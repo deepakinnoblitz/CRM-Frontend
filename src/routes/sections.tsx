@@ -56,6 +56,14 @@ const JobOpeningsPage = lazy(() => import('src/pages/job-openings'));
 const JobApplicantsPage = lazy(() => import('src/pages/job-applicants'));
 const InterviewPage = lazy(() => import('src/pages/interviews'));
 export const AccessDeniedPage = lazy(() => import('src/pages/access-denied'));
+export const PurchaseListPage = lazy(() => import('src/pages/purchase/list'));
+export const PurchaseNewPage = lazy(() => import('src/pages/purchase/new'));
+export const PurchaseEditPage = lazy(() => import('src/pages/purchase/edit'));
+export const PurchaseDetailsPage = lazy(() => import('src/pages/purchase/details'));
+export const InvoiceCollectionListPage = lazy(() => import('src/pages/invoice-collection/list'));
+export const InvoiceCollectionCreatePage = lazy(() => import('src/pages/invoice-collection/new'));
+export const InvoiceCollectionEditPage = lazy(() => import('src/pages/invoice-collection/edit'));
+export const InvoiceCollectionDetailsPage = lazy(() => import('src/pages/invoice-collection/details'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
 
@@ -137,6 +145,26 @@ export const routesSection: RouteObject[] = [
       { path: 'job-openings', element: <JobOpeningsPage /> },
       { path: 'job-applicants', element: <JobApplicantsPage /> },
       { path: 'interviews', element: <InterviewPage /> },
+      {
+        path: 'purchase',
+        children: [
+          { index: true, element: <PurchaseListPage /> },
+          { path: 'new', element: <PurchaseNewPage /> },
+          { path: 'edit/:id', element: <PurchaseEditPage /> },
+          { path: ':id', element: <PurchaseDetailsPage /> },
+        ],
+      },
+
+      {
+        path: 'invoice-collections',
+        children: [
+          { index: true, element: <InvoiceCollectionListPage /> },
+          { path: 'new', element: <InvoiceCollectionCreatePage /> },
+          { path: ':id/edit', element: <InvoiceCollectionEditPage /> },
+          { path: ':id/view', element: <InvoiceCollectionDetailsPage /> },
+        ],
+      },
+
       {
         path: 'reports',
         children: [

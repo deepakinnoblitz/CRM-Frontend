@@ -7,7 +7,8 @@ import { fetchEstimations } from 'src/api/estimation';
 export function useEstimations(
     page: number,
     rowsPerPage: number,
-    search: string
+    search: string,
+    sortBy?: string
 ) {
     const [data, setData] = useState<Estimation[]>([]);
     const [total, setTotal] = useState(0);
@@ -24,6 +25,7 @@ export function useEstimations(
             page: page + 1, // Frappe pages start from 1
             page_size: rowsPerPage,
             search,
+            sort_by: sortBy,
         })
             .then((res) => {
                 setData(res.data);
@@ -35,7 +37,7 @@ export function useEstimations(
                 setTotal(0);
             })
             .finally(() => setLoading(false));
-    }, [page, rowsPerPage, search, trigger]);
+    }, [page, rowsPerPage, search, sortBy, trigger]);
 
     return { data, total, loading, refetch };
 }

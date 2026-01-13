@@ -354,7 +354,7 @@ export function InvoiceEditView() {
         try {
             setLoading(true);
             const invoiceData = {
-                customer_id: customerId,
+                client_name: customerId,
                 customer_name: customerName,
                 billing_name: billingName,
                 invoice_date: invoiceDate,

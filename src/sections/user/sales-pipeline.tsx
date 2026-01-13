@@ -1,8 +1,12 @@
+console.log('SalesPipeline module loading...');
+
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
+
+import { getString } from 'src/utils/string';
 
 import { Label } from 'src/components/label';
 
@@ -44,9 +48,14 @@ type Props = {
 };
 
 export function SalesPipeline({ currentStage, stages = STAGES, leadName, service, onStageChange, disabled = false }: Props) {
+    console.log('SalesPipeline rendering:', { currentStage, leadName });
     const theme = useTheme();
 
-    const currentIndex = stages.indexOf(currentStage);
+    const safeCurrentStage = getString(currentStage);
+    const safeLeadName = getString(leadName);
+    const safeService = getString(service);
+
+    const currentIndex = stages.indexOf(safeCurrentStage);
 
     return (
         <Card sx={{ p: 3, mb: 3 }}>
@@ -67,6 +76,7 @@ export function SalesPipeline({ currentStage, stages = STAGES, leadName, service
                 }}
             >
                 {stages.map((stage, index) => {
+                    const stageStr = getString(stage);
                     const isActive = index === currentIndex;
                     const isCompleted = index < currentIndex;
 
@@ -85,7 +95,7 @@ export function SalesPipeline({ currentStage, stages = STAGES, leadName, service
 
                     return (
                         <Box
-                            key={stage}
+                            key={stageStr}
                             sx={{
                                 flex: 1,
                                 display: 'flex',
@@ -109,7 +119,7 @@ export function SalesPipeline({ currentStage, stages = STAGES, leadName, service
                                 zIndex: STAGES.length - index,
                             }}
                         >
-                            {stage}
+                            {stageStr}
                         </Box>
                     );
                 })}
@@ -129,7 +139,7 @@ export function SalesPipeline({ currentStage, stages = STAGES, leadName, service
                             Current Lead Stage
                         </Typography>
                         <Label color="primary" variant="filled" sx={{ borderRadius: 1, height: 28, fontSize: 13 }}>
-                            {currentStage}
+                            {safeCurrentStage}
                         </Label>
                     </Stack>
 
@@ -138,7 +148,7 @@ export function SalesPipeline({ currentStage, stages = STAGES, leadName, service
                             Need to do Next
                         </Typography>
                         <Stack direction="row" flexWrap="wrap" sx={{ gap: 2 }}>
-                            {(NEXT_STEPS[currentStage] || []).map((step) => (
+                            {(NEXT_STEPS[safeCurrentStage] || []).map((step) => (
                                 <Box
                                     key={step}
                                     sx={{
@@ -172,10 +182,10 @@ export function SalesPipeline({ currentStage, stages = STAGES, leadName, service
                         }}
                     >
                         <Typography variant="subtitle2" sx={{ display: 'flex', gap: 1 }}>
-                            Lead: <Typography component="span" variant="body2" sx={{ color: 'text.secondary' }}>{leadName || '---'}</Typography>
+                            Lead: <Typography component="span" variant="body2" sx={{ color: 'text.secondary' }}>{safeLeadName || '---'}</Typography>
                         </Typography>
                         <Typography variant="subtitle2" sx={{ display: 'flex', gap: 1 }}>
-                            Service: <Typography component="span" variant="body2" sx={{ color: 'text.secondary' }}>{service || '---'}</Typography>
+                            Service: <Typography component="span" variant="body2" sx={{ color: 'text.secondary' }}>{safeService || '---'}</Typography>
                         </Typography>
                     </Stack>
                 </Stack>

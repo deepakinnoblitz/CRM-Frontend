@@ -12,14 +12,16 @@ import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 
+import { getString } from 'src/utils/string';
+
 import { getLead, getWorkflowStates } from 'src/api/leads';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
-import { SalesPipeline } from 'src/sections/user/sales-pipeline';
-import { LeadFollowupDetails } from 'src/sections/user/lead-followup-details';
-import { LeadPipelineTimeline } from 'src/sections/user/lead-pipeline-timeline';
+import { SalesPipeline } from '../user/sales-pipeline';
+import { LeadFollowupDetails } from '../user/lead-followup-details';
+import { LeadPipelineTimeline } from '../user/lead-pipeline-timeline';
 
 // ----------------------------------------------------------------------
 
@@ -34,6 +36,7 @@ export function LeadDetailsDialog({ open, onClose, leadId }: Props) {
     const [loading, setLoading] = useState(false);
     const [currentTab, setCurrentTab] = useState('general');
     const [allWorkflowStates, setAllWorkflowStates] = useState<string[]>([]);
+
 
     useEffect(() => {
         getWorkflowStates('Lead').then(workflowData => {
@@ -127,13 +130,13 @@ export function LeadDetailsDialog({ open, onClose, leadId }: Props) {
                                         <Iconify icon={"solar:user-bold" as any} width={32} />
                                     </Box>
                                     <Box sx={{ flexGrow: 1 }}>
-                                        <Typography variant="h5" sx={{ fontWeight: 800 }}>{lead.lead_name}</Typography>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{lead.company_name || 'Individual'}</Typography>
+                                        <Typography variant="h5" sx={{ fontWeight: 800 }}>{getString(lead.lead_name)}</Typography>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{getString(lead.company_name) || 'Individual'}</Typography>
                                     </Box>
                                     <Box sx={{ textAlign: 'right' }}>
-                                        {renderStatus(lead.workflow_state || lead.status)}
+                                        {renderStatus(getString(lead.workflow_state) || getString(lead.status))}
                                         <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.disabled', fontWeight: 700 }}>
-                                            ID: {lead.name}
+                                            ID: {getString(lead.name)}
                                         </Typography>
                                     </Box>
                                 </Box>
@@ -150,12 +153,12 @@ export function LeadDetailsDialog({ open, onClose, leadId }: Props) {
                                             gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                         }}
                                     >
-                                        <DetailItem label="Email" value={lead.email} icon="solar:letter-bold" />
-                                        <DetailItem label="Phone" value={lead.phone_number} icon="solar:phone-bold" />
-                                        <DetailItem label="Service" value={lead.service} icon="solar:lightbulb-bold" color="info.main" />
-                                        <DetailItem label="Leads Type" value={lead.leads_type} icon="solar:tag-horizontal-bold" />
-                                        <DetailItem label="Leads From" value={lead.leads_from} icon="solar:globus-bold" />
-                                        <DetailItem label="GSTIN" value={lead.gstin} icon="solar:checklist-bold" />
+                                        <DetailItem label="Email" value={getString(lead.email)} icon="solar:letter-bold" />
+                                        <DetailItem label="Phone" value={getString(lead.phone_number)} icon="solar:phone-bold" />
+                                        <DetailItem label="Service" value={getString(lead.service)} icon="solar:lightbulb-bold" color="info.main" />
+                                        <DetailItem label="Leads Type" value={getString(lead.leads_type)} icon="solar:tag-horizontal-bold" />
+                                        <DetailItem label="Leads From" value={getString(lead.leads_from)} icon="solar:globus-bold" />
+                                        <DetailItem label="GSTIN" value={getString(lead.gstin)} icon="solar:checklist-bold" />
                                     </Box>
                                 </Box>
 
@@ -169,16 +172,16 @@ export function LeadDetailsDialog({ open, onClose, leadId }: Props) {
                                             gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                         }}
                                     >
-                                        <DetailItem label="Country" value={lead.country} icon="solar:earth-bold" />
-                                        <DetailItem label="State" value={lead.state} icon="solar:point-on-map-bold" />
-                                        <DetailItem label="City" value={lead.city} icon="solar:city-bold" />
+                                        <DetailItem label="Country" value={getString(lead.country)} icon="solar:earth-bold" />
+                                        <DetailItem label="State" value={getString(lead.state)} icon="solar:point-on-map-bold" />
+                                        <DetailItem label="City" value={getString(lead.city)} icon="solar:city-bold" />
                                         <Box>
                                             <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block' }}>
                                                 Interest Level
                                             </Typography>
-                                            {renderInterest(lead.interest_level || 'Medium')}
+                                            {renderInterest(getString(lead.interest_level) || 'Medium')}
                                         </Box>
-                                        <DetailItem label="Owner" value={lead.owner_name || lead.owner} icon="solar:user-rounded-bold" color="secondary.main" />
+                                        <DetailItem label="Owner" value={getString(lead.owner_name) || getString(lead.owner)} icon="solar:user-rounded-bold" color="secondary.main" />
                                         <DetailItem label="Creation" value={new Date(lead.creation).toLocaleString()} icon="solar:calendar-bold" />
                                     </Box>
                                 </Box>
@@ -192,7 +195,7 @@ export function LeadDetailsDialog({ open, onClose, leadId }: Props) {
                                                 Billing Address
                                             </Typography>
                                             <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                                {lead.billing_address || 'No address provided'}
+                                                {getString(lead.billing_address) || 'No address provided'}
                                             </Typography>
                                         </Box>
                                         <Divider sx={{ borderStyle: 'dotted' }} />
@@ -201,7 +204,7 @@ export function LeadDetailsDialog({ open, onClose, leadId }: Props) {
                                                 Remarks / Notes
                                             </Typography>
                                             <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600, fontStyle: lead.remarks ? 'normal' : 'italic' }}>
-                                                {lead.remarks || 'No remarks added'}
+                                                {getString(lead.remarks) || 'No remarks added'}
                                             </Typography>
                                         </Box>
                                     </Box>
@@ -246,13 +249,13 @@ export function LeadDetailsDialog({ open, onClose, leadId }: Props) {
                                             <TextField
                                                 fullWidth
                                                 label="Converted Account"
-                                                value={lead.converted_account}
+                                                value={getString(lead.converted_account)}
                                                 InputProps={{ readOnly: true }}
                                             />
                                             <TextField
                                                 fullWidth
                                                 label="Converted Contact"
-                                                value={lead.converted_contact}
+                                                value={getString(lead.converted_contact)}
                                                 InputProps={{ readOnly: true }}
                                             />
                                         </Box>

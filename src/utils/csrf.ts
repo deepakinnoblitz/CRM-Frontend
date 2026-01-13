@@ -9,17 +9,24 @@
 /**
  * Handle CSRF error by logging out user
  */
-function handleCSRFError(): void {
+async function handleCSRFError(): Promise<void> {
     console.error('CSRF Token Error detected - logging out user');
 
     // Clear local storage
     localStorage.clear();
 
-    // Show alert to user
-    alert('Your session has expired. Please log in again.');
+    try {
+        // Call logout API endpoint
+        await fetch('/api/method/logout', {
+            method: 'POST',
+            credentials: 'include'
+        });
+    } catch (error) {
+        console.error('Error during logout:', error);
+    }
 
-    // Redirect to logout endpoint
-    window.location.href = '/api/method/logout';
+    // Redirect to login page
+    window.location.href = '/login';
 }
 
 /**

@@ -47,6 +47,9 @@ export function AccountView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
+    const [sortBy, setSortBy] = useState('creation_desc');
+    const [total, setTotal] = useState(0);
+    const [selected, setSelected] = useState<string[]>([]);
     const [openCreate, setOpenCreate] = useState(false);
     const [openImport, setOpenImport] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -94,18 +97,22 @@ export function AccountView() {
     const loadAccounts = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await fetchAccounts({
+            const res = await fetchAccounts({
                 page: page + 1,
                 page_size: rowsPerPage,
                 search: filterName,
+                sort_by: sortBy,
             });
-            setAccounts(data || []);
+            setAccounts(res.data || []);
+            setTotal(res.total || 0);
         } catch (error) {
             console.error('Failed to fetch accounts', error);
+            setAccounts([]);
+            setTotal(0);
         } finally {
             setLoading(false);
         }
-    }, [page, rowsPerPage, filterName]);
+    }, [page, rowsPerPage, filterName, sortBy]);
 
     useEffect(() => {
         loadPermissions();
@@ -214,6 +221,44 @@ export function AccountView() {
         } finally {
             setConfirmDelete({ open: false, id: null });
         }
+    };
+
+    const handleBulkDelete = async () => {
+        try {
+            await Promise.all(selected.map((id) => deleteAccount(id)));
+            setSnackbar({ open: true, message: `${selected.length} accounts deleted successfully`, severity: 'success' });
+            setSelected([]);
+            loadAccounts();
+        } catch (e: any) {
+            setSnackbar({ open: true, message: e.message || 'Error during bulk delete', severity: 'error' });
+        }
+    };
+
+    const handleSelectAllRows = (checked: boolean, ids: string[]) => {
+        if (checked) {
+            setSelected(ids);
+            return;
+        }
+        setSelected([]);
+    };
+
+    const handleSelectRow = (id: string) => {
+        const selectedIndex = selected.indexOf(id);
+        let newSelected: string[] = [];
+
+        if (selectedIndex === -1) {
+            newSelected = newSelected.concat(selected, id);
+        } else if (selectedIndex === 0) {
+            newSelected = newSelected.concat(selected.slice(1));
+        } else if (selectedIndex === selected.length - 1) {
+            newSelected = newSelected.concat(selected.slice(0, -1));
+        } else if (selectedIndex > 0) {
+            newSelected = newSelected.concat(
+                selected.slice(0, selectedIndex),
+                selected.slice(selectedIndex + 1)
+            );
+        }
+        setSelected(newSelected);
     };
 
     const handleCreate = async () => {
@@ -359,22 +404,27 @@ export function AccountView() {
 
             <Card>
                 <AccountTableToolbar
-                    numSelected={0}
+                    numSelected={selected.length}
                     filterName={filterName}
                     onFilterName={handleFilterByName}
                     searchPlaceholder="Search accounts..."
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    onDelete={handleBulkDelete}
                 />
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
                         <Table sx={{ minWidth: 800 }}>
                             <AccountTableHead
-                                order="desc"
-                                orderBy="creation"
-                                rowCount={accounts.length}
-                                numSelected={0}
-                                onSort={() => { }}
-                                onSelectAllRows={() => { }}
+                                rowCount={total}
+                                numSelected={selected.length}
+                                onSelectAllRows={(checked: boolean) =>
+                                    handleSelectAllRows(
+                                        checked,
+                                        accounts.map((row) => row.name)
+                                    )
+                                }
                                 headLabel={[
                                     { id: 'account_name', label: 'Account Name' },
                                     { id: 'phone_number', label: 'Phone Number' },
@@ -404,8 +454,8 @@ export function AccountView() {
                                             state: row.state,
                                             country: row.country,
                                         }}
-                                        selected={false}
-                                        onSelectRow={() => { }}
+                                        selected={selected.includes(row.name)}
+                                        onSelectRow={() => handleSelectRow(row.name)}
                                         onView={() => handleViewRow(row)}
                                         onEdit={() => handleEditRow(row)}
                                         onDelete={() => handleDeleteRow(row.name)}
@@ -442,7 +492,7 @@ export function AccountView() {
                 <TablePagination
                     component="div"
                     page={page}
-                    count={accounts.length}
+                    count={total}
                     rowsPerPage={rowsPerPage}
                     onPageChange={onChangePage}
                     rowsPerPageOptions={[5, 10, 25]}

@@ -10,5 +10,5 @@
 }
 
 .simplebar-scrollbar.simplebar-visible:before {
-  opacity: 0.48;
+  opacity: 0;
 }

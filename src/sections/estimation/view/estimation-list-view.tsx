@@ -48,6 +48,7 @@ export function EstimationListView() {
 
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [filterName, setFilterName] = useState('');
+    const [sortBy, setSortBy] = useState('estimate_date_desc');
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
@@ -57,7 +58,8 @@ export function EstimationListView() {
     const { data, total, loading, refetch } = useEstimations(
         table.page,
         table.rowsPerPage,
-        filterName
+        filterName,
+        sortBy
     );
 
     const handleFilterName = useCallback(
@@ -110,7 +112,7 @@ export function EstimationListView() {
                 <Typography variant="h4">Estimations</Typography>
                 <Button
                     variant="contained"
-                    color="inherit"
+                    color="info"
                     startIcon={<Iconify icon="mingcute:add-line" />}
                     onClick={handleCreateNew}
                 >
@@ -123,17 +125,16 @@ export function EstimationListView() {
                     numSelected={table.selected.length}
                     filterName={filterName}
                     onFilterName={handleFilterName}
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
                 />
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
                         <Table sx={{ minWidth: 800 }}>
                             <EstimationTableHead
-                                order={table.order}
-                                orderBy={table.orderBy}
                                 rowCount={total}
                                 numSelected={table.selected.length}
-                                onSort={table.onSort}
                                 onSelectAllRows={(checked) =>
                                     table.onSelectAllRows(
                                         checked,

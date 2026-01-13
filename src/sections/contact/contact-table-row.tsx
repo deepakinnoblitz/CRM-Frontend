@@ -14,7 +14,7 @@ export type ContactProps = {
     companyName: string;
     email: string;
     phone: string;
-    designation: string;
+    designation?: string;
     avatarUrl: string;
     country?: string;
     state?: string;
@@ -63,13 +63,6 @@ export function ContactTableRow({
 
             <TableCell>{row.companyName}</TableCell>
 
-            <TableCell>{row.city || '-'}</TableCell>
-
-            <TableCell>{row.state || '-'}</TableCell>
-
-            <TableCell>{row.country || '-'}</TableCell>
-
-            <TableCell>{row.designation}</TableCell>
 
             <TableCell>{row.sourceLead || '-'}</TableCell>
 

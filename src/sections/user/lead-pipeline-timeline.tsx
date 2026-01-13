@@ -12,6 +12,7 @@ import TimelineSeparator from '@mui/lab/TimelineSeparator';
 import TimelineConnector from '@mui/lab/TimelineConnector';
 import TimelineItem, { timelineItemClasses } from '@mui/lab/TimelineItem';
 
+import { getString } from 'src/utils/string';
 import { fDateTime } from 'src/utils/format-time';
 
 import { Iconify } from 'src/components/iconify';
@@ -63,6 +64,10 @@ type ItemProps = TimelineItemProps & {
 };
 
 function Item({ item, lastItem, ...other }: ItemProps) {
+    const safeStateFrom = getString(item.state_from);
+    const safeStateTo = getString(item.state_to);
+    const safeChangeBy = getString(item.change_by);
+
     return (
         <TimelineItem {...other}>
             <TimelineSeparator>
@@ -72,11 +77,11 @@ function Item({ item, lastItem, ...other }: ItemProps) {
 
             <TimelineContent>
                 <Typography variant="subtitle2">
-                    {item.state_from ? `${item.state_from} → ${item.state_to}` : `Initial State: ${item.state_to}`}
+                    {safeStateFrom ? `${safeStateFrom} → ${safeStateTo}` : `Initial State: ${safeStateTo}`}
                 </Typography>
 
                 <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                    {fDateTime(item.date_and_time)} by {item.change_by}
+                    {fDateTime(item.date_and_time)} by {safeChangeBy}
                 </Typography>
             </TimelineContent>
         </TimelineItem>

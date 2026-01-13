@@ -25,14 +25,14 @@ export function Logo({
   isSingle = true,
   ...other
 }: LogoProps) {
-  const logoUrl = 'http://erp.innoblitz.in/assets/Innoblitz%20Logo%20Full.png';
+  const logoUrl = 'http://erp.innoblitz.in/assets/Innoblitz_logo_updated.png';
 
   const singleLogo = (
     <Box
       component="img"
       src={logoUrl}
       alt="Single logo"
-      sx={{ width: 1, height: 180, objectFit: 'contain' }}
+      sx={{ width: 1, height: 120, objectFit: 'contain', mt: 2 }}
     />
   );
 
@@ -41,7 +41,7 @@ export function Logo({
       component="img"
       src={logoUrl}
       alt="Full logo"
-      sx={{ width: 1, height: 1, objectFit: 'contain' }}
+      sx={{ width: 1, height: 120, objectFit: 'contain' }}
     />
   );
 
@@ -55,14 +55,13 @@ export function Logo({
       sx={[
         {
           width: 1,
-          height: 170,
+          height: 110,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          marginLeft: -1,
-          marginTop: -2,
-          marginBottom: -4,
-          mb: 3,
+          marginLeft: 0,
+          marginTop: 0,
+          marginBottom: 3.5,
           ...(disabled && { pointerEvents: 'none' }),
         },
         ...(Array.isArray(sx) ? sx : [sx]),

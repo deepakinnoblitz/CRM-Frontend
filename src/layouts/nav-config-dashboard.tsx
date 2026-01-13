@@ -170,6 +170,16 @@ export const salesNavData = [
     title: 'Estimations',
     path: '/estimations',
     icon: <Iconify icon={"solar:document-text-bold-duotone" as any} />,
+  },
+  {
+    title: 'Invoice Collections',
+    path: '/invoice-collections',
+    icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} />,
+  },
+  {
+    title: 'Purchases',
+    path: '/purchase',
+    icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
   }
 ];
 
@@ -268,6 +278,16 @@ export const crmAndSalesNavData = [
     icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} />,
   },
   {
+    title: 'Invoice Collections',
+    path: '/invoice-collections',
+    icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} />,
+  },
+  {
+    title: 'Purchases',
+    path: '/purchase',
+    icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
+  },
+  {
     title: 'Events',
     path: '/events',
     icon: <Iconify icon={"solar:calendar-mark-bold-duotone" as any} />,
@@ -307,23 +327,15 @@ export const commonNavData = [
 
 // Helper function to check if user has any valid role
 export function hasValidRole(roles: string[] = []): boolean {
-  console.log('Checking roles:', roles);
-
   if (roles.includes('Administrator')) {
-    console.log('User is Administrator');
     return true;
   }
 
-  const validRolePatterns = ['HR', 'Employee', 'Sales', 'CRM', 'CRM And Sales'];
+  const validRolePatterns = ['HR', 'Employee', 'Sales', 'CRM User', 'CRM And Sales'];
   const hasValid = roles.some((role) => {
     const matches = validRolePatterns.includes(role);
-    if (matches) {
-      console.log(`Role "${role}" matches exactly`);
-    }
     return matches;
   });
-
-  console.log('Has valid role:', hasValid);
   return hasValid;
 }
 
@@ -388,7 +400,7 @@ export function getNavData(roles: string[] = []) {
     hasCustomRole = true;
   }
 
-  if (hasRole('CRM')) {
+  if (hasRole('CRM User')) {
     addItems(crmNavData);
     hasCustomRole = true;
   }

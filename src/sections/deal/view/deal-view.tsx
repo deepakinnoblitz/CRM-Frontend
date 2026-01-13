@@ -53,6 +53,8 @@ export function DealView() {
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [filterStage, setFilterStage] = useState('all');
+    const [sortBy, setSortBy] = useState('creation_desc');
+    const [selected, setSelected] = useState<string[]>([]);
 
     const STAGE_OPTIONS = [
         { value: 'Qualification', label: 'Qualification' },
@@ -110,7 +112,8 @@ export function DealView() {
         page,
         rowsPerPage,
         filterName,
-        filterStage
+        filterStage,
+        sortBy
     );
 
     useEffect(() => {
@@ -166,6 +169,44 @@ export function DealView() {
         } finally {
             setConfirmDelete({ open: false, id: null });
         }
+    };
+
+    const handleBulkDelete = async () => {
+        try {
+            await Promise.all(selected.map((id) => deleteDeal(id)));
+            setSnackbar({ open: true, message: `${selected.length} deals deleted successfully`, severity: 'success' });
+            setSelected([]);
+            await refetch();
+        } catch (e: any) {
+            setSnackbar({ open: true, message: e.message || 'Error during bulk delete', severity: 'error' });
+        }
+    };
+
+    const handleSelectAllRows = (checked: boolean, ids: string[]) => {
+        if (checked) {
+            setSelected(ids);
+            return;
+        }
+        setSelected([]);
+    };
+
+    const handleSelectRow = (id: string) => {
+        const selectedIndex = selected.indexOf(id);
+        let newSelected: string[] = [];
+
+        if (selectedIndex === -1) {
+            newSelected = newSelected.concat(selected, id);
+        } else if (selectedIndex === 0) {
+            newSelected = newSelected.concat(selected.slice(1));
+        } else if (selectedIndex === selected.length - 1) {
+            newSelected = newSelected.concat(selected.slice(0, -1));
+        } else if (selectedIndex > 0) {
+            newSelected = newSelected.concat(
+                selected.slice(0, selectedIndex),
+                selected.slice(selectedIndex + 1)
+            );
+        }
+        setSelected(newSelected);
     };
 
     const handleCreate = async () => {
@@ -522,7 +563,7 @@ export function DealView() {
 
                 <Card>
                     <DealTableToolbar
-                        numSelected={0}
+                        numSelected={selected.length}
                         filterName={filterName}
                         onFilterName={(e) => {
                             setFilterName(e.target.value);
@@ -530,24 +571,29 @@ export function DealView() {
                         }}
                         filterStatus={filterStage}
                         onFilterStatus={(e) => {
-                            setFilterStage(e.target.value);
+                            setFilterStage(e.target.value as string);
                             setPage(0);
                         }}
                         options={STAGE_OPTIONS}
                         searchPlaceholder="Search deals..."
                         filterLabel="Stage"
+                        sortBy={sortBy}
+                        onSortChange={setSortBy}
+                        onDelete={handleBulkDelete}
                     />
 
                     <Scrollbar>
                         <TableContainer sx={{ overflow: 'unset' }}>
                             <Table sx={{ minWidth: 800 }}>
                                 <DealTableHead
-                                    order="desc"
-                                    orderBy="creation"
                                     rowCount={total}
-                                    numSelected={0}
-                                    onSort={() => { }}
-                                    onSelectAllRows={() => { }}
+                                    numSelected={selected.length}
+                                    onSelectAllRows={(checked: boolean) =>
+                                        handleSelectAllRows(
+                                            checked,
+                                            data.map((row) => row.name)
+                                        )
+                                    }
                                     headLabel={[
                                         { id: 'deal_title', label: 'Title' },
                                         { id: 'account', label: 'Account' },
@@ -576,8 +622,8 @@ export function DealView() {
                                                     expectedCloseDate: row.expected_close_date ?? '-',
                                                     avatarUrl: '/assets/images/avatar/avatar-25.webp',
                                                 }}
-                                                selected={false}
-                                                onSelectRow={() => { }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
                                                 onEdit={() => handleEditRow(row.name)}
                                                 onDelete={() => handleDeleteClick(row.name)}
                                                 onView={() => handleViewRow(row.name)}

@@ -21,3 +21,14 @@ export function stripHtml(html: string): string {
         .replace(/\n{2,}/g, '\n') // Collapse excessive newlines
         .trim();
 }
+
+/**
+ * Ensures that a value fetched from Frappe API (which could be a string or an object for Link fields)
+ * is returned as a plain string.
+ */
+export function getString(val: any): string {
+    if (typeof val === 'object' && val !== null) {
+        return val.name || val.label || String(val);
+    }
+    return val === null || val === undefined ? '' : String(val);
+}

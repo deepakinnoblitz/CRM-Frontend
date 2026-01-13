@@ -9,6 +9,7 @@ import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 
+import { getString } from 'src/utils/string';
 import { fDateTime } from 'src/utils/format-time';
 
 import { Label } from 'src/components/label';
@@ -59,18 +60,24 @@ export function LeadFollowupDetails({ title, subheader, list }: Props) {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                list.map((row) => (
-                                    <TableRow key={row.name}>
-                                        <TableCell>{fDateTime(row.date_and_time)}</TableCell>
-                                        <TableCell>
-                                            <Label color={row.type === 'Call' ? 'primary' : 'info'}>
-                                                {row.type}
-                                            </Label>
-                                        </TableCell>
-                                        <TableCell>{row.status}</TableCell>
-                                        <TableCell>{row.notes}</TableCell>
-                                    </TableRow>
-                                ))
+                                list.map((row) => {
+                                    const safeType = getString(row.type);
+                                    const safeStatus = getString(row.status);
+                                    const safeNotes = getString(row.notes);
+
+                                    return (
+                                        <TableRow key={row.name}>
+                                            <TableCell>{fDateTime(row.date_and_time)}</TableCell>
+                                            <TableCell>
+                                                <Label color={safeType === 'Call' ? 'primary' : 'info'}>
+                                                    {safeType}
+                                                </Label>
+                                            </TableCell>
+                                            <TableCell>{safeStatus}</TableCell>
+                                            <TableCell>{safeNotes}</TableCell>
+                                        </TableRow>
+                                    );
+                                })
                             )}
                         </TableBody>
                     </Table>

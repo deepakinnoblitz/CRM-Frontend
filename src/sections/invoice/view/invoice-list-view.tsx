@@ -50,6 +50,7 @@ export function InvoiceListView() {
 
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [filterName, setFilterName] = useState('');
+    const [sortBy, setSortBy] = useState('invoice_date_desc');
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
@@ -59,7 +60,8 @@ export function InvoiceListView() {
     const { data, total, loading, refetch } = useInvoices(
         table.page,
         table.rowsPerPage,
-        filterName
+        filterName,
+        sortBy
     );
 
     const handleFilterName = useCallback(
@@ -112,7 +114,7 @@ export function InvoiceListView() {
                 <Typography variant="h4">Invoices</Typography>
                 <Button
                     variant="contained"
-                    color="inherit"
+                    color="info"
                     startIcon={<Iconify icon="mingcute:add-line" />}
                     onClick={handleCreateNew}
                 >
@@ -125,6 +127,8 @@ export function InvoiceListView() {
                     numSelected={table.selected.length}
                     filterName={filterName}
                     onFilterName={handleFilterName}
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
                 />
 
                 <Scrollbar>

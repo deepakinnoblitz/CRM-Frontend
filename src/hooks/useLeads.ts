@@ -8,7 +8,8 @@ export function useLeads(
     page: number,
     rowsPerPage: number,
     search: string,
-    status?: string
+    status?: string,
+    sortBy?: string
 ) {
     const [data, setData] = useState<Lead[]>([]);
     const [total, setTotal] = useState(0);
@@ -26,6 +27,7 @@ export function useLeads(
             page_size: rowsPerPage,
             search,
             status,
+            sort_by: sortBy,
         })
             .then((res) => {
                 setData(res.data);
@@ -37,7 +39,7 @@ export function useLeads(
                 setTotal(0);
             })
             .finally(() => setLoading(false));
-    }, [page, rowsPerPage, search, status, trigger]);
+    }, [page, rowsPerPage, search, status, sortBy, trigger]);
 
     return { data, total, loading, refetch };
 }

@@ -22,6 +22,7 @@ import TablePagination from '@mui/material/TablePagination';
 
 import { useContacts } from 'src/hooks/useContacts';
 
+import { getString } from 'src/utils/string';
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
 import { getDoctypeList } from 'src/api/leads';
@@ -48,6 +49,8 @@ export function ContactView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
+    const [sortBy, setSortBy] = useState('creation_desc');
+    const [selected, setSelected] = useState<string[]>([]);
 
     const [openCreate, setOpenCreate] = useState(false);
     const [creating, setCreating] = useState(false);
@@ -94,7 +97,8 @@ export function ContactView() {
     const { data, total, loading, refetch } = useContacts(
         page + 1,
         rowsPerPage,
-        filterName
+        filterName,
+        sortBy
     );
 
     useEffect(() => {
@@ -194,6 +198,44 @@ export function ContactView() {
             setOpenDelete(false);
             setDeleteId(null);
         }
+    };
+
+    const handleBulkDelete = async () => {
+        try {
+            await Promise.all(selected.map((id) => deleteContact(id)));
+            setSnackbar({ open: true, message: `${selected.length} contacts deleted successfully`, severity: 'success' });
+            setSelected([]);
+            await refetch();
+        } catch (e: any) {
+            setSnackbar({ open: true, message: e.message || 'Error during bulk delete', severity: 'error' });
+        }
+    };
+
+    const handleSelectAllRows = (checked: boolean, ids: string[]) => {
+        if (checked) {
+            setSelected(ids);
+            return;
+        }
+        setSelected([]);
+    };
+
+    const handleSelectRow = (id: string) => {
+        const selectedIndex = selected.indexOf(id);
+        let newSelected: string[] = [];
+
+        if (selectedIndex === -1) {
+            newSelected = newSelected.concat(selected, id);
+        } else if (selectedIndex === 0) {
+            newSelected = newSelected.concat(selected.slice(1));
+        } else if (selectedIndex === selected.length - 1) {
+            newSelected = newSelected.concat(selected.slice(0, -1));
+        } else if (selectedIndex > 0) {
+            newSelected = newSelected.concat(
+                selected.slice(0, selectedIndex),
+                selected.slice(selectedIndex + 1)
+            );
+        }
+        setSelected(newSelected);
     };
 
     const handleCreate = async () => {
@@ -354,32 +396,33 @@ export function ContactView() {
 
             <Card>
                 <ContactTableToolbar
-                    numSelected={0}
+                    numSelected={selected.length}
                     filterName={filterName}
                     onFilterName={(e) => {
                         setFilterName(e.target.value);
                         setPage(0);
                     }}
                     searchPlaceholder="Search contacts..."
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    onDelete={handleBulkDelete}
                 />
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
                         <Table sx={{ minWidth: 800 }}>
                             <ContactTableHead
-                                order="asc"
-                                orderBy="name"
                                 rowCount={total}
-                                numSelected={0}
-                                onSort={() => { }}
-                                onSelectAllRows={() => { }}
+                                numSelected={selected.length}
+                                onSelectAllRows={(checked: boolean) =>
+                                    handleSelectAllRows(
+                                        checked,
+                                        data.map((row) => row.name)
+                                    )
+                                }
                                 headLabel={[
                                     { id: 'name', label: 'Name' },
                                     { id: 'company', label: 'Company' },
-                                    { id: 'city', label: 'City' },
-                                    { id: 'state', label: 'State' },
-                                    { id: 'country', label: 'Country' },
-                                    { id: 'designation', label: 'Designation' },
                                     { id: 'sourceLead', label: 'Source Lead' },
                                     { id: 'phone', label: 'Phone' },
                                     { id: 'email', label: 'Email' },
@@ -398,18 +441,14 @@ export function ContactView() {
                                         row={{
                                             id: row.name,
                                             firstName: row.first_name,
-                                            companyName: row.company_name || '',
-                                            email: row.email || '',
-                                            phone: row.phone || '',
-                                            designation: row.designation || '',
+                                            companyName: getString(row.company_name) || '',
+                                            email: getString(row.email) || '',
+                                            phone: getString(row.phone) || '',
                                             avatarUrl: '/assets/images/avatar/avatar-25.webp',
-                                            country: row.country,
-                                            state: row.state,
-                                            city: row.city,
-                                            sourceLead: row.source_lead ? `${row.source_lead} - ${leadOptions.find(l => l.name === row.source_lead)?.lead_name || ''}` : '',
+                                            sourceLead: row.source_lead ? `${getString(row.source_lead)} - ${leadOptions.find(l => l.name === getString(row.source_lead))?.lead_name || ''}` : '',
                                         }}
-                                        selected={false}
-                                        onSelectRow={() => { }}
+                                        selected={selected.includes(row.name)}
+                                        onSelectRow={() => handleSelectRow(row.name)}
                                         onView={() => handleViewRow(row.name)}
                                         onEdit={() => handleEditRow(row.name)}
                                         onDelete={() => handleDeleteClick(row.name)}

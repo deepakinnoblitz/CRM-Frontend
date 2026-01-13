@@ -43,14 +43,29 @@ export async function fetchEstimations(params: {
     page: number;
     page_size: number;
     search?: string;
+    sort_by?: string;
 }) {
     const filters: any[] = [];
+    const or_filters: any[] = [];
 
     if (params.search) {
-        filters.push([
-            ["Estimation", "ref_no", "like", `%${params.search}%`],
-            ["or", ["Estimation", "customer_name", "like", `%${params.search}%`]]
-        ]);
+        or_filters.push(["Estimation", "ref_no", "like", `%${params.search}%`]);
+        or_filters.push(["Estimation", "customer_name", "like", `%${params.search}%`]);
+        or_filters.push(["Estimation", "phone_number", "like", `%${params.search}%`]);
+    }
+
+    // Convert sort_by format (e.g., "estimate_date_desc") to Frappe order_by format
+    let orderBy = "creation desc";
+    if (params.sort_by) {
+        const [field, direction] = params.sort_by.split('_').reduce((acc, part) => {
+            if (part === 'asc' || part === 'desc') {
+                acc[1] = part;
+            } else {
+                acc[0] = acc[0] ? `${acc[0]}_${part}` : part;
+            }
+            return acc;
+        }, ['', 'desc']);
+        orderBy = `${field} ${direction}`;
     }
 
     const query = new URLSearchParams({
@@ -65,14 +80,15 @@ export async function fetchEstimations(params: {
             "creation"
         ]),
         filters: JSON.stringify(filters),
+        or_filters: JSON.stringify(or_filters),
         limit_start: String((params.page - 1) * params.page_size),
         limit_page_length: String(params.page_size),
-        order_by: "creation desc"
+        order_by: orderBy
     });
 
     const [res, countRes] = await Promise.all([
         fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Estimation&filters=${encodeURIComponent(JSON.stringify(filters))}`, { credentials: "include" })
+        fetch(`/api/method/frappe.client.get_count?doctype=Estimation&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`, { credentials: "include" })
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch estimations");

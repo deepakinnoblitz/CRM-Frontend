@@ -28,6 +28,7 @@ import TablePagination from '@mui/material/TablePagination';
 
 import { useLeads } from 'src/hooks/useLeads';
 
+import { getString } from 'src/utils/string';
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -56,6 +57,7 @@ export function UserView() {
   const table = useTable();
   const [filterName, setFilterName] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [sortBy, setSortBy] = useState('creation_desc');
 
   const STATUS_OPTIONS = [
     { value: 'New Lead', label: 'New Lead' },
@@ -135,13 +137,14 @@ export function UserView() {
     table.page,
     table.rowsPerPage,
     filterName,
-    filterStatus
+    filterStatus,
+    sortBy
   );
 
   useEffect(() => {
     // Fetch dropdown options on mount
-    getDoctypeList('Lead From').then(setLeadsFromOptions);
-    getDoctypeList('Service').then(setServiceOptions);
+    getDoctypeList('Lead From').then((list) => setLeadsFromOptions(list.map((item: any) => item.name || item.label || String(item))));
+    getDoctypeList('Service').then((list) => setServiceOptions(list.map((item: any) => item.name || item.label || String(item))));
 
     // Fetch Permissions
     import('src/api/leads').then(api => {
@@ -253,6 +256,17 @@ export function UserView() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(table.selected.map((id) => deleteLead(id)));
+      setSnackbar({ open: true, message: `${table.selected.length} leads deleted successfully`, severity: 'success' });
+      table.onSelectAllRows(false, []);
+      await refetch();
+    } catch (e: any) {
+      setSnackbar({ open: true, message: e.message || 'Error during bulk delete', severity: 'error' });
+    }
+  };
+
   // Validation State
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
 
@@ -356,6 +370,7 @@ export function UserView() {
     return val;
   };
 
+
   const handleEditRow = async (row: any) => {
     setViewOnly(false);
     setValidationErrors({}); // Clear errors when opening edit
@@ -364,29 +379,30 @@ export function UserView() {
 
     try {
       const fullLead = await getLead(leadId);
-      setLeadName(fullLead.lead_name || '');
-      setCompanyName(fullLead.company_name || '');
-      setGstin(fullLead.gstin || '');
-      setPhoneNumber(cleanPhoneNumber(fullLead.phone_number || ''));
-      setEmail(fullLead.email || '');
-      setLeadsType(fullLead.leads_type || 'Incoming');
-      setLeadsFrom(fullLead.leads_from || '');
-      setService(fullLead.service || '');
-      setCountry(fullLead.country || '');
-      setState(fullLead.state || '');
-      setCity(fullLead.city || '');
-      setWorkflowState(fullLead.workflow_state || '');
-      setStatus(fullLead.status || 'New Lead');
-      setBillingAddress(fullLead.billing_address || '');
-      setRemarks(fullLead.remarks || '');
-      setConvertedAccount(fullLead.converted_account || '');
-      setConvertedContact(fullLead.converted_contact || '');
+      setLeadName(getString(fullLead.lead_name) || '');
+      setCompanyName(getString(fullLead.company_name) || '');
+      setGstin(getString(fullLead.gstin) || '');
+      setPhoneNumber(cleanPhoneNumber(getString(fullLead.phone_number) || ''));
+      setEmail(getString(fullLead.email) || '');
+      setLeadsType(getString(fullLead.leads_type) || 'Incoming');
+      setLeadsFrom(getString(fullLead.leads_from) || '');
+      setService(getString(fullLead.service) || '');
+      setCountry(getString(fullLead.country) || '');
+      setState(getString(fullLead.state) || '');
+      setCity(getString(fullLead.city) || '');
+      setWorkflowState(getString(fullLead.workflow_state) || '');
+      setStatus(getString(fullLead.status) || 'New Lead');
+      setBillingAddress(getString(fullLead.billing_address) || '');
+      setRemarks(getString(fullLead.remarks) || '');
+      setConvertedAccount(getString(fullLead.converted_account) || '');
+      setConvertedContact(getString(fullLead.converted_contact) || '');
       setFollowupDetails(fullLead.followup_details || []);
       setPipelineTimeline(fullLead.converted_pipeline_timeline || []);
 
       // Fetch workflow actions for current state
-      if (fullLead.workflow_state) {
-        const actions = await getWorkflowActions('Lead', fullLead.workflow_state);
+      const currentST = getString(fullLead.workflow_state);
+      if (currentST) {
+        const actions = await getWorkflowActions('Lead', currentST);
         setWorkflowActions(actions);
       }
     } catch (error) {
@@ -394,21 +410,21 @@ export function UserView() {
       // Fallback to list data if full fetch fails
       const fallbackRow = data.find((item) => item.name === leadId);
       if (fallbackRow) {
-        setLeadName(fallbackRow.lead_name || '');
-        setCompanyName(fallbackRow.company_name || '');
-        setGstin(fallbackRow.gstin || '');
-        setPhoneNumber(cleanPhoneNumber(fallbackRow.phone_number || ''));
-        setEmail(fallbackRow.email || '');
-        setLeadsType(fallbackRow.leads_type || 'Incoming');
-        setLeadsFrom(fallbackRow.leads_from || '');
-        setService(fallbackRow.service || '');
-        setCountry(fallbackRow.country || '');
-        setState(fallbackRow.state || '');
-        setCity(fallbackRow.city || '');
-        setWorkflowState(fallbackRow.workflow_state || '');
-        setStatus(fallbackRow.status || 'New Lead');
-        setBillingAddress(fallbackRow.billing_address || '');
-        setRemarks(fallbackRow.remarks || '');
+        setLeadName(getString(fallbackRow.lead_name) || '');
+        setCompanyName(getString(fallbackRow.company_name) || '');
+        setGstin(getString(fallbackRow.gstin) || '');
+        setPhoneNumber(cleanPhoneNumber(getString(fallbackRow.phone_number) || ''));
+        setEmail(getString(fallbackRow.email) || '');
+        setLeadsType(getString(fallbackRow.leads_type) || 'Incoming');
+        setLeadsFrom(getString(fallbackRow.leads_from) || '');
+        setService(getString(fallbackRow.service) || '');
+        setCountry(getString(fallbackRow.country) || '');
+        setState(getString(fallbackRow.state) || '');
+        setCity(getString(fallbackRow.city) || '');
+        setWorkflowState(getString(fallbackRow.workflow_state) || '');
+        setStatus(getString(fallbackRow.status) || 'New Lead');
+        setBillingAddress(getString(fallbackRow.billing_address) || '');
+        setRemarks(getString(fallbackRow.remarks) || '');
       }
     }
     setOpenCreate(true);
@@ -732,17 +748,20 @@ export function UserView() {
                         }
                       }}
                     >
-                      {workflowActions.map((action) => (
-                        <MenuItem
-                          key={action.action}
-                          value={action.action}
-                          onClick={() => {
-                            setPendingWorkflowChange(action);
-                          }}
-                        >
-                          {action.action}
-                        </MenuItem>
-                      ))}
+                      {workflowActions.map((action) => {
+                        const safeAction = getString(action.action);
+                        return (
+                          <MenuItem
+                            key={safeAction}
+                            value={safeAction}
+                            onClick={() => {
+                              setPendingWorkflowChange(action);
+                            }}
+                          >
+                            {safeAction}
+                          </MenuItem>
+                        );
+                      })}
                     </Select>
                   </FormControl>
                 </Stack>
@@ -989,17 +1008,17 @@ export function UserView() {
             options={STATUS_OPTIONS}
             searchPlaceholder="Search leads..."
             filterLabel="Workflow State"
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            onDelete={handleBulkDelete}
           />
 
           <Scrollbar>
             <TableContainer sx={{ overflow: 'unset' }}>
               <Table sx={{ minWidth: 800 }}>
                 <UserTableHead
-                  order={table.order}
-                  orderBy={table.orderBy}
                   rowCount={total}
                   numSelected={table.selected.length}
-                  onSort={table.onSort}
                   onSelectAllRows={(checked) =>
                     table.onSelectAllRows(
                       checked,
@@ -1028,15 +1047,15 @@ export function UserView() {
                         key={row.name}
                         row={{
                           id: row.name,
-                          name: row.lead_name ?? '-',
-                          company: row.company_name ?? '-',
-                          phone: row.phone_number ?? '-',
-                          email: row.email ?? '-',
-                          status: row.status ?? '-',
-                          workflow_state: row.workflow_state ?? '-',
+                          name: getString(row.lead_name) ?? '-',
+                          company: getString(row.company_name) ?? '-',
+                          phone: getString(row.phone_number) ?? '-',
+                          email: getString(row.email) ?? '-',
+                          status: getString(row.status) ?? '-',
+                          workflow_state: getString(row.workflow_state) ?? '-',
                           avatarUrl: '/assets/images/avatar/avatar-25.webp',
                           isVerified: true,
-                          country: row.country ?? '-',
+                          country: getString(row.country) ?? '-',
                         }}
                         selected={table.selected.includes(row.name)}
                         onSelectRow={() => table.onSelectRow(row.name)}

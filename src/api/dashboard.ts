@@ -16,6 +16,7 @@ export interface DashboardStats {
     };
 }
 
+
 export interface Call {
     name: string;
     title: string;
@@ -167,3 +168,61 @@ export async function fetchPendingLeaveCount(): Promise<number> {
     const data = await res.json();
     return data.message || 0;
 }
+
+
+export interface SalesDashboardData {
+    total_sales: number;
+    total_qty_sold: number;
+    total_orders: number;
+    aov: number;
+    gross_sales: number;
+    net_sales: number;
+    total_discounts: number;
+    mtd_sales: number;
+    ytd_sales: number;
+    pipeline_value: number;
+    top_customers_by_revenue: Array<{
+        client_name: string;
+        billing_name: string;
+        revenue: number;
+        order_count: number;
+    }>;
+    most_repeated_customers: Array<{
+        client_name: string;
+        billing_name: string;
+        order_count: number;
+        total_spent: number;
+    }>;
+    overdue_orders: Array<{
+        name: string;
+        billing_name: string;
+        due_date: string;
+        balance_amount: number;
+        grand_total: number;
+    }>;
+    pending_orders_count: number;
+    sales_trend: {
+        categories: string[];
+        series: number[];
+    };
+    discount_trend: {
+        categories: string[];
+        series: number[];
+    };
+    conversion_rate: number;
+}
+
+export async function fetchSalesDashboardData(): Promise<SalesDashboardData> {
+    const res = await fetch(
+        '/api/method/company.company.frontend_api.get_sales_dashboard_data',
+        { credentials: 'include' }
+    );
+
+    if (!res.ok) {
+        throw new Error('Failed to fetch sales dashboard data');
+    }
+
+    const data = await res.json();
+    return data.message;
+}
+

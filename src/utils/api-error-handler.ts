@@ -5,8 +5,28 @@
 function beautifyFrappeMessage(msg: string): string {
     if (!msg) return msg;
 
+    // Remove HTML tags and normalize whitespace
+    let cleanMsg = msg.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
     // Remove "Error: " prefix if it exists
-    const cleanMsg = msg.replace(/^Error:\s*/i, '');
+    cleanMsg = cleanMsg.replace(/^Error:\s*/i, '');
+
+    // Handle ValidationError with collection amount
+    if (cleanMsg.includes('Collection exceeds Invoice Amount')) {
+        const grandTotal = cleanMsg.match(/Grand Total:\s*([\d.]+)/)?.[1];
+        const alreadyCollected = cleanMsg.match(/Already Collected:\s*([\d.]+)/)?.[1];
+        const tryingToAdd = cleanMsg.match(/Trying to Add:\s*([\d.]+)/)?.[1];
+        const remaining = cleanMsg.match(/Remaining Balance:\s*([\d.]+)/)?.[1];
+
+        if (grandTotal && remaining && tryingToAdd) {
+            return `Collection Amount Exceeds Invoice Balance!\n\n` +
+                `Invoice Total: ₹${parseFloat(grandTotal).toLocaleString()}\n` +
+                `Already Collected: ₹${parseFloat(alreadyCollected || '0').toLocaleString()}\n` +
+                `Remaining Balance: ₹${parseFloat(remaining).toLocaleString()}\n\n` +
+                `You tried to collect ₹${parseFloat(tryingToAdd).toLocaleString()}, ` +
+                `but only ₹${parseFloat(remaining).toLocaleString()} is remaining.`;
+        }
+    }
 
     // 1. Handle MandatoryError
     // frappe.exceptions.MandatoryError: [Employee, EMP00027]: employee_id, email

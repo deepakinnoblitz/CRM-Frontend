@@ -8,7 +8,8 @@ export function useDeals(
     page: number,
     rowsPerPage: number,
     search: string,
-    stage?: string
+    stage?: string,
+    sortBy?: string
 ) {
     const [data, setData] = useState<Deal[]>([]);
     const [total, setTotal] = useState(0);
@@ -26,14 +27,17 @@ export function useDeals(
             page_size: rowsPerPage,
             search,
             stage,
+            sort_by: sortBy,
         })
             .then((res) => {
-                if (Array.isArray(res)) {
-                    setData(res);
-                    setTotal(res.length);
-                } else {
-                    setData(res?.data || []);
-                    setTotal(res?.pagination?.total || 0);
+                if (res && typeof res === 'object' && 'data' in res) {
+                    setData(res.data);
+                    setTotal(res.total || 0);
+                } else if (Array.isArray(res)) {
+                    // Fallback cast to any to avoid TS error
+                    const results = res as any;
+                    setData(results);
+                    setTotal(results.length);
                 }
             })
             .catch((err) => {
@@ -42,7 +46,7 @@ export function useDeals(
                 setTotal(0);
             })
             .finally(() => setLoading(false));
-    }, [page, rowsPerPage, search, stage, trigger]);
+    }, [page, rowsPerPage, search, stage, trigger, sortBy]);
 
     return { data, total, loading, refetch };
 }
