@@ -21,12 +21,13 @@ import DialogContent from '@mui/material/DialogContent';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { Box, Card, Grid, Alert, Button, Snackbar, IconButton, Typography } from '@mui/material';
+import { Box, Card, Grid, Alert, Button, Snackbar, IconButton, Typography, Autocomplete } from '@mui/material';
 
 import { stripHtml } from 'src/utils/string';
 
-import { DashboardContent } from 'src/layouts/dashboard';
+import { getDoctypeList } from 'src/api/leads';
 import { type Call, fetchCalls, updateCall, deleteCall, createCall } from 'src/api/calls';
+import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -41,6 +42,7 @@ const INITIAL_CALL_STATE: Partial<Call> = {
     outgoing_call_status: 'Scheduled',
     call_start_time: '',
     call_end_time: '',
+    lead_name: '',
 };
 
 export function CallsView() {
@@ -56,6 +58,10 @@ export function CallsView() {
         severity: 'success',
     });
 
+    const [leadOptions, setLeadOptions] = useState<any[]>([]);
+    const [contactOptions, setContactOptions] = useState<any[]>([]);
+    const [accountOptions, setAccountOptions] = useState<any[]>([]);
+
     const loadCalls = useCallback(async (start?: Date, end?: Date) => {
         try {
             const startStr = start?.toISOString();
@@ -69,6 +75,9 @@ export function CallsView() {
 
     useEffect(() => {
         loadCalls();
+        getDoctypeList('Lead', ['name', 'lead_name']).then(setLeadOptions);
+        getDoctypeList('Contacts', ['name', 'first_name']).then(setContactOptions);
+        getDoctypeList('Accounts', ['name', 'account_name']).then(setAccountOptions);
     }, [loadCalls]);
 
     const handleDatesSet = (arg: any) => {
@@ -88,6 +97,7 @@ export function CallsView() {
                 outgoing_call_status: call.outgoing_call_status || 'Scheduled',
                 call_start_time: call.call_start_time.replace(' ', 'T'),
                 call_end_time: call.call_end_time?.replace(' ', 'T') || '',
+                lead_name: call.lead_name || '',
             });
             setOpenDialog(true);
         }
@@ -390,7 +400,7 @@ export function CallsView() {
                                         <Select
                                             label="Call For"
                                             value={callData.call_for}
-                                            onChange={(e) => setCallData({ ...callData, call_for: e.target.value as string })}
+                                            onChange={(e) => setCallData({ ...callData, call_for: e.target.value as string, lead_name: '' })}
                                         >
                                             <MenuItem value="Lead">Lead</MenuItem>
                                             <MenuItem value="Contact">Contact</MenuItem>
@@ -398,7 +408,47 @@ export function CallsView() {
                                         </Select>
                                     </FormControl>
                                 </Grid>
-                                <Grid size={{ xs: 12, md: 6 }}>
+
+                                {callData.call_for === 'Lead' && (
+                                    <Grid size={{ xs: 12, md: 6 }}>
+                                        <Autocomplete
+                                            fullWidth
+                                            options={leadOptions}
+                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.lead_name} (${option.name})`}
+                                            value={leadOptions.find(opt => opt.name === callData.lead_name) || null}
+                                            onChange={(_, newValue) => setCallData({ ...callData, lead_name: newValue?.name || '' })}
+                                            renderInput={(params) => <TextField {...params} label="Select Lead" />}
+                                        />
+                                    </Grid>
+                                )}
+
+                                {callData.call_for === 'Contact' && (
+                                    <Grid size={{ xs: 12, md: 6 }}>
+                                        <Autocomplete
+                                            fullWidth
+                                            options={contactOptions}
+                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.first_name} ${option.last_name} (${option.name})`}
+                                            value={contactOptions.find(opt => opt.name === callData.lead_name) || null}
+                                            onChange={(_, newValue) => setCallData({ ...callData, lead_name: newValue?.name || '' })}
+                                            renderInput={(params) => <TextField {...params} label="Select Contact" />}
+                                        />
+                                    </Grid>
+                                )}
+
+                                {callData.call_for === 'Accounts' && (
+                                    <Grid size={{ xs: 12, md: 6 }}>
+                                        <Autocomplete
+                                            fullWidth
+                                            options={accountOptions}
+                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.account_name} (${option.name})`}
+                                            value={accountOptions.find(opt => opt.name === callData.lead_name) || null}
+                                            onChange={(_, newValue) => setCallData({ ...callData, lead_name: newValue?.name || '' })}
+                                            renderInput={(params) => <TextField {...params} label="Select Account" />}
+                                        />
+                                    </Grid>
+                                )}
+
+                                <Grid size={{ xs: 12, md: 12 }}>
                                     <FormControl fullWidth>
                                         <InputLabel>Status</InputLabel>
                                         <Select

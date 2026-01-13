@@ -1,27 +1,17 @@
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
-import Alert from '@mui/material/Alert';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 
-import { getString } from 'src/utils/string';
-
-import { getLead, getWorkflowStates } from 'src/api/leads';
+import { getLead } from 'src/api/leads';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
-
-import { SalesPipeline } from '../user/sales-pipeline';
-import { LeadFollowupDetails } from '../user/lead-followup-details';
-import { LeadPipelineTimeline } from '../user/lead-pipeline-timeline';
 
 // ----------------------------------------------------------------------
 
@@ -34,15 +24,6 @@ type Props = {
 export function LeadDetailsDialog({ open, onClose, leadId }: Props) {
     const [lead, setLead] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [currentTab, setCurrentTab] = useState('general');
-    const [allWorkflowStates, setAllWorkflowStates] = useState<string[]>([]);
-
-
-    useEffect(() => {
-        getWorkflowStates('Lead').then(workflowData => {
-            setAllWorkflowStates(workflowData.states);
-        });
-    }, []);
 
     useEffect(() => {
         if (open && leadId) {
@@ -92,181 +73,109 @@ export function LeadDetailsDialog({ open, onClose, leadId }: Props) {
                 </IconButton>
             </DialogTitle>
 
-            <Box sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs
-                    value={currentTab}
-                    onChange={(e, newValue) => setCurrentTab(newValue)}
-                >
-                    <Tab label="General" value="general" />
-                    <Tab label="Pipeline" value="pipeline" />
-                    <Tab label="Followups" value="followups" />
-                    <Tab label="Convert Lead" value="convert" />
-                </Tabs>
-            </Box>
-
-            <DialogContent sx={{ p: 4, m: 2, mt: 4 }}>
+            <DialogContent sx={{ p: 4, m:2, mt: 4 }}>
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
                         <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
                     </Box>
                 ) : lead ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                        {currentTab === 'general' && (
-                            <>
-                                {/* Header Info */}
-                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5 }}>
-                                    <Box
-                                        sx={{
-                                            width: 64,
-                                            height: 64,
-                                            borderRadius: 2,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            bgcolor: 'primary.lighter',
-                                            color: 'primary.main',
-                                        }}
-                                    >
-                                        <Iconify icon={"solar:user-bold" as any} width={32} />
-                                    </Box>
-                                    <Box sx={{ flexGrow: 1 }}>
-                                        <Typography variant="h5" sx={{ fontWeight: 800 }}>{getString(lead.lead_name)}</Typography>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{getString(lead.company_name) || 'Individual'}</Typography>
-                                    </Box>
-                                    <Box sx={{ textAlign: 'right' }}>
-                                        {renderStatus(getString(lead.workflow_state) || getString(lead.status))}
-                                        <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.disabled', fontWeight: 700 }}>
-                                            ID: {getString(lead.name)}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-
-                                <Divider sx={{ borderStyle: 'dashed' }} />
-
-                                {/* General Information */}
-                                <Box>
-                                    <SectionHeader title="Contact & Service" icon="solar:phone-calling-bold" />
-                                    <Box
-                                        sx={{
-                                            display: 'grid',
-                                            gap: 3,
-                                            gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-                                        }}
-                                    >
-                                        <DetailItem label="Email" value={getString(lead.email)} icon="solar:letter-bold" />
-                                        <DetailItem label="Phone" value={getString(lead.phone_number)} icon="solar:phone-bold" />
-                                        <DetailItem label="Service" value={getString(lead.service)} icon="solar:lightbulb-bold" color="info.main" />
-                                        <DetailItem label="Leads Type" value={getString(lead.leads_type)} icon="solar:tag-horizontal-bold" />
-                                        <DetailItem label="Leads From" value={getString(lead.leads_from)} icon="solar:globus-bold" />
-                                        <DetailItem label="GSTIN" value={getString(lead.gstin)} icon="solar:checklist-bold" />
-                                    </Box>
-                                </Box>
-
-                                {/* Location & Status */}
-                                <Box>
-                                    <SectionHeader title="Location & Preferences" icon="solar:map-point-bold" />
-                                    <Box
-                                        sx={{
-                                            display: 'grid',
-                                            gap: 3,
-                                            gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-                                        }}
-                                    >
-                                        <DetailItem label="Country" value={getString(lead.country)} icon="solar:earth-bold" />
-                                        <DetailItem label="State" value={getString(lead.state)} icon="solar:point-on-map-bold" />
-                                        <DetailItem label="City" value={getString(lead.city)} icon="solar:city-bold" />
-                                        <Box>
-                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block' }}>
-                                                Interest Level
-                                            </Typography>
-                                            {renderInterest(getString(lead.interest_level) || 'Medium')}
-                                        </Box>
-                                        <DetailItem label="Owner" value={getString(lead.owner_name) || getString(lead.owner)} icon="solar:user-rounded-bold" color="secondary.main" />
-                                        <DetailItem label="Creation" value={new Date(lead.creation).toLocaleString()} icon="solar:calendar-bold" />
-                                    </Box>
-                                </Box>
-
-                                {/* Additional Info */}
-                                <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                                    <SectionHeader title="Additional Information" icon="solar:document-text-bold" noMargin />
-                                    <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                        <Box>
-                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                                                Billing Address
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                                {getString(lead.billing_address) || 'No address provided'}
-                                            </Typography>
-                                        </Box>
-                                        <Divider sx={{ borderStyle: 'dotted' }} />
-                                        <Box>
-                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                                                Remarks / Notes
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600, fontStyle: lead.remarks ? 'normal' : 'italic' }}>
-                                                {getString(lead.remarks) || 'No remarks added'}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                </Box>
-                            </>
-                        )}
-
-                        {currentTab === 'pipeline' && (
-                            <>
-                                <SalesPipeline
-                                    currentStage={lead.workflow_state || lead.status}
-                                    stages={allWorkflowStates}
-                                    leadName={lead.lead_name}
-                                    service={lead.service}
-                                    disabled
-                                />
-                                <LeadPipelineTimeline
-                                    title="State History"
-                                    list={lead.converted_pipeline_timeline || []}
-                                />
-                            </>
-                        )}
-
-                        {currentTab === 'followups' && (
-                            <LeadFollowupDetails
-                                title="Followup History"
-                                list={lead.followup_details || []}
-                            />
-                        )}
-
-                        {currentTab === 'convert' && (
-                            <Box sx={{ p: 3 }}>
-                                <Typography variant="h6" sx={{ mb: 3 }}>
-                                    Convert Lead Details
-                                </Typography>
-                                {(lead.converted_account || lead.converted_contact) ? (
-                                    <>
-                                        <Alert severity="info" sx={{ mb: 2 }}>
-                                            This lead has been converted.
-                                        </Alert>
-                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                            <TextField
-                                                fullWidth
-                                                label="Converted Account"
-                                                value={getString(lead.converted_account)}
-                                                InputProps={{ readOnly: true }}
-                                            />
-                                            <TextField
-                                                fullWidth
-                                                label="Converted Contact"
-                                                value={getString(lead.converted_contact)}
-                                                InputProps={{ readOnly: true }}
-                                            />
-                                        </Box>
-                                    </>
-                                ) : (
-                                    <Alert severity="warning">
-                                        This lead has not been converted yet.
-                                    </Alert>
-                                )}
+                        {/* Header Info */}
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5 }}>
+                            <Box
+                                sx={{
+                                    width: 64,
+                                    height: 64,
+                                    borderRadius: 2,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: 'primary.lighter',
+                                    color: 'primary.main',
+                                }}
+                            >
+                                <Iconify icon={"solar:user-bold" as any} width={32} />
                             </Box>
-                        )}
+                            <Box sx={{ flexGrow: 1 }}>
+                                <Typography variant="h5" sx={{ fontWeight: 800 }}>{lead.lead_name}</Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{lead.company_name || 'Individual'}</Typography>
+                            </Box>
+                            <Box sx={{ textAlign: 'right' }}>
+                                {renderStatus(lead.workflow_state || lead.status)}
+                                <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.disabled', fontWeight: 700 }}>
+                                    ID: {lead.name}
+                                </Typography>
+                            </Box>
+                        </Box>
+
+                        <Divider sx={{ borderStyle: 'dashed' }} />
+
+                        {/* General Information */}
+                        <Box>
+                            <SectionHeader title="Contact & Service" icon="solar:phone-calling-bold" />
+                            <Box
+                                sx={{
+                                    display: 'grid',
+                                    gap: 3,
+                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+                                }}
+                            >
+                                <DetailItem label="Email" value={lead.email} icon="solar:letter-bold" />
+                                <DetailItem label="Phone" value={lead.phone_number} icon="solar:phone-bold" />
+                                <DetailItem label="Service" value={lead.service} icon="solar:lightbulb-bold" color="info.main" />
+                                <DetailItem label="Leads Type" value={lead.leads_type} icon="solar:tag-horizontal-bold" />
+                                <DetailItem label="Leads From" value={lead.leads_from} icon="solar:globus-bold" />
+                                <DetailItem label="GSTIN" value={lead.gstin} icon="solar:checklist-bold" />
+                            </Box>
+                        </Box>
+
+                        {/* Location & Status */}
+                        <Box>
+                            <SectionHeader title="Location & Preferences" icon="solar:map-point-bold" />
+                            <Box
+                                sx={{
+                                    display: 'grid',
+                                    gap: 3,
+                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+                                }}
+                            >
+                                <DetailItem label="Country" value={lead.country} icon="solar:earth-bold" />
+                                <DetailItem label="State" value={lead.state} icon="solar:point-on-map-bold" />
+                                <DetailItem label="City" value={lead.city} icon="solar:city-bold" />
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block' }}>
+                                        Interest Level
+                                    </Typography>
+                                    {renderInterest(lead.interest_level || 'Medium')}
+                                </Box>
+                                <DetailItem label="Owner" value={lead.owner_name || lead.owner} icon="solar:user-rounded-bold" color="secondary.main" />
+                                <DetailItem label="Creation" value={new Date(lead.creation).toLocaleString()} icon="solar:calendar-bold" />
+                            </Box>
+                        </Box>
+
+                        {/* Additional Info */}
+                        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                            <SectionHeader title="Additional Information" icon="solar:document-text-bold" noMargin />
+                            <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                        Billing Address
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                        {lead.billing_address || 'No address provided'}
+                                    </Typography>
+                                </Box>
+                                <Divider sx={{ borderStyle: 'dotted' }} />
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                        Remarks / Notes
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600, fontStyle: lead.remarks ? 'normal' : 'italic' }}>
+                                        {lead.remarks || 'No remarks added'}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Box>
                     </Box>
                 ) : (
                     <Box sx={{ py: 10, textAlign: 'center' }}>

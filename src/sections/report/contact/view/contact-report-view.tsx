@@ -18,10 +18,13 @@ import IconButton from '@mui/material/IconButton';
 import FormControl from '@mui/material/FormControl';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { runReport } from 'src/api/reports';
-import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { getDoctypeList, getStates, getCities } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -41,6 +44,8 @@ export function ContactReportView() {
     const [state, setState] = useState('all');
     const [city, setCity] = useState('all');
     const [owner, setOwner] = useState('all');
+    const [fromDate, setFromDate] = useState<any>(null);
+    const [toDate, setToDate] = useState<any>(null);
 
     // Options
     const [countryOptions, setCountryOptions] = useState<string[]>([]);
@@ -95,28 +100,55 @@ export function ContactReportView() {
         setLoading(true);
         try {
             // Use IDs from selection or currently filtered report data
-            const idsToExport = selected.length > 0 ? selected : reportData.map(r => r.name);
+            // Ensure valid names are collected
+            const idsToExport = (selected.length > 0 ? selected : reportData.map(r => r.name)).filter(Boolean);
 
             // If no data to export
             if (idsToExport.length === 0) {
-                // handle empty case if needed, but get_list with empty in-filter might return empty or error.
-                // Better check.
                 setLoading(false);
                 return;
             }
 
-            const filters: any[] = [['Contact', 'name', 'in', idsToExport]];
+            // Simple filter for IDs
+            const filters = [['name', 'in', idsToExport]];
 
-            const query = new URLSearchParams({
-                doctype: "Contact",
-                fields: JSON.stringify(selectedFields),
+            // Ensure at least some fields are selected
+            // Use fields that exist in 'Contacts' custom doctype
+            const fieldsToFetch = selectedFields.length > 0 ? selectedFields : ['name', 'first_name', 'company_name', 'email', 'phone'];
+            // Add 'name' if missing to ensure we have a primary key
+            if (!fieldsToFetch.includes('name')) fieldsToFetch.push('name');
+
+            console.log("Exporting IDs:", idsToExport);
+            console.log("Exporting Fields:", fieldsToFetch);
+
+            const queryParams = new URLSearchParams({
+                doctype: "Contacts",
+                fields: JSON.stringify(fieldsToFetch),
                 filters: JSON.stringify(filters),
-                limit_page_length: "99999",
+                limit_page_length: "99999"
             });
 
-            const res = await fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" });
-            if (!res.ok) throw new Error("Failed to fetch data for export");
-            const data = (await res.json()).message || [];
+            // Using GET to match known working patterns
+            const res = await fetch(`/api/method/frappe.client.get_list?${queryParams.toString()}`, {
+                method: 'GET',
+                credentials: "include"
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error("Export API Error:", errorText);
+                throw new Error("Failed to fetch data for export");
+            }
+
+            const jsonResponse = await res.json();
+            const data = jsonResponse.message || [];
+
+            console.log("Export Data Received:", data);
+
+            if (!data || data.length === 0) {
+                console.warn("Export returned no data");
+                // Fallback: If no data returned, maybe create an empty sheet with headers?
+            }
 
             // Export
             const worksheet = XLSX.utils.json_to_sheet(data);
@@ -167,6 +199,8 @@ export function ContactReportView() {
             if (state !== 'all') filters.state = state;
             if (city !== 'all') filters.city = city;
             if (owner !== 'all') filters.owner = owner;
+            if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
+            if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
 
             // The runReport API returns { result, columns, summary, etc. }
             // But based on lead-report-view usage, runReport returns the full response object.
@@ -184,7 +218,7 @@ export function ContactReportView() {
         } finally {
             setLoading(false);
         }
-    }, [country, state, city, owner]);
+    }, [country, state, city, owner, fromDate, toDate]);
 
     useEffect(() => {
         fetchReport();
@@ -192,11 +226,36 @@ export function ContactReportView() {
 
     useEffect(() => {
         getDoctypeList('Country').then(setCountryOptions);
-        getDoctypeList('State').then(setStateOptions); // Assuming State doctype exists or is fetched similarly
-        // Ideally State/City are dependent, but for report filters independent lists are often used or simple all lists
-        getDoctypeList('City').then(setCityOptions); // Assuming City doctype exists
         getDoctypeList('User').then(setOwnerOptions);
     }, []);
+
+    useEffect(() => {
+        if (country && country !== 'all') {
+            getStates(country).then((options) => {
+                setStateOptions(options);
+                if (!options.includes(state)) {
+                    setState('all');
+                }
+            });
+        } else {
+            setStateOptions([]);
+            setState('all');
+        }
+    }, [country]);
+
+    useEffect(() => {
+        if (country && country !== 'all' && state && state !== 'all') {
+            getCities(country, state).then((options) => {
+                setCityOptions(options);
+                if (!options.includes(city)) {
+                    setCity('all');
+                }
+            });
+        } else {
+            setCityOptions([]);
+            setCity('all');
+        }
+    }, [country, state]);
 
     return (
         <DashboardContent>
@@ -224,70 +283,84 @@ export function ContactReportView() {
                         boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
                     }}
                 >
-                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
-                        <FormControl fullWidth size="small">
-                            <Select
-                                value={country}
-                                onChange={(e) => setCountry(e.target.value)}
-                                displayEmpty
-                            >
-                                <MenuItem value="all">Country</MenuItem>
-                                {countryOptions.map((opt) => (
-                                    <MenuItem key={opt} value={opt}>
-                                        {opt}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <FormControl fullWidth size="small">
-                            <Select
-                                value={state}
-                                onChange={(e) => setState(e.target.value)}
-                                displayEmpty
-                            >
-                                <MenuItem value="all">State</MenuItem>
-                                {stateOptions.map((opt) => (
-                                    <MenuItem key={opt} value={opt}>
-                                        {opt}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <FormControl fullWidth size="small">
-                            <Select
-                                value={city}
-                                onChange={(e) => setCity(e.target.value)}
-                                displayEmpty
-                            >
-                                <MenuItem value="all">City</MenuItem>
-                                {cityOptions.map((opt) => (
-                                    <MenuItem key={opt} value={opt}>
-                                        {opt}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <FormControl fullWidth size="small">
-                            <Select
-                                value={owner}
-                                onChange={(e) => setOwner(e.target.value)}
-                                displayEmpty
-                            >
-                                <MenuItem value="all">Owner</MenuItem>
-                                <MenuItem value="Administrator">Administrator</MenuItem>
-                                {ownerOptions
-                                    .filter((opt) => opt !== 'Administrator')
-                                    .map((opt) => (
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+                            <DatePicker
+                                label="From Date"
+                                value={fromDate}
+                                onChange={setFromDate}
+                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                            />
+                            <DatePicker
+                                label="To Date"
+                                value={toDate}
+                                onChange={setToDate}
+                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                            />
+                            <FormControl fullWidth size="small">
+                                <Select
+                                    value={country}
+                                    onChange={(e) => setCountry(e.target.value)}
+                                    displayEmpty
+                                >
+                                    <MenuItem value="all">Country</MenuItem>
+                                    {countryOptions.map((opt) => (
                                         <MenuItem key={opt} value={opt}>
                                             {opt}
                                         </MenuItem>
                                     ))}
-                            </Select>
-                        </FormControl>
-                    </Stack>
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth size="small" disabled={country === 'all'}>
+                                <Select
+                                    value={state}
+                                    onChange={(e) => setState(e.target.value)}
+                                    displayEmpty
+                                >
+                                    <MenuItem value="all">State</MenuItem>
+                                    {stateOptions.map((opt) => (
+                                        <MenuItem key={opt} value={opt}>
+                                            {opt}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth size="small" disabled={state === 'all'}>
+                                <Select
+                                    value={city}
+                                    onChange={(e) => setCity(e.target.value)}
+                                    displayEmpty
+                                >
+                                    <MenuItem value="all">City</MenuItem>
+                                    {cityOptions.map((opt) => (
+                                        <MenuItem key={opt} value={opt}>
+                                            {opt}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth size="small">
+                                <Select
+                                    value={owner}
+                                    onChange={(e) => setOwner(e.target.value)}
+                                    displayEmpty
+                                >
+                                    <MenuItem value="all">Owner</MenuItem>
+                                    <MenuItem value="Administrator">Administrator</MenuItem>
+                                    {ownerOptions
+                                        .filter((opt) => opt !== 'Administrator')
+                                        .map((opt) => (
+                                            <MenuItem key={opt} value={opt}>
+                                                {opt}
+                                            </MenuItem>
+                                        ))}
+                                </Select>
+                            </FormControl>
+                        </Stack>
+                    </LocalizationProvider>
                 </Card>
 
                 {/* Summary Stats */}
@@ -329,7 +402,6 @@ export function ContactReportView() {
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Company</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Email</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Phone</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Designation</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Location</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Source</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Owner</TableCell>
@@ -376,7 +448,6 @@ export function ContactReportView() {
                                                     <TableCell>{row.company_name}</TableCell>
                                                     <TableCell>{row.email}</TableCell>
                                                     <TableCell>{row.phone}</TableCell>
-                                                    <TableCell>{row.designation}</TableCell>
                                                     <TableCell>{[row.city, row.state, row.country].filter(Boolean).join(', ')}</TableCell>
                                                     <TableCell>{row.source_lead}</TableCell>
                                                     <TableCell>{row.owner_name}</TableCell>
@@ -436,7 +507,7 @@ export function ContactReportView() {
             <ExportFieldsDialog
                 open={openExportFields}
                 onClose={() => setOpenExportFields(false)}
-                doctype="Contact"
+                doctype="Contacts"
                 onExport={handleExport}
             />
         </DashboardContent>

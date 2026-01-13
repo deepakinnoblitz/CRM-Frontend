@@ -3,18 +3,19 @@ import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
+import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
+import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
-import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
@@ -30,27 +31,23 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
 import { ExportFieldsDialog } from '../../export-fields-dialog';
-import { MeetingDetailsDialog } from '../meeting-details-dialog';
+import { ExpenseDetailsDialog } from '../../expenses/expenses-details-dialog';
 
 // ----------------------------------------------------------------------
 
-export function MeetingReportView() {
+export function ExpenseReportView() {
     const [reportData, setReportData] = useState<any[]>([]);
     const [summaryData, setSummaryData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
     // Filters
+    const [expenseCategory, setExpenseCategory] = useState('');
+    const [paymentType, setPaymentType] = useState('all');
     const [fromDate, setFromDate] = useState<any>(null);
     const [toDate, setToDate] = useState<any>(null);
-    const [meetFor, setMeetFor] = useState('all');
-    const [status, setStatus] = useState('all');
-    const [owner, setOwner] = useState('all');
-    const [reminder, setReminder] = useState('all');
 
     // Options
-    const [ownerOptions, setOwnerOptions] = useState<string[]>([]);
-    const [statusOptions] = useState(['Scheduled', 'Completed', 'Overdue', 'Cancelled']);
-    const [meetForOptions] = useState(['Lead', 'Contact', 'Prospect', 'Customer']);
+    const [paymentTypeOptions, setPaymentTypeOptions] = useState<string[]>([]);
 
     // Pagination
     const [page, setPage] = useState(0);
@@ -58,15 +55,14 @@ export function MeetingReportView() {
 
     // View Details
     const [openView, setOpenView] = useState(false);
-    const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
+    const [selectedExpense, setSelectedExpense] = useState<any>(null);
 
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
 
-
     const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
-            const newSelected = reportData.map((n) => n.name);
+            const newSelected = reportData.map((n) => n.expense_no);
             setSelected(newSelected);
             return;
         }
@@ -98,40 +94,55 @@ export function MeetingReportView() {
     const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
         setLoading(true);
         try {
-            const idsToExport = selected.length > 0 ? selected : reportData.map(r => r.name);
+            const idsToExport = (selected.length > 0 ? selected : reportData.map(r => r.expense_no)).filter(Boolean);
 
             if (idsToExport.length === 0) {
                 setLoading(false);
                 return;
             }
 
-            const filters: any[] = [['HD Meeting Log', 'name', 'in', idsToExport]];
+            const filters = [['expense_no', 'in', idsToExport]];
+            const fieldsToFetch = selectedFields.length > 0 ? selectedFields : ['expense_no', 'expense_category', 'date', 'payment_type', 'total'];
+            if (!fieldsToFetch.includes('expense_no')) fieldsToFetch.push('expense_no');
 
-            const query = new URLSearchParams({
-                doctype: "HD Meeting Log",
-                fields: JSON.stringify(selectedFields),
+            const queryParams = new URLSearchParams({
+                doctype: "Expenses",
+                fields: JSON.stringify(fieldsToFetch),
                 filters: JSON.stringify(filters),
-                limit_page_length: "99999",
+                limit_page_length: "99999"
             });
 
-            const res = await fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" });
-            if (!res.ok) throw new Error("Failed to fetch data for export");
-            const data = (await res.json()).message || [];
+            const res = await fetch(`/api/method/frappe.client.get_list?${queryParams.toString()}`, {
+                method: 'GET',
+                credentials: "include"
+            });
 
-            // Export
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error("Export API Error:", errorText);
+                throw new Error("Failed to fetch data for export");
+            }
+
+            const jsonResponse = await res.json();
+            const data = jsonResponse.message || [];
+
+            if (!data || data.length === 0) {
+                console.warn("Export returned no data");
+            }
+
             const worksheet = XLSX.utils.json_to_sheet(data);
 
             if (format === 'excel') {
                 const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Meetings");
-                XLSX.writeFile(workbook, "Meeting_Report.xlsx");
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
+                XLSX.writeFile(workbook, "Expense_Report.xlsx");
             } else {
                 const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
                 const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement("a");
                 const url = URL.createObjectURL(blob);
                 link.setAttribute("href", url);
-                link.setAttribute("download", "Meeting_Report.csv");
+                link.setAttribute("download", "Expense_Report.csv");
                 link.style.visibility = 'hidden';
                 document.body.appendChild(link);
                 link.click();
@@ -145,8 +156,8 @@ export function MeetingReportView() {
         }
     };
 
-    const handleViewMeeting = useCallback((id: string) => {
-        setSelectedMeetingId(id);
+    const handleViewExpense = useCallback((expense: any) => {
+        setSelectedExpense(expense);
         setOpenView(true);
     }, []);
 
@@ -163,30 +174,28 @@ export function MeetingReportView() {
         setLoading(true);
         try {
             const filters: any = {};
+            if (expenseCategory) filters.expense_category = expenseCategory;
+            if (paymentType !== 'all') filters.payment_type = paymentType;
             if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
             if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
-            if (meetFor !== 'all') filters.meet_for = meetFor;
-            if (status !== 'all') filters.status = status;
-            if (owner !== 'all') filters.owner = owner;
-            if (reminder !== 'all') filters.enable_reminder = reminder;
 
-            const result = await runReport('Meeting Report', filters);
+            const result = await runReport('Expense Report', filters);
             setReportData(result.result || []);
             setSummaryData(result.report_summary || []);
             setPage(0);
         } catch (error) {
-            console.error('Failed to fetch meeting report:', error);
+            console.error('Failed to fetch expense report:', error);
         } finally {
             setLoading(false);
         }
-    }, [fromDate, toDate, meetFor, status, owner, reminder]);
+    }, [expenseCategory, paymentType, fromDate, toDate]);
 
     useEffect(() => {
         fetchReport();
     }, [fetchReport]);
 
     useEffect(() => {
-        getDoctypeList('User').then(setOwnerOptions);
+        getDoctypeList('Payment Type').then(setPaymentTypeOptions);
     }, []);
 
     return (
@@ -194,7 +203,7 @@ export function MeetingReportView() {
             <Stack spacing={4} sx={{ mt: 3, mb: 5 }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
                     <Typography variant="h4">
-                        Meeting Report
+                        Expense Report
                     </Typography>
                     <Box>
                         <Button
@@ -217,78 +226,42 @@ export function MeetingReportView() {
                         }}
                     >
                         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+                            <FormControl fullWidth size="small">
+                                <TextField
+                                    size="small"
+                                    placeholder="Expense Category"
+                                    value={expenseCategory}
+                                    onChange={(e) => setExpenseCategory(e.target.value)}
+                                />
+                            </FormControl>
+
+                            <FormControl fullWidth size="small">
+                                <Select
+                                    value={paymentType}
+                                    onChange={(e) => setPaymentType(e.target.value)}
+                                    displayEmpty
+                                >
+                                    <MenuItem value="all">Payment Type</MenuItem>
+                                    {paymentTypeOptions.map((opt) => (
+                                        <MenuItem key={opt} value={opt}>
+                                            {opt}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+
                             <DatePicker
-                                label="From"
+                                label="From Date"
                                 value={fromDate}
                                 onChange={setFromDate}
                                 slotProps={{ textField: { size: 'small', fullWidth: true } }}
                             />
                             <DatePicker
-                                label="To"
+                                label="To Date"
                                 value={toDate}
                                 onChange={setToDate}
                                 slotProps={{ textField: { size: 'small', fullWidth: true } }}
                             />
-
-                            <FormControl fullWidth size="small">
-                                <Select
-                                    value={meetFor}
-                                    onChange={(e) => setMeetFor(e.target.value)}
-                                    displayEmpty
-                                >
-                                    <MenuItem value="all">Meet For</MenuItem>
-                                    {meetForOptions.map((opt) => (
-                                        <MenuItem key={opt} value={opt}>
-                                            {opt}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-
-                            <FormControl fullWidth size="small">
-                                <Select
-                                    value={status}
-                                    onChange={(e) => setStatus(e.target.value)}
-                                    displayEmpty
-                                >
-                                    <MenuItem value="all">Status</MenuItem>
-                                    {statusOptions.map((opt) => (
-                                        <MenuItem key={opt} value={opt}>
-                                            {opt}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-
-                            <FormControl fullWidth size="small">
-                                <Select
-                                    value={owner}
-                                    onChange={(e) => setOwner(e.target.value)}
-                                    displayEmpty
-                                >
-                                    <MenuItem value="all">Owner</MenuItem>
-                                    <MenuItem value="Administrator">Administrator</MenuItem>
-                                    {ownerOptions
-                                        .filter((opt) => opt !== 'Administrator')
-                                        .map((opt) => (
-                                            <MenuItem key={opt} value={opt}>
-                                                {opt}
-                                            </MenuItem>
-                                        ))}
-                                </Select>
-                            </FormControl>
-
-                            <FormControl fullWidth size="small">
-                                <Select
-                                    value={reminder}
-                                    onChange={(e) => setReminder(e.target.value)}
-                                    displayEmpty
-                                >
-                                    <MenuItem value="all">Reminder</MenuItem>
-                                    <MenuItem value="1">Enabled</MenuItem>
-                                    <MenuItem value="0">Disabled</MenuItem>
-                                </Select>
-                            </FormControl>
                         </Stack>
                     </Card>
                 </LocalizationProvider>
@@ -306,6 +279,7 @@ export function MeetingReportView() {
                             title={card.label}
                             value={card.value}
                             color={getIndicatorColor(card.indicator)}
+                            datatype={card.datatype}
                         />
                     ))}
                 </Stack>
@@ -328,15 +302,15 @@ export function MeetingReportView() {
                                                 onChange={handleSelectAllClick}
                                             />
                                         </TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Title</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Meet For</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Reference</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Start Time</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Venue</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Location</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Owner</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Reminder</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Expense No</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Category</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Payment Type</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Item</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Quantity</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Price</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Amount</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Total</TableCell>
                                         <TableCell
                                             align="center"
                                             sx={{
@@ -357,7 +331,7 @@ export function MeetingReportView() {
                                     {reportData
                                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                         .map((row, index) => {
-                                            const isSelected = selected.indexOf(row.name) !== -1;
+                                            const isSelected = selected.indexOf(row.expense_no) !== -1;
                                             return (
                                                 <TableRow
                                                     key={index}
@@ -369,18 +343,18 @@ export function MeetingReportView() {
                                                     <TableCell padding="checkbox">
                                                         <Checkbox
                                                             checked={isSelected}
-                                                            onClick={(event) => handleClick(event, row.name)}
+                                                            onClick={(event) => handleClick(event, row.expense_no)}
                                                         />
                                                     </TableCell>
-                                                    <TableCell>{row.title}</TableCell>
-                                                    <TableCell>{row.meet_for}</TableCell>
-                                                    <TableCell>{row.lead_name}</TableCell>
-                                                    <TableCell>{row.outgoing_call_status}</TableCell>
-                                                    <TableCell>{row.from_time ? new Date(row.from_time).toLocaleString() : '-'}</TableCell>
-                                                    <TableCell>{row.meeting_venue}</TableCell>
-                                                    <TableCell>{row.location}</TableCell>
-                                                    <TableCell>{row.owner_name}</TableCell>
-                                                    <TableCell>{row.enable_reminder}</TableCell>
+                                                    <TableCell>{row.expense_no}</TableCell>
+                                                    <TableCell>{row.expense_category}</TableCell>
+                                                    <TableCell>{row.date ? new Date(row.date).toLocaleDateString() : '-'}</TableCell>
+                                                    <TableCell>{row.payment_type}</TableCell>
+                                                    <TableCell>{row.items}</TableCell>
+                                                    <TableCell>{row.quantity}</TableCell>
+                                                    <TableCell>₹{row.price?.toLocaleString() || 0}</TableCell>
+                                                    <TableCell>₹{row.amount?.toLocaleString() || 0}</TableCell>
+                                                    <TableCell>₹{row.total?.toLocaleString() || 0}</TableCell>
                                                     <TableCell
                                                         align="center"
                                                         sx={{
@@ -390,7 +364,7 @@ export function MeetingReportView() {
                                                             boxShadow: '-2px 0 5px rgba(0,0,0,0.05)',
                                                         }}
                                                     >
-                                                        <IconButton onClick={() => handleViewMeeting(row.name)} sx={{ color: 'info.main' }}>
+                                                        <IconButton onClick={() => handleViewExpense(row)} sx={{ color: 'info.main' }}>
                                                             <Iconify icon="solar:eye-bold" />
                                                         </IconButton>
                                                     </TableCell>
@@ -399,7 +373,7 @@ export function MeetingReportView() {
                                         })}
                                     {reportData.length === 0 && !loading && (
                                         <TableRow>
-                                            <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                            <TableCell colSpan={11} align="center" sx={{ py: 10 }}>
                                                 <Stack spacing={1} alignItems="center">
                                                     <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
                                                     <Typography variant="body2" sx={{ color: 'text.disabled' }}>
@@ -425,19 +399,19 @@ export function MeetingReportView() {
                 </Card>
             </Stack>
 
-            <MeetingDetailsDialog
+            <ExpenseDetailsDialog
                 open={openView}
-                meetingId={selectedMeetingId}
+                expense={selectedExpense}
                 onClose={() => {
                     setOpenView(false);
-                    setSelectedMeetingId(null);
+                    setSelectedExpense(null);
                 }}
             />
 
             <ExportFieldsDialog
                 open={openExportFields}
                 onClose={() => setOpenExportFields(false)}
-                doctype="HD Meeting Log"
+                doctype="Expenses"
                 onExport={handleExport}
             />
         </DashboardContent>
@@ -446,15 +420,24 @@ export function MeetingReportView() {
 
 // ----------------------------------------------------------------------
 
-function SummaryCard({ title, value, color }: { title: string; value: number; color: string }) {
+function SummaryCard({ title, value, color, datatype }: { title: string; value: number; color: string; datatype?: string }) {
     const getIcon = () => {
         switch (title) {
-            case 'Total Meetings': return 'solar:videocamera-record-bold-duotone';
-            case 'Scheduled Meetings': return 'solar:calendar-mark-bold-duotone';
-            case 'Completed Meetings': return 'solar:check-circle-bold-duotone';
-            case 'Reminder Enabled': return 'solar:bell-bing-bold-duotone';
+            case 'Total Expense Amount': return 'solar:wallet-money-bold-duotone';
+            case 'Total Quantity': return 'solar:box-bold-duotone';
+            case 'Total Item Amount': return 'solar:dollar-bold-duotone';
             default: return 'solar:chart-bold-duotone';
         }
+    };
+
+    const formatValue = (val: number) => {
+        if (datatype === 'Currency') {
+            return `₹${val.toLocaleString()}`;
+        }
+        if (datatype === 'Float') {
+            return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        return val.toLocaleString();
     };
 
     return (
@@ -495,7 +478,7 @@ function SummaryCard({ title, value, color }: { title: string; value: number; co
                 </Box>
                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                     <Typography variant="h2" sx={{ color: 'text.primary', fontWeight: 800, mb: 0.25 }}>
-                        {value}
+                        {formatValue(value)}
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.8125rem' }}>
                         {title}

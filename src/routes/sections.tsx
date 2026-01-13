@@ -40,6 +40,10 @@ export const ContactReportPage = lazy(() => import('src/pages/reports/contact'))
 export const AccountReportPage = lazy(() => import('src/pages/reports/account'));
 export const CallsReportPage = lazy(() => import('src/pages/reports/calls'));
 export const MeetingReportPage = lazy(() => import('src/pages/reports/meeting'));
+export const PurchaseReportPage = lazy(() => import('src/pages/reports/purchase'));
+export const ExpenseReportPage = lazy(() => import('src/pages/reports/expense'));
+export const EstimationReportPage = lazy(() => import('src/pages/reports/estimation'));
+export const InvoiceCollectionReportPage = lazy(() => import('src/pages/reports/invoice-collection'));
 export const EmployeePage = lazy(() => import('src/pages/employee'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
 export const LeavesPage = lazy(() => import('src/pages/leaves'));
@@ -188,6 +192,10 @@ export const routesSection: RouteObject[] = [
           { path: 'account', element: <AccountReportPage /> },
           { path: 'calls', element: <CallsReportPage /> },
           { path: 'meeting', element: <MeetingReportPage /> },
+          { path: 'purchase', element: <PurchaseReportPage /> },
+          { path: 'expense', element: <ExpenseReportPage /> },
+          { path: 'estimation', element: <EstimationReportPage /> },
+          { path: 'invoice-collection', element: <InvoiceCollectionReportPage /> },
         ],
       },
     ],

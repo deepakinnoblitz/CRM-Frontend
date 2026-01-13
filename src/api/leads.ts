@@ -159,7 +159,6 @@ export async function getDoctypeList(doctype: string, fields?: string[]) {
     const params: any = {
         doctype,
         limit_page_length: '1000',
-        order_by: 'creation desc'
     };
 
     if (fields) {
@@ -169,7 +168,7 @@ export async function getDoctypeList(doctype: string, fields?: string[]) {
     const query = new URLSearchParams(params);
 
     const res = await fetch(
-        `/api/method/frappe.client.get_list?${query.toString()}`,
+        `/api/method/company.company.frontend_api.get_doctype_list?${query.toString()}`,
         { credentials: 'include' }
     );
 
@@ -177,12 +176,17 @@ export async function getDoctypeList(doctype: string, fields?: string[]) {
         console.error(`Failed to fetch list for ${doctype}`);
         return [];
     }
-    return (await res.json()).message || [];
+    const data = await res.json();
+    const message = data.message || [];
+
+    // If it's a list of objects and we only wanted names, it would have been plucked on backend
+    // but just in case, or if fields were specified, we return the message as is.
+    return message;
 }
 
 export async function getStates(country: string) {
     const res = await fetch(
-        `/api/method/company.company.company.api.get_states?country=${encodeURIComponent(country)}`,
+        `/api/method/company.company.api.get_states?country=${encodeURIComponent(country)}`,
         { credentials: 'include' }
     );
 
@@ -195,7 +199,7 @@ export async function getStates(country: string) {
 
 export async function getCities(country: string, state: string) {
     const res = await fetch(
-        `/api/method/company.company.company.api.get_cities?country=${encodeURIComponent(country)}&state=${encodeURIComponent(state)}`,
+        `/api/method/company.company.api.get_cities?country=${encodeURIComponent(country)}&state=${encodeURIComponent(state)}`,
         { credentials: 'include' }
     );
 

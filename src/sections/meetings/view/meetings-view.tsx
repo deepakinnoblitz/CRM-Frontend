@@ -21,10 +21,11 @@ import DialogContent from '@mui/material/DialogContent';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { Box, Card, Grid, Alert, Button, Snackbar, IconButton, Typography } from '@mui/material';
+import { Box, Card, Grid, Alert, Button, Snackbar, IconButton, Typography, Autocomplete } from '@mui/material';
 
 import { stripHtml } from 'src/utils/string';
 
+import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { type Meeting, fetchMeetings, updateMeeting, deleteMeeting, createMeeting } from 'src/api/meetings';
 
@@ -36,6 +37,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 const INITIAL_MEETING_STATE: Partial<Meeting> = {
     title: '',
     meet_for: 'Lead',
+    lead_name: '',
     outgoing_call_status: 'Scheduled',
     from: '',
     to: '',
@@ -57,6 +59,10 @@ export function MeetingsView() {
         severity: 'success',
     });
 
+    const [leadOptions, setLeadOptions] = useState<any[]>([]);
+    const [contactOptions, setContactOptions] = useState<any[]>([]);
+    const [accountOptions, setAccountOptions] = useState<any[]>([]);
+
     const loadMeetings = useCallback(async (start?: Date, end?: Date) => {
         try {
             const startStr = start?.toISOString();
@@ -70,6 +76,9 @@ export function MeetingsView() {
 
     useEffect(() => {
         loadMeetings();
+        getDoctypeList('Lead', ['name', 'lead_name']).then(setLeadOptions);
+        getDoctypeList('Contacts', ['name', 'first_name']).then(setContactOptions);
+        getDoctypeList('Accounts', ['name', 'account_name']).then(setAccountOptions);
     }, [loadMeetings]);
 
     const handleDatesSet = (arg: any) => {
@@ -90,6 +99,7 @@ export function MeetingsView() {
                 meeting_venue: meeting.meeting_venue || 'In Office',
                 location: meeting.location || '',
                 completed_meet_notes: stripHtml(meeting.completed_meet_notes || ''),
+                lead_name: meeting.lead_name || '',
             });
             setOpenDialog(true);
         }
@@ -392,16 +402,56 @@ export function MeetingsView() {
                                         <Select
                                             label="Meet For"
                                             value={meetingData.meet_for}
-                                            onChange={(e) => setMeetingData({ ...meetingData, meet_for: e.target.value as string })}
+                                            onChange={(e) => setMeetingData({ ...meetingData, meet_for: e.target.value as string, lead_name: '' })}
                                         >
                                             <MenuItem value="Lead">Lead</MenuItem>
                                             <MenuItem value="Contact">Contact</MenuItem>
-                                            <MenuItem value="Account">Account</MenuItem>
+                                            <MenuItem value="Accounts">Account</MenuItem>
                                             <MenuItem value="Others">Others</MenuItem>
                                         </Select>
                                     </FormControl>
                                 </Grid>
-                                <Grid size={{ xs: 12, md: 6 }}>
+
+                                {meetingData.meet_for === 'Lead' && (
+                                    <Grid size={{ xs: 12, md: 6 }}>
+                                        <Autocomplete
+                                            fullWidth
+                                            options={leadOptions}
+                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.lead_name} (${option.name})`}
+                                            value={leadOptions.find(opt => opt.name === meetingData.lead_name) || null}
+                                            onChange={(_, newValue) => setMeetingData({ ...meetingData, lead_name: newValue?.name || '' })}
+                                            renderInput={(params) => <TextField {...params} label="Select Lead" />}
+                                        />
+                                    </Grid>
+                                )}
+
+                                {meetingData.meet_for === 'Contact' && (
+                                    <Grid size={{ xs: 12, md: 6 }}>
+                                        <Autocomplete
+                                            fullWidth
+                                            options={contactOptions}
+                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.first_name} ${option.last_name} (${option.name})`}
+                                            value={contactOptions.find(opt => opt.name === meetingData.lead_name) || null}
+                                            onChange={(_, newValue) => setMeetingData({ ...meetingData, lead_name: newValue?.name || '' })}
+                                            renderInput={(params) => <TextField {...params} label="Select Contact" />}
+                                        />
+                                    </Grid>
+                                )}
+
+                                {meetingData.meet_for === 'Accounts' && (
+                                    <Grid size={{ xs: 12, md: 6 }}>
+                                        <Autocomplete
+                                            fullWidth
+                                            options={accountOptions}
+                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.account_name} (${option.name})`}
+                                            value={accountOptions.find(opt => opt.name === meetingData.lead_name) || null}
+                                            onChange={(_, newValue) => setMeetingData({ ...meetingData, lead_name: newValue?.name || '' })}
+                                            renderInput={(params) => <TextField {...params} label="Select Account" />}
+                                        />
+                                    </Grid>
+                                )}
+
+                                <Grid size={{ xs: 12, md: 12 }}>
                                     <FormControl fullWidth>
                                         <InputLabel>Status</InputLabel>
                                         <Select

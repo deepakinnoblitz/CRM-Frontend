@@ -185,6 +185,17 @@ export const salesNavData = [
     title: 'Expenses',
     path: '/expenses',
     icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+  },
+  {
+    title: 'Reports',
+    path: '/reports',
+    icon: <Iconify icon={"solar:chart-square-bold-duotone" as any} />,
+    children: [
+      { title: 'Purchase Report', path: '/reports/purchase' },
+      { title: 'Expense Report', path: '/reports/expense' },
+      { title: 'Estimation Report', path: '/reports/estimation' },
+      { title: 'Invoice Collection Report', path: '/reports/invoice-collection' }
+    ]
   }
 ];
 
@@ -245,7 +256,7 @@ export const crmNavData = [
       { title: 'Contact Report', path: '/reports/contact' },
       { title: 'Accounts Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
-      { title: 'Meeting Report', path: '/reports/meeting' }
+      { title: 'Meeting Report', path: '/reports/meeting' },
     ]
   }
 ];
@@ -331,7 +342,11 @@ export const crmAndSalesNavData = [
       { title: 'Contact Report', path: '/reports/contact' },
       { title: 'Accounts Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
-      { title: 'Meeting Report', path: '/reports/meeting' }
+      { title: 'Meeting Report', path: '/reports/meeting' },
+      { title: 'Purchase Report', path: '/reports/purchase' },
+      { title: 'Expense Report', path: '/reports/expense' },
+      { title: 'Estimation Report', path: '/reports/estimation' },
+      { title: 'Invoice Collection Report', path: '/reports/invoice-collection' }
     ]
   }
 ];

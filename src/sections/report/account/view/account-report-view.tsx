@@ -19,10 +19,13 @@ import IconButton from '@mui/material/IconButton';
 import FormControl from '@mui/material/FormControl';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { runReport } from 'src/api/reports';
-import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { getDoctypeList, getStates, getCities } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -43,6 +46,8 @@ export function AccountReportView() {
     const [state, setState] = useState('all');
     const [city, setCity] = useState('all');
     const [owner, setOwner] = useState('all');
+    const [fromDate, setFromDate] = useState<any>(null);
+    const [toDate, setToDate] = useState<any>(null);
 
     // Options
     const [countryOptions, setCountryOptions] = useState<string[]>([]);
@@ -104,11 +109,17 @@ export function AccountReportView() {
                 return;
             }
 
-            const filters: any[] = [['Account', 'name', 'in', idsToExport]];
+            // Simple filter for IDs
+            const filters = [['name', 'in', idsToExport]];
+
+            // Ensure at least some fields are selected
+            const fieldsToFetch = selectedFields.length > 0 ? selectedFields : ['name', 'account_name', 'phone_number', 'website', 'gstin'];
+            // Add 'name' if missing to ensure we have a primary key
+            if (!fieldsToFetch.includes('name')) fieldsToFetch.push('name');
 
             const query = new URLSearchParams({
-                doctype: "Account",
-                fields: JSON.stringify(selectedFields),
+                doctype: "Accounts",
+                fields: JSON.stringify(fieldsToFetch),
                 filters: JSON.stringify(filters),
                 limit_page_length: "99999",
             });
@@ -167,6 +178,8 @@ export function AccountReportView() {
             if (state !== 'all') filters.state = state;
             if (city !== 'all') filters.city = city;
             if (owner !== 'all') filters.owner = owner;
+            if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
+            if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
 
             const result = await runReport('Account Report', filters);
             setReportData(result.result || []);
@@ -177,7 +190,7 @@ export function AccountReportView() {
         } finally {
             setLoading(false);
         }
-    }, [accountName, country, state, city, owner]);
+    }, [accountName, country, state, city, owner, fromDate, toDate]);
 
     useEffect(() => {
         fetchReport();
@@ -185,10 +198,36 @@ export function AccountReportView() {
 
     useEffect(() => {
         getDoctypeList('Country').then(setCountryOptions);
-        getDoctypeList('State').then(setStateOptions);
-        getDoctypeList('City').then(setCityOptions);
         getDoctypeList('User').then(setOwnerOptions);
     }, []);
+
+    useEffect(() => {
+        if (country && country !== 'all') {
+            getStates(country).then((options) => {
+                setStateOptions(options);
+                if (!options.includes(state)) {
+                    setState('all');
+                }
+            });
+        } else {
+            setStateOptions([]);
+            setState('all');
+        }
+    }, [country]);
+
+    useEffect(() => {
+        if (country && country !== 'all' && state && state !== 'all') {
+            getCities(country, state).then((options) => {
+                setCityOptions(options);
+                if (!options.includes(city)) {
+                    setCity('all');
+                }
+            });
+        } else {
+            setCityOptions([]);
+            setCity('all');
+        }
+    }, [country, state]);
 
     return (
         <DashboardContent>
@@ -216,78 +255,92 @@ export function AccountReportView() {
                         boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
                     }}
                 >
-                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
-                        <TextField
-                            label="Account Name"
-                            size="small"
-                            value={accountName}
-                            onChange={(e) => setAccountName(e.target.value)}
-                            fullWidth
-                        />
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+                            <DatePicker
+                                label="From Date"
+                                value={fromDate}
+                                onChange={setFromDate}
+                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                            />
+                            <DatePicker
+                                label="To Date"
+                                value={toDate}
+                                onChange={setToDate}
+                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                            />
+                            <TextField
+                                label="Account Name"
+                                size="small"
+                                value={accountName}
+                                onChange={(e) => setAccountName(e.target.value)}
+                                fullWidth
+                            />
 
-                        <FormControl fullWidth size="small">
-                            <Select
-                                value={country}
-                                onChange={(e) => setCountry(e.target.value)}
-                                displayEmpty
-                            >
-                                <MenuItem value="all">Country</MenuItem>
-                                {countryOptions.map((opt) => (
-                                    <MenuItem key={opt} value={opt}>
-                                        {opt}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <FormControl fullWidth size="small">
-                            <Select
-                                value={state}
-                                onChange={(e) => setState(e.target.value)}
-                                displayEmpty
-                            >
-                                <MenuItem value="all">State</MenuItem>
-                                {stateOptions.map((opt) => (
-                                    <MenuItem key={opt} value={opt}>
-                                        {opt}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <FormControl fullWidth size="small">
-                            <Select
-                                value={city}
-                                onChange={(e) => setCity(e.target.value)}
-                                displayEmpty
-                            >
-                                <MenuItem value="all">City</MenuItem>
-                                {cityOptions.map((opt) => (
-                                    <MenuItem key={opt} value={opt}>
-                                        {opt}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <FormControl fullWidth size="small">
-                            <Select
-                                value={owner}
-                                onChange={(e) => setOwner(e.target.value)}
-                                displayEmpty
-                            >
-                                <MenuItem value="all">Owner</MenuItem>
-                                <MenuItem value="Administrator">Administrator</MenuItem>
-                                {ownerOptions
-                                    .filter((opt) => opt !== 'Administrator')
-                                    .map((opt) => (
+                            <FormControl fullWidth size="small">
+                                <Select
+                                    value={country}
+                                    onChange={(e) => setCountry(e.target.value)}
+                                    displayEmpty
+                                >
+                                    <MenuItem value="all">Country</MenuItem>
+                                    {countryOptions.map((opt) => (
                                         <MenuItem key={opt} value={opt}>
                                             {opt}
                                         </MenuItem>
                                     ))}
-                            </Select>
-                        </FormControl>
-                    </Stack>
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth size="small" disabled={country === 'all'}>
+                                <Select
+                                    value={state}
+                                    onChange={(e) => setState(e.target.value)}
+                                    displayEmpty
+                                >
+                                    <MenuItem value="all">State</MenuItem>
+                                    {stateOptions.map((opt) => (
+                                        <MenuItem key={opt} value={opt}>
+                                            {opt}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth size="small" disabled={state === 'all'}>
+                                <Select
+                                    value={city}
+                                    onChange={(e) => setCity(e.target.value)}
+                                    displayEmpty
+                                >
+                                    <MenuItem value="all">City</MenuItem>
+                                    {cityOptions.map((opt) => (
+                                        <MenuItem key={opt} value={opt}>
+                                            {opt}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth size="small">
+                                <Select
+                                    value={owner}
+                                    onChange={(e) => setOwner(e.target.value)}
+                                    displayEmpty
+                                >
+                                    <MenuItem value="all">Owner</MenuItem>
+                                    <MenuItem value="Administrator">Administrator</MenuItem>
+                                    {ownerOptions
+                                        .filter((opt) => opt !== 'Administrator')
+                                        .map((opt) => (
+                                            <MenuItem key={opt} value={opt}>
+                                                {opt}
+                                            </MenuItem>
+                                        ))}
+                                </Select>
+                            </FormControl>
+                        </Stack>
+                    </LocalizationProvider>
                 </Card>
 
                 {/* Summary Stats */}
@@ -329,7 +382,6 @@ export function AccountReportView() {
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Phone</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Website</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>GSTIN</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Account Owner</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Location</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Owner</TableCell>
                                         <TableCell
@@ -371,7 +423,6 @@ export function AccountReportView() {
                                                     <TableCell>{row.phone_number}</TableCell>
                                                     <TableCell>{row.website}</TableCell>
                                                     <TableCell>{row.gstin}</TableCell>
-                                                    <TableCell>{row.account_owner}</TableCell>
                                                     <TableCell>{[row.city, row.state, row.country].filter(Boolean).join(', ')}</TableCell>
                                                     <TableCell>{row.owner_name}</TableCell>
                                                     <TableCell
@@ -430,7 +481,7 @@ export function AccountReportView() {
             <ExportFieldsDialog
                 open={openExportFields}
                 onClose={() => setOpenExportFields(false)}
-                doctype="Account"
+                doctype="Accounts"
                 onExport={handleExport}
             />
         </DashboardContent>
