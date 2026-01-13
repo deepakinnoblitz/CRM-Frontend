@@ -23,6 +23,7 @@ export const DealsPage = lazy(() => import('src/pages/deals'));
 export const EventsPage = lazy(() => import('src/pages/events'));
 export const CallsPage = lazy(() => import('src/pages/calls'));
 export const MeetingsPage = lazy(() => import('src/pages/meetings'));
+export const ToDoPage = lazy(() => import('src/pages/todo'));
 export const SignInPage = lazy(() => import('src/pages/sign-in'));
 export const InvoiceListPage = lazy(() => import('src/pages/invoice/list'));
 export const InvoiceCreatePage = lazy(() => import('src/pages/invoice/new'));
@@ -47,7 +48,10 @@ export const RequestsPage = lazy(() => import('src/pages/requests'));
 export const AnnouncementsPage = lazy(() => import('src/pages/announcements'));
 export const AssetsPage = lazy(() => import('src/pages/assets'));
 export const TimesheetsPage = lazy(() => import('src/pages/timesheets'));
-export const ExpensesPage = lazy(() => import('src/pages/expenses'));
+export const ExpensesListPage = lazy(() => import('src/pages/expenses/list'));
+export const ExpensesNewPage = lazy(() => import('src/pages/expenses/new'));
+export const ExpensesEditPage = lazy(() => import('src/pages/expenses/edit'));
+export const ExpensesDetailsPage = lazy(() => import('src/pages/expenses/details'));
 export const HolidaysPage = lazy(() => import('src/pages/holidays'));
 export const ReimbursementClaimsPage = lazy(() => import('src/pages/reimbursement-claims'));
 const RenewalTrackerPage = lazy(() => import('src/pages/renewals-tracker'));
@@ -55,6 +59,7 @@ const SalarySlipsPage = lazy(() => import('src/pages/salary-slips'));
 const JobOpeningsPage = lazy(() => import('src/pages/job-openings'));
 const JobApplicantsPage = lazy(() => import('src/pages/job-applicants'));
 const InterviewPage = lazy(() => import('src/pages/interviews'));
+export const ProfilePage = lazy(() => import('src/pages/profile'));
 export const AccessDeniedPage = lazy(() => import('src/pages/access-denied'));
 export const PurchaseListPage = lazy(() => import('src/pages/purchase/list'));
 export const PurchaseNewPage = lazy(() => import('src/pages/purchase/new'));
@@ -101,12 +106,14 @@ export const routesSection: RouteObject[] = [
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'user', element: <UserPage /> },
+      { path: 'profile', element: <ProfilePage /> },
       { path: 'contacts', element: <ContactPage /> },
       { path: 'accounts', element: <AccountsPage /> },
       { path: 'deals', element: <DealsPage /> },
       { path: 'events', element: <EventsPage /> },
       { path: 'calls', element: <CallsPage /> },
       { path: 'meetings', element: <MeetingsPage /> },
+      { path: 'todo', element: <ToDoPage /> },
       { path: 'products', element: <ProductsPage /> },
       {
         path: 'invoices',
@@ -137,7 +144,15 @@ export const routesSection: RouteObject[] = [
       { path: 'assets', element: <AssetsPage /> },
       { path: 'timesheets', element: <TimesheetsPage /> },
       { path: 'timesheet-reports', element: <TimesheetsPage /> }, // Placeholder until module is implemented
-      { path: 'expenses', element: <ExpensesPage /> },
+      {
+        path: 'expenses',
+        children: [
+          { index: true, element: <ExpensesListPage /> },
+          { path: 'new', element: <ExpensesNewPage /> },
+          { path: ':id/edit', element: <ExpensesEditPage /> },
+          { path: ':id/view', element: <ExpensesDetailsPage /> },
+        ],
+      },
       { path: 'holidays', element: <HolidaysPage /> },
       { path: 'reimbursement-claims', element: <ReimbursementClaimsPage /> },
       { path: 'renewals-tracker', element: <RenewalTrackerPage /> },

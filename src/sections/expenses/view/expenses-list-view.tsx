@@ -7,15 +7,16 @@ import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import TableBody from '@mui/material/TableBody';
+import AlertTitle from '@mui/material/AlertTitle';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 
 import { useRouter } from 'src/routes/hooks';
 
-import { usePurchase } from 'src/hooks/usePurchase';
+import { useExpense } from 'src/hooks/useExpense';
 
-import { deletePurchase } from 'src/api/purchase';
+import { deleteExpense } from 'src/api/expenses';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -25,38 +26,37 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { emptyRows } from '../utils';
 import { TableNoData } from '../table-no-data';
 import { TableEmptyRows } from '../table-empty-rows';
-import { PurchaseTableRow } from '../purchase-table-row';
-import { PurchaseTableHead } from '../purchase-table-head';
-import { PurchaseTableToolbar } from '../purchase-table-toolbar';
+import { ExpenseTableRow } from '../expenses-table-row';
+import { ExpenseTableHead } from '../expenses-table-head';
+import { ExpenseTableToolbar } from '../expenses-table-toolbar';
 
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
-    { id: 'name', label: 'Purchase ID' },
-    { id: 'bill_no', label: 'Bill No' },
-    { id: 'vendor_name', label: 'Vendor' },
-    { id: 'bill_date', label: 'Bill Date' },
-    { id: 'grand_total', label: 'Grand Total', align: 'right' },
+    { id: 'expense_no', label: 'Expense No' },
+    { id: 'expense_category', label: 'Category' },
+    { id: 'date', label: 'Date' },
     { id: 'payment_type', label: 'Payment Type' },
+    { id: 'total', label: 'Total', align: 'right' },
     { id: '' },
 ];
 
 // ----------------------------------------------------------------------
 
-export function PurchaseListView() {
+export function ExpenseListView() {
     const table = useTable();
     const router = useRouter();
 
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [filterName, setFilterName] = useState('');
-    const [sortBy, setSortBy] = useState('bill_date_desc');
+    const [sortBy, setSortBy] = useState('date_desc');
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
         severity: 'success',
     });
 
-    const { data, total, loading, refetch } = usePurchase(
+    const { data, total, loading, refetch } = useExpense(
         table.page,
         table.rowsPerPage,
         filterName,
@@ -72,15 +72,15 @@ export function PurchaseListView() {
     );
 
     const handleCreateNew = () => {
-        router.push('/purchase/new');
+        router.push('/expenses/new');
     };
 
     const handleEditRow = (id: string) => {
-        router.push(`/purchase/edit/${encodeURIComponent(id)}`);
+        router.push(`/expenses/${encodeURIComponent(id)}/edit`);
     };
 
     const handleViewRow = (id: string) => {
-        router.push(`/purchase/${encodeURIComponent(id)}`);
+        router.push(`/expenses/${encodeURIComponent(id)}/view`);
     };
 
     const handleDeleteRow = useCallback((id: string) => {
@@ -90,12 +90,12 @@ export function PurchaseListView() {
     const handleConfirmDelete = async () => {
         if (!confirmDelete.id) return;
         try {
-            await deletePurchase(confirmDelete.id);
-            setSnackbar({ open: true, message: 'Purchase deleted successfully', severity: 'success' });
+            await deleteExpense(confirmDelete.id);
+            setSnackbar({ open: true, message: 'Expense deleted successfully', severity: 'success' });
             await refetch();
         } catch (e) {
             console.error(e);
-            setSnackbar({ open: true, message: 'Failed to delete purchase', severity: 'error' });
+            setSnackbar({ open: true, message: 'Failed to delete expense', severity: 'error' });
         } finally {
             setConfirmDelete({ open: false, id: null });
         }
@@ -110,19 +110,19 @@ export function PurchaseListView() {
     return (
         <DashboardContent>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">Purchases</Typography>
+                <Typography variant="h4">Expenses</Typography>
                 <Button
                     variant="contained"
                     color="info"
                     startIcon={<Iconify icon="mingcute:add-line" />}
                     onClick={handleCreateNew}
                 >
-                    New Purchase
+                    New Expense
                 </Button>
             </Stack>
 
             <Card>
-                <PurchaseTableToolbar
+                <ExpenseTableToolbar
                     numSelected={table.selected.length}
                     filterName={filterName}
                     onFilterName={handleFilterName}
@@ -133,7 +133,7 @@ export function PurchaseListView() {
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
                         <Table sx={{ minWidth: 800 }}>
-                            <PurchaseTableHead
+                            <ExpenseTableHead
                                 order={table.order}
                                 orderBy={table.orderBy}
                                 rowCount={total}
@@ -149,22 +149,23 @@ export function PurchaseListView() {
                             />
                             <TableBody>
                                 {data.map((row) => (
-                                    <PurchaseTableRow
+                                    <ExpenseTableRow
                                         key={row.name}
                                         row={{
                                             id: row.name,
-                                            name: row.name,
-                                            bill_no: row.bill_no,
-                                            vendor_name: row.vendor_name || '',
-                                            bill_date: row.bill_date,
-                                            grand_total: row.grand_total || 0,
+                                            expense_no: row.expense_no || '',
+                                            expense_category: row.expense_category || '',
+                                            date: row.date,
                                             payment_type: row.payment_type || '',
+                                            total: row.total || 0,
                                         }}
                                         selected={table.selected.includes(row.name)}
                                         onSelectRow={() => table.onSelectRow(row.name)}
                                         onEdit={() => handleEditRow(row.name)}
                                         onView={() => handleViewRow(row.name)}
                                         onDelete={() => handleDeleteRow(row.name)}
+                                        canEdit
+                                        canDelete
                                     />
                                 ))}
 
@@ -173,7 +174,7 @@ export function PurchaseListView() {
                                     emptyRows={emptyRows(table.page, table.rowsPerPage, total)}
                                 />
 
-                                {notFound && <TableNoData query={filterName} />}
+                                {notFound && <TableNoData searchQuery={filterName} />}
                             </TableBody>
                         </Table>
                     </TableContainer>
@@ -196,7 +197,15 @@ export function PurchaseListView() {
                 onClose={handleCloseSnackbar}
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
-                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+                <Alert
+                    onClose={handleCloseSnackbar}
+                    severity={snackbar.severity}
+                    sx={{
+                        width: '100%',
+                        boxShadow: (theme) => theme.customShadows.z20
+                    }}
+                >
+                    <AlertTitle>{snackbar.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
                     {snackbar.message}
                 </Alert>
             </Snackbar>
@@ -205,7 +214,7 @@ export function PurchaseListView() {
                 open={confirmDelete.open}
                 onClose={() => setConfirmDelete({ open: false, id: null })}
                 title="Confirm Delete"
-                content="Are you sure you want to delete this purchase?"
+                content="Are you sure you want to delete this expense?"
                 action={
                     <Button
                         variant="contained"
@@ -225,7 +234,7 @@ export function PurchaseListView() {
 
 export function useTable() {
     const [page, setPage] = useState(0);
-    const [orderBy, setOrderBy] = useState('bill_no');
+    const [orderBy, setOrderBy] = useState('expense_category');
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [selected, setSelected] = useState<string[]>([]);
     const [order, setOrder] = useState<'asc' | 'desc'>('asc');

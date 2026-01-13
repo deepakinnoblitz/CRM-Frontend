@@ -518,12 +518,11 @@ export function CallsView() {
                 open={snackbar.open}
                 autoHideDuration={6000}
                 onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
                 <Alert
                     onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
                     severity={snackbar.severity}
-                    variant="filled"
                     sx={{ width: '100%' }}
                 >
                     {snackbar.message}

@@ -259,6 +259,7 @@ export function ExpensesView() {
                                 onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 headLabel={[
+                                    { id: 'expense_no', label: 'Expense No' },
                                     { id: 'expense_category', label: 'Category' },
                                     { id: 'date', label: 'Date' },
                                     { id: 'payment_type', label: 'Payment Type' },
@@ -272,6 +273,7 @@ export function ExpensesView() {
                                         key={row.name}
                                         row={{
                                             id: row.name,
+                                            expense_no: row.expense_no || '',
                                             expense_category: row.expense_category,
                                             date: row.date,
                                             payment_type: row.payment_type,

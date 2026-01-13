@@ -4,10 +4,17 @@ import { getCurrentUserInfo } from 'src/api/auth';
 
 type UserType = {
   name: string;
+  first_name: string;
+  middle_name?: string;
+  last_name?: string;
   full_name: string;
+  username: string;
   email: string;
+  time_zone?: string;
   user_image?: string;
   roles: string[];
+  role_profile_name?: string;
+  allowed_modules: string[];
 };
 
 type AuthContextType = {

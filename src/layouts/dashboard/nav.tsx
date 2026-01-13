@@ -52,6 +52,7 @@ export function NavDesktop({
         flexDirection: 'column',
         zIndex: 'var(--layout-nav-zIndex)',
         width: 'var(--layout-nav-vertical-width)',
+        bgcolor: theme.vars.palette.grey[200],
         borderRight: `1px solid ${varAlpha(theme.vars.palette.grey['500Channel'], 0.12)}`,
         [theme.breakpoints.up(layoutQuery)]: {
           display: 'flex',
@@ -74,6 +75,7 @@ export function NavMobile({
   onClose,
 }: Omit<NavContentProps, 'workspaces'> & { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
+  const theme = useTheme();
 
   useEffect(() => {
     if (open) {
@@ -92,6 +94,7 @@ export function NavMobile({
           px: 2.5,
           overflow: 'unset',
           width: 'var(--layout-nav-mobile-width)',
+          bgcolor: theme.vars.palette.grey[200],
           ...sx,
         },
       }}
@@ -182,13 +185,16 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
           },
           '&:hover': {
             bgcolor: varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
+            color: theme.vars.palette.text.primary,
             transform: 'translateX(4px)',
           },
           ...(isActived && {
             fontWeight: 'fontWeightSemiBold',
             color: theme.vars.palette.primary.main,
             bgcolor: varAlpha(theme.vars.palette.primary.mainChannel, 0.12),
+            boxShadow: 'none',
             '&::before': {
+              display: 'block',
               height: '70%',
             },
             '&:hover': {
@@ -199,7 +205,7 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
         }),
       ]}
     >
-      <Box component="span" sx={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Box component="span" sx={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'inherit' }}>
         {item.icon}
       </Box>
 
@@ -267,6 +273,7 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       '&:hover': {
                         bgcolor: varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
+                        color: theme.vars.palette.text.primary,
                         transform: 'translateX(4px)',
                       },
                       ...(isChildActived && {

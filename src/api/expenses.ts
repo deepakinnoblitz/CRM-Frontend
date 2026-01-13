@@ -1,12 +1,31 @@
+import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
+
+export interface ExpenseItem {
+    name?: string;
+    items: string;
+    quantity: number;
+    price: number;
+    amount: number;
+}
+
 export interface Expense {
     name: string;
+    expense_no: string;
     expense_category: string;
     date: string;
     payment_type: string;
-    total: number;
-    description: string;
+
+    // Items
+    table_qecz?: ExpenseItem[];
+
+    // Total
+    total?: number;
+
+    description?: string;
     creation?: string;
     modified?: string;
+    owner?: string;
 }
 
 async function fetchFrappeList(params: {
@@ -28,7 +47,17 @@ async function fetchFrappeList(params: {
 
     const query = new URLSearchParams({
         doctype: 'Expenses',
-        fields: JSON.stringify(["*"]),
+        fields: JSON.stringify([
+            "name",
+            "expense_no",
+            "expense_category",
+            "date",
+            "payment_type",
+            "total",
+            "description",
+            "owner",
+            "creation"
+        ]),
         filters: JSON.stringify(filters),
         limit_start: String((params.page - 1) * params.page_size),
         limit_page_length: String(params.page_size),
@@ -54,26 +83,30 @@ async function fetchFrappeList(params: {
 export const fetchExpenses = (params: any) => fetchFrappeList(params);
 
 export async function createExpense(data: Partial<Expense>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ doc: { doctype: "Expenses", ...data } })
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: "Expenses",
+                ...data
+            }
+        })
     });
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to create expense");
-    }
-
-    return (await res.json()).message;
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create expense"));
+    return json.message;
 }
 
 export async function updateExpense(name: string, data: Partial<Expense>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Expenses",
             name,
@@ -81,28 +114,26 @@ export async function updateExpense(name: string, data: Partial<Expense>) {
         })
     });
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to update expense");
-    }
-
-    return (await res.json()).message;
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update expense"));
+    return json.message;
 }
 
 export async function deleteExpense(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ doctype: "Expenses", name })
+        headers,
+        body: JSON.stringify({
+            doctype: "Expenses",
+            name
+        })
     });
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to delete expense");
-    }
-
-    return true;
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete expense"));
+    return json.message;
 }
 
 export async function getExpense(name: string) {
@@ -127,4 +158,26 @@ export async function getExpensePermissions() {
     }
 
     return (await res.json()).message || { read: false, write: false, delete: false };
+}
+
+export async function getDoctypeList(doctype: string, fields?: string[]) {
+    const params: any = { doctype };
+    if (fields) {
+        params.fields = JSON.stringify(fields);
+    }
+    const query = new URLSearchParams(params);
+
+    const res = await fetch(
+        `/api/method/company.company.frontend_api.get_doctype_list?${query.toString()}`,
+        { credentials: 'include' }
+    );
+
+    if (!res.ok) {
+        return [];
+    }
+    return (await res.json()).message || [];
+}
+
+export function getExpensePrintUrl(name: string) {
+    return `/api/method/frappe.utils.print_format.download_pdf?doctype=Expenses&name=${encodeURIComponent(name)}`;
 }

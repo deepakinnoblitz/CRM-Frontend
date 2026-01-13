@@ -7,10 +7,110 @@
  */
 
 /**
+ * Show session expired message
+ */
+function showSessionExpiredMessage(): Promise<void> {
+    return new Promise((resolve) => {
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(4px);
+        `;
+
+        // Create message box
+        const messageBox = document.createElement('div');
+        messageBox.style.cssText = `
+            background: white;
+            padding: 32px 48px;
+            border-radius: 16px;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            animation: slideIn 0.3s ease-out;
+        `;
+
+        // Add animation keyframes
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Create icon
+        const icon = document.createElement('div');
+        icon.innerHTML = `
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto 16px;">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="#f44336"/>
+            </svg>
+        `;
+
+        // Create title
+        const title = document.createElement('div');
+        title.textContent = 'Session Expired';
+        title.style.cssText = `
+            font-size: 24px;
+            font-weight: 700;
+            color: #212B36;
+            margin-bottom: 8px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        `;
+
+        // Create message
+        const message = document.createElement('div');
+        message.textContent = 'Your session has expired. Please log in again.';
+        message.style.cssText = `
+            font-size: 14px;
+            color: #637381;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        `;
+
+        // Assemble
+        messageBox.appendChild(icon);
+        messageBox.appendChild(title);
+        messageBox.appendChild(message);
+        overlay.appendChild(messageBox);
+        document.body.appendChild(overlay);
+
+        // Remove after 2 seconds
+        setTimeout(() => {
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 0.3s ease-out';
+            setTimeout(() => {
+                document.body.removeChild(overlay);
+                document.head.removeChild(style);
+                resolve();
+            }, 300);
+        }, 2000);
+    });
+}
+
+/**
  * Handle CSRF error by logging out user
  */
-async function handleCSRFError(): Promise<void> {
+export async function handleCSRFError(): Promise<void> {
     console.error('CSRF Token Error detected - logging out user');
+
+    // Show session expired message
+    await showSessionExpiredMessage();
 
     // Clear local storage
     localStorage.clear();
@@ -25,14 +125,14 @@ async function handleCSRFError(): Promise<void> {
         console.error('Error during logout:', error);
     }
 
-    // Redirect to login page
-    window.location.href = '/login';
+    // Redirect to sign-in page
+    window.location.href = '/sign-in';
 }
 
 /**
  * Check if error response contains CSRF error
  */
-function isCSRFError(json: any): boolean {
+export function isCSRFError(json: any): boolean {
     if (!json) return false;
 
     const errorMessage = json.exception || json.message || '';

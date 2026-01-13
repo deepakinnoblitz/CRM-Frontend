@@ -1,0 +1,125 @@
+import { handleResponse } from './utils';
+
+export interface ToDo {
+    name: string;
+    description: string;
+    status: 'Open' | 'Closed' | 'Cancelled';
+    priority: 'High' | 'Medium' | 'Low';
+    date: string;
+    allocated_to?: string;
+    reference_type?: string;
+    reference_name?: string;
+    color?: string;
+}
+
+export async function fetchToDos(start?: string, end?: string): Promise<ToDo[]> {
+    const filters: any[] = [];
+    if (start && end) {
+        filters.push(["ToDo", "date", "between", [start, end]]);
+    }
+
+    const query = new URLSearchParams({
+        doctype: "ToDo",
+        fields: JSON.stringify([
+            "name",
+            "description",
+            "status",
+            "priority",
+            "date",
+            "allocated_to",
+            "reference_type",
+            "reference_name",
+            "color"
+        ]),
+        filters: JSON.stringify(filters),
+        limit_page_length: "1000",
+        order_by: "date asc"
+    });
+
+    const res = await fetch(
+        `/api/method/frappe.client.get_list?${query.toString()}`,
+        { credentials: 'include' }
+    );
+
+    const data = await handleResponse(res);
+    return data.message;
+}
+
+export async function createToDo(data: Partial<ToDo>): Promise<void> {
+    const res = await fetch(
+        `/api/method/frappe.client.insert`,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                doc: {
+                    doctype: "ToDo",
+                    ...data
+                }
+            }),
+            credentials: 'include'
+        }
+    );
+
+    await handleResponse(res);
+}
+
+export async function updateToDo(name: string, data: Partial<ToDo>): Promise<void> {
+    const res = await fetch(
+        `/api/method/frappe.client.set_value`,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                doctype: "ToDo",
+                name,
+                fieldname: data
+            }),
+            credentials: 'include'
+        }
+    );
+
+    await handleResponse(res);
+}
+
+export async function deleteToDo(name: string): Promise<void> {
+    const res = await fetch(
+        `/api/method/frappe.client.delete`,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                doctype: "ToDo",
+                name
+            }),
+            credentials: 'include'
+        }
+    );
+
+    await handleResponse(res);
+}
+
+export async function getToDoPermissions() {
+    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=ToDo", {
+        credentials: "include"
+    });
+
+    if (!res.ok) {
+        return { read: false, write: false, delete: false };
+    }
+
+    const data = await res.json();
+    return data.message || { read: false, write: false, delete: false };
+}
+
+export async function getToDo(name: string) {
+    const res = await fetch(`/api/method/frappe.client.get?doctype=ToDo&name=${name}`, {
+        credentials: "include"
+    });
+
+    if (!res.ok) {
+        throw new Error("Failed to fetch ToDo details");
+    }
+
+    return (await res.json()).message;
+}

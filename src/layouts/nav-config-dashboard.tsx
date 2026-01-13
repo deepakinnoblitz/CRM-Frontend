@@ -180,6 +180,11 @@ export const salesNavData = [
     title: 'Purchases',
     path: '/purchase',
     icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
+  },
+  {
+    title: 'Expenses',
+    path: '/expenses',
+    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
   }
 ];
 
@@ -220,6 +225,11 @@ export const crmNavData = [
     title: 'Calls',
     path: '/calls',
     icon: <Iconify icon={"solar:phone-calling-rounded-bold-duotone" as any} />,
+  },
+  {
+    title: 'ToDo',
+    path: '/todo',
+    icon: <Iconify icon={"solar:list-bold-duotone" as any} />,
   },
   {
     title: 'Meetings',
@@ -288,6 +298,11 @@ export const crmAndSalesNavData = [
     icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
   },
   {
+    title: 'Expenses',
+    path: '/expenses',
+    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+  },
+  {
     title: 'Events',
     path: '/events',
     icon: <Iconify icon={"solar:calendar-mark-bold-duotone" as any} />,
@@ -296,6 +311,11 @@ export const crmAndSalesNavData = [
     title: 'Calls',
     path: '/calls',
     icon: <Iconify icon={"solar:phone-calling-rounded-bold-duotone" as any} />,
+  },
+  {
+    title: 'ToDo',
+    path: '/todo',
+    icon: <Iconify icon={"solar:list-bold-duotone" as any} />,
   },
   {
     title: 'Meetings',

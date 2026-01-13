@@ -11,6 +11,7 @@ import { Iconify } from 'src/components/iconify';
 export type ExpenseTableRowProps = {
     row: {
         id: string;
+        expense_no: string;
         expense_category: string;
         date: string;
         payment_type: string;
@@ -40,6 +41,8 @@ export function ExpenseTableRow({
             <TableCell padding="checkbox">
                 <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
             </TableCell>
+
+            <TableCell>{row.expense_no || '-'}</TableCell>
 
             <TableCell>{row.expense_category || '-'}</TableCell>
 

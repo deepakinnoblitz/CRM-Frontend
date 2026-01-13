@@ -140,6 +140,7 @@ export function PurchaseView() {
                                 onSort={handleSort}
                                 onSelectAllRows={handleSelectAllClick}
                                 headLabel={[
+                                    { id: 'name', label: 'Purchase ID' },
                                     { id: 'bill_no', label: 'Bill No' },
                                     { id: 'vendor_name', label: 'Vendor' },
                                     { id: 'bill_date', label: 'Bill Date' },
@@ -155,6 +156,7 @@ export function PurchaseView() {
                                             key={row.name}
                                             row={{
                                                 id: row.name,
+                                                name: row.name,
                                                 bill_no: row.bill_no,
                                                 vendor_name: row.vendor_name || '',
                                                 bill_date: row.bill_date,

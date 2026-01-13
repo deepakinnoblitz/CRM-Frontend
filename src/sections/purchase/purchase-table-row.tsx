@@ -14,6 +14,7 @@ import { Iconify } from 'src/components/iconify';
 
 export type PurchaseProps = {
     id: string;
+    name: string;
     bill_no: string;
     vendor_name: string;
     bill_date: string;
@@ -47,6 +48,8 @@ export function PurchaseTableRow({
             <TableCell padding="checkbox">
                 <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
             </TableCell>
+
+            <TableCell>{row.name}</TableCell>
 
             <TableCell component="th" scope="row">
                 <Box sx={{ gap: 2, display: 'flex', alignItems: 'center' }}>

@@ -127,6 +127,7 @@ export function DashboardLayout({
       cssVars={{ ...dashboardLayoutVars(theme), ...cssVars }}
       sx={[
         {
+          bgcolor: 'common.white',
           [`& .${layoutClasses.sidebarContainer}`]: {
             [theme.breakpoints.up(layoutQuery)]: {
               pl: 'var(--layout-nav-vertical-width)',

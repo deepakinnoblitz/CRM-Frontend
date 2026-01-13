@@ -44,6 +44,12 @@ export default defineConfig(({ mode }) => ({
         target: 'http://erp.localhost.innoblitz:8013',
         changeOrigin: true,
         secure: false,
+      },
+      // 🔹 File assets
+      '/files': {
+        target: 'http://erp.localhost.innoblitz:8013',
+        changeOrigin: true,
+        secure: false,
       }
     },
   },

@@ -1,9 +1,7 @@
 import 'src/global.css';
 
 import { useEffect } from 'react';
-
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { SnackbarProvider } from 'notistack';
 
 import { usePathname } from 'src/routes/hooks';
 
@@ -23,11 +21,11 @@ export default function App({ children }: AppProps) {
 
   return (
     <AuthProvider>
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <ThemeProvider>
+      <ThemeProvider>
+        <SnackbarProvider anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
           {children}
-        </ThemeProvider>
-      </LocalizationProvider>
+        </SnackbarProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
 }
