@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -10,7 +11,9 @@ import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -33,8 +36,10 @@ export function InvoiceCollectionReportView() {
     const [loading, setLoading] = useState(false);
 
     // Filters
-    const [fromDate, setFromDate] = useState<any>(null);
-    const [toDate, setToDate] = useState<any>(null);
+    const [customer, setCustomer] = useState('');
+    const [invoiceNo, setInvoiceNo] = useState('');
+    const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
+    const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
 
     // Pagination
     const [page, setPage] = useState(0);
@@ -44,7 +49,8 @@ export function InvoiceCollectionReportView() {
         setLoading(true);
         try {
             const filters: any = {};
-            // Default to last month if not set, similar to the backend default
+            if (customer) filters.customer = customer;
+            if (invoiceNo) filters.invoice = invoiceNo;
             if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
             if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
 
@@ -57,11 +63,18 @@ export function InvoiceCollectionReportView() {
         } finally {
             setLoading(false);
         }
-    }, [fromDate, toDate]);
+    }, [customer, invoiceNo, fromDate, toDate]);
 
     useEffect(() => {
         fetchReport();
     }, [fetchReport]);
+
+    const handleReset = () => {
+        setCustomer('');
+        setInvoiceNo('');
+        setFromDate(null);
+        setToDate(null);
+    };
 
     const onChangePage = useCallback((event: unknown, newPage: number) => {
         setPage(newPage);
@@ -81,121 +94,150 @@ export function InvoiceCollectionReportView() {
 
     return (
         <DashboardContent>
-            <Stack spacing={4} sx={{ mt: 3, mb: 5 }}>
+            <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Typography variant="h4">
-                        Invoice & Collection Summary
-                    </Typography>
-                    <Box>
+                    <Typography variant="h4">Invoice Collection Summary</Typography>
+                    <Stack direction="row" spacing={1}>
                         <Button
-                            variant="contained"
-                            color="inherit"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={handleExport}
-                            disabled={reportData.length === 0}
+                            variant="outlined"
+                            startIcon={<Iconify icon={"solar:refresh-bold" as any} />}
+                            onClick={fetchReport}
+                            disabled={loading}
                         >
-                            Export
+                            Refresh
                         </Button>
-                    </Box>
+                        <Button
+                            variant="outlined"
+                            color="error"
+                            startIcon={<Iconify icon="solar:restart-bold" />}
+                            onClick={handleReset}
+                        >
+                            Reset
+                        </Button>
+                    </Stack>
                 </Stack>
 
-                {/* Filters */}
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Card
-                        sx={{
-                            p: 2.5,
-                            boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
-                        }}
-                    >
-                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
-                            <DatePicker
-                                label="From Date"
-                                value={fromDate}
-                                onChange={setFromDate}
-                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                            />
-                            <DatePicker
-                                label="To Date"
-                                value={toDate}
-                                onChange={setToDate}
-                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                            />
-                        </Stack>
-                    </Card>
-                </LocalizationProvider>
-
-                {/* Summary Stats */}
-                <Stack
-                    direction={{ xs: 'column', sm: 'row' }}
-                    spacing={3}
-                    justifyContent="center"
-                    sx={{ py: 2 }}
-                >
-                    {summaryData.map((summary, index) => (
-                        <SummaryCard
-                            key={index}
-                            title={summary.label}
-                            value={summary.value}
-                            color={summary.indicator === 'green' ? '#4CAF50' : summary.indicator === 'red' ? '#F44336' : '#2196F3'}
-                            isCurrency={summary.datatype === 'Currency'}
-                        />
-                    ))}
-                </Stack>
-
-                {/* Data Table */}
                 <Card
                     sx={{
-                        boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
+                        p: 2.5,
+                        display: 'flex',
+                        gap: 2,
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        bgcolor: 'background.neutral',
+                        border: (t) => `1px solid ${t.palette.divider}`,
                     }}
                 >
-                    <Scrollbar>
-                        <TableContainer sx={{ minWidth: 900, maxHeight: 440, overflowY: 'auto' }}>
+                    <TextField
+                        label="Customer"
+                        value={customer}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomer(e.target.value)}
+                        placeholder="Search customer..."
+                        size="small"
+                        sx={{ minWidth: 200 }}
+                    />
+                    <TextField
+                        label="Invoice No"
+                        value={invoiceNo}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvoiceNo(e.target.value)}
+                        placeholder="Search invoice..."
+                        size="small"
+                        sx={{ minWidth: 150 }}
+                    />
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                            label="From Date"
+                            value={fromDate}
+                            onChange={(newValue) => setFromDate(newValue)}
+                            slotProps={{ textField: { size: 'small' } }}
+                        />
+                        <DatePicker
+                            label="To Date"
+                            value={toDate}
+                            onChange={(newValue) => setToDate(newValue)}
+                            slotProps={{ textField: { size: 'small' } }}
+                        />
+                    </LocalizationProvider>
+                    <Box sx={{ flexGrow: 1 }} />
+                    <Button
+                        variant="contained"
+                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                        onClick={handleExport}
+                        disabled={reportData.length === 0}
+                    >
+                        Export
+                    </Button>
+                </Card>
+
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gap: 3,
+                        gridTemplateColumns: {
+                            xs: 'repeat(1, 1fr)',
+                            sm: 'repeat(2, 1fr)',
+                            md: 'repeat(3, 1fr)',
+                        },
+                    }}
+                >
+                    {summaryData.map((item, index) => (
+                        <SummaryCard key={index} item={item} />
+                    ))}
+                    {summaryData.length === 0 && (
+                        <>
+                            <SummaryCard item={{ label: 'Total Invoices', value: 0, indicator: 'blue' }} />
+                            <SummaryCard item={{ label: 'Collected Amount', value: 0, indicator: 'green', datatype: 'Currency' }} />
+                            <SummaryCard item={{ label: 'Pending Amount', value: 0, indicator: 'red', datatype: 'Currency' }} />
+                        </>
+                    )}
+                </Box>
+
+                <Card>
+                    <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                        <Scrollbar>
                             <Table size="medium" stickyHeader>
                                 <TableHead>
                                     <TableRow sx={{ bgcolor: '#f4f6f8' }}>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Invoice</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Invoice Date</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Customer</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Customer Name</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Grand Total</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Collected Amount</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Pending Amount</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Last Collection Date</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Payment Mode</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Collected</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Pending</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Last Collection</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Mode</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {reportData
-                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                        .map((row, index) => (
-                                            <TableRow key={index} hover>
-                                                <TableCell>{row.invoice}</TableCell>
-                                                <TableCell>{row.invoice_date}</TableCell>
-                                                <TableCell>{row.customer}</TableCell>
-                                                <TableCell>{row.customer_name}</TableCell>
-                                                <TableCell>{fCurrency(row.grand_total)}</TableCell>
-                                                <TableCell>{fCurrency(row.amount_collected)}</TableCell>
-                                                <TableCell>{fCurrency(row.amount_pending)}</TableCell>
-                                                <TableCell>{row.last_collection_date}</TableCell>
-                                                <TableCell>{row.payment_mode}</TableCell>
-                                            </TableRow>
-                                        ))}
+                                    {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => (
+                                        <TableRow key={index} hover>
+                                            <TableCell sx={{ fontWeight: 600 }}>{row.invoice}</TableCell>
+                                            <TableCell>{row.invoice_date ? dayjs(row.invoice_date).format('DD MMM YYYY') : '-'}</TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.customer_name}</Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>{row.customer}</Typography>
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
+                                            <TableCell sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.amount_collected)}</TableCell>
+                                            <TableCell sx={{ color: 'error.main', fontWeight: 600 }}>{fCurrency(row.amount_pending)}</TableCell>
+                                            <TableCell>{row.last_collection_date ? dayjs(row.last_collection_date).format('DD MMM YYYY') : '-'}</TableCell>
+                                            <TableCell>{row.payment_mode || '-'}</TableCell>
+                                        </TableRow>
+                                    ))}
                                     {reportData.length === 0 && !loading && (
                                         <TableRow>
-                                            <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                            <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
                                                 <Stack spacing={1} alignItems="center">
                                                     <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>
-                                                        No data found
-                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
                                                 </Stack>
                                             </TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
                             </Table>
-                        </TableContainer>
-                    </Scrollbar>
+                        </Scrollbar>
+                    </TableContainer>
                     <TablePagination
                         component="div"
                         count={reportData.length}
@@ -207,64 +249,89 @@ export function InvoiceCollectionReportView() {
                     />
                 </Card>
             </Stack>
-        </DashboardContent >
+        </DashboardContent>
     );
 }
 
 // ----------------------------------------------------------------------
 
-function SummaryCard({ title, value, color, isCurrency = false }: { title: string; value: number; color: string; isCurrency?: boolean }) {
-    const getIcon = () => {
-        if (title.includes('Collected')) return 'solar:wallet-money-bold-duotone';
-        if (title.includes('Pending')) return 'solar:card-search-bold-duotone';
+function SummaryCard({ item }: { item: any }) {
+    const theme = useTheme();
+
+    const getIndicatorColor = (indicator: string) => {
+        switch (indicator?.toLowerCase()) {
+            case 'blue': return theme.palette.info.main;
+            case 'green': return theme.palette.success.main;
+            case 'orange': return theme.palette.warning.main;
+            case 'red': return theme.palette.error.main;
+            default: return theme.palette.primary.main;
+        }
+    };
+
+    const getIcon = (label: string) => {
+        const t = label.toLowerCase();
+        if (t.includes('collected')) return 'solar:wallet-money-bold-duotone';
+        if (t.includes('pending')) return 'solar:card-search-bold-duotone';
         return 'solar:bill-list-bold-duotone';
     };
+
+    const color = getIndicatorColor(item.indicator);
 
     return (
         <Card
             sx={{
-                py: 2.5,
-                px: 3,
-                width: { xs: 1, sm: 220 },
-                boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
-                borderRadius: 2,
+                p: 3,
+                boxShadow: 'none',
                 position: 'relative',
                 overflow: 'hidden',
-                '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 3,
-                    bgcolor: color,
+                bgcolor: alpha(color, 0.04),
+                border: `1px solid ${alpha(color, 0.1)}`,
+                transition: theme.transitions.create(['transform', 'box-shadow']),
+                '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: `0 12px 24px -4px ${alpha(color, 0.12)}`,
                 },
             }}
         >
-            <Stack direction="row" spacing={2} alignItems="center">
+            <Stack direction="row" alignItems="center" spacing={2.5}>
                 <Box
                     sx={{
                         width: 48,
                         height: 48,
-                        borderRadius: 1.5,
+                        flexShrink: 0,
                         display: 'flex',
+                        borderRadius: 1.5,
                         alignItems: 'center',
                         justifyContent: 'center',
-                        bgcolor: `${color}15`,
-                        flexShrink: 0,
+                        color,
+                        bgcolor: alpha(color, 0.1),
                     }}
                 >
-                    <Iconify icon={getIcon() as any} width={24} sx={{ color }} />
+                    <Iconify icon={getIcon(item.label) as any} width={28} />
                 </Box>
-                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Typography variant="h2" sx={{ color: 'text.primary', fontWeight: 800, mb: 0.25 }}>
-                        {isCurrency ? fCurrency(value) : value}
+
+                <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, mb: 0.5 }}>
+                        {item.label}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.8125rem' }}>
-                        {title}
+                    <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800 }}>
+                        {item.datatype === 'Currency' ? fCurrency(item.value) : item.value?.toLocaleString()}
                     </Typography>
                 </Box>
             </Stack>
+
+            <Box
+                sx={{
+                    top: -16,
+                    right: -16,
+                    width: 80,
+                    height: 80,
+                    opacity: 0.08,
+                    position: 'absolute',
+                    borderRadius: '50%',
+                    bgcolor: color,
+                }}
+            />
         </Card>
     );
 }

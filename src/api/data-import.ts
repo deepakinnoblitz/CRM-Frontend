@@ -1,3 +1,5 @@
+import { frappeRequest } from 'src/utils/csrf';
+
 export async function uploadFile(file: File, doctype?: string, docname?: string, fieldname?: string) {
     const formData = new FormData();
     formData.append("file", file);
@@ -8,9 +10,8 @@ export async function uploadFile(file: File, doctype?: string, docname?: string,
     if (docname) formData.append("docname", docname);
     if (fieldname) formData.append("fieldname", fieldname);
 
-    const res = await fetch("/api/method/upload_file", {
+    const res = await frappeRequest("/api/method/upload_file", {
         method: "POST",
-        credentials: "include",
         body: formData
     });
 
@@ -23,10 +24,8 @@ export async function uploadFile(file: File, doctype?: string, docname?: string,
 }
 
 export async function createDataImport(data: any) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({
             doc: {
                 doctype: "Data Import",
@@ -44,10 +43,8 @@ export async function createDataImport(data: any) {
 }
 
 export async function startDataImport(name: string) {
-    const res = await fetch("/api/method/frappe.core.doctype.data_import.data_import.form_start_import", {
+    const res = await frappeRequest("/api/method/frappe.core.doctype.data_import.data_import.form_start_import", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({
             data_import: name
         })
@@ -62,9 +59,7 @@ export async function startDataImport(name: string) {
 }
 
 export async function getImportStatus(name: string) {
-    const res = await fetch(`/api/method/frappe.core.doctype.data_import.data_import.get_import_status?data_import_name=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.core.doctype.data_import.data_import.get_import_status?data_import_name=${name}`);
 
     if (!res.ok) {
         const error = await res.json();
@@ -75,9 +70,7 @@ export async function getImportStatus(name: string) {
 }
 
 export async function getImportPreview(name: string) {
-    const res = await fetch(`/api/method/frappe.core.doctype.data_import.data_import.get_preview_from_template?data_import=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.core.doctype.data_import.data_import.get_preview_from_template?data_import=${name}`);
 
     if (!res.ok) {
         const error = await res.json();
@@ -88,9 +81,7 @@ export async function getImportPreview(name: string) {
 }
 
 export async function getImportLogs(name: string) {
-    const res = await fetch(`/api/method/frappe.core.doctype.data_import.data_import.get_import_logs?data_import=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.core.doctype.data_import.data_import.get_import_logs?data_import=${name}`);
 
     if (!res.ok) {
         const error = await res.json();
@@ -101,10 +92,8 @@ export async function getImportLogs(name: string) {
 }
 
 export async function updateDataImport(name: string, data: any) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({
             doctype: "Data Import",
             name,
@@ -121,9 +110,7 @@ export async function updateDataImport(name: string, data: any) {
 }
 
 export async function getDocFields(doctype: string) {
-    const res = await fetch(`/api/method/company.company.frontend_api.get_doc_fields?doctype=${doctype}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/company.company.frontend_api.get_doc_fields?doctype=${doctype}`);
 
     if (!res.ok) {
         const error = await res.json();
@@ -138,11 +125,8 @@ export function getTemplateUrl(doctype: string) {
 }
 
 export async function updateImportFile(name: string, data: any[][]) {
-    const res = await fetch(`/api/method/company.company.frontend_api.update_import_file`, {
+    const res = await frappeRequest(`/api/method/company.company.frontend_api.update_import_file`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
             data_import_name: name,
             data: JSON.stringify(data)

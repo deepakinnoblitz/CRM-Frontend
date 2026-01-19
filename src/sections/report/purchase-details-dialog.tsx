@@ -102,6 +102,53 @@ export function PurchaseDetailsDialog({ open, onClose, purchaseId }: Props) {
                             </Box>
                         </Box>
 
+                        {/* Items Table */}
+                        <Box>
+                            <SectionHeader title="Items" icon="solar:cart-large-minimalistic-bold" />
+                            <Box sx={{
+                                bgcolor: 'background.neutral',
+                                borderRadius: 2,
+                                overflow: 'hidden',
+                                border: (theme) => `1px solid ${theme.palette.divider}`
+                            }}>
+                                <Box sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                                    p: 1.5,
+                                    bgcolor: (theme) => theme.palette.grey[200],
+                                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`
+                                }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary' }}>ITEM</Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textAlign: 'right' }}>QTY</Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textAlign: 'right' }}>PRICE</Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textAlign: 'right' }}>TOTAL</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                    {purchase.table_qecz?.map((item: any, index: number) => (
+                                        <Box key={index} sx={{
+                                            display: 'grid',
+                                            gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                                            p: 1.5,
+                                            borderBottom: (theme) => index !== purchase.table_qecz.length - 1 ? `1px solid ${theme.palette.divider}` : 'none'
+                                        }}>
+                                            <Box>
+                                                <Typography variant="subtitle2">{item.service}</Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.disabled' }}>{item.description || item.service}</Typography>
+                                            </Box>
+                                            <Typography variant="body2" sx={{ textAlign: 'right' }}>{item.quantity}</Typography>
+                                            <Typography variant="body2" sx={{ textAlign: 'right' }}>{item.price}</Typography>
+                                            <Typography variant="body2" sx={{ textAlign: 'right', fontWeight: 600 }}>{item.sub_total}</Typography>
+                                        </Box>
+                                    ))}
+                                    {(!purchase.table_qecz || purchase.table_qecz.length === 0) && (
+                                        <Box sx={{ p: 3, textAlign: 'center' }}>
+                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>No items found</Typography>
+                                        </Box>
+                                    )}
+                                </Box>
+                            </Box>
+                        </Box>
+
                         {/* Summary Info */}
                         <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
                             <SectionHeader title="Financial Summary" icon="solar:bill-list-bold" noMargin />

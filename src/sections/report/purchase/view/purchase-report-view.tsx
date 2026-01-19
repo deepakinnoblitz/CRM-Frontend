@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -13,9 +14,11 @@ import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import FormControl from '@mui/material/FormControl';
+import Autocomplete from '@mui/material/Autocomplete';
+import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -40,12 +43,12 @@ export function PurchaseReportView() {
     const [summaryData, setSummaryData] = useState<any[]>([]);
 
     // Filters
-    const [fromDate, setFromDate] = useState<any>(null);
-    const [toDate, setToDate] = useState<any>(null);
-    const [vendor, setVendor] = useState('all');
+    const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
+    const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
+    const [vendor, setVendor] = useState<any>(null);
 
     // Options
-    const [vendorOptions, setVendorOptions] = useState<string[]>([]);
+    const [vendorOptions, setVendorOptions] = useState<{ name: string; first_name: string }[]>([]);
 
     // Pagination
     const [page, setPage] = useState(0);
@@ -98,7 +101,7 @@ export function PurchaseReportView() {
             } else {
                 if (fromDate) filters.push(['Purchase', 'bill_date', '>=', fromDate.format('YYYY-MM-DD')]);
                 if (toDate) filters.push(['Purchase', 'bill_date', '<=', toDate.format('YYYY-MM-DD')]);
-                if (vendor !== 'all') filters.push(['Purchase', 'vendor_name', '=', vendor]);
+                if (vendor) filters.push(['Purchase', 'vendor_name', '=', vendor.name]);
             }
 
             const query = new URLSearchParams({
@@ -156,7 +159,7 @@ export function PurchaseReportView() {
             const filters: any = {};
             if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
             if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
-            if (vendor !== 'all') filters.vendor = vendor;
+            if (vendor) filters.vendor = vendor.name;
 
             console.log('Fetching Purchase Report with filters:', filters);
             const result = await runReport('Purchase Report', filters);
@@ -184,80 +187,113 @@ export function PurchaseReportView() {
         fetchReport();
     }, [fetchReport]);
 
+    const handleReset = () => {
+        setFromDate(null);
+        setToDate(null);
+        setVendor(null);
+    };
+
     useEffect(() => {
-        getDoctypeList('Contacts', ['first_name']).then((contacts: any[]) => {
-            const names = contacts.map(c => c.first_name).filter(Boolean);
-            setVendorOptions(Array.from(new Set(names)));
+        getDoctypeList('Contacts', ['name', 'first_name'], { customer_type: 'Purchase' }).then((contacts: any[]) => {
+            setVendorOptions(contacts);
         });
     }, []);
 
     return (
         <DashboardContent>
-            <Stack spacing={4} sx={{ mt: 3, mb: 5 }}>
+            <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
                     <Typography variant="h4">Purchase Report</Typography>
-                    <Box>
+                    <Stack direction="row" spacing={1}>
                         <Button
-                            variant="contained"
-                            color="inherit"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={() => setOpenExportFields(true)}
+                            variant="outlined"
+                            startIcon={<Iconify icon={"solar:refresh-bold" as any} />}
+                            onClick={fetchReport}
+                            disabled={loading}
                         >
-                            Export
+                            Refresh
                         </Button>
-                    </Box>
+                        <Button
+                            variant="outlined"
+                            color="error"
+                            startIcon={<Iconify icon="solar:restart-bold" />}
+                            onClick={handleReset}
+                        >
+                            Reset
+                        </Button>
+                    </Stack>
                 </Stack>
 
-                {/* Filters */}
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Card sx={{ p: 2.5, boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)' }}>
-                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
-                            <DatePicker
-                                label="From Date"
-                                value={fromDate}
-                                onChange={setFromDate}
-                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                            />
-                            <DatePicker
-                                label="To Date"
-                                value={toDate}
-                                onChange={setToDate}
-                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                            />
-                            <FormControl fullWidth size="small">
-                                <Select
-                                    value={vendor}
-                                    onChange={(e) => setVendor(e.target.value)}
-                                    displayEmpty
-                                >
-                                    <MenuItem value="all">All Vendors</MenuItem>
-                                    {vendorOptions.map((opt) => (
-                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Stack>
-                    </Card>
-                </LocalizationProvider>
+                <Card
+                    sx={{
+                        p: 2.5,
+                        display: 'flex',
+                        gap: 2,
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        bgcolor: 'background.neutral',
+                        border: (t) => `1px solid ${t.palette.divider}`,
+                    }}
+                >
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                            label="From Date"
+                            value={fromDate}
+                            onChange={(newValue) => setFromDate(newValue)}
+                            slotProps={{ textField: { size: 'small' } }}
+                        />
+                        <DatePicker
+                            label="To Date"
+                            value={toDate}
+                            onChange={(newValue) => setToDate(newValue)}
+                            slotProps={{ textField: { size: 'small' } }}
+                        />
+                    </LocalizationProvider>
+                    <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 240 }}
+                        options={vendorOptions}
+                        getOptionLabel={(option) => option ? `${option.name} - ${option.first_name}` : ''}
+                        value={vendor}
+                        onChange={(event, newValue) => setVendor(newValue)}
+                        renderInput={(params) => <TextField {...params} label="Vendor" placeholder="All Vendors" />}
+                    />
+                    <Box sx={{ flexGrow: 1 }} />
+                    <Button
+                        variant="contained"
+                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                        onClick={() => setOpenExportFields(true)}
+                    >
+                        Export
+                    </Button>
+                </Card>
 
-                {/* Summary Stats */}
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} justifyContent="center" sx={{ py: 2 }}>
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gap: 3,
+                        gridTemplateColumns: {
+                            xs: 'repeat(1, 1fr)',
+                            sm: 'repeat(2, 1fr)',
+                            md: 'repeat(3, 1fr)',
+                        },
+                    }}
+                >
                     {summaryData.map((item, index) => (
-                        <SummaryCard key={index} title={item.label} value={item.value} color={item.indicator === 'blue' ? "#2196F3" : item.indicator === 'green' ? "#4CAF50" : "#FF9800"} />
+                        <SummaryCard key={index} item={item} />
                     ))}
                     {summaryData.length === 0 && (
                         <>
-                            <SummaryCard title="Total Purchase Amount" value={0} color="#2196F3" />
-                            <SummaryCard title="Total Quantity Purchased" value={0} color="#4CAF50" />
-                            <SummaryCard title="Purchase Records" value={0} color="#FF9800" />
+                            <SummaryCard item={{ label: 'Total Purchase Amount', value: 0, indicator: 'blue', datatype: 'Currency' }} />
+                            <SummaryCard item={{ label: 'Total Quantity Purchased', value: 0, indicator: 'green', datatype: 'Float' }} />
+                            <SummaryCard item={{ label: 'Purchase Records', value: 0, indicator: 'orange' }} />
                         </>
                     )}
-                </Stack>
+                </Box>
 
-                {/* Data Table */}
-                <Card sx={{ boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)' }}>
-                    <Scrollbar>
-                        <TableContainer sx={{ minWidth: 900, maxHeight: 440, overflowY: 'auto' }}>
+                <Card>
+                    <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                        <Scrollbar>
                             <Table size="medium" stickyHeader>
                                 <TableHead>
                                     <TableRow sx={{ bgcolor: '#f4f6f8' }}>
@@ -287,12 +323,12 @@ export function PurchaseReportView() {
                                                     <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                 </TableCell>
                                                 <TableCell>{row.name}</TableCell>
-                                                <TableCell>{row.vendor_name}</TableCell>
+                                                <TableCell>{row.vendor_name}{row.vendor_real_name ? ` - ${row.vendor_real_name}` : ''}</TableCell>
                                                 <TableCell>{row.bill_no}</TableCell>
-                                                <TableCell>{row.bill_date}</TableCell>
-                                                <TableCell>{row.service}</TableCell>
+                                                <TableCell>{row.bill_date ? dayjs(row.bill_date).format('DD MMM YYYY') : '-'}</TableCell>
+                                                <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
                                                 <TableCell>{row.quantity}</TableCell>
-                                                <TableCell>{row.grand_total}</TableCell>
+                                                <TableCell sx={{ fontWeight: 700 }}>₹{row.grand_total?.toLocaleString() || 0}</TableCell>
                                                 <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                     <IconButton onClick={() => handleViewPurchase(row.name)} sx={{ color: 'info.main' }}>
                                                         <Iconify icon="solar:eye-bold" />
@@ -313,8 +349,8 @@ export function PurchaseReportView() {
                                     )}
                                 </TableBody>
                             </Table>
-                        </TableContainer>
-                    </Scrollbar>
+                        </Scrollbar>
+                    </TableContainer>
                     <TablePagination
                         component="div"
                         count={reportData.length}
@@ -346,24 +382,86 @@ export function PurchaseReportView() {
     );
 }
 
-function SummaryCard({ title, value, color }: { title: string; value: number | string; color: string }) {
-    const getIcon = () => {
-        if (title.toLowerCase().includes('amount')) return 'solar:wad-of-money-bold-duotone';
-        if (title.toLowerCase().includes('quantity')) return 'solar:box-bold-duotone';
-        return 'solar:bill-list-bold-duotone';
+function SummaryCard({ item }: { item: any }) {
+    const theme = useTheme();
+
+    const getIndicatorColor = (indicator: string) => {
+        switch (indicator?.toLowerCase()) {
+            case 'blue': return theme.palette.info.main;
+            case 'green': return theme.palette.success.main;
+            case 'orange': return theme.palette.warning.main;
+            case 'red': return theme.palette.error.main;
+            default: return theme.palette.primary.main;
+        }
     };
 
+    const getIcon = (label: string) => {
+        const t = label.toLowerCase();
+        if (t.includes('amount')) return 'solar:wad-of-money-bold-duotone';
+        if (t.includes('quantity')) return 'solar:box-bold-duotone';
+        if (t.includes('records')) return 'solar:document-text-bold-duotone';
+        return 'solar:chart-2-bold-duotone';
+    };
+
+    const color = getIndicatorColor(item.indicator);
+
     return (
-        <Card sx={{ py: 2.5, px: 3, width: { xs: 1, sm: 220 }, boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)', borderRadius: 2, position: 'relative', overflow: 'hidden', '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: 3, bgcolor: color } }}>
-            <Stack direction="row" spacing={2} alignItems="center">
-                <Box sx={{ width: 48, height: 48, borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: `${color}15`, flexShrink: 0 }}>
-                    <Iconify icon={getIcon() as any} width={24} sx={{ color }} />
+        <Card
+            sx={{
+                p: 3,
+                boxShadow: 'none',
+                position: 'relative',
+                overflow: 'hidden',
+                bgcolor: alpha(color, 0.04),
+                border: `1px solid ${alpha(color, 0.1)}`,
+                transition: theme.transitions.create(['transform', 'box-shadow']),
+                '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: `0 12px 24px -4px ${alpha(color, 0.12)}`,
+                },
+            }}
+        >
+            <Stack direction="row" alignItems="center" spacing={2.5}>
+                <Box
+                    sx={{
+                        width: 48,
+                        height: 48,
+                        flexShrink: 0,
+                        display: 'flex',
+                        borderRadius: 1.5,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color,
+                        bgcolor: alpha(color, 0.1),
+                    }}
+                >
+                    <Iconify icon={getIcon(item.label) as any} width={28} />
                 </Box>
-                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Typography variant="h2" sx={{ color: 'text.primary', fontWeight: 800, mb: 0.25 }}>{value}</Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.8125rem' }}>{title}</Typography>
+
+                <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, mb: 0.5 }}>
+                        {item.label}
+                    </Typography>
+                    <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800 }}>
+                        {item.datatype === 'Currency' || (typeof item.value === 'number' && item.label.toLowerCase().includes('amount'))
+                            ? `₹${item.value?.toLocaleString()}`
+                            : item.value?.toLocaleString()}
+                    </Typography>
                 </Box>
             </Stack>
+
+            <Box
+                sx={{
+                    top: -16,
+                    right: -16,
+                    width: 80,
+                    height: 80,
+                    opacity: 0.08,
+                    position: 'absolute',
+                    borderRadius: '50%',
+                    bgcolor: color,
+                }}
+            />
         </Card>
     );
 }

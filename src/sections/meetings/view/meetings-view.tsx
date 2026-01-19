@@ -76,8 +76,8 @@ export function MeetingsView() {
 
     useEffect(() => {
         loadMeetings();
-        getDoctypeList('Lead', ['name', 'lead_name']).then(setLeadOptions);
-        getDoctypeList('Contacts', ['name', 'first_name']).then(setContactOptions);
+        getDoctypeList('Lead', ['name', 'lead_name', 'converted_contact', 'converted_account']).then(setLeadOptions);
+        getDoctypeList('Contacts', ['name', 'first_name', 'last_name']).then(setContactOptions);
         getDoctypeList('Accounts', ['name', 'account_name']).then(setAccountOptions);
     }, [loadMeetings]);
 
@@ -402,7 +402,13 @@ export function MeetingsView() {
                                         <Select
                                             label="Meet For"
                                             value={meetingData.meet_for}
-                                            onChange={(e) => setMeetingData({ ...meetingData, meet_for: e.target.value as string, lead_name: '' })}
+                                            onChange={(e) => setMeetingData({
+                                                ...meetingData,
+                                                meet_for: e.target.value as string,
+                                                lead_name: '',
+                                                contact_name: '',
+                                                account_name: ''
+                                            })}
                                         >
                                             <MenuItem value="Lead">Lead</MenuItem>
                                             <MenuItem value="Contact">Contact</MenuItem>
@@ -419,7 +425,14 @@ export function MeetingsView() {
                                             options={leadOptions}
                                             getOptionLabel={(option) => typeof option === 'string' ? option : `${option.lead_name} (${option.name})`}
                                             value={leadOptions.find(opt => opt.name === meetingData.lead_name) || null}
-                                            onChange={(_, newValue) => setMeetingData({ ...meetingData, lead_name: newValue?.name || '' })}
+                                            onChange={(_, newValue) => {
+                                                setMeetingData({
+                                                    ...meetingData,
+                                                    lead_name: newValue?.name || '',
+                                                    contact_name: newValue?.converted_contact || '',
+                                                    account_name: newValue?.converted_account || ''
+                                                });
+                                            }}
                                             renderInput={(params) => <TextField {...params} label="Select Lead" />}
                                         />
                                     </Grid>
@@ -430,9 +443,9 @@ export function MeetingsView() {
                                         <Autocomplete
                                             fullWidth
                                             options={contactOptions}
-                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.first_name} ${option.last_name} (${option.name})`}
-                                            value={contactOptions.find(opt => opt.name === meetingData.lead_name) || null}
-                                            onChange={(_, newValue) => setMeetingData({ ...meetingData, lead_name: newValue?.name || '' })}
+                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.first_name || ''} ${option.last_name || ''} (${option.name})`.trim()}
+                                            value={contactOptions.find(opt => opt.name === meetingData.contact_name) || null}
+                                            onChange={(_, newValue) => setMeetingData({ ...meetingData, contact_name: newValue?.name || '' })}
                                             renderInput={(params) => <TextField {...params} label="Select Contact" />}
                                         />
                                     </Grid>
@@ -444,8 +457,8 @@ export function MeetingsView() {
                                             fullWidth
                                             options={accountOptions}
                                             getOptionLabel={(option) => typeof option === 'string' ? option : `${option.account_name} (${option.name})`}
-                                            value={accountOptions.find(opt => opt.name === meetingData.lead_name) || null}
-                                            onChange={(_, newValue) => setMeetingData({ ...meetingData, lead_name: newValue?.name || '' })}
+                                            value={accountOptions.find(opt => opt.name === meetingData.account_name) || null}
+                                            onChange={(_, newValue) => setMeetingData({ ...meetingData, account_name: newValue?.name || '' })}
                                             renderInput={(params) => <TextField {...params} label="Select Account" />}
                                         />
                                     </Grid>

@@ -75,7 +75,7 @@ export function PurchaseForm({ id }: Props) {
     const fetchData = useCallback(async () => {
         try {
             const [vendors, items, services] = await Promise.all([
-                getDoctypeList('Contacts', ['name', 'first_name', 'company_name']),
+                getDoctypeList('Contacts', ['name', 'first_name', 'company_name'], { customer_type: 'Purchase' }),
                 getDoctypeList('Item', ['item_code', 'item_name', 'rate']),
                 getDoctypeList('Service', ['service_id', 'service_name'])
             ]);
@@ -225,7 +225,7 @@ export function PurchaseForm({ id }: Props) {
                         options={vendorOptions}
                         getOptionLabel={(option) => {
                             if (typeof option === 'string') return option;
-                            return option.name || '';
+                            return option ? `${option.name} - ${option.first_name}` : '';
                         }}
                         value={
                             vendorOptions.find((opt) => opt.name === formData.vendor_name) ||

@@ -226,6 +226,15 @@ export async function getAuthHeaders(additionalHeaders: Record<string, string> =
 export async function frappeRequest(url: string, options: RequestInit = {}): Promise<Response> {
     const headers = await getAuthHeaders(options.headers as Record<string, string> || {});
 
+    // Remove Content-Type header if body is FormData to let browser set it with boundary
+    if (options.body instanceof FormData) {
+        if (headers instanceof Headers) {
+            headers.delete('Content-Type');
+        } else if (typeof headers === 'object' && headers !== null) {
+            delete (headers as any)['Content-Type'];
+        }
+    }
+
     const response = await fetch(url, {
         ...options,
         headers,

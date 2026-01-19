@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -17,6 +18,7 @@ import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
+import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -43,8 +45,8 @@ export function ExpenseReportView() {
     // Filters
     const [expenseCategory, setExpenseCategory] = useState('');
     const [paymentType, setPaymentType] = useState('all');
-    const [fromDate, setFromDate] = useState<any>(null);
-    const [toDate, setToDate] = useState<any>(null);
+    const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
+    const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
 
     // Options
     const [paymentTypeOptions, setPaymentTypeOptions] = useState<string[]>([]);
@@ -194,104 +196,125 @@ export function ExpenseReportView() {
         fetchReport();
     }, [fetchReport]);
 
+    const handleReset = () => {
+        setExpenseCategory('');
+        setPaymentType('all');
+        setFromDate(null);
+        setToDate(null);
+    };
+
     useEffect(() => {
         getDoctypeList('Payment Type').then(setPaymentTypeOptions);
     }, []);
 
     return (
         <DashboardContent>
-            <Stack spacing={4} sx={{ mt: 3, mb: 5 }}>
+            <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Typography variant="h4">
-                        Expense Report
-                    </Typography>
-                    <Box>
+                    <Typography variant="h4">Expense Report</Typography>
+                    <Stack direction="row" spacing={1}>
                         <Button
-                            variant="contained"
-                            color="inherit"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={() => setOpenExportFields(true)}
+                            variant="outlined"
+                            startIcon={<Iconify icon={"solar:refresh-bold" as any} />}
+                            onClick={fetchReport}
+                            disabled={loading}
                         >
-                            Export
+                            Refresh
                         </Button>
-                    </Box>
+                        <Button
+                            variant="outlined"
+                            color="error"
+                            startIcon={<Iconify icon="solar:restart-bold" />}
+                            onClick={handleReset}
+                        >
+                            Reset
+                        </Button>
+                    </Stack>
                 </Stack>
 
-                {/* Filters */}
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Card
-                        sx={{
-                            p: 2.5,
-                            boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
-                        }}
-                    >
-                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
-                            <FormControl fullWidth size="small">
-                                <TextField
-                                    size="small"
-                                    placeholder="Expense Category"
-                                    value={expenseCategory}
-                                    onChange={(e) => setExpenseCategory(e.target.value)}
-                                />
-                            </FormControl>
-
-                            <FormControl fullWidth size="small">
-                                <Select
-                                    value={paymentType}
-                                    onChange={(e) => setPaymentType(e.target.value)}
-                                    displayEmpty
-                                >
-                                    <MenuItem value="all">Payment Type</MenuItem>
-                                    {paymentTypeOptions.map((opt) => (
-                                        <MenuItem key={opt} value={opt}>
-                                            {opt}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-
-                            <DatePicker
-                                label="From Date"
-                                value={fromDate}
-                                onChange={setFromDate}
-                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                            />
-                            <DatePicker
-                                label="To Date"
-                                value={toDate}
-                                onChange={setToDate}
-                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                            />
-                        </Stack>
-                    </Card>
-                </LocalizationProvider>
-
-                {/* Summary Stats */}
-                <Stack
-                    direction={{ xs: 'column', sm: 'row' }}
-                    spacing={3}
-                    justifyContent="center"
-                    sx={{ py: 2 }}
-                >
-                    {summaryData.map((card, index) => (
-                        <SummaryCard
-                            key={index}
-                            title={card.label}
-                            value={card.value}
-                            color={getIndicatorColor(card.indicator)}
-                            datatype={card.datatype}
-                        />
-                    ))}
-                </Stack>
-
-                {/* Data Table */}
                 <Card
                     sx={{
-                        boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
+                        p: 2.5,
+                        display: 'flex',
+                        gap: 2,
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        bgcolor: 'background.neutral',
+                        border: (t) => `1px solid ${t.palette.divider}`,
                     }}
                 >
-                    <Scrollbar>
-                        <TableContainer sx={{ minWidth: 900, maxHeight: 440, overflowY: 'auto' }}>
+                    <TextField
+                        label="Category"
+                        value={expenseCategory}
+                        onChange={(e) => setExpenseCategory(e.target.value)}
+                        placeholder="Search category..."
+                        size="small"
+                        sx={{ minWidth: 200 }}
+                    />
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={paymentType}
+                            onChange={(e) => setPaymentType(e.target.value)}
+                            displayEmpty
+                        >
+                            <MenuItem value="all">All Payment Types</MenuItem>
+                            {paymentTypeOptions.map((opt) => (
+                                <MenuItem key={opt} value={opt}>
+                                    {opt}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                            label="From Date"
+                            value={fromDate}
+                            onChange={(newValue) => setFromDate(newValue)}
+                            slotProps={{ textField: { size: 'small' } }}
+                        />
+                        <DatePicker
+                            label="To Date"
+                            value={toDate}
+                            onChange={(newValue) => setToDate(newValue)}
+                            slotProps={{ textField: { size: 'small' } }}
+                        />
+                    </LocalizationProvider>
+                    <Box sx={{ flexGrow: 1 }} />
+                    <Button
+                        variant="contained"
+                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                        onClick={() => setOpenExportFields(true)}
+                    >
+                        Export
+                    </Button>
+                </Card>
+
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gap: 3,
+                        gridTemplateColumns: {
+                            xs: 'repeat(1, 1fr)',
+                            sm: 'repeat(2, 1fr)',
+                            md: 'repeat(3, 1fr)',
+                        },
+                    }}
+                >
+                    {summaryData.map((item, index) => (
+                        <SummaryCard key={index} item={item} />
+                    ))}
+                    {summaryData.length === 0 && (
+                        <>
+                            <SummaryCard item={{ label: 'Total Expense Amount', value: 0, indicator: 'blue', datatype: 'Currency' }} />
+                            <SummaryCard item={{ label: 'Total Quantity', value: 0, indicator: 'green', datatype: 'Float' }} />
+                            <SummaryCard item={{ label: 'Expense Records', value: 0, indicator: 'orange' }} />
+                        </>
+                    )}
+                </Box>
+
+                <Card>
+                    <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                        <Scrollbar>
                             <Table size="medium" stickyHeader>
                                 <TableHead>
                                     <TableRow sx={{ bgcolor: '#f4f6f8' }}>
@@ -307,86 +330,52 @@ export function ExpenseReportView() {
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Payment Type</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Item</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Quantity</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Qty</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Price</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Amount</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Total</TableCell>
-                                        <TableCell
-                                            align="center"
-                                            sx={{
-                                                fontWeight: 700,
-                                                color: 'text.secondary',
-                                                position: 'sticky',
-                                                right: 0,
-                                                bgcolor: '#f4f6f8',
-                                                zIndex: 1,
-                                                boxShadow: '-2px 0 5px rgba(0,0,0,0.05)',
-                                            }}
-                                        >
-                                            Actions
-                                        </TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', position: 'sticky', right: 0, bgcolor: '#f4f6f8', zIndex: 11 }}>Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {reportData
-                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                        .map((row, index) => {
-                                            const isSelected = selected.indexOf(row.expense_no) !== -1;
-                                            return (
-                                                <TableRow
-                                                    key={index}
-                                                    hover
-                                                    role="checkbox"
-                                                    aria-checked={isSelected}
-                                                    selected={isSelected}
-                                                >
-                                                    <TableCell padding="checkbox">
-                                                        <Checkbox
-                                                            checked={isSelected}
-                                                            onClick={(event) => handleClick(event, row.expense_no)}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>{row.expense_no}</TableCell>
-                                                    <TableCell>{row.expense_category}</TableCell>
-                                                    <TableCell>{row.date ? new Date(row.date).toLocaleDateString() : '-'}</TableCell>
-                                                    <TableCell>{row.payment_type}</TableCell>
-                                                    <TableCell>{row.items}</TableCell>
-                                                    <TableCell>{row.quantity}</TableCell>
-                                                    <TableCell>₹{row.price?.toLocaleString() || 0}</TableCell>
-                                                    <TableCell>₹{row.amount?.toLocaleString() || 0}</TableCell>
-                                                    <TableCell>₹{row.total?.toLocaleString() || 0}</TableCell>
-                                                    <TableCell
-                                                        align="center"
-                                                        sx={{
-                                                            position: 'sticky',
-                                                            right: 0,
-                                                            bgcolor: 'background.paper',
-                                                            boxShadow: '-2px 0 5px rgba(0,0,0,0.05)',
-                                                        }}
-                                                    >
-                                                        <IconButton onClick={() => handleViewExpense(row)} sx={{ color: 'info.main' }}>
-                                                            <Iconify icon="solar:eye-bold" />
-                                                        </IconButton>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
+                                    {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                        const isSelected = selected.indexOf(row.expense_no) !== -1;
+                                        return (
+                                            <TableRow key={index} hover role="checkbox" aria-checked={isSelected} selected={isSelected}>
+                                                <TableCell padding="checkbox">
+                                                    <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.expense_no)} />
+                                                </TableCell>
+                                                <TableCell>{row.expense_no}</TableCell>
+                                                <TableCell>{row.expense_category}</TableCell>
+                                                <TableCell>{row.date ? dayjs(row.date).format('DD MMM YYYY') : '-'}</TableCell>
+                                                <TableCell>{row.payment_type}</TableCell>
+                                                <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.items}</TableCell>
+                                                <TableCell>{row.quantity}</TableCell>
+                                                <TableCell>₹{row.price?.toLocaleString() || 0}</TableCell>
+                                                <TableCell>₹{row.amount?.toLocaleString() || 0}</TableCell>
+                                                <TableCell sx={{ fontWeight: 700 }}>₹{row.total?.toLocaleString() || 0}</TableCell>
+                                                <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
+                                                    <IconButton onClick={() => handleViewExpense(row)} sx={{ color: 'info.main' }}>
+                                                        <Iconify icon="solar:eye-bold" />
+                                                    </IconButton>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
                                     {reportData.length === 0 && !loading && (
                                         <TableRow>
                                             <TableCell colSpan={11} align="center" sx={{ py: 10 }}>
                                                 <Stack spacing={1} alignItems="center">
                                                     <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>
-                                                        No data found
-                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
                                                 </Stack>
                                             </TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
                             </Table>
-                        </TableContainer>
-                    </Scrollbar>
+                        </Scrollbar>
+                    </TableContainer>
                     <TablePagination
                         component="div"
                         count={reportData.length}
@@ -401,7 +390,7 @@ export function ExpenseReportView() {
 
             <ExpenseDetailsDialog
                 open={openView}
-                expense={selectedExpense}
+                expenseId={selectedExpense ? selectedExpense.name : null}
                 onClose={() => {
                     setOpenView(false);
                     setSelectedExpense(null);
@@ -420,82 +409,86 @@ export function ExpenseReportView() {
 
 // ----------------------------------------------------------------------
 
-function SummaryCard({ title, value, color, datatype }: { title: string; value: number; color: string; datatype?: string }) {
-    const getIcon = () => {
-        switch (title) {
-            case 'Total Expense Amount': return 'solar:wallet-money-bold-duotone';
-            case 'Total Quantity': return 'solar:box-bold-duotone';
-            case 'Total Item Amount': return 'solar:dollar-bold-duotone';
-            default: return 'solar:chart-bold-duotone';
+function SummaryCard({ item }: { item: any }) {
+    const theme = useTheme();
+
+    const getIndicatorColor = (indicator: string) => {
+        switch (indicator?.toLowerCase()) {
+            case 'blue': return theme.palette.info.main;
+            case 'green': return theme.palette.success.main;
+            case 'orange': return theme.palette.warning.main;
+            case 'red': return theme.palette.error.main;
+            default: return theme.palette.primary.main;
         }
     };
 
-    const formatValue = (val: number) => {
-        if (datatype === 'Currency') {
-            return `₹${val.toLocaleString()}`;
-        }
-        if (datatype === 'Float') {
-            return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-        return val.toLocaleString();
+    const getIcon = (label: string) => {
+        const t = label.toLowerCase();
+        if (t.includes('amount')) return 'solar:wad-of-money-bold-duotone';
+        if (t.includes('quantity')) return 'solar:box-bold-duotone';
+        if (t.includes('records')) return 'solar:document-text-bold-duotone';
+        return 'solar:chart-2-bold-duotone';
     };
+
+    const color = getIndicatorColor(item.indicator);
 
     return (
         <Card
             sx={{
-                py: 2.5,
-                px: 3,
-                width: { xs: 1, sm: 220 },
-                boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
-                borderRadius: 2,
+                p: 3,
+                boxShadow: 'none',
                 position: 'relative',
                 overflow: 'hidden',
-                '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 3,
-                    bgcolor: color,
+                bgcolor: alpha(color, 0.04),
+                border: `1px solid ${alpha(color, 0.1)}`,
+                transition: theme.transitions.create(['transform', 'box-shadow']),
+                '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: `0 12px 24px -4px ${alpha(color, 0.12)}`,
                 },
             }}
         >
-            <Stack direction="row" spacing={2} alignItems="center">
+            <Stack direction="row" alignItems="center" spacing={2.5}>
                 <Box
                     sx={{
                         width: 48,
                         height: 48,
-                        borderRadius: 1.5,
+                        flexShrink: 0,
                         display: 'flex',
+                        borderRadius: 1.5,
                         alignItems: 'center',
                         justifyContent: 'center',
-                        bgcolor: `${color}15`,
-                        flexShrink: 0,
+                        color,
+                        bgcolor: alpha(color, 0.1),
                     }}
                 >
-                    <Iconify icon={getIcon() as any} width={24} sx={{ color }} />
+                    <Iconify icon={getIcon(item.label) as any} width={28} />
                 </Box>
-                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Typography variant="h2" sx={{ color: 'text.primary', fontWeight: 800, mb: 0.25 }}>
-                        {formatValue(value)}
+
+                <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, mb: 0.5 }}>
+                        {item.label}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.8125rem' }}>
-                        {title}
+                    <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800 }}>
+                        {item.datatype === 'Currency' || (typeof item.value === 'number' && item.label.toLowerCase().includes('amount'))
+                            ? `₹${item.value?.toLocaleString()}`
+                            : item.value?.toLocaleString()}
                     </Typography>
                 </Box>
             </Stack>
+
+            <Box
+                sx={{
+                    top: -16,
+                    right: -16,
+                    width: 80,
+                    height: 80,
+                    opacity: 0.08,
+                    position: 'absolute',
+                    borderRadius: '50%',
+                    bgcolor: color,
+                }}
+            />
         </Card>
     );
-}
-
-function getIndicatorColor(indicator: string) {
-    switch (indicator) {
-        case 'Green': return '#4CAF50';
-        case 'Red': return '#F44336';
-        case 'Blue': return '#2196F3';
-        case 'Orange': return '#FF9800';
-        case 'Purple': return '#9C27B0';
-        default: return '#2196F3';
-    }
 }

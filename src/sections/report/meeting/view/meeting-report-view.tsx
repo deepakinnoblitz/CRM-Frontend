@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -16,6 +17,7 @@ import TableHead from '@mui/material/TableHead';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import FormControl from '@mui/material/FormControl';
+import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -40,8 +42,8 @@ export function MeetingReportView() {
     const [loading, setLoading] = useState(false);
 
     // Filters
-    const [fromDate, setFromDate] = useState<any>(null);
-    const [toDate, setToDate] = useState<any>(null);
+    const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
+    const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [meetFor, setMeetFor] = useState('all');
     const [status, setStatus] = useState('all');
     const [owner, setOwner] = useState('all');
@@ -105,10 +107,10 @@ export function MeetingReportView() {
                 return;
             }
 
-            const filters: any[] = [['HD Meeting Log', 'name', 'in', idsToExport]];
+            const filters: any[] = [['Meeting', 'name', 'in', idsToExport]];
 
             const query = new URLSearchParams({
-                doctype: "HD Meeting Log",
+                doctype: "Meeting",
                 fields: JSON.stringify(selectedFields),
                 filters: JSON.stringify(filters),
                 limit_page_length: "99999",
@@ -185,139 +187,162 @@ export function MeetingReportView() {
         fetchReport();
     }, [fetchReport]);
 
+    const handleReset = () => {
+        setFromDate(null);
+        setToDate(null);
+        setMeetFor('all');
+        setStatus('all');
+        setOwner('all');
+        setReminder('all');
+    };
+
     useEffect(() => {
         getDoctypeList('User').then(setOwnerOptions);
     }, []);
 
     return (
         <DashboardContent>
-            <Stack spacing={4} sx={{ mt: 3, mb: 5 }}>
+            <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Typography variant="h4">
-                        Meeting Report
-                    </Typography>
-                    <Box>
+                    <Typography variant="h4">Meeting Report</Typography>
+                    <Stack direction="row" spacing={1}>
                         <Button
-                            variant="contained"
-                            color="inherit"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={() => setOpenExportFields(true)}
+                            variant="outlined"
+                            startIcon={<Iconify icon={"solar:refresh-bold" as any} />}
+                            onClick={fetchReport}
+                            disabled={loading}
                         >
-                            Export
+                            Refresh
                         </Button>
-                    </Box>
+                        <Button
+                            variant="outlined"
+                            color="error"
+                            startIcon={<Iconify icon="solar:restart-bold" />}
+                            onClick={handleReset}
+                        >
+                            Reset
+                        </Button>
+                    </Stack>
                 </Stack>
 
-                {/* Filters */}
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Card
-                        sx={{
-                            p: 2.5,
-                            boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
-                        }}
-                    >
-                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
-                            <DatePicker
-                                label="From"
-                                value={fromDate}
-                                onChange={setFromDate}
-                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                            />
-                            <DatePicker
-                                label="To"
-                                value={toDate}
-                                onChange={setToDate}
-                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                            />
-
-                            <FormControl fullWidth size="small">
-                                <Select
-                                    value={meetFor}
-                                    onChange={(e) => setMeetFor(e.target.value)}
-                                    displayEmpty
-                                >
-                                    <MenuItem value="all">Meet For</MenuItem>
-                                    {meetForOptions.map((opt) => (
-                                        <MenuItem key={opt} value={opt}>
-                                            {opt}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-
-                            <FormControl fullWidth size="small">
-                                <Select
-                                    value={status}
-                                    onChange={(e) => setStatus(e.target.value)}
-                                    displayEmpty
-                                >
-                                    <MenuItem value="all">Status</MenuItem>
-                                    {statusOptions.map((opt) => (
-                                        <MenuItem key={opt} value={opt}>
-                                            {opt}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-
-                            <FormControl fullWidth size="small">
-                                <Select
-                                    value={owner}
-                                    onChange={(e) => setOwner(e.target.value)}
-                                    displayEmpty
-                                >
-                                    <MenuItem value="all">Owner</MenuItem>
-                                    <MenuItem value="Administrator">Administrator</MenuItem>
-                                    {ownerOptions
-                                        .filter((opt) => opt !== 'Administrator')
-                                        .map((opt) => (
-                                            <MenuItem key={opt} value={opt}>
-                                                {opt}
-                                            </MenuItem>
-                                        ))}
-                                </Select>
-                            </FormControl>
-
-                            <FormControl fullWidth size="small">
-                                <Select
-                                    value={reminder}
-                                    onChange={(e) => setReminder(e.target.value)}
-                                    displayEmpty
-                                >
-                                    <MenuItem value="all">Reminder</MenuItem>
-                                    <MenuItem value="1">Enabled</MenuItem>
-                                    <MenuItem value="0">Disabled</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Stack>
-                    </Card>
-                </LocalizationProvider>
-
-                {/* Summary Stats */}
-                <Stack
-                    direction={{ xs: 'column', sm: 'row' }}
-                    spacing={3}
-                    justifyContent="center"
-                    sx={{ py: 2 }}
-                >
-                    {summaryData.map((card, index) => (
-                        <SummaryCard
-                            key={index}
-                            title={card.label}
-                            value={card.value}
-                            color={getIndicatorColor(card.indicator)}
-                        />
-                    ))}
-                </Stack>
-
-                {/* Data Table */}
                 <Card
                     sx={{
-                        boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
+                        p: 2.5,
+                        display: 'flex',
+                        gap: 2,
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        bgcolor: 'background.neutral',
+                        border: (t) => `1px solid ${t.palette.divider}`,
                     }}
                 >
-                    <Scrollbar>
-                        <TableContainer sx={{ minWidth: 900, maxHeight: 440, overflowY: 'auto' }}>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                            label="From Date"
+                            value={fromDate}
+                            onChange={(newValue) => setFromDate(newValue)}
+                            slotProps={{ textField: { size: 'small' } }}
+                        />
+                        <DatePicker
+                            label="To Date"
+                            value={toDate}
+                            onChange={(newValue) => setToDate(newValue)}
+                            slotProps={{ textField: { size: 'small' } }}
+                        />
+                    </LocalizationProvider>
+                    <FormControl size="small" sx={{ minWidth: 160 }}>
+                        <Select
+                            value={meetFor}
+                            onChange={(e) => setMeetFor(e.target.value)}
+                            displayEmpty
+                        >
+                            <MenuItem value="all">Meet For</MenuItem>
+                            {meetForOptions.map((opt) => (
+                                <MenuItem key={opt} value={opt}>
+                                    {opt}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <FormControl size="small" sx={{ minWidth: 160 }}>
+                        <Select
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            displayEmpty
+                        >
+                            <MenuItem value="all">Status</MenuItem>
+                            {statusOptions.map((opt) => (
+                                <MenuItem key={opt} value={opt}>
+                                    {opt}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <FormControl size="small" sx={{ minWidth: 160 }}>
+                        <Select
+                            value={owner}
+                            onChange={(e) => setOwner(e.target.value)}
+                            displayEmpty
+                        >
+                            <MenuItem value="all">Owner</MenuItem>
+                            <MenuItem value="Administrator">Administrator</MenuItem>
+                            {ownerOptions
+                                .filter((opt) => opt !== 'Administrator')
+                                .map((opt) => (
+                                    <MenuItem key={opt} value={opt}>
+                                        {opt}
+                                    </MenuItem>
+                                ))}
+                        </Select>
+                    </FormControl>
+                    <FormControl size="small" sx={{ minWidth: 160 }}>
+                        <Select
+                            value={reminder}
+                            onChange={(e) => setReminder(e.target.value)}
+                            displayEmpty
+                        >
+                            <MenuItem value="all">Reminder</MenuItem>
+                            <MenuItem value="1">Enabled</MenuItem>
+                            <MenuItem value="0">Disabled</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <Box sx={{ flexGrow: 1 }} />
+                    <Button
+                        variant="contained"
+                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                        onClick={() => setOpenExportFields(true)}
+                    >
+                        Export
+                    </Button>
+                </Card>
+
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gap: 3,
+                        gridTemplateColumns: {
+                            xs: 'repeat(1, 1fr)',
+                            sm: 'repeat(2, 1fr)',
+                            md: 'repeat(4, 1fr)',
+                        },
+                    }}
+                >
+                    {summaryData.map((item, index) => (
+                        <SummaryCard key={index} item={item} />
+                    ))}
+                    {summaryData.length === 0 && (
+                        <>
+                            <SummaryCard item={{ label: 'Total Meetings', value: 0, indicator: 'blue' }} />
+                            <SummaryCard item={{ label: 'Scheduled', value: 0, indicator: 'orange' }} />
+                            <SummaryCard item={{ label: 'Completed', value: 0, indicator: 'green' }} />
+                            <SummaryCard item={{ label: 'With Reminder', value: 0, indicator: 'red' }} />
+                        </>
+                    )}
+                </Box>
+
+                <Card>
+                    <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                        <Scrollbar>
                             <Table size="medium" stickyHeader>
                                 <TableHead>
                                     <TableRow sx={{ bgcolor: '#f4f6f8' }}>
@@ -330,89 +355,54 @@ export function MeetingReportView() {
                                         </TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Title</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Meet For</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Reference</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Lead/Contact</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Account</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Start Time</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Venue</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Location</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Time & Venue</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Owner</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Reminder</TableCell>
-                                        <TableCell
-                                            align="center"
-                                            sx={{
-                                                fontWeight: 700,
-                                                color: 'text.secondary',
-                                                position: 'sticky',
-                                                right: 0,
-                                                bgcolor: '#f4f6f8',
-                                                zIndex: 1,
-                                                boxShadow: '-2px 0 5px rgba(0,0,0,0.05)',
-                                            }}
-                                        >
-                                            Actions
-                                        </TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', position: 'sticky', right: 0, bgcolor: '#f4f6f8', zIndex: 11 }}>Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {reportData
-                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                        .map((row, index) => {
-                                            const isSelected = selected.indexOf(row.name) !== -1;
-                                            return (
-                                                <TableRow
-                                                    key={index}
-                                                    hover
-                                                    role="checkbox"
-                                                    aria-checked={isSelected}
-                                                    selected={isSelected}
-                                                >
-                                                    <TableCell padding="checkbox">
-                                                        <Checkbox
-                                                            checked={isSelected}
-                                                            onClick={(event) => handleClick(event, row.name)}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>{row.title}</TableCell>
-                                                    <TableCell>{row.meet_for}</TableCell>
-                                                    <TableCell>{row.lead_name}</TableCell>
-                                                    <TableCell>{row.outgoing_call_status}</TableCell>
-                                                    <TableCell>{row.from_time ? new Date(row.from_time).toLocaleString() : '-'}</TableCell>
-                                                    <TableCell>{row.meeting_venue}</TableCell>
-                                                    <TableCell>{row.location}</TableCell>
-                                                    <TableCell>{row.owner_name}</TableCell>
-                                                    <TableCell>{row.enable_reminder}</TableCell>
-                                                    <TableCell
-                                                        align="center"
-                                                        sx={{
-                                                            position: 'sticky',
-                                                            right: 0,
-                                                            bgcolor: 'background.paper',
-                                                            boxShadow: '-2px 0 5px rgba(0,0,0,0.05)',
-                                                        }}
-                                                    >
-                                                        <IconButton onClick={() => handleViewMeeting(row.name)} sx={{ color: 'info.main' }}>
-                                                            <Iconify icon="solar:eye-bold" />
-                                                        </IconButton>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
+                                    {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                        const isSelected = selected.indexOf(row.name) !== -1;
+                                        return (
+                                            <TableRow key={index} hover role="checkbox" aria-checked={isSelected} selected={isSelected}>
+                                                <TableCell padding="checkbox">
+                                                    <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                                                </TableCell>
+                                                <TableCell sx={{ fontWeight: 600 }}>{row.title}</TableCell>
+                                                <TableCell>{row.meet_for}</TableCell>
+                                                <TableCell>{row.lead_name || row.contact_name || '-'}</TableCell>
+                                                <TableCell>{row.account_name || '-'}</TableCell>
+                                                <TableCell>{row.outgoing_call_status}</TableCell>
+                                                <TableCell>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.from_time ? dayjs(row.from_time).format('DD MMM YYYY HH:mm') : '-'}</Typography>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>{row.meeting_venue || row.location || '-'}</Typography>
+                                                </TableCell>
+                                                <TableCell>{row.owner_name}</TableCell>
+                                                <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
+                                                    <IconButton onClick={() => handleViewMeeting(row.name)} sx={{ color: 'info.main' }}>
+                                                        <Iconify icon="solar:eye-bold" />
+                                                    </IconButton>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
                                     {reportData.length === 0 && !loading && (
                                         <TableRow>
                                             <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
                                                 <Stack spacing={1} alignItems="center">
                                                     <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>
-                                                        No data found
-                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
                                                 </Stack>
                                             </TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
                             </Table>
-                        </TableContainer>
-                    </Scrollbar>
+                        </Scrollbar>
+                    </TableContainer>
                     <TablePagination
                         component="div"
                         count={reportData.length}
@@ -437,7 +427,7 @@ export function MeetingReportView() {
             <ExportFieldsDialog
                 open={openExportFields}
                 onClose={() => setOpenExportFields(false)}
-                doctype="HD Meeting Log"
+                doctype="Meeting"
                 onExport={handleExport}
             />
         </DashboardContent>
@@ -446,73 +436,85 @@ export function MeetingReportView() {
 
 // ----------------------------------------------------------------------
 
-function SummaryCard({ title, value, color }: { title: string; value: number; color: string }) {
-    const getIcon = () => {
-        switch (title) {
-            case 'Total Meetings': return 'solar:videocamera-record-bold-duotone';
-            case 'Scheduled Meetings': return 'solar:calendar-mark-bold-duotone';
-            case 'Completed Meetings': return 'solar:check-circle-bold-duotone';
-            case 'Reminder Enabled': return 'solar:bell-bing-bold-duotone';
-            default: return 'solar:chart-bold-duotone';
+function SummaryCard({ item }: { item: any }) {
+    const theme = useTheme();
+
+    const getIndicatorColor = (indicator: string) => {
+        switch (indicator?.toLowerCase()) {
+            case 'blue': return theme.palette.info.main;
+            case 'green': return theme.palette.success.main;
+            case 'orange': return theme.palette.warning.main;
+            case 'red': return theme.palette.error.main;
+            default: return theme.palette.primary.main;
         }
     };
+
+    const getIcon = (label: string) => {
+        const t = label.toLowerCase();
+        if (t.includes('meeting')) return 'solar:videocamera-record-bold-duotone';
+        if (t.includes('scheduled')) return 'solar:calendar-mark-bold-duotone';
+        if (t.includes('completed')) return 'solar:check-circle-bold-duotone';
+        if (t.includes('reminder')) return 'solar:bell-bing-bold-duotone';
+        return 'solar:chart-2-bold-duotone';
+    };
+
+    const color = getIndicatorColor(item.indicator);
 
     return (
         <Card
             sx={{
-                py: 2.5,
-                px: 3,
-                width: { xs: 1, sm: 220 },
-                boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
-                borderRadius: 2,
+                p: 3,
+                boxShadow: 'none',
                 position: 'relative',
                 overflow: 'hidden',
-                '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 3,
-                    bgcolor: color,
+                bgcolor: alpha(color, 0.04),
+                border: `1px solid ${alpha(color, 0.1)}`,
+                transition: theme.transitions.create(['transform', 'box-shadow']),
+                '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: `0 12px 24px -4px ${alpha(color, 0.12)}`,
                 },
             }}
         >
-            <Stack direction="row" spacing={2} alignItems="center">
+            <Stack direction="row" alignItems="center" spacing={2.5}>
                 <Box
                     sx={{
                         width: 48,
                         height: 48,
-                        borderRadius: 1.5,
+                        flexShrink: 0,
                         display: 'flex',
+                        borderRadius: 1.5,
                         alignItems: 'center',
                         justifyContent: 'center',
-                        bgcolor: `${color}15`,
-                        flexShrink: 0,
+                        color,
+                        bgcolor: alpha(color, 0.1),
                     }}
                 >
-                    <Iconify icon={getIcon() as any} width={24} sx={{ color }} />
+                    <Iconify icon={getIcon(item.label) as any} width={28} />
                 </Box>
-                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Typography variant="h2" sx={{ color: 'text.primary', fontWeight: 800, mb: 0.25 }}>
-                        {value}
+
+                <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, mb: 0.5 }}>
+                        {item.label}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.8125rem' }}>
-                        {title}
+                    <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800 }}>
+                        {item.value?.toLocaleString()}
                     </Typography>
                 </Box>
             </Stack>
+
+            <Box
+                sx={{
+                    top: -16,
+                    right: -16,
+                    width: 80,
+                    height: 80,
+                    opacity: 0.08,
+                    position: 'absolute',
+                    borderRadius: '50%',
+                    bgcolor: color,
+                }}
+            />
         </Card>
     );
-}
-
-function getIndicatorColor(indicator: string) {
-    switch (indicator) {
-        case 'Green': return '#4CAF50';
-        case 'Red': return '#F44336';
-        case 'Blue': return '#2196F3';
-        case 'Orange': return '#FF9800';
-        case 'Purple': return '#9C27B0';
-        default: return '#2196F3';
-    }
 }

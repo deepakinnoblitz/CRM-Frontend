@@ -169,10 +169,13 @@ export async function getPurchase(name: string) {
     return (await res.json()).message;
 }
 
-export async function getDoctypeList(doctype: string, fields?: string[]) {
+export async function getDoctypeList(doctype: string, fields?: string[], filters?: any) {
     const params: any = { doctype };
     if (fields) {
         params.fields = JSON.stringify(fields);
+    }
+    if (filters) {
+        params.filters = JSON.stringify(filters);
     }
     const query = new URLSearchParams(params);
 

@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 import Box from '@mui/material/Box';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
@@ -6,6 +8,9 @@ import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 
+import { getExpense } from 'src/api/expenses';
+
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -13,10 +18,25 @@ import { Iconify } from 'src/components/iconify';
 type Props = {
     open: boolean;
     onClose: () => void;
-    expense: any;
+    expenseId: string | null;
 };
 
-export function ExpenseDetailsDialog({ open, onClose, expense }: Props) {
+export function ExpenseDetailsDialog({ open, onClose, expenseId }: Props) {
+    const [expense, setExpense] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (open && expenseId) {
+            setLoading(true);
+            getExpense(expenseId)
+                .then(setExpense)
+                .catch((err) => console.error('Failed to fetch expense details:', err))
+                .finally(() => setLoading(false));
+        } else {
+            setExpense(null);
+        }
+    }, [open, expenseId]);
+
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
             <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
@@ -27,7 +47,11 @@ export function ExpenseDetailsDialog({ open, onClose, expense }: Props) {
             </DialogTitle>
 
             <DialogContent sx={{ p: 4, m: 2, mt: 4 }}>
-                {expense ? (
+                {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
+                        <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
+                    </Box>
+                ) : expense ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                         {/* Header Info */}
                         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5 }}>
@@ -52,10 +76,11 @@ export function ExpenseDetailsDialog({ open, onClose, expense }: Props) {
                                 </Typography>
                             </Box>
                             <Box sx={{ textAlign: 'right' }}>
-                                <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                                <Label variant="soft" color="warning">Expense</Label>
+                                <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main', mt: 1 }}>
                                     ₹{expense.total?.toLocaleString() || 0}
                                 </Typography>
-                                <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.disabled', fontWeight: 700 }}>
+                                <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'text.disabled', fontWeight: 700 }}>
                                     ID: {expense.name}
                                 </Typography>
                             </Box>
@@ -73,6 +98,7 @@ export function ExpenseDetailsDialog({ open, onClose, expense }: Props) {
                                     gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
                                 }}
                             >
+                                <DetailItem label="Expense No" value={expense.expense_no} icon="solar:hashtag-square-bold" />
                                 <DetailItem label="Category" value={expense.expense_category} icon="solar:tag-bold" />
                                 <DetailItem
                                     label="Date"
@@ -80,7 +106,52 @@ export function ExpenseDetailsDialog({ open, onClose, expense }: Props) {
                                     icon="solar:calendar-bold"
                                 />
                                 <DetailItem label="Payment Type" value={expense.payment_type} icon="solar:card-bold" />
-                                <DetailItem label="Amount" value={`₹${expense.total?.toLocaleString() || 0}`} icon="solar:dollar-bold" />
+                            </Box>
+                        </Box>
+
+                        {/* Items Table */}
+                        <Box>
+                            <SectionHeader title="Items" icon="solar:cart-large-minimalistic-bold" />
+                            <Box sx={{
+                                bgcolor: 'background.neutral',
+                                borderRadius: 2,
+                                overflow: 'hidden',
+                                border: (theme) => `1px solid ${theme.palette.divider}`
+                            }}>
+                                <Box sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                                    p: 1.5,
+                                    bgcolor: (theme) => theme.palette.grey[200],
+                                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`
+                                }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary' }}>ITEM</Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textAlign: 'right' }}>QTY</Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textAlign: 'right' }}>PRICE</Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textAlign: 'right' }}>AMOUNT</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                    {expense.table_qecz?.map((item: any, index: number) => (
+                                        <Box key={index} sx={{
+                                            display: 'grid',
+                                            gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                                            p: 1.5,
+                                            borderBottom: (theme) => index !== expense.table_qecz.length - 1 ? `1px solid ${theme.palette.divider}` : 'none'
+                                        }}>
+                                            <Box>
+                                                <Typography variant="subtitle2">{item.items}</Typography>
+                                            </Box>
+                                            <Typography variant="body2" sx={{ textAlign: 'right' }}>{item.quantity}</Typography>
+                                            <Typography variant="body2" sx={{ textAlign: 'right' }}>{item.price}</Typography>
+                                            <Typography variant="body2" sx={{ textAlign: 'right', fontWeight: 600 }}>{item.amount}</Typography>
+                                        </Box>
+                                    ))}
+                                    {(!expense.table_qecz || expense.table_qecz.length === 0) && (
+                                        <Box sx={{ p: 3, textAlign: 'center' }}>
+                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>No items found</Typography>
+                                        </Box>
+                                    )}
+                                </Box>
                             </Box>
                         </Box>
 
@@ -99,7 +170,7 @@ export function ExpenseDetailsDialog({ open, onClose, expense }: Props) {
                 ) : (
                     <Box sx={{ py: 10, textAlign: 'center' }}>
                         <Iconify icon={"solar:ghost-bold" as any} width={64} sx={{ color: 'text.disabled', mb: 2 }} />
-                        <Typography variant="h6" sx={{ color: 'text.secondary' }}>No Expense Found</Typography>
+                        <Typography variant="h6" sx={{ color: 'text.secondary' }}>Expense Not Found</Typography>
                     </Box>
                 )}
             </DialogContent>
@@ -133,3 +204,4 @@ function DetailItem({ label, value, icon }: { label: string; value?: string | nu
         </Box>
     );
 }
+

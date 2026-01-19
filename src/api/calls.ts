@@ -5,6 +5,8 @@ export interface Call {
     title: string;
     call_for: string;
     lead_name?: string;
+    contact_name?: string;
+    account_name?: string;
     call_start_time: string;
     call_end_time?: string;
     outgoing_call_status: string;

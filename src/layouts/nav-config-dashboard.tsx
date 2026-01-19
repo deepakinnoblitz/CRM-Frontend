@@ -194,7 +194,8 @@ export const salesNavData = [
       { title: 'Purchase Report', path: '/reports/purchase' },
       { title: 'Expense Report', path: '/reports/expense' },
       { title: 'Estimation Report', path: '/reports/estimation' },
-      { title: 'Invoice Collection Report', path: '/reports/invoice-collection' }
+      { title: 'Invoice Report', path: '/reports/invoice' },
+      { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' }
     ]
   }
 ];
@@ -346,7 +347,8 @@ export const crmAndSalesNavData = [
       { title: 'Purchase Report', path: '/reports/purchase' },
       { title: 'Expense Report', path: '/reports/expense' },
       { title: 'Estimation Report', path: '/reports/estimation' },
-      { title: 'Invoice Collection Report', path: '/reports/invoice-collection' }
+      { title: 'Invoice Report', path: '/reports/invoice' },
+      { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' }
     ]
   }
 ];

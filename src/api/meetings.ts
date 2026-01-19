@@ -3,6 +3,8 @@ export interface Meeting {
     title: string;
     meet_for: string;
     lead_name?: string;
+    contact_name?: string;
+    account_name?: string;
     from: string;
     to?: string;
     outgoing_call_status: string;

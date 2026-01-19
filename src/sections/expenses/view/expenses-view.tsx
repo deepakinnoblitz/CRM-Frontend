@@ -410,7 +410,7 @@ export function ExpensesView() {
             <ExpenseDetailsDialog
                 open={openView}
                 onClose={() => setOpenView(false)}
-                expense={viewExpense}
+                expenseId={viewExpense ? viewExpense.name : null}
             />
 
             {/* Snackbar */}

@@ -75,8 +75,8 @@ export function CallsView() {
 
     useEffect(() => {
         loadCalls();
-        getDoctypeList('Lead', ['name', 'lead_name']).then(setLeadOptions);
-        getDoctypeList('Contacts', ['name', 'first_name']).then(setContactOptions);
+        getDoctypeList('Lead', ['name', 'lead_name', 'converted_contact', 'converted_account']).then(setLeadOptions);
+        getDoctypeList('Contacts', ['name', 'first_name', 'last_name']).then(setContactOptions);
         getDoctypeList('Accounts', ['name', 'account_name']).then(setAccountOptions);
     }, [loadCalls]);
 
@@ -400,7 +400,13 @@ export function CallsView() {
                                         <Select
                                             label="Call For"
                                             value={callData.call_for}
-                                            onChange={(e) => setCallData({ ...callData, call_for: e.target.value as string, lead_name: '' })}
+                                            onChange={(e) => setCallData({
+                                                ...callData,
+                                                call_for: e.target.value as string,
+                                                lead_name: '',
+                                                contact_name: '',
+                                                account_name: ''
+                                            })}
                                         >
                                             <MenuItem value="Lead">Lead</MenuItem>
                                             <MenuItem value="Contact">Contact</MenuItem>
@@ -416,7 +422,14 @@ export function CallsView() {
                                             options={leadOptions}
                                             getOptionLabel={(option) => typeof option === 'string' ? option : `${option.lead_name} (${option.name})`}
                                             value={leadOptions.find(opt => opt.name === callData.lead_name) || null}
-                                            onChange={(_, newValue) => setCallData({ ...callData, lead_name: newValue?.name || '' })}
+                                            onChange={(_, newValue) => {
+                                                setCallData({
+                                                    ...callData,
+                                                    lead_name: newValue?.name || '',
+                                                    contact_name: newValue?.converted_contact || '',
+                                                    account_name: newValue?.converted_account || ''
+                                                });
+                                            }}
                                             renderInput={(params) => <TextField {...params} label="Select Lead" />}
                                         />
                                     </Grid>
@@ -427,9 +440,9 @@ export function CallsView() {
                                         <Autocomplete
                                             fullWidth
                                             options={contactOptions}
-                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.first_name} ${option.last_name} (${option.name})`}
-                                            value={contactOptions.find(opt => opt.name === callData.lead_name) || null}
-                                            onChange={(_, newValue) => setCallData({ ...callData, lead_name: newValue?.name || '' })}
+                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.first_name || ''} ${option.last_name || ''} (${option.name})`.trim()}
+                                            value={contactOptions.find(opt => opt.name === callData.contact_name) || null}
+                                            onChange={(_, newValue) => setCallData({ ...callData, contact_name: newValue?.name || '' })}
                                             renderInput={(params) => <TextField {...params} label="Select Contact" />}
                                         />
                                     </Grid>
@@ -441,8 +454,8 @@ export function CallsView() {
                                             fullWidth
                                             options={accountOptions}
                                             getOptionLabel={(option) => typeof option === 'string' ? option : `${option.account_name} (${option.name})`}
-                                            value={accountOptions.find(opt => opt.name === callData.lead_name) || null}
-                                            onChange={(_, newValue) => setCallData({ ...callData, lead_name: newValue?.name || '' })}
+                                            value={accountOptions.find(opt => opt.name === callData.account_name) || null}
+                                            onChange={(_, newValue) => setCallData({ ...callData, account_name: newValue?.name || '' })}
                                             renderInput={(params) => <TextField {...params} label="Select Account" />}
                                         />
                                     </Grid>
