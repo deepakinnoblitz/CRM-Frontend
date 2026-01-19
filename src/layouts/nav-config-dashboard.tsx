@@ -249,7 +249,7 @@ export const crmNavData = [
     icon: <Iconify icon={"solar:videocamera-record-bold-duotone" as any} />,
   },
   {
-    title: 'Reports',
+    title: 'Report',
     path: '/reports',
     icon: <Iconify icon={"solar:chart-square-bold-duotone" as any} />,
     children: [
