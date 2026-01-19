@@ -1166,6 +1166,12 @@ export function UserView() {
           setCurrentLeadId(null);
         }}
         leadId={currentLeadId}
+        onEdit={() => {
+          if (currentLeadId) {
+            setOpenView(false);
+            handleEditRow({ id: currentLeadId });
+          }
+        }}
       />
 
       <Snackbar

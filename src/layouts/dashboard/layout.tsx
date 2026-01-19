@@ -14,7 +14,7 @@ import { layoutClasses } from '../core/classes';
 import { _account } from '../nav-config-account';
 import { dashboardLayoutVars } from './css-vars';
 import { MainSection } from '../core/main-section';
-import { Searchbar } from '../components/searchbar';
+// import { Searchbar } from '../components/searchbar';
 import { getNavData } from '../nav-config-dashboard';
 import { MenuButton } from '../components/menu-button';
 import { HeaderSection } from '../core/header-section';
@@ -80,7 +80,7 @@ export function DashboardLayout({
       rightArea: (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 0.75 } }}>
           {/** @slot Searchbar */}
-          <Searchbar />
+          {/* <Searchbar /> */}
 
           {/** @slot Account drawer */}
           <AccountPopover data={_account} />

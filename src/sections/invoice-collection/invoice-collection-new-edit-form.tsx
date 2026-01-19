@@ -48,11 +48,12 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
         customer_name: '',
         collection_date: new Date().toISOString().split('T')[0],
         amount_to_pay: 0,
-        amount_collected: 0,
+        amount_collected: 0 as number | string,
         amount_pending: 0,
         mode_of_payment: 'Cash',
         remarks: '',
     });
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (currentInvoiceCollection) {
@@ -90,6 +91,15 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
 
             return updated;
         });
+
+        // Clear error when field changes
+        if (errors[field]) {
+            setErrors(prev => {
+                const updated = { ...prev };
+                delete updated[field];
+                return updated;
+            });
+        }
     };
 
     const handleInvoiceChange = async (name: string) => {
@@ -113,14 +123,42 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
     };
 
     const handleSubmit = async () => {
+        const newErrors: Record<string, string> = {};
+        const normalizedAmount = Number(formData.amount_collected);
+
+        // Mandatory Field Validations
+        if (!formData.invoice) {
+            newErrors.invoice = 'Invoice is required';
+        }
+        if (!formData.collection_date) {
+            newErrors.collection_date = 'Collection Date is required';
+        }
+        if (!formData.mode_of_payment) {
+            newErrors.mode_of_payment = 'Mode of Payment is required';
+        }
+        if (!formData.amount_collected || normalizedAmount <= 0) {
+            newErrors.amount_collected = 'Amount Collected must be greater than zero';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            setSnackbar({ open: true, message: 'Please fill in all mandatory fields', severity: 'error' });
+            return;
+        }
+
+        const submissionData = {
+            ...formData,
+            amount_collected: normalizedAmount,
+        };
+
         try {
             setLoading(true);
             onLoadingChange?.(true);
             if (currentInvoiceCollection) {
-                await updateInvoiceCollection(currentInvoiceCollection.name, formData);
+                await updateInvoiceCollection(currentInvoiceCollection.name, submissionData);
                 setSnackbar({ open: true, message: 'Update success!', severity: 'success' });
             } else {
-                await createInvoiceCollection(formData);
+                await createInvoiceCollection(submissionData);
                 setSnackbar({ open: true, message: 'Create success!', severity: 'success' });
             }
             setTimeout(() => router.push('/invoice-collections'), 1500);
@@ -159,7 +197,16 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
                         getOptionLabel={(option) => typeof option === 'string' ? option : `${option.name} - ${option.customer_name}`}
                         value={invoiceOptions.find(opt => opt.name === formData.invoice) || null}
                         onChange={(_, newValue) => handleInvoiceChange(newValue?.name || '')}
-                        renderInput={(params) => <TextField {...params} label="Invoice" disabled={!!currentInvoiceCollection} />}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Invoice"
+                                disabled={!!currentInvoiceCollection}
+                                error={!!errors.invoice}
+                                helperText={errors.invoice}
+                                required
+                            />
+                        )}
                     />
 
                     <TextField
@@ -168,6 +215,9 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
                         value={formData.collection_date}
                         onChange={(e) => handleChange('collection_date', e.target.value)}
                         InputLabelProps={{ shrink: true }}
+                        error={!!errors.collection_date}
+                        helperText={errors.collection_date}
+                        required
                     />
 
                     <TextField
@@ -201,11 +251,27 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
                         label="Amount Collected"
                         type="number"
                         value={formData.amount_collected}
-                        onChange={(e) => handleChange('amount_collected', Number(e.target.value))}
-                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => {
+                            const val = e.target.value === '' ? '' : Number(e.target.value);
+                            handleChange('amount_collected', val);
+                        }}
+                        onFocus={(e) => {
+                            if (formData.amount_collected === 0) {
+                                handleChange('amount_collected', '');
+                            } else {
+                                e.target.select();
+                            }
+                        }}
+                        onBlur={(e) => {
+                            if (formData.amount_collected === '' || formData.amount_collected === null) {
+                                handleChange('amount_collected', 0);
+                            }
+                        }}
                         InputProps={{
                             startAdornment: <InputAdornment position="start">₹</InputAdornment>,
                         }}
+                        error={!!errors.amount_collected}
+                        helperText={errors.amount_collected}
                         required
                     />
 
@@ -231,6 +297,8 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
                         label="Mode of Payment"
                         value={formData.mode_of_payment}
                         onChange={(e) => handleChange('mode_of_payment', e.target.value)}
+                        error={!!errors.mode_of_payment}
+                        helperText={errors.mode_of_payment}
                         required
                     >
                         {paymentTypeOptions.map((option) => (
