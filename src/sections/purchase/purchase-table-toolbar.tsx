@@ -89,7 +89,7 @@ export function PurchaseTableToolbar({
                             <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
                         </InputAdornment>
                     }
-                    sx={{ maxWidth: 320 }}
+                    sx={{ maxWidth: 480, width: 1 }}
                 />
             )}
 

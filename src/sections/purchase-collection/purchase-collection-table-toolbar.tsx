@@ -15,7 +15,7 @@ import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-type InvoiceTableToolbarProps = {
+type Props = {
     numSelected: number;
     filterName: string;
     onFilterName: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -25,22 +25,22 @@ type InvoiceTableToolbarProps = {
 };
 
 const SORT_OPTIONS = [
-    { value: 'invoice_date_desc', label: 'Date: Newest First' },
-    { value: 'invoice_date_asc', label: 'Date: Oldest First' },
-    { value: 'grand_total_desc', label: 'Amount: High to Low' },
-    { value: 'grand_total_asc', label: 'Amount: Low to High' },
-    { value: 'customer_name_asc', label: 'Customer: A to Z' },
-    { value: 'customer_name_desc', label: 'Customer: Z to A' },
+    { value: 'collection_date_desc', label: 'Date: Newest First' },
+    { value: 'collection_date_asc', label: 'Date: Oldest First' },
+    { value: 'amount_collected_desc', label: 'Amount: High to Low' },
+    { value: 'amount_collected_asc', label: 'Amount: Low to High' },
+    { value: 'vendor_name_asc', label: 'Vendor: A to Z' },
+    { value: 'vendor_name_desc', label: 'Vendor: Z to A' },
 ];
 
-export function InvoiceTableToolbar({
+export default function PurchaseCollectionTableToolbar({
     numSelected,
     filterName,
     onFilterName,
     onDelete,
-    sortBy = 'invoice_date_desc',
+    sortBy = 'collection_date_desc',
     onSortChange,
-}: InvoiceTableToolbarProps) {
+}: Props) {
     const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
 
     const handleSortClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -81,7 +81,7 @@ export function InvoiceTableToolbar({
                 <OutlinedInput
                     value={filterName}
                     onChange={onFilterName}
-                    placeholder="Search invoices..."
+                    placeholder="Search by ID, Purchase, or Vendor..."
                     startAdornment={
                         <InputAdornment position="start">
                             <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />

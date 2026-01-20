@@ -1,7 +1,6 @@
 import dayjs from 'dayjs';
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 
-// 2️⃣ MUI Components (sorted alphabetically)
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
@@ -16,26 +15,21 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useRouter } from 'src/routes/hooks';
 
-import { getInvoice } from 'src/api/invoice';
-import { getDoctypeList } from 'src/api/leads';
-import {
-    createInvoiceCollection,
-    updateInvoiceCollection,
-    InvoiceCollection,
-} from 'src/api/invoice-collection';
-
+import { getPurchase } from 'src/api/purchase';
+import { getDoc, getDoctypeList } from 'src/api/leads';
+import { createPurchaseCollection, updatePurchaseCollection, PurchaseCollection } from 'src/api/purchase-collection';
 
 // ----------------------------------------------------------------------
 
 type Props = {
-    currentInvoiceCollection?: InvoiceCollection;
+    currentPurchaseCollection?: PurchaseCollection;
     onLoadingChange?: (loading: boolean) => void;
 };
 
-const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onLoadingChange }: Props, ref) => {
+const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, onLoadingChange }: Props, ref) => {
     const router = useRouter();
 
-    const [invoiceOptions, setInvoiceOptions] = useState<any[]>([]);
+    const [purchaseOptions, setPurchaseOptions] = useState<any[]>([]);
     const [paymentTypeOptions, setPaymentTypeOptions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -45,9 +39,9 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
     });
 
     const [formData, setFormData] = useState({
-        invoice: '',
-        customer: '',
-        customer_name: '',
+        purchase: '',
+        vendor: '',
+        vendor_name: '',
         collection_date: new Date().toISOString().split('T')[0],
         amount_to_pay: 0,
         amount_collected: 0 as number | string,
@@ -58,24 +52,24 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        if (currentInvoiceCollection) {
+        if (currentPurchaseCollection) {
             setFormData({
-                invoice: currentInvoiceCollection.invoice || '',
-                customer: currentInvoiceCollection.customer || '',
-                customer_name: currentInvoiceCollection.customer_name || '',
-                collection_date: currentInvoiceCollection.collection_date || '',
-                amount_to_pay: currentInvoiceCollection.amount_to_pay || 0,
-                amount_collected: currentInvoiceCollection.amount_collected || 0,
-                amount_pending: currentInvoiceCollection.amount_pending || 0,
-                mode_of_payment: currentInvoiceCollection.mode_of_payment || 'Cash',
-                remarks: currentInvoiceCollection.remarks || '',
+                purchase: currentPurchaseCollection.purchase || '',
+                vendor: currentPurchaseCollection.vendor || '',
+                vendor_name: currentPurchaseCollection.vendor_name || '',
+                collection_date: currentPurchaseCollection.collection_date || '',
+                amount_to_pay: currentPurchaseCollection.amount_to_pay || 0,
+                amount_collected: currentPurchaseCollection.amount_collected || 0,
+                amount_pending: currentPurchaseCollection.amount_pending || 0,
+                mode_of_payment: currentPurchaseCollection.mode_of_payment || 'Cash',
+                remarks: currentPurchaseCollection.remarks || '',
             });
         }
-    }, [currentInvoiceCollection]);
+    }, [currentPurchaseCollection]);
 
     useEffect(() => {
-        getDoctypeList('Invoice', ['name', 'client_name', 'customer_name', 'grand_total']).then((data) => {
-            setInvoiceOptions(data);
+        getDoctypeList('Purchase', ['name', 'vendor_name', 'grand_total', 'balance_amount']).then((data) => {
+            setPurchaseOptions(data);
         });
         getDoctypeList('Payment Type', ['name']).then((data) => {
             setPaymentTypeOptions(data);
@@ -86,15 +80,13 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
         setFormData(prev => {
             const updated = { ...prev, [field]: value };
 
-            // Auto-calculate amount_pending when amount_collected changes
             if (field === 'amount_collected') {
-                updated.amount_pending = Math.max(0, (updated.amount_to_pay || 0) - (value || 0));
+                updated.amount_pending = Math.max(0, (updated.amount_to_pay || 0) - (Number(value) || 0));
             }
 
             return updated;
         });
 
-        // Clear error when field changes
         if (errors[field]) {
             setErrors(prev => {
                 const updated = { ...prev };
@@ -104,22 +96,30 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
         }
     };
 
-    const handleInvoiceChange = async (name: string) => {
-        handleChange('invoice', name);
+    const handlePurchaseChange = async (name: string) => {
+        handleChange('purchase', name);
         if (name) {
             try {
-                const invoiceData = await getInvoice(name);
-                const amountToPay = invoiceData.balance_amount || invoiceData.grand_total || 0;
+                const purchaseData = await getPurchase(name);
+                const amountToPay = purchaseData.balance_amount || purchaseData.grand_total || 0;
+
+                // Fetch real vendor name from Contacts since purchaseData.vendor_name is just the ID
+                let vendorRealName = '';
+                if (purchaseData.vendor_name) {
+                    const contactData = await getDoc('Contacts', purchaseData.vendor_name);
+                    vendorRealName = contactData.first_name || '';
+                }
+
                 setFormData(prev => ({
                     ...prev,
-                    invoice: name,
-                    customer: invoiceData.client_name || invoiceData.customer_id || '',
-                    customer_name: invoiceData.customer_name || '',
+                    purchase: name,
+                    vendor: purchaseData.vendor_name || '',
+                    vendor_name: vendorRealName,
                     amount_to_pay: amountToPay,
-                    amount_pending: amountToPay, // Initially, pending = amount to pay
+                    amount_pending: Math.max(0, amountToPay - (Number(prev.amount_collected) || 0)),
                 }));
             } catch (error) {
-                console.error("Failed to fetch invoice details", error);
+                console.error("Failed to fetch purchase details", error);
             }
         }
     };
@@ -128,9 +128,8 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
         const newErrors: Record<string, string> = {};
         const normalizedAmount = Number(formData.amount_collected);
 
-        // Mandatory Field Validations
-        if (!formData.invoice) {
-            newErrors.invoice = 'Invoice is required';
+        if (!formData.purchase) {
+            newErrors.purchase = 'Purchase is required';
         }
         if (!formData.collection_date) {
             newErrors.collection_date = 'Collection Date is required';
@@ -156,14 +155,14 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
         try {
             setLoading(true);
             onLoadingChange?.(true);
-            if (currentInvoiceCollection) {
-                await updateInvoiceCollection(currentInvoiceCollection.name, submissionData);
+            if (currentPurchaseCollection) {
+                await updatePurchaseCollection(currentPurchaseCollection.name, submissionData);
                 setSnackbar({ open: true, message: 'Update success!', severity: 'success' });
             } else {
-                await createInvoiceCollection(submissionData);
+                await createPurchaseCollection(submissionData);
                 setSnackbar({ open: true, message: 'Create success!', severity: 'success' });
             }
-            setTimeout(() => router.push('/invoice-collections'), 1500);
+            setTimeout(() => router.push('/purchase-collections'), 1500);
         } catch (error: any) {
             setSnackbar({ open: true, message: error.message || 'Something went wrong', severity: 'error' });
             console.error(error);
@@ -173,7 +172,6 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
         }
     };
 
-    // Expose handleSubmit method to parent component
     useImperativeHandle(ref, () => ({
         handleSubmit,
     }));
@@ -186,26 +184,27 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
         <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Card sx={{ p: 3 }}>
                 <Box
-                    rowGap={3}
-                    columnGap={3}
                     display="grid"
-                    gridTemplateColumns={{
-                        xs: 'repeat(1, 1fr)',
-                        sm: 'repeat(2, 1fr)',
-                    }}
+                    columnGap={3}
+                    rowGap={3}
+                    gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
                 >
                     <Autocomplete
-                        options={invoiceOptions}
-                        getOptionLabel={(option) => typeof option === 'string' ? option : `${option.name} - ${option.customer_name}`}
-                        value={invoiceOptions.find(opt => opt.name === formData.invoice) || null}
-                        onChange={(_, newValue) => handleInvoiceChange(newValue?.name || '')}
+                        fullWidth
+                        options={purchaseOptions}
+                        getOptionLabel={(option) => {
+                            if (typeof option === 'string') return option;
+                            return option.name || '';
+                        }}
+                        value={purchaseOptions.find((opt) => opt.name === formData.purchase) || null}
+                        onChange={(_e, newValue) => handlePurchaseChange(newValue?.name || '')}
                         renderInput={(params) => (
                             <TextField
                                 {...params}
-                                label="Invoice"
-                                disabled={!!currentInvoiceCollection}
-                                error={!!errors.invoice}
-                                helperText={errors.invoice}
+                                label="Purchase"
+                                disabled={!!currentPurchaseCollection}
+                                error={!!errors.purchase}
+                                helperText={errors.purchase}
                                 required
                             />
                         )}
@@ -226,16 +225,16 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
                     />
 
                     <TextField
-                        label="Customer ID"
-                        value={formData.customer}
+                        label="Vendor ID"
+                        value={formData.vendor}
                         InputProps={{
                             readOnly: true,
                         }}
                     />
 
                     <TextField
-                        label="Customer Name"
-                        value={formData.customer_name}
+                        label="Vendor Name"
+                        value={formData.vendor_name}
                         InputProps={{
                             readOnly: true,
                         }}
@@ -342,4 +341,4 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
     );
 });
 
-export default InvoiceCollectionNewEditForm;
+export default PurchaseCollectionNewEditForm;

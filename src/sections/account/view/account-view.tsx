@@ -35,6 +35,7 @@ import { TableNoData } from '../../user/table-no-data';
 import { AccountTableRow } from '../account-table-row';
 import { TableEmptyRows } from '../../user/table-empty-rows';
 import { AccountImportDialog } from '../account-import-dialog';
+import { AccountTableFiltersDrawer } from '../account-table-filters-drawer';
 import { UserTableHead as AccountTableHead } from '../../user/user-table-head';
 import { AccountDetailsDialog } from '../../report/account/account-details-dialog';
 import { UserTableToolbar as AccountTableToolbar } from '../../user/user-table-toolbar';
@@ -47,9 +48,15 @@ export function AccountView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
-    const [sortBy, setSortBy] = useState('creation_desc');
+    const [filters, setFilters] = useState({
+        country: 'all',
+        state: 'all',
+        city: 'all',
+    });
+    const [sortBy, setSortBy] = useState('modified_desc');
     const [total, setTotal] = useState(0);
     const [selected, setSelected] = useState<string[]>([]);
+    const [openFilters, setOpenFilters] = useState(false);
     const [openCreate, setOpenCreate] = useState(false);
     const [openImport, setOpenImport] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -71,6 +78,9 @@ export function AccountView() {
     const [countryOptions, setCountryOptions] = useState<string[]>([]);
     const [stateOptions, setStateOptions] = useState<string[]>([]);
     const [cityOptions, setCityOptions] = useState<string[]>([]);
+    // Filter-specific location options
+    const [filterStateOptions, setFilterStateOptions] = useState<string[]>([]);
+    const [filterCityOptions, setFilterCityOptions] = useState<string[]>([]);
 
     // Permissions
     const [permissions, setPermissions] = useState({ read: false, write: false, delete: false });
@@ -101,6 +111,7 @@ export function AccountView() {
                 page: page + 1,
                 page_size: rowsPerPage,
                 search: filterName,
+                filterValues: filters,
                 sort_by: sortBy,
             });
             setAccounts(res.data || []);
@@ -112,7 +123,26 @@ export function AccountView() {
         } finally {
             setLoading(false);
         }
-    }, [page, rowsPerPage, filterName, sortBy]);
+    }, [page, rowsPerPage, filterName, filters, sortBy]);
+
+    const handleFilters = (update: any) => {
+        setFilters((prev) => ({ ...prev, ...update }));
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            country: 'all',
+            state: 'all',
+            city: 'all',
+        });
+        setPage(0);
+    };
+
+    const canReset =
+        filters.country !== 'all' ||
+        filters.state !== 'all' ||
+        filters.city !== 'all';
 
     useEffect(() => {
         loadPermissions();
@@ -164,6 +194,42 @@ export function AccountView() {
             setCityOptions([]);
         }
     }, [state, country]);
+
+    // Update filter state options when filter country changes
+    useEffect(() => {
+        if (filters.country && filters.country !== 'all') {
+            const countryData = locationData.find((c: any) => c.country === filters.country);
+            if (countryData) {
+                const states = countryData.states.map((s: any) => s.name);
+                setFilterStateOptions([...states, "Others"]);
+            } else {
+                setFilterStateOptions([]);
+            }
+        } else {
+            setFilterStateOptions([]);
+        }
+    }, [filters.country]);
+
+    // Update filter city options when filter state changes
+    useEffect(() => {
+        if (filters.state && filters.state !== 'all' && filters.country && filters.country !== 'all') {
+            if (filters.state === 'Others') {
+                setFilterCityOptions(['Others']);
+            } else {
+                const countryData = locationData.find((c: any) => c.country === filters.country);
+                if (countryData) {
+                    const stateData = countryData.states.find((s: any) => s.name === filters.state);
+                    if (stateData) {
+                        setFilterCityOptions([...stateData.cities, "Others"]);
+                    } else {
+                        setFilterCityOptions(["Others"]);
+                    }
+                }
+            }
+        } else {
+            setFilterCityOptions([]);
+        }
+    }, [filters.state, filters.country]);
 
     const handleOpenCreate = () => {
         setIsEdit(false);
@@ -369,8 +435,8 @@ export function AccountView() {
         setPage(0);
     };
 
-    const notFound = !loading && !accounts.length && !!filterName;
-    const empty = !loading && !accounts.length && !filterName;
+    const notFound = !loading && !accounts.length && (!!filterName || canReset);
+    const empty = !loading && !accounts.length && !filterName && !canReset;
 
     return (
         <DashboardContent>
@@ -408,9 +474,17 @@ export function AccountView() {
                     filterName={filterName}
                     onFilterName={handleFilterByName}
                     searchPlaceholder="Search accounts..."
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
                     sortBy={sortBy}
                     onSortChange={setSortBy}
                     onDelete={handleBulkDelete}
+                    sortOptions={[
+                        { value: 'modified_desc', label: 'Newest First' },
+                        { value: 'modified_asc', label: 'Oldest First' },
+                        { value: 'account_name_asc', label: 'Account Name: A to Z' },
+                        { value: 'account_name_desc', label: 'Account Name: Z to A' },
+                    ]}
                 />
 
                 <Scrollbar>
@@ -499,6 +573,21 @@ export function AccountView() {
                     onRowsPerPageChange={onChangeRowsPerPage}
                 />
             </Card>
+
+            <AccountTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                options={{
+                    countries: countryOptions.filter((c) => c !== ''),
+                    states: filterStateOptions,
+                    cities: filterCityOptions,
+                }}
+            />
 
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -686,6 +775,7 @@ export function AccountView() {
                     setCurrentAccount(null);
                 }}
                 accountId={currentAccount?.name}
+                onEdit={handleEditRow}
             />
 
             <ConfirmDialog

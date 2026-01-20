@@ -74,6 +74,9 @@ export const InvoiceCollectionListPage = lazy(() => import('src/pages/invoice-co
 export const InvoiceCollectionCreatePage = lazy(() => import('src/pages/invoice-collection/new'));
 export const InvoiceCollectionEditPage = lazy(() => import('src/pages/invoice-collection/edit'));
 export const InvoiceCollectionDetailsPage = lazy(() => import('src/pages/invoice-collection/details'));
+export const PurchaseCollectionListPage = lazy(() => import('src/pages/purchase-collection/list'));
+export const PurchaseCollectionCreatePage = lazy(() => import('src/pages/purchase-collection/new'));
+export const PurchaseCollectionEditPage = lazy(() => import('src/pages/purchase-collection/edit'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
 
@@ -182,6 +185,15 @@ export const routesSection: RouteObject[] = [
           { path: 'new', element: <InvoiceCollectionCreatePage /> },
           { path: ':id/edit', element: <InvoiceCollectionEditPage /> },
           { path: ':id/view', element: <InvoiceCollectionDetailsPage /> },
+        ],
+      },
+
+      {
+        path: 'purchase-collections',
+        children: [
+          { index: true, element: <PurchaseCollectionListPage /> },
+          { path: 'new', element: <PurchaseCollectionCreatePage /> },
+          { path: ':id/edit', element: <PurchaseCollectionEditPage /> },
         ],
       },
 

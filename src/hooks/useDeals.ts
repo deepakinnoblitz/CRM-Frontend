@@ -6,10 +6,11 @@ import { fetchDeals } from 'src/api/deals';
 
 export function useDeals(
     page: number,
-    rowsPerPage: number,
-    search: string,
+    pageSize: number,
+    search?: string,
     stage?: string,
-    sortBy?: string
+    sortBy?: string,
+    filterValues?: Record<string, any>
 ) {
     const [data, setData] = useState<Deal[]>([]);
     const [total, setTotal] = useState(0);
@@ -24,10 +25,11 @@ export function useDeals(
 
         fetchDeals({
             page: page + 1, // Frappe pages start from 1
-            page_size: rowsPerPage,
+            page_size: pageSize,
             search,
             stage,
             sort_by: sortBy,
+            filterValues,
         })
             .then((res) => {
                 if (res && typeof res === 'object' && 'data' in res) {
@@ -46,7 +48,7 @@ export function useDeals(
                 setTotal(0);
             })
             .finally(() => setLoading(false));
-    }, [page, rowsPerPage, search, stage, trigger, sortBy]);
+    }, [page, pageSize, search, stage, trigger, sortBy, filterValues]);
 
     return { data, total, loading, refetch };
 }

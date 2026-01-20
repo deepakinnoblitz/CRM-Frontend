@@ -5,27 +5,25 @@ import TableHead from '@mui/material/TableHead';
 import TableCell from '@mui/material/TableCell';
 import TableSortLabel from '@mui/material/TableSortLabel';
 
-import { visuallyHidden } from '../invoice/utils';
-
 // ----------------------------------------------------------------------
 
 type Props = {
+    order: 'asc' | 'desc';
     orderBy: string;
     rowCount: number;
+    headLabel: any[];
     numSelected: number;
-    order: 'asc' | 'desc';
     onSort: (id: string) => void;
-    headLabel: Record<string, any>[];
     onSelectAllRows: (checked: boolean) => void;
 };
 
-export function InvoiceCollectionTableHead({
+export default function PurchaseCollectionTableHead({
     order,
-    onSort,
     orderBy,
     rowCount,
     headLabel,
     numSelected,
+    onSort,
     onSelectAllRows,
 }: Props) {
     return (
@@ -35,9 +33,7 @@ export function InvoiceCollectionTableHead({
                     <Checkbox
                         indeterminate={numSelected > 0 && numSelected < rowCount}
                         checked={rowCount > 0 && numSelected === rowCount}
-                        onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                            onSelectAllRows(event.target.checked)
-                        }
+                        onChange={(event) => onSelectAllRows(event.target.checked)}
                     />
                 </TableCell>
 

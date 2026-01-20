@@ -182,6 +182,11 @@ export const salesNavData = [
     icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
   },
   {
+    title: 'Purchase Collections',
+    path: '/purchase-collections',
+    icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} />,
+  },
+  {
     title: 'Expenses',
     path: '/expenses',
     icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
@@ -195,7 +200,8 @@ export const salesNavData = [
       { title: 'Expense Report', path: '/reports/expense' },
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
-      { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' }
+      { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
+      { title: 'Purchase Collection Summary', path: '/reports/purchase-collection' }
     ]
   }
 ];
@@ -310,6 +316,11 @@ export const crmAndSalesNavData = [
     icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
   },
   {
+    title: 'Purchase Collections',
+    path: '/purchase-collections',
+    icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} />,
+  },
+  {
     title: 'Expenses',
     path: '/expenses',
     icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
@@ -348,7 +359,8 @@ export const crmAndSalesNavData = [
       { title: 'Expense Report', path: '/reports/expense' },
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
-      { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' }
+      { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
+      { title: 'Purchase Collection Summary', path: '/reports/purchase-collection' }
     ]
   }
 ];

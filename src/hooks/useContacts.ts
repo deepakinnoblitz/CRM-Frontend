@@ -2,7 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 
 import { fetchContacts } from 'src/api/contacts';
 
-export function useContacts(page: number, pageSize: number, search?: string, sortBy?: string) {
+export function useContacts(
+    page: number,
+    pageSize: number,
+    search?: string,
+    filterValues?: Record<string, any>,
+    sortBy?: string
+) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -10,7 +16,7 @@ export function useContacts(page: number, pageSize: number, search?: string, sor
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await fetchContacts({ page, page_size: pageSize, search, sort_by: sortBy });
+            const res = await fetchContacts({ page, page_size: pageSize, search, filterValues, sort_by: sortBy });
             // Handle new response structure with data and total
             if (res && typeof res === 'object' && 'data' in res) {
                 setData(res.data);
@@ -28,7 +34,7 @@ export function useContacts(page: number, pageSize: number, search?: string, sor
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, search, sortBy]);
+    }, [page, pageSize, search, filterValues, sortBy]);
 
     useEffect(() => {
         fetchData();
