@@ -1,53 +1,59 @@
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
+import Snackbar from '@mui/material/Snackbar';
 import TableBody from '@mui/material/TableBody';
-import TableHead from '@mui/material/TableHead';
 import TableCell from '@mui/material/TableCell';
+import TableHead from '@mui/material/TableHead';
+import AlertTitle from '@mui/material/AlertTitle';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
-import { getPurchase } from 'src/api/purchase';
-import { DashboardContent } from 'src/layouts/dashboard';
+import { fCurrency } from 'src/utils/format-number';
+import { handleDirectPrint } from 'src/utils/print';
 
-import { Label } from 'src/components/label';
+import { DashboardContent } from 'src/layouts/dashboard';
+import { getPurchase, deletePurchase, getPurchasePrintUrl } from 'src/api/purchase';
+
 import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 // ----------------------------------------------------------------------
 
-type Props = {
-    id?: string;
-};
-
-export function PurchaseDetailsView({ id }: Props) {
+export function PurchaseDetailsView() {
+    const { id } = useParams();
     const router = useRouter();
+
     const [purchase, setPurchase] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    const [fetching, setFetching] = useState(true);
+    const [deleting, setDeleting] = useState(false);
+    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
     useEffect(() => {
         if (id) {
             getPurchase(id)
                 .then(setPurchase)
                 .catch((err) => console.error('Failed to fetch purchase details:', err))
-                .finally(() => setLoading(false));
+                .finally(() => setFetching(false));
         }
     }, [id]);
 
-    if (loading) {
+    if (fetching) {
         return (
-            <DashboardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 20 }}>
-                    <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
-                </Box>
+            <DashboardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <CircularProgress />
             </DashboardContent>
         );
     }
@@ -55,169 +61,356 @@ export function PurchaseDetailsView({ id }: Props) {
     if (!purchase) {
         return (
             <DashboardContent>
-                <Box sx={{ py: 20, textAlign: 'center' }}>
-                    <Iconify icon={"solar:ghost-bold" as any} width={64} sx={{ color: 'text.disabled', mb: 2 }} />
-                    <Typography variant="h6" sx={{ color: 'text.secondary' }}>Purchase Not Found</Typography>
-                    <IconButton onClick={() => router.back()} sx={{ mt: 2 }}>Back</IconButton>
-                </Box>
+                <Typography variant="h4">Purchase not found</Typography>
+                <Button onClick={() => router.push('/purchase')} sx={{ mt: 3 }}>
+                    Go back to list
+                </Button>
             </DashboardContent>
         );
     }
 
+    const {
+        vendor_name,
+        bill_date,
+        bill_no,
+        payment_type,
+        payment_terms,
+        due_date,
+        description,
+        attach,
+        overall_discount_type,
+        overall_discount,
+        total_amount,
+        grand_total,
+        paid_amount,
+        balance_amount,
+        table_qecz = [],
+    } = purchase;
+
+    let parsedAttachments: { name: string; url: string }[] = [];
+    if (attach) {
+        try {
+            const parsed = JSON.parse(attach);
+            if (Array.isArray(parsed)) {
+                parsedAttachments = parsed;
+            } else {
+                parsedAttachments = [{ name: attach.split('/').pop() || 'Attachment', url: attach }];
+            }
+        } catch {
+            parsedAttachments = [{ name: attach.split('/').pop() || 'Attachment', url: attach }];
+        }
+    }
+
+    const totalTax = table_qecz.reduce((sum: number, item: any) => sum + (item.tax_amount || 0), 0);
+    const subTotal = total_amount + totalTax;
+    const discountAmount = overall_discount_type === 'Flat' ? overall_discount : (subTotal * overall_discount) / 100;
+
+    const handlePrint = () => {
+        if (id) {
+            handleDirectPrint(getPurchasePrintUrl(id));
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!id) return;
+        try {
+            setDeleting(true);
+            await deletePurchase(id);
+            router.push('/purchase');
+        } catch (error) {
+            console.error('Failed to delete purchase:', error);
+        } finally {
+            setDeleting(false);
+            setConfirmDeleteOpen(false);
+        }
+    };
+
     return (
         <DashboardContent>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-                <IconButton onClick={() => router.back()}>
-                    <Iconify icon={"solar:alt-arrow-left-bold" as any} />
-                </IconButton>
-                <Typography variant="h4">Purchase Profile</Typography>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} className="no-print">
+                <Typography variant="h4">Purchase: {id}</Typography>
+                <Stack direction="row" spacing={2}>
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={() => router.push('/purchase')}
+                        startIcon={<Iconify icon={"solar:arrow-left-bold" as any} />}
+                    >
+                        Back to List
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={handlePrint}
+                        startIcon={<Iconify icon={"solar:printer-bold" as any} />}
+                    >
+                        Print
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => setConfirmDeleteOpen(true)}
+                        startIcon={<Iconify icon={"solar:trash-bin-trash-bold" as any} />}
+                    >
+                        Delete
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => router.push(`/purchase/edit/${encodeURIComponent(id || '')}`)}
+                        startIcon={<Iconify icon={"solar:pen-bold" as any} />}
+                    >
+                        Edit Purchase
+                    </Button>
+                </Stack>
             </Stack>
 
-            <Card sx={{ p: 4 }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                    {/* Header Info */}
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5 }}>
-                        <Box
-                            sx={{
-                                width: 64,
-                                height: 64,
-                                borderRadius: 2,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                bgcolor: 'primary.lighter',
-                                color: 'primary.main',
-                            }}
-                        >
-                            <Iconify icon={"solar:cart-large-minimalistic-bold" as any} width={32} />
-                        </Box>
-                        <Box sx={{ flexGrow: 1 }}>
-                            <Typography variant="h5" sx={{ fontWeight: 800 }}>{purchase.vendor_name}</Typography>
-                            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>Bill No: {purchase.bill_no || '-'}</Typography>
-                        </Box>
-                        <Box sx={{ textAlign: 'right' }}>
-                            <Label variant="soft" color="secondary">Purchase</Label>
-                            <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.disabled', fontWeight: 700 }}>
-                                ID: {purchase.name}
-                            </Typography>
-                        </Box>
-                    </Box>
-
-                    <Divider sx={{ borderStyle: 'dashed' }} />
-
-                    {/* General Information */}
-                    <Box>
-                        <SectionHeader title="Purchase Details" icon="solar:info-circle-bold" />
-                        <Box
-                            sx={{
-                                display: 'grid',
-                                gap: 3,
-                                gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-                            }}
-                        >
-                            <DetailItem label="Vendor Name" value={purchase.vendor_name} icon="solar:user-bold" />
-                            <DetailItem label="Bill No" value={purchase.bill_no} icon="solar:tag-bold" />
-                            <DetailItem label="Bill Date" value={purchase.bill_date} icon="solar:calendar-date-bold" />
-                            <DetailItem label="Payment Type" value={purchase.payment_type} icon="solar:bank-note-bold" color="primary.main" />
-                            <DetailItem label="Payment Terms" value={purchase.payment_terms} icon="solar:document-text-bold" />
-                            <DetailItem label="Due Date" value={purchase.due_date} icon="solar:calendar-minimalistic-bold" color="error.main" />
-                        </Box>
-                    </Box>
-
-                    {/* Items Section */}
-                    <Box>
-                        <SectionHeader title="Items" icon="solar:list-bold" />
-                        <TableContainer component={Box} sx={{ mt: 2, border: (theme) => `solid 1px ${theme.palette.divider}`, borderRadius: 1.5 }}>
-                            <Scrollbar>
-                                <Table size="small" sx={{ minWidth: 640 }}>
-                                    <TableHead sx={{ bgcolor: 'background.neutral' }}>
-                                        <TableRow>
-                                            <TableCell sx={{ fontWeight: 800 }}>Item</TableCell>
-                                            <TableCell sx={{ fontWeight: 800 }}>Qty</TableCell>
-                                            <TableCell sx={{ fontWeight: 800 }}>Rate</TableCell>
-                                            <TableCell sx={{ fontWeight: 800 }}>Discount</TableCell>
-                                            <TableCell sx={{ fontWeight: 800 }} align="right">Amount</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {purchase.table_qecz?.map((item: any, index: number) => (
-                                            <TableRow key={index}>
-                                                <TableCell>{item.item_name}</TableCell>
-                                                <TableCell>{item.qty}</TableCell>
-                                                <TableCell>{item.rate}</TableCell>
-                                                <TableCell>{item.discount_amount || 0}</TableCell>
-                                                <TableCell align="right">{item.amount}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </Scrollbar>
-                        </TableContainer>
-                    </Box>
-
-                    {/* Totals Section */}
-                    <Box sx={{ alignSelf: 'flex-end', minWidth: 300 }}>
-                        <SectionHeader title="Totals" icon="solar:bill-list-bold" />
-                        <Stack spacing={1.5} sx={{ mt: 2 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Total Qty</Typography>
-                                <Typography variant="subtitle2">{purchase.total_qty}</Typography>
+            <Card sx={{ p: 4, borderRadius: 2 }}>
+                <Stack spacing={4}>
+                    {/* Header Info Sections */}
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            columnGap: 4,
+                            rowGap: 3,
+                            gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+                        }}
+                    >
+                        {/* Vendor Section */}
+                        <Stack spacing={1.5}>
+                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
+                                <Iconify icon={"solar:user-rounded-bold-duotone" as any} width={20} />
+                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Vendor Details</Typography>
+                            </Stack>
+                            <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                                <Typography variant="subtitle1" color="primary.main">{vendor_name}</Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{payment_type} | {payment_terms}</Typography>
                             </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Total Amount</Typography>
-                                <Typography variant="subtitle2">{purchase.total_amount}</Typography>
-                            </Box>
-                            {purchase.overall_discount > 0 && (
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>Discount ({purchase.overall_discount_type === 'Percentage' ? `${purchase.overall_discount}%` : 'Flat'})</Typography>
-                                    <Typography variant="subtitle2" sx={{ color: 'error.main' }}>-{purchase.overall_discount}</Typography>
-                                </Box>
-                            )}
-                            <Divider sx={{ borderStyle: 'dashed' }} />
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Grand Total</Typography>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>{purchase.grand_total}</Typography>
-                            </Box>
+                        </Stack>
+
+                        {/* Document Logistics Section */}
+                        <Stack spacing={1.5}>
+                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
+                                <Iconify icon={"solar:calendar-bold-duotone" as any} width={20} />
+                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Doc Logistics</Typography>
+                            </Stack>
+                            <Stack spacing={2} sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="caption" color="text.disabled">Bill Date</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{bill_date}</Typography>
+                                </Stack>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="caption" color="text.disabled">Bill No</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{bill_no || '-'}</Typography>
+                                </Stack>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="caption" color="text.disabled">Due Date</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold', color: 'error.main' }}>{due_date || '-'}</Typography>
+                                </Stack>
+                            </Stack>
+                        </Stack>
+
+                        {/* Summary Stats Section */}
+                        <Stack spacing={1.5}>
+                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
+                                <Iconify icon={"solar:wad-of-money-bold-duotone" as any} width={20} />
+                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Financial Status</Typography>
+                            </Stack>
+                            <Stack spacing={2} sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha((balance_amount || 0) > 0 ? theme.palette.error.main : theme.palette.success.main, 0.04), border: (theme) => `1px solid ${alpha((balance_amount || 0) > 0 ? theme.palette.error.main : theme.palette.success.main, 0.12)}` }}>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="caption" color="text.secondary">Grand Total</Typography>
+                                    <Typography variant="subtitle1" color="primary.main">{fCurrency(grand_total)}</Typography>
+                                </Stack>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="caption" color="text.secondary">Balance Due</Typography>
+                                    <Typography variant="h6" color={(balance_amount || 0) > 0 ? "error.main" : "success.main"}>{fCurrency(balance_amount)}</Typography>
+                                </Stack>
+                            </Stack>
                         </Stack>
                     </Box>
 
-                    {/* System Information */}
-                    <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                        <SectionHeader title="System Information" icon="solar:clock-circle-bold" noMargin />
-                        <Box sx={{ mt: 3, display: 'grid', gap: 3, gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' } }}>
-                            <DetailItem label="Created On" value={new Date(purchase.creation).toLocaleString()} icon="solar:calendar-date-bold" />
-                            <DetailItem label="Created By" value={purchase.owner} icon="solar:user-rounded-bold" />
-                        </Box>
+                    {/* Table Section */}
+                    <Box>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2, color: 'text.secondary' }}>
+                            <Iconify icon={"solar:list-bold-duotone" as any} width={20} />
+                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Purchase Items</Typography>
+                        </Stack>
+                        <TableContainer sx={{
+                            overflow: 'unset',
+                            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
+                            borderRadius: 1.5,
+                        }}>
+                            <Table sx={{ minWidth: 800 }}>
+                                <TableHead>
+                                    <TableRow sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04) }}>
+                                        <TableCell sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Item</TableCell>
+                                        <TableCell sx={{ fontWeight: 'fontWeightBold', py: 2 }}>HSN</TableCell>
+                                        <TableCell sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Description</TableCell>
+                                        <TableCell width={60} align="center" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Qty</TableCell>
+                                        <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Price</TableCell>
+                                        <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Discount</TableCell>
+                                        <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Tax Type</TableCell>
+                                        <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Tax Amt</TableCell>
+                                        <TableCell width={120} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Total</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {table_qecz.map((row: any, index: number) => (
+                                        <TableRow key={index} sx={{ '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) } }}>
+                                            <TableCell sx={{ py: 2 }}>
+                                                <Typography variant="subtitle2">{row.service}</Typography>
+                                            </TableCell>
+                                            <TableCell sx={{ py: 2 }}>
+                                                <Typography variant="body2">{row.hsn_code || '-'}</Typography>
+                                            </TableCell>
+                                            <TableCell sx={{ py: 2 }}>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', maxWidth: 200 }}>{row.description}</Typography>
+                                            </TableCell>
+                                            <TableCell align="center" sx={{ py: 2 }}>{row.quantity}</TableCell>
+                                            <TableCell align="right" sx={{ py: 2 }}>{fCurrency(row.price)}</TableCell>
+                                            <TableCell align="right" sx={{ py: 2 }}>
+                                                {row.discount > 0 ? (
+                                                    <Typography variant="caption" color="success.main">
+                                                        -{row.discount_type === 'Flat' ? fCurrency(row.discount) : `${row.discount}%`}
+                                                    </Typography>
+                                                ) : '-'}
+                                            </TableCell>
+                                            <TableCell align="right" sx={{ py: 2 }}>
+                                                <Typography variant="caption" color="text.secondary">{row.tax_type || '-'}</Typography>
+                                            </TableCell>
+                                            <TableCell align="right" sx={{ py: 2 }}>{fCurrency(row.tax_amount)}</TableCell>
+                                            <TableCell align="right" sx={{ py: 2 }}>
+                                                <Typography variant="subtitle2" color="primary">{fCurrency(row.sub_total)}</Typography>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
                     </Box>
-                </Box>
-            </Card>
-        </DashboardContent>
-    );
-}
 
-function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: string, noMargin?: boolean }) {
-    return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
-            <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                {title}
-            </Typography>
-        </Box>
-    );
-}
+                    {/* Footer Row */}
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            columnGap: 4,
+                            rowGap: 3,
+                            gridTemplateColumns: { xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' },
+                            alignItems: 'start'
+                        }}
+                    >
+                        {/* Description & Attachments Group */}
+                        <Stack spacing={3}>
+                            {description && (
+                                <Stack spacing={1}>
+                                    <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Description</Typography>
+                                    <Typography variant="body2" sx={{
+                                        p: 2,
+                                        borderRadius: 1.5,
+                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                                        border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                                        whiteSpace: 'pre-wrap',
+                                        minHeight: 80,
+                                        color: 'text.secondary'
+                                    }}>
+                                        {description}
+                                    </Typography>
+                                </Stack>
+                            )}
 
-function DetailItem({ label, value, icon, color = 'text.primary', fullWidth }: { label: string; value?: string | number | null; icon: string; color?: string, fullWidth?: boolean }) {
-    return (
-        <Box sx={fullWidth ? { gridColumn: '1 / -1' } : {}}>
-            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
-                {label}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
-                <Typography variant="body2" sx={{ fontWeight: 700, color }}>
-                    {value || '-'}
-                </Typography>
-            </Box>
-        </Box>
+                            {parsedAttachments.length > 0 && (
+                                <Stack spacing={1}>
+                                    <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Attachments</Typography>
+                                    <Stack spacing={1}>
+                                        {parsedAttachments.map((file, index) => (
+                                            <Stack
+                                                key={index}
+                                                direction="row"
+                                                alignItems="center"
+                                                component="a"
+                                                href={file.url}
+                                                target="_blank"
+                                                sx={{
+                                                    px: 2,
+                                                    py: 1,
+                                                    borderRadius: 1.5,
+                                                    textDecoration: 'none',
+                                                    color: 'inherit',
+                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                                                    border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                                                    transition: (theme) => theme.transitions.create(['background-color', 'transform']),
+                                                    '&:hover': {
+                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                        transform: 'translateY(-1px)'
+                                                    },
+                                                }}
+                                            >
+                                                <Iconify icon={"solar:link-bold" as any} width={18} sx={{ mr: 1, color: 'primary.main', flexShrink: 0 }} />
+                                                <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>{file.name || file.url.split('/').pop()}</Typography>
+                                                <Iconify icon={"solar:download-bold" as any} width={16} sx={{ ml: 1, color: 'text.disabled' }} />
+                                            </Stack>
+                                        ))}
+                                    </Stack>
+                                </Stack>
+                            )}
+                        </Stack>
+
+                        {/* Totals Breakdown */}
+                        <Stack spacing={2} sx={{ p: 3, borderRadius: 2, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
+                                <Typography variant="subtitle2">{fCurrency(table_qecz.reduce((sum: number, row: any) => sum + (row.sub_total - row.tax_amount), 0))}</Typography>
+                            </Stack>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Typography variant="body2" color="text.secondary">Total Tax</Typography>
+                                <Typography variant="subtitle2" color="error.main">+{fCurrency(totalTax)}</Typography>
+                            </Stack>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Typography variant="body2" color="text.secondary">Discount ({overall_discount_type === 'Flat' ? 'Flat' : `${overall_discount}%`})</Typography>
+                                <Typography variant="subtitle2" color="success.main">-{fCurrency(discountAmount)}</Typography>
+                            </Stack>
+                            <Divider sx={{ borderStyle: 'dashed' }} />
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Typography variant="subtitle1">Grand Total</Typography>
+                                <Typography variant="h6">{fCurrency(grand_total)}</Typography>
+                            </Stack>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <Iconify icon={"solar:hand-money-bold-duotone" as any} width={16} sx={{ color: 'success.main' }} />
+                                    <Typography variant="body2" color="text.secondary">Paid Amount</Typography>
+                                </Stack>
+                                <Typography variant="subtitle2" color="success.main">{fCurrency(paid_amount)}</Typography>
+                            </Stack>
+                            <Divider sx={{ borderStyle: 'dashed' }} />
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <Iconify icon={"solar:wallet-2-bold-duotone" as any} width={20} sx={{ color: (balance_amount || 0) > 0 ? 'error.main' : 'success.main' }} />
+                                    <Typography variant="subtitle1" sx={{ color: (balance_amount || 0) > 0 ? 'error.main' : 'success.main' }}>Balance Due</Typography>
+                                </Stack>
+                                <Typography variant="h5" color={(balance_amount || 0) > 0 ? "error.main" : "success.main"}>{fCurrency(balance_amount)}</Typography>
+                            </Stack>
+                        </Stack>
+                    </Box>
+                </Stack>
+            </Card >
+
+            <ConfirmDialog
+                open={confirmDeleteOpen}
+                onClose={() => !deleting && setConfirmDeleteOpen(false)}
+                title="Confirm Delete"
+                content="Are you sure you want to delete this purchase?"
+                action={
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        sx={{ borderRadius: 1.5, minWidth: 100 }}
+                    >
+                        {deleting ? 'Deleting...' : 'Delete'}
+                    </Button>
+                }
+            />
+        </DashboardContent >
     );
 }

@@ -26,6 +26,7 @@ import { TableEmptyRows } from '../../invoice/table-empty-rows';
 import PurchaseCollectionTableRow from '../purchase-collection-table-row';
 import PurchaseCollectionTableHead from '../purchase-collection-table-head';
 import PurchaseCollectionTableToolbar from '../purchase-collection-table-toolbar';
+import { PurchaseCollectionTableFiltersDrawer } from '../purchase-collection-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
@@ -63,6 +64,14 @@ export function PurchaseCollectionListView() {
         severity: 'success',
     });
 
+    const [openFilters, setOpenFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        vendor_name: 'all',
+        mode_of_payment: 'all',
+    });
+    const [vendorOptions, setVendorOptions] = useState<{ name: string; first_name: string }[]>([]);
+    const [paymentTypeOptions, setPaymentTypeOptions] = useState<{ name: string }[]>([]);
+
     const getCollections = useCallback(async () => {
         try {
             setLoading(true);
@@ -71,6 +80,7 @@ export function PurchaseCollectionListView() {
                 page_size: rowsPerPage,
                 search: filterName,
                 sort_by: `${orderBy}_${order}`,
+                filterValues: filters,
             });
 
             // Determine latest collection for each purchase based on collection_date (with creation as tiebreaker)
@@ -105,11 +115,57 @@ export function PurchaseCollectionListView() {
         } finally {
             setLoading(false);
         }
-    }, [page, rowsPerPage, filterName, orderBy, order]);
+    }, [page, rowsPerPage, filterName, orderBy, order, filters]);
+
+    const handleFilters = useCallback((name: string, value: string) => {
+        setFilters((prevState) => ({
+            ...prevState,
+            [name]: value,
+        }));
+        setPage(0);
+    }, []);
+
+    const handleResetFilters = useCallback(() => {
+        setFilters({
+            vendor_name: 'all',
+            mode_of_payment: 'all',
+        });
+        setPage(0);
+    }, []);
+
+    const canReset = filters.vendor_name !== 'all' || filters.mode_of_payment !== 'all';
 
     useEffect(() => {
         getCollections();
     }, [getCollections]);
+
+    useEffect(() => {
+        const fetchOptions = async () => {
+            try {
+                const [vendorsRes, paymentTypesRes] = await Promise.all([
+                    fetch("/api/method/frappe.client.get_list?doctype=Contacts&fields=[\"name\",\"first_name\"]&link_full_match=0&limit_page_length=999&filters=[[\"Contacts\",\"customer_type\",\"=\",\"Purchase\"]]", {
+                        credentials: "include"
+                    }),
+                    fetch("/api/method/frappe.client.get_list?doctype=Payment Type&fields=[\"name\"]", {
+                        credentials: "include"
+                    })
+                ]);
+
+                if (vendorsRes.ok) {
+                    const data = await vendorsRes.json();
+                    setVendorOptions(data.message || []);
+                }
+                if (paymentTypesRes.ok) {
+                    const data = await paymentTypesRes.json();
+                    setPaymentTypeOptions(data.message || []);
+                }
+            } catch (error) {
+                console.error("Failed to fetch filter options", error);
+            }
+        };
+
+        fetchOptions();
+    }, []);
 
     const handleFilterName = useCallback(
         (value: string) => {
@@ -186,7 +242,7 @@ export function PurchaseCollectionListView() {
         setSnackbar((prev) => ({ ...prev, open: false }));
     };
 
-    const notFound = !loading && tableData.length === 0;
+    const notFound = !loading && tableData.length === 0 && !canReset;
 
     return (
         <DashboardContent>
@@ -219,6 +275,25 @@ export function PurchaseCollectionListView() {
                         }, ['', 'desc']);
                         setOrderBy(field);
                         setOrder(direction as 'asc' | 'desc');
+                    }}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
+                />
+
+                <PurchaseCollectionTableFiltersDrawer
+                    open={openFilters}
+                    onOpen={() => setOpenFilters(true)}
+                    onClose={() => setOpenFilters(false)}
+                    filters={filters}
+                    onFilters={(newFilters) => {
+                        setFilters((prev) => ({ ...prev, ...newFilters }));
+                        setPage(0);
+                    }}
+                    canReset={canReset}
+                    onResetFilters={handleResetFilters}
+                    options={{
+                        vendors: vendorOptions,
+                        payment_types: paymentTypeOptions,
                     }}
                 />
 

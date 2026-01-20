@@ -33,6 +33,8 @@ export interface Purchase {
     overall_discount_type?: string;
     overall_discount?: number;
     grand_total?: number;
+    paid_amount?: number;
+    balance_amount?: number;
 
     description?: string;
     attach?: string; // File path or URL
@@ -46,9 +48,24 @@ export async function fetchPurchases(params: {
     page_size: number;
     search?: string;
     sort_by?: string;
+    filterValues?: Record<string, any>;
 }) {
     const filters: any[] = [];
     const or_filters: any[] = [];
+
+    // Add dynamic filters from filterValues
+    if (params.filterValues) {
+        Object.entries(params.filterValues).forEach(([key, value]) => {
+            if (value && value !== 'all') {
+                if (key === 'vendor_name') {
+                    // Special handling for vendor name if needed, but standard link field works
+                    filters.push(["Purchase", key, "=", value]);
+                } else {
+                    filters.push(["Purchase", key, "=", value]);
+                }
+            }
+        });
+    }
 
     if (params.search) {
         or_filters.push(["Purchase", "vendor_name", "like", `%${params.search}%`]);

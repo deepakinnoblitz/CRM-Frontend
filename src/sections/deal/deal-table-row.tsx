@@ -14,6 +14,8 @@ type Props = {
         id: string;
         title: string;
         account: string;
+        contact: string;
+        contactName: string;
         value: number;
         stage: string;
         expectedCloseDate?: string;
@@ -65,6 +67,10 @@ export function DealTableRow({
             </TableCell>
 
             <TableCell>{row.account}</TableCell>
+
+            <TableCell>
+                {row.contactName ? `${row.contactName} (${row.contact})` : row.contact}
+            </TableCell>
 
             <TableCell>{row.value ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(row.value) : '-'}</TableCell>
 

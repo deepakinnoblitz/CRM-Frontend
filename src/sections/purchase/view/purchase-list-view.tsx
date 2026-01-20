@@ -28,6 +28,7 @@ import { TableEmptyRows } from '../table-empty-rows';
 import { PurchaseTableRow } from '../purchase-table-row';
 import { PurchaseTableHead } from '../purchase-table-head';
 import { PurchaseTableToolbar } from '../purchase-table-toolbar';
+import { PurchaseTableFiltersDrawer } from '../purchase-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
@@ -56,12 +57,57 @@ export function PurchaseListView() {
         severity: 'success',
     });
 
+    const [openFilters, setOpenFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        vendor_name: 'all',
+        payment_type: 'all',
+        payment_terms: 'all',
+    });
+
+    // Dropdown Options
+    const [vendorOptions, setVendorOptions] = useState<any[]>([]);
+    const [paymentTypeOptions, setPaymentTypeOptions] = useState<any[]>([]);
+
     const { data, total, loading, refetch } = usePurchase(
         table.page,
         table.rowsPerPage,
         filterName,
-        sortBy
+        sortBy,
+        filters
     );
+
+    const handleFilters = (update: any) => {
+        setFilters((prev) => ({ ...prev, ...update }));
+        table.onResetPage();
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            vendor_name: 'all',
+            payment_type: 'all',
+            payment_terms: 'all',
+        });
+        table.onResetPage();
+    };
+
+    const canReset =
+        filters.vendor_name !== 'all' ||
+        filters.payment_type !== 'all' ||
+        filters.payment_terms !== 'all';
+
+    // Fetch filters options
+    useState(() => {
+        Promise.all([
+            fetch('/api/method/frappe.client.get_list?doctype=Contacts&fields=["name","first_name"]&link_full_match=0&limit_page_length=999&filters=[["Contacts","customer_type","=","Purchase"]]', { credentials: 'include' }),
+            fetch('/api/method/frappe.client.get_list?doctype=Payment Type&fields=["name"]&limit_page_length=999', { credentials: 'include' })
+        ]).then(async ([vendorsRes, paymentTypesRes]) => {
+            const vendors = await vendorsRes.json();
+            const paymentTypes = await paymentTypesRes.json();
+
+            setVendorOptions(vendors.message || []);
+            setPaymentTypeOptions(paymentTypes.message || []);
+        }).catch(err => console.error('Failed to fetch dropdown options', err));
+    });
 
     const handleFilterName = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,7 +151,7 @@ export function PurchaseListView() {
         setSnackbar((prev) => ({ ...prev, open: false }));
     };
 
-    const notFound = !loading && data.length === 0 && !!filterName;
+    const notFound = !loading && data.length === 0 && (!!filterName || canReset);
 
     return (
         <DashboardContent>
@@ -128,6 +174,8 @@ export function PurchaseListView() {
                     onFilterName={handleFilterName}
                     sortBy={sortBy}
                     onSortChange={setSortBy}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
                 />
 
                 <Scrollbar>
@@ -189,6 +237,20 @@ export function PurchaseListView() {
                     onRowsPerPageChange={table.onChangeRowsPerPage}
                 />
             </Card>
+
+            <PurchaseTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                options={{
+                    vendors: vendorOptions,
+                    payment_types: paymentTypeOptions,
+                }}
+            />
 
             <Snackbar
                 open={snackbar.open}

@@ -21,9 +21,22 @@ export async function fetchPurchaseCollections(params: {
     page_size: number;
     search?: string;
     sort_by?: string;
+    filterValues?: Record<string, any>;
 }) {
     const filters: any[] = [];
     const or_filters: any[] = [];
+
+    if (params.filterValues) {
+        Object.entries(params.filterValues).forEach(([key, value]) => {
+            if (value && value !== 'all') {
+                if (key === 'vendor_name') {
+                    filters.push(["Purchase Collection", "vendor", "=", value]);
+                } else {
+                    filters.push(["Purchase Collection", key, "=", value]);
+                }
+            }
+        });
+    }
 
     if (params.search) {
         or_filters.push(["Purchase Collection", "name", "like", `%${params.search}%`]);
@@ -53,6 +66,8 @@ export async function fetchPurchaseCollections(params: {
             "vendor_name",
             "collection_date",
             "amount_collected",
+            "amount_pending",
+            "amount_to_pay",
             "mode_of_payment",
             "creation"
         ]),

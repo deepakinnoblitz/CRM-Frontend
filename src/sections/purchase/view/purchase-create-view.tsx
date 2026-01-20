@@ -28,16 +28,18 @@ import TableContainer from '@mui/material/TableContainer';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import CircularProgress from '@mui/material/CircularProgress';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useRouter } from 'src/routes/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
 
 import { createItem } from 'src/api/invoice';
+import { getDoctypeList } from 'src/api/leads';
 import { uploadFile } from 'src/api/data-import';
 import { createPurchase } from 'src/api/purchase';
-import { getDoc, getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -346,640 +348,643 @@ export function PurchaseCreateView() {
     };
 
     return (
-        <DashboardContent maxWidth="xl">
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">New Purchase</Typography>
-                <Stack direction="row" spacing={2}>
-                    <Button variant="outlined" color="inherit" onClick={handleCancel}>
-                        Cancel
-                    </Button>
-                    <Button variant="contained" color="primary" onClick={handleSave} disabled={loading}>
-                        {loading ? <CircularProgress size={24} /> : 'Save Purchase'}
-                    </Button>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DashboardContent maxWidth="xl">
+                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+                    <Typography variant="h4">New Purchase</Typography>
+                    <Stack direction="row" spacing={2}>
+                        <Button variant="outlined" color="inherit" onClick={handleCancel}>
+                            Cancel
+                        </Button>
+                        <Button variant="contained" color="primary" onClick={handleSave} disabled={loading}>
+                            {loading ? <CircularProgress size={24} /> : 'Save Purchase'}
+                        </Button>
+                    </Stack>
                 </Stack>
-            </Stack>
 
-            <Card sx={{ p: 4 }}>
-                <Box
-                    sx={{
-                        display: 'grid',
-                        columnGap: 3,
-                        rowGap: 3,
-                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
-                    }}
-                >
-                    <Autocomplete
-                        fullWidth
-                        options={vendorOptions}
-                        getOptionLabel={(option) => (option.first_name ? `${option.name} - ${option.first_name}` : option.name || '')}
-                        value={vendorOptions.find((opt) => opt.name === vendorName) || null}
-                        onChange={(_e, newValue) => setVendorName(newValue?.name || '')}
-                        renderInput={(params) => (
-                            <TextField {...params} label="Vendor" required />
-                        )}
-                    />
 
-                    <TextField
-                        fullWidth
-                        label="Bill No"
-                        value={billNo}
-                        onChange={(e) => setBillNo(e.target.value)}
-                        required
-                    />
-
-                    <DatePicker
-                        label="Bill Date"
-                        value={dayjs(billDate)}
-                        onChange={(newValue) => setBillDate(newValue?.format('YYYY-MM-DD') || '')}
-                        slotProps={{
-                            textField: {
-                                fullWidth: true,
-                                InputLabelProps: { shrink: true },
-                            },
+                <Card sx={{ p: 4 }}>
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            columnGap: 3,
+                            rowGap: 3,
+                            gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
                         }}
-                    />
-
-                    <TextField
-                        fullWidth
-                        select
-                        label="Payment Type"
-                        value={paymentType}
-                        onChange={(e) => setPaymentType(e.target.value)}
-                        required
                     >
-                        {paymentTypeOptions.map((opt) => (
-                            <MenuItem key={opt.name} value={opt.name}>
-                                {opt.payment_type || opt.name}
-                            </MenuItem>
-                        ))}
-                    </TextField>
+                        <Autocomplete
+                            fullWidth
+                            options={vendorOptions}
+                            getOptionLabel={(option) => (option.first_name ? `${option.name} - ${option.first_name}` : option.name || '')}
+                            value={vendorOptions.find((opt) => opt.name === vendorName) || null}
+                            onChange={(_e, newValue) => setVendorName(newValue?.name || '')}
+                            renderInput={(params) => (
+                                <TextField {...params} label="Vendor" required />
+                            )}
+                        />
 
-                    <TextField
-                        fullWidth
-                        select
-                        label="Payment Terms"
-                        value={paymentTerms}
-                        onChange={(e) => setPaymentTerms(e.target.value)}
-                        required
-                    >
-                        {['Next day Payment', 'Due On Receipt', '15 days', '30 days', '60 days', '1 Year'].map((opt) => (
-                            <MenuItem key={opt} value={opt}>
-                                {opt}
-                            </MenuItem>
-                        ))}
-                    </TextField>
+                        <TextField
+                            fullWidth
+                            label="Bill No"
+                            value={billNo}
+                            onChange={(e) => setBillNo(e.target.value)}
+                            required
+                        />
 
-                    <DatePicker
-                        label="Due Date"
-                        value={dueDate ? dayjs(dueDate) : null}
-                        onChange={(newValue) => setDueDate(newValue?.format('YYYY-MM-DD') || '')}
-                        slotProps={{
-                            textField: {
-                                fullWidth: true,
-                                InputLabelProps: { shrink: true },
-                            },
-                        }}
-                    />
-                </Box>
+                        <DatePicker
+                            label="Bill Date"
+                            value={dayjs(billDate)}
+                            onChange={(newValue) => setBillDate(newValue?.format('YYYY-MM-DD') || '')}
+                            slotProps={{
+                                textField: {
+                                    fullWidth: true,
+                                    InputLabelProps: { shrink: true },
+                                },
+                            }}
+                        />
 
-                <Divider sx={{ my: 4 }} />
+                        <TextField
+                            fullWidth
+                            select
+                            label="Payment Type"
+                            value={paymentType}
+                            onChange={(e) => setPaymentType(e.target.value)}
+                            required
+                        >
+                            {paymentTypeOptions.map((opt) => (
+                                <MenuItem key={opt.name} value={opt.name}>
+                                    {opt.payment_type || opt.name}
+                                </MenuItem>
+                            ))}
+                        </TextField>
 
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                    Items
-                </Typography>
+                        <TextField
+                            fullWidth
+                            select
+                            label="Payment Terms"
+                            value={paymentTerms}
+                            onChange={(e) => setPaymentTerms(e.target.value)}
+                            required
+                        >
+                            {['Next day Payment', 'Due On Receipt', '15 days', '30 days', '60 days', '1 Year'].map((opt) => (
+                                <MenuItem key={opt} value={opt}>
+                                    {opt}
+                                </MenuItem>
+                            ))}
+                        </TextField>
 
-                <TableContainer sx={{
-                    overflow: 'unset',
-                    border: (theme) => `1px solid ${theme.palette.divider}`,
-                    borderRadius: 1.5,
-                    bgcolor: 'background.paper',
-                    boxShadow: (theme) => theme.customShadows.z8,
-                }}>
-                    <Table sx={{ minWidth: 960 }}>
-                        <TableHead sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}>
-                            <TableRow>
-                                <TableCell width={180} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Service</TableCell>
-                                <TableCell width={80} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>HSN</TableCell>
-                                <TableCell sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Description</TableCell>
-                                <TableCell width={80} align="right" sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Qty</TableCell>
-                                <TableCell width={120} align="right" sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Price</TableCell>
-                                <TableCell width={140} align="right" sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Discount</TableCell>
-                                <TableCell width={150} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Tax Type</TableCell>
-                                <TableCell width={120} align="right" sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Tax Amt</TableCell>
-                                <TableCell width={120} align="right" sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Total</TableCell>
-                                <TableCell width={40} />
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {items.map((row, index) => (
-                                <TableRow
-                                    key={index}
-                                    sx={{
-                                        verticalAlign: 'top',
-                                        transition: (theme) => theme.transitions.create('background-color'),
-                                        '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) },
-                                        '&:nth-of-type(even)': { bgcolor: (theme) => alpha(theme.palette.grey[500], 0.02) },
-                                    }}
-                                >
-                                    {[
-                                        {
-                                            field: 'service', component: (
-                                                <Autocomplete
-                                                    fullWidth
-                                                    size="small"
-                                                    options={itemOptions}
-                                                    getOptionLabel={(option) => {
-                                                        if (typeof option === 'string') return option;
-                                                        if (option.inputValue) return option.inputValue;
-                                                        return option.item_name || option.name || '';
-                                                    }}
-                                                    filterOptions={(options, params) => {
-                                                        const filtered = filter(options, params);
-                                                        const { inputValue } = params;
+                        <DatePicker
+                            label="Due Date"
+                            value={dueDate ? dayjs(dueDate) : null}
+                            onChange={(newValue) => setDueDate(newValue?.format('YYYY-MM-DD') || '')}
+                            slotProps={{
+                                textField: {
+                                    fullWidth: true,
+                                    InputLabelProps: { shrink: true },
+                                },
+                            }}
+                        />
+                    </Box>
 
-                                                        filtered.push({
-                                                            inputValue: inputValue || '',
-                                                            item_name: inputValue ? `+ Create "${inputValue}"` : '+ Create Item',
-                                                            isNew: true,
-                                                        });
+                    <Divider sx={{ my: 4 }} />
 
-                                                        return filtered;
-                                                    }}
-                                                    value={itemOptions.find((opt) => opt.name === row.service) || null}
-                                                    onChange={(_e, newValue) => {
-                                                        if (typeof newValue === 'string') {
-                                                            handleItemChange(index, 'service', newValue);
-                                                        } else if (newValue && newValue.isNew) {
-                                                            setActiveRowIndex(index);
-                                                            setNewItem((prev) => ({ ...prev, item_name: newValue.inputValue }));
-                                                            setItemDialogOpen(true);
-                                                        } else {
-                                                            handleItemChange(index, 'service', newValue?.name || '');
-                                                        }
-                                                    }}
-                                                    ListboxProps={{
-                                                        sx: {
-                                                            width: '350px',
-                                                            '& .MuiAutocomplete-option': {
-                                                                py: 1.5,
-                                                                px: 2,
-                                                                borderRadius: 0.75,
-                                                                mx: 0.5,
-                                                                my: 0.25,
-                                                            }
-                                                        }
-                                                    }}
-                                                    slotProps={{
-                                                        paper: {
-                                                            sx: {
-                                                                mt: 0.5,
-                                                                boxShadow: (theme) => theme.customShadows.z20,
-                                                                borderRadius: 1.5,
-                                                            }
-                                                        }
-                                                    }}
-                                                    renderInput={(params) => (
-                                                        <TextField
-                                                            {...params}
-                                                            placeholder="Select Service"
-                                                            variant="standard"
-                                                            InputProps={{
-                                                                ...params.InputProps,
-                                                                disableUnderline: true,
-                                                                sx: { typography: 'body2' }
-                                                            }}
-                                                        />
-                                                    )}
-                                                    renderOption={(props, option) => (
-                                                        <Box component="li" {...props} sx={{
-                                                            typography: 'body2',
-                                                            ...(option.isNew && {
-                                                                color: 'primary.main',
-                                                                fontWeight: 600,
-                                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                                                                borderTop: (theme) => `1px solid ${theme.palette.divider}`,
-                                                                mt: 0.5,
-                                                                '&:hover': {
-                                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
-                                                                }
-                                                            })
-                                                        }}>
-                                                            {option.isNew ? (
-                                                                <Stack direction="row" alignItems="center" spacing={1}>
-                                                                    <Iconify icon={"solar:add-circle-bold" as any} />
-                                                                    {option.item_name}
-                                                                </Stack>
-                                                            ) : (
-                                                                option.item_name || option.name
-                                                            )}
-                                                        </Box>
-                                                    )}
-                                                />
-                                            )
-                                        },
-                                        {
-                                            field: 'hsn_code', component: (
-                                                <TextField
-                                                    fullWidth
-                                                    size="small"
-                                                    variant="standard"
-                                                    value={row.hsn_code}
-                                                    onChange={(e) => handleItemChange(index, 'hsn_code', e.target.value)}
-                                                    InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
-                                                />
-                                            )
-                                        },
-                                        {
-                                            field: 'description', component: (
-                                                <TextField
-                                                    fullWidth
-                                                    multiline
-                                                    size="small"
-                                                    variant="standard"
-                                                    value={row.description}
-                                                    onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                                                    InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
-                                                />
-                                            )
-                                        },
-                                        {
-                                            field: 'quantity', component: (
-                                                <TextField
-                                                    fullWidth
-                                                    size="small"
-                                                    type="number"
-                                                    variant="standard"
-                                                    value={row.quantity === 0 ? '' : row.quantity}
-                                                    onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))}
-                                                    onFocus={(e) => e.target.select()}
-                                                    inputProps={{ sx: { textAlign: 'right', typography: 'body2', px: 0 } }}
-                                                    InputProps={{ disableUnderline: true }}
-                                                />
-                                            )
-                                        },
-                                        {
-                                            field: 'price', component: (
-                                                <TextField
-                                                    fullWidth
-                                                    size="small"
-                                                    type="number"
-                                                    variant="standard"
-                                                    value={row.price === 0 ? '' : row.price}
-                                                    onChange={(e) => handleItemChange(index, 'price', Number(e.target.value))}
-                                                    onFocus={(e) => e.target.select()}
-                                                    inputProps={{ sx: { textAlign: 'right', typography: 'body2', px: 0 } }}
-                                                    InputProps={{ disableUnderline: true }}
-                                                />
-                                            )
-                                        },
-                                        {
-                                            field: 'discount', component: (
-                                                <Stack direction="row" spacing={0.5} alignItems="center">
-                                                    <ToggleButtonGroup
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        Items
+                    </Typography>
+
+                    <TableContainer sx={{
+                        overflow: 'unset',
+                        border: (theme) => `1px solid ${theme.palette.divider}`,
+                        borderRadius: 1.5,
+                        bgcolor: 'background.paper',
+                        boxShadow: (theme) => theme.customShadows.z8,
+                    }}>
+                        <Table sx={{ minWidth: 960 }}>
+                            <TableHead sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}>
+                                <TableRow>
+                                    <TableCell width={180} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Service</TableCell>
+                                    <TableCell width={80} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>HSN</TableCell>
+                                    <TableCell sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Description</TableCell>
+                                    <TableCell width={80} align="right" sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Qty</TableCell>
+                                    <TableCell width={120} align="right" sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Price</TableCell>
+                                    <TableCell width={140} align="right" sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Discount</TableCell>
+                                    <TableCell width={150} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Tax Type</TableCell>
+                                    <TableCell width={120} align="right" sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Tax Amt</TableCell>
+                                    <TableCell width={120} align="right" sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Total</TableCell>
+                                    <TableCell width={40} />
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {items.map((row, index) => (
+                                    <TableRow
+                                        key={index}
+                                        sx={{
+                                            verticalAlign: 'top',
+                                            transition: (theme) => theme.transitions.create('background-color'),
+                                            '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) },
+                                            '&:nth-of-type(even)': { bgcolor: (theme) => alpha(theme.palette.grey[500], 0.02) },
+                                        }}
+                                    >
+                                        {[
+                                            {
+                                                field: 'service', component: (
+                                                    <Autocomplete
+                                                        fullWidth
                                                         size="small"
-                                                        value={row.discount_type}
-                                                        exclusive
-                                                        onChange={(e, nextView) => {
-                                                            if (nextView !== null) {
-                                                                handleItemChange(index, 'discount_type', nextView);
+                                                        options={itemOptions}
+                                                        getOptionLabel={(option) => {
+                                                            if (typeof option === 'string') return option;
+                                                            if (option.inputValue) return option.inputValue;
+                                                            return option.item_name || option.name || '';
+                                                        }}
+                                                        filterOptions={(options, params) => {
+                                                            const filtered = filter(options, params);
+                                                            const { inputValue } = params;
+
+                                                            filtered.push({
+                                                                inputValue: inputValue || '',
+                                                                item_name: inputValue ? `+ Create "${inputValue}"` : '+ Create Item',
+                                                                isNew: true,
+                                                            });
+
+                                                            return filtered;
+                                                        }}
+                                                        value={itemOptions.find((opt) => opt.name === row.service) || null}
+                                                        onChange={(_e, newValue) => {
+                                                            if (typeof newValue === 'string') {
+                                                                handleItemChange(index, 'service', newValue);
+                                                            } else if (newValue && newValue.isNew) {
+                                                                setActiveRowIndex(index);
+                                                                setNewItem((prev) => ({ ...prev, item_name: newValue.inputValue }));
+                                                                setItemDialogOpen(true);
+                                                            } else {
+                                                                handleItemChange(index, 'service', newValue?.name || '');
                                                             }
                                                         }}
-                                                        sx={{
-                                                            height: 28,
-                                                            '& .MuiToggleButton-root': {
-                                                                px: 1,
-                                                                py: 0,
-                                                                border: 'none',
-                                                                typography: 'body2',
-                                                                '&.Mui-selected': {
-                                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
-                                                                    color: 'primary.main',
-                                                                    '&:hover': {
-                                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
-                                                                    }
+                                                        ListboxProps={{
+                                                            sx: {
+                                                                width: '350px',
+                                                                '& .MuiAutocomplete-option': {
+                                                                    py: 1.5,
+                                                                    px: 2,
+                                                                    borderRadius: 0.75,
+                                                                    mx: 0.5,
+                                                                    my: 0.25,
                                                                 }
                                                             }
                                                         }}
-                                                    >
-                                                        <ToggleButton value="Flat">₹</ToggleButton>
-                                                        <ToggleButton value="Percentage">%</ToggleButton>
-                                                    </ToggleButtonGroup>
+                                                        slotProps={{
+                                                            paper: {
+                                                                sx: {
+                                                                    mt: 0.5,
+                                                                    boxShadow: (theme) => theme.customShadows.z20,
+                                                                    borderRadius: 1.5,
+                                                                }
+                                                            }
+                                                        }}
+                                                        renderInput={(params) => (
+                                                            <TextField
+                                                                {...params}
+                                                                placeholder="Select Service"
+                                                                variant="standard"
+                                                                InputProps={{
+                                                                    ...params.InputProps,
+                                                                    disableUnderline: true,
+                                                                    sx: { typography: 'body2' }
+                                                                }}
+                                                            />
+                                                        )}
+                                                        renderOption={(props, option) => (
+                                                            <Box component="li" {...props} sx={{
+                                                                typography: 'body2',
+                                                                ...(option.isNew && {
+                                                                    color: 'primary.main',
+                                                                    fontWeight: 600,
+                                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                                    borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                                                    mt: 0.5,
+                                                                    '&:hover': {
+                                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                                                    }
+                                                                })
+                                                            }}>
+                                                                {option.isNew ? (
+                                                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                                                        <Iconify icon={"solar:add-circle-bold" as any} />
+                                                                        {option.item_name}
+                                                                    </Stack>
+                                                                ) : (
+                                                                    option.item_name || option.name
+                                                                )}
+                                                            </Box>
+                                                        )}
+                                                    />
+                                                )
+                                            },
+                                            {
+                                                field: 'hsn_code', component: (
+                                                    <TextField
+                                                        fullWidth
+                                                        size="small"
+                                                        variant="standard"
+                                                        value={row.hsn_code}
+                                                        onChange={(e) => handleItemChange(index, 'hsn_code', e.target.value)}
+                                                        InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
+                                                    />
+                                                )
+                                            },
+                                            {
+                                                field: 'description', component: (
+                                                    <TextField
+                                                        fullWidth
+                                                        multiline
+                                                        size="small"
+                                                        variant="standard"
+                                                        value={row.description}
+                                                        onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                                                        InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
+                                                    />
+                                                )
+                                            },
+                                            {
+                                                field: 'quantity', component: (
                                                     <TextField
                                                         fullWidth
                                                         size="small"
                                                         type="number"
                                                         variant="standard"
-                                                        value={row.discount === 0 ? '' : row.discount}
-                                                        onChange={(e) => handleItemChange(index, 'discount', Number(e.target.value))}
+                                                        value={row.quantity === 0 ? '' : row.quantity}
+                                                        onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))}
                                                         onFocus={(e) => e.target.select()}
                                                         inputProps={{ sx: { textAlign: 'right', typography: 'body2', px: 0 } }}
                                                         InputProps={{ disableUnderline: true }}
                                                     />
-                                                </Stack>
-                                            )
-                                        },
-                                        {
-                                            field: 'tax_type', component: (
-                                                <TextField
-                                                    select
-                                                    fullWidth
-                                                    size="small"
-                                                    variant="standard"
-                                                    value={row.tax_type}
-                                                    onChange={(e) => handleItemChange(index, 'tax_type', e.target.value)}
-                                                    SelectProps={{ displayEmpty: true }}
-                                                    InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
-                                                >
-                                                    <MenuItem value="" disabled sx={{ typography: 'body2', color: 'text.disabled' }}>Select Tax</MenuItem>
-                                                    {taxOptions.map((opt) => (
-                                                        <MenuItem key={opt.name} value={opt.name} sx={{ typography: 'body2' }}>
-                                                            {opt.tax_name || opt.name}
-                                                        </MenuItem>
-                                                    ))}
-                                                </TextField>
-                                            )
-                                        },
-                                    ].map((cell, idx) => (
-                                        <TableCell
-                                            key={idx}
-                                            sx={{
-                                                px: 1,
-                                                py: 1,
-                                                borderRight: (theme) => `1px solid ${theme.palette.divider}`,
-                                                transition: (theme) => theme.transitions.create(['background-color', 'box-shadow']),
-                                                '&:focus-within': {
-                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
-                                                }
-                                            }}
-                                        >
-                                            {cell.component}
+                                                )
+                                            },
+                                            {
+                                                field: 'price', component: (
+                                                    <TextField
+                                                        fullWidth
+                                                        size="small"
+                                                        type="number"
+                                                        variant="standard"
+                                                        value={row.price === 0 ? '' : row.price}
+                                                        onChange={(e) => handleItemChange(index, 'price', Number(e.target.value))}
+                                                        onFocus={(e) => e.target.select()}
+                                                        inputProps={{ sx: { textAlign: 'right', typography: 'body2', px: 0 } }}
+                                                        InputProps={{ disableUnderline: true }}
+                                                    />
+                                                )
+                                            },
+                                            {
+                                                field: 'discount', component: (
+                                                    <Stack direction="row" spacing={0.5} alignItems="center">
+                                                        <ToggleButtonGroup
+                                                            size="small"
+                                                            value={row.discount_type}
+                                                            exclusive
+                                                            onChange={(e, nextView) => {
+                                                                if (nextView !== null) {
+                                                                    handleItemChange(index, 'discount_type', nextView);
+                                                                }
+                                                            }}
+                                                            sx={{
+                                                                height: 28,
+                                                                '& .MuiToggleButton-root': {
+                                                                    px: 1,
+                                                                    py: 0,
+                                                                    border: 'none',
+                                                                    typography: 'body2',
+                                                                    '&.Mui-selected': {
+                                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                                                                        color: 'primary.main',
+                                                                        '&:hover': {
+                                                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }}
+                                                        >
+                                                            <ToggleButton value="Flat">₹</ToggleButton>
+                                                            <ToggleButton value="Percentage">%</ToggleButton>
+                                                        </ToggleButtonGroup>
+                                                        <TextField
+                                                            fullWidth
+                                                            size="small"
+                                                            type="number"
+                                                            variant="standard"
+                                                            value={row.discount === 0 ? '' : row.discount}
+                                                            onChange={(e) => handleItemChange(index, 'discount', Number(e.target.value))}
+                                                            onFocus={(e) => e.target.select()}
+                                                            inputProps={{ sx: { textAlign: 'right', typography: 'body2', px: 0 } }}
+                                                            InputProps={{ disableUnderline: true }}
+                                                        />
+                                                    </Stack>
+                                                )
+                                            },
+                                            {
+                                                field: 'tax_type', component: (
+                                                    <TextField
+                                                        select
+                                                        fullWidth
+                                                        size="small"
+                                                        variant="standard"
+                                                        value={row.tax_type}
+                                                        onChange={(e) => handleItemChange(index, 'tax_type', e.target.value)}
+                                                        SelectProps={{ displayEmpty: true }}
+                                                        InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
+                                                    >
+                                                        <MenuItem value="" disabled sx={{ typography: 'body2', color: 'text.disabled' }}>Select Tax</MenuItem>
+                                                        {taxOptions.map((opt) => (
+                                                            <MenuItem key={opt.name} value={opt.name} sx={{ typography: 'body2' }}>
+                                                                {opt.tax_name || opt.name}
+                                                            </MenuItem>
+                                                        ))}
+                                                    </TextField>
+                                                )
+                                            },
+                                        ].map((cell, idx) => (
+                                            <TableCell
+                                                key={idx}
+                                                sx={{
+                                                    px: 1,
+                                                    py: 1,
+                                                    borderRight: (theme) => `1px solid ${theme.palette.divider}`,
+                                                    transition: (theme) => theme.transitions.create(['background-color', 'box-shadow']),
+                                                    '&:focus-within': {
+                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
+                                                    }
+                                                }}
+                                            >
+                                                {cell.component}
+                                            </TableCell>
+                                        ))}
+                                        <TableCell align="right" sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightMedium' }}>{fCurrency(row.tax_amount)}</Typography>
                                         </TableCell>
-                                    ))}
-                                    <TableCell align="right" sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                        <Typography variant="body2" sx={{ fontWeight: 'fontWeightMedium' }}>{fCurrency(row.tax_amount)}</Typography>
-                                    </TableCell>
-                                    <TableCell align="right" sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                        <Typography variant="subtitle2" color="primary.main">{fCurrency(row.sub_total)}</Typography>
-                                    </TableCell>
-                                    <TableCell sx={{ px: 1, py: 1 }}>
-                                        <IconButton color="error" onClick={() => handleRemoveRow(index)} size="small" sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}>
-                                            <Iconify icon="solar:trash-bin-trash-bold" />
-                                        </IconButton>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                                        <TableCell align="right" sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
+                                            <Typography variant="subtitle2" color="primary.main">{fCurrency(row.sub_total)}</Typography>
+                                        </TableCell>
+                                        <TableCell sx={{ px: 1, py: 1 }}>
+                                            <IconButton color="error" onClick={() => handleRemoveRow(index)} size="small" sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}>
+                                                <Iconify icon="solar:trash-bin-trash-bold" />
+                                            </IconButton>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
 
-                <Button
-                    startIcon={<Iconify icon="mingcute:add-line" />}
-                    onClick={handleAddRow}
-                    sx={{ mt: 2 }}
-                >
-                    Add Item
-                </Button>
+                    <Button
+                        startIcon={<Iconify icon="mingcute:add-line" />}
+                        onClick={handleAddRow}
+                        sx={{ mt: 2 }}
+                    >
+                        Add Item
+                    </Button>
 
-                <Divider sx={{ my: 4 }} />
+                    <Divider sx={{ my: 4 }} />
 
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Stack spacing={2} sx={{ width: 400, mt: 3 }}>
-                        <Stack direction="row" alignItems="center" justifyContent="space-between">
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                                <Iconify icon={"solar:box-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
-                                <Typography variant="body2" color="text.secondary">Total Quantity</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Stack spacing={2} sx={{ width: 400, mt: 3 }}>
+                            <Stack direction="row" alignItems="center" justifyContent="space-between">
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <Iconify icon={"solar:box-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <Typography variant="body2" color="text.secondary">Total Quantity</Typography>
+                                </Stack>
+                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{totalQty}</Typography>
                             </Stack>
-                            <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{totalQty}</Typography>
-                        </Stack>
 
-                        <Stack direction="row" alignItems="center" justifyContent="space-between">
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                                <Iconify icon={"solar:bill-list-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
-                                <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
+                            <Stack direction="row" alignItems="center" justifyContent="space-between">
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <Iconify icon={"solar:bill-list-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
+                                </Stack>
+                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(itemsTotalTaxable)}</Typography>
                             </Stack>
-                            <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(itemsTotalTaxable)}</Typography>
-                        </Stack>
 
-                        <Stack direction="row" alignItems="center" justifyContent="space-between">
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                                <Iconify icon={"solar:calculator-minimalistic-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
-                                <Typography variant="body2" color="text.secondary">Total Tax</Typography>
+                            <Stack direction="row" alignItems="center" justifyContent="space-between">
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <Iconify icon={"solar:calculator-minimalistic-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <Typography variant="body2" color="text.secondary">Total Tax</Typography>
+                                </Stack>
+                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(totalTax)}</Typography>
                             </Stack>
-                            <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(totalTax)}</Typography>
-                        </Stack>
 
-                        <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end">
-                            <Stack direction="row" alignItems="center" spacing={1} sx={{ flexGrow: 1 }}>
-                                <Iconify icon={"solar:tag-horizontal-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
-                                <Typography variant="body2" color="text.secondary">Overall Discount</Typography>
-                            </Stack>
-                            <ToggleButtonGroup
-                                size="small"
-                                value={discountType}
-                                exclusive
-                                onChange={(e, nextView) => {
-                                    if (nextView !== null) {
-                                        setDiscountType(nextView as any);
-                                    }
-                                }}
-                                sx={{
-                                    height: 32,
-                                    '& .MuiToggleButton-root': {
-                                        px: 1,
-                                        py: 0,
-                                        typography: 'body2',
-                                        '&.Mui-selected': {
-                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
-                                            color: 'primary.main',
+                            <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end">
+                                <Stack direction="row" alignItems="center" spacing={1} sx={{ flexGrow: 1 }}>
+                                    <Iconify icon={"solar:tag-horizontal-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <Typography variant="body2" color="text.secondary">Overall Discount</Typography>
+                                </Stack>
+                                <ToggleButtonGroup
+                                    size="small"
+                                    value={discountType}
+                                    exclusive
+                                    onChange={(e, nextView) => {
+                                        if (nextView !== null) {
+                                            setDiscountType(nextView as any);
                                         }
-                                    }
-                                }}
-                            >
-                                <ToggleButton value="Flat">₹</ToggleButton>
-                                <ToggleButton value="Percentage">%</ToggleButton>
-                            </ToggleButtonGroup>
-                            <TextField
-                                size="small"
-                                type="number"
-                                variant="standard"
-                                value={discountValue === 0 ? '' : discountValue}
-                                onChange={(e) => setDiscountValue(Number(e.target.value))}
-                                onFocus={(e) => e.target.select()}
-                                sx={{
-                                    width: 100,
-                                    '& .MuiInputBase-root': {
-                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                        borderRadius: 0.75,
-                                        px: 1,
-                                        '&:hover': {
-                                            bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
-                                        },
-                                        '&.Mui-focused': {
-                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                    }}
+                                    sx={{
+                                        height: 32,
+                                        '& .MuiToggleButton-root': {
+                                            px: 1,
+                                            py: 0,
+                                            typography: 'body2',
+                                            '&.Mui-selected': {
+                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                                                color: 'primary.main',
+                                            }
                                         }
-                                    }
-                                }}
-                                inputProps={{ sx: { textAlign: 'right', typography: 'body2' } }}
-                            />
-                        </Stack>
-
-                        <Divider />
-                        <Stack direction="row" alignItems="center" justifyContent="space-between">
-                            <Stack direction="row" alignItems="center" spacing={1.5}>
-                                <Iconify icon={"solar:wad-of-money-bold-duotone" as any} sx={{ color: 'primary.main', width: 24, height: 24 }} />
-                                <Typography variant="subtitle1" sx={{ color: 'primary.main' }}>Grand Total</Typography>
+                                    }}
+                                >
+                                    <ToggleButton value="Flat">₹</ToggleButton>
+                                    <ToggleButton value="Percentage">%</ToggleButton>
+                                </ToggleButtonGroup>
+                                <TextField
+                                    size="small"
+                                    type="number"
+                                    variant="standard"
+                                    value={discountValue === 0 ? '' : discountValue}
+                                    onChange={(e) => setDiscountValue(Number(e.target.value))}
+                                    onFocus={(e) => e.target.select()}
+                                    sx={{
+                                        width: 100,
+                                        '& .MuiInputBase-root': {
+                                            bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                            borderRadius: 0.75,
+                                            px: 1,
+                                            '&:hover': {
+                                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
+                                            },
+                                            '&.Mui-focused': {
+                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                            }
+                                        }
+                                    }}
+                                    inputProps={{ sx: { textAlign: 'right', typography: 'body2' } }}
+                                />
                             </Stack>
-                            <Typography variant="h6" color="primary" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(grandTotal)}</Typography>
+
+                            <Divider />
+                            <Stack direction="row" alignItems="center" justifyContent="space-between">
+                                <Stack direction="row" alignItems="center" spacing={1.5}>
+                                    <Iconify icon={"solar:wad-of-money-bold-duotone" as any} sx={{ color: 'primary.main', width: 24, height: 24 }} />
+                                    <Typography variant="subtitle1" sx={{ color: 'primary.main' }}>Grand Total</Typography>
+                                </Stack>
+                                <Typography variant="h6" color="primary" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(grandTotal)}</Typography>
+                            </Stack>
                         </Stack>
-                    </Stack>
-                </Box>
+                    </Box>
 
-                <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
-
-                <Box
-                    sx={{
-                        display: 'grid',
-                        gap: 3,
-                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' },
-                    }}
-                >
-                    <TextField
-                        fullWidth
-                        label="Description"
-                        multiline
-                        rows={4}
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                    />
+                    <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
 
                     <Box
                         sx={{
-                            p: 3,
-                            borderRadius: 2,
-                            bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
-                            border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
+                            display: 'grid',
+                            gap: 3,
+                            gridTemplateColumns: { xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' },
                         }}
                     >
-                        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
-                            <Typography variant="h6">Attachments</Typography>
+                        <TextField
+                            fullWidth
+                            label="Description"
+                            multiline
+                            rows={4}
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                        />
 
-                            <Button
-                                variant="contained"
-                                component="label"
-                                color="primary"
-                                size="small"
-                                startIcon={<Iconify icon={"solar:upload-bold" as any} />}
-                                disabled={uploading}
-                            >
-                                {uploading ? 'Uploading...' : 'Upload File'}
-                                <input type="file" hidden onChange={handleFileUpload} />
-                            </Button>
-                        </Stack>
+                        <Box
+                            sx={{
+                                p: 3,
+                                borderRadius: 2,
+                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
+                            }}
+                        >
+                            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
+                                <Typography variant="h6">Attachments</Typography>
 
-                        <Stack spacing={1}>
-                            {attachments.length === 0 ? (
-                                <Stack alignItems="center" justifyContent="center" sx={{ py: 3, color: 'text.disabled' }}>
-                                    <Iconify icon={"solar:file-bold" as any} width={40} height={40} sx={{ mb: 1, opacity: 0.48 }} />
-                                    <Typography variant="body2">No attachments yet</Typography>
-                                </Stack>
-                            ) : (
-                                attachments.map((file: any, index) => (
-                                    <Stack
-                                        key={index}
-                                        direction="row"
-                                        alignItems="center"
-                                        sx={{
-                                            px: 1.5,
-                                            py: 0.75,
-                                            borderRadius: 1.5,
-                                            bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                        }}
-                                    >
-                                        <Iconify icon={"solar:link-bold" as any} width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
-                                        <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
-                                            {typeof file === 'string' ? file : (file.url || file.name)}
-                                        </Typography>
-                                        <Button
-                                            size="small"
-                                            color="inherit"
-                                            onClick={() => handleRemoveAttachment(index)}
+                                <Button
+                                    variant="contained"
+                                    component="label"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<Iconify icon={"solar:upload-bold" as any} />}
+                                    disabled={uploading}
+                                >
+                                    {uploading ? 'Uploading...' : 'Upload File'}
+                                    <input type="file" hidden onChange={handleFileUpload} />
+                                </Button>
+                            </Stack>
+
+                            <Stack spacing={1}>
+                                {attachments.length === 0 ? (
+                                    <Stack alignItems="center" justifyContent="center" sx={{ py: 3, color: 'text.disabled' }}>
+                                        <Iconify icon={"solar:file-bold" as any} width={40} height={40} sx={{ mb: 1, opacity: 0.48 }} />
+                                        <Typography variant="body2">No attachments yet</Typography>
+                                    </Stack>
+                                ) : (
+                                    attachments.map((file: any, index) => (
+                                        <Stack
+                                            key={index}
+                                            direction="row"
+                                            alignItems="center"
                                             sx={{
                                                 px: 1.5,
-                                                py: 0,
-                                                height: 26,
+                                                py: 0.75,
                                                 borderRadius: 1.5,
-                                                minWidth: 'auto',
-                                                typography: 'caption',
-                                                bgcolor: 'background.paper',
-                                                border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.24)}`,
-                                                '&:hover': {
-                                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                                }
+                                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
                                             }}
                                         >
-                                            Clear
-                                        </Button>
-                                    </Stack>
-                                ))
-                            )}
-                        </Stack>
+                                            <Iconify icon={"solar:link-bold" as any} width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
+                                            <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
+                                                {typeof file === 'string' ? file : (file.url || file.name)}
+                                            </Typography>
+                                            <Button
+                                                size="small"
+                                                color="inherit"
+                                                onClick={() => handleRemoveAttachment(index)}
+                                                sx={{
+                                                    px: 1.5,
+                                                    py: 0,
+                                                    height: 26,
+                                                    borderRadius: 1.5,
+                                                    minWidth: 'auto',
+                                                    typography: 'caption',
+                                                    bgcolor: 'background.paper',
+                                                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.24)}`,
+                                                    '&:hover': {
+                                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                                    }
+                                                }}
+                                            >
+                                                Clear
+                                            </Button>
+                                        </Stack>
+                                    ))
+                                )}
+                            </Stack>
+                        </Box>
                     </Box>
-                </Box>
-            </Card>
+                </Card>
 
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={6000}
-                onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-                <Alert
-                    severity={snackbar.severity}
-                    sx={{
-                        width: '100%',
-                        boxShadow: (theme) => theme.customShadows.z20
-                    }}
+                <Snackbar
+                    open={snackbar.open}
+                    autoHideDuration={6000}
+                    onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
-                    <AlertTitle>{snackbar.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
+                    <Alert
+                        severity={snackbar.severity}
+                        sx={{
+                            width: '100%',
+                            boxShadow: (theme) => theme.customShadows.z20
+                        }}
+                    >
+                        <AlertTitle>{snackbar.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
+                        {snackbar.message}
+                    </Alert>
+                </Snackbar>
 
-            <Dialog open={itemDialogOpen} onClose={() => !creatingItem && setItemDialogOpen(false)} fullWidth maxWidth="xs">
-                <DialogTitle>Create Item</DialogTitle>
-                <DialogContent>
-                    <Stack spacing={3} sx={{ pt: 1 }}>
-                        <TextField
-                            fullWidth
-                            label="Item Name"
-                            value={newItem.item_name}
-                            onChange={(e) => setNewItem((prev) => ({ ...prev, item_name: e.target.value }))}
-                            required
-                        />
-                        <TextField
-                            fullWidth
-                            label="HSN Code"
-                            value={newItem.item_code}
-                            onChange={(e) => setNewItem((prev) => ({ ...prev, item_code: e.target.value }))}
-                        />
-                        <TextField
-                            fullWidth
-                            label="Rate"
-                            type="number"
-                            value={newItem.rate}
-                            onChange={(e) => setNewItem((prev) => ({ ...prev, rate: Number(e.target.value) }))}
-                        />
-                    </Stack>
-                </DialogContent>
-                <DialogActions>
-                    <Button color="inherit" onClick={() => setItemDialogOpen(false)} disabled={creatingItem}>
-                        Cancel
-                    </Button>
-                    <Button variant="contained" onClick={handleCreateItem} disabled={creatingItem}>
-                        {creatingItem ? <CircularProgress size={24} /> : 'Create'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </DashboardContent>
+                <Dialog open={itemDialogOpen} onClose={() => !creatingItem && setItemDialogOpen(false)} fullWidth maxWidth="xs">
+                    <DialogTitle>Create Item</DialogTitle>
+                    <DialogContent>
+                        <Stack spacing={3} sx={{ pt: 1 }}>
+                            <TextField
+                                fullWidth
+                                label="Item Name"
+                                value={newItem.item_name}
+                                onChange={(e) => setNewItem((prev) => ({ ...prev, item_name: e.target.value }))}
+                                required
+                            />
+                            <TextField
+                                fullWidth
+                                label="HSN Code"
+                                value={newItem.item_code}
+                                onChange={(e) => setNewItem((prev) => ({ ...prev, item_code: e.target.value }))}
+                            />
+                            <TextField
+                                fullWidth
+                                label="Rate"
+                                type="number"
+                                value={newItem.rate}
+                                onChange={(e) => setNewItem((prev) => ({ ...prev, rate: Number(e.target.value) }))}
+                            />
+                        </Stack>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button color="inherit" onClick={() => setItemDialogOpen(false)} disabled={creatingItem}>
+                            Cancel
+                        </Button>
+                        <Button variant="contained" onClick={handleCreateItem} disabled={creatingItem}>
+                            {creatingItem ? <CircularProgress size={24} /> : 'Create'}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </DashboardContent>
+        </LocalizationProvider>
     );
 }

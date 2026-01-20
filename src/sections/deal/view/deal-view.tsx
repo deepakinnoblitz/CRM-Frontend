@@ -631,8 +631,8 @@ export function DealView() {
                             { value: 'deal_title_desc', label: 'Title: Z to A' },
                             { value: 'account_asc', label: 'Account: A to Z' },
                             { value: 'account_desc', label: 'Account: Z to A' },
-                            { value: 'contact_asc', label: 'Contact: A to Z' },
-                            { value: 'contact_desc', label: 'Contact: Z to A' },
+                            { value: 'contact_name_asc', label: 'Contact Name: A to Z' },
+                            { value: 'contact_name_desc', label: 'Contact Name: Z to A' },
                             { value: 'value_desc', label: 'Deal Value: High to Low' },
                             { value: 'value_asc', label: 'Deal Value: Low to High' },
                         ]}
@@ -653,6 +653,7 @@ export function DealView() {
                                     headLabel={[
                                         { id: 'deal_title', label: 'Title' },
                                         { id: 'account', label: 'Account' },
+                                        { id: 'contact', label: 'Contact' },
                                         { id: 'value', label: 'Value' },
                                         { id: 'stage', label: 'Stage' },
                                         { id: 'expected_close_date', label: 'Expected Close' },
@@ -673,6 +674,8 @@ export function DealView() {
                                                     id: row.name,
                                                     title: row.deal_title ?? '-',
                                                     account: row.account ?? '-',
+                                                    contact: row.contact ?? '-',
+                                                    contactName: row.contact_name ?? '',
                                                     value: row.value ?? 0,
                                                     stage: row.stage ?? '-',
                                                     expectedCloseDate: row.expected_close_date ?? '-',

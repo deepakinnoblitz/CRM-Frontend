@@ -155,7 +155,11 @@ export function DealDetailsDialog({ open, onClose, dealId, onEdit }: Props) {
                                     </Typography>
                                     {renderType(deal.type || 'New Business')}
                                 </Box>
-                                <DetailItem label="Contact" value={deal.contact} icon="solar:user-bold" />
+                                <DetailItem
+                                    label="Contact"
+                                    value={deal.contact_name ? `${deal.contact_name} (${deal.contact})` : deal.contact}
+                                    icon="solar:user-bold"
+                                />
                                 <DetailItem label="Source Lead" value={deal.source_lead} icon="solar:tag-horizontal-bold" />
                             </Box>
                         </Box>

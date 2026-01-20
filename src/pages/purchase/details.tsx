@@ -13,7 +13,7 @@ export default function PurchaseViewPage() {
         <>
             <title> {`Purchase Detail - ${CONFIG.appName}`}</title>
 
-            <PurchaseDetailsView id={id} />
+            <PurchaseDetailsView />
         </>
     );
 }

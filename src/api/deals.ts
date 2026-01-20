@@ -3,6 +3,7 @@ export interface Deal {
     deal_title: string;
     account: string;
     contact?: string;
+    contact_name?: string;
     value: number;
     expected_close_date?: string;
     stage: 'Qualification' | 'Needs Analysis' | 'Meeting Scheduled' | 'Proposal Sent' | 'Negotiation' | 'Closed Won' | 'Closed Lost';
@@ -22,82 +23,27 @@ export async function fetchDeals(params: {
     sort_by?: string;
     filterValues?: Record<string, any>;
 }) {
-    const filters: any[] = [];
-
-    // Add dynamic filters from filterValues
-    if (params.filterValues) {
-        Object.entries(params.filterValues).forEach(([key, value]) => {
-            if (value && value !== 'all') {
-                filters.push(["Deal", key, "=", value]);
-            }
-        });
-    }
-
-    // Backward compatibility: if stage is provided directly (not in filterValues)
-    if (params.stage && params.stage !== 'all' && !params.filterValues?.stage) {
-        filters.push(["Deal", "stage", "=", params.stage]);
-    }
-
-    const or_filters: any[] = [];
-
-    if (params.search) {
-        or_filters.push(["Deal", "deal_title", "like", `%${params.search}%`]);
-        or_filters.push(["Deal", "account", "like", `%${params.search}%`]);
-    }
-
-    // Convert sort_by format (e.g., "creation_desc") to Frappe order_by format
-    let orderBy = "creation desc";
-    if (params.sort_by) {
-        const [field, direction] = params.sort_by.split('_').reduce((acc, part) => {
-            if (part === 'asc' || part === 'desc') {
-                acc[1] = part;
-            } else {
-                acc[0] = acc[0] ? `${acc[0]}_${part}` : part;
-            }
-            return acc;
-        }, ['', 'desc']);
-        orderBy = `${field} ${direction}`;
-    }
-
-    const query = new URLSearchParams({
-        doctype: "Deal",
-        fields: JSON.stringify([
-            "name",
-            "deal_title",
-            "account",
-            "contact",
-            "value",
-            "expected_close_date",
-            "stage",
-            "probability",
-            "type",
-            "source_lead",
-            "next_step",
-            "notes",
-            "deal_owner",
-            "owner",
-            "creation"
-        ]),
-        filters: JSON.stringify(filters),
-        or_filters: JSON.stringify(or_filters),
-        limit_start: String((params.page - 1) * params.page_size),
-        limit_page_length: String(params.page_size),
-        order_by: orderBy
+    const res = await fetch("/api/method/company.company.doctype.deal.deal.get_deals_list", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+            start: (params.page - 1) * params.page_size,
+            page_length: params.page_size,
+            search: params.search,
+            stage: params.stage,
+            sort_by: params.sort_by,
+            filterValues: params.filterValues
+        })
     });
-
-    const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Deal&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`, { credentials: "include" })
-    ]);
 
     if (!res.ok) throw new Error("Failed to fetch deals");
 
-    const data = await res.json();
-    const countData = await countRes.json();
+    const response = await res.json();
 
     return {
-        data: data.message || [],
-        total: countData.message || 0
+        data: response.message.data || [],
+        total: response.message.total || 0
     };
 }
 
@@ -168,24 +114,13 @@ export async function getDealPermissions() {
     return (await res.json()).message || { read: false, write: false, delete: false };
 }
 export async function getDeal(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get_value?doctype=Deal&name=${name}&fieldname=${JSON.stringify([
-        "name",
-        "deal_title",
-        "account",
-        "contact",
-        "value",
-        "expected_close_date",
-        "stage",
-        "probability",
-        "type",
-        "source_lead",
-        "next_step",
-        "notes",
-        "deal_owner",
-        "owner",
-        "creation",
-    ])}`, {
-        credentials: "include"
+    const res = await fetch("/api/method/company.company.doctype.deal.deal.get_deal_details", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+            name
+        })
     });
 
     if (!res.ok) {
