@@ -13,6 +13,8 @@ import TablePagination from '@mui/material/TablePagination';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { getDoctypeList } from 'src/api/leads';
+import { fetchInvoices } from 'src/api/invoice';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchInvoiceCollections, deleteInvoiceCollection, InvoiceCollection } from 'src/api/invoice-collection';
 
@@ -26,6 +28,7 @@ import { TableEmptyRows } from '../../invoice/table-empty-rows';
 import { InvoiceCollectionTableRow } from '../invoice-collection-table-row';
 import { InvoiceCollectionTableHead } from '../invoice-collection-table-head';
 import { InvoiceCollectionTableToolbar } from '../invoice-collection-table-toolbar';
+import { InvoiceCollectionTableFiltersDrawer } from '../invoice-collection-table-filters-drawer';
 
 const TABLE_HEAD = [
     { id: 'name', label: 'ID' },
@@ -44,7 +47,7 @@ export function InvoiceCollectionListView() {
 
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
-    const [orderBy, setOrderBy] = useState('creation');
+    const [orderBy, setOrderBy] = useState('modified');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [selected, setSelected] = useState<string[]>([]);
 
@@ -60,6 +63,39 @@ export function InvoiceCollectionListView() {
         severity: 'success',
     });
 
+    const [openFilters, setOpenFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        customer: 'all',
+        invoice: '',
+        collection_date: null as string | null,
+        mode_of_payment: 'all',
+    });
+    const [customerOptions, setCustomerOptions] = useState<{ name: string; customer_name: string }[]>([]);
+    const [invoiceOptions, setInvoiceOptions] = useState<string[]>([]);
+    const [modeOfPaymentOptions, setModeOfPaymentOptions] = useState<string[]>([]);
+
+    useEffect(() => {
+        // Fetch Contacts for Customer Filter
+        getDoctypeList('Contacts', ['name', 'first_name', 'company_name']).then((res) => {
+            const options = res.map((c: any) => ({
+                name: c.name,
+                customer_name: c.first_name + (c.company_name ? ` - ${c.company_name}` : '')
+            }));
+            setCustomerOptions(options);
+        });
+
+        // Fetch Invoices for Invoice Filter
+        fetchInvoices({ page: 1, page_size: 1000 }).then((res) => {
+            const invoices = res.data.map((i: any) => i.name) as string[];
+            setInvoiceOptions(invoices);
+        });
+
+        // Fetch Mode of Payment Options
+        getDoctypeList('Payment Type', ['name']).then((res) => {
+            setModeOfPaymentOptions(res.map((m: any) => m.name));
+        });
+    }, []);
+
     const getInvoiceCollections = useCallback(async () => {
         try {
             setLoading(true);
@@ -67,6 +103,7 @@ export function InvoiceCollectionListView() {
                 page: page + 1,
                 page_size: rowsPerPage,
                 search,
+                filters,
                 sort_by: `${orderBy}_${order}`
             });
 
@@ -103,11 +140,23 @@ export function InvoiceCollectionListView() {
         } finally {
             setLoading(false);
         }
-    }, [page, rowsPerPage, search, orderBy, order]);
+    }, [page, rowsPerPage, search, orderBy, order, filters]);
 
     useEffect(() => {
         getInvoiceCollections();
     }, [getInvoiceCollections]);
+
+    const handleFilters = (newFilters: any) => {
+        setFilters((prev) => ({ ...prev, ...newFilters }));
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilters({ customer: 'all', invoice: '', collection_date: null, mode_of_payment: 'all' });
+        setPage(0);
+    };
+
+    const canReset = filters.customer !== 'all' || !!filters.invoice || !!filters.collection_date || filters.mode_of_payment !== 'all';
 
     const handleSort = (id: string) => {
         const isAsc = orderBy === id && order === 'asc';
@@ -230,6 +279,8 @@ export function InvoiceCollectionListView() {
                         setOrderBy(field);
                         setOrder(direction as 'asc' | 'desc');
                     }}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
                 />
 
                 <Scrollbar>
@@ -281,6 +332,21 @@ export function InvoiceCollectionListView() {
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
             </Card>
+
+            <InvoiceCollectionTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                options={{
+                    customers: customerOptions,
+                    invoices: invoiceOptions,
+                    modesOfPayment: modeOfPaymentOptions,
+                }}
+            />
 
             <Snackbar
                 open={snackbar.open}

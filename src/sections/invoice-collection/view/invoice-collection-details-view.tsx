@@ -17,8 +17,9 @@ import { useRouter } from 'src/routes/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
 
+import { getInvoice, Invoice } from 'src/api/invoice';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getInvoiceCollection, deleteInvoiceCollection } from 'src/api/invoice-collection';
+import { getInvoiceCollection, deleteInvoiceCollection, fetchInvoiceCollections } from 'src/api/invoice-collection';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -32,13 +33,32 @@ export function InvoiceCollectionDetailsView() {
     const [collection, setCollection] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
     const [deleting, setDeleting] = useState(false);
+    const [isLatest, setIsLatest] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+    const [invoiceDetails, setInvoiceDetails] = useState<Invoice | null>(null);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
     useEffect(() => {
         if (id) {
             getInvoiceCollection(id)
-                .then(setCollection)
+                .then((data) => {
+                    setCollection(data);
+                    // Fetch Invoice Details
+                    getInvoice(data.invoice).then((inv) => {
+                        setInvoiceDetails(inv);
+                    }).catch((err) => console.error("Failed to fetch invoice details", err));
+
+                    // Check if latest
+                    fetchInvoiceCollections({
+                        page: 1,
+                        page_size: 1,
+                        filters: { invoice: data.invoice }
+                    }).then((res) => {
+                        if (res.data.length > 0) {
+                            setIsLatest(res.data[0].name === data.name);
+                        }
+                    });
+                })
                 .catch((error) => {
                     console.error('Failed to fetch collection:', error);
                     setSnackbar({ open: true, message: 'Failed to load collection details', severity: 'error' });
@@ -108,22 +128,26 @@ export function InvoiceCollectionDetailsView() {
                     >
                         Back to List
                     </Button>
-                    <Button
-                        variant="contained"
-                        color="error"
-                        onClick={() => setConfirmDeleteOpen(true)}
-                        startIcon={<Iconify icon={"solar:trash-bin-trash-bold" as any} />}
-                    >
-                        Delete
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => router.push(`/invoice-collections/${encodeURIComponent(id || '')}/edit`)}
-                        startIcon={<Iconify icon={"solar:pen-bold" as any} />}
-                    >
-                        Edit Collection
-                    </Button>
+                    {isLatest && (
+                        <Button
+                            variant="contained"
+                            color="error"
+                            onClick={() => setConfirmDeleteOpen(true)}
+                            startIcon={<Iconify icon={"solar:trash-bin-trash-bold" as any} />}
+                        >
+                            Delete
+                        </Button>
+                    )}
+                    {isLatest && (
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => router.push(`/invoice-collections/${encodeURIComponent(id || '')}/edit`)}
+                            startIcon={<Iconify icon={"solar:pen-bold" as any} />}
+                        >
+                            Edit Collection
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 
@@ -147,6 +171,13 @@ export function InvoiceCollectionDetailsView() {
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                                 <Typography variant="caption" color="text.disabled">Invoice Number</Typography>
                                 <Typography variant="subtitle1" color="primary.main" sx={{ mt: 0.5 }}>{invoice}</Typography>
+                                {invoiceDetails && (
+                                    <>
+                                        <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
+                                        <Typography variant="caption" color="text.disabled">Grand Total</Typography>
+                                        <Typography variant="subtitle1" sx={{ mt: 0.5 }}>{fCurrency(invoiceDetails.grand_total || 0)}</Typography>
+                                    </>
+                                )}
                                 <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
                                 <Typography variant="caption" color="text.disabled">Amount to Pay</Typography>
                                 <Typography variant="h6" sx={{ mt: 0.5 }}>{fCurrency(amount_to_pay)}</Typography>

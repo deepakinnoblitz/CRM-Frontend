@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
@@ -15,8 +15,9 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useInvoices } from 'src/hooks/useInvoices';
 
-import { deleteInvoice } from 'src/api/invoice';
+import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { fetchInvoices, deleteInvoice } from 'src/api/invoice';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -28,6 +29,7 @@ import { TableEmptyRows } from '../table-empty-rows';
 import { InvoiceTableRow } from '../invoice-table-row';
 import { InvoiceTableHead } from '../invoice-table-head';
 import { InvoiceTableToolbar } from '../invoice-table-toolbar';
+import { InvoiceTableFiltersDrawer } from '../invoice-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
@@ -57,12 +59,51 @@ export function InvoiceListView() {
         severity: 'success',
     });
 
+    const [openFilters, setOpenFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        client_name: 'all',
+        ref_no: '',
+        invoice_date: null as string | null,
+    });
+    const [customerOptions, setCustomerOptions] = useState<{ name: string; customer_name: string }[]>([]);
+    const [refNoOptions, setRefNoOptions] = useState<string[]>([]);
+
+    useEffect(() => {
+        // Fetch Contacts for Customer Filter
+        getDoctypeList('Contacts', ['name', 'first_name', 'company_name']).then((res) => {
+            const options = res.map((c: any) => ({
+                name: c.name,
+                customer_name: c.first_name + (c.company_name ? ` - ${c.company_name}` : '')
+            }));
+            setCustomerOptions(options);
+        });
+
+        // Fetch Invoices for Ref No Filter
+        fetchInvoices({ page: 1, page_size: 1000 }).then((res) => {
+            const refs = Array.from(new Set(res.data.map((i: any) => i.ref_no).filter(Boolean))) as string[];
+            setRefNoOptions(refs);
+        });
+    }, []);
+
     const { data, total, loading, refetch } = useInvoices(
         table.page,
         table.rowsPerPage,
         filterName,
+        filters,
         sortBy
     );
+
+    const handleFilters = (newFilters: any) => {
+        setFilters((prev) => ({ ...prev, ...newFilters }));
+        table.onResetPage();
+    };
+
+    const handleResetFilters = () => {
+        setFilters({ client_name: 'all', ref_no: '', invoice_date: null });
+        table.onResetPage();
+    };
+
+    const canReset = filters.client_name !== 'all' || !!filters.ref_no || !!filters.invoice_date;
 
     const handleFilterName = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,6 +170,8 @@ export function InvoiceListView() {
                     onFilterName={handleFilterName}
                     sortBy={sortBy}
                     onSortChange={setSortBy}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
                 />
 
                 <Scrollbar>
@@ -191,6 +234,20 @@ export function InvoiceListView() {
                     onRowsPerPageChange={table.onChangeRowsPerPage}
                 />
             </Card>
+
+            <InvoiceTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                options={{
+                    customers: customerOptions,
+                    refNos: refNoOptions,
+                }}
+            />
 
             <Snackbar
                 open={snackbar.open}

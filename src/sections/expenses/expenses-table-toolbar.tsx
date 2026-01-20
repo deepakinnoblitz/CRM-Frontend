@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
+import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
 import { alpha } from '@mui/material/styles';
@@ -23,9 +24,13 @@ type ExpenseTableToolbarProps = {
     onDelete?: VoidFunction;
     sortBy?: string;
     onSortChange?: (value: string) => void;
+    onOpenFilter?: () => void;
+    canReset?: boolean;
 };
 
 const SORT_OPTIONS = [
+    { value: 'modified_desc', label: 'Newest First' },
+    { value: 'modified_asc', label: 'Oldest First' },
     { value: 'date_desc', label: 'Date: Newest First' },
     { value: 'date_asc', label: 'Date: Oldest First' },
     { value: 'total_desc', label: 'Amount: High to Low' },
@@ -40,8 +45,10 @@ export function ExpenseTableToolbar({
     onFilterName,
     searchPlaceholder = "Search expenses...",
     onDelete,
-    sortBy = 'date_desc',
+    sortBy = 'modified_desc',
     onSortChange,
+    onOpenFilter,
+    canReset,
 }: ExpenseTableToolbarProps) {
     const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -99,66 +106,91 @@ export function ExpenseTableToolbar({
                         <Iconify icon="solar:trash-bin-trash-bold" />
                     </IconButton>
                 ) : (
-                    onSortChange && (
-                        <>
+                    <>
+                        {onOpenFilter && (
                             <Button
-                                variant="text"
+                                disableRipple
                                 color="inherit"
-                                startIcon={<Iconify icon={"solar:sort-bold" as any} />}
-                                onClick={handleSortClick}
+                                startIcon={
+                                    <Badge color="error" variant="dot" invisible={!canReset}>
+                                        <Iconify icon="ic:round-filter-list" />
+                                    </Badge>
+                                }
+                                onClick={onOpenFilter}
                                 sx={{
-                                    minWidth: 160,
                                     height: 40,
                                     px: 2,
-                                    color: 'text.primary',
                                     bgcolor: 'background.neutral',
                                     border: '1px solid',
                                     borderColor: 'divider',
                                     borderRadius: 1,
                                     fontWeight: 500,
-                                    '&:hover': {
-                                        bgcolor: 'action.hover',
-                                    }
                                 }}
                             >
-                                {currentSortLabel}
+                                Filters
                             </Button>
-
-                            <Menu
-                                anchorEl={sortAnchorEl}
-                                open={Boolean(sortAnchorEl)}
-                                onClose={handleSortClose}
-                                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                                slotProps={{
-                                    paper: {
-                                        sx: {
-                                            mt: 1,
-                                            minWidth: 200,
-                                            boxShadow: (theme) => theme.customShadows.z20,
+                        )}
+                        {onSortChange && (
+                            <>
+                                <Button
+                                    variant="text"
+                                    color="inherit"
+                                    startIcon={<Iconify icon={"solar:sort-bold" as any} />}
+                                    onClick={handleSortClick}
+                                    sx={{
+                                        minWidth: 160,
+                                        height: 40,
+                                        px: 2,
+                                        color: 'text.primary',
+                                        bgcolor: 'background.neutral',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        borderRadius: 1,
+                                        fontWeight: 500,
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
                                         }
-                                    }
-                                }}
-                            >
-                                {SORT_OPTIONS.map((option) => (
-                                    <MenuItem
-                                        key={option.value}
-                                        selected={option.value === sortBy}
-                                        onClick={() => handleSortSelect(option.value)}
-                                        sx={{
-                                            typography: 'body2',
-                                            ...(option.value === sortBy && {
-                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                                                fontWeight: 'fontWeightSemiBold',
-                                            })
-                                        }}
-                                    >
-                                        {option.label}
-                                    </MenuItem>
-                                ))}
-                            </Menu>
-                        </>
-                    )
+                                    }}
+                                >
+                                    {currentSortLabel}
+                                </Button>
+
+                                <Menu
+                                    anchorEl={sortAnchorEl}
+                                    open={Boolean(sortAnchorEl)}
+                                    onClose={handleSortClose}
+                                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                                    slotProps={{
+                                        paper: {
+                                            sx: {
+                                                mt: 1,
+                                                minWidth: 200,
+                                                boxShadow: (theme) => theme.customShadows.z20,
+                                            }
+                                        }
+                                    }}
+                                >
+                                    {SORT_OPTIONS.map((option) => (
+                                        <MenuItem
+                                            key={option.value}
+                                            selected={option.value === sortBy}
+                                            onClick={() => handleSortSelect(option.value)}
+                                            sx={{
+                                                typography: 'body2',
+                                                ...(option.value === sortBy && {
+                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                    fontWeight: 'fontWeightSemiBold',
+                                                })
+                                            }}
+                                        >
+                                            {option.label}
+                                        </MenuItem>
+                                    ))}
+                                </Menu>
+                            </>
+                        )}
+                    </>
                 )}
             </Box>
         </Toolbar>

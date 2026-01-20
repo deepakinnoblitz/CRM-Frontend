@@ -32,8 +32,14 @@ async function fetchFrappeList(params: {
     page: number;
     page_size: number;
     search?: string;
-    orderBy?: string;
-    order?: 'asc' | 'desc';
+    filters?: {
+        expense_id?: string;
+        expense_category?: string;
+        payment_type?: string;
+        start_date?: string | null;
+        end_date?: string | null;
+    };
+    sort_by?: string;
 }) {
     const filters: any[] = [];
 
@@ -43,7 +49,32 @@ async function fetchFrappeList(params: {
         ]);
     }
 
-    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "date desc";
+    if (params.filters) {
+        if (params.filters.expense_id) {
+            filters.push(['Expenses', 'expense_no', 'like', `%${params.filters.expense_id}%`]);
+        }
+        if (params.filters.expense_category && params.filters.expense_category !== 'all') {
+            filters.push(['Expenses', 'expense_category', 'like', `%${params.filters.expense_category}%`]);
+        }
+        if (params.filters.payment_type && params.filters.payment_type !== 'all') {
+            filters.push(['Expenses', 'payment_type', '=', params.filters.payment_type]);
+        }
+        if (params.filters.start_date) {
+            filters.push(['Expenses', 'date', '>=', params.filters.start_date]);
+        }
+        if (params.filters.end_date) {
+            filters.push(['Expenses', 'date', '<=', params.filters.end_date]);
+        }
+    }
+
+    // Parse sort_by parameter (e.g., "modified_desc" -> orderBy: "modified", order: "desc")
+    let orderByParam = "date desc";
+    if (params.sort_by) {
+        const parts = params.sort_by.split('_');
+        const order = parts[parts.length - 1]; // Last part is 'asc' or 'desc'
+        const field = parts.slice(0, -1).join('_'); // Everything before last part is the field
+        orderByParam = `${field} ${order}`;
+    }
 
     const query = new URLSearchParams({
         doctype: 'Expenses',

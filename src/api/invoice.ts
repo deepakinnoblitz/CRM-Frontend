@@ -53,6 +53,11 @@ export interface Invoice {
 }
 
 export async function fetchInvoices(params: {
+    filters?: {
+        client_name?: string;
+        ref_no?: string;
+        invoice_date?: string | null;
+    };
     page: number;
     page_size: number;
     search?: string;
@@ -60,6 +65,18 @@ export async function fetchInvoices(params: {
 }) {
     const filters: any[] = [];
     const or_filters: any[] = [];
+
+    if (params.filters) {
+        if (params.filters.client_name && params.filters.client_name !== 'all') {
+            filters.push(["Invoice", "client_name", "=", params.filters.client_name]);
+        }
+        if (params.filters.ref_no) {
+            filters.push(["Invoice", "ref_no", "=", params.filters.ref_no]);
+        }
+        if (params.filters.invoice_date) {
+            filters.push(["Invoice", "invoice_date", "=", params.filters.invoice_date]);
+        }
+    }
 
     if (params.search) {
         or_filters.push(["Invoice", "ref_no", "like", `%${params.search}%`]);

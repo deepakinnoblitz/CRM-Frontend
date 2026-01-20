@@ -8,6 +8,11 @@ export function useInvoices(
     page: number,
     rowsPerPage: number,
     search: string,
+    filters?: {
+        client_name?: string;
+        ref_no?: string;
+        invoice_date?: string | null;
+    },
     sortBy?: string
 ) {
     const [data, setData] = useState<Invoice[]>([]);
@@ -25,6 +30,7 @@ export function useInvoices(
             page: page + 1, // Frappe pages start from 1
             page_size: rowsPerPage,
             search,
+            filters,
             sort_by: sortBy,
         })
             .then((res) => {
@@ -37,7 +43,7 @@ export function useInvoices(
                 setTotal(0);
             })
             .finally(() => setLoading(false));
-    }, [page, rowsPerPage, search, sortBy, trigger]);
+    }, [page, rowsPerPage, search, filters, sortBy, trigger]);
 
     return { data, total, loading, refetch };
 }

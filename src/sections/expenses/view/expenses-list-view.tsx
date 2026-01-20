@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
@@ -16,8 +16,8 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useExpense } from 'src/hooks/useExpense';
 
-import { deleteExpense } from 'src/api/expenses';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { deleteExpense, getDoctypeList } from 'src/api/expenses';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -29,6 +29,7 @@ import { TableEmptyRows } from '../table-empty-rows';
 import { ExpenseTableRow } from '../expenses-table-row';
 import { ExpenseTableHead } from '../expenses-table-head';
 import { ExpenseTableToolbar } from '../expenses-table-toolbar';
+import { ExpenseTableFiltersDrawer } from '../expenses-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
@@ -49,7 +50,39 @@ export function ExpenseListView() {
 
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [filterName, setFilterName] = useState('');
-    const [sortBy, setSortBy] = useState('date_desc');
+    const [sortBy, setSortBy] = useState('modified_desc');
+
+    const [openFilters, setOpenFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        expense_id: '',
+        expense_category: 'all',
+        payment_type: 'all',
+        start_date: null as string | null,
+        end_date: null as string | null,
+    });
+    const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+    const [paymentTypeOptions, setPaymentTypeOptions] = useState<string[]>([]);
+
+    useEffect(() => {
+        getDoctypeList('Expense Category', ['name']).then((res) => {
+            setCategoryOptions(res.map((item: any) => item.name));
+        });
+        getDoctypeList('Payment Type', ['name']).then((res) => {
+            setPaymentTypeOptions(res.map((item: any) => item.name));
+        });
+    }, []);
+
+    const handleFilters = (newFilters: any) => {
+        setFilters((prev) => ({ ...prev, ...newFilters }));
+        table.onResetPage();
+    };
+
+    const handleResetFilters = () => {
+        setFilters({ expense_id: '', expense_category: 'all', payment_type: 'all', start_date: null, end_date: null });
+        table.onResetPage();
+    };
+
+    const canReset = !!filters.expense_id || filters.expense_category !== 'all' || filters.payment_type !== 'all' || !!filters.start_date || !!filters.end_date;
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
@@ -60,6 +93,7 @@ export function ExpenseListView() {
         table.page,
         table.rowsPerPage,
         filterName,
+        filters,
         sortBy
     );
 
@@ -128,6 +162,8 @@ export function ExpenseListView() {
                     onFilterName={handleFilterName}
                     sortBy={sortBy}
                     onSortChange={setSortBy}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
                 />
 
                 <Scrollbar>
@@ -225,6 +261,19 @@ export function ExpenseListView() {
                         Delete
                     </Button>
                 }
+            />
+            <ExpenseTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                options={{
+                    categories: categoryOptions,
+                    paymentTypes: paymentTypeOptions,
+                }}
             />
         </DashboardContent>
     );

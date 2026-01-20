@@ -66,9 +66,11 @@ export function InvoiceCollectionTableRow({
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
-                    <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
-                        <Iconify icon="solar:trash-bin-trash-bold" />
-                    </IconButton>
+                    {isLatest && (
+                        <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
+                            <Iconify icon="solar:trash-bin-trash-bold" />
+                        </IconButton>
+                    )}
                 </Box>
             </TableCell>
         </TableRow>

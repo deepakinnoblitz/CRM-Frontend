@@ -22,9 +22,30 @@ export async function fetchInvoiceCollections(params: {
     page_size: number;
     search?: string;
     sort_by?: string;
+    filters?: {
+        invoice?: string;
+        customer?: string;
+        collection_date?: string | null;
+        mode_of_payment?: string;
+    };
 }) {
     const filters: any[] = [];
     const or_filters: any[] = [];
+
+    if (params.filters) {
+        if (params.filters.invoice) {
+            filters.push(["Invoice Collection", "invoice", "=", params.filters.invoice]);
+        }
+        if (params.filters.customer && params.filters.customer !== 'all') {
+            filters.push(["Invoice Collection", "customer", "=", params.filters.customer]);
+        }
+        if (params.filters.collection_date) {
+            filters.push(["Invoice Collection", "collection_date", "=", params.filters.collection_date]);
+        }
+        if (params.filters.mode_of_payment && params.filters.mode_of_payment !== 'all') {
+            filters.push(["Invoice Collection", "mode_of_payment", "=", params.filters.mode_of_payment]);
+        }
+    }
 
     if (params.search) {
         or_filters.push(["Invoice Collection", "name", "like", `%${params.search}%`]);
@@ -52,9 +73,12 @@ export async function fetchInvoiceCollections(params: {
             "invoice",
             "customer",
             "customer_name",
+            "company_name",
             "collection_date",
             "amount_collected",
             "mode_of_payment",
+            "amount_pending",
+            "amount_to_pay",
             "creation"
         ]),
         filters: JSON.stringify(filters),
