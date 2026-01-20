@@ -15,13 +15,24 @@ export async function fetchAccounts(params: {
     page_size: number;
     search?: string;
     sort_by?: string;
+    filterValues?: Record<string, any>;
 }) {
     const filters: any[] = [];
+
+    // Add dynamic filters from filterValues
+    if (params.filterValues) {
+        Object.entries(params.filterValues).forEach(([key, value]) => {
+            if (value && value !== 'all') {
+                filters.push(["Accounts", key, "=", value]);
+            }
+        });
+    }
+
     const or_filters: any[] = params.search ? [
         ["Accounts", "account_name", "like", `%${params.search}%`],
-        ["or", "Accounts", "account_owner", "like", `%${params.search}%`],
-        ["or", "Accounts", "phone_number", "like", `%${params.search}%`],
-        ["or", "Accounts", "website", "like", `%${params.search}%`]
+        ["Accounts", "account_owner", "like", `%${params.search}%`],
+        ["Accounts", "phone_number", "like", `%${params.search}%`],
+        ["Accounts", "website", "like", `%${params.search}%`]
     ] : [];
 
     // Convert sort_by format (e.g., "creation_desc") to Frappe order_by format

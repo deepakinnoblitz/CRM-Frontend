@@ -39,6 +39,7 @@ import { TableNoData } from '../../user/table-no-data';
 import { ContactTableRow } from '../contact-table-row';
 import { TableEmptyRows } from '../../user/table-empty-rows';
 import { ContactImportDialog } from '../contact-import-dialog';
+import { ContactTableFiltersDrawer } from '../contact-table-filters-drawer';
 import { UserTableHead as ContactTableHead } from '../../user/user-table-head';
 import { ContactDetailsDialog } from '../../report/contact/contact-details-dialog';
 import { UserTableToolbar as ContactTableToolbar } from '../../user/user-table-toolbar';
@@ -49,8 +50,16 @@ export function ContactView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
-    const [sortBy, setSortBy] = useState('creation_desc');
+    const [filters, setFilters] = useState({
+        customer_type: 'all',
+        source_lead: 'all',
+        country: 'all',
+        state: 'all',
+        city: 'all',
+    });
+    const [sortBy, setSortBy] = useState('modified_desc');
     const [selected, setSelected] = useState<string[]>([]);
+    const [openFilters, setOpenFilters] = useState(false);
 
     const [openCreate, setOpenCreate] = useState(false);
     const [creating, setCreating] = useState(false);
@@ -77,6 +86,9 @@ export function ContactView() {
     const [stateOptions, setStateOptions] = useState<string[]>([]);
     const [cityOptions, setCityOptions] = useState<string[]>([]);
     const [leadOptions, setLeadOptions] = useState<{ name: string; lead_name: string }[]>([]);
+    // Filter-specific location options
+    const [filterStateOptions, setFilterStateOptions] = useState<string[]>([]);
+    const [filterCityOptions, setFilterCityOptions] = useState<string[]>([]);
 
     // Alert & Dialog State
     const [openDelete, setOpenDelete] = useState(false);
@@ -98,8 +110,32 @@ export function ContactView() {
         page + 1,
         rowsPerPage,
         filterName,
+        filters,
         sortBy
     );
+
+    const handleFilters = (update: any) => {
+        setFilters((prev) => ({ ...prev, ...update }));
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            customer_type: 'all',
+            source_lead: 'all',
+            country: 'all',
+            state: 'all',
+            city: 'all',
+        });
+        setPage(0);
+    };
+
+    const canReset =
+        filters.customer_type !== 'all' ||
+        filters.source_lead !== 'all' ||
+        filters.country !== 'all' ||
+        filters.state !== 'all' ||
+        filters.city !== 'all';
 
     useEffect(() => {
         getContactPermissions().then(setPermissions);
@@ -148,6 +184,42 @@ export function ContactView() {
             setCityOptions([]);
         }
     }, [state, country]);
+
+    // Update filter state options when filter country changes
+    useEffect(() => {
+        if (filters.country && filters.country !== 'all') {
+            const countryData = locationData.find((c: any) => c.country === filters.country);
+            if (countryData) {
+                const states = countryData.states.map((s: any) => s.name);
+                setFilterStateOptions([...states, "Others"]);
+            } else {
+                setFilterStateOptions([]);
+            }
+        } else {
+            setFilterStateOptions([]);
+        }
+    }, [filters.country]);
+
+    // Update filter city options when filter state changes
+    useEffect(() => {
+        if (filters.state && filters.state !== 'all' && filters.country && filters.country !== 'all') {
+            if (filters.state === 'Others') {
+                setFilterCityOptions(['Others']);
+            } else {
+                const countryData = locationData.find((c: any) => c.country === filters.country);
+                if (countryData) {
+                    const stateData = countryData.states.find((s: any) => s.name === filters.state);
+                    if (stateData) {
+                        setFilterCityOptions([...stateData.cities, "Others"]);
+                    } else {
+                        setFilterCityOptions(["Others"]);
+                    }
+                }
+            }
+        } else {
+            setFilterCityOptions([]);
+        }
+    }, [filters.state, filters.country]);
 
     // Validation State
     const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
@@ -362,8 +434,8 @@ export function ContactView() {
         setPage(0);
     };
 
-    const notFound = !loading && !data.length && !!filterName;
-    const empty = !loading && !data.length && !filterName;
+    const notFound = !loading && !data.length && (!!filterName || canReset);
+    const empty = !loading && !data.length && !filterName && !canReset;
 
     return (
         <DashboardContent>
@@ -403,6 +475,8 @@ export function ContactView() {
                         setPage(0);
                     }}
                     searchPlaceholder="Search contacts..."
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
                     sortBy={sortBy}
                     onSortChange={setSortBy}
                     onDelete={handleBulkDelete}
@@ -489,6 +563,22 @@ export function ContactView() {
                     onRowsPerPageChange={onChangeRowsPerPage}
                 />
             </Card>
+
+            <ContactTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                options={{
+                    countries: countryOptions.filter((c) => c !== ''),
+                    states: filterStateOptions,
+                    cities: filterCityOptions,
+                    source_leads: leadOptions,
+                }}
+            />
 
             {/* CREATE/EDIT DIALOG */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
@@ -724,6 +814,7 @@ export function ContactView() {
                     setCurrentContactId(null);
                 }}
                 contactId={currentContactId}
+                onEdit={handleEditRow}
             />
         </DashboardContent>
     );

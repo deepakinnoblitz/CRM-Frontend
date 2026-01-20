@@ -43,6 +43,7 @@ import { DealTableRow } from '../deal-table-row';
 import { TableNoData } from '../../user/table-no-data';
 import { DealDetailsDialog } from '../deal-details-dialog';
 import { TableEmptyRows } from '../../user/table-empty-rows';
+import { DealTableFiltersDrawer } from '../deal-table-filters-drawer';
 import { UserTableHead as DealTableHead } from '../../user/user-table-head';
 import { UserTableToolbar as DealTableToolbar } from '../../user/user-table-toolbar';
 
@@ -53,7 +54,15 @@ export function DealView() {
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [filterStage, setFilterStage] = useState('all');
-    const [sortBy, setSortBy] = useState('creation_desc');
+    const [filters, setFilters] = useState({
+        type: 'all',
+        contact: 'all',
+        account: 'all',
+        source_lead: 'all',
+        stage: 'all',
+    });
+    const [openFilters, setOpenFilters] = useState(false);
+    const [sortBy, setSortBy] = useState('modified_desc');
     const [selected, setSelected] = useState<string[]>([]);
 
     const STAGE_OPTIONS = [
@@ -86,9 +95,9 @@ export function DealView() {
     const [notes, setNotes] = useState('');
 
     // Dropdown Options
-    const [accountOptions, setAccountOptions] = useState<string[]>([]);
-    const [contactOptions, setContactOptions] = useState<string[]>([]);
-    const [leadOptions, setLeadOptions] = useState<string[]>([]);
+    const [accountOptions, setAccountOptions] = useState<any[]>([]);
+    const [contactOptions, setContactOptions] = useState<any[]>([]);
+    const [leadOptions, setLeadOptions] = useState<any[]>([]);
 
     // Alert & Dialog State
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
@@ -113,14 +122,48 @@ export function DealView() {
         rowsPerPage,
         filterName,
         filterStage,
-        sortBy
+        sortBy,
+        filters
     );
 
+    const handleFilters = (update: any) => {
+        setFilters((prev) => ({ ...prev, ...update }));
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            type: 'all',
+            contact: 'all',
+            account: 'all',
+            source_lead: 'all',
+            stage: 'all',
+        });
+        setPage(0);
+    };
+
+    const canReset =
+        filters.type !== 'all' ||
+        filters.contact !== 'all' ||
+        filters.account !== 'all' ||
+        filters.source_lead !== 'all' ||
+        filters.stage !== 'all';
+
     useEffect(() => {
-        // Fetch dropdown options on mount
-        getDoctypeList('Accounts').then(setAccountOptions);
-        getDoctypeList('Contacts').then(setContactOptions);
-        getDoctypeList('Lead').then(setLeadOptions);
+        // Fetch dropdown options on mount - get full objects for filter drawer
+        Promise.all([
+            fetch('/api/method/frappe.client.get_list?doctype=Accounts&fields=["name","account_name"]&limit_page_length=999', { credentials: 'include' }),
+            fetch('/api/method/frappe.client.get_list?doctype=Contacts&fields=["name","first_name"]&limit_page_length=999', { credentials: 'include' }),
+            fetch('/api/method/frappe.client.get_list?doctype=Lead&fields=["name","lead_name"]&limit_page_length=999', { credentials: 'include' })
+        ]).then(async ([accountsRes, contactsRes, leadsRes]) => {
+            const accounts = await accountsRes.json();
+            const contacts = await contactsRes.json();
+            const leads = await leadsRes.json();
+
+            setAccountOptions(accounts.message || []);
+            setContactOptions(contacts.message || []);
+            setLeadOptions(leads.message || []);
+        }).catch(err => console.error('Failed to fetch dropdown options', err));
 
         // Fetch Permissions
         getDealPermissions().then(setPermissions);
@@ -310,8 +353,8 @@ export function DealView() {
         setPage(0);
     };
 
-    const notFound = !loading && data.length === 0 && (!!filterName || filterStage !== 'all');
-    const empty = !loading && data.length === 0 && !filterName && filterStage === 'all';
+    const notFound = !loading && data.length === 0 && (!!filterName || filterStage !== 'all' || canReset);
+    const empty = !loading && data.length === 0 && !filterName && filterStage === 'all' && !canReset;
 
     return (
         <>
@@ -357,11 +400,12 @@ export function DealView() {
                             <Autocomplete
                                 fullWidth
                                 options={accountOptions}
-                                value={account}
+                                value={accountOptions.find((a) => a.name === account) || null}
                                 onChange={(event, newValue) => {
-                                    setAccount(newValue || '');
+                                    setAccount(newValue?.name || '');
                                     if (newValue) setValidationErrors((prev) => ({ ...prev, account: false }));
                                 }}
+                                getOptionLabel={(option) => `${option.account_name || option.name} (${option.name})`}
                                 disabled={viewOnly}
                                 slotProps={{
                                     paper: {
@@ -386,8 +430,9 @@ export function DealView() {
                             <Autocomplete
                                 fullWidth
                                 options={contactOptions}
-                                value={contact}
-                                onChange={(event, newValue) => setContact(newValue || '')}
+                                value={contactOptions.find((c) => c.name === contact) || null}
+                                onChange={(event, newValue) => setContact(newValue?.name || '')}
+                                getOptionLabel={(option) => `${option.first_name || option.name} (${option.name})`}
                                 disabled={viewOnly}
                                 slotProps={{
                                     paper: {
@@ -490,26 +535,30 @@ export function DealView() {
                                 <option value="Existing Business">Existing Business</option>
                             </TextField>
 
-                            <TextField
-                                select
+                            <Autocomplete
                                 fullWidth
-                                label="Source Lead"
-                                value={sourceLead}
-                                onChange={(e) => setSourceLead(e.target.value)}
+                                options={leadOptions}
+                                value={leadOptions.find((l) => l.name === sourceLead) || null}
+                                onChange={(event, newValue) => setSourceLead(newValue?.name || '')}
+                                getOptionLabel={(option) => `${option.lead_name || option.name} (${option.name})`}
                                 disabled={viewOnly}
-                                SelectProps={{ native: true }}
-                                InputLabelProps={{ shrink: true }}
-                                sx={{
-                                    "& .MuiInputBase-input.Mui-disabled": {
-                                        WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                                    },
+                                slotProps={{
+                                    paper: {
+                                        sx: {
+                                            bgcolor: '#F0F8FF',
+                                            '& .MuiAutocomplete-listbox': {
+                                                bgcolor: '#F0F8FF',
+                                            },
+                                        }
+                                    }
                                 }}
-                            >
-                                <option value="">Select Source Lead</option>
-                                {leadOptions.map((option) => (
-                                    <option key={option} value={option}>{option}</option>
-                                ))}
-                            </TextField>
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Source Lead"
+                                    />
+                                )}
+                            />
 
                             <TextField
                                 fullWidth
@@ -569,17 +618,24 @@ export function DealView() {
                             setFilterName(e.target.value);
                             setPage(0);
                         }}
-                        filterStatus={filterStage}
-                        onFilterStatus={(e) => {
-                            setFilterStage(e.target.value as string);
-                            setPage(0);
-                        }}
-                        options={STAGE_OPTIONS}
                         searchPlaceholder="Search deals..."
-                        filterLabel="Stage"
+                        onOpenFilter={() => setOpenFilters(true)}
+                        canReset={canReset}
                         sortBy={sortBy}
                         onSortChange={setSortBy}
                         onDelete={handleBulkDelete}
+                        sortOptions={[
+                            { value: 'modified_desc', label: 'Newest First' },
+                            { value: 'modified_asc', label: 'Oldest First' },
+                            { value: 'deal_title_asc', label: 'Title: A to Z' },
+                            { value: 'deal_title_desc', label: 'Title: Z to A' },
+                            { value: 'account_asc', label: 'Account: A to Z' },
+                            { value: 'account_desc', label: 'Account: Z to A' },
+                            { value: 'contact_asc', label: 'Contact: A to Z' },
+                            { value: 'contact_desc', label: 'Contact: Z to A' },
+                            { value: 'value_desc', label: 'Deal Value: High to Low' },
+                            { value: 'value_asc', label: 'Deal Value: Low to High' },
+                        ]}
                     />
 
                     <Scrollbar>
@@ -675,8 +731,24 @@ export function DealView() {
                         setCurrentDealId(null);
                     }}
                     dealId={currentDealId}
+                    onEdit={handleEditRow}
                 />
             </DashboardContent>
+
+            <DealTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                options={{
+                    contacts: contactOptions,
+                    accounts: accountOptions,
+                    source_leads: leadOptions,
+                }}
+            />
 
             <ConfirmDialog
                 open={confirmDelete.open}

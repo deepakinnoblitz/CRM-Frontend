@@ -18,19 +18,31 @@ export async function fetchDeals(params: {
     page: number;
     page_size: number;
     search?: string;
-    stage?: string;
+    stage?: string; // Keep for backward compatibility
     sort_by?: string;
+    filterValues?: Record<string, any>;
 }) {
     const filters: any[] = [];
+
+    // Add dynamic filters from filterValues
+    if (params.filterValues) {
+        Object.entries(params.filterValues).forEach(([key, value]) => {
+            if (value && value !== 'all') {
+                filters.push(["Deal", key, "=", value]);
+            }
+        });
+    }
+
+    // Backward compatibility: if stage is provided directly (not in filterValues)
+    if (params.stage && params.stage !== 'all' && !params.filterValues?.stage) {
+        filters.push(["Deal", "stage", "=", params.stage]);
+    }
+
     const or_filters: any[] = [];
 
     if (params.search) {
         or_filters.push(["Deal", "deal_title", "like", `%${params.search}%`]);
         or_filters.push(["Deal", "account", "like", `%${params.search}%`]);
-    }
-
-    if (params.stage && params.stage !== 'all') {
-        filters.push(["Deal", "stage", "=", params.stage]);
     }
 
     // Convert sort_by format (e.g., "creation_desc") to Frappe order_by format

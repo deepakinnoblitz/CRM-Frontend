@@ -50,14 +50,25 @@ import { LeadImportDialog } from '../lead-import-dialog';
 import { LeadFollowupDetails } from '../lead-followup-details';
 import { LeadPipelineTimeline } from '../lead-pipeline-timeline';
 import { LeadDetailsDialog } from '../../report/lead-details-dialog';
+import { UserTableFiltersDrawer } from '../user-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
 export function UserView() {
   const table = useTable();
   const [filterName, setFilterName] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [sortBy, setSortBy] = useState('creation_desc');
+  const [filters, setFilters] = useState({
+    status: 'all',
+    workflow_state: 'all',
+    leads_from: 'all',
+    leads_type: 'all',
+    service: 'all',
+    country: 'all',
+    state: 'all',
+    city: 'all',
+  });
+  const [sortBy, setSortBy] = useState('modified_desc');
+  const [openFilters, setOpenFilters] = useState(false);
 
   const STATUS_OPTIONS = [
     { value: 'New Lead', label: 'New Lead' },
@@ -109,6 +120,9 @@ export function UserView() {
   const [countryOptions, setCountryOptions] = useState<string[]>([]);
   const [stateOptions, setStateOptions] = useState<string[]>([]);
   const [cityOptions, setCityOptions] = useState<string[]>([]);
+  // Filter-specific location options
+  const [filterStateOptions, setFilterStateOptions] = useState<string[]>([]);
+  const [filterCityOptions, setFilterCityOptions] = useState<string[]>([]);
   const [workflowActions, setWorkflowActions] = useState<{ action: string; next_state: string }[]>([]);
   const [allWorkflowStates, setAllWorkflowStates] = useState<string[]>([]);
   const [pendingWorkflowChange, setPendingWorkflowChange] = useState<{ action: string; next_state: string } | null>(null);
@@ -137,9 +151,38 @@ export function UserView() {
     table.page,
     table.rowsPerPage,
     filterName,
-    filterStatus,
+    filters,
     sortBy
   );
+
+  const handleFilters = (update: any) => {
+    setFilters((prev) => ({ ...prev, ...update }));
+    table.onResetPage();
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      status: 'all',
+      workflow_state: 'all',
+      leads_from: 'all',
+      leads_type: 'all',
+      service: 'all',
+      country: 'all',
+      state: 'all',
+      city: 'all',
+    });
+    table.onResetPage();
+  };
+
+  const canReset =
+    filters.status !== 'all' ||
+    filters.workflow_state !== 'all' ||
+    filters.leads_from !== 'all' ||
+    filters.leads_type !== 'all' ||
+    filters.service !== 'all' ||
+    filters.country !== 'all' ||
+    filters.state !== 'all' ||
+    filters.city !== 'all';
 
   useEffect(() => {
     // Fetch dropdown options on mount
@@ -197,6 +240,42 @@ export function UserView() {
       setCityOptions([]);
     }
   }, [state, country]);
+
+  // Update filter state options when filter country changes
+  useEffect(() => {
+    if (filters.country && filters.country !== 'all') {
+      const countryData = locationData.find((c: any) => c.country === filters.country);
+      if (countryData) {
+        const states = countryData.states.map((s: any) => s.name);
+        setFilterStateOptions([...states, "Others"]);
+      } else {
+        setFilterStateOptions([]);
+      }
+    } else {
+      setFilterStateOptions([]);
+    }
+  }, [filters.country]);
+
+  // Update filter city options when filter state changes
+  useEffect(() => {
+    if (filters.state && filters.state !== 'all' && filters.country && filters.country !== 'all') {
+      if (filters.state === 'Others') {
+        setFilterCityOptions(['Others']);
+      } else {
+        const countryData = locationData.find((c: any) => c.country === filters.country);
+        if (countryData) {
+          const stateData = countryData.states.find((s: any) => s.name === filters.state);
+          if (stateData) {
+            setFilterCityOptions([...stateData.cities, "Others"]);
+          } else {
+            setFilterCityOptions(["Others"]);
+          }
+        }
+      }
+    } else {
+      setFilterCityOptions([]);
+    }
+  }, [filters.state, filters.country]);
 
   // Form state
 
@@ -440,8 +519,8 @@ export function UserView() {
     handleDeleteClick(id);
   };
 
-  const notFound = !loading && data.length === 0 && (!!filterName || filterStatus !== 'all');
-  const empty = !loading && data.length === 0 && !filterName && filterStatus === 'all';
+  const notFound = !loading && data.length === 0 && (!!filterName || canReset);
+  const empty = !loading && data.length === 0 && !filterName && !canReset;
 
   return (
     <>
@@ -651,7 +730,7 @@ export function UserView() {
                 label="State"
                 value={state}
                 onChange={(e) => setState(e.target.value)}
-                disabled={viewOnly}
+                disabled={viewOnly || !country}
                 SelectProps={{ native: true }}
                 InputLabelProps={{ shrink: true }}
                 sx={{
@@ -660,7 +739,7 @@ export function UserView() {
                   },
                 }}
               >
-                <option value="" disabled>Select</option>
+                <option value="" disabled>{!country ? 'Select Country First' : 'Select'}</option>
                 {stateOptions.map((option: string) => (
                   <option key={option} value={option}>{option}</option>
                 ))}
@@ -672,7 +751,7 @@ export function UserView() {
                 label="City"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                disabled={viewOnly}
+                disabled={viewOnly || !state}
                 SelectProps={{ native: true }}
                 InputLabelProps={{ shrink: true }}
                 sx={{
@@ -681,7 +760,7 @@ export function UserView() {
                   },
                 }}
               >
-                <option value="" disabled>Select</option>
+                <option value="" disabled>{!state ? 'Select State First' : 'Select'}</option>
                 {cityOptions.map((option: string) => (
                   <option key={option} value={option}>{option}</option>
                 ))}
@@ -1000,14 +1079,8 @@ export function UserView() {
               setFilterName(e.target.value);
               table.onResetPage();
             }}
-            filterStatus={filterStatus}
-            onFilterStatus={(e) => {
-              setFilterStatus(e.target.value);
-              table.onResetPage();
-            }}
-            options={STATUS_OPTIONS}
-            searchPlaceholder="Search leads..."
-            filterLabel="Workflow State"
+            onOpenFilter={() => setOpenFilters(true)}
+            canReset={canReset}
             sortBy={sortBy}
             onSortChange={setSortBy}
             onDelete={handleBulkDelete}
@@ -1100,6 +1173,25 @@ export function UserView() {
           />
         </Card>
       </DashboardContent>
+
+      <UserTableFiltersDrawer
+        open={openFilters}
+        onOpen={() => setOpenFilters(true)}
+        onClose={() => setOpenFilters(false)}
+        filters={filters}
+        onFilters={handleFilters}
+        canReset={canReset}
+        onResetFilters={handleResetFilters}
+        options={{
+          status: STATUS_OPTIONS,
+          workflow_states: allWorkflowStates,
+          leads_from: leadsFromOptions,
+          services: serviceOptions,
+          countries: countryOptions.filter((c) => c !== ''),
+          states: filterStateOptions,
+          cities: filterCityOptions,
+        }}
+      />
 
       <ConfirmDialog
         open={openDelete}

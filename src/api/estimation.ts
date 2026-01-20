@@ -44,6 +44,11 @@ export async function fetchEstimations(params: {
     page_size: number;
     search?: string;
     sort_by?: string;
+    filters?: {
+        client_name?: string;
+        ref_no?: string;
+        estimate_date?: string; // Expecting YYYY-MM-DD
+    };
 }) {
     const filters: any[] = [];
     const or_filters: any[] = [];
@@ -52,6 +57,18 @@ export async function fetchEstimations(params: {
         or_filters.push(["Estimation", "ref_no", "like", `%${params.search}%`]);
         or_filters.push(["Estimation", "customer_name", "like", `%${params.search}%`]);
         or_filters.push(["Estimation", "phone_number", "like", `%${params.search}%`]);
+    }
+
+    if (params.filters) {
+        if (params.filters.client_name && params.filters.client_name !== 'all') {
+            filters.push(["Estimation", "client_name", "=", params.filters.client_name]);
+        }
+        if (params.filters.ref_no) {
+            filters.push(["Estimation", "ref_no", "like", `%${params.filters.ref_no}%`]);
+        }
+        if (params.filters.estimate_date) {
+            filters.push(["Estimation", "estimate_date", "=", params.filters.estimate_date]);
+        }
     }
 
     // Convert sort_by format (e.g., "estimate_date_desc") to Frappe order_by format

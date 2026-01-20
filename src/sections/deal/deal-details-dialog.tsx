@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
@@ -19,9 +20,10 @@ type Props = {
     open: boolean;
     onClose: () => void;
     dealId: string | null;
+    onEdit?: (id: string) => void;
 };
 
-export function DealDetailsDialog({ open, onClose, dealId }: Props) {
+export function DealDetailsDialog({ open, onClose, dealId, onEdit }: Props) {
     const [deal, setDeal] = useState<any>(null);
     const [loading, setLoading] = useState(false);
 
@@ -68,9 +70,33 @@ export function DealDetailsDialog({ open, onClose, dealId }: Props) {
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
             <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Deal Profile</Typography>
-                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500], bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows?.z1 }}>
-                    <Iconify icon="mingcute:close-line" />
-                </IconButton>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    {onEdit && dealId && (
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Iconify icon="solar:pen-bold" />}
+                            onClick={() => {
+                                onEdit(dealId);
+                                onClose();
+                            }}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                borderColor: 'divider',
+                                '&:hover': {
+                                    borderColor: 'primary.main',
+                                    bgcolor: 'primary.lighter',
+                                },
+                            }}
+                        >
+                            Edit
+                        </Button>
+                    )}
+                    <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500], bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows?.z1 }}>
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </Box>
             </DialogTitle>
 
             <DialogContent sx={{ p: 4, m: 2, mt: 4 }}>

@@ -24,7 +24,7 @@ export async function fetchLeads(params: {
     page: number;
     page_size: number;
     search?: string;
-    status?: string;
+    filterValues?: Record<string, any>;
     sort_by?: string;
 }) {
     const filters: any[] = [];
@@ -37,8 +37,12 @@ export async function fetchLeads(params: {
         or_filters.push(["Lead", "phone_number", "like", `%${params.search}%`]);
     }
 
-    if (params.status && params.status !== 'all') {
-        filters.push(["Lead", "workflow_state", "=", params.status]);
+    if (params.filterValues) {
+        Object.entries(params.filterValues).forEach(([key, value]) => {
+            if (value && value !== 'all') {
+                filters.push(["Lead", key, "=", value]);
+            }
+        });
     }
 
     // Convert sort_by format (e.g., "creation_desc") to Frappe order_by format

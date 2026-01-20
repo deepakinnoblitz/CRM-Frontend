@@ -8,7 +8,7 @@ export function useLeads(
     page: number,
     rowsPerPage: number,
     search: string,
-    status?: string,
+    filterValues?: Record<string, any>,
     sortBy?: string
 ) {
     const [data, setData] = useState<Lead[]>([]);
@@ -26,7 +26,7 @@ export function useLeads(
             page: page + 1, // Frappe pages start from 1
             page_size: rowsPerPage,
             search,
-            status,
+            filterValues,
             sort_by: sortBy,
         })
             .then((res) => {
@@ -39,7 +39,7 @@ export function useLeads(
                 setTotal(0);
             })
             .finally(() => setLoading(false));
-    }, [page, rowsPerPage, search, status, sortBy, trigger]);
+    }, [page, rowsPerPage, search, filterValues, sortBy, trigger]);
 
     return { data, total, loading, refetch };
 }
