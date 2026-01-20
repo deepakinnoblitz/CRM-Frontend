@@ -1,203 +1,294 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import { alpha } from '@mui/material/styles';
+import Snackbar from '@mui/material/Snackbar';
+import AlertTitle from '@mui/material/AlertTitle';
 import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
-import { fDate } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getPurchaseCollection, PurchaseCollection } from 'src/api/purchase-collection';
+import { getPurchaseCollection, deletePurchaseCollection } from 'src/api/purchase-collection';
 
-import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 // ----------------------------------------------------------------------
 
 export function PurchaseCollectionDetailsView() {
-    const params = useParams();
+    const { id } = useParams();
     const router = useRouter();
-    const { id } = params;
 
-    const [purchaseCollection, setPurchaseCollection] = useState<PurchaseCollection | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [collection, setCollection] = useState<any>(null);
+    const [fetching, setFetching] = useState(true);
+    const [deleting, setDeleting] = useState(false);
+    const [isLatest, setIsLatest] = useState(false);
+    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
     useEffect(() => {
         if (id) {
-            setLoading(true);
-            getPurchaseCollection(id as string)
-                .then(setPurchaseCollection)
-                .catch((err) => console.error('Failed to fetch purchase collection details:', err))
-                .finally(() => setLoading(false));
+            getPurchaseCollection(id)
+                .then((data) => {
+                    setCollection(data);
+                    // Check if latest - fetch the most recent collection for this purchase
+                    fetch(`/api/method/frappe.client.get_list?doctype=Purchase Collection&fields=["name"]&filters=[["Purchase Collection","purchase","=","${data.purchase}"]]&order_by=collection_date desc&limit_page_length=1`, { credentials: 'include' })
+                        .then(res => res.json())
+                        .then(res => {
+                            if (res.message && res.message.length > 0) {
+                                setIsLatest(res.message[0].name === data.name);
+                            }
+                        })
+                        .catch(err => console.error('Failed to check if latest', err));
+                })
+                .catch((error) => {
+                    console.error('Failed to fetch collection:', error);
+                    setSnackbar({ open: true, message: 'Failed to load collection details', severity: 'error' });
+                })
+                .finally(() => setFetching(false));
         }
     }, [id]);
 
-    const handleEdit = () => {
-        router.push(`/purchase-collections/${id}/edit`);
-    };
-
-    const handleBack = () => {
-        router.push('/purchase-collections');
-    };
-
-    if (loading) {
+    if (fetching) {
         return (
-            <DashboardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
-                    <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
-                </Box>
+            <DashboardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <CircularProgress />
             </DashboardContent>
         );
     }
 
-    if (!purchaseCollection) {
+    if (!collection) {
         return (
             <DashboardContent>
-                <Box sx={{ py: 10, textAlign: 'center' }}>
-                    <Iconify icon={"solar:ghost-bold" as any} width={64} sx={{ color: 'text.disabled', mb: 2 }} />
-                    <Typography variant="h6" sx={{ color: 'text.secondary' }}>No Purchase Collection Found</Typography>
-                </Box>
+                <Typography variant="h4">Purchase Collection not found</Typography>
+                <Button onClick={() => router.push('/purchase-collections')} sx={{ mt: 3 }}>
+                    Go back to list
+                </Button>
             </DashboardContent>
         );
     }
+
+    const {
+        purchase,
+        vendor,
+        vendor_name,
+        collection_date,
+        amount_to_pay,
+        amount_collected,
+        amount_pending,
+        mode_of_payment,
+        remarks,
+    } = collection;
+
+    const handleDelete = async () => {
+        if (!id) return;
+        try {
+            setDeleting(true);
+            await deletePurchaseCollection(id);
+            setSnackbar({ open: true, message: 'Collection deleted successfully', severity: 'success' });
+            setTimeout(() => router.push('/purchase-collections'), 1500);
+        } catch (error) {
+            console.error('Failed to delete collection:', error);
+            setSnackbar({ open: true, message: 'Failed to delete collection', severity: 'error' });
+        } finally {
+            setDeleting(false);
+            setConfirmDeleteOpen(false);
+        }
+    };
 
     return (
         <DashboardContent>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Button
-                    variant="outlined"
-                    onClick={handleBack}
-                    startIcon={<Iconify icon={"eva:arrow-ios-back-fill" as any} />}
-                >
-                    Back
-                </Button>
-                <Box sx={{ flexGrow: 1 }} />
-                <Button
-                    variant="contained"
-                    startIcon={<Iconify icon="solar:pen-bold" />}
-                    onClick={handleEdit}
-                >
-                    Edit
-                </Button>
+                <Typography variant="h4">Purchase Collection: {id}</Typography>
+                <Stack direction="row" spacing={2}>
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={() => router.push('/purchase-collections')}
+                        startIcon={<Iconify icon={"solar:arrow-left-bold" as any} />}
+                    >
+                        Back to List
+                    </Button>
+                    {isLatest && (
+                        <Button
+                            variant="contained"
+                            color="error"
+                            onClick={() => setConfirmDeleteOpen(true)}
+                            startIcon={<Iconify icon={"solar:trash-bin-trash-bold" as any} />}
+                        >
+                            Delete
+                        </Button>
+                    )}
+                    {isLatest && (
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => router.push(`/purchase-collections/${encodeURIComponent(id || '')}/edit`)}
+                            startIcon={<Iconify icon={"solar:pen-bold" as any} />}
+                        >
+                            Edit Collection
+                        </Button>
+                    )}
+                </Stack>
             </Stack>
 
-            <Card sx={{ p: 4 }}>
-                {/* Header Info */}
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5, mb: 5 }}>
-                    <Box
-                        sx={{
-                            width: 64,
-                            height: 64,
-                            borderRadius: 2,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            bgcolor: 'primary.lighter',
-                            color: 'primary.main',
-                        }}
-                    >
-                        <Iconify icon={"solar:file-check-bold" as any} width={32} />
-                    </Box>
-                    <Box sx={{ flexGrow: 1 }}>
-                        <Typography variant="h5" sx={{ fontWeight: 800 }}>{purchaseCollection.name}</Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>Purchase: {purchaseCollection.purchase}</Typography>
-                    </Box>
-                </Box>
-
-                <Divider sx={{ borderStyle: 'dashed', mb: 5 }} />
-
-                {/* General Information */}
-                <Box sx={{ mb: 5 }}>
-                    <SectionHeader title="Collection Overview" icon="solar:info-circle-bold" />
+            <Card sx={{ p: 4, borderRadius: 2 }}>
+                <Stack spacing={4}>
+                    {/* Header Info Sections */}
                     <Box
                         sx={{
                             display: 'grid',
-                            gap: 3,
+                            columnGap: 4,
+                            rowGap: 3,
                             gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                         }}
                     >
-                        <DetailItem
-                            label="Vendor"
-                            value={purchaseCollection.vendor_name ? `${purchaseCollection.vendor_name} (${purchaseCollection.vendor})` : purchaseCollection.vendor}
-                            icon="solar:user-bold"
-                        />
-                        <DetailItem
-                            label="Date"
-                            value={fDate(purchaseCollection.collection_date)}
-                            icon="solar:calendar-bold"
-                        />
-                        <DetailItem
-                            label="Mode of Payment"
-                            value={purchaseCollection.mode_of_payment}
-                            icon="solar:card-bold"
-                        />
-                    </Box>
-                </Box>
+                        {/* Purchase Section */}
+                        <Stack spacing={1.5}>
+                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
+                                <Iconify icon={"solar:document-text-bold-duotone" as any} width={20} />
+                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Purchase Details</Typography>
+                            </Stack>
+                            <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                                <Typography variant="caption" color="text.disabled">Purchase Number</Typography>
+                                <Typography variant="subtitle1" color="primary.main" sx={{ mt: 0.5 }}>{purchase}</Typography>
+                                <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
+                                <Typography variant="caption" color="text.disabled">Amount to Pay</Typography>
+                                <Typography variant="h6" sx={{ mt: 0.5 }}>{fCurrency(amount_to_pay)}</Typography>
+                            </Box>
+                        </Stack>
 
-                <Box>
-                    <SectionHeader title="Financials" icon="solar:wad-of-money-bold" />
-                    <Box
-                        sx={{
-                            display: 'grid',
-                            gap: 3,
-                            gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-                        }}
-                    >
-                        <DetailItem
-                            label="Amount Collected"
-                            value={fCurrency(purchaseCollection.amount_collected)}
-                            icon="solar:wad-of-money-bold"
-                            color="success.main"
-                        />
-                        {/* We can add more fields if needed, like pending amount if available in the detailed API response */}
-                    </Box>
-                </Box>
+                        {/* Vendor Section */}
+                        <Stack spacing={1.5}>
+                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
+                                <Iconify icon={"solar:user-rounded-bold-duotone" as any} width={20} />
+                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Vendor Details</Typography>
+                            </Stack>
+                            <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                                <Typography variant="caption" color="text.disabled">Vendor ID</Typography>
+                                <Typography variant="subtitle2" sx={{ mt: 0.5 }}>{vendor}</Typography>
+                                <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
+                                <Typography variant="caption" color="text.disabled">Name</Typography>
+                                <Typography variant="body2" sx={{ mt: 0.5 }}>{vendor_name || '-'}</Typography>
+                            </Box>
+                        </Stack>
 
-                {purchaseCollection.remarks && (
-                    <Box sx={{ mt: 5, p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                        <SectionHeader title="Remarks" icon="solar:document-text-bold" noMargin />
-                        <Typography variant="body2" sx={{ mt: 2, color: 'text.primary', fontWeight: 600 }}>
-                            {purchaseCollection.remarks}
-                        </Typography>
+                        {/* Collection Details Section */}
+                        <Stack spacing={1.5}>
+                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
+                                <Iconify icon={"solar:calendar-bold-duotone" as any} width={20} />
+                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Collection Info</Typography>
+                            </Stack>
+                            <Stack spacing={2} sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="caption" color="text.disabled">Collection Date</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{collection_date}</Typography>
+                                </Stack>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="caption" color="text.disabled">Payment Mode</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{mode_of_payment}</Typography>
+                                </Stack>
+                            </Stack>
+                        </Stack>
                     </Box>
-                )}
 
+                    {/* Payment Summary */}
+                    <Box>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2, color: 'text.secondary' }}>
+                            <Iconify icon={"solar:wad-of-money-bold-duotone" as any} width={20} />
+                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Payment Summary</Typography>
+                        </Stack>
+                        <Stack spacing={2} sx={{ p: 3, borderRadius: 2, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Typography variant="body2" color="text.secondary">Amount to Pay</Typography>
+                                <Typography variant="subtitle2">{fCurrency(amount_to_pay)}</Typography>
+                            </Stack>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <Iconify icon={"solar:hand-money-bold-duotone" as any} width={16} sx={{ color: 'success.main' }} />
+                                    <Typography variant="body2" color="text.secondary">Amount Collected</Typography>
+                                </Stack>
+                                <Typography variant="subtitle2" color="success.main">{fCurrency(amount_collected)}</Typography>
+                            </Stack>
+                            <Divider sx={{ borderStyle: 'dashed' }} />
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <Iconify icon={"solar:wallet-2-bold-duotone" as any} width={20} sx={{ color: (amount_pending || 0) > 0 ? 'error.main' : 'success.main' }} />
+                                    <Typography variant="subtitle1" sx={{ color: (amount_pending || 0) > 0 ? 'error.main' : 'success.main' }}>Amount Pending</Typography>
+                                </Stack>
+                                <Typography variant="h5" color={(amount_pending || 0) > 0 ? "error.main" : "success.main"}>{fCurrency(amount_pending)}</Typography>
+                            </Stack>
+                        </Stack>
+                    </Box>
+
+                    {/* Remarks Section */}
+                    {remarks && (
+                        <Stack spacing={1}>
+                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
+                                <Iconify icon={"solar:notes-bold-duotone" as any} width={20} />
+                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Remarks</Typography>
+                            </Stack>
+                            <Typography variant="body2" sx={{
+                                p: 2,
+                                borderRadius: 1.5,
+                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                                border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                                whiteSpace: 'pre-wrap',
+                                minHeight: 80,
+                                color: 'text.secondary'
+                            }}>
+                                {remarks}
+                            </Typography>
+                        </Stack>
+                    )}
+                </Stack>
             </Card>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert
+                    severity={snackbar.severity}
+                    sx={{
+                        width: '100%',
+                        boxShadow: (theme) => theme.customShadows.z20
+                    }}
+                >
+                    <AlertTitle>{snackbar.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
+
+            <ConfirmDialog
+                open={confirmDeleteOpen}
+                onClose={() => !deleting && setConfirmDeleteOpen(false)}
+                title="Confirm Delete"
+                content="Are you sure you want to delete this purchase collection?"
+                action={
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        sx={{ borderRadius: 1.5, minWidth: 100 }}
+                    >
+                        {deleting ? 'Deleting...' : 'Delete'}
+                    </Button>
+                }
+            />
         </DashboardContent>
-    );
-}
-
-function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: string, noMargin?: boolean }) {
-    return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
-            <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                {title}
-            </Typography>
-        </Box>
-    );
-}
-
-function DetailItem({ label, value, icon, color = 'text.primary' }: { label: string; value?: string | null | number; icon: string; color?: string }) {
-    return (
-        <Box>
-            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
-                {label}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
-                <Typography variant="body2" sx={{ fontWeight: 700, color }}>
-                    {value || '-'}
-                </Typography>
-            </Box>
-        </Box>
     );
 }

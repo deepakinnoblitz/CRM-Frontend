@@ -74,7 +74,7 @@ export function InvoiceTableRow({
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
-                    {canDelete && (
+                    {canDelete && row.received_amount === 0 && (
                         <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>

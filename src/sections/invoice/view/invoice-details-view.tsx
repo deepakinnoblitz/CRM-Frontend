@@ -153,22 +153,26 @@ export function InvoiceDetailsView() {
                     >
                         Print
                     </Button>
-                    <Button
-                        variant="contained"
-                        color="error"
-                        onClick={() => setConfirmDeleteOpen(true)}
-                        startIcon={<Iconify icon={"solar:trash-bin-trash-bold" as any} />}
-                    >
-                        Delete
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => router.push(`/invoices/${encodeURIComponent(id || '')}/edit`)}
-                        startIcon={<Iconify icon={"solar:pen-bold" as any} />}
-                    >
-                        Edit Invoice
-                    </Button>
+                    {received_amount === 0 && (
+                        <Button
+                            variant="contained"
+                            color="error"
+                            onClick={() => setConfirmDeleteOpen(true)}
+                            startIcon={<Iconify icon={"solar:trash-bin-trash-bold" as any} />}
+                        >
+                            Delete
+                        </Button>
+                    )}
+                    {received_amount === 0 && (
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => router.push(`/invoices/${encodeURIComponent(id || '')}/edit`)}
+                            startIcon={<Iconify icon={"solar:pen-bold" as any} />}
+                        >
+                            Edit Invoice
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 

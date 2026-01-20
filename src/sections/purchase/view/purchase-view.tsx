@@ -162,6 +162,7 @@ export function PurchaseView() {
                                                 bill_date: row.bill_date,
                                                 grand_total: row.grand_total || 0,
                                                 payment_type: row.payment_type || '',
+                                                paid_amount: row.paid_amount || 0,
                                             }}
                                             selected={selected.indexOf(row.name) !== -1}
                                             onSelectRow={() => handleClick(null as any, row.name)}

@@ -20,6 +20,7 @@ export type PurchaseProps = {
     bill_date: string;
     grand_total: number;
     payment_type: string;
+    paid_amount: number;
 };
 
 type PurchaseTableRowProps = {
@@ -67,12 +68,12 @@ export function PurchaseTableRow({
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    {canEdit && (
+                    {canEdit && row.paid_amount === 0 && (
                         <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
-                    {canDelete && (
+                    {canDelete && row.paid_amount === 0 && (
                         <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>

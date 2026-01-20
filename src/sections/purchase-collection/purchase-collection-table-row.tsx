@@ -68,9 +68,11 @@ export default function PurchaseCollectionTableRow({
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
-                    <IconButton onClick={onDeleteRow} sx={{ color: 'error.main' }}>
-                        <Iconify icon="solar:trash-bin-trash-bold" />
-                    </IconButton>
+                    {isLatest && (
+                        <IconButton onClick={onDeleteRow} sx={{ color: 'error.main' }}>
+                            <Iconify icon="solar:trash-bin-trash-bold" />
+                        </IconButton>
+                    )}
                 </Box>
             </TableCell>
         </TableRow>

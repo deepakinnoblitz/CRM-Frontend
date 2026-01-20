@@ -207,6 +207,7 @@ export function PurchaseListView() {
                                             bill_date: row.bill_date,
                                             grand_total: row.grand_total || 0,
                                             payment_type: row.payment_type || '',
+                                            paid_amount: row.paid_amount || 0,
                                         }}
                                         selected={table.selected.includes(row.name)}
                                         onSelectRow={() => table.onSelectRow(row.name)}

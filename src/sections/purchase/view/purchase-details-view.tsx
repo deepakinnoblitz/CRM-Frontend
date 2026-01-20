@@ -146,22 +146,26 @@ export function PurchaseDetailsView() {
                     >
                         Print
                     </Button>
-                    <Button
-                        variant="contained"
-                        color="error"
-                        onClick={() => setConfirmDeleteOpen(true)}
-                        startIcon={<Iconify icon={"solar:trash-bin-trash-bold" as any} />}
-                    >
-                        Delete
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => router.push(`/purchase/edit/${encodeURIComponent(id || '')}`)}
-                        startIcon={<Iconify icon={"solar:pen-bold" as any} />}
-                    >
-                        Edit Purchase
-                    </Button>
+                    {paid_amount === 0 && (
+                        <Button
+                            variant="contained"
+                            color="error"
+                            onClick={() => setConfirmDeleteOpen(true)}
+                            startIcon={<Iconify icon={"solar:trash-bin-trash-bold" as any} />}
+                        >
+                            Delete
+                        </Button>
+                    )}
+                    {paid_amount === 0 && (
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => router.push(`/purchase/edit/${encodeURIComponent(id || '')}`)}
+                            startIcon={<Iconify icon={"solar:pen-bold" as any} />}
+                        >
+                            Edit Purchase
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 

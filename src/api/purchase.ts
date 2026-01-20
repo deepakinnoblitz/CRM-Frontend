@@ -97,6 +97,8 @@ export async function fetchPurchases(params: {
             "payment_terms",
             "due_date",
             "grand_total",
+            "paid_amount",
+            "balance_amount",
             "description",
             "owner",
             "creation"
