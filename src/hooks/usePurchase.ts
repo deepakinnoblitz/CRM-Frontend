@@ -8,7 +8,8 @@ export function usePurchase(
     page: number,
     rowsPerPage: number,
     search: string,
-    sortBy?: string
+    sortBy?: string,
+    filterValues?: Record<string, any>
 ) {
     const [data, setData] = useState<Purchase[]>([]);
     const [total, setTotal] = useState(0);
@@ -26,6 +27,7 @@ export function usePurchase(
             page_size: rowsPerPage,
             search,
             sort_by: sortBy,
+            filterValues,
         })
             .then((res) => {
                 setData(res.data);
@@ -37,7 +39,7 @@ export function usePurchase(
                 setTotal(0);
             })
             .finally(() => setLoading(false));
-    }, [page, rowsPerPage, search, sortBy, trigger]);
+    }, [page, rowsPerPage, search, sortBy, trigger, filterValues]);
 
     return { data, total, loading, refetch };
 }

@@ -88,7 +88,7 @@ export function ContactView() {
     const [country, setCountry] = useState('');
     const [state, setState] = useState('');
     const [city, setCity] = useState('');
-    const [contactType, setContactType] = useState('Customer');
+    const [contactType, setContactType] = useState('Sales');
     const [sourceLead, setSourceLead] = useState('');
 
     const [countryOptions, setCountryOptions] = useState<string[]>([]);
@@ -253,7 +253,7 @@ export function ContactView() {
         setCountry('');
         setState('');
         setCity('');
-        setContactType('Customer');
+        setContactType('Sales');
         setSourceLead('');
     };
 
@@ -371,7 +371,7 @@ export function ContactView() {
                 country,
                 state,
                 city,
-                contact_type: contactType,
+                customer_type: contactType,
                 source_lead: sourceLead,
             };
 
@@ -423,7 +423,7 @@ export function ContactView() {
             setCountry(fullRow.country || '');
             setState(fullRow.state || '');
             setCity(fullRow.city || '');
-            setContactType(fullRow.contact_type || 'Customer');
+            setContactType(fullRow.customer_type || 'Sales');
             setSourceLead(fullRow.source_lead || '');
         }
         setOpenCreate(true);
