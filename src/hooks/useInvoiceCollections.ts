@@ -1,17 +1,22 @@
-import type { Expense } from 'src/api/expenses';
+import type { InvoiceCollection } from 'src/api/invoice-collection';
 
 import { useState, useEffect } from 'react';
 
-import { fetchExpenses } from 'src/api/expenses';
+import { fetchInvoiceCollections } from 'src/api/invoice-collection';
 
-export function useExpense(
+export function useInvoiceCollections(
     page: number,
     rowsPerPage: number,
     search: string,
-    filters?: any,
+    filters?: {
+        invoice?: string;
+        customer?: string;
+        collection_date?: string | null;
+        mode_of_payment?: string;
+    },
     sortBy?: string
 ) {
-    const [data, setData] = useState<Expense[]>([]);
+    const [invoiceCollections, setInvoiceCollections] = useState<InvoiceCollection[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
 
@@ -22,7 +27,7 @@ export function useExpense(
     useEffect(() => {
         setLoading(true);
 
-        fetchExpenses({
+        fetchInvoiceCollections({
             page: page + 1, // Frappe pages start from 1
             page_size: rowsPerPage,
             search,
@@ -30,16 +35,16 @@ export function useExpense(
             sort_by: sortBy,
         })
             .then((res) => {
-                setData(res.data);
+                setInvoiceCollections(res.data);
                 setTotal(res.total);
             })
             .catch((err) => {
-                console.error("Failed to fetch expenses", err);
-                setData([]);
+                console.error("Failed to fetch invoice collections", err);
+                setInvoiceCollections([]);
                 setTotal(0);
             })
             .finally(() => setLoading(false));
     }, [page, rowsPerPage, search, filters, sortBy, trigger]);
 
-    return { data, total, loading, refetch };
+    return { invoiceCollections, total, loading, refetch };
 }

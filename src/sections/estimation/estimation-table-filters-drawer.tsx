@@ -1,3 +1,7 @@
+import type { Dayjs } from 'dayjs';
+
+import dayjs from 'dayjs';
+
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
@@ -7,6 +11,9 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Autocomplete from '@mui/material/Autocomplete';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -14,11 +21,9 @@ import { Scrollbar } from 'src/components/scrollbar';
 // ----------------------------------------------------------------------
 
 type FiltersProps = {
-    type: string;
-    contact: string;
-    account: string;
-    source_lead: string;
-    stage: string;
+    client_name: string;
+    ref_no: string;
+    estimate_date: string;
 };
 
 type Props = {
@@ -30,24 +35,12 @@ type Props = {
     canReset: boolean;
     onResetFilters: () => void;
     options: {
-        contacts: { name: string; first_name: string }[];
-        accounts: { name: string; account_name: string }[];
-        source_leads: { name: string; lead_name: string }[];
+        customers: { name: string; customer_name: string }[];
+        refNos: string[];
     };
 };
 
-const DEAL_TYPES = ['Existing Business', 'New Business'];
-const DEAL_STAGES = [
-    'Qualification',
-    'Needs Analysis',
-    'Meeting Scheduled',
-    'Proposal Sent',
-    'Negotiation',
-    'Closed Won',
-    'Closed Lost',
-];
-
-export function DealTableFiltersDrawer({
+export function EstimationTableFiltersDrawer({
     open,
     onOpen,
     onClose,
@@ -107,60 +100,28 @@ export function DealTableFiltersDrawer({
         </Box>
     );
 
-    const renderDealType = (
+    const renderCustomer = (
         <Stack spacing={1.5}>
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Deal Type
-            </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filters.type}
-                onChange={(e) => handleFilterChange('type', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">All Types</option>
-                {DEAL_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                        {type}
-                    </option>
-                ))}
-            </TextField>
-        </Stack>
-    );
-
-    const renderContact = (
-        <Stack spacing={1.5}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Contact
+                Customer
             </Typography>
             <Autocomplete
                 fullWidth
                 size="small"
                 value={
-                    filters.contact === 'all'
+                    filters.client_name === 'all'
                         ? null
-                        : options.contacts.find((c) => c.name === filters.contact) || null
+                        : options.customers.find((c) => c.name === filters.client_name) || null
                 }
                 onChange={(event, newValue) => {
-                    handleFilterChange('contact', newValue ? newValue.name : 'all');
+                    handleFilterChange('client_name', newValue ? newValue.name : 'all');
                 }}
-                options={options.contacts}
-                getOptionLabel={(option) => `${option.first_name} (${option.name})`}
+                options={options.customers}
+                getOptionLabel={(option) => `${option.customer_name} (${option.name})`}
                 renderInput={(params) => (
                     <TextField
                         {...params}
-                        placeholder="Search contacts..."
+                        placeholder="Search customers..."
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
@@ -172,39 +133,27 @@ export function DealTableFiltersDrawer({
                         }}
                     />
                 )}
-                renderOption={(props, option) => (
-                    <li {...props} key={option.name}>
-                        <Typography variant="body2" sx={{ fontSize: '13px' }}>
-                            {option.first_name} ({option.name})
-                        </Typography>
-                    </li>
-                )}
             />
         </Stack>
     );
 
-    const renderAccount = (
+    const renderRefNo = (
         <Stack spacing={1.5}>
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Account
+                Reference No
             </Typography>
             <Autocomplete
                 fullWidth
                 size="small"
-                value={
-                    filters.account === 'all'
-                        ? null
-                        : options.accounts.find((a) => a.name === filters.account) || null
-                }
+                value={filters.ref_no || null}
                 onChange={(event, newValue) => {
-                    handleFilterChange('account', newValue ? newValue.name : 'all');
+                    handleFilterChange('ref_no', newValue || '');
                 }}
-                options={options.accounts}
-                getOptionLabel={(option) => `${option.account_name} (${option.name})`}
+                options={options.refNos}
                 renderInput={(params) => (
                     <TextField
                         {...params}
-                        placeholder="Search accounts..."
+                        placeholder="Select reference no..."
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
@@ -216,90 +165,38 @@ export function DealTableFiltersDrawer({
                         }}
                     />
                 )}
-                renderOption={(props, option) => (
-                    <li {...props} key={option.name}>
-                        <Typography variant="body2" sx={{ fontSize: '13px' }}>
-                            {option.account_name} ({option.name})
-                        </Typography>
-                    </li>
-                )}
             />
         </Stack>
     );
 
-    const renderSourceLead = (
+    const renderDate = (
         <Stack spacing={1.5}>
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Source Lead
+                Estimation Date
             </Typography>
-            <Autocomplete
-                fullWidth
-                size="small"
-                value={
-                    filters.source_lead === 'all'
-                        ? null
-                        : options.source_leads.find((l) => l.name === filters.source_lead) || null
-                }
-                onChange={(event, newValue) => {
-                    handleFilterChange('source_lead', newValue ? newValue.name : 'all');
-                }}
-                options={options.source_leads}
-                getOptionLabel={(option) => `${option.lead_name} (${option.name})`}
-                renderInput={(params) => (
-                    <TextField
-                        {...params}
-                        placeholder="Search leads..."
-                        sx={{
-                            '& .MuiOutlinedInput-root': {
-                                borderRadius: 1.5,
-                                bgcolor: 'background.neutral',
-                                '&:hover': {
-                                    bgcolor: 'action.hover',
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                    value={filters.estimate_date ? dayjs(filters.estimate_date) : null}
+                    onChange={(newValue: Dayjs | null) => {
+                        handleFilterChange('estimate_date', newValue ? newValue.format('YYYY-MM-DD') : '');
+                    }}
+                    slotProps={{
+                        textField: {
+                            fullWidth: true,
+                            size: 'small',
+                            sx: {
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 1.5,
+                                    bgcolor: 'background.neutral',
+                                    '&:hover': {
+                                        bgcolor: 'action.hover',
+                                    },
                                 },
-                            },
-                        }}
-                    />
-                )}
-                renderOption={(props, option) => (
-                    <li {...props} key={option.name}>
-                        <Typography variant="body2" sx={{ fontSize: '13px' }}>
-                            {option.lead_name} ({option.name})
-                        </Typography>
-                    </li>
-                )}
-            />
-        </Stack>
-    );
-
-    const renderStage = (
-        <Stack spacing={1.5}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Stage
-            </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filters.stage}
-                onChange={(e) => handleFilterChange('stage', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">All Stages</option>
-                {DEAL_STAGES.map((stage) => (
-                    <option key={stage} value={stage}>
-                        {stage}
-                    </option>
-                ))}
-            </TextField>
+                            }
+                        }
+                    }}
+                />
+            </LocalizationProvider>
         </Stack>
     );
 
@@ -324,11 +221,9 @@ export function DealTableFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3 }}>
-                    {renderDealType}
-                    {renderContact}
-                    {renderAccount}
-                    {renderSourceLead}
-                    {renderStage}
+                    {renderCustomer}
+                    {renderRefNo}
+                    {renderDate}
                 </Stack>
             </Scrollbar>
 

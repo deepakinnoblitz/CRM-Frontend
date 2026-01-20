@@ -226,3 +226,40 @@ export async function fetchSalesDashboardData(): Promise<SalesDashboardData> {
     return data.message;
 }
 
+export interface FinancialTotals {
+    invoices: {
+        total: number;
+        count: number;
+        chart: number[];
+    };
+    estimations: {
+        total: number;
+        count: number;
+        chart: number[];
+    };
+    purchases: {
+        total: number;
+        count: number;
+        chart: number[];
+    };
+    expenses: {
+        total: number;
+        count: number;
+        chart: number[];
+    };
+    categories: string[];
+}
+
+export async function fetchFinancialTotals(): Promise<FinancialTotals> {
+    const res = await fetch(
+        '/api/method/company.company.frontend_api.get_financial_totals',
+        { credentials: 'include' }
+    );
+
+    if (!res.ok) {
+        throw new Error('Failed to fetch financial totals');
+    }
+
+    const data = await res.json();
+    return data.message;
+}

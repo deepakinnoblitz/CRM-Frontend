@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
@@ -15,6 +15,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useEstimations } from 'src/hooks/useEstimations';
 
+import { getDoctypeList } from 'src/api/leads';
 import { deleteEstimation } from 'src/api/estimation';
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -28,6 +29,7 @@ import { TableEmptyRows } from '../table-empty-rows';
 import { EstimationTableRow } from '../estimation-table-row';
 import { EstimationTableHead } from '../estimation-table-head';
 import { EstimationTableToolbar } from '../estimation-table-toolbar';
+import { EstimationTableFiltersDrawer } from '../estimation-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
@@ -55,12 +57,59 @@ export function EstimationListView() {
         severity: 'success',
     });
 
+    const [openFilters, setOpenFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        client_name: 'all',
+        ref_no: '',
+        estimate_date: '',
+    });
+    const [customerOptions, setCustomerOptions] = useState<any[]>([]);
+
+    const [refNoOptions, setRefNoOptions] = useState<string[]>([]);
+
+    useEffect(() => {
+        const fetchOptions = async () => {
+            try {
+                // Fetch Contacts for Customer filter
+                const contacts = await getDoctypeList('Contacts', ['name', 'first_name', 'company_name']);
+                setCustomerOptions(contacts.map((c: any) => ({ name: c.name, customer_name: c.first_name || c.name })));
+
+                // Fetch Estimations for Ref No filter
+                const estimations = await getDoctypeList('Estimation', ['ref_no']);
+                // Unique ref numbers
+                const refs = Array.from(new Set(estimations.map((e: any) => e.ref_no).filter(Boolean))) as string[];
+                setRefNoOptions(refs);
+            } catch (err) {
+                console.error('Failed to fetch filter options', err);
+            }
+        };
+
+        fetchOptions();
+    }, []);
+
     const { data, total, loading, refetch } = useEstimations(
         table.page,
         table.rowsPerPage,
         filterName,
-        sortBy
+        sortBy,
+        filters
     );
+
+    const handleFilters = (update: any) => {
+        setFilters((prev) => ({ ...prev, ...update }));
+        table.onResetPage();
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            client_name: 'all',
+            ref_no: '',
+            estimate_date: '',
+        });
+        table.onResetPage();
+    };
+
+    const canReset = filters.client_name !== 'all' || !!filters.ref_no || !!filters.estimate_date;
 
     const handleFilterName = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,7 +153,7 @@ export function EstimationListView() {
         setSnackbar((prev) => ({ ...prev, open: false }));
     };
 
-    const notFound = !loading && data.length === 0 && !!filterName;
+    const notFound = !loading && data.length === 0 && (!!filterName || canReset);
 
     return (
         <DashboardContent>
@@ -127,6 +176,8 @@ export function EstimationListView() {
                     onFilterName={handleFilterName}
                     sortBy={sortBy}
                     onSortChange={setSortBy}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
                 />
 
                 <Scrollbar>
@@ -184,6 +235,20 @@ export function EstimationListView() {
                     onRowsPerPageChange={table.onChangeRowsPerPage}
                 />
             </Card>
+
+            <EstimationTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                options={{
+                    customers: customerOptions,
+                    refNos: refNoOptions,
+                }}
+            />
 
             <Snackbar
                 open={snackbar.open}

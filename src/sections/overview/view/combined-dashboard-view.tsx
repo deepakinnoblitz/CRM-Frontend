@@ -21,7 +21,9 @@ import {
     fetchTodayActivities,
     type TodayActivities,
     fetchSalesDashboardData,
-    type SalesDashboardData
+    type SalesDashboardData,
+    fetchFinancialTotals,
+    type FinancialTotals
 } from 'src/api/dashboard';
 
 import { Scrollbar } from 'src/components/scrollbar';
@@ -40,18 +42,21 @@ export function CombinedDashboardView() {
     const [salesData, setSalesData] = useState<SalesDashboardData | null>(null);
     const [crmStats, setCrmStats] = useState<DashboardStats | null>(null);
     const [activities, setActivities] = useState<TodayActivities | null>(null);
+    const [financialTotals, setFinancialTotals] = useState<FinancialTotals | null>(null);
 
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [sales, stats, acts] = await Promise.all([
+                const [sales, stats, acts, financial] = await Promise.all([
                     fetchSalesDashboardData(),
                     fetchDashboardStats(),
-                    fetchTodayActivities()
+                    fetchTodayActivities(),
+                    fetchFinancialTotals()
                 ]);
                 setSalesData(sales);
                 setCrmStats(stats);
                 setActivities(acts);
+                setFinancialTotals(financial);
             } catch (error) {
                 console.error('Failed to load Combined dashboard data:', error);
             }
@@ -69,7 +74,7 @@ export function CombinedDashboardView() {
         return Math.round(((today - yesterday) / yesterday) * 100);
     };
 
-    if (!salesData || !crmStats || !activities) return null;
+    if (!salesData || !crmStats || !activities || !financialTotals) return null;
 
     return (
         <DashboardContent maxWidth="xl">
@@ -134,58 +139,58 @@ export function CombinedDashboardView() {
                     />
                 </Grid>
 
-                {/* Row 2: Sales Summary Widgets */}
+                {/* Row 2: Financial Totals */}
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <AnalyticsWidgetSummary
-                        title="Total Sales"
-                        percent={0}
-                        total={salesData.total_sales}
-                        icon={<img alt="Total Sales" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-buy.svg`} />}
+                        title="Total Invoices"
+                        percent={getPercentChange(financialTotals.invoices.chart)}
+                        total={financialTotals.invoices.count}
+                        icon={<img alt="Invoices" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-buy.svg`} />}
                         chart={{
-                            categories: ['MTD', 'YTD'],
-                            series: [salesData.mtd_sales, salesData.ytd_sales],
+                            categories: financialTotals.categories,
+                            series: financialTotals.invoices.chart,
                         }}
                     />
                 </Grid>
 
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <AnalyticsWidgetSummary
-                        title="MTD Sales"
-                        percent={0}
-                        total={salesData.mtd_sales}
+                        title="Total Estimations"
+                        percent={getPercentChange(financialTotals.estimations.chart)}
+                        total={financialTotals.estimations.count}
                         color="secondary"
-                        icon={<img alt="MTD Sales" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-bag.svg`} />}
+                        icon={<img alt="Estimations" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-bag.svg`} />}
                         chart={{
-                            categories: ['Prev', 'Current'],
-                            series: [salesData.mtd_sales, salesData.mtd_sales],
+                            categories: financialTotals.categories,
+                            series: financialTotals.estimations.chart,
                         }}
                     />
                 </Grid>
 
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <AnalyticsWidgetSummary
-                        title="Conversion Rate"
-                        percent={0}
-                        total={parseFloat(salesData.conversion_rate.toFixed(2))}
+                        title="Total Purchases"
+                        percent={getPercentChange(financialTotals.purchases.chart)}
+                        total={financialTotals.purchases.count}
                         color="warning"
-                        icon={<img alt="Conversion" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-message.svg`} />}
+                        icon={<img alt="Purchases" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-message.svg`} />}
                         chart={{
-                            categories: ['Prev', 'Current'],
-                            series: [salesData.conversion_rate, salesData.conversion_rate],
+                            categories: financialTotals.categories,
+                            series: financialTotals.purchases.chart,
                         }}
                     />
                 </Grid>
 
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <AnalyticsWidgetSummary
-                        title="Open Pipeline"
-                        percent={0}
-                        total={salesData.pipeline_value}
+                        title="Total Expenses"
+                        percent={getPercentChange(financialTotals.expenses.chart)}
+                        total={financialTotals.expenses.count}
                         color="info"
-                        icon={<img alt="Pipeline" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-buy.svg`} />}
+                        icon={<img alt="Expenses" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-users.svg`} />}
                         chart={{
-                            categories: ['Prev', 'Current'],
-                            series: [salesData.pipeline_value, salesData.pipeline_value],
+                            categories: financialTotals.categories,
+                            series: financialTotals.expenses.chart,
                         }}
                     />
                 </Grid>

@@ -71,7 +71,8 @@ export async function fetchContacts(params: {
             "city",
             "customer_type",
             "owner",
-            "creation"
+            "creation",
+            "modified"
         ]),
         filters: JSON.stringify(filters),
         or_filters: JSON.stringify(or_filters),

@@ -46,6 +46,15 @@ import { UserTableToolbar as ContactTableToolbar } from '../../user/user-table-t
 
 // ----------------------------------------------------------------------
 
+const CONTACT_SORT_OPTIONS = [
+    { value: 'modified_desc', label: 'Newest First' },
+    { value: 'modified_asc', label: 'Oldest First' },
+    { value: 'first_name_asc', label: 'Name: A to Z' },
+    { value: 'first_name_desc', label: 'Name: Z to A' },
+    { value: 'company_name_asc', label: 'Company: A to Z' },
+    { value: 'company_name_desc', label: 'Company: Z to A' },
+];
+
 export function ContactView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -480,6 +489,7 @@ export function ContactView() {
                     sortBy={sortBy}
                     onSortChange={setSortBy}
                     onDelete={handleBulkDelete}
+                    sortOptions={CONTACT_SORT_OPTIONS}
                 />
 
                 <Scrollbar>

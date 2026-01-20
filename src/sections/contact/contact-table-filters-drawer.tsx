@@ -166,6 +166,13 @@ export function ContactTableFiltersDrawer({
                         }}
                     />
                 )}
+                renderOption={(props, option) => (
+                    <li {...props} key={option.name}>
+                        <Typography variant="body2" sx={{ fontSize: '13px' }}>
+                            {option.lead_name} ({option.name})
+                        </Typography>
+                    </li>
+                )}
             />
         </Stack>
     );
