@@ -109,8 +109,8 @@ export function MeetingsView() {
         setSelectedMeeting(null);
         setMeetingData({
             ...INITIAL_MEETING_STATE,
-            from: new Date().toISOString().slice(0, 16),
-            to: new Date(Date.now() + 3600000).toISOString().slice(0, 16), // 1 hour later
+            from: dayjs().format('YYYY-MM-DDTHH:mm'),
+            to: '',
         });
         setOpenDialog(true);
     };
@@ -119,8 +119,8 @@ export function MeetingsView() {
         const { event } = info;
         try {
             await updateMeeting(event.id, {
-                from: event.start.toISOString().replace('T', ' ').split('.')[0],
-                to: event.end ? event.end.toISOString().replace('T', ' ').split('.')[0] : undefined
+                from: dayjs(event.start).format('YYYY-MM-DD HH:mm:ss'),
+                to: event.end ? dayjs(event.end).format('YYYY-MM-DD HH:mm:ss') : undefined
             });
             loadMeetings();
         } catch (error: any) {
@@ -134,8 +134,8 @@ export function MeetingsView() {
         const { event } = info;
         try {
             await updateMeeting(event.id, {
-                from: event.start.toISOString().replace('T', ' ').split('.')[0],
-                to: event.end ? event.end.toISOString().replace('T', ' ').split('.')[0] : undefined
+                from: dayjs(event.start).format('YYYY-MM-DD HH:mm:ss'),
+                to: event.end ? dayjs(event.end).format('YYYY-MM-DD HH:mm:ss') : undefined
             });
             loadMeetings();
         } catch (error: any) {
@@ -150,7 +150,7 @@ export function MeetingsView() {
             const formattedData = {
                 ...meetingData,
                 from: meetingData.from?.replace('T', ' '),
-                to: meetingData.to?.replace('T', ' ') || undefined,
+                to: meetingData.to ? meetingData.to.replace('T', ' ') : undefined,
             };
 
             if (selectedMeeting) {
@@ -341,10 +341,14 @@ export function MeetingsView() {
                         eventResize={handleEventResize}
                         select={(info) => {
                             setSelectedMeeting(null);
+                            const startTime = info.allDay
+                                ? `${info.startStr}T${dayjs().format('HH:mm')}`
+                                : info.startStr.slice(0, 16);
+
                             setMeetingData({
                                 ...INITIAL_MEETING_STATE,
-                                from: info.startStr.slice(0, 16),
-                                to: info.endStr.slice(0, 16),
+                                from: startTime,
+                                to: '',
                             });
                             setOpenDialog(true);
                         }}

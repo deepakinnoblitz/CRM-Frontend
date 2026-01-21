@@ -99,8 +99,8 @@ export function EventsView() {
         const { event } = info;
         try {
             await updateEvent(event.id, {
-                starts_on: event.start.toISOString().replace('T', ' ').split('.')[0],
-                ends_on: event.end ? event.end.toISOString().replace('T', ' ').split('.')[0] : undefined
+                starts_on: dayjs(event.start).format('YYYY-MM-DD HH:mm:ss'),
+                ends_on: event.end ? dayjs(event.end).format('YYYY-MM-DD HH:mm:ss') : undefined
             });
             // Refresh events
             loadEvents();
@@ -115,8 +115,8 @@ export function EventsView() {
         const { event } = info;
         try {
             await updateEvent(event.id, {
-                starts_on: event.start.toISOString().replace('T', ' ').split('.')[0],
-                ends_on: event.end ? event.end.toISOString().replace('T', ' ').split('.')[0] : undefined
+                starts_on: dayjs(event.start).format('YYYY-MM-DD HH:mm:ss'),
+                ends_on: event.end ? dayjs(event.end).format('YYYY-MM-DD HH:mm:ss') : undefined
             });
             // Refresh events
             loadEvents();
@@ -131,7 +131,7 @@ export function EventsView() {
         const formattedData = {
             ...eventData,
             starts_on: eventData.starts_on?.replace('T', ' '),
-            ends_on: eventData.ends_on?.replace('T', ' '),
+            ends_on: eventData.ends_on ? eventData.ends_on.replace('T', ' ') : undefined,
         };
 
         try {
@@ -352,7 +352,7 @@ export function EventsView() {
                             setEventData({
                                 ...INITIAL_EVENT_STATE,
                                 starts_on: info.startStr.slice(0, 16),
-                                ends_on: info.endStr.slice(0, 16),
+                                ends_on: '',
                             });
                             setOpenDialog(true);
                         }}
@@ -618,12 +618,11 @@ export function EventsView() {
                 open={snackbar.open}
                 autoHideDuration={6000}
                 onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
                 <Alert
                     onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
                     severity={snackbar.severity}
-                    variant="filled"
                     sx={{ width: '100%' }}
                 >
                     {snackbar.message}
