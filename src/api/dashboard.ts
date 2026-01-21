@@ -46,31 +46,62 @@ export interface TodayActivities {
 }
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
-    const res = await fetch(
-        '/api/method/company.company.frontend_api.get_dashboard_stats',
-        { credentials: 'include' }
-    );
+    try {
+        const res = await fetch(
+            '/api/method/company.company.frontend_api.get_dashboard_stats',
+            { credentials: 'include' }
+        );
 
-    if (!res.ok) {
-        throw new Error('Failed to fetch dashboard stats');
+        if (!res.ok) {
+            throw new Error('Failed to fetch dashboard stats');
+        }
+
+        const data = await res.json();
+        return data.message;
+    } catch (error) {
+        console.error('Failed to fetch dashboard stats:', error);
+        // Return default zero values when API fails
+        return {
+            leads: 0,
+            contacts: 0,
+            deals: 0,
+            accounts: 0,
+            recent_leads: 0,
+            total_deal_value: 0,
+            leads_by_status: [],
+            deals_by_stage: [],
+            charts: {
+                categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                leads: [0, 0, 0, 0, 0, 0, 0],
+                contacts: [0, 0, 0, 0, 0, 0, 0],
+                deals: [0, 0, 0, 0, 0, 0, 0],
+                accounts: [0, 0, 0, 0, 0, 0, 0],
+            },
+        };
     }
-
-    const data = await res.json();
-    return data.message;
 }
 
 export async function fetchTodayActivities(): Promise<TodayActivities> {
-    const res = await fetch(
-        '/api/method/company.company.frontend_api.get_today_activities',
-        { credentials: 'include' }
-    );
+    try {
+        const res = await fetch(
+            '/api/method/company.company.frontend_api.get_today_activities',
+            { credentials: 'include' }
+        );
 
-    if (!res.ok) {
-        throw new Error('Failed to fetch today activities');
+        if (!res.ok) {
+            throw new Error('Failed to fetch today activities');
+        }
+
+        const data = await res.json();
+        return data.message;
+    } catch (error) {
+        console.error('Failed to fetch today activities:', error);
+        // Return default empty arrays when API fails
+        return {
+            calls: [],
+            meetings: [],
+        };
     }
-
-    const data = await res.json();
-    return data.message;
 }
 
 export interface HRDashboardData {
@@ -213,17 +244,47 @@ export interface SalesDashboardData {
 }
 
 export async function fetchSalesDashboardData(): Promise<SalesDashboardData> {
-    const res = await fetch(
-        '/api/method/company.company.frontend_api.get_sales_dashboard_data',
-        { credentials: 'include' }
-    );
+    try {
+        const res = await fetch(
+            '/api/method/company.company.frontend_api.get_sales_dashboard_data',
+            { credentials: 'include' }
+        );
 
-    if (!res.ok) {
-        throw new Error('Failed to fetch sales dashboard data');
+        if (!res.ok) {
+            throw new Error('Failed to fetch sales dashboard data');
+        }
+
+        const data = await res.json();
+        return data.message;
+    } catch (error) {
+        console.error('Failed to fetch sales dashboard data:', error);
+        // Return default zero values when API fails
+        return {
+            total_sales: 0,
+            total_qty_sold: 0,
+            total_orders: 0,
+            aov: 0,
+            gross_sales: 0,
+            net_sales: 0,
+            total_discounts: 0,
+            mtd_sales: 0,
+            ytd_sales: 0,
+            pipeline_value: 0,
+            top_customers_by_revenue: [],
+            most_repeated_customers: [],
+            overdue_orders: [],
+            pending_orders_count: 0,
+            sales_trend: {
+                categories: [],
+                series: [],
+            },
+            discount_trend: {
+                categories: [],
+                series: [],
+            },
+            conversion_rate: 0,
+        };
     }
-
-    const data = await res.json();
-    return data.message;
 }
 
 export interface FinancialTotals {
@@ -251,15 +312,43 @@ export interface FinancialTotals {
 }
 
 export async function fetchFinancialTotals(): Promise<FinancialTotals> {
-    const res = await fetch(
-        '/api/method/company.company.frontend_api.get_financial_totals',
-        { credentials: 'include' }
-    );
+    try {
+        const res = await fetch(
+            '/api/method/company.company.frontend_api.get_financial_totals',
+            { credentials: 'include' }
+        );
 
-    if (!res.ok) {
-        throw new Error('Failed to fetch financial totals');
+        if (!res.ok) {
+            throw new Error('Failed to fetch financial totals');
+        }
+
+        const data = await res.json();
+        return data.message;
+    } catch (error) {
+        console.error('Failed to fetch financial totals:', error);
+        // Return default zero values when API fails
+        return {
+            invoices: {
+                total: 0,
+                count: 0,
+                chart: [0, 0, 0, 0, 0, 0, 0],
+            },
+            estimations: {
+                total: 0,
+                count: 0,
+                chart: [0, 0, 0, 0, 0, 0, 0],
+            },
+            purchases: {
+                total: 0,
+                count: 0,
+                chart: [0, 0, 0, 0, 0, 0, 0],
+            },
+            expenses: {
+                total: 0,
+                count: 0,
+                chart: [0, 0, 0, 0, 0, 0, 0],
+            },
+            categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        };
     }
-
-    const data = await res.json();
-    return data.message;
 }

@@ -17,21 +17,36 @@ import { AnalyticsWidgetSummary } from '../analytics-widget-summary';
 export function OverviewAnalyticsView() {
   const { user } = useAuth();
 
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [activities, setActivities] = useState<TodayActivities | null>(null);
+  const [stats, setStats] = useState<DashboardStats>({
+    leads: 0,
+    contacts: 0,
+    deals: 0,
+    accounts: 0,
+    recent_leads: 0,
+    total_deal_value: 0,
+    leads_by_status: [],
+    deals_by_stage: [],
+    charts: {
+      categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      leads: [0, 0, 0, 0, 0, 0, 0],
+      contacts: [0, 0, 0, 0, 0, 0, 0],
+      deals: [0, 0, 0, 0, 0, 0, 0],
+      accounts: [0, 0, 0, 0, 0, 0, 0],
+    },
+  });
+  const [activities, setActivities] = useState<TodayActivities>({
+    calls: [],
+    meetings: [],
+  });
 
   useEffect(() => {
     const loadData = async () => {
-      try {
-        const [statsData, activitiesData] = await Promise.all([
-          fetchDashboardStats(),
-          fetchTodayActivities()
-        ]);
-        setStats(statsData);
-        setActivities(activitiesData);
-      } catch (error) {
-        console.error('Failed to load dashboard data:', error);
-      }
+      const [statsData, activitiesData] = await Promise.all([
+        fetchDashboardStats(),
+        fetchTodayActivities()
+      ]);
+      setStats(statsData);
+      setActivities(activitiesData);
     };
 
     loadData();
