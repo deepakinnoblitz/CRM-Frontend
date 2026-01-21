@@ -39,27 +39,66 @@ import { AnalyticsCurrentVisits } from '../analytics-current-visits';
 
 export function CombinedDashboardView() {
     const { user } = useAuth();
-    const [salesData, setSalesData] = useState<SalesDashboardData | null>(null);
-    const [crmStats, setCrmStats] = useState<DashboardStats | null>(null);
-    const [activities, setActivities] = useState<TodayActivities | null>(null);
-    const [financialTotals, setFinancialTotals] = useState<FinancialTotals | null>(null);
+    const [salesData, setSalesData] = useState<SalesDashboardData>({
+        total_sales: 0,
+        total_qty_sold: 0,
+        total_orders: 0,
+        aov: 0,
+        gross_sales: 0,
+        net_sales: 0,
+        total_discounts: 0,
+        mtd_sales: 0,
+        ytd_sales: 0,
+        pipeline_value: 0,
+        top_customers_by_revenue: [],
+        most_repeated_customers: [],
+        overdue_orders: [],
+        pending_orders_count: 0,
+        sales_trend: { categories: [], series: [] },
+        discount_trend: { categories: [], series: [] },
+        conversion_rate: 0,
+    });
+    const [crmStats, setCrmStats] = useState<DashboardStats>({
+        leads: 0,
+        contacts: 0,
+        deals: 0,
+        accounts: 0,
+        recent_leads: 0,
+        total_deal_value: 0,
+        leads_by_status: [],
+        deals_by_stage: [],
+        charts: {
+            categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            leads: [0, 0, 0, 0, 0, 0, 0],
+            contacts: [0, 0, 0, 0, 0, 0, 0],
+            deals: [0, 0, 0, 0, 0, 0, 0],
+            accounts: [0, 0, 0, 0, 0, 0, 0],
+        },
+    });
+    const [activities, setActivities] = useState<TodayActivities>({
+        calls: [],
+        meetings: [],
+    });
+    const [financialTotals, setFinancialTotals] = useState<FinancialTotals>({
+        invoices: { total: 0, count: 0, chart: [0, 0, 0, 0, 0, 0, 0] },
+        estimations: { total: 0, count: 0, chart: [0, 0, 0, 0, 0, 0, 0] },
+        purchases: { total: 0, count: 0, chart: [0, 0, 0, 0, 0, 0, 0] },
+        expenses: { total: 0, count: 0, chart: [0, 0, 0, 0, 0, 0, 0] },
+        categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    });
 
     useEffect(() => {
         const loadData = async () => {
-            try {
-                const [sales, stats, acts, financial] = await Promise.all([
-                    fetchSalesDashboardData(),
-                    fetchDashboardStats(),
-                    fetchTodayActivities(),
-                    fetchFinancialTotals()
-                ]);
-                setSalesData(sales);
-                setCrmStats(stats);
-                setActivities(acts);
-                setFinancialTotals(financial);
-            } catch (error) {
-                console.error('Failed to load Combined dashboard data:', error);
-            }
+            const [sales, stats, acts, financial] = await Promise.all([
+                fetchSalesDashboardData(),
+                fetchDashboardStats(),
+                fetchTodayActivities(),
+                fetchFinancialTotals()
+            ]);
+            setSalesData(sales);
+            setCrmStats(stats);
+            setActivities(acts);
+            setFinancialTotals(financial);
         };
 
         loadData();
@@ -73,8 +112,6 @@ export function CombinedDashboardView() {
         if (yesterday === 0) return today > 0 ? 100 : 0;
         return Math.round(((today - yesterday) / yesterday) * 100);
     };
-
-    if (!salesData || !crmStats || !activities || !financialTotals) return null;
 
     return (
         <DashboardContent maxWidth="xl">

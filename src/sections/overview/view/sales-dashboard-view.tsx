@@ -28,22 +28,34 @@ import { AnalyticsWebsiteVisits } from '../analytics-website-visits';
 
 export function SalesDashboardView() {
     const { user } = useAuth();
-    const [data, setData] = useState<SalesDashboardData | null>(null);
+    const [data, setData] = useState<SalesDashboardData>({
+        total_sales: 0,
+        total_qty_sold: 0,
+        total_orders: 0,
+        aov: 0,
+        gross_sales: 0,
+        net_sales: 0,
+        total_discounts: 0,
+        mtd_sales: 0,
+        ytd_sales: 0,
+        pipeline_value: 0,
+        top_customers_by_revenue: [],
+        most_repeated_customers: [],
+        overdue_orders: [],
+        pending_orders_count: 0,
+        sales_trend: { categories: [], series: [] },
+        discount_trend: { categories: [], series: [] },
+        conversion_rate: 0,
+    });
 
     useEffect(() => {
         const loadData = async () => {
-            try {
-                const dashboardData = await fetchSalesDashboardData();
-                setData(dashboardData);
-            } catch (error) {
-                console.error('Failed to load Sales dashboard data:', error);
-            }
+            const dashboardData = await fetchSalesDashboardData();
+            setData(dashboardData);
         };
 
         loadData();
     }, []);
-
-    if (!data) return null;
 
     return (
         <DashboardContent maxWidth="xl">
