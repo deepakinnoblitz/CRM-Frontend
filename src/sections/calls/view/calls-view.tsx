@@ -107,8 +107,8 @@ export function CallsView() {
         setSelectedCall(null);
         setCallData({
             ...INITIAL_CALL_STATE,
-            call_start_time: new Date().toISOString().slice(0, 16),
-            call_end_time: new Date(Date.now() + 1800000).toISOString().slice(0, 16), // 30 mins later
+            call_start_time: dayjs().format('YYYY-MM-DDTHH:mm'),
+            call_end_time: '',
         });
         setOpenDialog(true);
     };
@@ -117,8 +117,8 @@ export function CallsView() {
         const { event } = info;
         try {
             await updateCall(event.id, {
-                call_start_time: event.start.toISOString().replace('T', ' ').split('.')[0],
-                call_end_time: event.end ? event.end.toISOString().replace('T', ' ').split('.')[0] : undefined
+                call_start_time: dayjs(event.start).format('YYYY-MM-DD HH:mm:ss'),
+                call_end_time: event.end ? dayjs(event.end).format('YYYY-MM-DD HH:mm:ss') : undefined
             });
             loadCalls();
         } catch (error: any) {
@@ -132,8 +132,8 @@ export function CallsView() {
         const { event } = info;
         try {
             await updateCall(event.id, {
-                call_start_time: event.start.toISOString().replace('T', ' ').split('.')[0],
-                call_end_time: event.end ? event.end.toISOString().replace('T', ' ').split('.')[0] : undefined
+                call_start_time: dayjs(event.start).format('YYYY-MM-DD HH:mm:ss'),
+                call_end_time: event.end ? dayjs(event.end).format('YYYY-MM-DD HH:mm:ss') : undefined
             });
             loadCalls();
         } catch (error: any) {
@@ -339,10 +339,14 @@ export function CallsView() {
                         eventResize={handleEventResize}
                         select={(info) => {
                             setSelectedCall(null);
+                            const startTime = info.allDay
+                                ? `${info.startStr}T${dayjs().format('HH:mm')}`
+                                : info.startStr.slice(0, 16);
+
                             setCallData({
                                 ...INITIAL_CALL_STATE,
-                                call_start_time: info.startStr.slice(0, 16),
-                                call_end_time: info.endStr.slice(0, 16),
+                                call_start_time: startTime,
+                                call_end_time: '',
                             });
                             setOpenDialog(true);
                         }}
