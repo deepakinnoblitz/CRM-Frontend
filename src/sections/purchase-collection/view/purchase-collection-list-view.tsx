@@ -1,4 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
+import type { PurchaseCollection } from 'src/api/purchase-collection';
+
+import { useState, useEffect, useCallback } from 'react';
 
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
@@ -16,7 +18,7 @@ import TablePagination from '@mui/material/TablePagination';
 import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { fetchPurchaseCollections, deletePurchaseCollection, PurchaseCollection } from 'src/api/purchase-collection';
+import { fetchPurchaseCollections, deletePurchaseCollection } from 'src/api/purchase-collection';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';

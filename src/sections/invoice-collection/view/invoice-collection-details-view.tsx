@@ -1,3 +1,5 @@
+import type { Invoice } from 'src/api/invoice';
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -17,7 +19,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
 
-import { getInvoice, Invoice } from 'src/api/invoice';
+import { getInvoice } from 'src/api/invoice';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getInvoiceCollection, deleteInvoiceCollection, fetchInvoiceCollections } from 'src/api/invoice-collection';
 

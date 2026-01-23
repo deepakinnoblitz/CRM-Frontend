@@ -1,4 +1,4 @@
-import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
+import { frappeRequest } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 export async function uploadFile(file: File, doctype?: string, docname?: string, fieldname?: string) {
