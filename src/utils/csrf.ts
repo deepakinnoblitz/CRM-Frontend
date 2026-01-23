@@ -124,9 +124,6 @@ export async function handleCSRFError(): Promise<void> {
     } catch (error) {
         console.error('Error during logout:', error);
     }
-
-    // Redirect to sign-in page
-    window.location.href = '/sign-in';
 }
 
 /**
