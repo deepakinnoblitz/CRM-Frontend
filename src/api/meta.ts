@@ -1,3 +1,6 @@
+import { frappeRequest } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
+
 export interface DocField {
     fieldname: string;
     label: string;
@@ -12,12 +15,11 @@ export interface DocTypeMeta {
 }
 
 export async function getDoctypeMeta(doctype: string): Promise<DocTypeMeta> {
-    const res = await fetch(`/api/method/company.company.frontend_api.get_doctype_fields?doctype=${doctype}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/company.company.frontend_api.get_doctype_fields?doctype=${doctype}`);
 
     if (!res.ok) {
-        throw new Error(`Failed to fetch doctype meta: ${res.status} ${res.statusText}`);
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, `Failed to fetch doctype meta for ${doctype}`));
     }
 
     const json = await res.json();

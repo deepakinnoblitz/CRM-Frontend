@@ -1,3 +1,4 @@
+import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 export interface Lead {
@@ -90,8 +91,8 @@ export async function fetchLeads(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Lead&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Lead&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch leads");
@@ -107,10 +108,11 @@ export async function fetchLeads(params: {
 
 
 export async function createLead(data: Partial<Lead>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doc: {
                 doctype: "Lead",
@@ -125,10 +127,11 @@ export async function createLead(data: Partial<Lead>) {
 
 
 export async function updateLead(name: string, data: Partial<Lead>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Lead",
             name,
@@ -143,10 +146,11 @@ export async function updateLead(name: string, data: Partial<Lead>) {
 
 
 export async function deleteLead(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Lead",
             name
@@ -171,9 +175,8 @@ export async function getDoctypeList(doctype: string, fields?: string[]) {
 
     const query = new URLSearchParams(params);
 
-    const res = await fetch(
-        `/api/method/company.company.frontend_api.get_doctype_list?${query.toString()}`,
-        { credentials: 'include' }
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_doctype_list?${query.toString()}`
     );
 
     if (!res.ok) {
@@ -189,9 +192,8 @@ export async function getDoctypeList(doctype: string, fields?: string[]) {
 }
 
 export async function getStates(country: string) {
-    const res = await fetch(
-        `/api/method/company.company.api.get_states?country=${encodeURIComponent(country)}`,
-        { credentials: 'include' }
+    const res = await frappeRequest(
+        `/api/method/company.company.api.get_states?country=${encodeURIComponent(country)}`
     );
 
     if (!res.ok) {
@@ -202,9 +204,8 @@ export async function getStates(country: string) {
 }
 
 export async function getCities(country: string, state: string) {
-    const res = await fetch(
-        `/api/method/company.company.api.get_cities?country=${encodeURIComponent(country)}&state=${encodeURIComponent(state)}`,
-        { credentials: 'include' }
+    const res = await frappeRequest(
+        `/api/method/company.company.api.get_cities?country=${encodeURIComponent(country)}&state=${encodeURIComponent(state)}`
     );
 
     if (!res.ok) {
@@ -215,9 +216,7 @@ export async function getCities(country: string, state: string) {
 }
 
 export async function getDoc(doctype: string, name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=${doctype}&name=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=${doctype}&name=${name}`);
 
     if (!res.ok) {
         throw new Error(`Failed to fetch ${doctype} details`);
@@ -231,9 +230,7 @@ export async function getLead(name: string) {
 }
 
 export async function getLeadPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_lead_permissions", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_lead_permissions");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };
@@ -257,9 +254,8 @@ export interface WorkflowStates {
 }
 
 export async function getWorkflowStates(doctype: string = 'Lead'): Promise<WorkflowStates> {
-    const res = await fetch(
-        `/api/method/company.company.frontend_api.get_workflow_states?doctype=${doctype}`,
-        { credentials: 'include' }
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_workflow_states?doctype=${doctype}`
     );
 
     if (!res.ok) {
@@ -270,9 +266,8 @@ export async function getWorkflowStates(doctype: string = 'Lead'): Promise<Workf
 }
 
 export async function getWorkflowActions(doctype: string = 'Lead', currentState: string): Promise<{ action: string; next_state: string }[]> {
-    const res = await fetch(
-        `/api/method/company.company.frontend_api.get_workflow_states?doctype=${doctype}&current_state=${encodeURIComponent(currentState)}`,
-        { credentials: 'include' }
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_workflow_states?doctype=${doctype}&current_state=${encodeURIComponent(currentState)}`
     );
 
     if (!res.ok) {
@@ -303,10 +298,11 @@ export interface ConvertLeadResponse {
 }
 
 export async function convertLead(leadName: string): Promise<ConvertLeadResponse> {
-    const res = await fetch("/api/method/company.company.crm_api.convert_lead", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/company.company.crm_api.convert_lead", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             lead_name: leadName
         })

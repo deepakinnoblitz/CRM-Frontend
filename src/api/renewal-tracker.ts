@@ -1,3 +1,6 @@
+import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
+
 export interface RenewalTracker {
     name: string;
     item_name: string;
@@ -38,8 +41,8 @@ async function fetchFrappeList(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Renewal Tracker&filters=${encodeURIComponent(JSON.stringify(filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Renewal Tracker&filters=${encodeURIComponent(JSON.stringify(filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch renewals");
@@ -56,26 +59,28 @@ async function fetchFrappeList(params: {
 export const fetchRenewals = (params: any) => fetchFrappeList(params);
 
 export async function createRenewal(data: Partial<RenewalTracker>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doc: { doctype: "Renewal Tracker", ...data } })
     });
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to create renewal");
+        throw new Error(handleFrappeError(error, "Failed to create renewal"));
     }
 
     return (await res.json()).message;
 }
 
 export async function updateRenewal(name: string, data: Partial<RenewalTracker>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Renewal Tracker",
             name,
@@ -85,32 +90,31 @@ export async function updateRenewal(name: string, data: Partial<RenewalTracker>)
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to update renewal");
+        throw new Error(handleFrappeError(error, "Failed to update renewal"));
     }
 
     return (await res.json()).message;
 }
 
 export async function deleteRenewal(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doctype: "Renewal Tracker", name })
     });
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to delete renewal");
+        throw new Error(handleFrappeError(error, "Failed to delete renewal"));
     }
 
     return true;
 }
 
 export async function getRenewal(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Renewal Tracker&name=${encodeURIComponent(name)}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Renewal Tracker&name=${encodeURIComponent(name)}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch renewal details");
@@ -120,9 +124,7 @@ export async function getRenewal(name: string) {
 }
 
 export async function getRenewalPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Renewal Tracker", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Renewal Tracker");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };

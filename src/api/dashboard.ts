@@ -1,3 +1,6 @@
+import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
+
 export interface DashboardStats {
     leads: number;
     contacts: number;
@@ -47,13 +50,13 @@ export interface TodayActivities {
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
     try {
-        const res = await fetch(
-            '/api/method/company.company.frontend_api.get_dashboard_stats',
-            { credentials: 'include' }
+        const res = await frappeRequest(
+            '/api/method/company.company.frontend_api.get_dashboard_stats'
         );
 
         if (!res.ok) {
-            throw new Error('Failed to fetch dashboard stats');
+            const error = await res.json();
+            throw new Error(handleFrappeError(error, 'Failed to fetch dashboard stats'));
         }
 
         const data = await res.json();
@@ -83,13 +86,13 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
 
 export async function fetchTodayActivities(): Promise<TodayActivities> {
     try {
-        const res = await fetch(
-            '/api/method/company.company.frontend_api.get_today_activities',
-            { credentials: 'include' }
+        const res = await frappeRequest(
+            '/api/method/company.company.frontend_api.get_today_activities'
         );
 
         if (!res.ok) {
-            throw new Error('Failed to fetch today activities');
+            const error = await res.json();
+            throw new Error(handleFrappeError(error, 'Failed to fetch today activities'));
         }
 
         const data = await res.json();
@@ -116,15 +119,21 @@ export interface HRDashboardData {
 }
 
 export async function fetchRecentAnnouncements(): Promise<any[]> {
-    const res = await fetch('/api/method/company.company.api.get_recent_announcements', { credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to fetch announcements');
+    const res = await frappeRequest('/api/method/company.company.api.get_recent_announcements');
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch announcements'));
+    }
     const data = await res.json();
     return data.message || [];
 }
 
 export async function fetchUpcomingRenewals(): Promise<any[]> {
-    const res = await fetch('/api/method/company.company.api.get_upcoming_and_expired_renewals', { credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to fetch upcoming renewals');
+    const res = await frappeRequest('/api/method/company.company.api.get_upcoming_and_expired_renewals');
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch upcoming renewals'));
+    }
     const data = await res.json();
     return data.message || [];
 }
@@ -136,41 +145,53 @@ export async function fetchMonthHolidays(month?: number, year?: number): Promise
     if (year) params.append('year', year.toString());
     if (params.toString()) url += `?${params.toString()}`;
 
-    const res = await fetch(url, { credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to fetch month holidays');
+    const res = await frappeRequest(url);
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch month holidays'));
+    }
     const data = await res.json();
     return data.message || [];
 }
 
 export async function fetchTodayBirthdays(): Promise<any[]> {
-    const res = await fetch('/api/method/company.company.api.get_today_birthdays', { credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to fetch birthdays');
+    const res = await frappeRequest('/api/method/company.company.api.get_today_birthdays');
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch birthdays'));
+    }
     const data = await res.json();
     return data.message || [];
 }
 
 export async function fetchTodayLeaveEmployees(): Promise<any[]> {
-    const res = await fetch('/api/method/company.company.api.get_today_leave_employees', { credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to fetch today leave employees');
+    const res = await frappeRequest('/api/method/company.company.api.get_today_leave_employees');
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch today leave employees'));
+    }
     const data = await res.json();
     return data.message || [];
 }
 
 export async function fetchAttendanceStats(range: string = 'today'): Promise<any> {
-    const res = await fetch(`/api/method/company.company.api.get_attendance_stats?range=${range}`, { credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to fetch attendance stats');
+    const res = await frappeRequest(`/api/method/company.company.api.get_attendance_stats?range=${range}`);
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch attendance stats'));
+    }
     const data = await res.json();
     return data.message;
 }
 
 export async function fetchHRDashboardData(): Promise<HRDashboardData> {
-    const res = await fetch(
-        '/api/method/company.company.frontend_api.get_hr_dashboard_data',
-        { credentials: 'include' }
+    const res = await frappeRequest(
+        '/api/method/company.company.frontend_api.get_hr_dashboard_data'
     );
 
     if (!res.ok) {
-        throw new Error('Failed to fetch HR dashboard data');
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch HR dashboard data'));
     }
 
     const data = await res.json();
@@ -179,11 +200,13 @@ export async function fetchHRDashboardData(): Promise<HRDashboardData> {
 
 // Get total employee count
 export async function fetchTotalEmployeeCount(): Promise<number> {
-    const res = await fetch(
-        `/api/method/frappe.client.get_count?doctype=Employee&filters=${encodeURIComponent(JSON.stringify([]))}`,
-        { credentials: 'include' }
+    const res = await frappeRequest(
+        `/api/method/frappe.client.get_count?doctype=Employee&filters=${encodeURIComponent(JSON.stringify([]))}`
     );
-    if (!res.ok) throw new Error('Failed to fetch employee count');
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch employee count'));
+    }
     const data = await res.json();
     return data.message || 0;
 }
@@ -191,11 +214,13 @@ export async function fetchTotalEmployeeCount(): Promise<number> {
 // Get pending leave applications count
 export async function fetchPendingLeaveCount(): Promise<number> {
     const filters = [['Leave Application', 'workflow_state', '=', 'Pending']];
-    const res = await fetch(
-        `/api/method/frappe.client.get_count?doctype=Leave Application&filters=${encodeURIComponent(JSON.stringify(filters))}`,
-        { credentials: 'include' }
+    const res = await frappeRequest(
+        `/api/method/frappe.client.get_count?doctype=Leave Application&filters=${encodeURIComponent(JSON.stringify(filters))}`
     );
-    if (!res.ok) throw new Error('Failed to fetch pending leave count');
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch pending leave count'));
+    }
     const data = await res.json();
     return data.message || 0;
 }
@@ -245,13 +270,13 @@ export interface SalesDashboardData {
 
 export async function fetchSalesDashboardData(): Promise<SalesDashboardData> {
     try {
-        const res = await fetch(
-            '/api/method/company.company.frontend_api.get_sales_dashboard_data',
-            { credentials: 'include' }
+        const res = await frappeRequest(
+            '/api/method/company.company.frontend_api.get_sales_dashboard_data'
         );
 
         if (!res.ok) {
-            throw new Error('Failed to fetch sales dashboard data');
+            const error = await res.json();
+            throw new Error(handleFrappeError(error, 'Failed to fetch sales dashboard data'));
         }
 
         const data = await res.json();
@@ -313,13 +338,13 @@ export interface FinancialTotals {
 
 export async function fetchFinancialTotals(): Promise<FinancialTotals> {
     try {
-        const res = await fetch(
-            '/api/method/company.company.frontend_api.get_financial_totals',
-            { credentials: 'include' }
+        const res = await frappeRequest(
+            '/api/method/company.company.frontend_api.get_financial_totals'
         );
 
         if (!res.ok) {
-            throw new Error('Failed to fetch financial totals');
+            const error = await res.json();
+            throw new Error(handleFrappeError(error, 'Failed to fetch financial totals'));
         }
 
         const data = await res.json();

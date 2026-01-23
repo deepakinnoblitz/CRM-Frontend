@@ -1,3 +1,6 @@
+import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
+
 export interface Account {
     name: string;
     account_name: string;
@@ -72,8 +75,8 @@ export async function fetchAccounts(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Accounts&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Accounts&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch accounts");
@@ -88,10 +91,11 @@ export async function fetchAccounts(params: {
 }
 
 export async function createAccount(data: Partial<Account>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doc: {
                 doctype: "Accounts",
@@ -100,14 +104,17 @@ export async function createAccount(data: Partial<Account>) {
         })
     });
 
-    return (await res.json()).message;
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create account"));
+    return json.message;
 }
 
 export async function updateAccount(name: string, data: Partial<Account>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Accounts",
             name,
@@ -115,37 +122,30 @@ export async function updateAccount(name: string, data: Partial<Account>) {
         })
     });
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to update account");
-    }
-
-    return (await res.json()).message;
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update account"));
+    return json.message;
 }
 
 export async function deleteAccount(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Accounts",
             name
         })
     });
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to delete account");
-    }
-
-    return (await res.json()).message;
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete account"));
+    return json.message;
 }
 
 export async function getAccountPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Accounts", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Accounts");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };
@@ -156,9 +156,7 @@ export async function getAccountPermissions() {
 
 
 export async function getAccount(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Accounts&name=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Accounts&name=${name}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch account details");

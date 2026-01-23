@@ -39,9 +39,8 @@ export async function fetchToDos(start?: string, end?: string): Promise<ToDo[]> 
         order_by: "date asc"
     });
 
-    const res = await fetch(
-        `/api/method/frappe.client.get_list?${query.toString()}`,
-        { credentials: 'include' }
+    const res = await frappeRequest(
+        `/api/method/frappe.client.get_list?${query.toString()}`
     );
 
     const data = await handleResponse(res);
@@ -106,9 +105,7 @@ export async function deleteToDo(name: string): Promise<void> {
 }
 
 export async function getToDoPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=ToDo", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=ToDo");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };
@@ -119,9 +116,7 @@ export async function getToDoPermissions() {
 }
 
 export async function getToDo(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=ToDo&name=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=ToDo&name=${name}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch ToDo details");

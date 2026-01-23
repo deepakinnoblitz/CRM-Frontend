@@ -1,3 +1,6 @@
+import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
+
 export interface Asset {
     name: string;
     asset_name: string;
@@ -39,8 +42,8 @@ async function fetchFrappeList(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Asset&filters=${encodeURIComponent(JSON.stringify(filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Asset&filters=${encodeURIComponent(JSON.stringify(filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch assets");
@@ -57,26 +60,28 @@ async function fetchFrappeList(params: {
 export const fetchAssets = (params: any) => fetchFrappeList(params);
 
 export async function createAsset(data: Partial<Asset>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doc: { doctype: "Asset", ...data } })
     });
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to create asset");
+        throw new Error(handleFrappeError(error, "Failed to create asset"));
     }
 
     return (await res.json()).message;
 }
 
 export async function updateAsset(name: string, data: Partial<Asset>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Asset",
             name,
@@ -86,32 +91,31 @@ export async function updateAsset(name: string, data: Partial<Asset>) {
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to update asset");
+        throw new Error(handleFrappeError(error, "Failed to update asset"));
     }
 
     return (await res.json()).message;
 }
 
 export async function deleteAsset(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doctype: "Asset", name })
     });
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to delete asset");
+        throw new Error(handleFrappeError(error, "Failed to delete asset"));
     }
 
     return true;
 }
 
 export async function getAsset(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Asset&name=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Asset&name=${name}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch asset details");
@@ -121,9 +125,7 @@ export async function getAsset(name: string) {
 }
 
 export async function getAssetPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Asset", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Asset");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };

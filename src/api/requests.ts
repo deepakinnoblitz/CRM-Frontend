@@ -1,3 +1,6 @@
+import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
+
 export interface Request {
     name: string;
     employee_id: string;
@@ -41,8 +44,8 @@ async function fetchFrappeList(params: {
 
     // Fetch data and count in parallel
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Request&filters=${encodeURIComponent(JSON.stringify(filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Request&filters=${encodeURIComponent(JSON.stringify(filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch requests");
@@ -59,26 +62,28 @@ async function fetchFrappeList(params: {
 export const fetchRequests = (params: any) => fetchFrappeList(params);
 
 export async function createRequest(data: Partial<Request>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doc: { doctype: "Request", ...data } })
     });
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to create request");
+        throw new Error(handleFrappeError(error, "Failed to create request"));
     }
 
     return (await res.json()).message;
 }
 
 export async function updateRequest(name: string, data: Partial<Request>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Request",
             name,
@@ -88,32 +93,31 @@ export async function updateRequest(name: string, data: Partial<Request>) {
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to update request");
+        throw new Error(handleFrappeError(error, "Failed to update request"));
     }
 
     return (await res.json()).message;
 }
 
 export async function deleteRequest(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doctype: "Request", name })
     });
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to delete request");
+        throw new Error(handleFrappeError(error, "Failed to delete request"));
     }
 
     return true;
 }
 
 export async function getRequest(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Request&name=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Request&name=${name}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch request details");
@@ -123,9 +127,7 @@ export async function getRequest(name: string) {
 }
 
 export async function getRequestPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Request", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Request");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };
