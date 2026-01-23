@@ -1,3 +1,5 @@
+import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
 import { handleResponse } from './utils';
 
 export interface ToDo {
@@ -46,57 +48,60 @@ export async function fetchToDos(start?: string, end?: string): Promise<ToDo[]> 
 }
 
 export async function createToDo(data: Partial<ToDo>): Promise<void> {
-    const res = await fetch(
-        `/api/method/frappe.client.insert`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                doc: {
-                    doctype: "ToDo",
-                    ...data
-                }
-            }),
-            credentials: 'include'
-        }
-    );
+    const headers = await getAuthHeaders();
 
-    await handleResponse(res);
+    const res = await frappeRequest(`/api/method/frappe.client.insert`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: "ToDo",
+                ...data
+            }
+        })
+    });
+
+    if (!res.ok) {
+        const json = await res.json();
+        throw new Error(handleFrappeError(json, "Failed to create todo"));
+    }
 }
 
 export async function updateToDo(name: string, data: Partial<ToDo>): Promise<void> {
-    const res = await fetch(
-        `/api/method/frappe.client.set_value`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                doctype: "ToDo",
-                name,
-                fieldname: data
-            }),
-            credentials: 'include'
-        }
-    );
+    const headers = await getAuthHeaders();
 
-    await handleResponse(res);
+    const res = await frappeRequest(`/api/method/frappe.client.set_value`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            doctype: "ToDo",
+            name,
+            fieldname: data
+        })
+    });
+
+    if (!res.ok) {
+        const json = await res.json();
+        throw new Error(handleFrappeError(json, "Failed to update todo"));
+    }
 }
 
 export async function deleteToDo(name: string): Promise<void> {
-    const res = await fetch(
-        `/api/method/frappe.client.delete`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                doctype: "ToDo",
-                name
-            }),
-            credentials: 'include'
-        }
-    );
+    const headers = await getAuthHeaders();
 
-    await handleResponse(res);
+    const res = await frappeRequest(`/api/method/frappe.client.delete`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            doctype: "ToDo",
+            name
+        })
+    });
+
+    if (!res.ok) {
+        const json = await res.json();
+        throw new Error(handleFrappeError(json, "Failed to delete todo"));
+    }
 }
 
 export async function getToDoPermissions() {
