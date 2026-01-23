@@ -1,3 +1,5 @@
+import type { PurchaseCollection } from 'src/api/purchase-collection';
+
 import dayjs from 'dayjs';
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 
@@ -17,7 +19,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { getPurchase } from 'src/api/purchase';
 import { getDoc, getDoctypeList } from 'src/api/leads';
-import { createPurchaseCollection, updatePurchaseCollection, PurchaseCollection } from 'src/api/purchase-collection';
+import { createPurchaseCollection, updatePurchaseCollection } from 'src/api/purchase-collection';
 
 // ----------------------------------------------------------------------
 

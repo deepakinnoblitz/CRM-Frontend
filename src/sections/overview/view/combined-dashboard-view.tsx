@@ -20,10 +20,10 @@ import {
     type DashboardStats,
     fetchTodayActivities,
     type TodayActivities,
-    fetchSalesDashboardData,
-    type SalesDashboardData,
     fetchFinancialTotals,
-    type FinancialTotals
+    type FinancialTotals,
+    fetchSalesDashboardData,
+    type SalesDashboardData
 } from 'src/api/dashboard';
 
 import { Scrollbar } from 'src/components/scrollbar';

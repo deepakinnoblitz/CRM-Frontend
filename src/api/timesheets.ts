@@ -1,3 +1,6 @@
+import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
+
 export interface Timesheet {
     name: string;
     employee: string;
@@ -36,8 +39,8 @@ async function fetchFrappeList(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Timesheet&filters=${encodeURIComponent(JSON.stringify(filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Timesheet&filters=${encodeURIComponent(JSON.stringify(filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch timesheets");
@@ -54,26 +57,28 @@ async function fetchFrappeList(params: {
 export const fetchTimesheets = (params: any) => fetchFrappeList(params);
 
 export async function createTimesheet(data: Partial<Timesheet>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doc: { doctype: "Timesheet", ...data } })
     });
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to create timesheet");
+        throw new Error(handleFrappeError(error, "Failed to create timesheet"));
     }
 
     return (await res.json()).message;
 }
 
 export async function updateTimesheet(name: string, data: Partial<Timesheet>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Timesheet",
             name,
@@ -83,32 +88,31 @@ export async function updateTimesheet(name: string, data: Partial<Timesheet>) {
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to update timesheet");
+        throw new Error(handleFrappeError(error, "Failed to update timesheet"));
     }
 
     return (await res.json()).message;
 }
 
 export async function deleteTimesheet(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doctype: "Timesheet", name })
     });
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to delete timesheet");
+        throw new Error(handleFrappeError(error, "Failed to delete timesheet"));
     }
 
     return true;
 }
 
 export async function getTimesheet(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Timesheet&name=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Timesheet&name=${name}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch timesheet details");
@@ -118,9 +122,7 @@ export async function getTimesheet(name: string) {
 }
 
 export async function getTimesheetPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Timesheet", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Timesheet");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };

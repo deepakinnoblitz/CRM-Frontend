@@ -30,7 +30,6 @@ import { useDeals } from 'src/hooks/useDeals';
 
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
-import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { createDeal, updateDeal, deleteDeal, getDealPermissions } from 'src/api/deals';
 

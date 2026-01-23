@@ -1,5 +1,7 @@
+import type { PurchaseCollection } from 'src/api/purchase-collection';
+
 import { useParams } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
@@ -8,7 +10,7 @@ import Typography from '@mui/material/Typography';
 import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getPurchaseCollection, PurchaseCollection } from 'src/api/purchase-collection';
+import { getPurchaseCollection } from 'src/api/purchase-collection';
 
 import PurchaseCollectionNewEditForm from '../purchase-collection-new-edit-form';
 

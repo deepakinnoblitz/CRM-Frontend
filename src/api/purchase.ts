@@ -1,3 +1,4 @@
+import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 export interface PurchaseItem {
@@ -111,8 +112,8 @@ export async function fetchPurchases(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Purchase&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Purchase&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch purchases");
@@ -127,10 +128,11 @@ export async function fetchPurchases(params: {
 }
 
 export async function createPurchase(data: Partial<Purchase>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doc: {
                 doctype: "Purchase",
@@ -144,10 +146,11 @@ export async function createPurchase(data: Partial<Purchase>) {
 }
 
 export async function updatePurchase(name: string, data: Partial<Purchase>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Purchase",
             name,
@@ -161,10 +164,11 @@ export async function updatePurchase(name: string, data: Partial<Purchase>) {
 }
 
 export async function deletePurchase(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Purchase",
             name
@@ -177,9 +181,7 @@ export async function deletePurchase(name: string) {
 }
 
 export async function getPurchase(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Purchase&name=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Purchase&name=${name}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch purchase details");
@@ -198,9 +200,8 @@ export async function getDoctypeList(doctype: string, fields?: string[], filters
     }
     const query = new URLSearchParams(params);
 
-    const res = await fetch(
-        `/api/method/company.company.frontend_api.get_doctype_list?${query.toString()}`,
-        { credentials: 'include' }
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_doctype_list?${query.toString()}`
     );
 
     if (!res.ok) {
@@ -210,9 +211,7 @@ export async function getDoctypeList(doctype: string, fields?: string[], filters
 }
 
 export async function getPurchasePermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Purchase", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Purchase");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };

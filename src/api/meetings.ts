@@ -1,3 +1,8 @@
+import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
+
+import { handleResponse } from './utils';
+
 export interface Meeting {
     name: string;
     title: string;
@@ -13,7 +18,6 @@ export interface Meeting {
     completed_meet_notes?: string;
 }
 
-import { handleResponse } from './utils';
 
 export async function fetchMeetings(start?: string, end?: string): Promise<Meeting[]> {
     const filters: any[] = [];
@@ -40,9 +44,8 @@ export async function fetchMeetings(start?: string, end?: string): Promise<Meeti
         order_by: "`from` asc"
     });
 
-    const res = await fetch(
-        `/api/method/frappe.client.get_list?${query.toString()}`,
-        { credentials: 'include' }
+    const res = await frappeRequest(
+        `/api/method/frappe.client.get_list?${query.toString()}`
     );
 
     const data = await handleResponse(res);
@@ -50,63 +53,64 @@ export async function fetchMeetings(start?: string, end?: string): Promise<Meeti
 }
 
 export async function createMeeting(data: Partial<Meeting>): Promise<void> {
-    const res = await fetch(
-        `/api/method/frappe.client.insert`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                doc: {
-                    doctype: "Meeting",
-                    ...data
-                }
-            }),
-            credentials: 'include'
-        }
-    );
+    const headers = await getAuthHeaders();
 
-    await handleResponse(res);
+    const res = await frappeRequest(`/api/method/frappe.client.insert`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: "Meeting",
+                ...data
+            }
+        })
+    });
+
+    if (!res.ok) {
+        const json = await res.json();
+        throw new Error(handleFrappeError(json, "Failed to create meeting"));
+    }
 }
 
 export async function updateMeeting(name: string, data: Partial<Meeting>): Promise<void> {
-    const res = await fetch(
-        `/api/method/frappe.client.set_value`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                doctype: "Meeting",
-                name,
-                fieldname: data
-            }),
-            credentials: 'include'
-        }
-    );
+    const headers = await getAuthHeaders();
 
-    await handleResponse(res);
+    const res = await frappeRequest(`/api/method/frappe.client.set_value`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            doctype: "Meeting",
+            name,
+            fieldname: data
+        })
+    });
+
+    if (!res.ok) {
+        const json = await res.json();
+        throw new Error(handleFrappeError(json, "Failed to update meeting"));
+    }
 }
 
 export async function deleteMeeting(name: string): Promise<void> {
-    const res = await fetch(
-        `/api/method/frappe.client.delete`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                doctype: "Meeting",
-                name
-            }),
-            credentials: 'include'
-        }
-    );
+    const headers = await getAuthHeaders();
 
-    await handleResponse(res);
+    const res = await frappeRequest(`/api/method/frappe.client.delete`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            doctype: "Meeting",
+            name
+        })
+    });
+
+    if (!res.ok) {
+        const json = await res.json();
+        throw new Error(handleFrappeError(json, "Failed to delete meeting"));
+    }
 }
 
 export async function getMeetingPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Meeting", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Meeting");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };
@@ -117,9 +121,7 @@ export async function getMeetingPermissions() {
 }
 
 export async function getMeeting(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Meeting&name=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Meeting&name=${name}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch meeting details");

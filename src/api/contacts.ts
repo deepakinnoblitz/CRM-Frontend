@@ -1,3 +1,6 @@
+import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
+
 export interface Contact {
     name: string;
     first_name: string;
@@ -82,8 +85,8 @@ export async function fetchContacts(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Contacts&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Contacts&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch contacts");
@@ -98,10 +101,11 @@ export async function fetchContacts(params: {
 }
 
 export async function createContact(data: Partial<Contact>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doc: {
                 doctype: "Contacts",
@@ -110,14 +114,17 @@ export async function createContact(data: Partial<Contact>) {
         })
     });
 
-    return (await res.json()).message;
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create contact"));
+    return json.message;
 }
 
 export async function updateContact(name: string, data: Partial<Contact>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Contacts",
             name,
@@ -125,37 +132,30 @@ export async function updateContact(name: string, data: Partial<Contact>) {
         })
     });
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to update contact");
-    }
-
-    return (await res.json()).message;
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update contact"));
+    return json.message;
 }
 
 export async function deleteContact(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Contacts",
             name
         })
     });
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to delete contact");
-    }
-
-    return (await res.json()).message;
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete contact"));
+    return json.message;
 }
 
 export async function getContactPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Contacts", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Contacts");
 
     // We might need to genericize get_lead_permissions to get_doc_permissions in the backend
     // Or just use get_lead_permissions if it's already generic enough or create a new one.
@@ -169,9 +169,7 @@ export async function getContactPermissions() {
 }
 
 export async function getContact(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Contacts&name=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Contacts&name=${name}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch contact details");

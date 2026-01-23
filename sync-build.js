@@ -21,7 +21,7 @@ try {
     const jsFile = scriptMatch[1];
     const cssFile = cssMatch[1];
 
-    const crmEntryPath = '../www/crm_entry.html';
+    const crmEntryPath = '../www/crm.html';
     if (fs.existsSync(crmEntryPath)) {
         let crmEntry = fs.readFileSync(crmEntryPath, 'utf-8');
 

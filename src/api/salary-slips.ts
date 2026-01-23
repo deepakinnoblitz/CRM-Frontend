@@ -1,3 +1,5 @@
+import { frappeRequest } from 'src/utils/csrf';
+
 export interface SalarySlip {
     name: string;
     employee: string;
@@ -49,8 +51,8 @@ async function fetchFrappeList(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Salary Slip&filters=${encodeURIComponent(JSON.stringify(filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Salary Slip&filters=${encodeURIComponent(JSON.stringify(filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch salary slips");
@@ -67,9 +69,7 @@ async function fetchFrappeList(params: {
 export const fetchSalarySlips = (params: any) => fetchFrappeList(params);
 
 export async function getSalarySlip(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Salary Slip&name=${encodeURIComponent(name)}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Salary Slip&name=${encodeURIComponent(name)}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch salary slip details");
@@ -79,9 +79,7 @@ export async function getSalarySlip(name: string) {
 }
 
 export async function getSalarySlipPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Salary Slip", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Salary Slip");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };

@@ -1,4 +1,4 @@
-import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
+import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 export interface PurchaseCollection {
@@ -79,8 +79,8 @@ export async function fetchPurchaseCollections(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Purchase Collection&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Purchase Collection&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch purchase collections");
@@ -148,9 +148,7 @@ export async function deletePurchaseCollection(name: string) {
 }
 
 export async function getPurchaseCollection(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Purchase Collection&name=${encodeURIComponent(name)}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Purchase Collection&name=${encodeURIComponent(name)}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch purchase collection details");
