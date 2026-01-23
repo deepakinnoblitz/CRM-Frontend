@@ -6,7 +6,9 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
+import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
@@ -20,6 +22,7 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { emptyRows } from '../utils';
@@ -152,6 +155,7 @@ export function PurchaseListView() {
     };
 
     const notFound = !loading && data.length === 0 && (!!filterName || canReset);
+    const empty = !loading && data.length === 0 && !filterName && !canReset;
 
     return (
         <DashboardContent>
@@ -223,6 +227,18 @@ export function PurchaseListView() {
                                 />
 
                                 {notFound && <TableNoData query={filterName} />}
+
+                                {empty && (
+                                    <TableRow>
+                                        <TableCell colSpan={7}>
+                                            <EmptyContent
+                                                title="No purchases found"
+                                                description="Create a new purchase order to track your procurement."
+                                                icon="solar:bag-3-bold-duotone"
+                                            />
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>

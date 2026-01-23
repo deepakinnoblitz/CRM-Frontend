@@ -695,7 +695,7 @@ export function DealView() {
 
                                     {empty && (
                                         <TableRow>
-                                            <TableCell colSpan={6}>
+                                            <TableCell colSpan={10} align="center">
                                                 <EmptyContent
                                                     title="No deals found"
                                                     description="Create a new deal to track your sales pipeline."

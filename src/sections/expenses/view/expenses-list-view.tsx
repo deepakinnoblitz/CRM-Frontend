@@ -6,7 +6,9 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
+import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
 import AlertTitle from '@mui/material/AlertTitle';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
@@ -21,6 +23,7 @@ import { deleteExpense, getDoctypeList } from 'src/api/expenses';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { emptyRows } from '../utils';
@@ -140,6 +143,7 @@ export function ExpenseListView() {
     };
 
     const notFound = !loading && data.length === 0 && !!filterName;
+    const empty = !loading && data.length === 0 && !filterName && !canReset;
 
     return (
         <DashboardContent>
@@ -211,6 +215,18 @@ export function ExpenseListView() {
                                 />
 
                                 {notFound && <TableNoData searchQuery={filterName} />}
+
+                                {empty && (
+                                    <TableRow>
+                                        <TableCell colSpan={6}>
+                                            <EmptyContent
+                                                title="No expenses found"
+                                                description="Record and track your business expenses efficiently."
+                                                icon="solar:bill-list-bold-duotone"
+                                            />
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>

@@ -6,7 +6,9 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
+import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
@@ -21,6 +23,7 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { emptyRows } from '../utils';
@@ -154,6 +157,7 @@ export function EstimationListView() {
     };
 
     const notFound = !loading && data.length === 0 && (!!filterName || canReset);
+    const empty = !loading && data.length === 0 && !filterName && !canReset;
 
     return (
         <DashboardContent>
@@ -220,6 +224,18 @@ export function EstimationListView() {
                                 />
 
                                 {notFound && <TableNoData searchQuery={filterName} />}
+
+                                {empty && (
+                                    <TableRow>
+                                        <TableCell colSpan={6}>
+                                            <EmptyContent
+                                                title="No estimations found"
+                                                description="Create a new estimation to track your sales pipeline."
+                                                icon="solar:document-text-bold-duotone"
+                                            />
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>

@@ -545,7 +545,7 @@ export function AccountView() {
                                         <TableCell colSpan={8}>
                                             <EmptyContent
                                                 title="No accounts found"
-                                                description="Create your first account to start managing your business relationships."
+                                                description="Create a new account to manage your business relationships."
                                                 icon="solar:buildings-bold-duotone"
                                             />
                                         </TableCell>

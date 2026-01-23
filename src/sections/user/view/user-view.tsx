@@ -52,6 +52,7 @@ import { LeadPipelineTimeline } from '../lead-pipeline-timeline';
 import { LeadDetailsDialog } from '../../report/lead-details-dialog';
 import { UserTableFiltersDrawer } from '../user-table-filters-drawer';
 
+
 // ----------------------------------------------------------------------
 
 export function UserView() {
@@ -1144,7 +1145,7 @@ export function UserView() {
 
                   {empty && (
                     <TableRow>
-                      <TableCell colSpan={7}>
+                      <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
                         <EmptyContent
                           title="No leads found"
                           description="Start capturing leads to boost your sales."
