@@ -1,4 +1,5 @@
-import { frappeRequest } from 'src/utils/csrf';
+import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
 
 export async function uploadFile(file: File, doctype?: string, docname?: string, fieldname?: string) {
     const formData = new FormData();
@@ -17,7 +18,7 @@ export async function uploadFile(file: File, doctype?: string, docname?: string,
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to upload file");
+        throw new Error(handleFrappeError(error, "Failed to upload file"));
     }
 
     return (await res.json()).message;
@@ -36,7 +37,7 @@ export async function createDataImport(data: any) {
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to create data import");
+        throw new Error(handleFrappeError(error, "Failed to create data import"));
     }
 
     return (await res.json()).message;
@@ -52,7 +53,7 @@ export async function startDataImport(name: string) {
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to start data import");
+        throw new Error(handleFrappeError(error, "Failed to start data import"));
     }
 
     return (await res.json()).message;
@@ -103,7 +104,7 @@ export async function updateDataImport(name: string, data: any) {
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to update data import");
+        throw new Error(handleFrappeError(error, "Failed to update data import"));
     }
 
     return (await res.json()).message;

@@ -163,7 +163,7 @@ export function getCSRFTokenFromCookie(): string | null {
  */
 export async function fetchCSRFToken(): Promise<string | null> {
     try {
-        const response = await fetch('/api/method/frappe.auth.get_logged_user', {
+        const response = await fetch('/api/method/company.company.frontend_api.get_csrf_token', {
             credentials: 'include'
         });
 
@@ -172,14 +172,16 @@ export async function fetchCSRFToken(): Promise<string | null> {
             return null;
         }
 
-        // Try to get token from response header
-        const headerToken = response.headers.get('X-Frappe-CSRF-Token');
-        if (headerToken) {
-            return headerToken;
+        const data = await response.json();
+        const token = data.message;
+
+        if (token) {
+            // Also update the cookie so getCSRFTokenFromCookie can find it next time
+            document.cookie = `csrf_token=${token}; path=/; SameSite=Lax`;
+            return token;
         }
 
-        // Fallback to cookie
-        return getCSRFTokenFromCookie();
+        return null;
     } catch (error) {
         console.error('Error fetching CSRF token:', error);
         return null;

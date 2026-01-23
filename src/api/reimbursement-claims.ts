@@ -1,3 +1,6 @@
+import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
+
 export interface ReimbursementClaim {
     name: string;
     employee: string;
@@ -45,8 +48,8 @@ async function fetchFrappeList(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Reimbursement Claim&filters=${encodeURIComponent(JSON.stringify(filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Reimbursement Claim&filters=${encodeURIComponent(JSON.stringify(filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch reimbursement claims");
@@ -63,26 +66,28 @@ async function fetchFrappeList(params: {
 export const fetchReimbursementClaims = (params: any) => fetchFrappeList(params);
 
 export async function createReimbursementClaim(data: Partial<ReimbursementClaim>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doc: { doctype: "Reimbursement Claim", ...data } })
     });
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to create reimbursement claim");
+        throw new Error(handleFrappeError(error, "Failed to create reimbursement claim"));
     }
 
     return (await res.json()).message;
 }
 
 export async function updateReimbursementClaim(name: string, data: Partial<ReimbursementClaim>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Reimbursement Claim",
             name,
@@ -92,32 +97,31 @@ export async function updateReimbursementClaim(name: string, data: Partial<Reimb
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to update reimbursement claim");
+        throw new Error(handleFrappeError(error, "Failed to update reimbursement claim"));
     }
 
     return (await res.json()).message;
 }
 
 export async function deleteReimbursementClaim(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doctype: "Reimbursement Claim", name })
     });
 
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to delete reimbursement claim");
+        throw new Error(handleFrappeError(error, "Failed to delete reimbursement claim"));
     }
 
     return true;
 }
 
 export async function getReimbursementClaim(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Reimbursement Claim&name=${encodeURIComponent(name)}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Reimbursement Claim&name=${encodeURIComponent(name)}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch reimbursement claim details");
@@ -127,9 +131,7 @@ export async function getReimbursementClaim(name: string) {
 }
 
 export async function getReimbursementClaimPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Reimbursement Claim", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Reimbursement Claim");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };

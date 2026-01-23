@@ -119,8 +119,8 @@ export async function fetchInvoices(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Invoice&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Invoice&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch invoices");
@@ -188,9 +188,7 @@ export async function deleteInvoice(name: string) {
 }
 
 export async function getInvoice(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Invoice&name=${encodeURIComponent(name)}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Invoice&name=${encodeURIComponent(name)}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch invoice details");
@@ -200,9 +198,7 @@ export async function getInvoice(name: string) {
 }
 
 export async function getInvoicePermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Invoice", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Invoice");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };

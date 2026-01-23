@@ -96,8 +96,8 @@ async function fetchFrappeList(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Expenses&filters=${encodeURIComponent(JSON.stringify(filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Expenses&filters=${encodeURIComponent(JSON.stringify(filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch expenses");
@@ -168,9 +168,7 @@ export async function deleteExpense(name: string) {
 }
 
 export async function getExpense(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Expenses&name=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Expenses&name=${name}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch expense details");
@@ -180,9 +178,7 @@ export async function getExpense(name: string) {
 }
 
 export async function getExpensePermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Expenses", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Expenses");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };
@@ -198,9 +194,8 @@ export async function getDoctypeList(doctype: string, fields?: string[]) {
     }
     const query = new URLSearchParams(params);
 
-    const res = await fetch(
-        `/api/method/company.company.frontend_api.get_doctype_list?${query.toString()}`,
-        { credentials: 'include' }
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_doctype_list?${query.toString()}`
     );
 
     if (!res.ok) {

@@ -1,3 +1,4 @@
+import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 export interface JobApplicant {
@@ -43,8 +44,8 @@ export async function fetchJobApplicants(
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Job Applicant&filters=${encodeURIComponent(JSON.stringify(filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Job Applicant&filters=${encodeURIComponent(JSON.stringify(filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch job applicants");
@@ -59,9 +60,7 @@ export async function fetchJobApplicants(
 }
 
 export async function getJobApplicant(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Job Applicant&name=${encodeURIComponent(name)}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Job Applicant&name=${encodeURIComponent(name)}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch job applicant details");
@@ -71,10 +70,11 @@ export async function getJobApplicant(name: string) {
 }
 
 export async function createJobApplicant(data: Partial<JobApplicant>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doc: { doctype: "Job Applicant", ...data } })
     });
 
@@ -84,10 +84,11 @@ export async function createJobApplicant(data: Partial<JobApplicant>) {
 }
 
 export async function updateJobApplicant(name: string, data: Partial<JobApplicant>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Job Applicant",
             name,
@@ -101,10 +102,11 @@ export async function updateJobApplicant(name: string, data: Partial<JobApplican
 }
 
 export async function deleteJobApplicant(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doctype: "Job Applicant", name })
     });
 
@@ -114,9 +116,7 @@ export async function deleteJobApplicant(name: string) {
 }
 
 export async function getJobApplicantPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Job Applicant", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Job Applicant");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };
