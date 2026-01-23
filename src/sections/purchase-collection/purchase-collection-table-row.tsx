@@ -1,3 +1,5 @@
+import type { PurchaseCollection } from 'src/api/purchase-collection';
+
 import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
@@ -6,8 +8,6 @@ import IconButton from '@mui/material/IconButton';
 
 import { fDate } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
-
-import { PurchaseCollection } from 'src/api/purchase-collection';
 
 import { Iconify } from 'src/components/iconify';
 

@@ -1,5 +1,7 @@
+import type { InvoiceCollection } from 'src/api/invoice-collection';
+
 import { useParams } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
@@ -8,7 +10,7 @@ import Typography from '@mui/material/Typography';
 import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getInvoiceCollection, InvoiceCollection } from 'src/api/invoice-collection';
+import { getInvoiceCollection } from 'src/api/invoice-collection';
 
 import InvoiceCollectionNewEditForm from '../invoice-collection-new-edit-form';
 

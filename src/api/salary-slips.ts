@@ -1,5 +1,4 @@
-import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
-import { handleFrappeError } from 'src/utils/api-error-handler';
+import { frappeRequest } from 'src/utils/csrf';
 
 export interface SalarySlip {
     name: string;

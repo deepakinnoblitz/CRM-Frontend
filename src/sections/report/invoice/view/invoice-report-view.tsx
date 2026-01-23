@@ -25,7 +25,6 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { runReport } from 'src/api/reports';
 import { DashboardContent } from 'src/layouts/dashboard';
 
-import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 

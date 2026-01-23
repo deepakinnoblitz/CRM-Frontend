@@ -1,5 +1,4 @@
-import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
-import { handleFrappeError } from 'src/utils/api-error-handler';
+import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
 
 export async function login(usr: string, pwd: string) {
   const res = await fetch('/api/method/login', {
