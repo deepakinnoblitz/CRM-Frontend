@@ -548,7 +548,7 @@ export function ContactView() {
                                         <TableCell colSpan={10}>
                                             <EmptyContent
                                                 title="No contacts found"
-                                                description="Save your business contacts to keep track of your network."
+                                                description="Create a new contact to track your professional network."
                                                 icon="solar:users-group-rounded-bold-duotone"
                                             />
                                         </TableCell>

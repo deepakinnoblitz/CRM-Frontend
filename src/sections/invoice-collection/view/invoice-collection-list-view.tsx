@@ -6,7 +6,9 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
+import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
@@ -20,6 +22,7 @@ import { fetchInvoiceCollections, deleteInvoiceCollection, InvoiceCollection } f
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { emptyRows } from '../../invoice/utils';
@@ -245,7 +248,8 @@ export function InvoiceCollectionListView() {
         setSnackbar((prev) => ({ ...prev, open: false }));
     };
 
-    const notFound = !loading && tableData.length === 0;
+    const notFound = !loading && tableData.length === 0 && (!!search || canReset);
+    const empty = !loading && tableData.length === 0 && !search && !canReset;
 
     return (
         <DashboardContent>
@@ -316,6 +320,18 @@ export function InvoiceCollectionListView() {
 
                                 {notFound && (
                                     <TableNoData searchQuery={search} />
+                                )}
+
+                                {empty && (
+                                    <TableRow>
+                                        <TableCell colSpan={8}>
+                                            <EmptyContent
+                                                title="No invoice collections found"
+                                                description="Track your invoice payments and collections here."
+                                                icon="solar:bill-check-bold-duotone"
+                                            />
+                                        </TableCell>
+                                    </TableRow>
                                 )}
                             </TableBody>
                         </Table>

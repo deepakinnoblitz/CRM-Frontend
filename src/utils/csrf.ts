@@ -235,7 +235,7 @@ export async function frappeRequest(url: string, options: RequestInit = {}): Pro
         }
     }
 
-    const response = await fetch(url, {
+    let response = await fetch(url, {
         ...options,
         headers,
         credentials: 'include'
@@ -248,14 +248,52 @@ export async function frappeRequest(url: string, options: RequestInit = {}): Pro
             const json = await clone.json();
 
             if (isCSRFError(json)) {
-                handleCSRFError();
-                throw new Error('CSRF Token Error - Session expired');
+                console.warn('CSRF token invalid, refreshing...');
+
+                // Token might be expired, try to fetch a new one explicitly
+                const newToken = await fetchCSRFToken();
+
+                if (newToken) {
+                    console.log('Got new CSRF token, retrying request...');
+
+                    // Update header with new token
+                    if (headers instanceof Headers) {
+                        headers.set('X-Frappe-CSRF-Token', newToken);
+                    } else if (typeof headers === 'object' && headers !== null) {
+                        (headers as any)['X-Frappe-CSRF-Token'] = newToken;
+                    }
+
+                    // Retry request with new token
+                    response = await fetch(url, {
+                        ...options,
+                        headers,
+                        credentials: 'include'
+                    });
+
+                    // Check if retry failed (only checking for CSRF again)
+                    if (!response.ok) {
+                        const retryClone = response.clone();
+                        const retryJson = await retryClone.json();
+
+                        if (isCSRFError(retryJson)) {
+                            console.error('CSRF Retry failed');
+                            handleCSRFError();
+                            throw new Error('CSRF Token Error - Session expired');
+                        }
+                    }
+                } else {
+                    console.error('Failed to refresh CSRF token');
+                    handleCSRFError();
+                    throw new Error('CSRF Token Error - Session expired');
+                }
             }
         } catch (e) {
             // If not a JSON response or parsing fails, continue
             if (e instanceof Error && e.message.includes('CSRF')) {
                 throw e;
             }
+            // For other errors during retry or parsing, we just return the original response 
+            // (or let the caller handle the error from the retried response)
         }
     }
 

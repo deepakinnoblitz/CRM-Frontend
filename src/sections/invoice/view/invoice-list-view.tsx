@@ -6,7 +6,9 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
+import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
@@ -21,6 +23,7 @@ import { fetchInvoices, deleteInvoice } from 'src/api/invoice';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { emptyRows } from '../utils';
@@ -147,7 +150,10 @@ export function InvoiceListView() {
         setSnackbar((prev) => ({ ...prev, open: false }));
     };
 
+
+
     const notFound = !loading && data.length === 0 && !!filterName;
+    const empty = !loading && data.length === 0 && !filterName && !canReset;
 
     return (
         <DashboardContent>
@@ -219,6 +225,18 @@ export function InvoiceListView() {
                                 />
 
                                 {notFound && <TableNoData searchQuery={filterName} />}
+
+                                {empty && (
+                                    <TableRow>
+                                        <TableCell colSpan={8}>
+                                            <EmptyContent
+                                                title="No invoices found"
+                                                description="Create a new invoice to track your sales pipeline."
+                                                icon="solar:bill-list-bold-duotone"
+                                            />
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>

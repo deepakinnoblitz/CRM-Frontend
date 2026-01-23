@@ -6,7 +6,9 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
+import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
@@ -18,6 +20,7 @@ import { fetchPurchaseCollections, deletePurchaseCollection, PurchaseCollection 
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { emptyRows } from '../../invoice/utils';
@@ -242,7 +245,8 @@ export function PurchaseCollectionListView() {
         setSnackbar((prev) => ({ ...prev, open: false }));
     };
 
-    const notFound = !loading && tableData.length === 0 && !canReset;
+    const notFound = !loading && tableData.length === 0 && (!!filterName || canReset);
+    const empty = !loading && tableData.length === 0 && !filterName && !canReset;
 
     return (
         <DashboardContent>
@@ -262,7 +266,7 @@ export function PurchaseCollectionListView() {
                 <PurchaseCollectionTableToolbar
                     numSelected={selected.length}
                     filterName={filterName}
-                    onFilterName={(e) => handleFilterName(e.target.value)}
+                    onFilterName={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterName(e.target.value)}
                     sortBy={`${orderBy}_${order}`}
                     onSortChange={(value: string) => {
                         const [field, direction] = value.split('_').reduce((acc: string[], part: string) => {
@@ -331,6 +335,18 @@ export function PurchaseCollectionListView() {
 
                                 {notFound && (
                                     <TableNoData searchQuery={filterName} />
+                                )}
+
+                                {empty && (
+                                    <TableRow>
+                                        <TableCell colSpan={8}>
+                                            <EmptyContent
+                                                title="No purchase collections found"
+                                                description="Track your purchase payments to vendors here."
+                                                icon="solar:bill-check-bold-duotone"
+                                            />
+                                        </TableCell>
+                                    </TableRow>
                                 )}
                             </TableBody>
                         </Table>
