@@ -31,6 +31,8 @@ export async function fetchCalls(start?: string, end?: string): Promise<Call[]> 
             "title",
             "call_for",
             "lead_name",
+            "contact_name",
+            "account_name",
             "call_start_time",
             "call_end_time",
             "outgoing_call_status",

@@ -32,7 +32,7 @@ type Props = {
     options: {
         contacts: { name: string; first_name: string }[];
         accounts: { name: string; account_name: string }[];
-        source_leads: { name: string; lead_name: string }[];
+        source_leads: string[];
     };
 };
 
@@ -232,42 +232,30 @@ export function DealTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Source Lead
             </Typography>
-            <Autocomplete
+            <TextField
+                select
                 fullWidth
+                value={filters.source_lead}
+                onChange={(e) => handleFilterChange('source_lead', e.target.value)}
+                SelectProps={{ native: true }}
                 size="small"
-                value={
-                    filters.source_lead === 'all'
-                        ? null
-                        : options.source_leads.find((l) => l.name === filters.source_lead) || null
-                }
-                onChange={(event, newValue) => {
-                    handleFilterChange('source_lead', newValue ? newValue.name : 'all');
+                sx={{
+                    '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                        bgcolor: 'background.neutral',
+                        '&:hover': {
+                            bgcolor: 'action.hover',
+                        },
+                    },
                 }}
-                options={options.source_leads}
-                getOptionLabel={(option) => `${option.lead_name} (${option.name})`}
-                renderInput={(params) => (
-                    <TextField
-                        {...params}
-                        placeholder="Search leads..."
-                        sx={{
-                            '& .MuiOutlinedInput-root': {
-                                borderRadius: 1.5,
-                                bgcolor: 'background.neutral',
-                                '&:hover': {
-                                    bgcolor: 'action.hover',
-                                },
-                            },
-                        }}
-                    />
-                )}
-                renderOption={(props, option) => (
-                    <li {...props} key={option.name}>
-                        <Typography variant="body2" sx={{ fontSize: '13px' }}>
-                            {option.lead_name} ({option.name})
-                        </Typography>
-                    </li>
-                )}
-            />
+            >
+                <option value="all">All Sources</option>
+                {options.source_leads.map((source) => (
+                    <option key={source} value={source}>
+                        {source}
+                    </option>
+                ))}
+            </TextField>
         </Stack>
     );
 

@@ -229,25 +229,29 @@ export function LeavesView() {
                             <LeavesTableHead
                                 order="asc"
                                 orderBy="name"
-                                rowCount={total}
+                                rowCount={data.length}
                                 numSelected={0}
                                 onSort={() => { }}
                                 onSelectAllRows={() => { }}
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
-                                    { id: 'employee', label: 'Employee', minWidth: 180 },
-                                    { id: 'leaveType', label: 'Leave Type', minWidth: 150 },
-                                    { id: 'period', label: 'Period', minWidth: 200 },
-                                    { id: 'days', label: 'Days', minWidth: 80 },
-                                    { id: 'reason', label: 'Reason', minWidth: 200 },
-                                    { id: 'status', label: 'Status', minWidth: 100 },
-                                    { id: '', label: 'Actions', align: 'right' },
+                                    { id: 'employee', label: 'Employee' },
+                                    { id: 'leaveType', label: 'Lead Type' },
+                                    { id: 'fromDate', label: 'Duration' },
+                                    { id: 'totalDays', label: 'Days' },
+                                    { id: 'reason', label: 'Reason' },
+                                    { id: 'status', label: 'Status' },
+                                    { id: '', label: '' },
                                 ]}
                             />
 
                             <TableBody>
-                                {data.map((row) => (
+                                {data.map((row, index) => (
                                     <LeavesTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             employee: row.employee,

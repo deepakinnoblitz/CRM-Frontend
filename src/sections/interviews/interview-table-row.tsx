@@ -1,8 +1,9 @@
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
-import TableRow from '@mui/material/TableRow';
+import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
+import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -28,6 +29,8 @@ type Props = {
     onDelete: VoidFunction;
     canEdit?: boolean;
     canDelete?: boolean;
+    hideCheckbox?: boolean;
+    index?: number;
 };
 
 export function InterviewTableRow({
@@ -39,6 +42,8 @@ export function InterviewTableRow({
     onDelete,
     canEdit,
     canDelete,
+    hideCheckbox = false,
+    index,
 }: Props) {
     const renderStatus = (status: string) => {
         let color: 'default' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'error' = 'default';
@@ -84,9 +89,40 @@ export function InterviewTableRow({
 
     return (
         <TableRow hover selected={selected}>
-            <TableCell padding="checkbox">
-                <Checkbox checked={selected} onClick={onSelectRow} />
-            </TableCell>
+            {!hideCheckbox && (
+                <TableCell padding="checkbox">
+                    <Checkbox checked={selected} onClick={onSelectRow} />
+                </TableCell>
+            )}
+
+            {typeof index === 'number' && (
+                <TableCell align="center">
+                    <Box
+                        sx={{
+                            width: 28,
+                            height: 28,
+                            display: 'flex',
+                            borderRadius: '50%',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                            color: 'primary.main',
+                            typography: 'subtitle2',
+                            fontWeight: 800,
+                            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                            mx: 'auto',
+                            transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+                            '&:hover': {
+                                bgcolor: 'primary.main',
+                                color: 'primary.contrastText',
+                                transform: 'scale(1.1)',
+                            },
+                        }}
+                    >
+                        {index + 1}
+                    </Box>
+                </TableCell>
+            )}
 
             <TableCell>
                 <Stack direction="row" alignItems="center" spacing={2}>

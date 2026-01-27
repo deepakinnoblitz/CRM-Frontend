@@ -98,6 +98,8 @@ export function CallsView() {
                 call_start_time: call.call_start_time.replace(' ', 'T'),
                 call_end_time: call.call_end_time?.replace(' ', 'T') || '',
                 lead_name: call.lead_name || '',
+                contact_name: call.contact_name || '',
+                account_name: call.account_name || '',
             });
             setOpenDialog(true);
         }

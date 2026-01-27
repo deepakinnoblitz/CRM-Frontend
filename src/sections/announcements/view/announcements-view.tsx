@@ -235,6 +235,8 @@ export function AnnouncementsView() {
                                 numSelected={selected.length}
                                 onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
                                     { id: 'announcement_name', label: 'Title' },
                                     { id: 'announcement', label: 'Announcement' },
@@ -243,9 +245,11 @@ export function AnnouncementsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row) => (
+                                {data.map((row, index) => (
                                     <AnnouncementTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             announcement_name: row.announcement_name,

@@ -321,6 +321,8 @@ export function HolidaysView() {
                                 numSelected={selected.length}
                                 onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
                                     { id: 'holiday_list_name', label: 'Holiday List Name' },
                                     { id: 'year', label: 'Year' },
@@ -330,9 +332,11 @@ export function HolidaysView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row) => (
+                                {data.map((row, index) => (
                                     <HolidayListTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             holiday_list_name: row.holiday_list_name,

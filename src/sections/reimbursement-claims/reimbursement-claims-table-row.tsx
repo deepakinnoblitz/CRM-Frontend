@@ -1,6 +1,7 @@
 import type { MouseEvent } from 'react';
 
 import Box from '@mui/material/Box';
+import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
@@ -27,8 +28,9 @@ type Props = {
     onDelete: () => void;
     canEdit: boolean;
     canDelete: boolean;
+    hideCheckbox?: boolean;
+    index?: number;
 };
-
 export function ReimbursementClaimTableRow({
     row,
     selected,
@@ -38,6 +40,8 @@ export function ReimbursementClaimTableRow({
     onDelete,
     canEdit,
     canDelete,
+    hideCheckbox = false,
+    index,
 }: Props) {
     const handleClick = (event: MouseEvent<HTMLButtonElement>, action: () => void) => {
         event.stopPropagation();
@@ -46,9 +50,40 @@ export function ReimbursementClaimTableRow({
 
     return (
         <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
-            <TableCell padding="checkbox">
-                <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
-            </TableCell>
+            {!hideCheckbox && (
+                <TableCell padding="checkbox">
+                    <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
+                </TableCell>
+            )}
+
+            {typeof index === 'number' && (
+                <TableCell align="center">
+                    <Box
+                        sx={{
+                            width: 28,
+                            height: 28,
+                            display: 'flex',
+                            borderRadius: '50%',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                            color: 'primary.main',
+                            typography: 'subtitle2',
+                            fontWeight: 800,
+                            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                            mx: 'auto',
+                            transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+                            '&:hover': {
+                                bgcolor: 'primary.main',
+                                color: 'primary.contrastText',
+                                transform: 'scale(1.1)',
+                            },
+                        }}
+                    >
+                        {index + 1}
+                    </Box>
+                </TableCell>
+            )}
 
             <TableCell>{row.employee_name}</TableCell>
 

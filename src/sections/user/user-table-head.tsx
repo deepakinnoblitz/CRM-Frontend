@@ -17,6 +17,8 @@ type UserTableHeadProps = {
   onSort?: (id: string) => void;
   headLabel: Record<string, any>[];
   onSelectAllRows: (checked: boolean) => void;
+  hideCheckbox?: boolean;
+  showIndex?: boolean;
 };
 
 export function UserTableHead({
@@ -27,19 +29,29 @@ export function UserTableHead({
   headLabel,
   numSelected,
   onSelectAllRows,
+  hideCheckbox = false,
+  showIndex = false,
 }: UserTableHeadProps) {
   return (
     <TableHead>
       <TableRow>
-        <TableCell padding="checkbox">
-          <Checkbox
-            indeterminate={numSelected > 0 && numSelected < rowCount}
-            checked={rowCount > 0 && numSelected === rowCount}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              onSelectAllRows(event.target.checked)
-            }
-          />
-        </TableCell>
+        {!hideCheckbox && (
+          <TableCell padding="checkbox">
+            <Checkbox
+              indeterminate={numSelected > 0 && numSelected < rowCount}
+              checked={rowCount > 0 && numSelected === rowCount}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                onSelectAllRows(event.target.checked)
+              }
+            />
+          </TableCell>
+        )}
+
+        {showIndex && (
+          <TableCell align="center" sx={{ fontWeight: 800, color: 'text.secondary', width: 50 }}>
+            S.No
+          </TableCell>
+        )}
 
         {headLabel.map((headCell) => (
           <TableCell

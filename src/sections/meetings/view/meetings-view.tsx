@@ -100,6 +100,8 @@ export function MeetingsView() {
                 location: meeting.location || '',
                 completed_meet_notes: stripHtml(meeting.completed_meet_notes || ''),
                 lead_name: meeting.lead_name || '',
+                contact_name: meeting.contact_name || '',
+                account_name: meeting.account_name || '',
             });
             setOpenDialog(true);
         }
