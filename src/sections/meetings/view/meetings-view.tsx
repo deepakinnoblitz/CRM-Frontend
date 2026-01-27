@@ -7,61 +7,31 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import { useState, useEffect, useCallback } from 'react';
 import interactionPlugin from '@fullcalendar/interaction';
 
-import Dialog from '@mui/material/Dialog';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
 import { useTheme } from '@mui/material/styles';
-import InputLabel from '@mui/material/InputLabel';
 import CardHeader from '@mui/material/CardHeader';
-import FormControl from '@mui/material/FormControl';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { Box, Card, Grid, Alert, Button, Snackbar, IconButton, Typography, Autocomplete } from '@mui/material';
+import { Box, Card, Alert, Button, Snackbar } from '@mui/material';
 
-import { stripHtml } from 'src/utils/string';
-
-import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { type Meeting, fetchMeetings, updateMeeting, deleteMeeting, createMeeting } from 'src/api/meetings';
+import { type Meeting, fetchMeetings, updateMeeting, deleteMeeting } from 'src/api/meetings';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-// ----------------------------------------------------------------------
+import MeetingDialog from '../meeting-dialog';
 
-const INITIAL_MEETING_STATE: Partial<Meeting> = {
-    title: '',
-    meet_for: 'Lead',
-    lead_name: '',
-    outgoing_call_status: 'Scheduled',
-    from: '',
-    to: '',
-    meeting_venue: 'In Office',
-    location: '',
-    completed_meet_notes: '',
-};
+// ----------------------------------------------------------------------
 
 export function MeetingsView() {
     const theme = useTheme();
     const [meetings, setMeetings] = useState<Meeting[]>([]);
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
     const [openDialog, setOpenDialog] = useState(false);
-    const [meetingData, setMeetingData] = useState<Partial<Meeting>>(INITIAL_MEETING_STATE);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
         severity: 'success',
     });
-
-    const [leadOptions, setLeadOptions] = useState<any[]>([]);
-    const [contactOptions, setContactOptions] = useState<any[]>([]);
-    const [accountOptions, setAccountOptions] = useState<any[]>([]);
 
     const loadMeetings = useCallback(async (start?: Date, end?: Date) => {
         try {
@@ -76,9 +46,6 @@ export function MeetingsView() {
 
     useEffect(() => {
         loadMeetings();
-        getDoctypeList('Lead', ['name', 'lead_name', 'converted_contact', 'converted_account']).then(setLeadOptions);
-        getDoctypeList('Contacts', ['name', 'first_name', 'last_name']).then(setContactOptions);
-        getDoctypeList('Accounts', ['name', 'account_name']).then(setAccountOptions);
     }, [loadMeetings]);
 
     const handleDatesSet = (arg: any) => {
@@ -90,30 +57,12 @@ export function MeetingsView() {
         const meeting = meetings.find(m => m.name === meetingId);
         if (meeting) {
             setSelectedMeeting(meeting);
-            setMeetingData({
-                title: meeting.title,
-                meet_for: meeting.meet_for || 'Lead',
-                outgoing_call_status: meeting.outgoing_call_status || 'Scheduled',
-                from: meeting.from.replace(' ', 'T'),
-                to: meeting.to?.replace(' ', 'T') || '',
-                meeting_venue: meeting.meeting_venue || 'In Office',
-                location: meeting.location || '',
-                completed_meet_notes: stripHtml(meeting.completed_meet_notes || ''),
-                lead_name: meeting.lead_name || '',
-                contact_name: meeting.contact_name || '',
-                account_name: meeting.account_name || '',
-            });
             setOpenDialog(true);
         }
     };
 
     const handleNewMeeting = () => {
         setSelectedMeeting(null);
-        setMeetingData({
-            ...INITIAL_MEETING_STATE,
-            from: dayjs().format('YYYY-MM-DDTHH:mm'),
-            to: '',
-        });
         setOpenDialog(true);
     };
 
@@ -144,28 +93,6 @@ export function MeetingsView() {
             console.error('Failed to update meeting duration:', error);
             setSnackbar({ open: true, message: error.message || 'Failed to update meeting duration', severity: 'error' });
             info.revert();
-        }
-    };
-
-    const handleSaveMeeting = async () => {
-        try {
-            const formattedData = {
-                ...meetingData,
-                from: meetingData.from?.replace('T', ' '),
-                to: meetingData.to ? meetingData.to.replace('T', ' ') : undefined,
-            };
-
-            if (selectedMeeting) {
-                await updateMeeting(selectedMeeting.name, formattedData);
-            } else {
-                await createMeeting(formattedData);
-            }
-            setOpenDialog(false);
-            loadMeetings();
-            setSnackbar({ open: true, message: selectedMeeting ? 'Meeting updated successfully' : 'Meeting created successfully', severity: 'success' });
-        } catch (error: any) {
-            console.error('Failed to save meeting:', error);
-            setSnackbar({ open: true, message: error.message || 'Failed to save meeting', severity: 'error' });
         }
     };
 
@@ -220,7 +147,6 @@ export function MeetingsView() {
                             '--fc-list-event-dot-width': '10px',
                             '--fc-today-bg-color': theme.palette.primary.lighter,
                         },
-                        // ToolBar
                         '& .fc .fc-toolbar': {
                             mb: 3,
                             gap: 1.5,
@@ -230,7 +156,6 @@ export function MeetingsView() {
                                 fontWeight: 700,
                             },
                         },
-                        // Buttons
                         '& .fc .fc-button': {
                             border: 'none',
                             py: '8px',
@@ -262,7 +187,6 @@ export function MeetingsView() {
                                 },
                             },
                         },
-                        // Table Head
                         '& .fc .fc-col-header-cell': {
                             py: 1.5,
                             backgroundColor: '#08a3cd',
@@ -279,7 +203,6 @@ export function MeetingsView() {
                                 fontWeight: 700,
                             },
                         },
-                        // Calendar Border Radius
                         '& .fc-view-harness': {
                             borderRadius: '12px',
                             overflow: 'hidden',
@@ -288,7 +211,6 @@ export function MeetingsView() {
                         '& .fc-scrollgrid': {
                             border: 'none',
                         },
-                        // Day Cells
                         '& .fc .fc-daygrid-day': {
                             '&:hover': {
                                 backgroundColor: theme.palette.action.hover,
@@ -300,7 +222,6 @@ export function MeetingsView() {
                             fontWeight: 600,
                             color: theme.palette.text.primary,
                         },
-                        // Events
                         '& .fc .fc-event': {
                             border: 'none',
                             borderRadius: '6px',
@@ -314,7 +235,6 @@ export function MeetingsView() {
                         '& .fc .fc-daygrid-event': {
                             boxShadow: 'none',
                         },
-                        // List View
                         '& .fc .fc-list': {
                             border: 'none',
                             '& .fc-list-day-cushion': {
@@ -343,15 +263,6 @@ export function MeetingsView() {
                         eventResize={handleEventResize}
                         select={(info) => {
                             setSelectedMeeting(null);
-                            const startTime = info.allDay
-                                ? `${info.startStr}T${dayjs().format('HH:mm')}`
-                                : info.startStr.slice(0, 16);
-
-                            setMeetingData({
-                                ...INITIAL_MEETING_STATE,
-                                from: startTime,
-                                to: '',
-                            });
                             setOpenDialog(true);
                         }}
                         height="auto"
@@ -376,226 +287,12 @@ export function MeetingsView() {
                 </Box>
             </Card>
 
-            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {selectedMeeting ? 'Edit Meeting' : 'New Meeting'}
-                    <IconButton onClick={() => setOpenDialog(false)} sx={{ color: 'text.secondary' }}>
-                        <Iconify icon="mingcute:close-line" />
-                    </IconButton>
-                </DialogTitle>
-
-                <DialogContent dividers>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            <Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                                    <Iconify icon="solar:pen-bold" sx={{ color: 'warning.main' }} />
-                                    <Typography variant="subtitle2">General Information</Typography>
-                                </Box>
-                                <TextField
-                                    onClick={(e) => e.stopPropagation()}
-                                    fullWidth
-                                    label="Title"
-                                    value={meetingData.title}
-                                    onChange={(e) => setMeetingData({ ...meetingData, title: e.target.value })}
-                                />
-                            </Box>
-
-                            <Grid container spacing={2}>
-                                <Grid size={{ xs: 12, md: 6 }}>
-                                    <FormControl fullWidth>
-                                        <InputLabel>Meet For</InputLabel>
-                                        <Select
-                                            label="Meet For"
-                                            value={meetingData.meet_for}
-                                            onChange={(e) => setMeetingData({
-                                                ...meetingData,
-                                                meet_for: e.target.value as string,
-                                                lead_name: '',
-                                                contact_name: '',
-                                                account_name: ''
-                                            })}
-                                        >
-                                            <MenuItem value="Lead">Lead</MenuItem>
-                                            <MenuItem value="Contact">Contact</MenuItem>
-                                            <MenuItem value="Accounts">Account</MenuItem>
-                                            <MenuItem value="Others">Others</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-
-                                {meetingData.meet_for === 'Lead' && (
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <Autocomplete
-                                            fullWidth
-                                            options={leadOptions}
-                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.lead_name} (${option.name})`}
-                                            value={leadOptions.find(opt => opt.name === meetingData.lead_name) || null}
-                                            onChange={(_, newValue) => {
-                                                setMeetingData({
-                                                    ...meetingData,
-                                                    lead_name: newValue?.name || '',
-                                                    contact_name: newValue?.converted_contact || '',
-                                                    account_name: newValue?.converted_account || ''
-                                                });
-                                            }}
-                                            renderInput={(params) => <TextField {...params} label="Select Lead" />}
-                                        />
-                                    </Grid>
-                                )}
-
-                                {meetingData.meet_for === 'Contact' && (
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <Autocomplete
-                                            fullWidth
-                                            options={contactOptions}
-                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.first_name || ''} ${option.last_name || ''} (${option.name})`.trim()}
-                                            value={contactOptions.find(opt => opt.name === meetingData.contact_name) || null}
-                                            onChange={(_, newValue) => setMeetingData({ ...meetingData, contact_name: newValue?.name || '' })}
-                                            renderInput={(params) => <TextField {...params} label="Select Contact" />}
-                                        />
-                                    </Grid>
-                                )}
-
-                                {meetingData.meet_for === 'Accounts' && (
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <Autocomplete
-                                            fullWidth
-                                            options={accountOptions}
-                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.account_name} (${option.name})`}
-                                            value={accountOptions.find(opt => opt.name === meetingData.account_name) || null}
-                                            onChange={(_, newValue) => setMeetingData({ ...meetingData, account_name: newValue?.name || '' })}
-                                            renderInput={(params) => <TextField {...params} label="Select Account" />}
-                                        />
-                                    </Grid>
-                                )}
-
-                                <Grid size={{ xs: 12, md: 12 }}>
-                                    <FormControl fullWidth>
-                                        <InputLabel>Status</InputLabel>
-                                        <Select
-                                            label="Status"
-                                            value={meetingData.outgoing_call_status}
-                                            onChange={(e) => setMeetingData({ ...meetingData, outgoing_call_status: e.target.value as string })}
-                                        >
-                                            <MenuItem value="Scheduled">Scheduled</MenuItem>
-                                            <MenuItem value="Completed">Completed</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                            </Grid>
-
-                            <Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                                    <Iconify icon="solar:clock-circle-outline" sx={{ color: 'warning.main' }} />
-                                    <Typography variant="subtitle2">Time Schedule</Typography>
-                                </Box>
-                                <Grid container spacing={2}>
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <DateTimePicker
-                                            label="From"
-                                            value={meetingData.from ? dayjs(meetingData.from) : null}
-                                            onChange={(newValue) => setMeetingData({ ...meetingData, from: newValue ? newValue.format('YYYY-MM-DD HH:mm:ss') : '' })}
-                                            slotProps={{
-                                                textField: {
-                                                    fullWidth: true,
-                                                    size: 'small',
-                                                    sx: {
-                                                        '& .MuiInputBase-root': {
-                                                            fontSize: '0.813rem',
-                                                            height: '36px'
-                                                        },
-                                                        '& .MuiInputLabel-root': {
-                                                            fontSize: '0.813rem'
-                                                        }
-                                                    }
-                                                }
-                                            }}
-                                        />
-                                    </Grid>
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <DateTimePicker
-                                            label="To"
-                                            value={meetingData.to ? dayjs(meetingData.to) : null}
-                                            onChange={(newValue) => setMeetingData({ ...meetingData, to: newValue ? newValue.format('YYYY-MM-DD HH:mm:ss') : '' })}
-                                            slotProps={{
-                                                textField: {
-                                                    fullWidth: true,
-                                                    size: 'small',
-                                                    sx: {
-                                                        '& .MuiInputBase-root': {
-                                                            fontSize: '0.813rem',
-                                                            height: '36px'
-                                                        },
-                                                        '& .MuiInputLabel-root': {
-                                                            fontSize: '0.813rem'
-                                                        }
-                                                    }
-                                                }
-                                            }}
-                                        />
-                                    </Grid>
-                                </Grid>
-                            </Box>
-
-                            <Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                                    <Iconify icon={"solar:chat-round-dots-bold" as any} sx={{ color: 'warning.main' }} />
-                                    <Typography variant="subtitle2">Location & Venue</Typography>
-                                </Box>
-                                <Grid container spacing={2}>
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <FormControl fullWidth>
-                                            <InputLabel>Venue</InputLabel>
-                                            <Select
-                                                label="Venue"
-                                                value={meetingData.meeting_venue}
-                                                onChange={(e) => setMeetingData({ ...meetingData, meeting_venue: e.target.value as string })}
-                                            >
-                                                <MenuItem value="In Office">In Office</MenuItem>
-                                                <MenuItem value="Client Location">Client Location</MenuItem>
-                                                <MenuItem value="Online">Online</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                    </Grid>
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <TextField
-                                            fullWidth
-                                            label="Location"
-                                            value={meetingData.location}
-                                            onChange={(e) => setMeetingData({ ...meetingData, location: e.target.value })}
-                                        />
-                                    </Grid>
-                                </Grid>
-                            </Box>
-
-                            <Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                                    <Iconify icon={"solar:document-text-bold" as any} sx={{ color: 'warning.main' }} />
-                                    <Typography variant="subtitle2">Meeting Notes</Typography>
-                                </Box>
-                                <TextField
-                                    fullWidth
-                                    multiline
-                                    rows={4}
-                                    label="Notes"
-                                    value={meetingData.completed_meet_notes}
-                                    onChange={(e) => setMeetingData({ ...meetingData, completed_meet_notes: e.target.value })}
-                                />
-                            </Box>
-                        </Box>
-                    </LocalizationProvider>
-                </DialogContent>
-                <DialogActions sx={{ p: 2, gap: 1 }}>
-                    {selectedMeeting && (
-                        <Button color="error" variant="outlined" onClick={() => setConfirmDelete({ open: true, id: selectedMeeting.name })} sx={{ mr: 'auto' }}>
-                            Delete
-                        </Button>
-                    )}
-                    <Button color="inherit" variant="outlined" onClick={() => setOpenDialog(false)}>Cancel</Button>
-                    <Button variant="contained" onClick={handleSaveMeeting}>{selectedMeeting ? 'Save Changes' : 'Create Meeting'}</Button>
-                </DialogActions>
-            </Dialog>
+            <MeetingDialog
+                open={openDialog}
+                onClose={() => setOpenDialog(false)}
+                selectedMeeting={selectedMeeting}
+                onSuccess={loadMeetings}
+            />
 
             <ConfirmDialog
                 open={confirmDelete.open}

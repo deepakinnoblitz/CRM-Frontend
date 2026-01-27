@@ -7,60 +7,31 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import { useState, useEffect, useCallback } from 'react';
 import interactionPlugin from '@fullcalendar/interaction';
 
-import Dialog from '@mui/material/Dialog';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
 import { useTheme } from '@mui/material/styles';
-import InputLabel from '@mui/material/InputLabel';
 import CardHeader from '@mui/material/CardHeader';
-import FormControl from '@mui/material/FormControl';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { Box, Card, Grid, Alert, Button, Snackbar, IconButton, Typography, Autocomplete } from '@mui/material';
+import { Box, Card, Alert, Button, Snackbar } from '@mui/material';
 
-import { stripHtml } from 'src/utils/string';
-
-import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { type Call, fetchCalls, updateCall, deleteCall, createCall } from 'src/api/calls';
+import { type Call, fetchCalls, updateCall, deleteCall } from 'src/api/calls';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-// ----------------------------------------------------------------------
+import CallDialog from '../call-dialog';
 
-const INITIAL_CALL_STATE: Partial<Call> = {
-    title: '',
-    call_purpose: '',
-    call_agenda: '',
-    call_for: 'Lead',
-    outgoing_call_status: 'Scheduled',
-    call_start_time: '',
-    call_end_time: '',
-    lead_name: '',
-};
+// ----------------------------------------------------------------------
 
 export function CallsView() {
     const theme = useTheme();
     const [calls, setCalls] = useState<Call[]>([]);
     const [selectedCall, setSelectedCall] = useState<Call | null>(null);
     const [openDialog, setOpenDialog] = useState(false);
-    const [callData, setCallData] = useState<Partial<Call>>(INITIAL_CALL_STATE);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
         severity: 'success',
     });
-
-    const [leadOptions, setLeadOptions] = useState<any[]>([]);
-    const [contactOptions, setContactOptions] = useState<any[]>([]);
-    const [accountOptions, setAccountOptions] = useState<any[]>([]);
 
     const loadCalls = useCallback(async (start?: Date, end?: Date) => {
         try {
@@ -75,9 +46,6 @@ export function CallsView() {
 
     useEffect(() => {
         loadCalls();
-        getDoctypeList('Lead', ['name', 'lead_name', 'converted_contact', 'converted_account']).then(setLeadOptions);
-        getDoctypeList('Contacts', ['name', 'first_name', 'last_name']).then(setContactOptions);
-        getDoctypeList('Accounts', ['name', 'account_name']).then(setAccountOptions);
     }, [loadCalls]);
 
     const handleDatesSet = (arg: any) => {
@@ -89,29 +57,12 @@ export function CallsView() {
         const call = calls.find(c => c.name === callId);
         if (call) {
             setSelectedCall(call);
-            setCallData({
-                title: call.title,
-                call_purpose: call.call_purpose || '',
-                call_agenda: stripHtml(call.call_agenda || ''),
-                call_for: call.call_for || 'Lead',
-                outgoing_call_status: call.outgoing_call_status || 'Scheduled',
-                call_start_time: call.call_start_time.replace(' ', 'T'),
-                call_end_time: call.call_end_time?.replace(' ', 'T') || '',
-                lead_name: call.lead_name || '',
-                contact_name: call.contact_name || '',
-                account_name: call.account_name || '',
-            });
             setOpenDialog(true);
         }
     };
 
     const handleNewCall = () => {
         setSelectedCall(null);
-        setCallData({
-            ...INITIAL_CALL_STATE,
-            call_start_time: dayjs().format('YYYY-MM-DDTHH:mm'),
-            call_end_time: '',
-        });
         setOpenDialog(true);
     };
 
@@ -142,28 +93,6 @@ export function CallsView() {
             console.error('Failed to update call duration:', error);
             setSnackbar({ open: true, message: error.message || 'Failed to update call duration', severity: 'error' });
             info.revert();
-        }
-    };
-
-    const handleSaveCall = async () => {
-        try {
-            const formattedData = {
-                ...callData,
-                call_start_time: callData.call_start_time?.replace('T', ' '),
-                call_end_time: callData.call_end_time?.replace('T', ' ') || undefined,
-            };
-
-            if (selectedCall) {
-                await updateCall(selectedCall.name, formattedData);
-            } else {
-                await createCall(formattedData);
-            }
-            setOpenDialog(false);
-            loadCalls();
-            setSnackbar({ open: true, message: selectedCall ? 'Call updated successfully' : 'Call created successfully', severity: 'success' });
-        } catch (error: any) {
-            console.error('Failed to save call:', error);
-            setSnackbar({ open: true, message: error.message || 'Failed to save call', severity: 'error' });
         }
     };
 
@@ -218,7 +147,6 @@ export function CallsView() {
                             '--fc-list-event-dot-width': '10px',
                             '--fc-today-bg-color': theme.palette.primary.lighter,
                         },
-                        // ToolBar
                         '& .fc .fc-toolbar': {
                             mb: 3,
                             gap: 1.5,
@@ -228,7 +156,6 @@ export function CallsView() {
                                 fontWeight: 700,
                             },
                         },
-                        // Buttons
                         '& .fc .fc-button': {
                             border: 'none',
                             py: '8px',
@@ -260,7 +187,6 @@ export function CallsView() {
                                 },
                             },
                         },
-                        // Table Head
                         '& .fc .fc-col-header-cell': {
                             py: 1.5,
                             backgroundColor: '#08a3cd',
@@ -277,7 +203,6 @@ export function CallsView() {
                                 fontWeight: 700,
                             },
                         },
-                        // Calendar Border Radius
                         '& .fc-view-harness': {
                             borderRadius: '12px',
                             overflow: 'hidden',
@@ -286,7 +211,6 @@ export function CallsView() {
                         '& .fc-scrollgrid': {
                             border: 'none',
                         },
-                        // Day Cells
                         '& .fc .fc-daygrid-day': {
                             '&:hover': {
                                 backgroundColor: theme.palette.action.hover,
@@ -298,7 +222,6 @@ export function CallsView() {
                             fontWeight: 600,
                             color: theme.palette.text.primary,
                         },
-                        // Events
                         '& .fc .fc-event': {
                             border: 'none',
                             borderRadius: '6px',
@@ -312,7 +235,6 @@ export function CallsView() {
                         '& .fc .fc-daygrid-event': {
                             boxShadow: 'none',
                         },
-                        // List View
                         '& .fc .fc-list': {
                             border: 'none',
                             '& .fc-list-day-cushion': {
@@ -341,15 +263,6 @@ export function CallsView() {
                         eventResize={handleEventResize}
                         select={(info) => {
                             setSelectedCall(null);
-                            const startTime = info.allDay
-                                ? `${info.startStr}T${dayjs().format('HH:mm')}`
-                                : info.startStr.slice(0, 16);
-
-                            setCallData({
-                                ...INITIAL_CALL_STATE,
-                                call_start_time: startTime,
-                                call_end_time: '',
-                            });
                             setOpenDialog(true);
                         }}
                         height="auto"
@@ -374,202 +287,12 @@ export function CallsView() {
                 </Box>
             </Card>
 
-            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {selectedCall ? 'Edit Call' : 'New Call'}
-                    <IconButton onClick={() => setOpenDialog(false)} sx={{ color: 'text.secondary' }}>
-                        <Iconify icon="mingcute:close-line" />
-                    </IconButton>
-                </DialogTitle>
-
-                <DialogContent dividers>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            <Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                                    <Iconify icon="solar:pen-bold" sx={{ color: 'primary.main' }} />
-                                    <Typography variant="subtitle2">General Information</Typography>
-                                </Box>
-                                <TextField
-                                    onClick={(e) => e.stopPropagation()}
-                                    fullWidth
-                                    label="Title"
-                                    value={callData.title}
-                                    onChange={(e) => setCallData({ ...callData, title: e.target.value })}
-                                />
-                            </Box>
-
-                            <Grid container spacing={2}>
-                                <Grid size={{ xs: 12, md: 6 }}>
-                                    <FormControl fullWidth>
-                                        <InputLabel>Call For</InputLabel>
-                                        <Select
-                                            label="Call For"
-                                            value={callData.call_for}
-                                            onChange={(e) => setCallData({
-                                                ...callData,
-                                                call_for: e.target.value as string,
-                                                lead_name: '',
-                                                contact_name: '',
-                                                account_name: ''
-                                            })}
-                                        >
-                                            <MenuItem value="Lead">Lead</MenuItem>
-                                            <MenuItem value="Contact">Contact</MenuItem>
-                                            <MenuItem value="Accounts">Accounts</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-
-                                {callData.call_for === 'Lead' && (
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <Autocomplete
-                                            fullWidth
-                                            options={leadOptions}
-                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.lead_name} (${option.name})`}
-                                            value={leadOptions.find(opt => opt.name === callData.lead_name) || null}
-                                            onChange={(_, newValue) => {
-                                                setCallData({
-                                                    ...callData,
-                                                    lead_name: newValue?.name || '',
-                                                    contact_name: newValue?.converted_contact || '',
-                                                    account_name: newValue?.converted_account || ''
-                                                });
-                                            }}
-                                            renderInput={(params) => <TextField {...params} label="Select Lead" />}
-                                        />
-                                    </Grid>
-                                )}
-
-                                {callData.call_for === 'Contact' && (
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <Autocomplete
-                                            fullWidth
-                                            options={contactOptions}
-                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.first_name || ''} ${option.last_name || ''} (${option.name})`.trim()}
-                                            value={contactOptions.find(opt => opt.name === callData.contact_name) || null}
-                                            onChange={(_, newValue) => setCallData({ ...callData, contact_name: newValue?.name || '' })}
-                                            renderInput={(params) => <TextField {...params} label="Select Contact" />}
-                                        />
-                                    </Grid>
-                                )}
-
-                                {callData.call_for === 'Accounts' && (
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <Autocomplete
-                                            fullWidth
-                                            options={accountOptions}
-                                            getOptionLabel={(option) => typeof option === 'string' ? option : `${option.account_name} (${option.name})`}
-                                            value={accountOptions.find(opt => opt.name === callData.account_name) || null}
-                                            onChange={(_, newValue) => setCallData({ ...callData, account_name: newValue?.name || '' })}
-                                            renderInput={(params) => <TextField {...params} label="Select Account" />}
-                                        />
-                                    </Grid>
-                                )}
-
-                                <Grid size={{ xs: 12, md: 12 }}>
-                                    <FormControl fullWidth>
-                                        <InputLabel>Status</InputLabel>
-                                        <Select
-                                            label="Status"
-                                            value={callData.outgoing_call_status}
-                                            onChange={(e) => setCallData({ ...callData, outgoing_call_status: e.target.value as string })}
-                                        >
-                                            <MenuItem value="Scheduled">Scheduled</MenuItem>
-                                            <MenuItem value="Completed">Completed</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                            </Grid>
-
-                            <Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                                    <Iconify icon="solar:clock-circle-outline" sx={{ color: 'primary.main' }} />
-                                    <Typography variant="subtitle2">Time Schedule</Typography>
-                                </Box>
-                                <Grid container spacing={2}>
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <DateTimePicker
-                                            label="Start Time"
-                                            value={callData.call_start_time ? dayjs(callData.call_start_time) : null}
-                                            onChange={(newValue) => setCallData({ ...callData, call_start_time: newValue ? newValue.format('YYYY-MM-DD HH:mm:ss') : '' })}
-                                            slotProps={{
-                                                textField: {
-                                                    fullWidth: true,
-                                                    size: 'small',
-                                                    sx: {
-                                                        '& .MuiInputBase-root': {
-                                                            fontSize: '0.813rem',
-                                                            height: '36px'
-                                                        },
-                                                        '& .MuiInputLabel-root': {
-                                                            fontSize: '0.813rem'
-                                                        }
-                                                    }
-                                                }
-                                            }}
-                                        />
-                                    </Grid>
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <DateTimePicker
-                                            label="End Time"
-                                            value={callData.call_end_time ? dayjs(callData.call_end_time) : null}
-                                            onChange={(newValue) => setCallData({ ...callData, call_end_time: newValue ? newValue.format('YYYY-MM-DD HH:mm:ss') : '' })}
-                                            slotProps={{
-                                                textField: {
-                                                    fullWidth: true,
-                                                    size: 'small',
-                                                    sx: {
-                                                        '& .MuiInputBase-root': {
-                                                            fontSize: '0.813rem',
-                                                            height: '36px'
-                                                        },
-                                                        '& .MuiInputLabel-root': {
-                                                            fontSize: '0.813rem'
-                                                        }
-                                                    }
-                                                }
-                                            }}
-                                        />
-                                    </Grid>
-                                </Grid>
-                            </Box>
-
-                            <Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                                    <Iconify icon={"solar:chat-round-dots-bold" as any} sx={{ color: 'primary.main' }} />
-                                    <Typography variant="subtitle2">Details & Agenda</Typography>
-                                </Box>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                    <TextField
-                                        fullWidth
-                                        label="Purpose"
-                                        value={callData.call_purpose}
-                                        onChange={(e) => setCallData({ ...callData, call_purpose: e.target.value })}
-                                    />
-                                    <TextField
-                                        fullWidth
-                                        multiline
-                                        rows={4}
-                                        label="Agenda"
-                                        value={callData.call_agenda}
-                                        onChange={(e) => setCallData({ ...callData, call_agenda: e.target.value })}
-                                    />
-                                </Box>
-                            </Box>
-                        </Box>
-                    </LocalizationProvider>
-                </DialogContent>
-                <DialogActions sx={{ p: 2, gap: 1 }}>
-                    {selectedCall && (
-                        <Button color="error" variant="outlined" onClick={() => setConfirmDelete({ open: true, id: selectedCall.name })} sx={{ mr: 'auto' }}>
-                            Delete
-                        </Button>
-                    )}
-                    <Button color="inherit" variant="outlined" onClick={() => setOpenDialog(false)}>Cancel</Button>
-                    <Button variant="contained" onClick={handleSaveCall}>{selectedCall ? 'Save Changes' : 'Create Call'}</Button>
-                </DialogActions>
-            </Dialog>
+            <CallDialog
+                open={openDialog}
+                onClose={() => setOpenDialog(false)}
+                selectedCall={selectedCall}
+                onSuccess={loadCalls}
+            />
 
             <ConfirmDialog
                 open={confirmDelete.open}
