@@ -136,3 +136,15 @@ export async function updateImportFile(name: string, data: any[][]) {
 
     return (await res.json()).message;
 }
+
+export async function getImportWarnings(name: string) {
+    const res = await frappeRequest(`/api/method/frappe.client.get_value?doctype=Data Import&filters=${encodeURIComponent(JSON.stringify({ name }))}&fieldname=template_warnings`);
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.exception || error.message || "Failed to get import warnings");
+    }
+
+    const message = (await res.json()).message;
+    return message?.template_warnings ? JSON.parse(message.template_warnings) : [];
+}

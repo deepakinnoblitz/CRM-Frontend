@@ -328,14 +328,6 @@ export function ContactView() {
             newErrors.firstName = true;
             missingFields.push('Name');
         }
-        if (!email) {
-            newErrors.email = true;
-            missingFields.push('Email');
-        }
-        if (!phone) {
-            newErrors.phone = true;
-            missingFields.push('Phone Number');
-        }
 
         if (Object.keys(newErrors).length > 0) {
             setValidationErrors(newErrors);
@@ -622,12 +614,7 @@ export function ContactView() {
                             fullWidth
                             label="Email"
                             value={email}
-                            onChange={(e) => {
-                                setEmail(e.target.value);
-                                if (e.target.value) setValidationErrors(prev => ({ ...prev, email: false }));
-                            }}
-                            required
-                            error={!!validationErrors.email}
+                            onChange={(e) => setEmail(e.target.value)}
                             slotProps={{ input: { readOnly: viewOnly } }}
                         />
 
@@ -637,12 +624,7 @@ export function ContactView() {
                             label="Phone Number"
                             name="phone_number"
                             value={phone}
-                            onChange={(newValue) => {
-                                setPhone(newValue);
-                                if (newValue) setValidationErrors(prev => ({ ...prev, phone: false }));
-                            }}
-                            required
-                            error={!!validationErrors.phone}
+                            onChange={(newValue) => setPhone(newValue)}
                             disabled={viewOnly}
                             sx={{
                                 '& .MuiInputBase-input.Mui-disabled': {

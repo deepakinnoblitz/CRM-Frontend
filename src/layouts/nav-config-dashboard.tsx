@@ -216,7 +216,7 @@ export const crmNavData = [
   },
   {
     title: 'Leads',
-    path: '/user',
+    path: '/leads',
     icon: <Iconify icon={"solar:target-bold-duotone" as any} />,
   },
   {
@@ -277,7 +277,7 @@ export const crmAndSalesNavData = [
   },
   {
     title: 'Leads',
-    path: '/user',
+    path: '/leads',
     icon: <Iconify icon={"solar:target-bold-duotone" as any} />,
   },
   {

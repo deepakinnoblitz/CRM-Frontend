@@ -589,13 +589,14 @@ export function EstimationEditView() {
                                                         }}
                                                         ListboxProps={{
                                                             sx: {
-                                                                width: '350px',
+                                                                pr: 3,
                                                                 '& .MuiAutocomplete-option': {
                                                                     py: 1.5,
                                                                     px: 2,
                                                                     borderRadius: 0.75,
                                                                     mx: 0.5,
                                                                     my: 0.25,
+                                                                    whiteSpace: 'nowrap',
                                                                 }
                                                             }
                                                         }}
@@ -605,7 +606,25 @@ export function EstimationEditView() {
                                                                     mt: 0.5,
                                                                     boxShadow: (theme) => theme.customShadows.z20,
                                                                     borderRadius: 1.5,
+                                                                    width: 'max-content !important',
+                                                                    minWidth: '350px',
                                                                 }
+                                                            },
+                                                            popper: {
+                                                                placement: 'bottom-start',
+                                                                sx: {
+                                                                    width: 'fit-content !important',
+                                                                },
+                                                                modifiers: [
+                                                                    {
+                                                                        name: 'flip',
+                                                                        enabled: true,
+                                                                    },
+                                                                    {
+                                                                        name: 'preventOverflow',
+                                                                        enabled: true,
+                                                                    },
+                                                                ],
                                                             }
                                                         }}
                                                         renderInput={(params) => (
