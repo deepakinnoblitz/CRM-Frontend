@@ -222,9 +222,10 @@ export function DealView() {
             await deleteDeal(confirmDelete.id);
             setSnackbar({ open: true, message: 'Deal deleted successfully', severity: 'success' });
             await refetch();
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            setSnackbar({ open: true, message: 'Failed to delete deal', severity: 'error' });
+            const friendlyMsg = getFriendlyErrorMessage(e);
+            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
         } finally {
             setConfirmDelete({ open: false, id: null });
         }
@@ -237,7 +238,9 @@ export function DealView() {
             setSelected([]);
             await refetch();
         } catch (e: any) {
-            setSnackbar({ open: true, message: e.message || 'Error during bulk delete', severity: 'error' });
+            console.error(e);
+            const friendlyMsg = getFriendlyErrorMessage(e);
+            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
         }
     };
 

@@ -284,7 +284,9 @@ export function AccountView() {
             setSnackbar({ open: true, message: 'Account deleted successfully', severity: 'success' });
             loadAccounts();
         } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Failed to delete account', severity: 'error' });
+            console.error(error);
+            const friendlyMsg = getFriendlyErrorMessage(error);
+            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
         } finally {
             setConfirmDelete({ open: false, id: null });
         }
@@ -297,7 +299,9 @@ export function AccountView() {
             setSelected([]);
             loadAccounts();
         } catch (e: any) {
-            setSnackbar({ open: true, message: e.message || 'Error during bulk delete', severity: 'error' });
+            console.error(e);
+            const friendlyMsg = getFriendlyErrorMessage(e);
+            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
         }
     };
 
