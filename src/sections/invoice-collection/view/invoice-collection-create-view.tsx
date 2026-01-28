@@ -24,7 +24,7 @@ export function InvoiceCollectionCreateView() {
     };
 
     const handleCancel = () => {
-        router.push('/invoice-collections');
+        router.push('/invoices?tab=collections');
     };
 
     return (

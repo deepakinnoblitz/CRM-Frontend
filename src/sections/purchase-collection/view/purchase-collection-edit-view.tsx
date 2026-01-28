@@ -38,7 +38,7 @@ export function PurchaseCollectionEditView() {
     };
 
     const handleCancel = () => {
-        router.push('/purchase-collections');
+        router.push('/purchase?tab=collections');
     };
 
     return (

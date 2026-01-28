@@ -48,7 +48,11 @@ const TABLE_HEAD = [
 
 // ----------------------------------------------------------------------
 
-export function PurchaseCollectionListView() {
+type Props = {
+    hideHeader?: boolean;
+};
+
+export function PurchaseCollectionListView({ hideHeader }: Props) {
     const router = useRouter();
 
     const [page, setPage] = useState(0);
@@ -250,19 +254,30 @@ export function PurchaseCollectionListView() {
     const notFound = !loading && tableData.length === 0 && (!!filterName || canReset);
     const empty = !loading && tableData.length === 0 && !filterName && !canReset;
 
-    return (
-        <DashboardContent>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">Purchase Collections</Typography>
-                <Button
-                    variant="contained"
-                    color="info"
-                    startIcon={<Iconify icon="mingcute:add-line" />}
-                    onClick={() => router.push('/purchase-collections/new')}
-                >
-                    New Collection
-                </Button>
-            </Stack>
+    // Assuming this is part of a functional component, and `router` is defined via `useRouter()`
+    // and `hideHeader` is a prop passed to this component.
+    // For example: export default function PurchaseCollectionListView({ hideHeader = false }: { hideHeader?: boolean }) {
+    // And `router` is defined as: const router = useRouter();
+
+    const handleCreateNew = useCallback(() => {
+        router.push('/purchase-collections/new');
+    }, [router]);
+
+    const content = (
+        <>
+            {!hideHeader && (
+                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+                    <Typography variant="h4">Purchase Collections</Typography>
+                    <Button
+                        variant="contained"
+                        color="info"
+                        startIcon={<Iconify icon="mingcute:add-line" />}
+                        onClick={handleCreateNew}
+                    >
+                        New Collection
+                    </Button>
+                </Stack>
+            )}
 
             <Card>
                 <PurchaseCollectionTableToolbar
@@ -397,6 +412,12 @@ export function PurchaseCollectionListView() {
                     </Button>
                 }
             />
-        </DashboardContent>
+        </>
     );
+
+    if (hideHeader) {
+        return content;
+    }
+
+    return <DashboardContent>{content}</DashboardContent>;
 }

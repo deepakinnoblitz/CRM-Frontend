@@ -47,7 +47,11 @@ const TABLE_HEAD = [
 
 // ----------------------------------------------------------------------
 
-export function PurchaseListView() {
+type Props = {
+    hideHeader?: boolean;
+};
+
+export function PurchaseListView({ hideHeader }: Props) {
     const table = useTable();
     const router = useRouter();
 
@@ -157,19 +161,21 @@ export function PurchaseListView() {
     const notFound = !loading && data.length === 0 && (!!filterName || canReset);
     const empty = !loading && data.length === 0 && !filterName && !canReset;
 
-    return (
-        <DashboardContent>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">Purchases</Typography>
-                <Button
-                    variant="contained"
-                    color="info"
-                    startIcon={<Iconify icon="mingcute:add-line" />}
-                    onClick={handleCreateNew}
-                >
-                    New Purchase
-                </Button>
-            </Stack>
+    const content = (
+        <>
+            {!hideHeader && (
+                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+                    <Typography variant="h4">Purchases</Typography>
+                    <Button
+                        variant="contained"
+                        color="info"
+                        startIcon={<Iconify icon="mingcute:add-line" />}
+                        onClick={handleCreateNew}
+                    >
+                        New Purchase
+                    </Button>
+                </Stack>
+            )}
 
             <Card>
                 <PurchaseTableToolbar
@@ -300,8 +306,14 @@ export function PurchaseListView() {
                     </Button>
                 }
             />
-        </DashboardContent>
+        </>
     );
+
+    if (hideHeader) {
+        return content;
+    }
+
+    return <DashboardContent>{content}</DashboardContent>;
 }
 
 // ----------------------------------------------------------------------

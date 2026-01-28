@@ -1,6 +1,6 @@
 import { CONFIG } from 'src/config-global';
 
-import { InvoiceListView } from 'src/sections/invoice/view';
+import { InvoiceView } from 'src/sections/invoice/view';
 
 // ----------------------------------------------------------------------
 
@@ -9,7 +9,7 @@ export default function InvoiceListPage() {
         <>
             <title>{`Invoices - ${CONFIG.appName}`}</title>
 
-            <InvoiceListView />
+            <InvoiceView />
         </>
     );
 }

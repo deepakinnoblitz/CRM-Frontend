@@ -81,7 +81,7 @@ export function InvoiceCollectionDetailsView() {
         return (
             <DashboardContent>
                 <Typography variant="h4">Invoice Collection not found</Typography>
-                <Button onClick={() => router.push('/invoice-collections')} sx={{ mt: 3 }}>
+                <Button onClick={() => router.push('/invoices?tab=collections')} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
             </DashboardContent>
@@ -107,7 +107,7 @@ export function InvoiceCollectionDetailsView() {
             setDeleting(true);
             await deleteInvoiceCollection(id);
             setSnackbar({ open: true, message: 'Collection deleted successfully', severity: 'success' });
-            setTimeout(() => router.push('/invoice-collections'), 1500);
+            setTimeout(() => router.push('/invoices?tab=collections'), 1500);
         } catch (error) {
             console.error('Failed to delete collection:', error);
             setSnackbar({ open: true, message: 'Failed to delete collection', severity: 'error' });
@@ -125,7 +125,7 @@ export function InvoiceCollectionDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/invoice-collections')}
+                        onClick={() => router.push('/invoices?tab=collections')}
                         startIcon={<Iconify icon={"solar:arrow-left-bold" as any} />}
                     >
                         Back to List

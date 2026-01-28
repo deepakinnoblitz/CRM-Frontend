@@ -1,6 +1,6 @@
 import { CONFIG } from 'src/config-global';
 
-import { PurchaseListView } from 'src/sections/purchase/view';
+import { PurchaseManagementView } from 'src/sections/purchase/view';
 
 // ----------------------------------------------------------------------
 
@@ -9,7 +9,7 @@ export default function PurchaseListPage() {
         <>
             <title>{`Purchases - ${CONFIG.appName}`}</title>
 
-            <PurchaseListView />
+            <PurchaseManagementView />
         </>
     );
 }

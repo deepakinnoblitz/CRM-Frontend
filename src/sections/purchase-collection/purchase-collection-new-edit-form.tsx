@@ -164,7 +164,7 @@ const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, o
                 await createPurchaseCollection(submissionData);
                 setSnackbar({ open: true, message: 'Create success!', severity: 'success' });
             }
-            setTimeout(() => router.push('/purchase-collections'), 1500);
+            setTimeout(() => router.push('/purchase?tab=collections'), 1500);
         } catch (error: any) {
             setSnackbar({ open: true, message: error.message || 'Something went wrong', severity: 'error' });
             console.error(error);
