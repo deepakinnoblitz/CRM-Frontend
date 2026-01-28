@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
+import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -184,7 +186,6 @@ export function DealDetailsDialog({ open, onClose, dealId, onEdit }: Props) {
                                 <DetailItem label="Creation" value={new Date(deal.creation).toLocaleString()} icon="solar:calendar-date-bold" />
                             </Box>
                         </Box>
-
                         {/* Notes */}
                         <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
                             <SectionHeader title="Notes & Remarks" icon="solar:document-text-bold" noMargin />
@@ -199,6 +200,59 @@ export function DealDetailsDialog({ open, onClose, dealId, onEdit }: Props) {
                                 </Box>
                             </Box>
                         </Box>
+
+                        {/* Attachments Section */}
+                        {deal.attachments && (
+                            <Box>
+                                <SectionHeader title="Attachments" icon="solar:link-bold" />
+                                <Box
+                                    sx={{
+                                        p: 2,
+                                        borderRadius: 2,
+                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                        border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
+                                    }}
+                                >
+                                    <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
+                                        <Box
+                                            sx={{
+                                                px: 2,
+                                                py: 1,
+                                                borderRadius: 1.5,
+                                                bgcolor: 'background.paper',
+                                                boxShadow: (theme) => theme.customShadows.z8,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 1.5,
+                                                flexGrow: 1,
+                                                border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                                            }}
+                                        >
+                                            <Iconify icon={"solar:file-bold" as any} width={24} sx={{ color: 'primary.main' }} />
+                                            <Box sx={{ flexGrow: 1 }}>
+                                                <Typography variant="subtitle2" noWrap>
+                                                    {deal.attachments.split('/').pop()}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>
+                                                    Attached Document
+                                                </Typography>
+                                            </Box>
+                                            <IconButton
+                                                color="primary"
+                                                href={deal.attachments}
+                                                target="_blank"
+                                                sx={{
+                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                    '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16) }
+                                                }}
+                                            >
+                                                <Iconify icon={"solar:download-bold" as any} width={20} />
+                                            </IconButton>
+                                        </Box>
+                                    </Stack>
+                                </Box>
+                            </Box>
+                        )}
                     </Box>
                 ) : (
                     <Box sx={{ py: 10, textAlign: 'center' }}>

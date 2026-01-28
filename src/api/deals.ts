@@ -16,6 +16,7 @@ export interface Deal {
     next_step?: string;
     notes?: string;
     deal_owner?: string;
+    attachments?: string;
 }
 
 export async function fetchDeals(params: {
