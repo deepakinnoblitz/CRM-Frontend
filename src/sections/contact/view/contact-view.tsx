@@ -315,6 +315,14 @@ export function ContactView() {
             newErrors.firstName = true;
             missingFields.push('Name');
         }
+        if (!email) {
+            newErrors.email = true;
+            missingFields.push('Email');
+        }
+        if (!phone) {
+            newErrors.phone = true;
+            missingFields.push('Phone Number');
+        }
 
         if (Object.keys(newErrors).length > 0) {
             setValidationErrors(newErrors);
@@ -556,191 +564,6 @@ export function ContactView() {
             />
 
             {/* CREATE/EDIT DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {viewOnly ? 'Contact Details' : (currentContactId ? 'Edit Contact' : 'New Contact')}
-                    <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
-                        <Iconify icon="mingcute:close-line" />
-                    </IconButton>
-                </DialogTitle>
-
-                <DialogContent dividers>
-                    <Box
-                        display="grid"
-                        margin={2}
-                        gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }}
-                        gap={3}
-                    >
-                        <TextField
-                            fullWidth
-                            label="Name"
-                            value={firstName}
-                            onChange={(e) => {
-                                setFirstName(e.target.value);
-                                if (e.target.value) setValidationErrors(prev => ({ ...prev, firstName: false }));
-                            }}
-                            required
-                            error={!!validationErrors.firstName}
-                            slotProps={{ input: { readOnly: viewOnly } }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="Email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            slotProps={{ input: { readOnly: viewOnly } }}
-                        />
-
-                        <MuiTelInput
-                            fullWidth
-                            defaultCountry="IN"
-                            label="Phone Number"
-                            name="phone_number"
-                            value={phone}
-                            onChange={(newValue) => setPhone(newValue)}
-                            disabled={viewOnly}
-                            sx={{
-                                '& .MuiInputBase-input.Mui-disabled': {
-                                    WebkitTextFillColor: 'inherit',
-                                    color: 'inherit',
-                                },
-                            }}
-                        />
-
-                        <TextField
-                            fullWidth
-                            label="Company Name"
-                            value={companyName}
-                            onChange={(e) => setCompanyName(e.target.value)}
-                            slotProps={{ input: { readOnly: viewOnly } }}
-                        />
-                        <TextField
-                            select
-                            fullWidth
-                            label="Contact Type"
-                            value={contactType}
-                            onChange={(e) => setContactType(e.target.value)}
-                            disabled={viewOnly}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="Sales">Sales</option>
-                            <option value="Purchase">Purchase</option>
-                        </TextField>
-                        <TextField
-                            fullWidth
-                            label="Designation"
-                            value={designation}
-                            onChange={(e) => setDesignation(e.target.value)}
-                            slotProps={{ input: { readOnly: viewOnly } }}
-                        />
-
-                        <TextField
-                            select
-                            fullWidth
-                            label="Country"
-                            name="country"
-                            value={country}
-                            onChange={(e) => setCountry(e.target.value)}
-                            disabled={viewOnly}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {countryOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
-
-                        <TextField
-                            select
-                            fullWidth
-                            label="State"
-                            name="state"
-                            value={state}
-                            onChange={(e) => setState(e.target.value)}
-                            disabled={viewOnly || !country}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {stateOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
-
-                        <TextField
-                            select
-                            fullWidth
-                            label="City"
-                            name="city"
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
-                            disabled={viewOnly || !state}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {cityOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
-
-                        <TextField
-                            fullWidth
-                            label="Address"
-                            multiline
-                            rows={2}
-                            value={address}
-                            onChange={(e) => setAddress(e.target.value)}
-                            sx={{ gridColumn: 'span 2' }}
-                            slotProps={{ input: { readOnly: viewOnly } }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="Notes"
-                            multiline
-                            rows={3}
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            sx={{ gridColumn: 'span 2' }}
-                            slotProps={{ input: { readOnly: viewOnly } }}
-                        />
-                    </Box>
-                </DialogContent>
-
-                <DialogActions>
-                    {!viewOnly && (
-                        <Button variant="contained" onClick={handleCreate} disabled={creating}>
-                            {creating ? 'Saving...' : (currentContactId ? 'Update Contact' : 'Create Contact')}
-                        </Button>
-                    )}
-                </DialogActions>
-            </Dialog>
             <ContactFormDialog
                 open={openCreate}
                 onClose={handleCloseCreate}
