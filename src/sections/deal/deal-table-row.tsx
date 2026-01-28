@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
@@ -28,6 +29,8 @@ type Props = {
     onSelectRow: VoidFunction;
     canEdit?: boolean;
     canDelete?: boolean;
+    hideCheckbox?: boolean;
+    index?: number;
 };
 
 export function DealTableRow({
@@ -39,6 +42,8 @@ export function DealTableRow({
     onSelectRow,
     canEdit = true,
     canDelete = true,
+    hideCheckbox = false,
+    index,
 }: Props) {
     const getStageColor = (stage: string) => {
         switch (stage) {
@@ -56,9 +61,40 @@ export function DealTableRow({
 
     return (
         <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
-            <TableCell padding="checkbox">
-                <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
-            </TableCell>
+            {!hideCheckbox && (
+                <TableCell padding="checkbox">
+                    <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
+                </TableCell>
+            )}
+
+            {typeof index === 'number' && (
+                <TableCell align="center">
+                    <Box
+                        sx={{
+                            width: 28,
+                            height: 28,
+                            display: 'flex',
+                            borderRadius: '50%',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                            color: 'primary.main',
+                            typography: 'subtitle2',
+                            fontWeight: 800,
+                            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                            mx: 'auto',
+                            transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+                            '&:hover': {
+                                bgcolor: 'primary.main',
+                                color: 'primary.contrastText',
+                                transform: 'scale(1.1)',
+                            },
+                        }}
+                    >
+                        {index + 1}
+                    </Box>
+                </TableCell>
+            )}
 
             <TableCell component="th" scope="row">
                 <Box sx={{ gap: 2, display: 'flex', alignItems: 'center' }}>

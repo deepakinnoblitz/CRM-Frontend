@@ -208,7 +208,7 @@ export async function getInvoicePermissions() {
 }
 
 export function getInvoicePrintUrl(name: string) {
-    return `/api/method/frappe.utils.print_format.download_pdf?doctype=Invoice&name=${encodeURIComponent(name)}&format=Invoice%20Print%20Style&no_letterhead=1&letterhead=NoLetterhead&settings=%7B%7D&trigger_print=0`;
+    return `/api/method/frappe.utils.print_format.download_pdf?doctype=Invoice&name=${encodeURIComponent(name)}`;
 }
 
 export async function createItem(data: { item_name: string; item_code: string; rate: number }) {
@@ -226,5 +226,23 @@ export async function createItem(data: { item_name: string; item_code: string; r
     });
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create item"));
+    return json.message;
+}
+
+export async function createTaxType(data: { tax_name: string; tax_percentage: number; tax_type: string }) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: "Tax Types",
+                ...data
+            }
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create tax type"));
     return json.message;
 }

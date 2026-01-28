@@ -28,8 +28,8 @@ type EstimationTableToolbarProps = {
 };
 
 const SORT_OPTIONS = [
-    { value: 'estimate_date_desc', label: 'Newest First' },
-    { value: 'estimate_date_asc', label: 'Oldest First' },
+    { value: 'modified_desc', label: 'Newest First' },
+    { value: 'creation_asc', label: 'Oldest First' },
     { value: 'grand_total_desc', label: 'Amount: High to Low' },
     { value: 'grand_total_asc', label: 'Amount: Low to High' },
     { value: 'client_name_asc', label: 'Customer ID: A to Z' },

@@ -37,6 +37,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from '../../user/table-no-data';
 import { ContactTableRow } from '../contact-table-row';
+import { ContactFormDialog } from '../contact-form-dialog';
 import { TableEmptyRows } from '../../user/table-empty-rows';
 import { ContactImportDialog } from '../contact-import-dialog';
 import { ContactTableFiltersDrawer } from '../contact-table-filters-drawer';
@@ -71,13 +72,24 @@ export function ContactView() {
     const [openFilters, setOpenFilters] = useState(false);
 
     const [openCreate, setOpenCreate] = useState(false);
-    const [creating, setCreating] = useState(false);
     const [currentContactId, setCurrentContactId] = useState<string | null>(null);
-    const [viewOnly, setViewOnly] = useState(false);
     const [openView, setOpenView] = useState(false);
     const [openImport, setOpenImport] = useState(false);
 
-    // Form state
+    const [countryOptions, setCountryOptions] = useState<string[]>([]);
+    const [stateOptions, setStateOptions] = useState<string[]>([]);
+    const [cityOptions, setCityOptions] = useState<string[]>([]);
+    const [leadOptions, setLeadOptions] = useState<{ name: string; lead_name: string }[]>([]);
+
+    const [country, setCountry] = useState('');
+    const [state, setState] = useState('');
+    const [city, setCity] = useState('');
+
+    // Filter-specific location options
+    const [filterStateOptions, setFilterStateOptions] = useState<string[]>([]);
+    const [filterCityOptions, setFilterCityOptions] = useState<string[]>([]);
+
+    const [creating, setCreating] = useState(false);
     const [firstName, setFirstName] = useState('');
     const [companyName, setCompanyName] = useState('');
     const [email, setEmail] = useState('');
@@ -85,19 +97,8 @@ export function ContactView() {
     const [designation, setDesignation] = useState('');
     const [address, setAddress] = useState('');
     const [notes, setNotes] = useState('');
-    const [country, setCountry] = useState('');
-    const [state, setState] = useState('');
-    const [city, setCity] = useState('');
     const [contactType, setContactType] = useState('Sales');
     const [sourceLead, setSourceLead] = useState('');
-
-    const [countryOptions, setCountryOptions] = useState<string[]>([]);
-    const [stateOptions, setStateOptions] = useState<string[]>([]);
-    const [cityOptions, setCityOptions] = useState<string[]>([]);
-    const [leadOptions, setLeadOptions] = useState<{ name: string; lead_name: string }[]>([]);
-    // Filter-specific location options
-    const [filterStateOptions, setFilterStateOptions] = useState<string[]>([]);
-    const [filterCityOptions, setFilterCityOptions] = useState<string[]>([]);
 
     // Alert & Dialog State
     const [openDelete, setOpenDelete] = useState(false);
@@ -149,7 +150,7 @@ export function ContactView() {
     useEffect(() => {
         getContactPermissions().then(setPermissions);
 
-        // Populate Country Options from local JSON (remove duplicates)
+        // Populate Country Options from local JSON for filters
         const countries = Array.from(new Set(locationData.map((c: any) => c.country)));
         setCountryOptions(["", ...countries]);
 
@@ -234,27 +235,13 @@ export function ContactView() {
     const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
 
     const handleOpenCreate = () => {
-        setViewOnly(false);
+        setCurrentContactId(null);
         setOpenCreate(true);
     };
 
     const handleCloseCreate = () => {
         setOpenCreate(false);
-        setValidationErrors({}); // Clear errors
         setCurrentContactId(null);
-        setViewOnly(false);
-        setFirstName('');
-        setCompanyName('');
-        setEmail('');
-        setPhone('');
-        setDesignation('');
-        setAddress('');
-        setNotes('');
-        setCountry('');
-        setState('');
-        setCity('');
-        setContactType('Sales');
-        setSourceLead('');
     };
 
     const handleCloseSnackbar = () => {
@@ -407,25 +394,7 @@ export function ContactView() {
     };
 
     const handleEditRow = (id: string) => {
-        setViewOnly(false);
-        setValidationErrors({}); // Clear errors when opening edit
         setCurrentContactId(id);
-
-        const fullRow = data.find((item: any) => item.name === id);
-        if (fullRow) {
-            setFirstName(fullRow.first_name || '');
-            setCompanyName(fullRow.company_name || '');
-            setEmail(fullRow.email || '');
-            setPhone(cleanPhoneNumber(fullRow.phone || ''));
-            setDesignation(fullRow.designation || '');
-            setAddress(fullRow.address || '');
-            setNotes(fullRow.notes || '');
-            setCountry(fullRow.country || '');
-            setState(fullRow.state || '');
-            setCity(fullRow.city || '');
-            setContactType(fullRow.customer_type || 'Sales');
-            setSourceLead(fullRow.source_lead || '');
-        }
         setOpenCreate(true);
     };
 
@@ -504,6 +473,8 @@ export function ContactView() {
                                         data.map((row) => row.name)
                                     )
                                 }
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
                                     { id: 'name', label: 'Name' },
                                     { id: 'company', label: 'Company' },
@@ -519,9 +490,11 @@ export function ContactView() {
                                     <TableEmptyRows height={68} emptyRows={rowsPerPage} />
                                 )}
 
-                                {!loading && data.map((row) => (
+                                {!loading && data.map((row, index) => (
                                     <ContactTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             firstName: row.first_name,
@@ -591,201 +564,12 @@ export function ContactView() {
             />
 
             {/* CREATE/EDIT DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {viewOnly ? 'Contact Details' : (currentContactId ? 'Edit Contact' : 'New Contact')}
-                    <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
-                        <Iconify icon="mingcute:close-line" />
-                    </IconButton>
-                </DialogTitle>
-
-                <DialogContent dividers>
-                    <Box
-                        display="grid"
-                        margin={2}
-                        gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }}
-                        gap={3}
-                    >
-                        <TextField
-                            fullWidth
-                            label="Name"
-                            value={firstName}
-                            onChange={(e) => {
-                                setFirstName(e.target.value);
-                                if (e.target.value) setValidationErrors(prev => ({ ...prev, firstName: false }));
-                            }}
-                            required
-                            error={!!validationErrors.firstName}
-                            slotProps={{ input: { readOnly: viewOnly } }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="Email"
-                            value={email}
-                            onChange={(e) => {
-                                setEmail(e.target.value);
-                                if (e.target.value) setValidationErrors(prev => ({ ...prev, email: false }));
-                            }}
-                            required
-                            error={!!validationErrors.email}
-                            slotProps={{ input: { readOnly: viewOnly } }}
-                        />
-
-                        <MuiTelInput
-                            fullWidth
-                            defaultCountry="IN"
-                            label="Phone Number"
-                            name="phone_number"
-                            value={phone}
-                            onChange={(newValue) => {
-                                setPhone(newValue);
-                                if (newValue) setValidationErrors(prev => ({ ...prev, phone: false }));
-                            }}
-                            required
-                            error={!!validationErrors.phone}
-                            disabled={viewOnly}
-                            sx={{
-                                '& .MuiInputBase-input.Mui-disabled': {
-                                    WebkitTextFillColor: 'inherit',
-                                    color: 'inherit',
-                                },
-                            }}
-                        />
-
-                        <TextField
-                            fullWidth
-                            label="Company Name"
-                            value={companyName}
-                            onChange={(e) => setCompanyName(e.target.value)}
-                            slotProps={{ input: { readOnly: viewOnly } }}
-                        />
-                        <TextField
-                            select
-                            fullWidth
-                            label="Contact Type"
-                            value={contactType}
-                            onChange={(e) => setContactType(e.target.value)}
-                            disabled={viewOnly}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="Sales">Sales</option>
-                            <option value="Purchase">Purchase</option>
-                        </TextField>
-                        <TextField
-                            fullWidth
-                            label="Designation"
-                            value={designation}
-                            onChange={(e) => setDesignation(e.target.value)}
-                            slotProps={{ input: { readOnly: viewOnly } }}
-                        />
-
-                        <TextField
-                            select
-                            fullWidth
-                            label="Country"
-                            name="country"
-                            value={country}
-                            onChange={(e) => setCountry(e.target.value)}
-                            disabled={viewOnly}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {countryOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
-
-                        <TextField
-                            select
-                            fullWidth
-                            label="State"
-                            name="state"
-                            value={state}
-                            onChange={(e) => setState(e.target.value)}
-                            disabled={viewOnly || !country}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {stateOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
-
-                        <TextField
-                            select
-                            fullWidth
-                            label="City"
-                            name="city"
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
-                            disabled={viewOnly || !state}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {cityOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
-
-                        <TextField
-                            fullWidth
-                            label="Address"
-                            multiline
-                            rows={2}
-                            value={address}
-                            onChange={(e) => setAddress(e.target.value)}
-                            sx={{ gridColumn: 'span 2' }}
-                            slotProps={{ input: { readOnly: viewOnly } }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="Notes"
-                            multiline
-                            rows={3}
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            sx={{ gridColumn: 'span 2' }}
-                            slotProps={{ input: { readOnly: viewOnly } }}
-                        />
-                    </Box>
-                </DialogContent>
-
-                <DialogActions>
-                    {!viewOnly && (
-                        <Button variant="contained" onClick={handleCreate} disabled={creating}>
-                            {creating ? 'Saving...' : (currentContactId ? 'Update Contact' : 'Create Contact')}
-                        </Button>
-                    )}
-                </DialogActions>
-            </Dialog>
+            <ContactFormDialog
+                open={openCreate}
+                onClose={handleCloseCreate}
+                contactId={currentContactId}
+                onSuccess={refetch}
+            />
 
             {/* DELETE CONFIRMATION */}
             <ConfirmDialog
@@ -821,7 +605,6 @@ export function ContactView() {
                 open={openView}
                 onClose={() => {
                     setOpenView(false);
-                    setCurrentContactId(null);
                 }}
                 contactId={currentContactId}
                 onEdit={handleEditRow}

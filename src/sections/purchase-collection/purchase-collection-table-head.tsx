@@ -13,6 +13,8 @@ type Props = {
     numSelected: number;
     onSort: (id: string) => void;
     onSelectAllRows: (checked: boolean) => void;
+    hideCheckbox?: boolean;
+    showIndex?: boolean;
 };
 
 export default function PurchaseCollectionTableHead({
@@ -23,17 +25,23 @@ export default function PurchaseCollectionTableHead({
     numSelected,
     onSort,
     onSelectAllRows,
+    hideCheckbox = false,
+    showIndex = false,
 }: Props) {
     return (
         <TableHead>
             <TableRow>
-                <TableCell padding="checkbox">
-                    <Checkbox
-                        indeterminate={numSelected > 0 && numSelected < rowCount}
-                        checked={rowCount > 0 && numSelected === rowCount}
-                        onChange={(event) => onSelectAllRows(event.target.checked)}
-                    />
-                </TableCell>
+                {!hideCheckbox && (
+                    <TableCell padding="checkbox">
+                        <Checkbox
+                            indeterminate={numSelected > 0 && numSelected < rowCount}
+                            checked={rowCount > 0 && numSelected === rowCount}
+                            onChange={(event) => onSelectAllRows(event.target.checked)}
+                        />
+                    </TableCell>
+                )}
+
+                {showIndex && <TableCell align="center">Sno</TableCell>}
 
                 {headLabel.map((headCell) => (
                     <TableCell

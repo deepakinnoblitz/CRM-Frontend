@@ -268,6 +268,8 @@ export function AssetsView() {
                                 numSelected={selected.length}
                                 onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
                                     { id: 'asset_name', label: 'Asset Name' },
                                     { id: 'asset_tag', label: 'Tag' },
@@ -279,9 +281,11 @@ export function AssetsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row) => (
+                                {data.map((row, index) => (
                                     <AssetTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             asset_name: row.asset_name,

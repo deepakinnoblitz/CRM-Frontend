@@ -187,8 +187,8 @@ export const salesNavData = [
     icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} />,
   },
   {
-    title: 'Expenses',
-    path: '/expenses',
+    title: 'Expense Tracker',
+    path: '/crm-expense-tracker',
     icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
   },
   {
@@ -197,7 +197,7 @@ export const salesNavData = [
     icon: <Iconify icon={"solar:chart-square-bold-duotone" as any} />,
     children: [
       { title: 'Purchase Report', path: '/reports/purchase' },
-      { title: 'Expense Report', path: '/reports/expense' },
+      { title: 'Expense Tracker Report', path: '/reports/crm-expense-tracker' },
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
@@ -213,6 +213,11 @@ export const crmNavData = [
     title: 'Dashboard',
     path: '/',
     icon: <Iconify icon={"solar:widget-5-bold-duotone" as any} />,
+  },
+  {
+    title: 'Expense Tracker',
+    path: '/crm-expense-tracker',
+    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
   },
   {
     title: 'Leads',
@@ -321,29 +326,14 @@ export const crmAndSalesNavData = [
     icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} />,
   },
   {
-    title: 'Expenses',
-    path: '/expenses',
+    title: 'Expense Tracker',
+    path: '/crm-expense-tracker',
     icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
   },
   {
-    title: 'Events',
+    title: 'Calendar',
     path: '/events',
     icon: <Iconify icon={"solar:calendar-mark-bold-duotone" as any} />,
-  },
-  {
-    title: 'Calls',
-    path: '/calls',
-    icon: <Iconify icon={"solar:phone-calling-rounded-bold-duotone" as any} />,
-  },
-  {
-    title: 'ToDo',
-    path: '/todo',
-    icon: <Iconify icon={"solar:list-bold-duotone" as any} />,
-  },
-  {
-    title: 'Meetings',
-    path: '/meetings',
-    icon: <Iconify icon={"solar:videocamera-record-bold-duotone" as any} />,
   },
   {
     title: 'Reports',
@@ -356,7 +346,7 @@ export const crmAndSalesNavData = [
       { title: 'Calls Report', path: '/reports/calls' },
       { title: 'Meeting Report', path: '/reports/meeting' },
       { title: 'Purchase Report', path: '/reports/purchase' },
-      { title: 'Expense Report', path: '/reports/expense' },
+      { title: 'Expense Tracker Report', path: '/reports/crm-expense-tracker' },
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },

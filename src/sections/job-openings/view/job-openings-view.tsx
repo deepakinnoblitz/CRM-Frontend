@@ -277,6 +277,8 @@ export function JobOpeningsView() {
                                 numSelected={selected.length}
                                 onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
                                     { id: 'job_title', label: 'Job Title' },
                                     { id: 'location', label: 'Location' },
@@ -286,9 +288,11 @@ export function JobOpeningsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row) => (
+                                {data.map((row, index) => (
                                     <JobOpeningTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             job_title: row.job_title,

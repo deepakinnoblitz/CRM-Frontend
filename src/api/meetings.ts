@@ -32,6 +32,8 @@ export async function fetchMeetings(start?: string, end?: string): Promise<Meeti
             "title",
             "meet_for",
             "lead_name",
+            "contact_name",
+            "account_name",
             "from",
             "to",
             "outgoing_call_status",

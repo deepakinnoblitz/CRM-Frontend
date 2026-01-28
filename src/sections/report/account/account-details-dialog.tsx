@@ -44,28 +44,6 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
             <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Account Profile</Typography>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    {onEdit && accountId && (
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<Iconify icon="solar:pen-bold" />}
-                            onClick={() => {
-                                onEdit(accountId);
-                                onClose();
-                            }}
-                            sx={{
-                                borderRadius: 1.5,
-                                fontWeight: 600,
-                                borderColor: 'divider',
-                                '&:hover': {
-                                    borderColor: 'primary.main',
-                                    bgcolor: 'primary.lighter',
-                                },
-                            }}
-                        >
-                            Edit
-                        </Button>
-                    )}
                     <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500], bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows?.z1 }}>
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
@@ -96,7 +74,30 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
                                 <Iconify icon={"solar:buildings-bold" as any} width={32} />
                             </Box>
                             <Box sx={{ flexGrow: 1 }}>
-                                <Typography variant="h5" sx={{ fontWeight: 800 }}>{account.account_name}</Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 0.5 }}>
+                                    <Typography variant="h5" sx={{ fontWeight: 800 }}>{account.account_name}</Typography>
+                                    {onEdit && accountId && (
+                                        <Button
+                                            variant="outlined"
+                                            color="primary"
+                                            size="small"
+                                            startIcon={<Iconify icon="solar:pen-bold" width={16} />}
+                                            onClick={() => {
+                                                onEdit(accountId);
+                                                onClose();
+                                            }}
+                                            sx={{
+                                                height: 28,
+                                                borderRadius: 1,
+                                                px: 1.5,
+                                                typography: 'subtitle2',
+                                                fontWeight: 700,
+                                            }}
+                                        >
+                                            Edit
+                                        </Button>
+                                    )}
+                                </Box>
                                 <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{account.website || 'No website provided'}</Typography>
                             </Box>
                             <Box sx={{ textAlign: 'right' }}>

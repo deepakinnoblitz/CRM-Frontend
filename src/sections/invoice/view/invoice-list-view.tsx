@@ -55,7 +55,7 @@ export function InvoiceListView() {
 
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [filterName, setFilterName] = useState('');
-    const [sortBy, setSortBy] = useState('invoice_date_desc');
+    const [sortBy, setSortBy] = useState('modified_desc');
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
@@ -195,12 +195,16 @@ export function InvoiceListView() {
                                         data.map((row) => row.name)
                                     )
                                 }
+                                hideCheckbox
+                                showIndex
                                 headLabel={TABLE_HEAD}
                             />
                             <TableBody>
-                                {data.map((row) => (
+                                {data.map((row, index) => (
                                     <InvoiceTableRow
                                         key={row.name}
+                                        index={table.page * table.rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             ref_no: row.ref_no,

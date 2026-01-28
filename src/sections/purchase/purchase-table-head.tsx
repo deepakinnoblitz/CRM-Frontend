@@ -14,6 +14,8 @@ type PurchaseTableHeadProps = {
     onSort: (id: string) => void;
     headLabel: Record<string, any>[];
     onSelectAllRows: (checked: boolean) => void;
+    hideCheckbox?: boolean;
+    showIndex?: boolean;
 };
 
 export function PurchaseTableHead({
@@ -24,19 +26,25 @@ export function PurchaseTableHead({
     headLabel,
     numSelected,
     onSelectAllRows,
+    hideCheckbox = false,
+    showIndex = false,
 }: PurchaseTableHeadProps) {
     return (
         <TableHead>
             <TableRow>
-                <TableCell padding="checkbox">
-                    <Checkbox
-                        indeterminate={numSelected > 0 && numSelected < rowCount}
-                        checked={rowCount > 0 && numSelected === rowCount}
-                        onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                            onSelectAllRows(event.target.checked)
-                        }
-                    />
-                </TableCell>
+                {!hideCheckbox && (
+                    <TableCell padding="checkbox">
+                        <Checkbox
+                            indeterminate={numSelected > 0 && numSelected < rowCount}
+                            checked={rowCount > 0 && numSelected === rowCount}
+                            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                                onSelectAllRows(event.target.checked)
+                            }
+                        />
+                    </TableCell>
+                )}
+
+                {showIndex && <TableCell align="center">Sno</TableCell>}
 
                 {headLabel.map((headCell) => (
                     <TableCell

@@ -325,6 +325,8 @@ export function ReimbursementClaimsView() {
                                 numSelected={selected.length}
                                 onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
                                     { id: 'employee_name', label: 'Employee' },
                                     { id: 'claim_type', label: 'Claim Type' },
@@ -335,9 +337,11 @@ export function ReimbursementClaimsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row) => (
+                                {data.map((row, index) => (
                                     <ReimbursementClaimTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             employee_name: row.employee_name,

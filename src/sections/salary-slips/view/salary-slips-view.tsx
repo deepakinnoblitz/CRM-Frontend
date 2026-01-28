@@ -144,6 +144,8 @@ export function SalarySlipsView() {
                                 numSelected={selected.length}
                                 onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
                                     { id: 'employee_name', label: 'Employee Name' },
                                     { id: 'pay_period_start', label: 'Pay Period' },
@@ -153,9 +155,11 @@ export function SalarySlipsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row) => (
+                                {data.map((row, index) => (
                                     <SalarySlipTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             employee_name: row.employee_name,
