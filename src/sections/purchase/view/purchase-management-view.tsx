@@ -12,31 +12,31 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 
-import { InvoiceListView } from './invoice-list-view';
-import { InvoiceCollectionListView } from '../../invoice-collection/view/invoice-collection-list-view';
+import { PurchaseListView } from './purchase-list-view';
+import { PurchaseCollectionListView } from '../../purchase-collection/view/purchase-collection-list-view';
 
 // ----------------------------------------------------------------------
 
 const TABS = [
-    { value: 'invoices', label: 'Invoices', icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} width={24} /> },
+    { value: 'purchases', label: 'Purchases', icon: <Iconify icon={"solar:cart-large-bold-duotone" as any} width={24} /> },
     { value: 'collections', label: 'Collections', icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} width={24} /> },
 ];
 
 // ----------------------------------------------------------------------
 
-export function InvoiceView() {
+export function PurchaseManagementView() {
     const router = useRouter();
     const pathname = usePathname();
 
     const searchParams = new URLSearchParams(window.location.search);
     const tabParam = searchParams.get('tab');
 
-    const [currentTab, setCurrentTab] = useState(tabParam === 'collections' ? 'collections' : 'invoices');
+    const [currentTab, setCurrentTab] = useState(tabParam === 'collections' ? 'collections' : 'purchases');
 
     const handleChangeTab = useCallback((event: React.SyntheticEvent, newValue: string) => {
         setCurrentTab(newValue);
         const params = new URLSearchParams(window.location.search);
-        if (newValue === 'invoices') {
+        if (newValue === 'purchases') {
             params.delete('tab');
         } else {
             params.set('tab', newValue);
@@ -45,24 +45,24 @@ export function InvoiceView() {
     }, [pathname, router]);
 
     const handleCreateNew = () => {
-        if (currentTab === 'invoices') {
-            router.push('/invoices/new');
+        if (currentTab === 'purchases') {
+            router.push('/purchase/new');
         } else {
-            router.push('/invoice-collections/new');
+            router.push('/purchase-collections/new');
         }
     };
 
     return (
         <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">Invoice Management</Typography>
+                <Typography variant="h4">Purchase Management</Typography>
                 <Button
                     variant="contained"
                     color="info"
                     startIcon={<Iconify icon="mingcute:add-line" />}
                     onClick={handleCreateNew}
                 >
-                    {currentTab === 'invoices' ? 'New Invoice' : 'New Collection'}
+                    {currentTab === 'purchases' ? 'New Purchase' : 'New Collection'}
                 </Button>
             </Stack>
 
@@ -78,8 +78,8 @@ export function InvoiceView() {
                 ))}
             </Tabs>
 
-            {currentTab === 'invoices' && <InvoiceListView hideHeader />}
-            {currentTab === 'collections' && <InvoiceCollectionListView hideHeader />}
+            {currentTab === 'purchases' && <PurchaseListView hideHeader />}
+            {currentTab === 'collections' && <PurchaseCollectionListView hideHeader />}
         </DashboardContent>
     );
 }

@@ -311,11 +311,6 @@ export const crmAndSalesNavData = [
     icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
   },
   {
-    title: 'Purchase Collections',
-    path: '/purchase-collections',
-    icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} />,
-  },
-  {
     title: 'Expense Tracker',
     path: '/crm-expense-tracker',
     icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,

@@ -71,7 +71,7 @@ export function PurchaseCollectionDetailsView() {
         return (
             <DashboardContent>
                 <Typography variant="h4">Purchase Collection not found</Typography>
-                <Button onClick={() => router.push('/purchase-collections')} sx={{ mt: 3 }}>
+                <Button onClick={() => router.push('/purchase?tab=collections')} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
             </DashboardContent>
@@ -96,7 +96,7 @@ export function PurchaseCollectionDetailsView() {
             setDeleting(true);
             await deletePurchaseCollection(id);
             setSnackbar({ open: true, message: 'Collection deleted successfully', severity: 'success' });
-            setTimeout(() => router.push('/purchase-collections'), 1500);
+            setTimeout(() => router.push('/purchase?tab=collections'), 1500);
         } catch (error) {
             console.error('Failed to delete collection:', error);
             setSnackbar({ open: true, message: 'Failed to delete collection', severity: 'error' });
@@ -114,7 +114,7 @@ export function PurchaseCollectionDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/purchase-collections')}
+                        onClick={() => router.push('/purchase?tab=collections')}
                         startIcon={<Iconify icon={"solar:arrow-left-bold" as any} />}
                     >
                         Back to List
