@@ -259,9 +259,10 @@ export function ContactView() {
             await deleteContact(deleteId);
             setSnackbar({ open: true, message: 'Contact deleted successfully', severity: 'success' });
             await refetch();
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            setSnackbar({ open: true, message: 'Failed to delete contact', severity: 'error' });
+            const friendlyMsg = getFriendlyErrorMessage(e);
+            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
         } finally {
             setOpenDelete(false);
             setDeleteId(null);
@@ -275,7 +276,9 @@ export function ContactView() {
             setSelected([]);
             await refetch();
         } catch (e: any) {
-            setSnackbar({ open: true, message: e.message || 'Error during bulk delete', severity: 'error' });
+            console.error(e);
+            const friendlyMsg = getFriendlyErrorMessage(e);
+            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
         }
     };
 
