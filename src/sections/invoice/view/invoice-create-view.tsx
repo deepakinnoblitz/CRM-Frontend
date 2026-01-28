@@ -643,7 +643,6 @@ export function InvoiceCreateView() {
                                                         ListboxProps={{
                                                             sx: {
                                                                 height: '300px',
-                                                                pr: 3,
                                                                 '& .MuiAutocomplete-option': {
                                                                     py: 1.5,
                                                                     px: 2,
@@ -660,7 +659,6 @@ export function InvoiceCreateView() {
                                                                     mt: 0.5,
                                                                     boxShadow: (theme) => theme.customShadows.z20,
                                                                     borderRadius: 1.5,
-                                                                    width: 'max-content !important',
                                                                     minWidth: '350px',
                                                                 }
                                                             },

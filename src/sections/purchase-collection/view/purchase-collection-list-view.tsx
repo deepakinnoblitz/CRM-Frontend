@@ -267,14 +267,14 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
         <>
             {!hideHeader && (
                 <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                    <Typography variant="h4">Purchase Collections</Typography>
+                    <Typography variant="h4">Purchase Settlements</Typography>
                     <Button
                         variant="contained"
                         color="info"
                         startIcon={<Iconify icon="mingcute:add-line" />}
                         onClick={handleCreateNew}
                     >
-                        New Collection
+                        New Settlement
                     </Button>
                 </Stack>
             )}
@@ -362,7 +362,7 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
                                     <TableRow>
                                         <TableCell colSpan={8}>
                                             <EmptyContent
-                                                title="No purchase collections found"
+                                                title="No purchase settlements found"
                                                 description="Track your purchase payments to vendors here."
                                                 icon="solar:bill-check-bold-duotone"
                                             />

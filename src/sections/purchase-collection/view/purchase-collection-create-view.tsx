@@ -30,7 +30,7 @@ export function PurchaseCollectionCreateView() {
     return (
         <DashboardContent>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">Create New Purchase Collection</Typography>
+                <Typography variant="h4">Create New Purchase Settlement</Typography>
                 <Stack direction="row" spacing={2}>
                     <Button
                         variant="outlined"
@@ -46,7 +46,7 @@ export function PurchaseCollectionCreateView() {
                         onClick={handleCreate}
                         disabled={loading}
                     >
-                        {loading ? 'Creating...' : 'Create Collection'}
+                        {loading ? 'Creating...' : 'Create Settlement'}
                     </Button>
                 </Stack>
             </Stack>

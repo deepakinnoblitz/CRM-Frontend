@@ -5,6 +5,7 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
+import Backdrop from '@mui/material/Backdrop';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
@@ -12,14 +13,17 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
 import { useInvoices } from 'src/hooks/useInvoices';
 
+import { handleDirectPrint, handleDownload } from 'src/utils/print';
+
 import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { fetchInvoices, deleteInvoice } from 'src/api/invoice';
+import { fetchInvoices, deleteInvoice, getInvoicePrintUrl } from 'src/api/invoice';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -61,6 +65,7 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
         message: '',
         severity: 'success',
     });
+    const [printing, setPrinting] = useState(false);
 
     const [openFilters, setOpenFilters] = useState(false);
     const [filters, setFilters] = useState({
@@ -131,6 +136,23 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
     const handleDeleteRow = useCallback((id: string) => {
         setConfirmDelete({ open: true, id });
     }, []);
+
+    const handlePrintRow = (id: string, ref_no?: string) => {
+        handleDownload(
+            getInvoicePrintUrl(id),
+            `${ref_no || id}.pdf`,
+            () => setPrinting(true),
+            () => setPrinting(false)
+        );
+    };
+
+    const handlePreviewRow = (id: string) => {
+        handleDirectPrint(
+            getInvoicePrintUrl(id),
+            () => setPrinting(true),
+            () => setPrinting(false)
+        );
+    };
 
     const handleConfirmDelete = async () => {
         if (!confirmDelete.id) return;
@@ -222,6 +244,8 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
                                         onEdit={() => handleEditRow(row.name)}
                                         onView={() => handleViewRow(row.name)}
                                         onDelete={() => handleDeleteRow(row.name)}
+                                        onPrint={() => handlePrintRow(row.name, row.ref_no)}
+                                        onPreview={() => handlePreviewRow(row.name)}
                                     />
                                 ))}
 
@@ -300,6 +324,13 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
                     </Button>
                 }
             />
+
+            <Backdrop
+                sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                open={printing}
+            >
+                <CircularProgress color="inherit" />
+            </Backdrop>
         </>
     );
 

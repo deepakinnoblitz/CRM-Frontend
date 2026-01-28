@@ -28,6 +28,8 @@ type EstimationTableRowProps = {
     onView: () => void;
     onEdit: () => void;
     onDelete: () => void;
+    onPrint: () => void;
+    onPreview: () => void;
     canEdit?: boolean;
     canDelete?: boolean;
     hideCheckbox?: boolean;
@@ -41,6 +43,8 @@ export function EstimationTableRow({
     onView,
     onEdit,
     onDelete,
+    onPrint,
+    onPreview,
     canEdit = true,
     canDelete = true,
     hideCheckbox = false,
@@ -99,6 +103,12 @@ export function EstimationTableRow({
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <IconButton onClick={onPrint} sx={{ color: 'warning.main' }}>
+                        <Iconify icon={"solar:printer-bold" as any} />
+                    </IconButton>
+                    <IconButton onClick={onPreview} sx={{ color: 'secondary.main' }}>
+                        <Iconify icon={"solar:file-text-bold" as any} />
+                    </IconButton>
                     {canEdit && (
                         <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
                             <Iconify icon="solar:pen-bold" />
@@ -110,7 +120,7 @@ export function EstimationTableRow({
                         </IconButton>
                     )}
                     <IconButton onClick={onView} sx={{ color: 'info.main' }}>
-                        <Iconify icon="solar:eye-bold" />
+                        <Iconify icon={"solar:eye-bold" as any} />
                     </IconButton>
                 </Box>
             </TableCell>

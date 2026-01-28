@@ -19,7 +19,7 @@ import { PurchaseCollectionListView } from '../../purchase-collection/view/purch
 
 const TABS = [
     { value: 'purchases', label: 'Purchases', icon: <Iconify icon={"solar:cart-large-bold-duotone" as any} width={24} /> },
-    { value: 'collections', label: 'Collections', icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} width={24} /> },
+    { value: 'collections', label: 'Settlements', icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} width={24} /> },
 ];
 
 // ----------------------------------------------------------------------
@@ -62,7 +62,7 @@ export function PurchaseManagementView() {
                     startIcon={<Iconify icon="mingcute:add-line" />}
                     onClick={handleCreateNew}
                 >
-                    {currentTab === 'purchases' ? 'New Purchase' : 'New Collection'}
+                    {currentTab === 'purchases' ? 'New Purchase' : 'New Settlement'}
                 </Button>
             </Stack>
 

@@ -70,7 +70,7 @@ export function PurchaseCollectionDetailsView() {
     if (!collection) {
         return (
             <DashboardContent>
-                <Typography variant="h4">Purchase Collection not found</Typography>
+                <Typography variant="h4">Purchase Settlement not found</Typography>
                 <Button onClick={() => router.push('/purchase?tab=collections')} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
@@ -109,7 +109,7 @@ export function PurchaseCollectionDetailsView() {
     return (
         <DashboardContent>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">Purchase Collection: {id}</Typography>
+                <Typography variant="h4">Purchase Settlement: {id}</Typography>
                 <Stack direction="row" spacing={2}>
                     <Button
                         variant="outlined"
@@ -136,7 +136,7 @@ export function PurchaseCollectionDetailsView() {
                             onClick={() => router.push(`/purchase-collections/${encodeURIComponent(id || '')}/edit`)}
                             startIcon={<Iconify icon={"solar:pen-bold" as any} />}
                         >
-                            Edit Collection
+                            Edit Settlement
                         </Button>
                     )}
                 </Stack>
@@ -276,7 +276,7 @@ export function PurchaseCollectionDetailsView() {
                 open={confirmDeleteOpen}
                 onClose={() => !deleting && setConfirmDeleteOpen(false)}
                 title="Confirm Delete"
-                content="Are you sure you want to delete this purchase collection?"
+                content="Are you sure you want to delete this purchase settlement?"
                 action={
                     <Button
                         variant="contained"
