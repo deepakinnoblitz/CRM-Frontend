@@ -24,6 +24,8 @@ import { IconButton, FormControl } from '@mui/material';
 import LinearProgress from '@mui/material/LinearProgress';
 import TableContainer from '@mui/material/TableContainer';
 
+import { getFriendlyErrorMessage } from 'src/utils/error-handler';
+
 import {
     uploadFile,
     getDocFields,
@@ -32,6 +34,7 @@ import {
     startDataImport,
     getImportStatus,
     getImportPreview,
+    getImportWarnings,
     createDataImport,
     updateDataImport,
     updateImportFile
@@ -159,23 +162,36 @@ export function AccountImportDialog({ open, onClose, onRefresh }: Props) {
     // ----------------------------------------------------------------------
     // STEP 2 -> 3: Start Import & Poll
     const handleStartImport = async () => {
+        const validationError = validateData();
+        if (validationError) {
+            setError(validationError);
+            return;
+        }
+
         setLoading(true);
         try {
-            // 1. Sync Mapping
+            // 1. Sync Mapping & Edited Data
+            const dataIndices = previewData.columns
+                .map((c: any, i: number) => ({ title: c.header_title, index: i }))
+                .filter((c: any) => c.title !== 'Sr. No')
+                .map((c: any) => c.index);
+
+            const headers = dataIndices.map((idx: number) => previewData.columns[idx].header_title);
+            const fullGrid = [
+                headers,
+                ...editedData.map(row => dataIndices.map((idx: number) => row[idx]))
+            ];
+            await updateImportFile(importName, fullGrid);
+
+            // 2. Prepare final mapping for Frappe: indices must match the CSV we just uploaded
             const finalMapping: Record<string, string> = {};
-            Object.entries(mapping).forEach(([idx, field]) => {
-                const numericIdx = parseInt(idx, 10);
-                if (numericIdx > 0) {
-                    finalMapping[numericIdx - 1] = field === "Don't Import" ? "__skip__" : field;
-                }
+            dataIndices.forEach((actualIdx: number, newIdx: number) => {
+                const field = mapping[actualIdx];
+                finalMapping[newIdx] = (!field || field === "Don't Import") ? "__skip__" : field;
             });
+
             const template_options = { column_to_field_map: finalMapping };
             await updateDataImport(importName, { template_options: JSON.stringify(template_options) });
-
-            // 2. Sync Edited Data
-            const headers = previewData.columns.map((c: any) => c.header_title);
-            const fullGrid = [headers, ...editedData];
-            await updateImportFile(importName, fullGrid);
 
             // 3. Start Import
             await startDataImport(importName);
@@ -188,7 +204,7 @@ export function AccountImportDialog({ open, onClose, onRefresh }: Props) {
     };
 
     const pollStatus = async (name: string) => {
-        const interval = setInterval(async () => {
+        const poll = async () => {
             try {
                 const status = await getImportStatus(name);
                 setImportStatus(status);
@@ -199,16 +215,30 @@ export function AccountImportDialog({ open, onClose, onRefresh }: Props) {
                 }
 
                 if (['Success', 'Partial Success', 'Error', 'Timed Out'].includes(status.status)) {
-                    clearInterval(interval);
                     setLoading(false);
                     const finalLogs = await getImportLogs(name);
                     setLogs(finalLogs);
                     onRefresh();
+                } else {
+                    // Check if there are template warnings which indicate an early exit
+                    const warnings = await getImportWarnings(name);
+                    if (warnings && warnings.length > 0) {
+                        setLoading(false);
+                        const warningMsgs = warnings.map((w: any) => (w.row ? `Row ${w.row}: ${w.message}` : w.message)).join('\n');
+                        setError(`Import Aborted: Validation warnings found.\n${warningMsgs}`);
+                    } else {
+                        // Continue polling after 2 seconds
+                        setTimeout(poll, 2000);
+                    }
                 }
             } catch (e) {
                 console.error('Polling error:', e);
+                // Retry after error
+                setTimeout(poll, 5000);
             }
-        }, 2000);
+        };
+
+        poll();
     };
 
     const reset = () => {
@@ -253,6 +283,31 @@ export function AccountImportDialog({ open, onClose, onRefresh }: Props) {
         setMapping({ ...mapping, [colIndex]: value });
     };
 
+    const handleDeletePreviewRow = (rowIndex: number) => {
+        const newData = editedData.filter((_, idx) => idx !== rowIndex);
+        setEditedData(newData);
+    };
+
+    const validateData = () => {
+        const mandatoryFields = docFields.filter(f => f.reqd).map(f => f.fieldname);
+
+        for (let i = 0; i < editedData.length; i++) {
+            const row = editedData[i];
+            for (const fieldname of mandatoryFields) {
+                // Find which column this field is mapped to
+                const colIdx = Object.keys(mapping).find(key => mapping[key] === fieldname);
+                if (colIdx !== undefined) {
+                    const val = row[parseInt(colIdx, 10)];
+                    if (!val || String(val).trim() === '') {
+                        const fieldLabel = docFields.find(f => f.fieldname === fieldname)?.label || fieldname;
+                        return `Row ${i + 1}: Value missing for mandatory field "${fieldLabel}"`;
+                    }
+                }
+            }
+        }
+        return null;
+    };
+
     // ----------------------------------------------------------------------
     // UI RENDERERS
 
@@ -293,7 +348,6 @@ export function AccountImportDialog({ open, onClose, onRefresh }: Props) {
             >
                 Download Sample Template
             </Button>
-            {error && <Alert severity="error" sx={{ mt: 2, width: '100%', maxWidth: 400 }}>{error}</Alert>}
         </Box>
     );
 
@@ -439,32 +493,25 @@ export function AccountImportDialog({ open, onClose, onRefresh }: Props) {
                                         >
                                             {col.header_title}
                                         </Typography>
-                                        <FormControl fullWidth size="small">
-                                            <Select
-                                                value={mapping[i] || "Don't Import"}
-                                                onChange={(e) => handleHeaderMappingChange(i, e.target.value)}
+                                        <Box sx={{ px: 0.5 }}>
+                                            <Typography
+                                                variant="caption"
                                                 sx={{
-                                                    height: 32,
-                                                    fontSize: '0.75rem',
-                                                    bgcolor: isSkipped ? 'transparent' : 'background.paper',
-                                                    '& .MuiOutlinedInput-notchedOutline': {
-                                                        borderColor: isSkipped ? 'transparent' : 'primary.light',
-                                                    }
+                                                    color: isSkipped ? 'text.disabled' : 'primary.main',
+                                                    fontWeight: '600',
+                                                    display: 'block',
+                                                    fontSize: '0.7rem'
                                                 }}
                                             >
-                                                <MenuItem value="Don't Import" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
-                                                    Don&apos;t Import
-                                                </MenuItem>
-                                                {docFields.map((field) => (
-                                                    <MenuItem key={field.fieldname} value={field.fieldname} sx={{ fontSize: '0.75rem' }}>
-                                                        {field.label}
-                                                    </MenuItem>
-                                                ))}
-                                            </Select>
-                                        </FormControl>
+                                                {isSkipped ? "Don't Import" : (docFields.find(f => f.fieldname === mapping[i])?.label || mapping[i])}
+                                            </Typography>
+                                        </Box>
                                     </TableCell>
                                 );
                             })}
+                            <TableCell sx={{ bgcolor: 'background.neutral', borderBottom: 2, borderColor: 'divider', width: 50 }}>
+                                <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Action</Typography>
+                            </TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -485,7 +532,13 @@ export function AccountImportDialog({ open, onClose, onRefresh }: Props) {
                                                 p: 0,
                                                 borderRight: 1,
                                                 borderColor: 'divider',
-                                                bgcolor: isSkipped ? 'action.hover' : 'inherit',
+                                                bgcolor: (() => {
+                                                    if (isSkipped) return 'action.hover';
+                                                    const fieldname = mapping[j];
+                                                    const isMandatory = docFields.find(f => f.fieldname === fieldname)?.reqd;
+                                                    if (isMandatory && (!val || String(val).trim() === '')) return 'error.lighter';
+                                                    return 'inherit';
+                                                })(),
                                                 opacity: isSkipped ? 0.5 : 1
                                             }}
                                         >
@@ -514,6 +567,11 @@ export function AccountImportDialog({ open, onClose, onRefresh }: Props) {
                                         </TableCell>
                                     );
                                 })}
+                                <TableCell sx={{ borderRight: 1, borderColor: 'divider', textAlign: 'center' }}>
+                                    <IconButton size="small" color="error" onClick={() => handleDeletePreviewRow(i)}>
+                                        <Iconify icon="solar:trash-bin-trash-bold" />
+                                    </IconButton>
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -575,8 +633,10 @@ export function AccountImportDialog({ open, onClose, onRefresh }: Props) {
                                             <TableCell sx={{ fontSize: '0.75rem', maxWidth: 400 }}>
                                                 {log.success ? `Created: ${log.docname}` : (
                                                     <Box>
-                                                        <Typography variant="caption" color="error" component="pre" sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
-                                                            {log.messages !== "[]" ? JSON.parse(log.messages).join('\n') : log.exception}
+                                                        <Typography variant="caption" color="error" component="pre" sx={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
+                                                            {log.messages !== "[]"
+                                                                ? JSON.parse(log.messages).map((m: any) => getFriendlyErrorMessage(m)).join('\n')
+                                                                : getFriendlyErrorMessage(log.exception)}
                                                         </Typography>
                                                     </Box>
                                                 )}
@@ -609,6 +669,12 @@ export function AccountImportDialog({ open, onClose, onRefresh }: Props) {
                         </Step>
                     ))}
                 </Stepper>
+
+                {error && (
+                    <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
+                        {error}
+                    </Alert>
+                )}
 
                 {activeStep === 0 && renderUpload}
                 {activeStep === 1 && renderMapping}

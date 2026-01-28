@@ -49,7 +49,7 @@ const TABLE_HEAD = [
 
 // ----------------------------------------------------------------------
 
-export function InvoiceListView() {
+export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }) {
     const table = useTable();
     const router = useRouter();
 
@@ -155,19 +155,21 @@ export function InvoiceListView() {
     const notFound = !loading && data.length === 0 && !!filterName;
     const empty = !loading && data.length === 0 && !filterName && !canReset;
 
-    return (
-        <DashboardContent>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">Invoices</Typography>
-                <Button
-                    variant="contained"
-                    color="info"
-                    startIcon={<Iconify icon="mingcute:add-line" />}
-                    onClick={handleCreateNew}
-                >
-                    New Invoice
-                </Button>
-            </Stack>
+    const content = (
+        <>
+            {!hideHeader && (
+                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+                    <Typography variant="h4">Invoices</Typography>
+                    <Button
+                        variant="contained"
+                        color="info"
+                        startIcon={<Iconify icon="mingcute:add-line" />}
+                        onClick={handleCreateNew}
+                    >
+                        New Invoice
+                    </Button>
+                </Stack>
+            )}
 
             <Card>
                 <InvoiceTableToolbar
@@ -298,8 +300,14 @@ export function InvoiceListView() {
                     </Button>
                 }
             />
-        </DashboardContent>
+        </>
     );
+
+    if (hideHeader) {
+        return content;
+    }
+
+    return <DashboardContent>{content}</DashboardContent>;
 }
 
 // ----------------------------------------------------------------------

@@ -24,7 +24,7 @@ export function PurchaseCollectionCreateView() {
     };
 
     const handleCancel = () => {
-        router.push('/purchase-collections');
+        router.push('/purchase?tab=collections');
     };
 
     return (

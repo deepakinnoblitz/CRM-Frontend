@@ -1,39 +1,114 @@
 
 export const getFriendlyErrorMessage = (error: any): string => {
-    const message = error.message || error.toString();
+    if (!error) return "Unknown error";
+
+    let message = "";
+
+    // 1. Extract the core message string
+    if (typeof error === 'string') {
+        // Try to parse as JSON if it looks like a JSON object string
+        if (error.trim().startsWith('{') && error.trim().endsWith('}')) {
+            try {
+                const parsed = JSON.parse(error);
+                if (parsed.message) {
+                    message = String(parsed.message);
+                } else {
+                    message = error;
+                }
+            } catch (e) {
+                message = error;
+            }
+        } else {
+            message = error;
+        }
+    } else if (error && typeof error === 'object') {
+        // Handle common object structures like { message: "...", ... } or { error: "...", ... }
+        if (error.message && typeof error.message === 'string') {
+            message = error.message;
+        } else if (error.error && typeof error.error === 'string') {
+            message = error.error;
+        } else if (error.message && typeof error.message === 'object') {
+            message = JSON.stringify(error.message);
+        } else {
+            try {
+                message = JSON.stringify(error);
+            } catch (e) {
+                message = String(error);
+            }
+        }
+    } else {
+        message = String(error);
+    }
+
+    // Prevents "[object Object]" from slipping through
+    if (message === "[object Object]" || message === "{}") {
+        return "An unspecified error occurred.";
+    }
+
+    // 2. Handle known technical Python/Frappe patterns
+    const technicalPatterns = [
+        { pattern: "Value missing for", replacement: "Missing value for " },
+        { pattern: "'NoneType' object has no attribute", replacement: "Technical processing error: Missing data reference." },
+        { pattern: "AttributeError:", replacement: "Internal processing error." },
+        { pattern: "TypeError:", replacement: "Data type mismatch or invalid data format." },
+        { pattern: "KeyError:", replacement: "Missing required data key." },
+        { pattern: "IndexError:", replacement: "Data structure error (index out of range)." }
+    ];
+
+    for (const { pattern, replacement } of technicalPatterns) {
+        if (message.includes(pattern)) {
+            // Special handling for "Value missing for [DocType]: [Field]"
+            if (pattern === "Value missing for" && message.includes(":")) {
+                const fieldName = message.split(':').pop()?.trim();
+                return `Missing required field: ${fieldName}`;
+            }
+            return replacement;
+        }
+    }
 
     // Handle Duplicate Entry Error (IntegrityError)
-    // Example: Duplicate entry 'deepakkjc088@gmail.com' for key 'email'
     if (message.includes("Duplicate entry")) {
         const match = message.match(/Duplicate entry '([^']+)' for key '([^']+)'/);
         if (match) {
             const value = match[1];
             const key = match[2];
-            // Format: "Email 'foo@bar.com' already exists."
-            // Capitalize first letter of key
             const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
             return `${formattedKey} '${value}' already exists.`;
         }
     }
 
-    // Handle Frappe Exceptions (strip technical prefix)
-    // Example: frappe.exceptions.ValidationError: Some message (Some details)
-    if (message.includes("frappe.exceptions.")) {
-        // 1. Remove the "frappe.exceptions.X:" prefix
-        // 2. Remove purely technical tuple wrappers if present like ('DocType', 'Name', ...)
-        // This simple regex cleans up the common prefix
-        const cleanMessage = message.replace(/frappe\.exceptions\.[a-zA-Z0-9]+:\s*/, '');
+    // Handle Frappe Exceptions & Tracebacks
+    if (message.includes("frappe.exceptions.") || message.includes("Traceback (most recent call last):")) {
+        if (message.includes("Traceback")) {
+            const lines = message.split('\n').filter(l => l.trim() !== "");
+            const lastLine = lines[lines.length - 1];
+            if (lastLine && lastLine.includes(':')) {
+                const parts = lastLine.split(':');
+                const lastPart = parts.slice(1).join(':').trim();
+                // Check if the last part itself is technical
+                for (const { pattern, replacement } of technicalPatterns) {
+                    if (lastPart.includes(pattern)) return replacement;
+                }
+                return lastPart;
+            }
+            return "An internal server error occurred. Please check the data format.";
+        }
 
-        // If it looks like a python tuple/list string, try to extract the message inside
-        // Not perfect but handles common "('Title', 'ID', Error(...))" patterns by just returning the cleaned string or a generic error
-        // Ideally we'd just want the inner message.
+        let cleanMessage = message.replace(/frappe\.exceptions\.[a-zA-Z0-9]+:\s*/, '');
 
-        // For now, let's just return the cleaned prefix version, possibly truncated at ' (' if it's an IntegrityError wrapper
+        if (cleanMessage.includes("Mandatory fields required")) {
+            const match = cleanMessage.match(/Mandatory fields required in [^:]+:\s*(.+)/);
+            if (match) {
+                return `Missing mandatory fields: ${match[1]}`;
+            }
+        }
+
         if (cleanMessage.includes("IntegrityError")) {
             return "Database integrity error. Please check for duplicates or invalid references.";
         }
 
-        return cleanMessage;
+        cleanMessage = cleanMessage.replace(/\s*\([^)]+\)$/, '');
+        return cleanMessage.trim();
     }
 
     return message;

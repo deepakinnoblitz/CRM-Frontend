@@ -47,7 +47,7 @@ const TABLE_HEAD = [
 ];
 
 
-export function InvoiceCollectionListView() {
+export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?: boolean }) {
     const router = useRouter();
 
     const [page, setPage] = useState(0);
@@ -253,19 +253,21 @@ export function InvoiceCollectionListView() {
     const notFound = !loading && tableData.length === 0 && (!!search || canReset);
     const empty = !loading && tableData.length === 0 && !search && !canReset;
 
-    return (
-        <DashboardContent>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">Invoice Collections</Typography>
-                <Button
-                    variant="contained"
-                    color="info"
-                    startIcon={<Iconify icon="mingcute:add-line" />}
-                    onClick={handleCreateNew}
-                >
-                    New Collection
-                </Button>
-            </Stack>
+    const content = (
+        <>
+            {!hideHeader && (
+                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+                    <Typography variant="h4">Invoice Collections</Typography>
+                    <Button
+                        variant="contained"
+                        color="info"
+                        startIcon={<Iconify icon="mingcute:add-line" />}
+                        onClick={handleCreateNew}
+                    >
+                        New Collection
+                    </Button>
+                </Stack>
+            )}
 
             <Card>
                 <InvoiceCollectionTableToolbar
@@ -397,6 +399,12 @@ export function InvoiceCollectionListView() {
                     </Button>
                 }
             />
-        </DashboardContent>
+        </>
     );
+
+    if (hideHeader) {
+        return content;
+    }
+
+    return <DashboardContent>{content}</DashboardContent>;
 }

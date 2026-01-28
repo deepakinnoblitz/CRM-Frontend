@@ -172,11 +172,6 @@ export const salesNavData = [
     icon: <Iconify icon={"solar:document-text-bold-duotone" as any} />,
   },
   {
-    title: 'Invoice Collections',
-    path: '/invoice-collections',
-    icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} />,
-  },
-  {
     title: 'Purchases',
     path: '/purchase',
     icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
@@ -221,7 +216,7 @@ export const crmNavData = [
   },
   {
     title: 'Leads',
-    path: '/user',
+    path: '/leads',
     icon: <Iconify icon={"solar:target-bold-duotone" as any} />,
   },
   {
@@ -282,7 +277,7 @@ export const crmAndSalesNavData = [
   },
   {
     title: 'Leads',
-    path: '/user',
+    path: '/leads',
     icon: <Iconify icon={"solar:target-bold-duotone" as any} />,
   },
   {
@@ -311,19 +306,9 @@ export const crmAndSalesNavData = [
     icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} />,
   },
   {
-    title: 'Invoice Collections',
-    path: '/invoice-collections',
-    icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} />,
-  },
-  {
     title: 'Purchases',
     path: '/purchase',
     icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
-  },
-  {
-    title: 'Purchase Collections',
-    path: '/purchase-collections',
-    icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} />,
   },
   {
     title: 'Expense Tracker',
