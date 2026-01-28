@@ -34,9 +34,9 @@ export default defineConfig(({ mode }) => ({
 
   server: {
     port: PORT,
-    host: 'erp.localhost.innoblitz',
+    host: 'erp.innoblitz.in',
     hmr: {
-      host: 'erp.localhost.innoblitz',
+      host: 'erp.innoblitz.in',
     },
     proxy: {
       // 🔹 Frappe APIs
