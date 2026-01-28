@@ -41,18 +41,18 @@ export default defineConfig(({ mode }) => ({
     proxy: {
       // 🔹 Frappe APIs
       '/api': {
-        target: 'http://erp.localhost.innoblitz:8013',
+        target: 'https://erp.innoblitz.in',
         changeOrigin: true,
         secure: false,
       },
       // 🔹 File assets
       '/files': {
-        target: 'http://erp.localhost.innoblitz:8013',
+        target: 'https://erp.innoblitz.in',
         changeOrigin: true,
         secure: false,
       },
       '/private': {
-        target: 'http://erp.localhost.innoblitz:8013',
+        target: 'https://erp.innoblitz.in',
         changeOrigin: true,
         secure: false,
       }
