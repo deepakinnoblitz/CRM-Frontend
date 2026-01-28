@@ -192,7 +192,6 @@ export const salesNavData = [
     icon: <Iconify icon={"solar:chart-square-bold-duotone" as any} />,
     children: [
       { title: 'Purchase Report', path: '/reports/purchase' },
-      { title: 'Expense Tracker Report', path: '/reports/crm-expense-tracker' },
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
@@ -331,7 +330,6 @@ export const crmAndSalesNavData = [
       { title: 'Calls Report', path: '/reports/calls' },
       { title: 'Meeting Report', path: '/reports/meeting' },
       { title: 'Purchase Report', path: '/reports/purchase' },
-      { title: 'Expense Tracker Report', path: '/reports/crm-expense-tracker' },
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
