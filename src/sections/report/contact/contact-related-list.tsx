@@ -8,10 +8,13 @@ import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
+
+import { useRouter } from 'src/routes/hooks';
 
 import { fDate } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
@@ -37,6 +40,7 @@ type Props = {
 
 export function ContactRelatedList({ contactId, type }: Props) {
     const theme = useTheme();
+    const router = useRouter();
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [total, setTotal] = useState(0);
@@ -123,6 +127,7 @@ export function ContactRelatedList({ contactId, type }: Props) {
                 { id: 'grand_total', label: 'Total', align: 'right' },
                 { id: 'received_amount', label: 'Received', align: 'right' },
                 { id: 'balance_amount', label: 'Balance', align: 'right' },
+                { id: 'action', label: '' },
             ];
         }
         if (type === 'purchases') {
@@ -132,6 +137,7 @@ export function ContactRelatedList({ contactId, type }: Props) {
                 { id: 'grand_total', label: 'Total', align: 'right' },
                 { id: 'paid_amount', label: 'Paid', align: 'right' },
                 { id: 'balance_amount', label: 'Balance', align: 'right' },
+                { id: 'action', label: '' },
             ];
         }
         if (type === 'deals') {
@@ -140,12 +146,14 @@ export function ContactRelatedList({ contactId, type }: Props) {
                 { id: 'stage', label: 'Stage', align: 'center' },
                 { id: 'value', label: 'Value', align: 'right' },
                 { id: 'expected_close_date', label: 'Expected Close' },
+                { id: 'action', label: '' },
             ];
         }
         return [
             { id: 'ref_no', label: 'Ref No' },
             { id: 'estimate_date', label: 'Date' },
             { id: 'grand_total', label: 'Total', align: 'right' },
+            { id: 'action', label: '' },
         ];
     };
 
@@ -178,6 +186,15 @@ export function ContactRelatedList({ contactId, type }: Props) {
                     <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
                     <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.received_amount)}</TableCell>
                     <TableCell align="right" sx={{ color: 'error.main', fontWeight: 700 }}>{fCurrency(row.balance_amount)}</TableCell>
+                    <TableCell align="right">
+                        <IconButton
+                            color="primary"
+                            onClick={() => router.push(`/invoices/${encodeURIComponent(row.name)}/view`)}
+                            size="small"
+                        >
+                            <Iconify icon="solar:eye-bold" />
+                        </IconButton>
+                    </TableCell>
                 </TableRow>
             );
         }
@@ -190,6 +207,15 @@ export function ContactRelatedList({ contactId, type }: Props) {
                     <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
                     <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.paid_amount)}</TableCell>
                     <TableCell align="right" sx={{ color: 'error.main', fontWeight: 700 }}>{fCurrency(row.balance_amount)}</TableCell>
+                    <TableCell align="right">
+                        <IconButton
+                            color="primary"
+                            onClick={() => router.push(`/purchase/${encodeURIComponent(row.name)}`)}
+                            size="small"
+                        >
+                            <Iconify icon="solar:eye-bold" />
+                        </IconButton>
+                    </TableCell>
                 </TableRow>
             );
         }
@@ -201,6 +227,15 @@ export function ContactRelatedList({ contactId, type }: Props) {
                     <TableCell align="center">{getStatusLabel(row)}</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 600, color: 'primary.main' }}>{fCurrency(row.value)}</TableCell>
                     <TableCell>{fDate(row.expected_close_date)}</TableCell>
+                    <TableCell align="right">
+                        <IconButton
+                            color="primary"
+                            onClick={() => router.push(`/deals`)}
+                            size="small"
+                        >
+                            <Iconify icon="solar:eye-bold" />
+                        </IconButton>
+                    </TableCell>
                 </TableRow>
             );
         }
@@ -210,6 +245,15 @@ export function ContactRelatedList({ contactId, type }: Props) {
                 <TableCell sx={{ fontWeight: 700 }}>{row.ref_no}</TableCell>
                 <TableCell>{fDate(row.estimate_date)}</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
+                <TableCell align="right">
+                    <IconButton
+                        color="primary"
+                        onClick={() => router.push(`/estimations/${encodeURIComponent(row.name)}/view`)}
+                        size="small"
+                    >
+                        <Iconify icon="solar:eye-bold" />
+                    </IconButton>
+                </TableCell>
             </TableRow>
         );
     };
@@ -221,7 +265,11 @@ export function ContactRelatedList({ contactId, type }: Props) {
                 sx={{
                     display: 'grid',
                     gap: 2,
-                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(3, 1fr)' },
+                    gridTemplateColumns: {
+                        xs: 'repeat(1, 1fr)',
+                        sm: ['estimations', 'deals'].includes(type) ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                        md: ['estimations', 'deals'].includes(type) ? 'repeat(3, 1fr)' : 'repeat(3, 1fr)',
+                    },
                 }}
             >
                 <SummaryCard
@@ -230,18 +278,31 @@ export function ContactRelatedList({ contactId, type }: Props) {
                     icon="solar:wad-of-money-bold"
                     color={theme.palette.primary.main}
                 />
-                <SummaryCard
-                    title={type === 'purchases' ? "Total Paid" : "Total Received"}
-                    value={fCurrency(summary.paid)}
-                    icon="solar:check-circle-bold"
-                    color={theme.palette.success.main}
-                />
-                <SummaryCard
-                    title="Outstanding"
-                    value={fCurrency(summary.balance)}
-                    icon="solar:info-circle-bold"
-                    color={theme.palette.error.main}
-                />
+
+                {['estimations', 'deals'].includes(type) ? (
+                    <SummaryCard
+                        title="Total Count"
+                        value={String(total)}
+                        icon={type === 'deals' ? "solar:hand-stars-bold" : "solar:document-text-bold"}
+                        color={theme.palette.info.main}
+                    />
+                ) : (
+                    <>
+                        <SummaryCard
+                            title={type === 'purchases' ? "Total Paid" : "Total Received"}
+                            value={fCurrency(summary.paid)}
+                            icon="solar:check-circle-bold"
+                            color={theme.palette.success.main}
+                        />
+
+                        <SummaryCard
+                            title="Outstanding"
+                            value={fCurrency(summary.balance)}
+                            icon="solar:info-circle-bold"
+                            color={theme.palette.error.main}
+                        />
+                    </>
+                )}
             </Box>
 
             <Card sx={{ border: `1px solid ${alpha(theme.palette.grey[500], 0.12)}`, borderRadius: 1.5 }}>
