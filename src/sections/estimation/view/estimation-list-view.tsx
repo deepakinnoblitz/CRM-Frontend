@@ -7,19 +7,23 @@ import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
+import Backdrop from '@mui/material/Backdrop';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
 import { useEstimations } from 'src/hooks/useEstimations';
 
+import { handleDirectPrint, handleDownload } from 'src/utils/print';
+
 import { getDoctypeList } from 'src/api/leads';
-import { deleteEstimation } from 'src/api/estimation';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { deleteEstimation, getEstimationPrintUrl } from 'src/api/estimation';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -54,6 +58,7 @@ export function EstimationListView() {
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [filterName, setFilterName] = useState('');
     const [sortBy, setSortBy] = useState('modified_desc');
+    const [printing, setPrinting] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
@@ -138,6 +143,25 @@ export function EstimationListView() {
         setConfirmDelete({ open: true, id });
     }, []);
 
+    const handlePrintRow = (id: string, ref_no?: string) => {
+        // Now Print triggers Direct Download as requested
+        handleDownload(
+            getEstimationPrintUrl(id),
+            `${ref_no || id}.pdf`,
+            () => setPrinting(true),
+            () => setPrinting(false)
+        );
+    };
+
+    const handlePreviewRow = (id: string) => {
+        // Now Preview triggers the "Current print functionality" (dialog) as requested
+        handleDirectPrint(
+            getEstimationPrintUrl(id),
+            () => setPrinting(true),
+            () => setPrinting(false)
+        );
+    };
+
     const handleConfirmDelete = async () => {
         if (!confirmDelete.id) return;
         try {
@@ -219,6 +243,8 @@ export function EstimationListView() {
                                         onEdit={() => handleEditRow(row.name)}
                                         onView={() => handleViewRow(row.name)}
                                         onDelete={() => handleDeleteRow(row.name)}
+                                        onPrint={() => handlePrintRow(row.name, row.ref_no)}
+                                        onPreview={() => handlePreviewRow(row.name)}
                                     />
                                 ))}
 
@@ -297,6 +323,13 @@ export function EstimationListView() {
                     </Button>
                 }
             />
+
+            <Backdrop
+                sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                open={printing}
+            >
+                <CircularProgress color="inherit" />
+            </Backdrop>
         </DashboardContent>
     );
 }

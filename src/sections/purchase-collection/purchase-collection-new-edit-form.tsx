@@ -134,13 +134,13 @@ const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, o
             newErrors.purchase = 'Purchase is required';
         }
         if (!formData.collection_date) {
-            newErrors.collection_date = 'Collection Date is required';
+            newErrors.collection_date = 'Settlement Date is required';
         }
         if (!formData.mode_of_payment) {
             newErrors.mode_of_payment = 'Mode of Payment is required';
         }
         if (!formData.amount_collected || normalizedAmount <= 0) {
-            newErrors.amount_collected = 'Amount Collected must be greater than zero';
+            newErrors.amount_collected = 'Amount Settled must be greater than zero';
         }
 
         if (Object.keys(newErrors).length > 0) {
@@ -213,7 +213,7 @@ const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, o
                     />
 
                     <DatePicker
-                        label="Collection Date"
+                        label="Settlement Date"
                         value={dayjs(formData.collection_date)}
                         onChange={(newValue) => handleChange('collection_date', newValue?.format('YYYY-MM-DD') || '')}
                         slotProps={{
@@ -254,7 +254,7 @@ const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, o
 
                     <TextField
                         fullWidth
-                        label="Amount Collected"
+                        label="Amount Settled"
                         type="number"
                         value={formData.amount_collected}
                         onChange={(e) => {

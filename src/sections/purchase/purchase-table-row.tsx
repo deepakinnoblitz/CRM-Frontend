@@ -114,7 +114,7 @@ export function PurchaseTableRow({
                         </IconButton>
                     )}
                     <IconButton onClick={onView} sx={{ color: 'info.main' }}>
-                        <Iconify icon="solar:eye-bold" />
+                        <Iconify icon={"solar:eye-bold" as any} />
                     </IconButton>
                 </Box>
             </TableCell>

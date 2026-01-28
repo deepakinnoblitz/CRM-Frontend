@@ -177,7 +177,7 @@ export const salesNavData = [
     icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
   },
   {
-    title: 'Purchase Collections',
+    title: 'Purchase Settlements',
     path: '/purchase-collections',
     icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} />,
   },

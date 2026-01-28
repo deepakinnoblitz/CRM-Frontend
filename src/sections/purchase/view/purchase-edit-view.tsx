@@ -426,14 +426,6 @@ export function PurchaseEditView() {
                         <Button variant="outlined" color="inherit" onClick={handleCancel}>
                             Cancel
                         </Button>
-                        <Button
-                            variant="outlined"
-                            color="primary"
-                            startIcon={<Iconify icon={"solar:printer-bold" as any} />}
-                            onClick={handlePrint}
-                        >
-                            Print
-                        </Button>
                         <Button variant="contained" color="primary" onClick={handleSave} disabled={loading}>
                             {loading ? <CircularProgress size={24} /> : 'Update Purchase'}
                         </Button>
@@ -600,7 +592,6 @@ export function PurchaseEditView() {
                                                         }}
                                                         ListboxProps={{
                                                             sx: {
-                                                                pr: 3,
                                                                 '& .MuiAutocomplete-option': {
                                                                     py: 1.5,
                                                                     px: 2,
@@ -617,7 +608,6 @@ export function PurchaseEditView() {
                                                                     mt: 0.5,
                                                                     boxShadow: (theme) => theme.customShadows.z20,
                                                                     borderRadius: 1.5,
-                                                                    width: 'max-content !important',
                                                                     minWidth: '350px',
                                                                 }
                                                             },

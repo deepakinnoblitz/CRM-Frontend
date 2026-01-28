@@ -19,10 +19,9 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useRouter } from 'src/routes/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
-import { handleDirectPrint } from 'src/utils/print';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getPurchase, deletePurchase, getPurchasePrintUrl } from 'src/api/purchase';
+import { getPurchase, deletePurchase } from 'src/api/purchase';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -102,11 +101,7 @@ export function PurchaseDetailsView() {
     const subTotal = total_amount + totalTax;
     const discountAmount = overall_discount_type === 'Flat' ? overall_discount : (subTotal * overall_discount) / 100;
 
-    const handlePrint = () => {
-        if (id) {
-            handleDirectPrint(getPurchasePrintUrl(id));
-        }
-    };
+
 
     const handleDelete = async () => {
         if (!id) return;
@@ -134,14 +129,6 @@ export function PurchaseDetailsView() {
                         startIcon={<Iconify icon={"solar:arrow-left-bold" as any} />}
                     >
                         Back to List
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        color="primary"
-                        onClick={handlePrint}
-                        startIcon={<Iconify icon={"solar:printer-bold" as any} />}
-                    >
-                        Print
                     </Button>
                     {paid_amount === 0 && (
                         <Button
