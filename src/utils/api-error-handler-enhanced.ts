@@ -51,7 +51,23 @@ export async function handleAPIError(response: Response): Promise<void> {
         }
 
         // Handle other errors
-        const errorMessage = json.message || json.exception || 'An error occurred';
+        let errorMessage = 'An error occurred';
+
+        if (json.message) {
+            errorMessage = json.message;
+        } else if (json.exception) {
+            // Extract message from exception string
+            // Format: "frappe.exceptions.ValidationError: Scheduled Call Time cannot be in the past."
+            const exceptionString = json.exception;
+            const colonIndex = exceptionString.indexOf(':');
+            if (colonIndex !== -1) {
+                // Get everything after the first colon and trim whitespace
+                errorMessage = exceptionString.substring(colonIndex + 1).trim();
+            } else {
+                errorMessage = exceptionString;
+            }
+        }
+
         throw new Error(errorMessage);
     } catch (error) {
         // If JSON parsing fails, check response status

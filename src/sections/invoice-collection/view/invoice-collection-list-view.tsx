@@ -299,12 +299,16 @@ export function InvoiceCollectionListView() {
                                 numSelected={selected.length}
                                 onSort={handleSort}
                                 onSelectAllRows={handleSelectAllRows}
+                                hideCheckbox
+                                showIndex
                                 headLabel={TABLE_HEAD}
                             />
                             <TableBody>
-                                {tableData.map((row) => (
+                                {tableData.map((row, index) => (
                                     <InvoiceCollectionTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={row}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}

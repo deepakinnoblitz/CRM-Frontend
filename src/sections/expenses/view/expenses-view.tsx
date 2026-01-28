@@ -258,6 +258,8 @@ export function ExpensesView() {
                                 numSelected={selected.length}
                                 onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
                                     { id: 'expense_no', label: 'Expense No' },
                                     { id: 'expense_category', label: 'Category' },
@@ -268,9 +270,11 @@ export function ExpensesView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row) => (
+                                {data.map((row, index) => (
                                     <ExpenseTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             expense_no: row.expense_no || '',

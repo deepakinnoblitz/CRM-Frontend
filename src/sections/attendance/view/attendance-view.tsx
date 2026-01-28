@@ -411,6 +411,8 @@ export function AttendanceView() {
                                 numSelected={selected.length}
                                 onSort={handleSort}
                                 onSelectAllRows={(checked) => handleSelectAllRows(checked)}
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
                                     { id: 'employee_name', label: 'Employee', minWidth: 180 },
                                     { id: 'attendance_date', label: 'Date', minWidth: 120 },
@@ -422,9 +424,11 @@ export function AttendanceView() {
                             />
 
                             <TableBody>
-                                {data.map((row) => (
+                                {data.map((row, index) => (
                                     <AttendanceTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             employee: row.employee,

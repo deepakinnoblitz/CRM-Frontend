@@ -28,8 +28,8 @@ type InvoiceTableToolbarProps = {
 };
 
 const SORT_OPTIONS = [
-    { value: 'invoice_date_desc', label: 'Newest First' },
-    { value: 'invoice_date_asc', label: 'Oldest First' },
+    { value: 'modified_desc', label: 'Newest First' },
+    { value: 'creation_asc', label: 'Oldest First' },
     { value: 'grand_total_desc', label: 'Amount: High to Low' },
     { value: 'grand_total_asc', label: 'Amount: Low to High' },
     { value: 'customer_name_asc', label: 'Customer: A to Z' },
@@ -41,7 +41,7 @@ export function InvoiceTableToolbar({
     filterName,
     onFilterName,
     onDelete,
-    sortBy = 'invoice_date_desc',
+    sortBy = 'modified_desc',
     onSortChange,
     onOpenFilter,
     canReset,

@@ -242,6 +242,7 @@ export function AccountView() {
         setCountry('');
         setState('');
         setCity('');
+        setValidationErrors({});
         setOpenCreate(true);
     };
 
@@ -401,20 +402,23 @@ export function AccountView() {
         return val;
     };
 
-    const handleEditRow = useCallback((row: any) => {
-        setCurrentAccount(row);
-        setValidationErrors({}); // Clear errors
-        setAccountName(row.account_name || '');
-        setPhoneNumber(cleanPhoneNumber(row.phone_number || ''));
-        setWebsite(row.website || '');
-        setGstin(row.gstin || '');
-        setCountry(row.country || '');
-        setState(row.state || '');
-        setCity(row.city || '');
-        setIsEdit(true);
-        setViewMode(false);
-        setOpenCreate(true);
-    }, []);
+    const handleEditRow = useCallback((id: string) => {
+        const row = accounts.find((item: any) => item.name === id);
+        if (row) {
+            setCurrentAccount(row);
+            setValidationErrors({}); // Clear errors
+            setAccountName(row.account_name || '');
+            setPhoneNumber(cleanPhoneNumber(row.phone_number || ''));
+            setWebsite(row.website || '');
+            setGstin(row.gstin || '');
+            setCountry(row.country || '');
+            setState(row.state || '');
+            setCity(row.city || '');
+            setIsEdit(true);
+            setViewMode(false);
+            setOpenCreate(true);
+        }
+    }, [accounts]);
 
     const handleViewRow = useCallback((row: any) => {
         setCurrentAccount(row);
@@ -499,6 +503,8 @@ export function AccountView() {
                                         accounts.map((row) => row.name)
                                     )
                                 }
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
                                     { id: 'account_name', label: 'Account Name' },
                                     { id: 'phone_number', label: 'Phone Number' },
@@ -515,9 +521,11 @@ export function AccountView() {
                                     <TableEmptyRows height={68} emptyRows={rowsPerPage} />
                                 )}
 
-                                {!loading && accounts.map((row) => (
+                                {!loading && accounts.map((row, index) => (
                                     <AccountTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             account_name: row.account_name,
@@ -531,7 +539,7 @@ export function AccountView() {
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
                                         onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row)}
+                                        onEdit={() => handleEditRow(row.name)}
                                         onDelete={() => handleDeleteRow(row.name)}
                                         canEdit={permissions.write}
                                         canDelete={permissions.delete}
@@ -772,10 +780,9 @@ export function AccountView() {
                 open={openView}
                 onClose={() => {
                     setOpenView(false);
-                    setCurrentAccount(null);
                 }}
                 accountId={currentAccount?.name}
-                onEdit={handleEditRow}
+                onEdit={() => handleEditRow(currentAccount?.name)}
             />
 
             <ConfirmDialog

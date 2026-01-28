@@ -21,8 +21,19 @@ export async function handleResponse(res: Response) {
                 errorMessage = firstMsg.message || errorMessage;
             }
         } else if (errorData.exception) {
-            // Extract message from traceback or just use the exception string
-            errorMessage = errorData.exception.split(':').pop()?.trim() || errorData.exception;
+            // Extract message from exception string
+            // Format: "frappe.exceptions.ValidationError: Scheduled Call Time cannot be in the past."
+            // We want to remove the exception type and keep only the message
+            const exceptionString = errorData.exception;
+
+            // Find the first colon after the exception type
+            const colonIndex = exceptionString.indexOf(':');
+            if (colonIndex !== -1) {
+                // Get everything after the first colon and trim whitespace
+                errorMessage = exceptionString.substring(colonIndex + 1).trim();
+            } else {
+                errorMessage = exceptionString;
+            }
         } else if (errorData.message) {
             errorMessage = errorData.message;
         }

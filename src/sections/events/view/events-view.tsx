@@ -1,6 +1,7 @@
 
 import dayjs from 'dayjs';
 import listPlugin from '@fullcalendar/list';
+import { useNavigate } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -21,7 +22,7 @@ import DialogContent from '@mui/material/DialogContent';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { Box, Card, Grid, Alert, Button, Snackbar, IconButton, Typography } from '@mui/material';
+import { Box, Card, Grid, Stack, Alert, Button, Snackbar, IconButton, Typography } from '@mui/material';
 
 import { stripHtml } from 'src/utils/string';
 
@@ -30,6 +31,10 @@ import { fetchEvents, updateEvent, createEvent, deleteEvent, type CalendarEvent 
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import TodoDialog from 'src/sections/todo/todo-dialog';
+import CallDialog from 'src/sections/calls/call-dialog';
+import MeetingDialog from 'src/sections/meetings/meeting-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -45,6 +50,7 @@ const INITIAL_EVENT_STATE: Partial<CalendarEvent> = {
 
 export function EventsView() {
     const theme = useTheme();
+    const navigate = useNavigate();
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
     const [openDialog, setOpenDialog] = useState(false);
@@ -55,6 +61,13 @@ export function EventsView() {
         message: '',
         severity: 'success',
     });
+
+    // Event Type Selection Dialog
+    const [openTypeDialog, setOpenTypeDialog] = useState(false);
+    const [openCallDialog, setOpenCallDialog] = useState(false);
+    const [openMeetingDialog, setOpenMeetingDialog] = useState(false);
+    const [openTodoDialog, setOpenTodoDialog] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
     const loadEvents = useCallback(async (start?: Date, end?: Date) => {
         try {
@@ -74,6 +87,29 @@ export function EventsView() {
 
     const handleDatesSet = (arg: any) => {
         loadEvents(arg.start, arg.end);
+    };
+
+    // Handler to open type selection dialog
+    const handleOpenTypeDialog = (date?: string) => {
+        if (date) setSelectedDate(date);
+        else setSelectedDate(null);
+        setOpenTypeDialog(true);
+    };
+
+    // Handlers for opening specific dialogs
+    const handleOpenCallDialog = () => {
+        setOpenTypeDialog(false);
+        setOpenCallDialog(true);
+    };
+
+    const handleOpenMeetingDialog = () => {
+        setOpenTypeDialog(false);
+        setOpenMeetingDialog(true);
+    };
+
+    const handleOpenTodoDialog = () => {
+        setOpenTypeDialog(false);
+        setOpenTodoDialog(true);
     };
 
     const handleEventClick = (info: any) => {
@@ -204,17 +240,30 @@ export function EventsView() {
 
     return (
         <DashboardContent maxWidth="xl">
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+                <Box>
+                    <Typography variant="h4">Events Calendar</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                        Manage your schedule and important events
+                    </Typography>
+                </Box>
+                <Button
+                    variant="contained"
+                    color="info"
+                    startIcon={<Iconify icon="mingcute:add-line" />}
+                    onClick={() => handleOpenTypeDialog()}
+                >
+                    Add Events
+                </Button>
+            </Stack>
+
             <Card
                 sx={{
                     display: 'flex',
-                    flexDirection: 'column'
+                    flexDirection: 'column',
+                    pt: 3,
                 }}
             >
-                <CardHeader
-                    title="Events Calendar"
-                    subheader="Manage your schedule and important events"
-                    sx={{ mb: 1 }}
-                />
 
                 <Box
                     sx={{
@@ -348,13 +397,7 @@ export function EventsView() {
                         eventDrop={handleEventDrop}
                         eventResize={handleEventResize}
                         select={(info) => {
-                            setSelectedEvent(null);
-                            setEventData({
-                                ...INITIAL_EVENT_STATE,
-                                starts_on: info.startStr.slice(0, 16),
-                                ends_on: '',
-                            });
-                            setOpenDialog(true);
+                            handleOpenTypeDialog();
                         }}
                         eventContent={(eventInfo) => {
                             const { category } = eventInfo.event.extendedProps;
@@ -628,6 +671,116 @@ export function EventsView() {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            {/* Event Type Selection Dialog */}
+            <Dialog open={openTypeDialog} onClose={() => setOpenTypeDialog(false)} maxWidth="sm" fullWidth>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    Choose Event Type
+                    <IconButton onClick={() => setOpenTypeDialog(false)} sx={{ color: 'text.secondary' }}>
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent>
+                    <Grid container spacing={2} sx={{ py: 2 }}>
+                        {[
+                            {
+                                label: 'Calls',
+                                icon: '/assets/images/calls-3d-white.png',
+                                color: 'primary',
+                                sub: 'Schedule a call',
+                                handler: handleOpenCallDialog,
+                            },
+                            {
+                                label: 'Meeting',
+                                icon: '/assets/images/meeting-3d-white.png',
+                                color: 'success',
+                                sub: 'Schedule a meeting',
+                                handler: handleOpenMeetingDialog,
+                            },
+                            {
+                                label: 'To-do',
+                                icon: '/assets/images/todo-3d-white.png',
+                                color: 'warning',
+                                sub: 'Create a task',
+                                handler: handleOpenTodoDialog,
+                            },
+                        ].map((item) => (
+                            <Grid key={item.label} size={{ xs: 12, md: 4 }}>
+                                <Box
+                                    onClick={item.handler}
+                                    sx={{
+                                        p: 3,
+                                        borderRadius: 2.5,
+                                        cursor: 'pointer',
+                                        transition: theme.transitions.create(['all'], {
+                                            duration: theme.transitions.duration.shorter,
+                                        }),
+                                        textAlign: 'center',
+                                        bgcolor: alpha(theme.palette[item.color as 'primary' | 'success' | 'warning'].main, 0.04),
+                                        border: `1px solid ${alpha(theme.palette[item.color as 'primary' | 'success' | 'warning'].main, 0.1)}`,
+                                        backdropFilter: 'blur(12px) saturate(160%)',
+                                        '&:hover': {
+                                            bgcolor: alpha(theme.palette[item.color as 'primary' | 'success' | 'warning'].main, 0.08),
+                                            borderColor: theme.palette[item.color as 'primary' | 'success' | 'warning'].main,
+                                            transform: 'translateY(-6px)',
+                                            boxShadow: `0 12px 24px -4px ${alpha(theme.palette[item.color as 'primary' | 'success' | 'warning'].main, 0.16)}`,
+                                            '& img': {
+                                                transform: 'scale(1.1) rotate(5deg)',
+                                            }
+                                        },
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            mb: 1,
+                                            display: 'inline-flex',
+                                            transition: theme.transitions.create(['transform']),
+                                        }}
+                                    >
+                                        <Box
+                                            component="img"
+                                            src={item.icon}
+                                            sx={{
+                                                width: 80,
+                                                height: 80,
+                                                objectFit: 'contain',
+                                                mixBlendMode: 'multiply',
+                                                filter: 'contrast(1.2) brightness(1.1)',
+                                                transition: theme.transitions.create(['transform']),
+                                            }}
+                                        />
+                                    </Box>
+                                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>{item.label}</Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.813rem' }}>
+                                        {item.sub}
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </DialogContent>
+            </Dialog>
+
+            <CallDialog
+                open={openCallDialog}
+                onClose={() => setOpenCallDialog(false)}
+                initialData={selectedDate ? { call_start_time: selectedDate } : undefined}
+                onSuccess={loadEvents}
+            />
+
+            <MeetingDialog
+                open={openMeetingDialog}
+                onClose={() => setOpenMeetingDialog(false)}
+                initialData={selectedDate ? { from: selectedDate } : undefined}
+                onSuccess={loadEvents}
+            />
+
+            <TodoDialog
+                open={openTodoDialog}
+                onClose={() => setOpenTodoDialog(false)}
+                initialData={selectedDate ? { date: selectedDate.split('T')[0] } : undefined}
+                onSuccess={loadEvents}
+            />
         </DashboardContent>
     );
 }

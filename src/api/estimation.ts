@@ -193,7 +193,7 @@ export async function getEstimationPermissions() {
 }
 
 export function getEstimationPrintUrl(name: string) {
-    return `/api/method/frappe.utils.print_format.download_pdf?doctype=Estimation&name=${encodeURIComponent(name)}&format=Estimation%20Print%20Style&no_letterhead=1&letterhead=NoLetterhead&settings=%7B%7D&trigger_print=0`;
+    return `/api/method/frappe.utils.print_format.download_pdf?doctype=Estimation&name=${encodeURIComponent(name)}`;
 }
 
 export async function convertEstimationToInvoice(name: string) {
