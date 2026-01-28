@@ -1,3 +1,6 @@
+import type {
+    InvoiceCollection} from 'src/api/invoice-collection';
+
 import dayjs from 'dayjs';
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 
@@ -20,8 +23,7 @@ import { getInvoice } from 'src/api/invoice';
 import { getDoctypeList } from 'src/api/leads';
 import {
     createInvoiceCollection,
-    updateInvoiceCollection,
-    InvoiceCollection,
+    updateInvoiceCollection
 } from 'src/api/invoice-collection';
 
 

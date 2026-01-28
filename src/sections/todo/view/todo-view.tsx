@@ -6,43 +6,25 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import { useState, useEffect, useCallback } from 'react';
 import interactionPlugin from '@fullcalendar/interaction';
 
-import Dialog from '@mui/material/Dialog';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
 import { useTheme } from '@mui/material/styles';
-import InputLabel from '@mui/material/InputLabel';
 import CardHeader from '@mui/material/CardHeader';
-import FormControl from '@mui/material/FormControl';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { Box, Card, Grid, Alert, Button, Snackbar, IconButton, Typography } from '@mui/material';
+import { Box, Card, Alert, Button, Snackbar } from '@mui/material';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { type ToDo, fetchToDos, updateToDo, deleteToDo, createToDo } from 'src/api/todo';
+import { type ToDo, fetchToDos, updateToDo, deleteToDo } from 'src/api/todo';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-// ----------------------------------------------------------------------
+import TodoDialog from '../todo-dialog';
 
-const INITIAL_TODO_STATE: Partial<ToDo> = {
-    description: '',
-    status: 'Open',
-    priority: 'Medium',
-    date: dayjs().format('YYYY-MM-DD'),
-};
+// ----------------------------------------------------------------------
 
 export function ToDoView() {
     const theme = useTheme();
     const [todos, setTodos] = useState<ToDo[]>([]);
     const [selectedTodo, setSelectedTodo] = useState<ToDo | null>(null);
     const [openDialog, setOpenDialog] = useState(false);
-    const [todoData, setTodoData] = useState<Partial<ToDo>>(INITIAL_TODO_STATE);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
@@ -74,23 +56,12 @@ export function ToDoView() {
         const todo = todos.find(t => t.name === todoId);
         if (todo) {
             setSelectedTodo(todo);
-            setTodoData({
-                description: todo.description,
-                status: todo.status,
-                priority: todo.priority,
-                date: todo.date,
-                allocated_to: todo.allocated_to,
-            });
             setOpenDialog(true);
         }
     };
 
     const handleNewToDo = () => {
         setSelectedTodo(null);
-        setTodoData({
-            ...INITIAL_TODO_STATE,
-            date: dayjs().format('YYYY-MM-DD'),
-        });
         setOpenDialog(true);
     };
 
@@ -105,22 +76,6 @@ export function ToDoView() {
             console.error('Failed to update todo position:', error);
             setSnackbar({ open: true, message: error.message || 'Failed to update todo position', severity: 'error' });
             info.revert();
-        }
-    };
-
-    const handleSaveToDo = async () => {
-        try {
-            if (selectedTodo) {
-                await updateToDo(selectedTodo.name, todoData);
-            } else {
-                await createToDo(todoData);
-            }
-            setOpenDialog(false);
-            loadToDos();
-            setSnackbar({ open: true, message: selectedTodo ? 'ToDo updated successfully' : 'ToDo created successfully', severity: 'success' });
-        } catch (error: any) {
-            console.error('Failed to save todo:', error);
-            setSnackbar({ open: true, message: error.message || 'Failed to save todo', severity: 'error' });
         }
     };
 
@@ -245,10 +200,6 @@ export function ToDoView() {
                         eventDrop={handleEventDrop}
                         select={(info) => {
                             setSelectedTodo(null);
-                            setTodoData({
-                                ...INITIAL_TODO_STATE,
-                                date: info.startStr,
-                            });
                             setOpenDialog(true);
                         }}
                         height="auto"
@@ -257,88 +208,12 @@ export function ToDoView() {
                 </Box>
             </Card>
 
-            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {selectedTodo ? 'Edit Task' : 'New Task'}
-                    <IconButton onClick={() => setOpenDialog(false)} sx={{ color: 'text.secondary' }}>
-                        <Iconify icon="mingcute:close-line" />
-                    </IconButton>
-                </DialogTitle>
-
-                <DialogContent dividers>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            <Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                                    <Iconify icon="solar:pen-bold" sx={{ color: 'primary.main' }} />
-                                    <Typography variant="subtitle2">Task Description</Typography>
-                                </Box>
-                                <TextField
-                                    fullWidth
-                                    multiline
-                                    rows={3}
-                                    label="What needs to be done?"
-                                    value={todoData.description}
-                                    onChange={(e) => setTodoData({ ...todoData, description: e.target.value })}
-                                />
-                            </Box>
-
-                            <Grid container spacing={2}>
-                                <Grid size={{ xs: 12, md: 6 }}>
-                                    <FormControl fullWidth>
-                                        <InputLabel>Status</InputLabel>
-                                        <Select
-                                            label="Status"
-                                            value={todoData.status}
-                                            onChange={(e) => setTodoData({ ...todoData, status: e.target.value as any })}
-                                        >
-                                            <MenuItem value="Open">Open</MenuItem>
-                                            <MenuItem value="Closed">Closed</MenuItem>
-                                            <MenuItem value="Cancelled">Cancelled</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                                <Grid size={{ xs: 12, md: 6 }}>
-                                    <FormControl fullWidth>
-                                        <InputLabel>Priority</InputLabel>
-                                        <Select
-                                            label="Priority"
-                                            value={todoData.priority}
-                                            onChange={(e) => setTodoData({ ...todoData, priority: e.target.value as any })}
-                                        >
-                                            <MenuItem value="High">High</MenuItem>
-                                            <MenuItem value="Medium">Medium</MenuItem>
-                                            <MenuItem value="Low">Low</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                            </Grid>
-
-                            <Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                                    <Iconify icon={"solar:calendar-bold" as any} sx={{ color: 'primary.main' }} />
-                                    <Typography variant="subtitle2">Due Date</Typography>
-                                </Box>
-                                <DatePicker
-                                    label="Due Date"
-                                    value={todoData.date ? dayjs(todoData.date) : null}
-                                    onChange={(newValue) => setTodoData({ ...todoData, date: newValue ? newValue.format('YYYY-MM-DD') : '' })}
-                                    slotProps={{ textField: { fullWidth: true } }}
-                                />
-                            </Box>
-                        </Box>
-                    </LocalizationProvider>
-                </DialogContent>
-                <DialogActions sx={{ p: 2, gap: 1 }}>
-                    {selectedTodo && (
-                        <Button color="error" variant="outlined" onClick={() => setConfirmDelete({ open: true, id: selectedTodo.name })} sx={{ mr: 'auto' }}>
-                            Delete
-                        </Button>
-                    )}
-                    <Button color="inherit" variant="outlined" onClick={() => setOpenDialog(false)}>Cancel</Button>
-                    <Button variant="contained" onClick={handleSaveToDo}>{selectedTodo ? 'Save Changes' : 'Create Task'}</Button>
-                </DialogActions>
-            </Dialog>
+            <TodoDialog
+                open={openDialog}
+                onClose={() => setOpenDialog(false)}
+                selectedTodo={selectedTodo}
+                onSuccess={loadToDos}
+            />
 
             <ConfirmDialog
                 open={confirmDelete.open}

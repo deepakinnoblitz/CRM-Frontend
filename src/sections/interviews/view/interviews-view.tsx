@@ -314,6 +314,8 @@ export function InterviewsView() {
                                 numSelected={selected.length}
                                 onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
                                     { id: 'job_applicant', label: 'Applicant' },
                                     { id: 'scheduled_on', label: 'Schedule' },
@@ -322,9 +324,11 @@ export function InterviewsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row) => (
+                                {data.map((row, index) => (
                                     <InterviewTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             job_applicant: row.job_applicant,

@@ -1,3 +1,4 @@
+import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 export interface Employee {
@@ -67,11 +68,14 @@ async function fetchFrappeList(doctype: string, params: {
 
     // Fetch data and count in parallel
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=${doctype}&filters=${encodeURIComponent(JSON.stringify(filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=${doctype}&filters=${encodeURIComponent(JSON.stringify(filters))}`)
     ]);
 
-    if (!res.ok) throw new Error(`Failed to fetch ${doctype}`);
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, `Failed to fetch ${doctype}`));
+    }
     const data = await res.json();
     const countData = await countRes.json();
 
@@ -85,10 +89,11 @@ async function fetchFrappeList(doctype: string, params: {
 export const fetchEmployees = (params: any) => fetchFrappeList("Employee", { ...params, searchField: "employee_name" });
 
 export async function createEmployee(data: Partial<Employee>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doc: { doctype: "Employee", ...data } })
     });
     const json = await res.json();
@@ -97,10 +102,11 @@ export async function createEmployee(data: Partial<Employee>) {
 }
 
 export async function updateEmployee(name: string, data: Partial<Employee>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doctype: "Employee", name, fieldname: data })
     });
     const json = await res.json();
@@ -109,10 +115,11 @@ export async function updateEmployee(name: string, data: Partial<Employee>) {
 }
 
 export async function deleteEmployee(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doctype: "Employee", name })
     });
     const json = await res.json();
@@ -124,10 +131,11 @@ export async function deleteEmployee(name: string) {
 export const fetchAttendance = (params: any) => fetchFrappeList("Attendance", { ...params, searchField: "employee_name" });
 
 export async function createAttendance(data: Partial<Attendance>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doc: { doctype: "Attendance", ...data } })
     });
     const json = await res.json();
@@ -136,10 +144,11 @@ export async function createAttendance(data: Partial<Attendance>) {
 }
 
 export async function updateAttendance(name: string, data: Partial<Attendance>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doctype: "Attendance", name, fieldname: data })
     });
     const json = await res.json();
@@ -148,10 +157,11 @@ export async function updateAttendance(name: string, data: Partial<Attendance>) 
 }
 
 export async function deleteAttendance(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doctype: "Attendance", name })
     });
     const json = await res.json();
@@ -163,10 +173,11 @@ export async function deleteAttendance(name: string) {
 export const fetchLeaveApplications = (params: any) => fetchFrappeList("Leave Application", { ...params, searchField: "employee_name" });
 
 export async function createLeaveApplication(data: Partial<LeaveApplication>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doc: { doctype: "Leave Application", ...data } })
     });
     const json = await res.json();
@@ -175,10 +186,11 @@ export async function createLeaveApplication(data: Partial<LeaveApplication>) {
 }
 
 export async function updateLeaveApplication(name: string, data: Partial<LeaveApplication>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doctype: "Leave Application", name, fieldname: data })
     });
     const json = await res.json();
@@ -187,10 +199,11 @@ export async function updateLeaveApplication(name: string, data: Partial<LeaveAp
 }
 
 export async function deleteLeaveApplication(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doctype: "Leave Application", name })
     });
     const json = await res.json();
@@ -200,12 +213,11 @@ export async function deleteLeaveApplication(name: string) {
 
 // Generic fetch for a single document
 export async function getHRDoc(doctype: string, name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=${doctype}&name=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=${doctype}&name=${name}`);
 
     if (!res.ok) {
-        throw new Error(`Failed to fetch ${doctype} details`);
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, `Failed to fetch ${doctype} details`));
     }
 
     return (await res.json()).message;
@@ -213,19 +225,18 @@ export async function getHRDoc(doctype: string, name: string) {
 
 // DocType Metadata API
 export async function getDocTypeMetadata(doctype: string) {
-    const res = await fetch(`/api/method/frappe.desk.form.load.getdoctype?doctype=${doctype}`, {
-        credentials: "include"
-    });
-    if (!res.ok) throw new Error(`Failed to fetch metadata for ${doctype}`);
+    const res = await frappeRequest(`/api/method/frappe.desk.form.load.getdoctype?doctype=${doctype}`);
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, `Failed to fetch metadata for ${doctype}`));
+    }
     const json = await res.json();
     return json.docs?.[0] || json.message;
 }
 
 // Salary Component API
 export async function fetchSalaryComponents() {
-    const res = await fetch(`/api/method/frappe.client.get_list?doctype=Salary Structure Component&fields=${JSON.stringify(["component_name", "field_name", "type", "percentage", "static_amount"])}&limit_page_length=100`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get_list?doctype=Salary Structure Component&fields=${JSON.stringify(["component_name", "field_name", "type", "percentage", "static_amount"])}&limit_page_length=100`);
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to fetch salary components"));
     return json.message || [];
@@ -233,9 +244,7 @@ export async function fetchSalaryComponents() {
 
 // Generic Permission API
 export async function getHRPermissions(doctype: string) {
-    const res = await fetch(`/api/method/company.company.frontend_api.get_doc_permissions?doctype=${doctype}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/company.company.frontend_api.get_doc_permissions?doctype=${doctype}`);
     if (!res.ok) return { read: false, write: false, delete: false };
     const json = await res.json();
     return json.message || { read: false, write: false, delete: false };

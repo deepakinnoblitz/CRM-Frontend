@@ -28,8 +28,8 @@ type PurchaseTableToolbarProps = {
 };
 
 const SORT_OPTIONS = [
-    { value: 'bill_date_desc', label: 'Date: Newest First' },
-    { value: 'bill_date_asc', label: 'Date: Oldest First' },
+    { value: 'modified_desc', label: 'Newest First' },
+    { value: 'creation_asc', label: 'Oldest First' },
     { value: 'grand_total_desc', label: 'Amount: High to Low' },
     { value: 'grand_total_asc', label: 'Amount: Low to High' },
     { value: 'vendor_name_asc', label: 'Vendor: A to Z' },
@@ -42,7 +42,7 @@ export function PurchaseTableToolbar({
     onFilterName,
     searchPlaceholder = "Search purchases...",
     onDelete,
-    sortBy = 'bill_date_desc',
+    sortBy = 'modified_desc',
     onSortChange,
     onOpenFilter,
     canReset,

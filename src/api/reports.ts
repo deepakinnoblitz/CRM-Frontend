@@ -1,8 +1,12 @@
+import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
+
 export async function runReport(reportName: string, filters: any = {}) {
-    const res = await fetch('/api/method/frappe.desk.query_report.run', {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest('/api/method/frappe.desk.query_report.run', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers,
         body: JSON.stringify({
             report_name: reportName,
             filters: JSON.stringify(filters),
@@ -10,7 +14,8 @@ export async function runReport(reportName: string, filters: any = {}) {
     });
 
     if (!res.ok) {
-        throw new Error('Failed to run report');
+        const json = await res.json();
+        throw new Error(handleFrappeError(json, 'Failed to run report'));
     }
 
     const data = await res.json();
@@ -18,12 +23,11 @@ export async function runReport(reportName: string, filters: any = {}) {
 }
 
 export async function getReportFilters(reportName: string) {
-    const res = await fetch(`/api/method/frappe.desk.query_report.get_script?report_name=${reportName}`, {
-        credentials: 'include',
-    });
+    const res = await frappeRequest(`/api/method/frappe.desk.query_report.get_script?report_name=${reportName}`);
 
     if (!res.ok) {
-        throw new Error('Failed to fetch report filters');
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch report filters'));
     }
 
     const data = await res.json();

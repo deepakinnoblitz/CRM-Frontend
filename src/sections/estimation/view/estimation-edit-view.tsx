@@ -47,6 +47,9 @@ import { getEstimation, updateEstimation, getEstimationPrintUrl, convertEstimati
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { ContactFormDialog } from '../../contact/contact-form-dialog';
+import { TaxTypeFormDialog } from '../../invoice/tax-type-form-dialog';
+
 // ----------------------------------------------------------------------
 
 const filter = createFilterOptions<any>();
@@ -84,7 +87,7 @@ export function EstimationEditView() {
     const [billingAddress, setBillingAddress] = useState('');
     const [description, setDescription] = useState('');
     const [remarks, setRemarks] = useState('');
-    const [attachments, setAttachments] = useState<{ name: string; url: string }[]>([]);
+    const [attachments, setAttachments] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
 
     const [items, setItems] = useState<ItemRow[]>([]);
@@ -103,9 +106,13 @@ export function EstimationEditView() {
     });
 
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
+    const [contactDialogOpen, setContactDialogOpen] = useState(false);
     const [newItem, setNewItem] = useState({ item_name: '', item_code: '', rate: 0 });
     const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
     const [creatingItem, setCreatingItem] = useState(false);
+
+    const [taxTypeDialogOpen, setTaxTypeDialogOpen] = useState(false);
+    const [newTaxInitialName, setNewTaxInitialName] = useState('');
 
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'address']).then(setCustomerOptions);
@@ -318,20 +325,12 @@ export function EstimationEditView() {
     const discountAmount = discountType === 'Flat' ? discountValue : (subTotal * discountValue) / 100;
     const grandTotal = Math.max(0, subTotal - discountAmount);
 
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        try {
-            setUploading(true);
-            const uploaded = await uploadFile(file, 'Estimation', id, 'attachments');
-            setAttachments([{ name: file.name, url: uploaded.file_url }]);
-            setSnackbar({ open: true, message: 'File uploaded successfully', severity: 'success' });
-        } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Upload failed', severity: 'error' });
-        } finally {
-            setUploading(false);
-        }
+        // Store the local file object
+        setAttachments([file]);
     };
 
     const handleRemoveAttachment = (index: number) => {
@@ -349,6 +348,23 @@ export function EstimationEditView() {
 
         try {
             setLoading(true);
+
+            // Upload files if any are new local Files
+            let attachmentUrl = '';
+            if (attachments.length > 0 && attachments[0] instanceof File) {
+                setUploading(true);
+                try {
+                    const uploaded = await uploadFile(attachments[0], 'Estimation', id, 'attachments');
+                    attachmentUrl = uploaded.file_url;
+                } catch (error: any) {
+                    throw new Error(`File upload failed: ${error.message}`);
+                } finally {
+                    setUploading(false);
+                }
+            } else if (attachments.length > 0) {
+                attachmentUrl = attachments[0].url || '';
+            }
+
             const estimationData = {
                 client_name: clientName,
                 customer_name: customerName,
@@ -357,7 +373,7 @@ export function EstimationEditView() {
                 billing_address: billingAddress,
                 description,
                 terms_and_conditions: remarks,
-                attachments: attachments.length > 0 ? attachments[0].url : '',
+                attachments: attachmentUrl,
                 overall_discount_type: discountType,
                 overall_discount: discountValue,
                 total_qty: totalQty,
@@ -462,22 +478,36 @@ export function EstimationEditView() {
                             gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
                         }}
                     >
-                        <Autocomplete
-                            fullWidth
-                            options={customerOptions}
-                            getOptionLabel={(option) => (option.first_name ? `${option.name} - ${option.first_name}` : option.name || '')}
-                            value={customerOptions.find((opt) => opt.name === clientName) || null}
-                            onChange={(_e, newValue) => handleCustomerChange(newValue?.name || '')}
-                            renderInput={(params) => (
-                                <TextField {...params} label="Customer ID" required />
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Autocomplete
+                                fullWidth
+                                options={customerOptions}
+                                getOptionLabel={(option) => (option.first_name ? `${option.name} - ${option.first_name}` : option.name || '')}
+                                value={customerOptions.find((opt) => opt.name === clientName) || null}
+                                onChange={(_e, newValue) => handleCustomerChange(newValue?.name || '')}
+                                renderInput={(params) => (
+                                    <TextField {...params} label="Customer ID" required />
+                                )}
+                            />
+                            {clientName && (
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={() => setContactDialogOpen(true)}
+                                    sx={{ height: 35, px: 2 }}
+                                >
+                                    Edit
+                                </Button>
                             )}
-                        />
+                        </Stack>
 
                         <TextField
                             fullWidth
                             label="Customer Name"
                             value={customerName}
                             onChange={(e) => setCustomerName(e.target.value)}
+                            slotProps={{ input: { readOnly: true } }}
+                            sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}
                         />
 
                         <TextField
@@ -485,6 +515,8 @@ export function EstimationEditView() {
                             label="Billing Name"
                             value={billingName}
                             onChange={(e) => setBillingName(e.target.value)}
+                            slotProps={{ input: { readOnly: true } }}
+                            sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}
                         />
 
                         <DatePicker
@@ -506,7 +538,8 @@ export function EstimationEditView() {
                             rows={2}
                             value={billingAddress}
                             onChange={(e) => setBillingAddress(e.target.value)}
-                            sx={{ gridColumn: 'span 2' }}
+                            sx={{ gridColumn: 'span 2', bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}
+                            slotProps={{ input: { readOnly: true } }}
                         />
 
                     </Box>
@@ -654,9 +687,12 @@ export function EstimationEditView() {
                                                                 })
                                                             }}>
                                                                 {option.isNew ? (
-                                                                    <Stack direction="row" alignItems="center" spacing={1}>
-                                                                        <Iconify icon={"solar:add-circle-bold" as any} />
-                                                                        {option.item_name}
+                                                                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                                                                        <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                                                        <Stack spacing={0}>
+                                                                            <Typography variant="subtitle2" sx={{ lineHeight: 1, fontWeight: 700 }}>Create</Typography>
+                                                                            <Typography variant="caption" sx={{ opacity: 0.8 }}>Item</Typography>
+                                                                        </Stack>
                                                                     </Stack>
                                                                 ) : (
                                                                     option.item_name || option.name
@@ -769,23 +805,79 @@ export function EstimationEditView() {
                                             },
                                             {
                                                 field: 'tax_type', component: (
-                                                    <TextField
-                                                        select
+                                                    <Autocomplete
                                                         fullWidth
                                                         size="small"
-                                                        variant="standard"
-                                                        value={row.tax_type}
-                                                        onChange={(e) => handleItemChange(index, 'tax_type', e.target.value)}
-                                                        SelectProps={{ displayEmpty: true }}
-                                                        InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
-                                                    >
-                                                        <MenuItem value="" disabled sx={{ typography: 'body2', color: 'text.disabled' }}>Select Tax</MenuItem>
-                                                        {taxOptions.map((opt) => (
-                                                            <MenuItem key={opt.name} value={opt.name} sx={{ typography: 'body2' }}>
-                                                                {opt.tax_name || opt.name}
-                                                            </MenuItem>
-                                                        ))}
-                                                    </TextField>
+                                                        options={taxOptions}
+                                                        getOptionLabel={(option) => {
+                                                            if (typeof option === 'string') return option;
+                                                            if (option.inputValue) return option.inputValue;
+                                                            return option.tax_name || option.name || '';
+                                                        }}
+                                                        filterOptions={(options, params) => {
+                                                            const filtered = filter(options, params);
+                                                            const { inputValue } = params;
+
+                                                            filtered.push({
+                                                                inputValue: inputValue || '',
+                                                                tax_name: inputValue ? `+ Create "${inputValue}"` : 'Create Tax Type',
+                                                                isNew: true,
+                                                            });
+
+                                                            return filtered;
+                                                        }}
+                                                        value={taxOptions.find((opt) => opt.name === row.tax_type) || null}
+                                                        onChange={(_e, newValue) => {
+                                                            if (typeof newValue === 'string') {
+                                                                handleItemChange(index, 'tax_type', newValue);
+                                                            } else if (newValue && newValue.isNew) {
+                                                                setActiveRowIndex(index);
+                                                                setNewTaxInitialName(newValue.inputValue);
+                                                                setTaxTypeDialogOpen(true);
+                                                            } else {
+                                                                handleItemChange(index, 'tax_type', newValue?.name || '');
+                                                            }
+                                                        }}
+                                                        renderInput={(params) => (
+                                                            <TextField
+                                                                {...params}
+                                                                placeholder="Select Tax"
+                                                                variant="standard"
+                                                                InputProps={{
+                                                                    ...params.InputProps,
+                                                                    disableUnderline: true,
+                                                                    sx: { typography: 'body2' }
+                                                                }}
+                                                            />
+                                                        )}
+                                                        renderOption={(props, option) => (
+                                                            <Box component="li" {...props} sx={{
+                                                                typography: 'body2',
+                                                                ...(option.isNew && {
+                                                                    color: 'primary.main',
+                                                                    fontWeight: 600,
+                                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                                    borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                                                    mt: 0.5,
+                                                                    '&:hover': {
+                                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                                                    }
+                                                                })
+                                                            }}>
+                                                                {option.isNew ? (
+                                                                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                                                                        <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                                                        <Stack spacing={0}>
+                                                                            <Typography variant="subtitle2" sx={{ lineHeight: 1, fontWeight: 700 }}>Create</Typography>
+                                                                            <Typography variant="caption" sx={{ opacity: 0.8 }}>Tax Type</Typography>
+                                                                        </Stack>
+                                                                    </Stack>
+                                                                ) : (
+                                                                    option.tax_name || option.name
+                                                                )}
+                                                            </Box>
+                                                        )}
+                                                    />
                                                 )
                                             },
                                         ].map((cell, idx) => (
@@ -997,7 +1089,7 @@ export function EstimationEditView() {
                                         >
                                             <Iconify icon={"solar:link-bold" as any} width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
                                             <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
-                                                {file.url}
+                                                {typeof file === 'string' ? file : (file.url || file.name)}
                                             </Typography>
                                             <Button
                                                 size="small"
@@ -1027,6 +1119,27 @@ export function EstimationEditView() {
                     </Box>
                 </Card>
             </LocalizationProvider>
+
+            <ContactFormDialog
+                open={contactDialogOpen}
+                onClose={() => setContactDialogOpen(false)}
+                contactId={clientName}
+                onSuccess={() => {
+                    if (clientName) handleCustomerChange(clientName);
+                }}
+            />
+
+            <TaxTypeFormDialog
+                open={taxTypeDialogOpen}
+                initialName={newTaxInitialName}
+                onClose={() => setTaxTypeDialogOpen(false)}
+                onSuccess={(newTax) => {
+                    setTaxOptions((prev) => [...prev, newTax]);
+                    if (activeRowIndex !== null) {
+                        handleItemChange(activeRowIndex, 'tax_type', newTax.name);
+                    }
+                }}
+            />
 
             <Snackbar
                 open={snackbar.open}

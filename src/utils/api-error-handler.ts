@@ -75,10 +75,20 @@ export function handleFrappeError(json: any, defaultMessage: string = "An error 
         }
     }
 
-    // 2. Include exception
+    // 2. Include exception (extract message only, remove exception type)
     if (json.exception) {
-        const excLines = json.exception.split('\n');
-        if (excLines[0]) rawMessages.push(excLines[0]);
+        // Format: "frappe.exceptions.ValidationError: Scheduled Call Time cannot be in the past."
+        const exceptionString = json.exception;
+        const colonIndex = exceptionString.indexOf(':');
+        if (colonIndex !== -1) {
+            // Get everything after the first colon and trim
+            const cleanMessage = exceptionString.substring(colonIndex + 1).trim();
+            rawMessages.push(cleanMessage);
+        } else {
+            // No colon found, use the whole exception
+            const excLines = exceptionString.split('\n');
+            if (excLines[0]) rawMessages.push(excLines[0]);
+        }
     }
 
     // 3. Include message

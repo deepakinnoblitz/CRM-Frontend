@@ -446,6 +446,8 @@ export function EmployeeView() {
                                 numSelected={selected.length}
                                 onSort={handleSort}
                                 onSelectAllRows={(checked) => handleSelectAllRows(checked)}
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
                                     { id: 'employee_name', label: 'Name', minWidth: 180 },
                                     { id: 'employee_id', label: 'ID', minWidth: 80 },
@@ -457,9 +459,11 @@ export function EmployeeView() {
                             />
 
                             <TableBody>
-                                {data.map((row) => (
+                                {data.map((row, index) => (
                                     <EmployeeTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             employeeId: row.employee_id,

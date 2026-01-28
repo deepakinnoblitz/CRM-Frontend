@@ -1,4 +1,4 @@
-import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
+import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 export interface InvoiceItem {
@@ -119,8 +119,8 @@ export async function fetchInvoices(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Invoice&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Invoice&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch invoices");
@@ -188,9 +188,7 @@ export async function deleteInvoice(name: string) {
 }
 
 export async function getInvoice(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Invoice&name=${encodeURIComponent(name)}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Invoice&name=${encodeURIComponent(name)}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch invoice details");
@@ -200,9 +198,7 @@ export async function getInvoice(name: string) {
 }
 
 export async function getInvoicePermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Invoice", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Invoice");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };
@@ -212,7 +208,7 @@ export async function getInvoicePermissions() {
 }
 
 export function getInvoicePrintUrl(name: string) {
-    return `/api/method/frappe.utils.print_format.download_pdf?doctype=Invoice&name=${encodeURIComponent(name)}&format=Invoice%20Print%20Style&no_letterhead=1&letterhead=NoLetterhead&settings=%7B%7D&trigger_print=0`;
+    return `/api/method/frappe.utils.print_format.download_pdf?doctype=Invoice&name=${encodeURIComponent(name)}`;
 }
 
 export async function createItem(data: { item_name: string; item_code: string; rate: number }) {
@@ -230,5 +226,23 @@ export async function createItem(data: { item_name: string; item_code: string; r
     });
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create item"));
+    return json.message;
+}
+
+export async function createTaxType(data: { tax_name: string; tax_percentage: number; tax_type: string }) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: "Tax Types",
+                ...data
+            }
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create tax type"));
     return json.message;
 }

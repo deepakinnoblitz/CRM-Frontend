@@ -1,4 +1,3 @@
-import Box from '@mui/material/Box';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableHead from '@mui/material/TableHead';
@@ -11,6 +10,8 @@ type EstimationTableHeadProps = {
     numSelected: number;
     headLabel: Record<string, any>[];
     onSelectAllRows: (checked: boolean) => void;
+    hideCheckbox?: boolean;
+    showIndex?: boolean;
 };
 
 export function EstimationTableHead({
@@ -18,19 +19,25 @@ export function EstimationTableHead({
     headLabel,
     numSelected,
     onSelectAllRows,
+    hideCheckbox = false,
+    showIndex = false,
 }: EstimationTableHeadProps) {
     return (
         <TableHead>
             <TableRow>
-                <TableCell padding="checkbox">
-                    <Checkbox
-                        indeterminate={numSelected > 0 && numSelected < rowCount}
-                        checked={rowCount > 0 && numSelected === rowCount}
-                        onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                            onSelectAllRows(event.target.checked)
-                        }
-                    />
-                </TableCell>
+                {!hideCheckbox && (
+                    <TableCell padding="checkbox">
+                        <Checkbox
+                            indeterminate={numSelected > 0 && numSelected < rowCount}
+                            checked={rowCount > 0 && numSelected === rowCount}
+                            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                                onSelectAllRows(event.target.checked)
+                            }
+                        />
+                    </TableCell>
+                )}
+
+                {showIndex && <TableCell align="center">Sno</TableCell>}
 
                 {headLabel.map((headCell) => (
                     <TableCell

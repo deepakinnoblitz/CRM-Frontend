@@ -27,6 +27,8 @@ type Props = {
 };
 
 const SORT_OPTIONS = [
+    { value: 'modified_desc', label: 'Newest First' },
+    { value: 'modified_asc', label: 'Oldest First' },
     { value: 'collection_date_desc', label: 'Date: Newest First' },
     { value: 'collection_date_asc', label: 'Date: Oldest First' },
     { value: 'amount_collected_desc', label: 'Amount: High to Low' },
@@ -40,7 +42,7 @@ export default function PurchaseCollectionTableToolbar({
     filterName,
     onFilterName,
     onDelete,
-    sortBy = 'collection_date_desc',
+    sortBy = 'modified_desc',
     onSortChange,
     onOpenFilter,
     canReset,

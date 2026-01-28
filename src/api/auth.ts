@@ -1,3 +1,5 @@
+import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
+
 export async function login(usr: string, pwd: string) {
   const res = await fetch('/api/method/login', {
     method: 'POST',
@@ -16,9 +18,7 @@ export async function login(usr: string, pwd: string) {
 }
 
 export async function getLoggedUser() {
-  const res = await fetch('/api/method/frappe.auth.get_logged_user', {
-    credentials: 'include',
-  });
+  const res = await frappeRequest('/api/method/frappe.auth.get_logged_user');
 
   if (!res.ok) {
     return null;
@@ -29,16 +29,16 @@ export async function getLoggedUser() {
 }
 
 export async function logout() {
-  await fetch('/api/method/logout', {
+  const headers = await getAuthHeaders();
+  await frappeRequest('/api/method/logout', {
     method: 'POST',
+    headers,
     credentials: 'include',
   });
 }
 
 export async function getCurrentUserInfo() {
-  const res = await fetch('/api/method/company.company.frontend_api.get_current_user_info', {
-    credentials: 'include',
-  });
+  const res = await frappeRequest('/api/method/company.company.frontend_api.get_current_user_info');
 
   if (!res.ok) {
     return null;

@@ -1,4 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
+import type { PurchaseCollection } from 'src/api/purchase-collection';
+
+import { useState, useEffect, useCallback } from 'react';
 
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
@@ -16,7 +18,7 @@ import TablePagination from '@mui/material/TablePagination';
 import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { fetchPurchaseCollections, deletePurchaseCollection, PurchaseCollection } from 'src/api/purchase-collection';
+import { fetchPurchaseCollections, deletePurchaseCollection } from 'src/api/purchase-collection';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -51,7 +53,7 @@ export function PurchaseCollectionListView() {
 
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
-    const [orderBy, setOrderBy] = useState('creation');
+    const [orderBy, setOrderBy] = useState('modified');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [selected, setSelected] = useState<string[]>([]);
 
@@ -311,13 +313,17 @@ export function PurchaseCollectionListView() {
                                 numSelected={selected.length}
                                 onSort={handleSort}
                                 onSelectAllRows={handleSelectAllRows}
+                                hideCheckbox
+                                showIndex
                                 headLabel={TABLE_HEAD}
                             />
 
                             <TableBody>
-                                {tableData.map((row) => (
+                                {tableData.map((row, index) => (
                                     <PurchaseCollectionTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={row}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}

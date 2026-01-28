@@ -1,4 +1,4 @@
-import { getAuthHeaders, frappeRequest } from 'src/utils/csrf';
+import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 export interface InvoiceCollection {
@@ -89,8 +89,8 @@ export async function fetchInvoiceCollections(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Invoice Collection&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Invoice Collection&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch invoice collections");
@@ -158,9 +158,7 @@ export async function deleteInvoiceCollection(name: string) {
 }
 
 export async function getInvoiceCollection(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Invoice Collection&name=${encodeURIComponent(name)}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Invoice Collection&name=${encodeURIComponent(name)}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch invoice collection details");

@@ -1099,6 +1099,8 @@ export function UserView() {
                       data.map((row) => row.name)
                     )
                   }
+                  hideCheckbox
+                  showIndex
                   headLabel={[
                     { id: 'lead_name', label: 'Name' },
                     { id: 'company_name', label: 'Company' },
@@ -1116,9 +1118,11 @@ export function UserView() {
                   )}
 
                   {!loading &&
-                    data.map((row) => (
+                    data.map((row, index) => (
                       <UserTableRow
                         key={row.name}
+                        index={table.page * table.rowsPerPage + index}
+                        hideCheckbox
                         row={{
                           id: row.name,
                           name: getString(row.lead_name) ?? '-',
@@ -1145,7 +1149,7 @@ export function UserView() {
 
                   {empty && (
                     <TableRow>
-                      <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                      <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
                         <EmptyContent
                           title="No leads found"
                           description="Start capturing leads to boost your sales."

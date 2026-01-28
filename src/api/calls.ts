@@ -1,3 +1,6 @@
+import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
+
 import { handleResponse } from './utils';
 
 export interface Call {
@@ -28,6 +31,8 @@ export async function fetchCalls(start?: string, end?: string): Promise<Call[]> 
             "title",
             "call_for",
             "lead_name",
+            "contact_name",
+            "account_name",
             "call_start_time",
             "call_end_time",
             "outgoing_call_status",
@@ -40,9 +45,8 @@ export async function fetchCalls(start?: string, end?: string): Promise<Call[]> 
         order_by: "call_start_time asc"
     });
 
-    const res = await fetch(
-        `/api/method/frappe.client.get_list?${query.toString()}`,
-        { credentials: 'include' }
+    const res = await frappeRequest(
+        `/api/method/frappe.client.get_list?${query.toString()}`
     );
 
     const data = await handleResponse(res);
@@ -50,63 +54,64 @@ export async function fetchCalls(start?: string, end?: string): Promise<Call[]> 
 }
 
 export async function createCall(data: Partial<Call>): Promise<void> {
-    const res = await fetch(
-        `/api/method/frappe.client.insert`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                doc: {
-                    doctype: "Calls",
-                    ...data
-                }
-            }),
-            credentials: 'include'
-        }
-    );
+    const headers = await getAuthHeaders();
 
-    await handleResponse(res);
+    const res = await frappeRequest(`/api/method/frappe.client.insert`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: "Calls",
+                ...data
+            }
+        })
+    });
+
+    if (!res.ok) {
+        const json = await res.json();
+        throw new Error(handleFrappeError(json, "Failed to create call"));
+    }
 }
 
 export async function updateCall(name: string, data: Partial<Call>): Promise<void> {
-    const res = await fetch(
-        `/api/method/frappe.client.set_value`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                doctype: "Calls",
-                name,
-                fieldname: data
-            }),
-            credentials: 'include'
-        }
-    );
+    const headers = await getAuthHeaders();
 
-    await handleResponse(res);
+    const res = await frappeRequest(`/api/method/frappe.client.set_value`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            doctype: "Calls",
+            name,
+            fieldname: data
+        })
+    });
+
+    if (!res.ok) {
+        const json = await res.json();
+        throw new Error(handleFrappeError(json, "Failed to update call"));
+    }
 }
 
 export async function deleteCall(name: string): Promise<void> {
-    const res = await fetch(
-        `/api/method/frappe.client.delete`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                doctype: "Calls",
-                name
-            }),
-            credentials: 'include'
-        }
-    );
+    const headers = await getAuthHeaders();
 
-    await handleResponse(res);
+    const res = await frappeRequest(`/api/method/frappe.client.delete`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            doctype: "Calls",
+            name
+        })
+    });
+
+    if (!res.ok) {
+        const json = await res.json();
+        throw new Error(handleFrappeError(json, "Failed to delete call"));
+    }
 }
 
 export async function getCallPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Calls", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Calls");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };
@@ -117,9 +122,7 @@ export async function getCallPermissions() {
 }
 
 export async function getCall(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Calls&name=${name}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Calls&name=${name}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch call details");

@@ -9,6 +9,7 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import Tooltip from '@mui/material/Tooltip';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
@@ -25,6 +26,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import ToggleButton from '@mui/material/ToggleButton';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
+import InputAdornment from '@mui/material/InputAdornment';
 import TableContainer from '@mui/material/TableContainer';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -43,6 +45,9 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { getInvoice, createItem, updateInvoice } from 'src/api/invoice';
 
 import { Iconify } from 'src/components/iconify';
+
+import { TaxTypeFormDialog } from '../tax-type-form-dialog';
+import { ContactFormDialog } from '../../contact/contact-form-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -85,7 +90,7 @@ export function InvoiceEditView() {
     const [billingAddress, setBillingAddress] = useState('');
     const [description, setDescription] = useState('');
     const [remarks, setRemarks] = useState('');
-    const [attachments, setAttachments] = useState<{ name: string; url: string }[]>([]);
+    const [attachments, setAttachments] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
 
     const [items, setItems] = useState<ItemRow[]>([]);
@@ -105,6 +110,11 @@ export function InvoiceEditView() {
     const [newItem, setNewItem] = useState({ item_name: '', item_code: '', rate: 0 });
     const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
     const [creatingItem, setCreatingItem] = useState(false);
+
+    const [taxTypeDialogOpen, setTaxTypeDialogOpen] = useState(false);
+    const [newTaxInitialName, setNewTaxInitialName] = useState('');
+
+    const [contactDialogOpen, setContactDialogOpen] = useState(false);
 
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'address']).then(setCustomerOptions);
@@ -324,20 +334,12 @@ export function InvoiceEditView() {
     const discountAmount = discountType === 'Flat' ? discountValue : (subTotal * discountValue) / 100;
     const grandTotal = Math.max(0, subTotal - discountAmount);
 
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        try {
-            setUploading(true);
-            const uploaded = await uploadFile(file, 'Invoice', id, 'attachments');
-            setAttachments([{ name: file.name, url: uploaded.file_url }]);
-            setSnackbar({ open: true, message: 'File uploaded successfully', severity: 'success' });
-        } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Upload failed', severity: 'error' });
-        } finally {
-            setUploading(false);
-        }
+        // Store the local file object
+        setAttachments([file]);
     };
 
     const handleRemoveAttachment = (index: number) => {
@@ -355,6 +357,23 @@ export function InvoiceEditView() {
 
         try {
             setLoading(true);
+
+            // Upload files if any are new local Files
+            let attachmentUrl = '';
+            if (attachments.length > 0 && attachments[0] instanceof File) {
+                setUploading(true);
+                try {
+                    const uploaded = await uploadFile(attachments[0], 'Invoice', id, 'attachments');
+                    attachmentUrl = uploaded.file_url;
+                } catch (error: any) {
+                    throw new Error(`File upload failed: ${error.message}`);
+                } finally {
+                    setUploading(false);
+                }
+            } else if (attachments.length > 0) {
+                attachmentUrl = attachments[0].url || '';
+            }
+
             const invoiceData = {
                 client_name: customerId,
                 customer_name: customerName,
@@ -367,7 +386,7 @@ export function InvoiceEditView() {
                 billing_address: billingAddress,
                 description,
                 terms_and_conditions: remarks,
-                attachments: attachments.length > 0 ? attachments[0].url : '',
+                attachments: attachmentUrl,
                 overall_discount_type: discountType,
                 overall_discount: discountValue,
                 total_qty: totalQty,
@@ -434,42 +453,79 @@ export function InvoiceEditView() {
                             gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
                         }}
                     >
-                        <Autocomplete
-                            fullWidth
-                            options={customerOptions}
-                            getOptionLabel={(option) => (option.first_name ? `${option.name} - ${option.first_name}` : option.name || '')}
-                            value={customerOptions.find((opt) => opt.name === customerId) || null}
-                            onChange={(_e, newValue) => handleCustomerChange(newValue?.name || '')}
-                            renderInput={(params) => (
-                                <TextField {...params} label="Customer ID" required />
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Autocomplete
+                                fullWidth
+                                options={customerOptions}
+                                getOptionLabel={(option) => (option.first_name ? `${option.name} - ${option.first_name}` : option.name || '')}
+                                value={customerOptions.find((opt) => opt.name === customerId) || null}
+                                onChange={(_e, newValue) => handleCustomerChange(newValue?.name || '')}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Customer ID"
+                                        required
+                                    />
+                                )}
+                            />
+                            {customerId && (
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={() => setContactDialogOpen(true)}
+                                    sx={{ height: 35, px: 2 }}
+                                >
+                                    Edit
+                                </Button>
                             )}
-                        />
+                        </Stack>
 
                         <TextField
                             fullWidth
                             label="Customer Name"
                             value={customerName}
-                            onChange={(e) => setCustomerName(e.target.value)}
+                            InputProps={{
+                                readOnly: true,
+                            }}
+                            sx={{
+                                '& .MuiInputBase-root': {
+                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                },
+                            }}
                         />
 
                         <TextField
                             fullWidth
                             label="Billing Name"
                             value={billingName}
-                            onChange={(e) => setBillingName(e.target.value)}
-                        />
-
-                        <DatePicker
-                            label="Invoice Date"
-                            value={invoiceDate ? dayjs(invoiceDate) : null}
-                            onChange={(newValue) => setInvoiceDate(newValue?.format('YYYY-MM-DD') || '')}
-                            slotProps={{
-                                textField: {
-                                    fullWidth: true,
-                                    InputLabelProps: { shrink: true },
+                            InputProps={{
+                                readOnly: true,
+                            }}
+                            sx={{
+                                '& .MuiInputBase-root': {
+                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
                                 },
                             }}
                         />
+
+                        <TextField
+                            fullWidth
+                            label="Billing Address"
+                            multiline
+                            rows={2}
+                            value={billingAddress}
+                            InputProps={{
+                                readOnly: true,
+                            }}
+                            sx={{
+                                gridColumn: 'span 2',
+                                '& .MuiInputBase-root': {
+                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                },
+                            }}
+                        />
+
+                        <Divider sx={{ my: 2, gridColumn: 'span 2' }} />
 
                         <TextField
                             select
@@ -516,14 +572,16 @@ export function InvoiceEditView() {
                             }}
                         />
 
-                        <TextField
-                            fullWidth
-                            label="Billing Address"
-                            multiline
-                            rows={2}
-                            value={billingAddress}
-                            onChange={(e) => setBillingAddress(e.target.value)}
-                            sx={{ gridColumn: 'span 2' }}
+                        <DatePicker
+                            label="Invoice Date"
+                            value={invoiceDate ? dayjs(invoiceDate) : null}
+                            onChange={(newValue) => setInvoiceDate(newValue?.format('YYYY-MM-DD') || '')}
+                            slotProps={{
+                                textField: {
+                                    fullWidth: true,
+                                    InputLabelProps: { shrink: true },
+                                },
+                            }}
                         />
 
                     </Box>
@@ -671,9 +729,12 @@ export function InvoiceEditView() {
                                                                 })
                                                             }}>
                                                                 {option.isNew ? (
-                                                                    <Stack direction="row" alignItems="center" spacing={1}>
-                                                                        <Iconify icon={"solar:add-circle-bold" as any} />
-                                                                        {option.item_name}
+                                                                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                                                                        <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                                                        <Stack spacing={0}>
+                                                                            <Typography variant="subtitle2" sx={{ lineHeight: 1, fontWeight: 700 }}>Create</Typography>
+                                                                            <Typography variant="caption" sx={{ opacity: 0.8 }}>Item</Typography>
+                                                                        </Stack>
                                                                     </Stack>
                                                                 ) : (
                                                                     option.item_name || option.name
@@ -786,23 +847,79 @@ export function InvoiceEditView() {
                                             },
                                             {
                                                 field: 'tax_type', component: (
-                                                    <TextField
-                                                        select
+                                                    <Autocomplete
                                                         fullWidth
                                                         size="small"
-                                                        variant="standard"
-                                                        value={row.tax_type}
-                                                        onChange={(e) => handleItemChange(index, 'tax_type', e.target.value)}
-                                                        SelectProps={{ displayEmpty: true }}
-                                                        InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
-                                                    >
-                                                        <MenuItem value="" disabled sx={{ typography: 'body2', color: 'text.disabled' }}>Select Tax</MenuItem>
-                                                        {taxOptions.map((opt) => (
-                                                            <MenuItem key={opt.name} value={opt.name} sx={{ typography: 'body2' }}>
-                                                                {opt.tax_name || opt.name}
-                                                            </MenuItem>
-                                                        ))}
-                                                    </TextField>
+                                                        options={taxOptions}
+                                                        getOptionLabel={(option) => {
+                                                            if (typeof option === 'string') return option;
+                                                            if (option.inputValue) return option.inputValue;
+                                                            return option.tax_name || option.name || '';
+                                                        }}
+                                                        filterOptions={(options, params) => {
+                                                            const filtered = filter(options, params);
+                                                            const { inputValue } = params;
+
+                                                            filtered.push({
+                                                                inputValue: inputValue || '',
+                                                                tax_name: inputValue ? `+ Create "${inputValue}"` : 'Create Tax Type',
+                                                                isNew: true,
+                                                            });
+
+                                                            return filtered;
+                                                        }}
+                                                        value={taxOptions.find((opt) => opt.name === row.tax_type) || null}
+                                                        onChange={(_e, newValue) => {
+                                                            if (typeof newValue === 'string') {
+                                                                handleItemChange(index, 'tax_type', newValue);
+                                                            } else if (newValue && newValue.isNew) {
+                                                                setActiveRowIndex(index);
+                                                                setNewTaxInitialName(newValue.inputValue);
+                                                                setTaxTypeDialogOpen(true);
+                                                            } else {
+                                                                handleItemChange(index, 'tax_type', newValue?.name || '');
+                                                            }
+                                                        }}
+                                                        renderInput={(params) => (
+                                                            <TextField
+                                                                {...params}
+                                                                placeholder="Select Tax"
+                                                                variant="standard"
+                                                                InputProps={{
+                                                                    ...params.InputProps,
+                                                                    disableUnderline: true,
+                                                                    sx: { typography: 'body2' }
+                                                                }}
+                                                            />
+                                                        )}
+                                                        renderOption={(props, option) => (
+                                                            <Box component="li" {...props} sx={{
+                                                                typography: 'body2',
+                                                                ...(option.isNew && {
+                                                                    color: 'primary.main',
+                                                                    fontWeight: 600,
+                                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                                    borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                                                    mt: 0.5,
+                                                                    '&:hover': {
+                                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                                                    }
+                                                                })
+                                                            }}>
+                                                                {option.isNew ? (
+                                                                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                                                                        <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                                                        <Stack spacing={0}>
+                                                                            <Typography variant="subtitle2" sx={{ lineHeight: 1, fontWeight: 700 }}>Create</Typography>
+                                                                            <Typography variant="caption" sx={{ opacity: 0.8 }}>Tax Type</Typography>
+                                                                        </Stack>
+                                                                    </Stack>
+                                                                ) : (
+                                                                    option.tax_name || option.name
+                                                                )}
+                                                            </Box>
+                                                        )}
+                                                    />
                                                 )
                                             },
                                         ].map((cell, idx) => (
@@ -1044,6 +1161,27 @@ export function InvoiceEditView() {
                     </Box>
                 </Card>
             </LocalizationProvider>
+
+            <ContactFormDialog
+                open={contactDialogOpen}
+                onClose={() => setContactDialogOpen(false)}
+                contactId={customerId}
+                onSuccess={() => {
+                    if (customerId) handleCustomerChange(customerId);
+                }}
+            />
+
+            <TaxTypeFormDialog
+                open={taxTypeDialogOpen}
+                initialName={newTaxInitialName}
+                onClose={() => setTaxTypeDialogOpen(false)}
+                onSuccess={(newTax) => {
+                    setTaxOptions((prev) => [...prev, newTax]);
+                    if (activeRowIndex !== null) {
+                        handleItemChange(activeRowIndex, 'tax_type', newTax.name);
+                    }
+                }}
+            />
 
             <Snackbar
                 open={snackbar.open}

@@ -1,3 +1,6 @@
+import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
+import { handleFrappeError } from 'src/utils/api-error-handler';
+
 export interface Deal {
     name: string;
     deal_title: string;
@@ -23,10 +26,10 @@ export async function fetchDeals(params: {
     sort_by?: string;
     filterValues?: Record<string, any>;
 }) {
-    const res = await fetch("/api/method/company.company.doctype.deal.deal.get_deals_list", {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/company.company.doctype.deal.deal.get_deals_list", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             start: (params.page - 1) * params.page_size,
             page_length: params.page_size,
@@ -48,10 +51,11 @@ export async function fetchDeals(params: {
 }
 
 export async function createDeal(data: Partial<Deal>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doc: {
                 doctype: "Deal",
@@ -60,14 +64,17 @@ export async function createDeal(data: Partial<Deal>) {
         })
     });
 
-    return (await res.json()).message;
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create deal"));
+    return json.message;
 }
 
 export async function updateDeal(name: string, data: Partial<Deal>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Deal",
             name,
@@ -75,37 +82,30 @@ export async function updateDeal(name: string, data: Partial<Deal>) {
         })
     });
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to update deal");
-    }
-
-    return (await res.json()).message;
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update deal"));
+    return json.message;
 }
 
 export async function deleteDeal(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Deal",
             name
         })
     });
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.exception || error.message || "Failed to delete deal");
-    }
-
-    return (await res.json()).message;
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete deal"));
+    return json.message;
 }
 
 export async function getDealPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_deal_permissions", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_deal_permissions");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };
@@ -114,10 +114,11 @@ export async function getDealPermissions() {
     return (await res.json()).message || { read: false, write: false, delete: false };
 }
 export async function getDeal(name: string) {
-    const res = await fetch("/api/method/company.company.doctype.deal.deal.get_deal_details", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/company.company.doctype.deal.deal.get_deal_details", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             name
         })

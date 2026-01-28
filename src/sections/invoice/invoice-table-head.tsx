@@ -1,11 +1,8 @@
-import Box from '@mui/material/Box';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableHead from '@mui/material/TableHead';
 import TableCell from '@mui/material/TableCell';
-import TableSortLabel from '@mui/material/TableSortLabel';
 
-import { visuallyHidden } from './utils';
 
 // ----------------------------------------------------------------------
 
@@ -17,6 +14,8 @@ type InvoiceTableHeadProps = {
     onSort: (id: string) => void;
     headLabel: Record<string, any>[];
     onSelectAllRows: (checked: boolean) => void;
+    hideCheckbox?: boolean;
+    showIndex?: boolean;
 };
 
 export function InvoiceTableHead({
@@ -27,19 +26,25 @@ export function InvoiceTableHead({
     headLabel,
     numSelected,
     onSelectAllRows,
+    hideCheckbox = false,
+    showIndex = false,
 }: InvoiceTableHeadProps) {
     return (
         <TableHead>
             <TableRow>
-                <TableCell padding="checkbox">
-                    <Checkbox
-                        indeterminate={numSelected > 0 && numSelected < rowCount}
-                        checked={rowCount > 0 && numSelected === rowCount}
-                        onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                            onSelectAllRows(event.target.checked)
-                        }
-                    />
-                </TableCell>
+                {!hideCheckbox && (
+                    <TableCell padding="checkbox">
+                        <Checkbox
+                            indeterminate={numSelected > 0 && numSelected < rowCount}
+                            checked={rowCount > 0 && numSelected === rowCount}
+                            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                                onSelectAllRows(event.target.checked)
+                            }
+                        />
+                    </TableCell>
+                )}
+
+                {showIndex && <TableCell align="center">Sno</TableCell>}
 
                 {headLabel.map((headCell) => (
                     <TableCell

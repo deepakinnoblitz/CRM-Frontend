@@ -187,7 +187,7 @@ export function SignInView() {
 
       {renderForm}
 
-      <Divider sx={{ my: 3, '&::before, &::after': { borderTopStyle: 'dashed' } }}>
+      {/* <Divider sx={{ my: 3, '&::before, &::after': { borderTopStyle: 'dashed' } }}>
         <Typography
           variant="overline"
           sx={{ color: 'text.secondary', fontWeight: 'fontWeightMedium' }}
@@ -206,7 +206,7 @@ export function SignInView() {
         <IconButton color="inherit">
           <Iconify width={22} icon="socials:twitter" />
         </IconButton>
-      </Box>
+      </Box> */}
     </>
   );
 }

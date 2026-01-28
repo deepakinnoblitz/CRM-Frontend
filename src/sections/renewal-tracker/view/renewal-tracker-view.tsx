@@ -338,6 +338,8 @@ export function RenewalTrackerView() {
                                 numSelected={selected.length}
                                 onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
                                     { id: 'item_name', label: 'Item Name' },
                                     { id: 'category', label: 'Category' },
@@ -348,9 +350,11 @@ export function RenewalTrackerView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row) => (
+                                {data.map((row, index) => (
                                     <RenewalTrackerTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             item_name: row.item_name,

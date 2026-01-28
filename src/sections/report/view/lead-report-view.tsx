@@ -1,4 +1,5 @@
-import dayjs from 'dayjs';
+import type dayjs from 'dayjs';
+
 import * as XLSX from 'xlsx';
 import { useState, useEffect, useCallback } from 'react';
 

@@ -37,6 +37,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from '../../user/table-no-data';
 import { ContactTableRow } from '../contact-table-row';
+import { ContactFormDialog } from '../contact-form-dialog';
 import { TableEmptyRows } from '../../user/table-empty-rows';
 import { ContactImportDialog } from '../contact-import-dialog';
 import { ContactTableFiltersDrawer } from '../contact-table-filters-drawer';
@@ -71,13 +72,24 @@ export function ContactView() {
     const [openFilters, setOpenFilters] = useState(false);
 
     const [openCreate, setOpenCreate] = useState(false);
-    const [creating, setCreating] = useState(false);
     const [currentContactId, setCurrentContactId] = useState<string | null>(null);
-    const [viewOnly, setViewOnly] = useState(false);
     const [openView, setOpenView] = useState(false);
     const [openImport, setOpenImport] = useState(false);
 
-    // Form state
+    const [countryOptions, setCountryOptions] = useState<string[]>([]);
+    const [stateOptions, setStateOptions] = useState<string[]>([]);
+    const [cityOptions, setCityOptions] = useState<string[]>([]);
+    const [leadOptions, setLeadOptions] = useState<{ name: string; lead_name: string }[]>([]);
+
+    const [country, setCountry] = useState('');
+    const [state, setState] = useState('');
+    const [city, setCity] = useState('');
+
+    // Filter-specific location options
+    const [filterStateOptions, setFilterStateOptions] = useState<string[]>([]);
+    const [filterCityOptions, setFilterCityOptions] = useState<string[]>([]);
+
+    const [creating, setCreating] = useState(false);
     const [firstName, setFirstName] = useState('');
     const [companyName, setCompanyName] = useState('');
     const [email, setEmail] = useState('');
@@ -85,19 +97,8 @@ export function ContactView() {
     const [designation, setDesignation] = useState('');
     const [address, setAddress] = useState('');
     const [notes, setNotes] = useState('');
-    const [country, setCountry] = useState('');
-    const [state, setState] = useState('');
-    const [city, setCity] = useState('');
     const [contactType, setContactType] = useState('Sales');
     const [sourceLead, setSourceLead] = useState('');
-
-    const [countryOptions, setCountryOptions] = useState<string[]>([]);
-    const [stateOptions, setStateOptions] = useState<string[]>([]);
-    const [cityOptions, setCityOptions] = useState<string[]>([]);
-    const [leadOptions, setLeadOptions] = useState<{ name: string; lead_name: string }[]>([]);
-    // Filter-specific location options
-    const [filterStateOptions, setFilterStateOptions] = useState<string[]>([]);
-    const [filterCityOptions, setFilterCityOptions] = useState<string[]>([]);
 
     // Alert & Dialog State
     const [openDelete, setOpenDelete] = useState(false);
@@ -149,7 +150,7 @@ export function ContactView() {
     useEffect(() => {
         getContactPermissions().then(setPermissions);
 
-        // Populate Country Options from local JSON (remove duplicates)
+        // Populate Country Options from local JSON for filters
         const countries = Array.from(new Set(locationData.map((c: any) => c.country)));
         setCountryOptions(["", ...countries]);
 
@@ -234,27 +235,13 @@ export function ContactView() {
     const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
 
     const handleOpenCreate = () => {
-        setViewOnly(false);
+        setCurrentContactId(null);
         setOpenCreate(true);
     };
 
     const handleCloseCreate = () => {
         setOpenCreate(false);
-        setValidationErrors({}); // Clear errors
         setCurrentContactId(null);
-        setViewOnly(false);
-        setFirstName('');
-        setCompanyName('');
-        setEmail('');
-        setPhone('');
-        setDesignation('');
-        setAddress('');
-        setNotes('');
-        setCountry('');
-        setState('');
-        setCity('');
-        setContactType('Sales');
-        setSourceLead('');
     };
 
     const handleCloseSnackbar = () => {
@@ -399,25 +386,7 @@ export function ContactView() {
     };
 
     const handleEditRow = (id: string) => {
-        setViewOnly(false);
-        setValidationErrors({}); // Clear errors when opening edit
         setCurrentContactId(id);
-
-        const fullRow = data.find((item: any) => item.name === id);
-        if (fullRow) {
-            setFirstName(fullRow.first_name || '');
-            setCompanyName(fullRow.company_name || '');
-            setEmail(fullRow.email || '');
-            setPhone(cleanPhoneNumber(fullRow.phone || ''));
-            setDesignation(fullRow.designation || '');
-            setAddress(fullRow.address || '');
-            setNotes(fullRow.notes || '');
-            setCountry(fullRow.country || '');
-            setState(fullRow.state || '');
-            setCity(fullRow.city || '');
-            setContactType(fullRow.customer_type || 'Sales');
-            setSourceLead(fullRow.source_lead || '');
-        }
         setOpenCreate(true);
     };
 
@@ -496,6 +465,8 @@ export function ContactView() {
                                         data.map((row) => row.name)
                                     )
                                 }
+                                hideCheckbox
+                                showIndex
                                 headLabel={[
                                     { id: 'name', label: 'Name' },
                                     { id: 'company', label: 'Company' },
@@ -511,9 +482,11 @@ export function ContactView() {
                                     <TableEmptyRows height={68} emptyRows={rowsPerPage} />
                                 )}
 
-                                {!loading && data.map((row) => (
+                                {!loading && data.map((row, index) => (
                                     <ContactTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             firstName: row.first_name,
@@ -768,6 +741,12 @@ export function ContactView() {
                     )}
                 </DialogActions>
             </Dialog>
+            <ContactFormDialog
+                open={openCreate}
+                onClose={handleCloseCreate}
+                contactId={currentContactId}
+                onSuccess={refetch}
+            />
 
             {/* DELETE CONFIRMATION */}
             <ConfirmDialog
@@ -803,7 +782,6 @@ export function ContactView() {
                 open={openView}
                 onClose={() => {
                     setOpenView(false);
-                    setCurrentContactId(null);
                 }}
                 contactId={currentContactId}
                 onEdit={handleEditRow}

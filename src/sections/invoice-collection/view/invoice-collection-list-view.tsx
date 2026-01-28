@@ -1,4 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
+import type { InvoiceCollection } from 'src/api/invoice-collection';
+
+import { useState, useEffect, useCallback } from 'react';
 
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
@@ -18,7 +20,7 @@ import { useRouter } from 'src/routes/hooks';
 import { getDoctypeList } from 'src/api/leads';
 import { fetchInvoices } from 'src/api/invoice';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { fetchInvoiceCollections, deleteInvoiceCollection, InvoiceCollection } from 'src/api/invoice-collection';
+import { fetchInvoiceCollections, deleteInvoiceCollection } from 'src/api/invoice-collection';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -297,12 +299,16 @@ export function InvoiceCollectionListView() {
                                 numSelected={selected.length}
                                 onSort={handleSort}
                                 onSelectAllRows={handleSelectAllRows}
+                                hideCheckbox
+                                showIndex
                                 headLabel={TABLE_HEAD}
                             />
                             <TableBody>
-                                {tableData.map((row) => (
+                                {tableData.map((row, index) => (
                                     <InvoiceCollectionTableRow
                                         key={row.name}
+                                        index={page * rowsPerPage + index}
+                                        hideCheckbox
                                         row={row}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}

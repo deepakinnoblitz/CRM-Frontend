@@ -44,6 +44,8 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 
+import { TaxTypeFormDialog } from '../../invoice/tax-type-form-dialog';
+
 // ----------------------------------------------------------------------
 
 const filter = createFilterOptions<any>();
@@ -77,7 +79,7 @@ export function PurchaseCreateView() {
     const [paymentTerms, setPaymentTerms] = useState('');
     const [dueDate, setDueDate] = useState('');
     const [description, setDescription] = useState('');
-    const [attachments, setAttachments] = useState<{ name: string; url: string }[]>([]);
+    const [attachments, setAttachments] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
 
     const [items, setItems] = useState<ItemRow[]>([
@@ -110,6 +112,9 @@ export function PurchaseCreateView() {
     const [newItem, setNewItem] = useState({ item_name: '', item_code: '', rate: 0 });
     const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
     const [creatingItem, setCreatingItem] = useState(false);
+
+    const [taxTypeDialogOpen, setTaxTypeDialogOpen] = useState(false);
+    const [newTaxInitialName, setNewTaxInitialName] = useState('');
 
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'customer_type'])
@@ -264,20 +269,12 @@ export function PurchaseCreateView() {
     const discountAmount = discountType === 'Flat' ? discountValue : (subTotal * discountValue) / 100;
     const grandTotal = Math.max(0, subTotal - discountAmount);
 
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        try {
-            setUploading(true);
-            const uploaded = await uploadFile(file, 'Purchase', undefined, 'attachments');
-            setAttachments([{ name: file.name, url: uploaded.file_url }]);
-            setSnackbar({ open: true, message: 'File uploaded successfully', severity: 'success' });
-        } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Upload failed', severity: 'error' });
-        } finally {
-            setUploading(false);
-        }
+        // Store the local file object
+        setAttachments([file]);
     };
 
     const handleRemoveAttachment = (index: number) => {
@@ -303,6 +300,23 @@ export function PurchaseCreateView() {
 
         try {
             setLoading(true);
+
+            // Upload files if any
+            let attachmentUrl = '';
+            if (attachments.length > 0 && attachments[0] instanceof File) {
+                setUploading(true);
+                try {
+                    const uploaded = await uploadFile(attachments[0]);
+                    attachmentUrl = uploaded.file_url;
+                } catch (error: any) {
+                    throw new Error(`File upload failed: ${error.message}`);
+                } finally {
+                    setUploading(false);
+                }
+            } else if (attachments.length > 0) {
+                attachmentUrl = attachments[0].url || '';
+            }
+
             const purchaseData = {
                 vendor_name: vendorName,
                 vendor_id: vendorName,
@@ -312,7 +326,7 @@ export function PurchaseCreateView() {
                 payment_terms: paymentTerms,
                 due_date: dueDate,
                 description,
-                attach: attachments.length > 0 ? attachments[0].url : '',
+                attach: attachmentUrl,
                 overall_discount_type: discountType,
                 overall_discount: discountValue,
                 total_qty: totalQty,
@@ -588,9 +602,12 @@ export function PurchaseCreateView() {
                                                                 })
                                                             }}>
                                                                 {option.isNew ? (
-                                                                    <Stack direction="row" alignItems="center" spacing={1}>
-                                                                        <Iconify icon={"solar:add-circle-bold" as any} />
-                                                                        {option.item_name}
+                                                                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                                                                        <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                                                        <Stack spacing={0}>
+                                                                            <Typography variant="subtitle2" sx={{ lineHeight: 1, fontWeight: 700 }}>Create</Typography>
+                                                                            <Typography variant="caption" sx={{ opacity: 0.8 }}>Item</Typography>
+                                                                        </Stack>
                                                                     </Stack>
                                                                 ) : (
                                                                     option.item_name || option.name
@@ -703,23 +720,79 @@ export function PurchaseCreateView() {
                                             },
                                             {
                                                 field: 'tax_type', component: (
-                                                    <TextField
-                                                        select
+                                                    <Autocomplete
                                                         fullWidth
                                                         size="small"
-                                                        variant="standard"
-                                                        value={row.tax_type}
-                                                        onChange={(e) => handleItemChange(index, 'tax_type', e.target.value)}
-                                                        SelectProps={{ displayEmpty: true }}
-                                                        InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
-                                                    >
-                                                        <MenuItem value="" disabled sx={{ typography: 'body2', color: 'text.disabled' }}>Select Tax</MenuItem>
-                                                        {taxOptions.map((opt) => (
-                                                            <MenuItem key={opt.name} value={opt.name} sx={{ typography: 'body2' }}>
-                                                                {opt.tax_name || opt.name}
-                                                            </MenuItem>
-                                                        ))}
-                                                    </TextField>
+                                                        options={taxOptions}
+                                                        getOptionLabel={(option) => {
+                                                            if (typeof option === 'string') return option;
+                                                            if (option.inputValue) return option.inputValue;
+                                                            return option.tax_name || option.name || '';
+                                                        }}
+                                                        filterOptions={(options, params) => {
+                                                            const filtered = filter(options, params);
+                                                            const { inputValue } = params;
+
+                                                            filtered.push({
+                                                                inputValue: inputValue || '',
+                                                                tax_name: inputValue ? `+ Create "${inputValue}"` : 'Create Tax Type',
+                                                                isNew: true,
+                                                            });
+
+                                                            return filtered;
+                                                        }}
+                                                        value={taxOptions.find((opt) => opt.name === row.tax_type) || null}
+                                                        onChange={(_e, newValue) => {
+                                                            if (typeof newValue === 'string') {
+                                                                handleItemChange(index, 'tax_type', newValue);
+                                                            } else if (newValue && newValue.isNew) {
+                                                                setActiveRowIndex(index);
+                                                                setNewTaxInitialName(newValue.inputValue);
+                                                                setTaxTypeDialogOpen(true);
+                                                            } else {
+                                                                handleItemChange(index, 'tax_type', newValue?.name || '');
+                                                            }
+                                                        }}
+                                                        renderInput={(params) => (
+                                                            <TextField
+                                                                {...params}
+                                                                placeholder="Select Tax"
+                                                                variant="standard"
+                                                                InputProps={{
+                                                                    ...params.InputProps,
+                                                                    disableUnderline: true,
+                                                                    sx: { typography: 'body2' }
+                                                                }}
+                                                            />
+                                                        )}
+                                                        renderOption={(props, option) => (
+                                                            <Box component="li" {...props} sx={{
+                                                                typography: 'body2',
+                                                                ...(option.isNew && {
+                                                                    color: 'primary.main',
+                                                                    fontWeight: 600,
+                                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                                    borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                                                    mt: 0.5,
+                                                                    '&:hover': {
+                                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                                                    }
+                                                                })
+                                                            }}>
+                                                                {option.isNew ? (
+                                                                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                                                                        <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                                                        <Stack spacing={0}>
+                                                                            <Typography variant="subtitle2" sx={{ lineHeight: 1, fontWeight: 700 }}>Create</Typography>
+                                                                            <Typography variant="caption" sx={{ opacity: 0.8 }}>Tax Type</Typography>
+                                                                        </Stack>
+                                                                    </Stack>
+                                                                ) : (
+                                                                    option.tax_name || option.name
+                                                                )}
+                                                            </Box>
+                                                        )}
+                                                    />
                                                 )
                                             },
                                         ].map((cell, idx) => (
@@ -1003,6 +1076,17 @@ export function PurchaseCreateView() {
                         </Button>
                     </DialogActions>
                 </Dialog>
+                <TaxTypeFormDialog
+                    open={taxTypeDialogOpen}
+                    initialName={newTaxInitialName}
+                    onClose={() => setTaxTypeDialogOpen(false)}
+                    onSuccess={(newTax) => {
+                        setTaxOptions((prev) => [...prev, newTax]);
+                        if (activeRowIndex !== null) {
+                            handleItemChange(activeRowIndex, 'tax_type', newTax.name);
+                        }
+                    }}
+                />
             </DashboardContent>
         </LocalizationProvider>
     );

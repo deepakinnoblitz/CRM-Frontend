@@ -19,7 +19,7 @@ const router = createBrowserRouter([
     children: routesSection,
   },
 ], {
-  basename: import.meta.env.BASE_URL,
+  basename: import.meta.env.PROD ? '/crm' : '/',
 });
 
 const root = createRoot(document.getElementById('root')!);

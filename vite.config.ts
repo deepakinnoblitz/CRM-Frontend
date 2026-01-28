@@ -50,6 +50,11 @@ export default defineConfig(({ mode }) => ({
         target: 'http://erp.localhost.innoblitz:8013',
         changeOrigin: true,
         secure: false,
+      },
+      '/private': {
+        target: 'http://erp.localhost.innoblitz:8013',
+        changeOrigin: true,
+        secure: false,
       }
     },
   },

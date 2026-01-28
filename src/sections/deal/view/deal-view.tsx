@@ -30,7 +30,6 @@ import { useDeals } from 'src/hooks/useDeals';
 
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
-import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { createDeal, updateDeal, deleteDeal, getDealPermissions } from 'src/api/deals';
 
@@ -97,7 +96,6 @@ export function DealView() {
     // Dropdown Options
     const [accountOptions, setAccountOptions] = useState<any[]>([]);
     const [contactOptions, setContactOptions] = useState<any[]>([]);
-    const [leadOptions, setLeadOptions] = useState<any[]>([]);
 
     // Alert & Dialog State
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
@@ -149,20 +147,25 @@ export function DealView() {
         filters.source_lead !== 'all' ||
         filters.stage !== 'all';
 
+    const SOURCE_LEAD_OPTIONS = [
+        'Advertisement', 'Cold Call', 'Employee Referral', 'External Referral', 'Online Store',
+        'Website', 'Social Media', 'Email Campaign', 'Walk In', 'Trade Show / Event',
+        'Partner', 'Distributor', 'Telemarketing', 'Existing Customer', 'Repeat Customer',
+        'Direct Mail', 'Marketplace', 'Google Ads', 'Facebook / Instagram Ads', 'LinkedIn',
+        'WhatsApp', 'Customer Support', 'Inbound Call', 'Outbound Call', 'Other'
+    ];
+
     useEffect(() => {
         // Fetch dropdown options on mount - get full objects for filter drawer
         Promise.all([
             fetch('/api/method/frappe.client.get_list?doctype=Accounts&fields=["name","account_name"]&limit_page_length=999', { credentials: 'include' }),
             fetch('/api/method/frappe.client.get_list?doctype=Contacts&fields=["name","first_name"]&limit_page_length=999', { credentials: 'include' }),
-            fetch('/api/method/frappe.client.get_list?doctype=Lead&fields=["name","lead_name"]&limit_page_length=999', { credentials: 'include' })
-        ]).then(async ([accountsRes, contactsRes, leadsRes]) => {
+        ]).then(async ([accountsRes, contactsRes]) => {
             const accounts = await accountsRes.json();
             const contacts = await contactsRes.json();
-            const leads = await leadsRes.json();
 
             setAccountOptions(accounts.message || []);
             setContactOptions(contacts.message || []);
-            setLeadOptions(leads.message || []);
         }).catch(err => console.error('Failed to fetch dropdown options', err));
 
         // Fetch Permissions
@@ -171,6 +174,19 @@ export function DealView() {
 
     const handleOpenCreate = () => {
         setViewOnly(false);
+        setCurrentDealId(null);
+        setDealTitle('');
+        setAccount('');
+        setContact('');
+        setValue('');
+        setExpectedCloseDate(null);
+        setStage('Qualification');
+        setProbability('');
+        setDealType('New Business');
+        setSourceLead('');
+        setNextStep('');
+        setNotes('');
+        setValidationErrors({});
         setOpenCreate(true);
     };
 
@@ -535,30 +551,28 @@ export function DealView() {
                                 <option value="Existing Business">Existing Business</option>
                             </TextField>
 
-                            <Autocomplete
+                            <TextField
+                                select
                                 fullWidth
-                                options={leadOptions}
-                                value={leadOptions.find((l) => l.name === sourceLead) || null}
-                                onChange={(event, newValue) => setSourceLead(newValue?.name || '')}
-                                getOptionLabel={(option) => `${option.lead_name || option.name} (${option.name})`}
+                                label="Source Lead"
+                                value={sourceLead}
+                                onChange={(e) => setSourceLead(e.target.value)}
                                 disabled={viewOnly}
-                                slotProps={{
-                                    paper: {
-                                        sx: {
-                                            bgcolor: '#F0F8FF',
-                                            '& .MuiAutocomplete-listbox': {
-                                                bgcolor: '#F0F8FF',
-                                            },
-                                        }
-                                    }
+                                SelectProps={{ native: true }}
+                                InputLabelProps={{ shrink: true }}
+                                sx={{
+                                    "& .MuiInputBase-input.Mui-disabled": {
+                                        WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
+                                    },
                                 }}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="Source Lead"
-                                    />
-                                )}
-                            />
+                            >
+                                <option value="" disabled>Select Source</option>
+                                {SOURCE_LEAD_OPTIONS.map((option) => (
+                                    <option key={option} value={option}>
+                                        {option}
+                                    </option>
+                                ))}
+                            </TextField>
 
                             <TextField
                                 fullWidth
@@ -650,6 +664,8 @@ export function DealView() {
                                             data.map((row) => row.name)
                                         )
                                     }
+                                    hideCheckbox
+                                    showIndex
                                     headLabel={[
                                         { id: 'deal_title', label: 'Title' },
                                         { id: 'account', label: 'Account' },
@@ -667,9 +683,11 @@ export function DealView() {
                                     )}
 
                                     {!loading &&
-                                        data.map((row) => (
+                                        data.map((row, index) => (
                                             <DealTableRow
                                                 key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
                                                 row={{
                                                     id: row.name,
                                                     title: row.deal_title ?? '-',
@@ -731,7 +749,6 @@ export function DealView() {
                     open={openView}
                     onClose={() => {
                         setOpenView(false);
-                        setCurrentDealId(null);
                     }}
                     dealId={currentDealId}
                     onEdit={handleEditRow}
@@ -749,7 +766,7 @@ export function DealView() {
                 options={{
                     contacts: contactOptions,
                     accounts: accountOptions,
-                    source_leads: leadOptions,
+                    source_leads: SOURCE_LEAD_OPTIONS,
                 }}
             />
 

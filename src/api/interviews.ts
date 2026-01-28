@@ -1,3 +1,4 @@
+import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 export interface InterviewFeedback {
@@ -59,8 +60,8 @@ export async function fetchInterviews(
     });
 
     const [res, countRes] = await Promise.all([
-        fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" }),
-        fetch(`/api/method/frappe.client.get_count?doctype=Interview&filters=${encodeURIComponent(JSON.stringify(filters))}`, { credentials: "include" })
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Interview&filters=${encodeURIComponent(JSON.stringify(filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch interviews");
@@ -75,9 +76,7 @@ export async function fetchInterviews(
 }
 
 export async function getInterview(name: string) {
-    const res = await fetch(`/api/method/frappe.client.get?doctype=Interview&name=${encodeURIComponent(name)}`, {
-        credentials: "include"
-    });
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Interview&name=${encodeURIComponent(name)}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch interview details");
@@ -87,10 +86,11 @@ export async function getInterview(name: string) {
 }
 
 export async function createInterview(data: Partial<Interview>) {
-    const res = await fetch("/api/method/frappe.client.insert", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doc: { doctype: "Interview", ...data } })
     });
 
@@ -100,10 +100,11 @@ export async function createInterview(data: Partial<Interview>) {
 }
 
 export async function updateInterview(name: string, data: Partial<Interview>) {
-    const res = await fetch("/api/method/frappe.client.set_value", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({
             doctype: "Interview",
             name,
@@ -117,10 +118,11 @@ export async function updateInterview(name: string, data: Partial<Interview>) {
 }
 
 export async function deleteInterview(name: string) {
-    const res = await fetch("/api/method/frappe.client.delete", {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ doctype: "Interview", name })
     });
 
@@ -130,9 +132,7 @@ export async function deleteInterview(name: string) {
 }
 
 export async function getInterviewPermissions() {
-    const res = await fetch("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Interview", {
-        credentials: "include"
-    });
+    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Interview");
 
     if (!res.ok) {
         return { read: false, write: false, delete: false };
