@@ -1,0 +1,179 @@
+
+> @minimal/material-kit-react@3.0.0 lint
+> eslint "src/**/*.{js,jsx,ts,tsx}"
+
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/pages/purchase/details.tsx
+  10:13  warning  'id' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/account/account-import-dialog.tsx
+   38:5   warning  Expected "createDataImport" to come before "getImportWarnings"  perfectionist/sort-named-imports
+  282:11  warning  'handleHeaderMappingChange' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/auth/sign-in-view.tsx
+  7:8  warning  'Divider' is defined but never used  @typescript-eslint/no-unused-vars
+  7:8  warning  'Divider' is defined but never used  unused-imports/no-unused-imports
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/calls/call-dialog.tsx
+   2:31  warning  'useCallback' is defined but never used            @typescript-eslint/no-unused-vars
+   2:31  warning  'useCallback' is defined but never used            unused-imports/no-unused-imports
+  16:74  warning  Expected "Snackbar" to come before "Autocomplete"  perfectionist/sort-named-imports
+  16:84  warning  Expected "Alert" to come before "Snackbar"         perfectionist/sort-named-imports
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/contact/contact-form-dialog.tsx
+  47:12  warning  'leadOptions' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/contact/contact-import-dialog.tsx
+   38:5   warning  Expected "createDataImport" to come before "getImportWarnings"  perfectionist/sort-named-imports
+  282:11  warning  'handleHeaderMappingChange' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/contact/view/contact-view.tsx
+    1:10  warning  'MuiTelInput' is defined but never used                @typescript-eslint/no-unused-vars
+    1:10  warning  'MuiTelInput' is defined but never used                unused-imports/no-unused-imports
+    9:8   warning  'Dialog' is defined but never used                     @typescript-eslint/no-unused-vars
+    9:8   warning  'Dialog' is defined but never used                     unused-imports/no-unused-imports
+   10:10  warning  'IconButton' is defined but never used                 @typescript-eslint/no-unused-vars
+   10:10  warning  'IconButton' is defined but never used                 unused-imports/no-unused-imports
+   14:8   warning  'TextField' is defined but never used                  @typescript-eslint/no-unused-vars
+   14:8   warning  'TextField' is defined but never used                  unused-imports/no-unused-imports
+   17:8   warning  'DialogTitle' is defined but never used                @typescript-eslint/no-unused-vars
+   17:8   warning  'DialogTitle' is defined but never used                unused-imports/no-unused-imports
+   18:8   warning  'DialogContent' is defined but never used              @typescript-eslint/no-unused-vars
+   18:8   warning  'DialogContent' is defined but never used              unused-imports/no-unused-imports
+   19:8   warning  'DialogActions' is defined but never used              @typescript-eslint/no-unused-vars
+   19:8   warning  'DialogActions' is defined but never used              unused-imports/no-unused-imports
+   80:12  warning  'stateOptions' is assigned a value but never used      @typescript-eslint/no-unused-vars
+   81:12  warning  'cityOptions' is assigned a value but never used       @typescript-eslint/no-unused-vars
+   84:21  warning  'setCountry' is assigned a value but never used        @typescript-eslint/no-unused-vars
+   85:19  warning  'setState' is assigned a value but never used          @typescript-eslint/no-unused-vars
+   86:18  warning  'setCity' is assigned a value but never used           @typescript-eslint/no-unused-vars
+   92:12  warning  'creating' is assigned a value but never used          @typescript-eslint/no-unused-vars
+   93:23  warning  'setFirstName' is assigned a value but never used      @typescript-eslint/no-unused-vars
+   94:25  warning  'setCompanyName' is assigned a value but never used    @typescript-eslint/no-unused-vars
+   95:19  warning  'setEmail' is assigned a value but never used          @typescript-eslint/no-unused-vars
+   96:19  warning  'setPhone' is assigned a value but never used          @typescript-eslint/no-unused-vars
+   97:25  warning  'setDesignation' is assigned a value but never used    @typescript-eslint/no-unused-vars
+   98:21  warning  'setAddress' is assigned a value but never used        @typescript-eslint/no-unused-vars
+   99:19  warning  'setNotes' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  100:25  warning  'setContactType' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  101:24  warning  'setSourceLead' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  235:12  warning  'validationErrors' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  312:11  warning  'handleCreate' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  389:11  warning  'cleanPhoneNumber' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/crm-expense-tracker/crm-expense-tracker-table-row.tsx
+  42:39  warning  'creation' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  42:49  warning  'name' is assigned a value but never used      @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/crm-expense-tracker/view/crm-expense-tracker-view.tsx
+  45:20  warning  'setSortBy' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/deal/deal-details-dialog.tsx
+   16:20  warning  Expected "alpha" to come before "useTheme"       perfectionist/sort-named-imports
+  102:11  warning  'renderType' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/deal/view/deal-view.tsx
+  17:8   warning  'Divider' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+  17:8   warning  'Divider' is defined but never used                                                                          unused-imports/no-unused-imports
+  55:1   error    Expected "../../invoice/view/invoice-list-view" to come before "../../estimation/view/estimation-list-view"  perfectionist/sort-imports
+  74:25  warning  'setFilterStage' is assigned a value but never used                                                          @typescript-eslint/no-unused-vars
+  86:11  warning  'STAGE_OPTIONS' is assigned a value but never used                                                           @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/estimation/view/estimation-create-view.tsx
+    3:31  warning  'useCallback' is defined but never used  @typescript-eslint/no-unused-vars
+    3:31  warning  'useCallback' is defined but never used  unused-imports/no-unused-imports
+   14:8   warning  'MenuItem' is defined but never used     @typescript-eslint/no-unused-vars
+   14:8   warning  'MenuItem' is defined but never used     unused-imports/no-unused-imports
+  386:17  warning  Expected property shorthand              object-shorthand
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/estimation/view/estimation-edit-view.tsx
+   14:8   warning  'MenuItem' is defined but never used  @typescript-eslint/no-unused-vars
+   14:8   warning  'MenuItem' is defined but never used  unused-imports/no-unused-imports
+  381:17  warning  Expected property shorthand           object-shorthand
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/estimation/view/estimation-list-view.tsx
+  23:29  warning  Expected "handleDownload" to come before "handleDirectPrint"  perfectionist/sort-named-imports
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/events/view/events-view.tsx
+  16:8   warning  'CardHeader' is defined but never used         @typescript-eslint/no-unused-vars
+  16:8   warning  'CardHeader' is defined but never used         unused-imports/no-unused-imports
+  53:11  warning  'navigate' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/invoice-collection/invoice-collection-new-edit-form.tsx
+   43:12  warning  'loading' is assigned a value but never used              @typescript-eslint/no-unused-vars
+  184:11  warning  'handleCloseSnackbar' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/invoice/view/invoice-create-view.tsx
+   7:1  error  Expected "@mui/material/Box" (custom-mui) to come before "src/routes/hooks" (custom-routes)             perfectionist/sort-imports
+  39:1  error  Extra spacing between "@mui/x-date-pickers/LocalizationProvider" and "src/utils/format-number" objects  perfectionist/sort-imports
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/invoice/view/invoice-edit-view.tsx
+  12:8  warning  'Tooltip' is defined but never used         @typescript-eslint/no-unused-vars
+  12:8  warning  'Tooltip' is defined but never used         unused-imports/no-unused-imports
+  29:8  warning  'InputAdornment' is defined but never used  @typescript-eslint/no-unused-vars
+  29:8  warning  'InputAdornment' is defined but never used  unused-imports/no-unused-imports
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/invoice/view/invoice-list-view.tsx
+  22:29  warning  Expected "handleDownload" to come before "handleDirectPrint"  perfectionist/sort-named-imports
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/meetings/meeting-dialog.tsx
+  16:21  warning  'Stack' is defined but never used                  @typescript-eslint/no-unused-vars
+  16:21  warning  'Stack' is defined but never used                  unused-imports/no-unused-imports
+  16:74  warning  Expected "Snackbar" to come before "Autocomplete"  perfectionist/sort-named-imports
+  16:84  warning  Expected "Alert" to come before "Snackbar"         perfectionist/sort-named-imports
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/profile/view/profile-view.tsx
+  112:30  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/purchase-collection/purchase-collection-new-edit-form.tsx
+   36:12  warning  'loading' is assigned a value but never used              @typescript-eslint/no-unused-vars
+  181:11  warning  'handleCloseSnackbar' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/purchase-collection/view/purchase-collection-list-view.tsx
+  129:11  warning  'handleFilters' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/purchase/view/purchase-edit-view.tsx
+  400:11  warning  'handlePrint' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/report/account/view/account-report-view.tsx
+  229:8  warning  React Hook useEffect has a missing dependency: 'state'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  243:8  warning  React Hook useEffect has a missing dependency: 'city'. Either include it or remove the dependency array   react-hooks/exhaustive-deps
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/report/contact/contact-related-list.tsx
+  384:21  warning  Expected property shorthand  object-shorthand
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/report/contact/view/contact-report-view.tsx
+  256:8  warning  React Hook useEffect has a missing dependency: 'state'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  270:8  warning  React Hook useEffect has a missing dependency: 'city'. Either include it or remove the dependency array   react-hooks/exhaustive-deps
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/report/invoice/view/invoice-report-view.tsx
+  37:11  warning  'theme' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/report/lead-details-dialog.tsx
+  96:11  warning  'renderInterest' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/todo/todo-dialog.tsx
+  16:29  warning  Expected "Stack" to come before "Button"         perfectionist/sort-named-imports
+  16:29  warning  'Stack' is defined but never used                @typescript-eslint/no-unused-vars
+  16:29  warning  'Stack' is defined but never used                unused-imports/no-unused-imports
+  16:60  warning  Expected "Snackbar" to come before "Typography"  perfectionist/sort-named-imports
+  16:70  warning  Expected "Alert" to come before "Snackbar"       perfectionist/sort-named-imports
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/todo/view/todo-view.tsx
+  1:8  warning  'dayjs' is defined but never used  @typescript-eslint/no-unused-vars
+  1:8  warning  'dayjs' is defined but never used  unused-imports/no-unused-imports
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/sections/user/lead-import-dialog.tsx
+   38:5   warning  Expected "createDataImport" to come before "getImportWarnings"  perfectionist/sort-named-imports
+  292:11  warning  'handleHeaderMappingChange' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/utils/api-error-handler-enhanced.ts
+  98:22  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/vishal/frappe/live/com-bench/apps/company/company/frontend/src/utils/error-handler.ts
+  18:22  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+  35:22  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 103 problems (3 errors, 100 warnings)
+  3 errors and 35 warnings potentially fixable with the `--fix` option.
+

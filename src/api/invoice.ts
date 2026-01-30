@@ -246,3 +246,24 @@ export async function createTaxType(data: { tax_name: string; tax_percentage: nu
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create tax type"));
     return json.message;
 }
+
+export async function fetchRelatedInvoices(dealId: string) {
+    const filters = [["Invoice", "deal", "=", dealId]];
+    const fields = ["name", "ref_no", "invoice_date", "grand_total", "received_amount", "balance_amount"];
+
+    const query = new URLSearchParams({
+        doctype: "Invoice",
+        fields: JSON.stringify(fields),
+        filters: JSON.stringify(filters),
+        order_by: "creation desc"
+    });
+
+    const res = await frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`);
+
+    if (!res.ok) {
+        throw new Error("Failed to fetch related invoices");
+    }
+
+    const data = await res.json();
+    return data.message || [];
+}
