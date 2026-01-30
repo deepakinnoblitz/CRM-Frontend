@@ -45,7 +45,7 @@ export function PurchaseCollectionEditView() {
         <DashboardContent>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
                 <Typography variant="h4">
-                    Edit Collection: {currentPurchaseCollection?.name}
+                    Edit Settlement: {currentPurchaseCollection?.name}
                 </Typography>
                 <Stack direction="row" spacing={2}>
                     <Button

@@ -11,6 +11,7 @@ import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import Snackbar from '@mui/material/Snackbar';
+import Backdrop from '@mui/material/Backdrop';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
@@ -40,6 +41,7 @@ export function InvoiceDetailsView() {
     const [invoice, setInvoice] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
     const [deleting, setDeleting] = useState(false);
+    const [printing, setPrinting] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [showConvertedMessage, setShowConvertedMessage] = useState(false);
 
@@ -79,7 +81,7 @@ export function InvoiceDetailsView() {
     }
 
     const {
-        customer_id,
+        client_name,
         invoice_date,
         billing_address,
         description,
@@ -114,7 +116,11 @@ export function InvoiceDetailsView() {
 
     const handlePrint = () => {
         if (id) {
-            handleDirectPrint(getInvoicePrintUrl(id));
+            handleDirectPrint(
+                getInvoicePrintUrl(id),
+                () => setPrinting(true),
+                () => setPrinting(false)
+            );
         }
     };
 
@@ -194,7 +200,7 @@ export function InvoiceDetailsView() {
                                 <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Customer Details</Typography>
                             </Stack>
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                                <Typography variant="subtitle1" color="primary.main">{customer_id}</Typography>
+                                <Typography variant="subtitle1" color="primary.main">{client_name}</Typography>
                                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>{billing_address || 'No address provided'}</Typography>
                             </Box>
                         </Stack>
@@ -450,6 +456,13 @@ export function InvoiceDetailsView() {
                     </Button>
                 }
             />
+
+            <Backdrop
+                sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                open={printing}
+            >
+                <CircularProgress color="inherit" />
+            </Backdrop>
         </DashboardContent >
     );
 }

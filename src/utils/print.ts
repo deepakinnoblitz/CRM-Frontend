@@ -1,18 +1,52 @@
-export function handleDirectPrint(url: string) {
-    // Create a hidden iframe
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = url;
+export function handleDirectPrint(url: string, onStart?: () => void, onEnd?: () => void) {
+    let iframe = document.getElementById('direct-print-iframe') as HTMLIFrameElement;
 
-    // Append to document
-    document.body.appendChild(iframe);
+    if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'direct-print-iframe';
+        iframe.style.visibility = 'hidden';
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = 'none';
+        document.body.appendChild(iframe);
+    }
 
-    // Wait for iframe to load and trigger print
+    if (onStart) onStart();
+
     iframe.onload = () => {
-        iframe.contentWindow?.print();
-        // Remove iframe after small delay to allow print dialog to open
-        setTimeout(() => {
-            document.body.removeChild(iframe);
-        }, 1000);
+        if (iframe.contentWindow) {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+        }
+        if (onEnd) onEnd();
     };
+
+    iframe.src = url;
+}
+
+export function handleDownload(url: string, filename?: string, onStart?: () => void, onEnd?: () => void) {
+    if (onStart) onStart();
+
+    fetch(url, { credentials: 'include' })
+        .then((response) => response.blob())
+        .then((blob) => {
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            if (filename) {
+                link.download = filename;
+            }
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+            if (onEnd) onEnd();
+        })
+        .catch((error) => {
+            console.error('Download failed:', error);
+            if (onEnd) onEnd();
+        });
 }

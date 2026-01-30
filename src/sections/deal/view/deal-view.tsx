@@ -5,11 +5,14 @@ import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { IconButton } from '@mui/material';
+import Divider from '@mui/material/Divider';
+import { alpha } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
@@ -30,6 +33,7 @@ import { useDeals } from 'src/hooks/useDeals';
 
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
+import { uploadFile } from 'src/api/data-import';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { createDeal, updateDeal, deleteDeal, getDealPermissions } from 'src/api/deals';
 
@@ -92,6 +96,8 @@ export function DealView() {
     const [sourceLead, setSourceLead] = useState('');
     const [nextStep, setNextStep] = useState('');
     const [notes, setNotes] = useState('');
+    const [attachments, setAttachments] = useState<any[]>([]);
+    const [uploading, setUploading] = useState(false);
 
     // Dropdown Options
     const [accountOptions, setAccountOptions] = useState<any[]>([]);
@@ -186,8 +192,21 @@ export function DealView() {
         setSourceLead('');
         setNextStep('');
         setNotes('');
+        setAttachments([]);
         setValidationErrors({});
         setOpenCreate(true);
+    };
+
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Store the local file object
+        setAttachments([file]);
+    };
+
+    const handleRemoveAttachment = (index: number) => {
+        setAttachments((prev) => prev.filter((_, i) => i !== index));
     };
 
     const handleCloseCreate = () => {
@@ -205,6 +224,7 @@ export function DealView() {
         setSourceLead('');
         setNextStep('');
         setNotes('');
+        setAttachments([]);
         setValidationErrors({}); // Clear errors on close
     };
 
@@ -222,9 +242,10 @@ export function DealView() {
             await deleteDeal(confirmDelete.id);
             setSnackbar({ open: true, message: 'Deal deleted successfully', severity: 'success' });
             await refetch();
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            setSnackbar({ open: true, message: 'Failed to delete deal', severity: 'error' });
+            const friendlyMsg = getFriendlyErrorMessage(e);
+            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
         } finally {
             setConfirmDelete({ open: false, id: null });
         }
@@ -237,7 +258,9 @@ export function DealView() {
             setSelected([]);
             await refetch();
         } catch (e: any) {
-            setSnackbar({ open: true, message: e.message || 'Error during bulk delete', severity: 'error' });
+            console.error(e);
+            const friendlyMsg = getFriendlyErrorMessage(e);
+            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
         }
     };
 
@@ -315,7 +338,23 @@ export function DealView() {
                 source_lead: sourceLead,
                 next_step: nextStep,
                 notes,
+                attachments: '',
             };
+
+            // Upload files if any
+            if (attachments.length > 0 && attachments[0] instanceof File) {
+                setUploading(true);
+                try {
+                    const uploaded = await uploadFile(attachments[0]);
+                    dealData.attachments = uploaded.file_url;
+                } catch (error: any) {
+                    throw new Error(`File upload failed: ${error.message}`);
+                } finally {
+                    setUploading(false);
+                }
+            } else if (attachments.length > 0) {
+                dealData.attachments = attachments[0].url || attachments[0];
+            }
 
             if (currentDealId) {
                 await updateDeal(currentDealId, dealData);
@@ -353,6 +392,7 @@ export function DealView() {
             setSourceLead(fullRow.source_lead || '');
             setNextStep(fullRow.next_step || '');
             setNotes(fullRow.notes || '');
+            setAttachments(fullRow.attachments ? [fullRow.attachments] : []);
         }
         setOpenCreate(true);
     };
@@ -592,6 +632,99 @@ export function DealView() {
                                 sx={{ gridColumn: { sm: 'span 2' } }}
                                 slotProps={{ input: { readOnly: viewOnly } }}
                             />
+
+                            <Box
+                                sx={{
+                                    gridColumn: { sm: 'span 2' },
+                                    p: 3,
+                                    borderRadius: 2,
+                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                    border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
+                                }}
+                            >
+                                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
+                                    <Typography variant="h6">Attachments</Typography>
+
+                                    {!viewOnly && (
+                                        <Button
+                                            variant="contained"
+                                            component="label"
+                                            color="primary"
+                                            size="small"
+                                            startIcon={<Iconify icon={"solar:upload-bold" as any} />}
+                                            disabled={uploading}
+                                        >
+                                            {uploading ? 'Uploading...' : 'Upload File'}
+                                            <input type="file" hidden onChange={handleFileUpload} />
+                                        </Button>
+                                    )}
+                                </Stack>
+
+                                <Stack spacing={1}>
+                                    {attachments.length === 0 ? (
+                                        <Stack alignItems="center" justifyContent="center" sx={{ py: 3, color: 'text.disabled' }}>
+                                            <Iconify icon={"solar:file-bold" as any} width={40} height={40} sx={{ mb: 1, opacity: 0.48 }} />
+                                            <Typography variant="body2">No attachments yet</Typography>
+                                        </Stack>
+                                    ) : (
+                                        attachments.map((file: any, index) => (
+                                            <Stack
+                                                key={index}
+                                                direction="row"
+                                                alignItems="center"
+                                                sx={{
+                                                    px: 1.5,
+                                                    py: 0.75,
+                                                    borderRadius: 1.5,
+                                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                                }}
+                                            >
+                                                <Iconify icon={"solar:link-bold" as any} width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
+                                                <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
+                                                    {typeof file === 'string' ? file.split('/').pop() : (file.url?.split('/').pop() || file.name)}
+                                                </Typography>
+                                                {!viewOnly && (
+                                                    <Button
+                                                        size="small"
+                                                        color="inherit"
+                                                        onClick={() => handleRemoveAttachment(index)}
+                                                        sx={{
+                                                            px: 1.5,
+                                                            py: 0,
+                                                            height: 26,
+                                                            borderRadius: 1.5,
+                                                            minWidth: 'auto',
+                                                            typography: 'caption',
+                                                            bgcolor: 'background.paper',
+                                                            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.24)}`,
+                                                            '&:hover': {
+                                                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                                            }
+                                                        }}
+                                                    >
+                                                        Clear
+                                                    </Button>
+                                                )}
+                                                {viewOnly && (
+                                                    <IconButton
+                                                        size="small"
+                                                        color="primary"
+                                                        href={typeof file === 'string' ? file : file.url}
+                                                        target="_blank"
+                                                        sx={{
+                                                            bgcolor: 'background.paper',
+                                                            boxShadow: (theme) => theme.customShadows.z1,
+                                                            '&:hover': { bgcolor: 'background.neutral' }
+                                                        }}
+                                                    >
+                                                        <Iconify icon={"solar:download-bold" as any} width={16} />
+                                                    </IconButton>
+                                                )}
+                                            </Stack>
+                                        ))
+                                    )}
+                                </Stack>
+                            </Box>
                         </Box>
                     </LocalizationProvider>
                 </DialogContent>

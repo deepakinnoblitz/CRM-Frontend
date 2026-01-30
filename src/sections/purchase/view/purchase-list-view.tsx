@@ -140,6 +140,8 @@ export function PurchaseListView({ hideHeader }: Props) {
         setConfirmDelete({ open: true, id });
     }, []);
 
+
+
     const handleConfirmDelete = async () => {
         if (!confirmDelete.id) return;
         try {

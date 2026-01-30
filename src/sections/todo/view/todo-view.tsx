@@ -10,6 +10,8 @@ import { useTheme } from '@mui/material/styles';
 import CardHeader from '@mui/material/CardHeader';
 import { Box, Card, Alert, Button, Snackbar } from '@mui/material';
 
+import { getFriendlyErrorMessage } from 'src/utils/error-handler';
+
 import { DashboardContent } from 'src/layouts/dashboard';
 import { type ToDo, fetchToDos, updateToDo, deleteToDo } from 'src/api/todo';
 
@@ -74,7 +76,8 @@ export function ToDoView() {
             loadToDos();
         } catch (error: any) {
             console.error('Failed to update todo position:', error);
-            setSnackbar({ open: true, message: error.message || 'Failed to update todo position', severity: 'error' });
+            const friendlyMsg = getFriendlyErrorMessage(error);
+            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
             info.revert();
         }
     };
@@ -89,7 +92,8 @@ export function ToDoView() {
             setSnackbar({ open: true, message: 'ToDo deleted successfully', severity: 'success' });
         } catch (error: any) {
             console.error('Failed to delete todo:', error);
-            setSnackbar({ open: true, message: error.message || 'Failed to delete todo', severity: 'error' });
+            const friendlyMsg = getFriendlyErrorMessage(error);
+            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
         }
     };
 

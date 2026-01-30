@@ -537,7 +537,6 @@ export function PurchaseCreateView() {
                                                         }}
                                                         ListboxProps={{
                                                             sx: {
-                                                                pr: 3,
                                                                 '& .MuiAutocomplete-option': {
                                                                     py: 1.5,
                                                                     px: 2,
@@ -554,7 +553,6 @@ export function PurchaseCreateView() {
                                                                     mt: 0.5,
                                                                     boxShadow: (theme) => theme.customShadows.z20,
                                                                     borderRadius: 1.5,
-                                                                    width: 'max-content !important',
                                                                     minWidth: '350px',
                                                                 }
                                                             },

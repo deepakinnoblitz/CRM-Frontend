@@ -327,9 +327,10 @@ export function UserView() {
       await deleteLead(deleteId);
       setSnackbar({ open: true, message: 'Lead deleted successfully', severity: 'success' });
       await refetch();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      setSnackbar({ open: true, message: 'Failed to delete lead', severity: 'error' });
+      const friendlyMsg = getFriendlyErrorMessage(e);
+      setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
     } finally {
       setOpenDelete(false);
       setDeleteId(null);
@@ -343,7 +344,9 @@ export function UserView() {
       table.onSelectAllRows(false, []);
       await refetch();
     } catch (e: any) {
-      setSnackbar({ open: true, message: e.message || 'Error during bulk delete', severity: 'error' });
+      console.error(e);
+      const friendlyMsg = getFriendlyErrorMessage(e);
+      setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
     }
   };
 
@@ -429,12 +432,8 @@ export function UserView() {
       handleCloseCreate();
     } catch (err: any) {
       console.error(err);
-      if (currentLeadId) {
-        setSnackbar({ open: true, message: 'Failed to update lead', severity: 'error' });
-      } else {
-        const friendlyMsg = getFriendlyErrorMessage(err);
-        setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
-      }
+      const friendlyMsg = getFriendlyErrorMessage(err);
+      setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
     } finally {
       setCreating(false);
     }

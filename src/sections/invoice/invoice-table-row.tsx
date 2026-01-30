@@ -30,6 +30,8 @@ type InvoiceTableRowProps = {
     onView: () => void;
     onEdit: () => void;
     onDelete: () => void;
+    onPrint: () => void;
+    onPreview: () => void;
     canEdit?: boolean;
     canDelete?: boolean;
     hideCheckbox?: boolean;
@@ -43,6 +45,8 @@ export function InvoiceTableRow({
     onView,
     onEdit,
     onDelete,
+    onPrint,
+    onPreview,
     canEdit = true,
     canDelete = true,
     hideCheckbox = false,
@@ -115,8 +119,14 @@ export function InvoiceTableRow({
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>
                     )}
+                    <IconButton onClick={onPrint} sx={{ color: 'warning.main' }}>
+                        <Iconify icon={"solar:printer-bold" as any} />
+                    </IconButton>
+                    <IconButton onClick={onPreview} sx={{ color: 'secondary.main' }}>
+                        <Iconify icon={"solar:file-text-bold" as any} />
+                    </IconButton>
                     <IconButton onClick={onView} sx={{ color: 'info.main' }}>
-                        <Iconify icon="solar:eye-bold" />
+                        <Iconify icon={"solar:eye-bold" as any} />
                     </IconButton>
                 </Box>
             </TableCell>

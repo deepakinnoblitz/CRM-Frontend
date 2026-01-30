@@ -165,9 +165,6 @@ export default function TodoDialog({ open, onClose, selectedTodo, initialData, o
                 </DialogContent>
 
                 <DialogActions sx={{ p: 3, pt: 2, gap: 1.5 }}>
-                    <Button color="inherit" variant="outlined" onClick={onClose} sx={{ borderRadius: 1 }}>
-                        Cancel
-                    </Button>
                     <Button
                         variant="contained"
                         color="info"

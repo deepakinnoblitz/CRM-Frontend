@@ -99,6 +99,8 @@ export function PurchaseView() {
         }
     };
 
+
+
     const dataFiltered = applyFilter({
         inputData: purchases,
         comparator: getComparator(order, orderBy),
