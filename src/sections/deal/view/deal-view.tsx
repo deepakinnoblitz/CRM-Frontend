@@ -49,8 +49,8 @@ import { TableNoData } from '../../user/table-no-data';
 import { DealDetailsDialog } from '../deal-details-dialog';
 import { TableEmptyRows } from '../../user/table-empty-rows';
 import { DealTableFiltersDrawer } from '../deal-table-filters-drawer';
-import { UserTableHead as DealTableHead } from '../../user/user-table-head';
 import { InvoiceListView } from '../../invoice/view/invoice-list-view';
+import { UserTableHead as DealTableHead } from '../../user/user-table-head';
 import { EstimationListView } from '../../estimation/view/estimation-list-view';
 import { UserTableToolbar as DealTableToolbar } from '../../user/user-table-toolbar';
 
