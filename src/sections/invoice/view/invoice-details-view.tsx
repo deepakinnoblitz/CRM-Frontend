@@ -81,7 +81,7 @@ export function InvoiceDetailsView() {
     }
 
     const {
-        customer_id,
+        client_name,
         invoice_date,
         billing_address,
         description,
@@ -200,7 +200,7 @@ export function InvoiceDetailsView() {
                                 <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Customer Details</Typography>
                             </Stack>
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                                <Typography variant="subtitle1" color="primary.main">{customer_id}</Typography>
+                                <Typography variant="subtitle1" color="primary.main">{client_name}</Typography>
                                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>{billing_address || 'No address provided'}</Typography>
                             </Box>
                         </Stack>
