@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -74,9 +74,14 @@ export function InvoiceCreateView() {
     const estimationData = location.state;
 
     const [customerOptions, setCustomerOptions] = useState<any[]>([]);
+    const [dealOptions, setDealOptions] = useState<any[]>([]);
     const [itemOptions, setItemOptions] = useState<any[]>([]);
     const [taxOptions, setTaxOptions] = useState<any[]>([]);
 
+    const [searchParams] = useSearchParams();
+    const queryDealId = searchParams.get('deal_id');
+
+    const [dealId, setDealId] = useState(estimationData?.deal || queryDealId || '');
     const [customerId, setCustomerId] = useState(estimationData?.client_name || estimationData?.customer_id || '');
     const [customerName, setCustomerName] = useState(estimationData?.customer_name || '');
     const [billingName, setBillingName] = useState(estimationData?.billing_name || '');
@@ -140,6 +145,7 @@ export function InvoiceCreateView() {
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'address']).then(setCustomerOptions);
         getDoctypeList('Item', ['name', 'item_name', 'rate', 'item_code']).then(setItemOptions);
         getDoctypeList('Tax Types', ['name', 'tax_name', 'tax_percentage', 'tax_type']).then(setTaxOptions);
+        getDoctypeList('Deal', ['name']).then(setDealOptions);
     }, []);
 
     const handleCustomerChange = async (name: string) => {
@@ -358,6 +364,7 @@ export function InvoiceCreateView() {
             }
 
             const invoiceData = {
+                deal: dealId,
                 client_name: customerId,
                 customer_name: customerName,
                 billing_name: billingName,
@@ -431,6 +438,21 @@ export function InvoiceCreateView() {
                             gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
                         }}
                     >
+                        <Autocomplete
+                            fullWidth
+                            options={dealOptions}
+                            getOptionLabel={(option) => (typeof option === 'string' ? option : option.name || '')}
+                            value={dealOptions.find((opt) => opt.name === dealId) || (dealId ? { name: dealId } : null)}
+                            onChange={(_e, newValue) => setDealId(newValue?.name || '')}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Linked Deal"
+                                />
+                            )}
+                            sx={{ gridColumn: 'span 2' }}
+                        />
+
                         <Stack direction="row" spacing={1} alignItems="center">
                             <Autocomplete
                                 fullWidth
@@ -1213,6 +1235,6 @@ export function InvoiceCreateView() {
                     </Button>
                 </DialogActions>
             </Dialog>
-        </DashboardContent>
+        </DashboardContent >
     );
 }

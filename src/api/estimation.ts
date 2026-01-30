@@ -209,3 +209,26 @@ export async function convertEstimationToInvoice(name: string) {
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to convert estimation"));
     return json.message;
 }
+
+export async function fetchRelatedEstimations(dealId: string) {
+    const filters = [["Estimation", "deal", "=", dealId]];
+    const query = new URLSearchParams({
+        doctype: "Estimation",
+        fields: JSON.stringify([
+            "name",
+            "ref_no",
+            "customer_name",
+            "estimate_date",
+            "grand_total",
+            "creation"
+        ]),
+        filters: JSON.stringify(filters),
+        order_by: "creation desc"
+    });
+
+    const res = await frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`);
+    if (!res.ok) throw new Error("Failed to fetch related estimations");
+
+    const data = await res.json();
+    return data.message || [];
+}

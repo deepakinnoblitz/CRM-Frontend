@@ -1,8 +1,8 @@
 import type { RouteObject } from 'react-router';
 
 import { lazy, Suspense } from 'react';
-import { Outlet } from 'react-router-dom';
 import { varAlpha } from 'minimal-shared/utils';
+import { Outlet, Navigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
@@ -128,7 +128,7 @@ export const routesSection: RouteObject[] = [
       {
         path: 'invoices',
         children: [
-          { index: true, element: <InvoiceListPage /> },
+          { index: true, element: <Navigate to="/deals?tab=invoices" replace /> },
           { path: 'new', element: <InvoiceCreatePage /> },
           { path: ':id/edit', element: <InvoiceEditPage /> },
           { path: ':id/view', element: <InvoiceDetailsPage /> },
@@ -137,7 +137,7 @@ export const routesSection: RouteObject[] = [
       {
         path: 'estimations',
         children: [
-          { index: true, element: <EstimationListPage /> },
+          { index: true, element: <Navigate to="/deals?tab=estimations" replace /> },
           { path: 'new', element: <EstimationCreatePage /> },
           { path: ':id/edit', element: <EstimationEditPage /> },
           { path: ':id/view', element: <EstimationDetailsPage /> },
