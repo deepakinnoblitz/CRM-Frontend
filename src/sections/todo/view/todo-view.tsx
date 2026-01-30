@@ -13,7 +13,7 @@ import { Box, Card, Alert, Button, Snackbar } from '@mui/material';
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { type ToDo, fetchToDos, updateToDo, deleteToDo } from 'src/api/todo';   
+import { type ToDo, fetchToDos, updateToDo, deleteToDo } from 'src/api/todo';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
