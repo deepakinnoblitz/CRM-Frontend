@@ -185,7 +185,7 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
                     <Typography variant="h4">Invoices</Typography>
                 )}
                 {hideHeader && <Box sx={{ flexGrow: 1 }} />}
-                <Button
+                {/* <Button
                     variant="contained"
                     color="info"
                     startIcon={<Iconify icon="mingcute:add-line" />}
@@ -199,7 +199,7 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
                     }}
                 >
                     New Invoice
-                </Button>
+                </Button> */}
             </Stack>
 
             <Card>

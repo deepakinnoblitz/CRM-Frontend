@@ -95,8 +95,6 @@ export function InvoiceTableRow({
                 </Box>
             </TableCell>
 
-            <TableCell>{row.client_name}</TableCell>
-
             <TableCell>{row.customer_name}</TableCell>
 
             <TableCell>{fDate(row.invoice_date)}</TableCell>

@@ -188,14 +188,14 @@ export function EstimationListView({ hideTitle }: Props) {
     const notFound = !loading && data.length === 0 && (!!filterName || canReset);
     const empty = !loading && data.length === 0 && !filterName && !canReset;
 
-    return (
-        <DashboardContent>
+    const renderContent = (
+        <>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                 {!hideTitle && (
                     <Typography variant="h4">Estimations</Typography>
                 )}
                 {hideTitle && <Box sx={{ flexGrow: 1 }} />}
-                <Button
+                {/* <Button
                     variant="contained"
                     color="info"
                     startIcon={<Iconify icon="mingcute:add-line" />}
@@ -209,7 +209,7 @@ export function EstimationListView({ hideTitle }: Props) {
                     }}
                 >
                     New Estimation
-                </Button>
+                </Button> */}
             </Stack>
             <Card>
                 <EstimationTableToolbar
@@ -344,8 +344,14 @@ export function EstimationListView({ hideTitle }: Props) {
             >
                 <CircularProgress color="inherit" />
             </Backdrop>
-        </DashboardContent>
+        </>
     );
+
+    if (hideTitle) {
+        return renderContent;
+    }
+
+    return <DashboardContent>{renderContent}</DashboardContent>;
 }
 
 // ----------------------------------------------------------------------
