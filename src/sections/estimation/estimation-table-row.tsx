@@ -88,18 +88,18 @@ export function EstimationTableRow({
             )}
 
             <TableCell component="th" scope="row">
-                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center', fontWeight: 700  }}>
                     {row.ref_no}
                 </Box>
             </TableCell>
 
-            <TableCell>{row.client_name}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 400 }}>{row.client_name}</TableCell>
 
-            <TableCell>{row.customer_name}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 400 }}>{row.customer_name}</TableCell>
 
-            <TableCell>{fDate(row.estimate_date)}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 400 }}>{fDate(row.estimate_date)}</TableCell>
 
-            <TableCell align="right">{fCurrency(row.grand_total)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{fCurrency(row.grand_total)}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

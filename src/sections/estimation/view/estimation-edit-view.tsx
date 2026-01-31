@@ -79,7 +79,9 @@ export function EstimationEditView() {
     const [customerOptions, setCustomerOptions] = useState<any[]>([]);
     const [itemOptions, setItemOptions] = useState<any[]>([]);
     const [taxOptions, setTaxOptions] = useState<any[]>([]);
+    const [dealOptions, setDealOptions] = useState<any[]>([]);
 
+    const [deal, setDeal] = useState('');
     const [clientName, setClientName] = useState('');
     const [customerName, setCustomerName] = useState('');
     const [billingName, setBillingName] = useState('');
@@ -117,12 +119,21 @@ export function EstimationEditView() {
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'address']).then(setCustomerOptions);
         getDoctypeList('Item', ['name', 'item_name', 'rate', 'item_code']).then(setItemOptions);
-        getDoctypeList('Tax Types', ['name', 'tax_name', 'tax_percentage', 'tax_type']).then(setTaxOptions);
+        getDoctypeList('Tax Types', ['name', 'tax_name', 'tax_percentage', 'tax_type'])
+            .then(setTaxOptions)
+            .catch((error) => console.error('Failed to load Tax Types data:', error));
 
+        getDoctypeList('Deal', ['name', 'deal_title'])
+            .then(setDealOptions)
+            .catch((error) => console.error('Failed to load Deal data:', error));
+    }, []);
+
+    useEffect(() => {
         if (id) {
             getEstimation(id)
                 .then((data) => {
                     setClientName(data.client_name || '');
+                    setDeal(data.deal || '');
                     setCustomerName(data.customer_name || '');
                     setBillingName(data.billing_name || '');
                     setEstimateDate(data.estimate_date || '');
@@ -367,6 +378,7 @@ export function EstimationEditView() {
 
             const estimationData = {
                 client_name: clientName,
+                deal: deal,
                 customer_name: customerName,
                 billing_name: billingName,
                 estimate_date: estimateDate,
@@ -500,6 +512,17 @@ export function EstimationEditView() {
                                 </Button>
                             )}
                         </Stack>
+
+                        <Autocomplete
+                            fullWidth
+                            options={dealOptions}
+                            getOptionLabel={(option) => (option.deal_title ? `${option.name} - ${option.deal_title}` : option.name || '')}
+                            value={dealOptions.find((opt) => opt.name === deal) || null}
+                            onChange={(_e, newValue) => setDeal(newValue?.name || '')}
+                            renderInput={(params) => (
+                                <TextField {...params} label="Link Deal" />
+                            )}
+                        />
 
                         <TextField
                             fullWidth

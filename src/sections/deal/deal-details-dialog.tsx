@@ -1,20 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
+import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
-import { alpha } from '@mui/material/styles';
+import TableRow from '@mui/material/TableRow';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableHead from '@mui/material/TableHead';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
+import { useTheme, alpha } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
+import TableContainer from '@mui/material/TableContainer';
+
+import { useRouter } from 'src/routes/hooks';
+
+import { fCurrency } from 'src/utils/format-number';
 
 import { getDeal } from 'src/api/deals';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
+
+import { DealRelatedList } from './deal-related-list';
 
 // ----------------------------------------------------------------------
 
@@ -26,20 +43,41 @@ type Props = {
 };
 
 export function DealDetailsDialog({ open, onClose, dealId, onEdit }: Props) {
+    const theme = useTheme();
+    const router = useRouter();
+
     const [deal, setDeal] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [currentTab, setCurrentTab] = useState('estimations');
 
     useEffect(() => {
         if (open && dealId) {
             setLoading(true);
             getDeal(dealId)
-                .then(setDeal)
+                .then((dealData) => {
+                    setDeal(dealData);
+                })
                 .catch((err) => console.error('Failed to fetch deal details:', err))
                 .finally(() => setLoading(false));
         } else {
             setDeal(null);
+            setCurrentTab('estimations');
         }
     }, [open, dealId]);
+
+    const handleCreateEstimation = useCallback(() => {
+        if (deal) {
+            router.push(`/estimations/new?deal_id=${deal.name}&client_id=${deal.contact}`);
+            onClose();
+        }
+    }, [deal, router, onClose]);
+
+    const handleCreateInvoice = useCallback(() => {
+        if (deal) {
+            router.push(`/invoices/new?deal_id=${deal.name}`);
+            onClose();
+        }
+    }, [deal, router, onClose]);
 
     const renderStage = (stage: string) => {
         let color: 'default' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'error' = 'default';
@@ -56,208 +94,192 @@ export function DealDetailsDialog({ open, onClose, dealId, onEdit }: Props) {
         );
     };
 
-    const renderType = (type: string) => {
-        let color: 'default' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'error' = 'default';
-        if (type === 'New Business') color = 'success';
-        if (type === 'Existing Business') color = 'info';
-
-        return (
-            <Label variant="outlined" color={color}>
-                {type}
-            </Label>
-        );
-    };
+    const TABS = [
+        { value: 'estimations', label: 'Estimations', icon: 'solar:document-text-bold' },
+        { value: 'invoices', label: 'Invoices', icon: 'solar:bill-list-bold' },
+    ];
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>Deal Profile</Typography>
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-
-                    <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500], bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows?.z1 }}>
-                        <Iconify icon="mingcute:close-line" />
-                    </IconButton>
-                </Box>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>Deal Details</Typography>
+                <IconButton onClick={onClose} sx={{ color: theme.palette.grey[500] }}>
+                    <Iconify icon="mingcute:close-line" />
+                </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 4, m: 2, mt: 4 }}>
+            <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
                 {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
-                        <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 20 }}>
+                        <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={48} sx={{ color: 'primary.main' }} />
                     </Box>
                 ) : deal ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                        {/* Header Info */}
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5 }}>
-                            <Box
-                                sx={{
-                                    width: 64,
-                                    height: 64,
-                                    borderRadius: 2,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    bgcolor: 'primary.lighter',
-                                    color: 'primary.main',
-                                }}
-                            >
-                                <Iconify icon={"solar:bag-bold" as any} width={32} />
-                            </Box>
-                            <Box sx={{ flexGrow: 1 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 0.5 }}>
-                                    <Typography variant="h5" sx={{ fontWeight: 800 }}>{deal.deal_title}</Typography>
-                                    {onEdit && dealId && (
-                                        <Button
-                                            variant="outlined"
-                                            color="primary"
-                                            size="small"
-                                            startIcon={<Iconify icon="solar:pen-bold" width={16} />}
-                                            onClick={() => {
-                                                onEdit(dealId);
-                                                onClose();
-                                            }}
-                                            sx={{
-                                                height: 28,
-                                                borderRadius: 1,
-                                                px: 1.5,
-                                                typography: 'subtitle2',
-                                                fontWeight: 700,
-                                                '&:hover': {
-                                                    boxShadow: (theme) => `0 0 0 2px ${theme.palette.primary.lighter}`,
-                                                }
-                                            }}
-                                        >
-                                            Edit
-                                        </Button>
-                                    )}
-                                </Box>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{deal.account}</Typography>
-                            </Box>
-                            <Box sx={{ textAlign: 'right' }}>
-                                {renderStage(deal.stage)}
-                                <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.disabled', fontWeight: 700 }}>
-                                    ID: {deal.name}
-                                </Typography>
-                            </Box>
-                        </Box>
+                    <Box sx={{ display: 'flex', height: '75vh' }}>
+                        {/* Sidebar: Deal Details */}
+                        <Box
+                            sx={{
+                                width: 380,
+                                borderRight: `1px solid ${theme.palette.divider}`,
+                                bgcolor: alpha(theme.palette.grey[500], 0.02),
+                                display: 'flex',
+                                flexDirection: 'column',
+                            }}
+                        >
+                            <Scrollbar sx={{ p: 4 }}>
+                                <Stack spacing={5}>
+                                    {/* Deal Identity */}
+                                    <Box>
+                                        <Stack direction="row" spacing={2.5} alignItems="center" sx={{ mb: 3 }}>
+                                            <Box
+                                                sx={{
+                                                    width: 72,
+                                                    height: 72,
+                                                    borderRadius: 2,
+                                                    bgcolor: 'primary.main',
+                                                    color: 'white',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    boxShadow: `0 8px 16px 0 ${alpha(theme.palette.primary.main, 0.24)}`,
+                                                }}
+                                            >
+                                                <Iconify icon={"solar:bag-bold" as any} width={36} />
+                                            </Box>
+                                            <Box sx={{ flexGrow: 1 }}>
+                                                <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                                                    {deal.deal_title}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                                    {deal.account}
+                                                </Typography>
+                                            </Box>
+                                        </Stack>
 
-                        <Divider sx={{ borderStyle: 'dashed' }} />
+                                        <Stack spacing={1.5} direction="row" alignItems="center">
+                                            <Label variant="soft" color="secondary" sx={{ textTransform: 'none', fontWeight: 700 }}>
+                                                {deal.name}
+                                            </Label>
+                                            <Box sx={{ flexGrow: 1 }} />
+                                            {onEdit && dealId && (
+                                                <Button
+                                                    variant="outlined"
+                                                    color="primary"
+                                                    size="small"
+                                                    startIcon={<Iconify icon={"solar:pen-bold" as any} width={14} />}
+                                                    onClick={() => {
+                                                        onEdit(dealId);
+                                                        onClose();
+                                                    }}
+                                                    sx={{ py: 0.5, height: 28, fontSize: 12, fontWeight: 700 }}
+                                                >
+                                                    Edit
+                                                </Button>
+                                            )}
+                                        </Stack>
+                                    </Box>
 
-                        {/* General Information */}
-                        <Box>
-                            <SectionHeader title="Deal Overview" icon="solar:info-circle-bold" />
-                            <Box
-                                sx={{
-                                    display: 'grid',
-                                    gap: 3,
-                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-                                }}
-                            >
-                                <DetailItem label="Value" value={deal.value ? `₹${deal.value.toLocaleString()}` : '-'} icon="solar:wad-of-money-bold" color="success.main" />
-                                <DetailItem label="Expected Close" value={deal.expected_close_date} icon="solar:calendar-bold" />
-                                <DetailItem label="Probability" value={deal.probability ? `${deal.probability}%` : '-'} icon="solar:chart-square-bold" />
-                                <Box>
-                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block' }}>
-                                        Deal Type
-                                    </Typography>
-                                    {renderType(deal.type || 'New Business')}
-                                </Box>
-                                <DetailItem
-                                    label="Contact"
-                                    value={deal.contact_name ? `${deal.contact_name} (${deal.contact})` : deal.contact}
-                                    icon="solar:user-bold"
-                                />
-                                <DetailItem label="Source Lead" value={deal.source_lead} icon="solar:tag-horizontal-bold" />
-                            </Box>
-                        </Box>
+                                    <Divider sx={{ borderStyle: 'dashed' }} />
 
-                        {/* Additional & Tracking */}
-                        <Box>
-                            <SectionHeader title="Tracking & Next Steps" icon="solar:walking-bold" />
-                            <Box
-                                sx={{
-                                    display: 'grid',
-                                    gap: 3,
-                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-                                }}
-                            >
-                                <DetailItem label="Next Step" value={deal.next_step} icon="solar:flag-bold" color="info.main" />
-                                <DetailItem label="Owner" value={deal.deal_owner || deal.owner} icon="solar:user-rounded-bold" color="secondary.main" />
-                                <DetailItem label="Creation" value={new Date(deal.creation).toLocaleString()} icon="solar:calendar-date-bold" />
-                            </Box>
-                        </Box>
-                        {/* Notes */}
-                        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                            <SectionHeader title="Notes & Remarks" icon="solar:document-text-bold" noMargin />
-                            <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                <Box>
-                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                                        Deal Notes
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600, fontStyle: deal.notes ? 'normal' : 'italic' }}>
-                                        {deal.notes || 'No notes added'}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        </Box>
+                                    {/* Deal Stats */}
+                                    <Box>
+                                        <SectionHeader title="Overview" icon="solar:info-circle-bold" />
+                                        <Stack spacing={2.5} sx={{ mt: 2.5 }}>
+                                            <DetailItem label="Value" value={deal.value ? `₹${deal.value.toLocaleString()}` : '-'} icon="solar:wad-of-money-bold" color="success.main" />
+                                            <DetailItem label="Expected Close" value={deal.expected_close_date} icon="solar:calendar-bold" />
+                                            <DetailItem label="Probability" value={deal.probability ? `${deal.probability}%` : '-'} icon="solar:chart-square-bold" />
+                                            <Box>
+                                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase', mb: 0.5, display: 'block', fontSize: 10 }}>
+                                                    Stage
+                                                </Typography>
+                                                {renderStage(deal.stage)}
+                                            </Box>
+                                        </Stack>
+                                    </Box>
 
-                        {/* Attachments Section */}
-                        {deal.attachments && (
-                            <Box>
-                                <SectionHeader title="Attachments" icon="solar:link-bold" />
+                                    {/* Relationships */}
+                                    <Box>
+                                        <SectionHeader title="Connectivity" icon="solar:link-bold" />
+                                        <Stack spacing={2.5} sx={{ mt: 2.5 }}>
+                                            <DetailItem label="Contact" value={deal.contact_name || deal.contact} icon="solar:user-bold" />
+                                            <DetailItem label="Source Lead" value={deal.source_lead} icon="solar:tag-horizontal-bold" />
+                                            <DetailItem label="Deal Owner" value={deal.deal_owner || deal.owner} icon="solar:user-rounded-bold" />
+                                        </Stack>
+                                    </Box>
+
+                                    {/* Notes */}
+                                    <Box>
+                                        <SectionHeader title="Notes" icon="solar:document-text-bold" />
+                                        <Typography variant="body2" sx={{ mt: 1.5, color: 'text.secondary', fontStyle: deal.notes ? 'normal' : 'italic' }}>
+                                            {deal.notes || 'No notes added'}
+                                        </Typography>
+                                    </Box>
+                                </Stack>
+
+                                <Divider sx={{ borderStyle: 'dashed', my: 3 }} />
+
+                                {/* Synchronization Info */}
                                 <Box
                                     sx={{
                                         p: 2,
-                                        borderRadius: 2,
-                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
-                                        border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`
                                     }}
                                 >
-                                    <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
-                                        <Box
-                                            sx={{
-                                                px: 2,
-                                                py: 1,
-                                                borderRadius: 1.5,
-                                                bgcolor: 'background.paper',
-                                                boxShadow: (theme) => theme.customShadows.z8,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 1.5,
-                                                flexGrow: 1,
-                                                border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
-                                            }}
-                                        >
-                                            <Iconify icon={"solar:file-bold" as any} width={24} sx={{ color: 'primary.main' }} />
-                                            <Box sx={{ flexGrow: 1 }}>
-                                                <Typography variant="subtitle2" noWrap>
-                                                    {deal.attachments.split('/').pop()}
-                                                </Typography>
-                                                <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>
-                                                    Attached Document
-                                                </Typography>
-                                            </Box>
-                                            <IconButton
-                                                color="primary"
-                                                href={deal.attachments}
-                                                target="_blank"
-                                                sx={{
-                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                                                    '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16) }
-                                                }}
-                                            >
-                                                <Iconify icon={"solar:download-bold" as any} width={20} />
-                                            </IconButton>
-                                        </Box>
+                                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                                        <Iconify icon={"solar:clock-circle-bold" as any} width={16} sx={{ color: 'text.disabled' }} />
+                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase' }}>
+                                            Last Synchronized
+                                        </Typography>
                                     </Stack>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                        {deal.modified ? new Date(deal.modified).toLocaleString() : '—'}
+                                    </Typography>
                                 </Box>
+                            </Scrollbar>
+                        </Box>
+
+                        {/* Main Content: Tabs & Related Data */}
+                        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                            <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.neutral' }}>
+                                <Tabs
+                                    value={currentTab}
+                                    onChange={(e, newValue) => setCurrentTab(newValue)}
+                                    sx={{
+                                        px: 3,
+                                        '& .MuiTab-root': {
+                                            minHeight: 64,
+                                            fontWeight: 800,
+                                            fontSize: 15,
+                                            '&.Mui-selected': { color: 'primary.main' },
+                                        },
+                                        '& .MuiTabs-indicator': {
+                                            height: 3,
+                                            borderRadius: '3px 3px 0 0',
+                                        }
+                                    }}
+                                >
+                                    {TABS.map((tab) => (
+                                        <Tab
+                                            key={tab.value}
+                                            value={tab.value}
+                                            label={tab.label}
+                                            icon={<Iconify icon={tab.icon as any} width={22} />}
+                                            iconPosition="start"
+                                        />
+                                    ))}
+                                </Tabs>
                             </Box>
-                        )}
+
+                            <Box sx={{ flexGrow: 1, p: 4, bgcolor: 'background.paper', overflow: 'auto' }}>
+                                <DealRelatedList dealId={dealId || ''} type={currentTab as any} />
+                            </Box>
+                        </Box>
                     </Box>
                 ) : (
-                    <Box sx={{ py: 10, textAlign: 'center' }}>
-                        <Iconify icon={"solar:ghost-bold" as any} width={64} sx={{ color: 'text.disabled', mb: 2 }} />
-                        <Typography variant="h6" sx={{ color: 'text.secondary' }}>No Deal Found</Typography>
+                    <Box sx={{ py: 20, textAlign: 'center' }}>
+                        <Iconify icon={"solar:ghost-bold" as any} width={80} sx={{ color: 'text.disabled', mb: 3 }} />
+                        <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 800 }}>Deal Not Found</Typography>
                     </Box>
                 )}
             </DialogContent>
@@ -265,29 +287,29 @@ export function DealDetailsDialog({ open, onClose, dealId, onEdit }: Props) {
     );
 }
 
-function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: string, noMargin?: boolean }) {
+function SectionHeader({ title, icon }: { title: string; icon: string }) {
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
-            <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Iconify icon={icon as any} width={18} sx={{ color: 'primary.main' }} />
+            <Typography variant="overline" sx={{ fontWeight: 900, color: 'text.secondary' }}>
                 {title}
             </Typography>
-        </Box>
+        </Stack>
     );
 }
 
 function DetailItem({ label, value, icon, color = 'text.primary' }: { label: string; value?: string | null | number; icon: string; color?: string }) {
     return (
-        <Box>
-            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
-                {label}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
-                <Typography variant="body2" sx={{ fontWeight: 700, color }}>
-                    {value || '-'}
+        <Stack direction="row" spacing={1.5}>
+            <Iconify icon={icon as any} width={20} sx={{ mt: 0.5, color: 'text.disabled', opacity: 0.64 }} />
+            <Box>
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase', mb: 0.25, display: 'block', fontSize: 10 }}>
+                    {label}
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color, wordBreak: 'break-word', lineHeight: 1.4 }}>
+                    {value || '—'}
                 </Typography>
             </Box>
-        </Box>
+        </Stack>
     );
 }

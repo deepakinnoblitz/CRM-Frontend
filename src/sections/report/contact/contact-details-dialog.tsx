@@ -13,6 +13,8 @@ import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 
+import { useRouter } from 'src/routes/hooks';
+
 import { getContact } from 'src/api/contacts';
 
 import { Label } from 'src/components/label';
@@ -32,6 +34,7 @@ type Props = {
 
 export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props) {
     const theme = useTheme();
+    const router = useRouter();
     const [contact, setContact] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [currentTab, setCurrentTab] = useState('invoices');
@@ -114,6 +117,18 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
 
                                         <Stack spacing={1.5}>
                                             <DetailItem label="Organization" value={contact.company_name} icon="solar:buildings-bold" />
+                                            {contact.source_lead && (
+                                                <DetailItem
+                                                    label="Source Lead"
+                                                    value={contact.source_lead}
+                                                    icon="solar:user-speak-bold"
+                                                    color="info.main"
+                                                    onClick={() => {
+                                                        router.push(`/leads?view=${encodeURIComponent(contact.source_lead)}`);
+                                                        onClose();
+                                                    }}
+                                                />
+                                            )}
                                             <Stack direction="row" spacing={1} alignItems="center">
                                                 <Label variant="soft" color="secondary" sx={{ textTransform: 'none', fontWeight: 700 }}>
                                                     {contact.name}
@@ -241,9 +256,20 @@ function SectionHeader({ title, icon }: { title: string; icon: string }) {
     );
 }
 
-function DetailItem({ label, value, icon, color = 'text.primary' }: { label: string; value?: string | null; icon: string; color?: string }) {
+function DetailItem({ label, value, icon, color = 'text.primary', onClick, sx }: { label: string; value?: string | null; icon: string; color?: string; onClick?: () => void; sx?: any }) {
     return (
-        <Stack direction="row" spacing={1.5}>
+        <Stack
+            direction="row"
+            spacing={1.5}
+            onClick={onClick}
+            sx={{
+                ...(onClick && {
+                    cursor: 'pointer',
+                    '&:hover': { opacity: 0.72 },
+                }),
+                ...sx
+            }}
+        >
             <Iconify icon={icon as any} width={20} sx={{ mt: 0.5, color: 'text.disabled', opacity: 0.64 }} />
             <Box>
                 <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase', mb: 0.25, display: 'block', fontSize: 10 }}>

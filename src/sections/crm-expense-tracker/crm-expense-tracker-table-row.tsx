@@ -73,7 +73,7 @@ export function CRMExpenseTrackerTableRow({
             )}
 
             <TableCell>
-                <Typography variant="body2" noWrap>
+                <Typography variant="body2" noWrap align="left" sx={{ fontWeight: 500 }}>
                     {titlenotes || '-'}
                 </Typography>
             </TableCell>
@@ -88,7 +88,7 @@ export function CRMExpenseTrackerTableRow({
                 </Label>
             </TableCell>
 
-            <TableCell>
+            <TableCell align="left" sx={{ fontWeight: 700 }}>
                 {fCurrency(amount)}
             </TableCell>
 

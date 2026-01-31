@@ -216,7 +216,7 @@ export async function getCities(country: string, state: string) {
 }
 
 export async function getDoc(doctype: string, name: string) {
-    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=${doctype}&name=${name}`);
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=${encodeURIComponent(doctype)}&name=${encodeURIComponent(name)}`);
 
     if (!res.ok) {
         throw new Error(`Failed to fetch ${doctype} details`);

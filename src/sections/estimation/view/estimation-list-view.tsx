@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
+import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
@@ -51,7 +52,11 @@ const TABLE_HEAD = [
 
 // ----------------------------------------------------------------------
 
-export function EstimationListView() {
+interface Props {
+    hideTitle?: boolean;
+}
+
+export function EstimationListView({ hideTitle }: Props) {
     const table = useTable();
     const router = useRouter();
 
@@ -183,20 +188,29 @@ export function EstimationListView() {
     const notFound = !loading && data.length === 0 && (!!filterName || canReset);
     const empty = !loading && data.length === 0 && !filterName && !canReset;
 
-    return (
-        <DashboardContent>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">Estimations</Typography>
-                <Button
+    const renderContent = (
+        <>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+                {!hideTitle && (
+                    <Typography variant="h4">Estimations</Typography>
+                )}
+                {hideTitle && <Box sx={{ flexGrow: 1 }} />}
+                {/* <Button
                     variant="contained"
                     color="info"
                     startIcon={<Iconify icon="mingcute:add-line" />}
                     onClick={handleCreateNew}
+                    sx={{
+                        ...(hideTitle && {
+                            bgcolor: '#08a3cd',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#068fb3' }
+                        })
+                    }}
                 >
                     New Estimation
-                </Button>
+                </Button> */}
             </Stack>
-
             <Card>
                 <EstimationTableToolbar
                     numSelected={table.selected.length}
@@ -330,8 +344,14 @@ export function EstimationListView() {
             >
                 <CircularProgress color="inherit" />
             </Backdrop>
-        </DashboardContent>
+        </>
     );
+
+    if (hideTitle) {
+        return renderContent;
+    }
+
+    return <DashboardContent>{renderContent}</DashboardContent>;
 }
 
 // ----------------------------------------------------------------------
