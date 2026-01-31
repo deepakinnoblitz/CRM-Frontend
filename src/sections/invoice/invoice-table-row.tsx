@@ -15,7 +15,6 @@ import { Iconify } from 'src/components/iconify';
 export type InvoiceProps = {
     id: string;
     ref_no: string;
-    client_name: string;
     customer_name: string;
     invoice_date: string;
     grand_total: number;
@@ -89,21 +88,19 @@ export function InvoiceTableRow({
                 </TableCell>
             )}
 
-            <TableCell component="th" scope="row">
-                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center' }}>
-                    {row.ref_no}
-                </Box>
+            <TableCell component="th" scope="row" sx={{ fontWeight: 700 }}>
+                {row.ref_no}
             </TableCell>
 
-            <TableCell>{row.customer_name}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 400 }}>{row.customer_name}</TableCell>
 
-            <TableCell>{fDate(row.invoice_date)}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 400 }}>{fDate(row.invoice_date)}</TableCell>
 
-            <TableCell align="right">{fCurrency(row.grand_total)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
 
-            <TableCell align="right">{fCurrency(row.received_amount)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{fCurrency(row.received_amount)}</TableCell>
 
-            <TableCell align="right">{fCurrency(row.balance_amount)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>{fCurrency(row.balance_amount)}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

@@ -85,7 +85,7 @@ export async function fetchInvoices(params: {
     if (params.search) {
         or_filters.push(["Invoice", "ref_no", "like", `%${params.search}%`]);
         or_filters.push(["Invoice", "customer_name", "like", `%${params.search}%`]);
-        or_filters.push(["Invoice", "phone_number", "like", `%${params.search}%`]);
+        or_filters.push(["Invoice", "client_name", "like", `%${params.search}%`]);
     }
 
     // Convert sort_by format (e.g., "invoice_date_desc") to Frappe order_by format

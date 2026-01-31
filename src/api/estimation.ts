@@ -57,7 +57,7 @@ export async function fetchEstimations(params: {
     if (params.search) {
         or_filters.push(["Estimation", "ref_no", "like", `%${params.search}%`]);
         or_filters.push(["Estimation", "customer_name", "like", `%${params.search}%`]);
-        or_filters.push(["Estimation", "phone_number", "like", `%${params.search}%`]);
+        or_filters.push(["Estimation", "client_name", "like", `%${params.search}%`]);
     }
 
     if (params.filters) {
