@@ -57,6 +57,7 @@ export async function fetchInvoices(params: {
         client_name?: string;
         ref_no?: string;
         invoice_date?: string | null;
+        deal_id?: string;
     };
     page: number;
     page_size: number;
@@ -75,6 +76,9 @@ export async function fetchInvoices(params: {
         }
         if (params.filters.invoice_date) {
             filters.push(["Invoice", "invoice_date", "=", params.filters.invoice_date]);
+        }
+        if (params.filters.deal_id) {
+            filters.push(["Invoice", "deal", "=", params.filters.deal_id]);
         }
     }
 

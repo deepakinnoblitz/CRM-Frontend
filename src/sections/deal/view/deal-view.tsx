@@ -793,9 +793,7 @@ export function DealView() {
                     {currentTab === 'deals' && (
                         <>
                             <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-                                <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                                    Deals List
-                                </Typography>
+                                <Typography variant="h6" sx={{ flexGrow: 1 }} />
 
                                 {permissions.write && (
                                     <Button

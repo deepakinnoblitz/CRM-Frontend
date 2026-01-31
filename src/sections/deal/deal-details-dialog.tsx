@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
@@ -22,13 +25,13 @@ import { useRouter } from 'src/routes/hooks';
 import { fCurrency } from 'src/utils/format-number';
 
 import { getDeal } from 'src/api/deals';
-import { fetchRelatedInvoices } from 'src/api/invoice';
-import { fetchRelatedEstimations } from 'src/api/estimation';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
+
+import { DealRelatedList } from './deal-related-list';
 
 // ----------------------------------------------------------------------
 
@@ -44,29 +47,21 @@ export function DealDetailsDialog({ open, onClose, dealId, onEdit }: Props) {
     const router = useRouter();
 
     const [deal, setDeal] = useState<any>(null);
-    const [relatedEstimations, setRelatedEstimations] = useState<any[]>([]);
-    const [relatedInvoices, setRelatedInvoices] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [currentTab, setCurrentTab] = useState('estimations');
 
     useEffect(() => {
         if (open && dealId) {
             setLoading(true);
-            Promise.all([
-                getDeal(dealId),
-                fetchRelatedEstimations(dealId),
-                fetchRelatedInvoices(dealId)
-            ])
-                .then(([dealData, estimationsData, invoicesData]) => {
+            getDeal(dealId)
+                .then((dealData) => {
                     setDeal(dealData);
-                    setRelatedEstimations(estimationsData);
-                    setRelatedInvoices(invoicesData);
                 })
-                .catch((err) => console.error('Failed to fetch deal details or related estimations:', err))
+                .catch((err) => console.error('Failed to fetch deal details:', err))
                 .finally(() => setLoading(false));
         } else {
             setDeal(null);
-            setRelatedEstimations([]);
-            setRelatedInvoices([]);
+            setCurrentTab('estimations');
         }
     }, [open, dealId]);
 
@@ -99,17 +94,10 @@ export function DealDetailsDialog({ open, onClose, dealId, onEdit }: Props) {
         );
     };
 
-    const renderType = (type: string) => {
-        let color: 'default' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'error' = 'default';
-        if (type === 'New Business') color = 'success';
-        if (type === 'Existing Business') color = 'info';
-
-        return (
-            <Label variant="outlined" color={color}>
-                {type}
-            </Label>
-        );
-    };
+    const TABS = [
+        { value: 'estimations', label: 'Estimations', icon: 'solar:document-text-bold' },
+        { value: 'invoices', label: 'Invoices', icon: 'solar:bill-list-bold' },
+    ];
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
@@ -152,7 +140,7 @@ export function DealDetailsDialog({ open, onClose, dealId, onEdit }: Props) {
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    boxShadow: (themeVar) => `0 8px 16px 0 ${alpha(themeVar.palette.primary.main, 0.24)}`,
+                                                    boxShadow: `0 8px 16px 0 ${alpha(theme.palette.primary.main, 0.24)}`,
                                                 }}
                                             >
                                                 <Iconify icon={"solar:bag-bold" as any} width={36} />
@@ -226,131 +214,65 @@ export function DealDetailsDialog({ open, onClose, dealId, onEdit }: Props) {
                                         </Typography>
                                     </Box>
                                 </Stack>
+
+                                <Divider sx={{ borderStyle: 'dashed', my: 3 }} />
+
+                                {/* Synchronization Info */}
+                                <Box
+                                    sx={{
+                                        p: 2,
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`
+                                    }}
+                                >
+                                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                                        <Iconify icon={"solar:clock-circle-bold" as any} width={16} sx={{ color: 'text.disabled' }} />
+                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase' }}>
+                                            Last Synchronized
+                                        </Typography>
+                                    </Stack>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                        {deal.modified ? new Date(deal.modified).toLocaleString() : '—'}
+                                    </Typography>
+                                </Box>
                             </Scrollbar>
                         </Box>
 
-                        {/* Main Content: Related Estimations */}
+                        {/* Main Content: Tabs & Related Data */}
                         <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                            <Box sx={{ p: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'background.neutral' }}>
-                                <Typography variant="h6" sx={{ fontWeight: 800 }}>Related Estimations</Typography>
-                                <Button
-                                    variant="contained"
-                                    color="info"
-                                    size="small"
-                                    startIcon={<Iconify icon="mingcute:add-line" width={16} />}
-                                    onClick={handleCreateEstimation}
-                                    sx={{ height: 36, px: 2 }}
+                            <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.neutral' }}>
+                                <Tabs
+                                    value={currentTab}
+                                    onChange={(e, newValue) => setCurrentTab(newValue)}
+                                    sx={{
+                                        px: 3,
+                                        '& .MuiTab-root': {
+                                            minHeight: 64,
+                                            fontWeight: 800,
+                                            fontSize: 15,
+                                            '&.Mui-selected': { color: 'primary.main' },
+                                        },
+                                        '& .MuiTabs-indicator': {
+                                            height: 3,
+                                            borderRadius: '3px 3px 0 0',
+                                        }
+                                    }}
                                 >
-                                    New Estimation
-                                </Button>
+                                    {TABS.map((tab) => (
+                                        <Tab
+                                            key={tab.value}
+                                            value={tab.value}
+                                            label={tab.label}
+                                            icon={<Iconify icon={tab.icon as any} width={22} />}
+                                            iconPosition="start"
+                                        />
+                                    ))}
+                                </Tabs>
                             </Box>
 
                             <Box sx={{ flexGrow: 1, p: 4, bgcolor: 'background.paper', overflow: 'auto' }}>
-                                {relatedEstimations.length > 0 ? (
-                                    <TableContainer sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 1.5 }}>
-                                        <Table size="medium">
-                                            <TableHead sx={{ bgcolor: 'background.neutral' }}>
-                                                <TableRow>
-                                                    <TableCell sx={{ fontWeight: 700 }}>Ref No</TableCell>
-                                                    <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
-                                                    <TableCell align="right" sx={{ fontWeight: 700 }}>Total</TableCell>
-                                                    <TableCell align="right" />
-                                                </TableRow>
-                                            </TableHead>
-                                            <TableBody>
-                                                {relatedEstimations.map((est) => (
-                                                    <TableRow key={est.name} hover>
-                                                        <TableCell sx={{ fontWeight: 700 }}>{est.ref_no}</TableCell>
-                                                        <TableCell sx={{ color: 'text.secondary', fontWeight: 600 }}>{est.estimate_date}</TableCell>
-                                                        <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>
-                                                            {fCurrency(est.grand_total)}
-                                                        </TableCell>
-                                                        <TableCell align="right">
-                                                            <IconButton
-                                                                size="small"
-                                                                color="primary"
-                                                                onClick={() => {
-                                                                    router.push(`/estimations/${encodeURIComponent(est.name)}/view`);
-                                                                    onClose();
-                                                                }}
-                                                            >
-                                                                <Iconify icon="solar:eye-bold" width={20} />
-                                                            </IconButton>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </TableContainer>
-                                ) : (
-                                    <EmptyContent
-                                        title="No estimations created"
-                                        description="Start by creating a new estimation for this deal."
-                                        sx={{ py: 10 }}
-                                    />
-                                )}
-                            </Box>
-
-                            <Divider />
-
-                            <Box sx={{ p: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'background.neutral' }}>
-                                <Typography variant="h6" sx={{ fontWeight: 800 }}>Related Invoices</Typography>
-                                <Button
-                                    variant="contained"
-                                    color="success"
-                                    size="small"
-                                    startIcon={<Iconify icon="mingcute:add-line" width={16} />}
-                                    onClick={handleCreateInvoice}
-                                    sx={{ height: 36, px: 2 }}
-                                >
-                                    New Invoice
-                                </Button>
-                            </Box>
-
-                            <Box sx={{ flexGrow: 1, p: 4, bgcolor: 'background.paper', overflow: 'auto' }}>
-                                {relatedInvoices.length > 0 ? (
-                                    <TableContainer sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 1.5 }}>
-                                        <Table size="medium">
-                                            <TableHead sx={{ bgcolor: 'background.neutral' }}>
-                                                <TableRow>
-                                                    <TableCell sx={{ fontWeight: 700 }}>Ref No</TableCell>
-                                                    <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
-                                                    <TableCell align="right" sx={{ fontWeight: 700 }}>Total</TableCell>
-                                                    <TableCell align="right" />
-                                                </TableRow>
-                                            </TableHead>
-                                            <TableBody>
-                                                {relatedInvoices.map((inv) => (
-                                                    <TableRow key={inv.name} hover>
-                                                        <TableCell sx={{ fontWeight: 700 }}>{inv.ref_no}</TableCell>
-                                                        <TableCell sx={{ color: 'text.secondary', fontWeight: 600 }}>{inv.invoice_date}</TableCell>
-                                                        <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>
-                                                            {fCurrency(inv.grand_total)}
-                                                        </TableCell>
-                                                        <TableCell align="right">
-                                                            <IconButton
-                                                                size="small"
-                                                                color="primary"
-                                                                onClick={() => {
-                                                                    router.push(`/invoices/${encodeURIComponent(inv.name)}/view`);
-                                                                    onClose();
-                                                                }}
-                                                            >
-                                                                <Iconify icon="solar:eye-bold" width={20} />
-                                                            </IconButton>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </TableContainer>
-                                ) : (
-                                    <EmptyContent
-                                        title="No invoices created"
-                                        description="Start by creating a new invoice for this deal."
-                                        sx={{ py: 10 }}
-                                    />
-                                )}
+                                <DealRelatedList dealId={dealId || ''} type={currentTab as any} />
                             </Box>
                         </Box>
                     </Box>
