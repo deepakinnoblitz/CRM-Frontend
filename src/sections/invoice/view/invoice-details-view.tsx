@@ -73,7 +73,7 @@ export function InvoiceDetailsView() {
         return (
             <DashboardContent>
                 <Typography variant="h4">Invoice not found</Typography>
-                <Button onClick={() => router.push('/invoices')} sx={{ mt: 3 }}>
+                <Button onClick={() => router.push('/deals?tab=invoices')} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
             </DashboardContent>
@@ -129,7 +129,7 @@ export function InvoiceDetailsView() {
         try {
             setDeleting(true);
             await deleteInvoice(id);
-            router.push('/invoices');
+            router.push('/deals?tab=invoices');
         } catch (error) {
             console.error('Failed to delete invoice:', error);
         } finally {
@@ -146,7 +146,7 @@ export function InvoiceDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/invoices')}
+                        onClick={() => router.push('/deals?tab=invoices')}
                         startIcon={<Iconify icon={"solar:arrow-left-bold" as any} />}
                     >
                         Back to List

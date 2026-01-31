@@ -401,7 +401,7 @@ export function InvoiceCreateView() {
 
             await createInvoice(invoiceData);
             setSnackbar({ open: true, message: 'Invoice created successfully', severity: 'success' });
-            setTimeout(() => router.push('/invoices'), 1500);
+            setTimeout(() => router.push('/deals?tab=invoices'), 1500);
         } catch (err: any) {
             console.error(err);
             setSnackbar({ open: true, message: err.message || 'Failed to create invoice', severity: 'error' });
@@ -411,7 +411,7 @@ export function InvoiceCreateView() {
     };
 
     const handleCancel = () => {
-        router.push('/invoices');
+        router.push('/deals?tab=invoices');
     };
 
     return (
@@ -450,7 +450,7 @@ export function InvoiceCreateView() {
                                     label="Linked Deal"
                                 />
                             )}
-                            sx={{ gridColumn: 'span 2' }}
+                            sx={{ gridColumn: 'span 2', display: 'none' }}
                         />
 
                         <Stack direction="row" spacing={1} alignItems="center">

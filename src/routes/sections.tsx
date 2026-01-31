@@ -128,7 +128,7 @@ export const routesSection: RouteObject[] = [
       {
         path: 'invoices',
         children: [
-          { index: true, element: <Navigate to="/deals?tab=invoices" replace /> },
+          { index: true, element: <InvoiceListPage /> },
           { path: 'new', element: <InvoiceCreatePage /> },
           { path: ':id/edit', element: <InvoiceEditPage /> },
           { path: ':id/view', element: <InvoiceDetailsPage /> },
