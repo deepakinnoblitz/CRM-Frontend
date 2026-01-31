@@ -38,7 +38,7 @@ export default function InvoiceCollectionEditView() {
     };
 
     const handleCancel = () => {
-        router.push('/invoices?tab=collections');
+        router.push('/deals?tab=invoices&subtab=collections');
     };
 
     return (

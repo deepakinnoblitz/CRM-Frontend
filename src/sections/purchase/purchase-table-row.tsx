@@ -18,8 +18,8 @@ export type PurchaseProps = {
     bill_no: string;
     vendor_name: string;
     bill_date: string;
-    grand_total: number;
     payment_type: string;
+    grand_total: number;
     paid_amount: number;
 };
 
@@ -85,21 +85,21 @@ export function PurchaseTableRow({
                 </TableCell>
             )}
 
-            <TableCell>{row.name}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 700 }}>{row.name}</TableCell>
 
             <TableCell component="th" scope="row">
-                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center', fontWeight: 400 }}>
                     {row.bill_no}
                 </Box>
             </TableCell>
 
-            <TableCell>{row.vendor_name}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 400 }}>{row.vendor_name}</TableCell>
 
-            <TableCell>{fDate(row.bill_date)}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 400 }}>{fDate(row.bill_date)}</TableCell>
 
-            <TableCell align="right">{fCurrency(row.grand_total)}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 400 }}>{row.payment_type}</TableCell>
 
-            <TableCell>{row.payment_type}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700 }}>{fCurrency(row.grand_total)}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

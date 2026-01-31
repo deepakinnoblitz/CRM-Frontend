@@ -48,6 +48,7 @@ export async function fetchEstimations(params: {
         client_name?: string;
         ref_no?: string;
         estimate_date?: string; // Expecting YYYY-MM-DD
+        deal_id?: string;
     };
 }) {
     const filters: any[] = [];
@@ -56,7 +57,7 @@ export async function fetchEstimations(params: {
     if (params.search) {
         or_filters.push(["Estimation", "ref_no", "like", `%${params.search}%`]);
         or_filters.push(["Estimation", "customer_name", "like", `%${params.search}%`]);
-        or_filters.push(["Estimation", "phone_number", "like", `%${params.search}%`]);
+        or_filters.push(["Estimation", "client_name", "like", `%${params.search}%`]);
     }
 
     if (params.filters) {
@@ -68,6 +69,9 @@ export async function fetchEstimations(params: {
         }
         if (params.filters.estimate_date) {
             filters.push(["Estimation", "estimate_date", "=", params.filters.estimate_date]);
+        }
+        if (params.filters.deal_id) {
+            filters.push(["Estimation", "deal", "=", params.filters.deal_id]);
         }
     }
 
@@ -208,4 +212,27 @@ export async function convertEstimationToInvoice(name: string) {
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to convert estimation"));
     return json.message;
+}
+
+export async function fetchRelatedEstimations(dealId: string) {
+    const filters = [["Estimation", "deal", "=", dealId]];
+    const query = new URLSearchParams({
+        doctype: "Estimation",
+        fields: JSON.stringify([
+            "name",
+            "ref_no",
+            "customer_name",
+            "estimate_date",
+            "grand_total",
+            "creation"
+        ]),
+        filters: JSON.stringify(filters),
+        order_by: "creation desc"
+    });
+
+    const res = await frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`);
+    if (!res.ok) throw new Error("Failed to fetch related estimations");
+
+    const data = await res.json();
+    return data.message || [];
 }

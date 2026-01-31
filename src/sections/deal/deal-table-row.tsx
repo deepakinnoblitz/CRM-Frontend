@@ -117,7 +117,21 @@ export function DealTableRow({
             <TableCell>{row.expectedCloseDate || '-'}</TableCell>
 
             <TableCell align="right">
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+                    <IconButton
+                        onClick={() => window.location.href = `/estimations/new?deal_id=${encodeURIComponent(row.id)}&client_id=${encodeURIComponent(row.contact)}`}
+                        sx={{ color: 'secondary.main' }}
+                        title="Create Estimation"
+                    >
+                        <Iconify icon={"solar:document-add-bold" as any} />
+                    </IconButton>
+                    <IconButton
+                        onClick={() => window.location.href = `/invoices/new?deal_id=${encodeURIComponent(row.id)}`}
+                        sx={{ color: 'success.main' }}
+                        title="Create Invoice"
+                    >
+                        <Iconify icon={"solar:bill-list-bold" as any} />
+                    </IconButton>
                     {canEdit && (
                         <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
                             <Iconify icon="solar:pen-bold" />

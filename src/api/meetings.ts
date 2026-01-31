@@ -16,6 +16,8 @@ export interface Meeting {
     meeting_venue?: string;
     location?: string;
     completed_meet_notes?: string;
+    enable_reminder?: number;
+    remind_before_minutes?: number;
 }
 
 
@@ -39,7 +41,9 @@ export async function fetchMeetings(start?: string, end?: string): Promise<Meeti
             "outgoing_call_status",
             "meeting_venue",
             "location",
-            "completed_meet_notes"
+            "completed_meet_notes",
+            "enable_reminder",
+            "remind_before_minutes"
         ]),
         filters: JSON.stringify(filters),
         limit_page_length: "1000",
@@ -96,7 +100,7 @@ export async function updateMeeting(name: string, data: Partial<Meeting>): Promi
 export async function deleteMeeting(name: string): Promise<void> {
     const headers = await getAuthHeaders();
 
-    const res = await frappeRequest(`/api/method/frappe.client.delete`, {
+    const res = await frappeRequest(`/api/method/company.company.crm_api.force_delete_doc`, {
         method: 'POST',
         headers,
         body: JSON.stringify({

@@ -71,6 +71,7 @@ export function EstimationDetailsView() {
 
     const {
         client_name,
+        deal,
         estimate_date,
         billing_address,
         description,
@@ -228,6 +229,12 @@ export function EstimationDetailsView() {
                                     <Typography variant="caption" color="text.disabled">Reference</Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>#{id}</Typography>
                                 </Stack>
+                                {deal && (
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                        <Typography variant="caption" color="text.disabled">Linked Deal</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold', color: 'info.main' }}>{deal}</Typography>
+                                    </Stack>
+                                )}
                             </Stack>
                         </Stack>
 

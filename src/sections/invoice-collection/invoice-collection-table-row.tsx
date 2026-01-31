@@ -75,22 +75,22 @@ export function InvoiceCollectionTableRow({
             )}
 
             <TableCell component="th" scope="row">
-                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center',fontWeight: 700 }}>
                     {row.name}
                 </Box>
             </TableCell>
 
-            <TableCell>{row.invoice}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 500 }}>{row.invoice}</TableCell>
 
-            <TableCell>{row.customer_name || row.customer}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 500 }}>{row.customer_name || row.customer}</TableCell>
 
-            <TableCell>{fDate(row.collection_date)}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 500 }}>{fDate(row.collection_date)}</TableCell>
 
-            <TableCell>{row.mode_of_payment}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 500 }}>{row.mode_of_payment}</TableCell>
 
-            <TableCell align="right">{fCurrency(row.amount_collected)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{fCurrency(row.amount_collected)}</TableCell>
 
-            <TableCell align="right">{fCurrency(row.amount_pending || 0)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>{fCurrency(row.amount_pending || 0)}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

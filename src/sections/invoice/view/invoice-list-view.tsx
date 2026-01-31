@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
+import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
@@ -42,7 +43,6 @@ import { InvoiceTableFiltersDrawer } from '../invoice-table-filters-drawer';
 
 const TABLE_HEAD = [
     { id: 'ref_no', label: 'Ref No' },
-    { id: 'client_name', label: 'Customer ID' },
     { id: 'customer_name', label: 'Customer' },
     { id: 'invoice_date', label: 'Date' },
     { id: 'grand_total', label: 'Amount', align: 'right' },
@@ -179,19 +179,27 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
 
     const content = (
         <>
-            {!hideHeader && (
-                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+                {!hideHeader && (
                     <Typography variant="h4">Invoices</Typography>
-                    <Button
-                        variant="contained"
-                        color="info"
-                        startIcon={<Iconify icon="mingcute:add-line" />}
-                        onClick={handleCreateNew}
-                    >
-                        New Invoice
-                    </Button>
-                </Stack>
-            )}
+                )}
+                {hideHeader && <Box sx={{ flexGrow: 1 }} />}
+                {/* <Button
+                    variant="contained"
+                    color="info"
+                    startIcon={<Iconify icon="mingcute:add-line" />}
+                    onClick={handleCreateNew}
+                    sx={{
+                        ...(hideHeader && {
+                            bgcolor: '#08a3cd',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#068fb3' }
+                        })
+                    }}
+                >
+                    New Invoice
+                </Button> */}
+            </Stack>
 
             <Card>
                 <InvoiceTableToolbar
@@ -232,7 +240,6 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
                                         row={{
                                             id: row.name,
                                             ref_no: row.ref_no,
-                                            client_name: row.client_name || '',
                                             customer_name: row.customer_name || '',
                                             invoice_date: row.invoice_date,
                                             grand_total: row.grand_total || 0,

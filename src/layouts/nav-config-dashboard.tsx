@@ -162,16 +162,6 @@ export const salesNavData = [
     icon: <Iconify icon={"solar:widget-5-bold-duotone" as any} />,
   },
   {
-    title: 'Invoices',
-    path: '/invoices',
-    icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} />,
-  },
-  {
-    title: 'Estimations',
-    path: '/estimations',
-    icon: <Iconify icon={"solar:document-text-bold-duotone" as any} />,
-  },
-  {
     title: 'Purchases',
     path: '/purchase',
     icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
@@ -293,16 +283,6 @@ export const crmAndSalesNavData = [
     title: 'Deals',
     path: '/deals',
     icon: <Iconify icon={"solar:hand-money-bold-duotone" as any} />,
-  },
-  {
-    title: 'Estimations',
-    path: '/estimations',
-    icon: <Iconify icon={"solar:document-text-bold-duotone" as any} />,
-  },
-  {
-    title: 'Invoices',
-    path: '/invoices',
-    icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} />,
   },
   {
     title: 'Purchases',

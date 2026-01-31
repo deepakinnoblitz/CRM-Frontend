@@ -26,7 +26,9 @@ import { Box, Card, Grid, Stack, Alert, Button, Snackbar, IconButton, Typography
 
 import { stripHtml } from 'src/utils/string';
 
+import { getCall, type Call } from 'src/api/calls';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { getMeeting, type Meeting } from 'src/api/meetings';
 import { fetchEvents, updateEvent, createEvent, deleteEvent, type CalendarEvent } from 'src/api/events';
 
 import { Iconify } from 'src/components/iconify';
@@ -68,6 +70,9 @@ export function EventsView() {
     const [openMeetingDialog, setOpenMeetingDialog] = useState(false);
     const [openTodoDialog, setOpenTodoDialog] = useState(false);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+    const [selectedCallDoc, setSelectedCallDoc] = useState<Call | null>(null);
+    const [selectedMeetingDoc, setSelectedMeetingDoc] = useState<Meeting | null>(null);
 
     const loadEvents = useCallback(async (start?: Date, end?: Date) => {
         try {
@@ -112,15 +117,49 @@ export function EventsView() {
         setOpenTodoDialog(true);
     };
 
-    const handleEventClick = (info: any) => {
+    const handleCloseCallDialog = () => {
+        setOpenCallDialog(false);
+        setSelectedCallDoc(null);
+    };
+
+    const handleCloseMeetingDialog = () => {
+        setOpenMeetingDialog(false);
+        setSelectedMeetingDoc(null);
+    };
+
+    const handleEventClick = async (info: any) => {
         const eventId = info.event.id;
         const event = events.find(e => e.name === eventId);
         if (event) {
+            if (event.reference_doctype === 'Calls' && event.reference_docname) {
+                try {
+                    const call = await getCall(event.reference_docname);
+                    setSelectedCallDoc(call);
+                    setOpenCallDialog(true);
+                } catch (error) {
+                    console.error('Failed to fetch call:', error);
+                    setSnackbar({ open: true, message: 'Failed to fetch call details', severity: 'error' });
+                }
+                return;
+            }
+
+            if (event.reference_doctype === 'Meeting' && event.reference_docname) {
+                try {
+                    const meeting = await getMeeting(event.reference_docname);
+                    setSelectedMeetingDoc(meeting);
+                    setOpenMeetingDialog(true);
+                } catch (error) {
+                    console.error('Failed to fetch meeting:', error);
+                    setSnackbar({ open: true, message: 'Failed to fetch meeting details', severity: 'error' });
+                }
+                return;
+            }
+
             setSelectedEvent(event);
             setEventData({
                 subject: event.subject,
                 description: stripHtml(event.description || ''),
-                event_category: event.event_category || 'Event',
+                event_category: event.event_category && event.event_category.trim() !== '' ? event.event_category : 'Event',
                 event_type: event.event_type || 'Private',
                 starts_on: event.starts_on.replace(' ', 'T'),
                 ends_on: event.ends_on?.replace(' ', 'T') || '',
@@ -461,122 +500,85 @@ export function EventsView() {
                 </Box>
             </Card>
 
-            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="md">
-                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {selectedEvent ? 'Edit Event' : 'New Event'}
-                    <IconButton
-                        aria-label="close"
-                        onClick={() => setOpenDialog(false)}
-                        sx={{
-                            color: (themeValue) => themeValue.palette.grey[500],
-                        }}
-                    >
+            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
+                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                            {selectedEvent ? 'Edit Event' : 'New Event'}
+                        </Typography>
+                    </Box>
+                    <IconButton onClick={() => setOpenDialog(false)} sx={{ color: 'text.secondary' }}>
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
                 </DialogTitle>
-                <DialogContent dividers>
+
+                <DialogContent dividers sx={{ borderBottom: 'none', px: 3, pb: 0 }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <Box sx={{ py: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {/* Event Overview Section */}
                             <Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                                    <Box
-                                        sx={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: 1,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
-                                            color: 'primary.main'
-                                        }}
-                                    >
-                                        <Iconify icon="solar:pen-bold" width={20} />
-                                    </Box>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: '600' }}>Event Overview</Typography>
-                                </Box>
-                                <TextField
-                                    fullWidth
-                                    label="Subject"
-                                    value={eventData.subject}
-                                    onChange={(e) => setEventData({ ...eventData, subject: e.target.value })}
-                                />
+                                <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
+                                    Event Overview
+                                </Typography>
+                                <Stack spacing={2.5}>
+                                    <TextField
+                                        fullWidth
+                                        label="Subject"
+                                        placeholder="Enter event subject"
+                                        value={eventData.subject}
+                                        onChange={(e) => setEventData({ ...eventData, subject: e.target.value })}
+                                    />
+
+                                    <Grid container spacing={2}>
+                                        <Grid size={{ xs: 12, md: 6 }}>
+                                            <FormControl fullWidth>
+                                                <InputLabel>Event Category</InputLabel>
+                                                <Select
+                                                    label="Event Category"
+                                                    value={eventData.event_category}
+                                                    onChange={(e) => setEventData({ ...eventData, event_category: e.target.value as string })}
+                                                >
+                                                    <MenuItem value="Event">Event</MenuItem>
+                                                    <MenuItem value="Meeting">Meeting</MenuItem>
+                                                    <MenuItem value="Call">Call</MenuItem>
+                                                    <MenuItem value="Todo">Todo</MenuItem>
+                                                    <MenuItem value="Email">Email</MenuItem>
+                                                    <MenuItem value="Other">Other</MenuItem>
+                                                </Select>
+                                            </FormControl>
+                                        </Grid>
+                                        <Grid size={{ xs: 12, md: 6 }}>
+                                            <FormControl fullWidth>
+                                                <InputLabel>Status</InputLabel>
+                                                <Select
+                                                    label="Status"
+                                                    value={eventData.status}
+                                                    onChange={(e) => setEventData({ ...eventData, status: e.target.value as string })}
+                                                >
+                                                    <MenuItem value="Open">Open</MenuItem>
+                                                    <MenuItem value="Scheduled">Scheduled</MenuItem>
+                                                    <MenuItem value="Completed">Completed</MenuItem>
+                                                    <MenuItem value="Closed">Closed</MenuItem>
+                                                    <MenuItem value="Cancelled">Cancelled</MenuItem>
+                                                </Select>
+                                            </FormControl>
+                                        </Grid>
+                                    </Grid>
+                                </Stack>
                             </Box>
 
-                            <Grid container spacing={3}>
-                                <Grid size={{ xs: 12, md: 6 }}>
-                                    <FormControl fullWidth>
-                                        <InputLabel>Event Category</InputLabel>
-                                        <Select
-                                            label="Event Category"
-                                            value={eventData.event_category}
-                                            onChange={(e) => setEventData({ ...eventData, event_category: e.target.value as string })}
-                                        >
-                                            <MenuItem value="Event">Event</MenuItem>
-                                            <MenuItem value="Meeting">Meeting</MenuItem>
-                                            <MenuItem value="Call">Call</MenuItem>
-                                            <MenuItem value="Email">Email</MenuItem>
-                                            <MenuItem value="Other">Other</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                                <Grid size={{ xs: 12, md: 6 }}>
-                                    <FormControl fullWidth>
-                                        <InputLabel>Status</InputLabel>
-                                        <Select
-                                            label="Status"
-                                            value={eventData.status}
-                                            onChange={(e) => setEventData({ ...eventData, status: e.target.value as string })}
-                                        >
-                                            <MenuItem value="Open">Open</MenuItem>
-                                            <MenuItem value="Scheduled">Scheduled</MenuItem>
-                                            <MenuItem value="Completed">Completed</MenuItem>
-                                            <MenuItem value="Closed">Closed</MenuItem>
-                                            <MenuItem value="Cancelled">Cancelled</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                            </Grid>
-
+                            {/* Schedule Details Section */}
                             <Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                                    <Box
-                                        sx={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: 1,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            bgcolor: (t) => alpha(t.palette.info.main, 0.1),
-                                            color: 'info.main'
-                                        }}
-                                    >
-                                        <Iconify icon="solar:clock-circle-outline" width={20} />
-                                    </Box>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: '600' }}>Schedule Details</Typography>
-                                </Box>
-                                <Grid container spacing={3}>
+                                <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
+                                    Schedule Details
+                                </Typography>
+                                <Grid container spacing={2}>
                                     <Grid size={{ xs: 12, md: 6 }}>
                                         <DateTimePicker
                                             label="Starts On"
                                             value={eventData.starts_on ? dayjs(eventData.starts_on) : null}
                                             onChange={(newValue) => setEventData({ ...eventData, starts_on: newValue ? newValue.format('YYYY-MM-DD HH:mm:ss') : '' })}
-                                            slotProps={{
-                                                textField: {
-                                                    fullWidth: true,
-                                                    size: 'small',
-                                                    sx: {
-                                                        '& .MuiInputBase-root': {
-                                                            fontSize: '0.813rem',
-                                                            height: '36px'
-                                                        },
-                                                        '& .MuiInputLabel-root': {
-                                                            fontSize: '0.813rem'
-                                                        }
-                                                    }
-                                                }
-                                            }}
+                                            slotProps={{ textField: { fullWidth: true } }}
                                         />
                                     </Grid>
                                     <Grid size={{ xs: 12, md: 6 }}>
@@ -584,49 +586,23 @@ export function EventsView() {
                                             label="Ends On"
                                             value={eventData.ends_on ? dayjs(eventData.ends_on) : null}
                                             onChange={(newValue) => setEventData({ ...eventData, ends_on: newValue ? newValue.format('YYYY-MM-DD HH:mm:ss') : '' })}
-                                            slotProps={{
-                                                textField: {
-                                                    fullWidth: true,
-                                                    size: 'small',
-                                                    sx: {
-                                                        '& .MuiInputBase-root': {
-                                                            fontSize: '0.813rem',
-                                                            height: '36px'
-                                                        },
-                                                        '& .MuiInputLabel-root': {
-                                                            fontSize: '0.813rem'
-                                                        }
-                                                    }
-                                                }
-                                            }}
+                                            slotProps={{ textField: { fullWidth: true } }}
                                         />
                                     </Grid>
                                 </Grid>
                             </Box>
 
+                            {/* Description Section */}
                             <Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                                    <Box
-                                        sx={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: 1,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            bgcolor: (t) => alpha(t.palette.warning.main, 0.1),
-                                            color: 'warning.main'
-                                        }}
-                                    >
-                                        <Iconify icon="solar:chat-round-dots-bold" width={20} />
-                                    </Box>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: '600' }}>Description</Typography>
-                                </Box>
+                                <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
+                                    Description
+                                </Typography>
                                 <TextField
                                     fullWidth
                                     multiline
                                     rows={4}
                                     label="Details"
+                                    placeholder="Enter event details..."
                                     value={eventData.description}
                                     onChange={(e) => setEventData({ ...eventData, description: e.target.value })}
                                 />
@@ -634,14 +610,21 @@ export function EventsView() {
                         </Box>
                     </LocalizationProvider>
                 </DialogContent>
-                <DialogActions sx={{ p: 2, gap: 1 }}>
+
+                <DialogActions sx={{ p: 3, pt: 2, gap: 1.5 }}>
                     {selectedEvent && (
-                        <Button color="error" variant="outlined" onClick={() => setConfirmDelete({ open: true, id: selectedEvent.name })} sx={{ mr: 'auto' }}>
+                        <Button color="error" variant="outlined" onClick={() => setConfirmDelete({ open: true, id: selectedEvent.name })} sx={{ mr: 'auto', borderRadius: 1 }}>
                             Delete
                         </Button>
                     )}
-                    <Button color="inherit" variant="outlined" onClick={() => setOpenDialog(false)}>Cancel</Button>
-                    <Button variant="contained" onClick={handleSaveEvent}>{selectedEvent ? 'Save Changes' : 'Create Event'}</Button>
+                    <Button
+                        variant="contained"
+                        color="info"
+                        onClick={handleSaveEvent}
+                        sx={{ borderRadius: 1, px: 3 }}
+                    >
+                        {selectedEvent ? 'Save Changes' : 'Create Event'}
+                    </Button>
                 </DialogActions>
             </Dialog>
 
@@ -685,21 +668,21 @@ export function EventsView() {
                         {[
                             {
                                 label: 'Calls',
-                                icon: '/assets/images/calls-3d-white.png',
+                                icon: '/assets/company/crm/assets/images/calls-3d-white.png',
                                 color: 'primary',
                                 sub: 'Schedule a call',
                                 handler: handleOpenCallDialog,
                             },
                             {
                                 label: 'Meeting',
-                                icon: '/assets/images/meeting-3d-white.png',
+                                icon: '/assets/company/crm/assets/images/meeting-3d-white.png',
                                 color: 'success',
                                 sub: 'Schedule a meeting',
                                 handler: handleOpenMeetingDialog,
                             },
                             {
                                 label: 'To-do',
-                                icon: '/assets/images/todo-3d-white.png',
+                                icon: '/assets/company/crm/assets/images/todo-3d-white.png',
                                 color: 'warning',
                                 sub: 'Create a task',
                                 handler: handleOpenTodoDialog,
@@ -763,14 +746,16 @@ export function EventsView() {
 
             <CallDialog
                 open={openCallDialog}
-                onClose={() => setOpenCallDialog(false)}
+                onClose={handleCloseCallDialog}
+                selectedCall={selectedCallDoc}
                 initialData={selectedDate ? { call_start_time: selectedDate } : undefined}
                 onSuccess={loadEvents}
             />
 
             <MeetingDialog
                 open={openMeetingDialog}
-                onClose={() => setOpenMeetingDialog(false)}
+                onClose={handleCloseMeetingDialog}
+                selectedMeeting={selectedMeetingDoc}
                 initialData={selectedDate ? { from: selectedDate } : undefined}
                 onSuccess={loadEvents}
             />

@@ -16,6 +16,8 @@ export interface Call {
     call_purpose?: string;
     call_agenda?: string;
     color?: string;
+    enable_reminder?: number;
+    remind_before_minutes?: number;
 }
 
 export async function fetchCalls(start?: string, end?: string): Promise<Call[]> {
@@ -38,7 +40,9 @@ export async function fetchCalls(start?: string, end?: string): Promise<Call[]> 
             "outgoing_call_status",
             "call_purpose",
             "call_agenda",
-            "color"
+            "color",
+            "enable_reminder",
+            "remind_before_minutes"
         ]),
         filters: JSON.stringify(filters),
         limit_page_length: "1000",
@@ -95,7 +99,7 @@ export async function updateCall(name: string, data: Partial<Call>): Promise<voi
 export async function deleteCall(name: string): Promise<void> {
     const headers = await getAuthHeaders();
 
-    const res = await frappeRequest(`/api/method/frappe.client.delete`, {
+    const res = await frappeRequest(`/api/method/company.company.crm_api.force_delete_doc`, {
         method: 'POST',
         headers,
         body: JSON.stringify({

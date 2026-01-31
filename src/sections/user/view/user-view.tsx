@@ -1,4 +1,5 @@
 import { MuiTelInput } from 'mui-tel-input';
+import { useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -57,6 +58,8 @@ import { UserTableFiltersDrawer } from '../user-table-filters-drawer';
 
 export function UserView() {
   const table = useTable();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewLeadId = searchParams.get('view');
   const [filterName, setFilterName] = useState('');
   const [filters, setFilters] = useState({
     status: 'all',
@@ -155,6 +158,17 @@ export function UserView() {
     filters,
     sortBy
   );
+
+  useEffect(() => {
+    if (viewLeadId && !openView) {
+      setCurrentLeadId(viewLeadId);
+      setOpenView(true);
+      // Remove 'view' from search params to avoid re-opening on refresh
+      const params = new URLSearchParams(searchParams);
+      params.delete('view');
+      setSearchParams(params, { replace: true });
+    }
+  }, [viewLeadId, openView, setSearchParams, searchParams]);
 
   const handleFilters = (update: any) => {
     setFilters((prev) => ({ ...prev, ...update }));

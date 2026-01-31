@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -74,11 +75,13 @@ export function EstimationCreateView() {
     const [customerOptions, setCustomerOptions] = useState<any[]>([]);
     const [itemOptions, setItemOptions] = useState<any[]>([]);
     const [taxOptions, setTaxOptions] = useState<any[]>([]);
+    const [dealOptions, setDealOptions] = useState<any[]>([]);
 
     const [clientName, setClientName] = useState('');
     const [customerName, setCustomerName] = useState('');
     const [billingName, setBillingName] = useState('');
     const [estimateDate, setEstimateDate] = useState(new Date().toISOString().split('T')[0]);
+    const [deal, setDeal] = useState('');
     const [billingAddress, setBillingAddress] = useState('');
     const [description, setDescription] = useState('');
     const [remarks, setRemarks] = useState('');
@@ -123,6 +126,22 @@ export function EstimationCreateView() {
     const [taxTypeDialogOpen, setTaxTypeDialogOpen] = useState(false);
     const [newTaxInitialName, setNewTaxInitialName] = useState('');
 
+    const [searchParams] = useSearchParams();
+    const dealIdParam = searchParams.get('deal_id');
+    const clientIdParam = searchParams.get('client_id');
+
+    useEffect(() => {
+        if (clientIdParam && customerOptions.length > 0) {
+            handleCustomerChange(clientIdParam);
+        }
+    }, [clientIdParam, customerOptions]);
+
+    useEffect(() => {
+        if (dealIdParam) {
+            setDeal(dealIdParam);
+        }
+    }, [dealIdParam]);
+
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'address'])
             .then((data) => {
@@ -141,6 +160,10 @@ export function EstimationCreateView() {
         getDoctypeList('Tax Types', ['name', 'tax_name', 'tax_percentage', 'tax_type'])
             .then(setTaxOptions)
             .catch((error) => console.error('Failed to load Tax Types data:', error));
+
+        getDoctypeList('Deal', ['name', 'deal_title'])
+            .then(setDealOptions)
+            .catch((error) => console.error('Failed to load Deal data:', error));
     }, []);
 
     const handleCustomerChange = async (name: string) => {
@@ -360,6 +383,7 @@ export function EstimationCreateView() {
 
             const estimationData = {
                 client_name: clientName,
+                deal: deal,
                 customer_name: customerName,
                 billing_name: billingName,
                 estimate_date: estimateDate,
@@ -450,6 +474,18 @@ export function EstimationCreateView() {
                                 </Button>
                             )}
                         </Stack>
+
+                        <Autocomplete
+                            fullWidth
+                            options={dealOptions}
+                            getOptionLabel={(option) => (option.deal_title ? `${option.name} - ${option.deal_title}` : option.name || '')}
+                            value={dealOptions.find((opt) => opt.name === deal) || null}
+                            onChange={(_e, newValue) => setDeal(newValue?.name || '')}
+                            renderInput={(params) => (
+                                <TextField {...params} label="Link Deal" />
+                            )}
+                            sx={{ display: 'none' }}
+                        />
 
                         <TextField
                             fullWidth

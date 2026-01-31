@@ -40,8 +40,8 @@ const TABLE_HEAD = [
     { id: 'bill_no', label: 'Bill No' },
     { id: 'vendor_name', label: 'Vendor' },
     { id: 'bill_date', label: 'Bill Date' },
-    { id: 'grand_total', label: 'Grand Total', align: 'right' },
     { id: 'payment_type', label: 'Payment Type' },
+    { id: 'grand_total', label: 'Grand Total', align: 'right' },
     { id: '' },
 ];
 

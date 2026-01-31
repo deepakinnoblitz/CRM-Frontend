@@ -14,6 +14,8 @@ export interface CalendarEvent {
     description?: string;
     color?: string;
     all_day?: number;
+    reference_doctype?: string;
+    reference_docname?: string;
 }
 
 export async function fetchEvents(start?: string, end?: string): Promise<CalendarEvent[]> {
@@ -34,7 +36,9 @@ export async function fetchEvents(start?: string, end?: string): Promise<Calenda
             "status",
             "description",
             "color",
-            "all_day"
+            "all_day",
+            "reference_doctype",
+            "reference_docname"
         ]),
         filters: JSON.stringify(filters),
         limit_page_length: "1000",

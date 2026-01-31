@@ -169,7 +169,7 @@ export async function getContactPermissions() {
 }
 
 export async function getContact(name: string) {
-    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Contacts&name=${name}`);
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Contacts&name=${encodeURIComponent(name)}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch contact details");

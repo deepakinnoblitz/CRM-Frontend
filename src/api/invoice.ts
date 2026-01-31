@@ -57,6 +57,7 @@ export async function fetchInvoices(params: {
         client_name?: string;
         ref_no?: string;
         invoice_date?: string | null;
+        deal_id?: string;
     };
     page: number;
     page_size: number;
@@ -76,12 +77,15 @@ export async function fetchInvoices(params: {
         if (params.filters.invoice_date) {
             filters.push(["Invoice", "invoice_date", "=", params.filters.invoice_date]);
         }
+        if (params.filters.deal_id) {
+            filters.push(["Invoice", "deal", "=", params.filters.deal_id]);
+        }
     }
 
     if (params.search) {
         or_filters.push(["Invoice", "ref_no", "like", `%${params.search}%`]);
         or_filters.push(["Invoice", "customer_name", "like", `%${params.search}%`]);
-        or_filters.push(["Invoice", "phone_number", "like", `%${params.search}%`]);
+        or_filters.push(["Invoice", "client_name", "like", `%${params.search}%`]);
     }
 
     // Convert sort_by format (e.g., "invoice_date_desc") to Frappe order_by format
@@ -245,4 +249,25 @@ export async function createTaxType(data: { tax_name: string; tax_percentage: nu
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create tax type"));
     return json.message;
+}
+
+export async function fetchRelatedInvoices(dealId: string) {
+    const filters = [["Invoice", "deal", "=", dealId]];
+    const fields = ["name", "ref_no", "invoice_date", "grand_total", "received_amount", "balance_amount"];
+
+    const query = new URLSearchParams({
+        doctype: "Invoice",
+        fields: JSON.stringify(fields),
+        filters: JSON.stringify(filters),
+        order_by: "creation desc"
+    });
+
+    const res = await frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`);
+
+    if (!res.ok) {
+        throw new Error("Failed to fetch related invoices");
+    }
+
+    const data = await res.json();
+    return data.message || [];
 }

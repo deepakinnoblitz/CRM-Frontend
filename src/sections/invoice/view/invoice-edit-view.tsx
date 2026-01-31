@@ -412,7 +412,7 @@ export function InvoiceEditView() {
 
             await updateInvoice(id, invoiceData);
             setSnackbar({ open: true, message: 'Invoice updated successfully', severity: 'success' });
-            setTimeout(() => router.push('/invoices'), 1500);
+            setTimeout(() => router.push('/deals?tab=invoices'), 1500);
         } catch (err: any) {
             console.error(err);
             setSnackbar({ open: true, message: err.message || 'Failed to update invoice', severity: 'error' });
@@ -434,7 +434,7 @@ export function InvoiceEditView() {
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
                 <Typography variant="h4">Edit Invoice: {id}</Typography>
                 <Stack direction="row" spacing={2}>
-                    <Button variant="outlined" color="inherit" onClick={() => router.push('/invoices')}>
+                    <Button variant="outlined" color="inherit" onClick={() => router.push('/deals?tab=invoices')}>
                         Cancel
                     </Button>
                     <Button variant="contained" color="primary" onClick={handleSave} loading={loading}>
