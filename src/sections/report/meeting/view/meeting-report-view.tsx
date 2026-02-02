@@ -31,6 +31,8 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { ExportFieldsDialog } from '../../export-fields-dialog';
 import { MeetingDetailsDialog } from '../meeting-details-dialog';
 
@@ -41,12 +43,19 @@ export function MeetingReportView() {
     const [summaryData, setSummaryData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
+    const { user } = useAuth();
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [meetFor, setMeetFor] = useState('all');
     const [status, setStatus] = useState('all');
-    const [owner, setOwner] = useState('all');
+    const [owner, setOwner] = useState(user?.name || 'all');
+
+    useEffect(() => {
+        if (user?.name) {
+            setOwner(user.name);
+        }
+    }, [user]);
     const [reminder, setReminder] = useState('all');
 
     // Options
@@ -192,8 +201,10 @@ export function MeetingReportView() {
         setToDate(null);
         setMeetFor('all');
         setStatus('all');
-        setOwner('all');
         setReminder('all');
+        if (user?.name) {
+            setOwner(user.name);
+        }
     };
 
     useEffect(() => {
@@ -278,11 +289,12 @@ export function MeetingReportView() {
                             ))}
                         </Select>
                     </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 160 }}>
+                    <FormControl size="small" sx={{ minWidth: 160 }} disabled>
                         <Select
                             value={owner}
                             onChange={(e) => setOwner(e.target.value)}
                             displayEmpty
+                            inputProps={{ readOnly: true }}
                         >
                             <MenuItem value="all">Owner</MenuItem>
                             <MenuItem value="Administrator">Administrator</MenuItem>
@@ -374,7 +386,7 @@ export function MeetingReportView() {
                                                 <TableCell sx={{ fontWeight: 600 }}>{row.title}</TableCell>
                                                 <TableCell>{row.meet_for}</TableCell>
                                                 <TableCell>{row.lead_name || row.contact_name || '-'}</TableCell>
-                                                <TableCell>{row.account_name || '-'}</TableCell>
+                                                <TableCell>{row.accounts_name || '-'}</TableCell>
                                                 <TableCell>{row.outgoing_call_status}</TableCell>
                                                 <TableCell>
                                                     <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.from_time ? dayjs(row.from_time).format('DD MMM YYYY HH:mm') : '-'}</Typography>

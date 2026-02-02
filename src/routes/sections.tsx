@@ -45,6 +45,7 @@ export const ExpenseReportPage = lazy(() => import('src/pages/reports/expense'))
 export const EstimationReportPage = lazy(() => import('src/pages/reports/estimation'));
 export const InvoiceReportPage = lazy(() => import('src/pages/reports/invoice'));
 export const InvoiceCollectionReportPage = lazy(() => import('src/pages/reports/invoice-collection'));
+export const PurchaseCollectionReportPage = lazy(() => import('src/pages/reports/purchase-settlement-report'));
 export const EmployeePage = lazy(() => import('src/pages/employee'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
 export const LeavesPage = lazy(() => import('src/pages/leaves'));
@@ -214,6 +215,7 @@ export const routesSection: RouteObject[] = [
           { path: 'estimation', element: <EstimationReportPage /> },
           { path: 'invoice', element: <InvoiceReportPage /> },
           { path: 'invoice-collection', element: <InvoiceCollectionReportPage /> },
+          { path: 'purchase-settlement', element: <PurchaseCollectionReportPage /> },
         ],
       },
     ],

@@ -70,11 +70,16 @@ const INITIAL_CALL_STATE: Partial<Call> = {
     call_agenda: '',
     call_for: 'Lead',
     outgoing_call_status: 'Scheduled',
+    completed_call_status: '',
     call_start_time: '',
     call_end_time: '',
     lead_name: '',
+    account_name: '',
+    enter_id: '',
     enable_reminder: 0,
     remind_before_minutes: 60,
+    host: '',
+    participants: [],
 };
 
 export default function CallDialog({ open, onClose, selectedCall, initialData, onSuccess }: Props) {
@@ -92,12 +97,16 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
     const [leadOptions, setLeadOptions] = useState<any[]>([]);
     const [contactOptions, setContactOptions] = useState<any[]>([]);
     const [accountOptions, setAccountOptions] = useState<any[]>([]);
+    const [userOptions, setUserOptions] = useState<any[]>([]);
 
     useEffect(() => {
         if (open) {
             getDoctypeList('Lead', ['name', 'lead_name', 'converted_contact', 'converted_account']).then(setLeadOptions);
             getDoctypeList('Contacts', ['name', 'first_name', 'last_name']).then(setContactOptions);
             getDoctypeList('Accounts', ['name', 'account_name']).then(setAccountOptions);
+            getDoctypeList('User', ['name', 'full_name']).then((users) => {
+                setUserOptions(users.filter((u: any) => u.name !== 'Administrator' && u.name !== 'Guest'));
+            });
         }
     }, [open]);
 
@@ -109,13 +118,17 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                 call_agenda: stripHtml(selectedCall.call_agenda || ''),
                 call_for: selectedCall.call_for || 'Lead',
                 outgoing_call_status: selectedCall.outgoing_call_status || 'Scheduled',
+                completed_call_status: selectedCall.completed_call_status || '',
                 call_start_time: selectedCall.call_start_time.replace(' ', 'T'),
                 call_end_time: selectedCall.call_end_time?.replace(' ', 'T') || '',
                 lead_name: selectedCall.lead_name || '',
                 contact_name: selectedCall.contact_name || '',
                 account_name: selectedCall.account_name || '',
+                enter_id: selectedCall.enter_id || '',
                 enable_reminder: selectedCall.enable_reminder || 0,
                 remind_before_minutes: selectedCall.remind_before_minutes || 60,
+                host: selectedCall.host || '',
+                participants: selectedCall.participants || [],
             });
         } else if (initialData) {
             setCallData({
@@ -239,9 +252,22 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                                                     <MenuItem value="Lead">Lead</MenuItem>
                                                     <MenuItem value="Contact">Contact</MenuItem>
                                                     <MenuItem value="Accounts">Accounts</MenuItem>
+                                                    <MenuItem value="Others">Others</MenuItem>
                                                 </Select>
                                             </FormControl>
                                         </Grid>
+
+                                        {callData.call_for === 'Others' && (
+                                            <Grid size={{ xs: 12, md: 6 }}>
+                                                <TextField
+                                                    fullWidth
+                                                    label="Enter ID"
+                                                    placeholder="Enter other ID"
+                                                    value={callData.enter_id}
+                                                    onChange={(e) => setCallData({ ...callData, enter_id: e.target.value })}
+                                                />
+                                            </Grid>
+                                        )}
 
                                         {callData.call_for === 'Lead' && (
                                             <Grid size={{ xs: 12, md: 6 }}>
@@ -322,7 +348,7 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                                             </Grid>
                                         )}
 
-                                        <Grid size={{ xs: 12 }}>
+                                        <Grid size={{ xs: 12, md: 6 }}>
                                             <FormControl fullWidth>
                                                 <InputLabel>Status</InputLabel>
                                                 <Select
@@ -340,6 +366,56 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                                                 </Select>
                                             </FormControl>
                                         </Grid>
+
+                                        {callData.outgoing_call_status === 'Completed' && (
+                                            <Grid size={{ xs: 12, md: 6 }}>
+                                                <FormControl fullWidth>
+                                                    <InputLabel>Call Status</InputLabel>
+                                                    <Select
+                                                        label="Call Status"
+                                                        value={callData.completed_call_status}
+                                                        onChange={(e) => setCallData({ ...callData, completed_call_status: e.target.value as string })}
+                                                    >
+                                                        {[
+                                                            'Called – No Response',
+                                                            'Called – Phone Switched Off',
+                                                            'Called – Number Not Reachable',
+                                                            'Called – Wrong Number',
+                                                            'Called – Left Voicemail',
+                                                            'Called – Asked to Call Later',
+                                                            'Called – Spoke Briefly',
+                                                            'Spoke to Prospect – Not Available',
+                                                            'Spoke to Prospect – Confirmed Interest',
+                                                            'Spoke to Prospect – Needs More Time',
+                                                            'Spoke to Prospect – Will Revert Soon',
+                                                            'Spoke to Prospect – Awaiting Internal Discussion',
+                                                            'Demo Scheduled',
+                                                            'Demo Completed',
+                                                            'Demo Rescheduled',
+                                                            'Prospect Did Not Attend Demo',
+                                                            'Proposal / Quotation Sent',
+                                                            'Pricing Discussion Ongoing',
+                                                            'Negotiation in Progress',
+                                                            'Awaiting Prospect Approval',
+                                                            'Deal Won – Order Confirmed',
+                                                            'Deal Lost – Price Issue',
+                                                            'Deal Lost – No Requirement',
+                                                            'Deal Lost – Competitor Chosen',
+                                                            'Order Processing Started',
+                                                            'Payment Received',
+                                                            'Delivery / Implementation Started',
+                                                            'Post-Sales Follow-up Scheduled',
+                                                            'Lead Not Interested',
+                                                            'Lead Invalid',
+                                                            'Lead Closed – No Response',
+                                                            'Others'
+                                                        ].map((opt) => (
+                                                            <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                                        ))}
+                                                    </Select>
+                                                </FormControl>
+                                            </Grid>
+                                        )}
                                     </Grid>
                                 </Stack>
                             </Box>
@@ -362,6 +438,39 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                                             label="End Time"
                                             value={callData.call_end_time ? dayjs(callData.call_end_time) : null}
                                             onChange={(newValue) => setCallData({ ...callData, call_end_time: newValue ? newValue.format('YYYY-MM-DD HH:mm:ss') : '' })}
+                                        />
+                                    </Grid>
+                                </Grid>
+                            </Box>
+
+                            {/* Stakeholders Section */}
+                            <Box>
+                                <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
+                                    Stakeholders
+                                </Typography>
+                                <Grid container spacing={2}>
+                                    <Grid size={{ xs: 12, md: 6 }}>
+                                        <Autocomplete
+                                            fullWidth
+                                            options={userOptions}
+                                            getOptionLabel={(option) => typeof option === 'string' ? option : option.full_name || option.name}
+                                            value={userOptions.find(opt => opt.name === callData.host) || null}
+                                            onChange={(_, newValue) => setCallData({ ...callData, host: newValue?.name || '' })}
+                                            renderInput={(params) => <TextField {...params} label="Host" />}
+                                        />
+                                    </Grid>
+                                    <Grid size={{ xs: 12, md: 6 }}>
+                                        <Autocomplete
+                                            multiple
+                                            fullWidth
+                                            options={userOptions}
+                                            getOptionLabel={(option) => typeof option === 'string' ? option : option.full_name || option.name}
+                                            value={userOptions.filter(opt => callData.participants?.some(p => p.user === opt.name))}
+                                            onChange={(_, newValue) => setCallData({
+                                                ...callData,
+                                                participants: newValue.map(v => ({ user: v.name }))
+                                            })}
+                                            renderInput={(params) => <TextField {...params} label="Participants" />}
                                         />
                                     </Grid>
                                 </Grid>
