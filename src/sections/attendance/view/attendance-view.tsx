@@ -28,7 +28,8 @@ import { useAttendance } from 'src/hooks/useAttendance';
 
 import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { fetchAttendance, createAttendance, updateAttendance, deleteAttendance, getHRPermissions } from 'src/api/hr-management';
+import { getHRPermissions } from 'src/api/hr-management';
+import { fetchAttendance, createAttendance, updateAttendance, deleteAttendance } from 'src/api/attendance';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';

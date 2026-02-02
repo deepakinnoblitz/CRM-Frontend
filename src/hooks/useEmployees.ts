@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { fetchEmployees } from 'src/api/hr-management';
+import { fetchEmployees } from 'src/api/employees';
 
 export function useEmployees(page: number, pageSize: number, search: string, orderBy?: string, order?: 'asc' | 'desc') {
     const [data, setData] = useState<any[]>([]);

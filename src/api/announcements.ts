@@ -13,15 +13,22 @@ async function fetchFrappeList(params: {
     page: number;
     page_size: number;
     search?: string;
+    filters?: any;
     orderBy?: string;
     order?: 'asc' | 'desc';
 }) {
     const filters: any[] = [];
 
     if (params.search) {
-        filters.push([
-            ['Announcement', 'announcement_name', 'like', `%${params.search}%`]
-        ]);
+        filters.push(['Announcement', 'announcement_name', 'like', `%${params.search}%`]);
+    }
+
+    if (params.filters) {
+        if (params.filters.startDate || params.filters.endDate) {
+            const start = params.filters.startDate || '1970-01-01';
+            const end = params.filters.endDate || '2099-12-31';
+            filters.push(['Announcement', 'creation', 'between', [start, end]]);
+        }
     }
 
     const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "creation desc";

@@ -31,7 +31,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useTimesheets } from 'src/hooks/useTimesheets';
 
-import { fetchEmployees } from 'src/api/hr-management';
+import { fetchEmployees } from 'src/api/employees';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getTimesheet, createTimesheet, updateTimesheet, deleteTimesheet, getTimesheetPermissions, fetchProjects, fetchActivityTypes } from 'src/api/timesheets';
 
