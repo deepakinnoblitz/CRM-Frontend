@@ -62,6 +62,7 @@ export const ExpensesDetailsPage = lazy(() => import('src/pages/expenses/details
 export const WFHAttendancePage = lazy(() => import('src/pages/wfh-attendance'));
 export const HolidaysPage = lazy(() => import('src/pages/holidays'));
 export const CRMExpenseTrackerPage = lazy(() => import('src/pages/crm-expense-tracker'));
+export const ExpenseTrackerPage = lazy(() => import('src/pages/expense-tracker'));
 export const ReimbursementClaimsPage = lazy(() => import('src/pages/reimbursement-claims'));
 const RenewalTrackerPage = lazy(() => import('src/pages/renewals-tracker'));
 const SalarySlipsPage = lazy(() => import('src/pages/salary-slips'));
@@ -169,6 +170,7 @@ export const routesSection: RouteObject[] = [
         ],
       },
       { path: 'crm-expense-tracker', element: <CRMExpenseTrackerPage /> },
+      { path: 'expense-tracker', element: <ExpenseTrackerPage /> },
       { path: 'holidays', element: <HolidaysPage /> },
       { path: 'reimbursement-claims', element: <ReimbursementClaimsPage /> },
       { path: 'renewals-tracker', element: <RenewalTrackerPage /> },
