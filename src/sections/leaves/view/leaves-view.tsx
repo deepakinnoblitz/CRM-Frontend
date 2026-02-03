@@ -136,7 +136,8 @@ export function LeavesView() {
             ...(filters.endDate ? { end_date: filters.endDate } : {}),
         },
         orderBy,
-        order
+        order,
+        3000
     );
 
     const notFound = !data.length && !!filterName;

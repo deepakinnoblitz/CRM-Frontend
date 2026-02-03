@@ -1,11 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
-import Snackbar from '@mui/material/Snackbar';
+import Badge from '@mui/material/Badge';
+import Stack from '@mui/material/Stack';
+import Table from '@mui/material/Table';
+import Button from '@mui/material/Button';
 import TableRow from '@mui/material/TableRow';
+import Snackbar from '@mui/material/Snackbar';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
@@ -14,11 +17,11 @@ import TablePagination from '@mui/material/TablePagination';
 
 import { useSalarySlips } from 'src/hooks/useSalarySlips';
 
+import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
-import {
-    getSalarySlip,
-} from 'src/api/salary-slips';
+import { getSalarySlip, deleteSalarySlip, SalarySlip } from 'src/api/salary-slips';
 
+import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 
@@ -29,27 +32,115 @@ import { UserTableHead as SalarySlipTableHead } from 'src/sections/user/user-tab
 import { UserTableToolbar as SalarySlipTableToolbar } from 'src/sections/user/user-table-toolbar';
 import { SalarySlipDetailsDialog } from 'src/sections/report/salary-slips/salary-slip-details-dialog';
 
-// ----------------------------------------------------------------------
+import SalarySlipCreateDialog from '../salary-slip-create-dialog';
+import SalarySlipAutoAllocateDialog from '../salary-slip-auto-allocate-dialog';
+import { SalarySlipFiltersDrawer, SalarySlipFiltersProps } from '../salary-slip-filters-drawer';
+
+
+
+const SORT_OPTIONS = [
+    { value: 'pay_period_start_desc', label: 'Newest First' },
+    { value: 'pay_period_start_asc', label: 'Oldest First' },
+    { value: 'employee_name_asc', label: 'Employee: A to Z' },
+    { value: 'employee_name_desc', label: 'Employee: Z to A' },
+];
 
 export function SalarySlipsView() {
+
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('pay_period_start');
-    const [selected, setSelected] = useState<string[]>([]);
+    const [filters, setFilters] = useState<SalarySlipFiltersProps>({
+        employee: 'all',
+        department: 'all',
+        designation: 'all',
+        pay_period_start: null,
+        pay_period_end: null,
+    });
 
-    const { data, total } = useSalarySlips(
+    const filterValues = Object.fromEntries(
+        Object.entries(filters).filter(([_, v]) => v !== 'all' && v !== null)
+    );
+
+    const { data, total, refetch, loading } = useSalarySlips(
         page + 1,
         rowsPerPage,
         filterName,
+        filterValues,
         orderBy,
         order
     );
 
+    const [selected, setSelected] = useState<string[]>([]);
+    const [openFilters, setOpenFilters] = useState(false);
+
+    const [filterOptions, setFilterOptions] = useState<{
+        employees: any[];
+        departments: any[];
+        designations: any[];
+    }>({
+        employees: [],
+        departments: [],
+        designations: [],
+    });
+
+    useEffect(() => {
+        const fetchOptions = async () => {
+            try {
+                const [emps, depts, desigs] = await Promise.all([
+                    getDoctypeList('Employee', ['name', 'employee_name']),
+                    getDoctypeList('Department', ['name']),
+                    getDoctypeList('Designation', ['name']),
+                ]);
+                setFilterOptions({
+                    employees: emps,
+                    departments: depts,
+                    designations: desigs,
+                });
+            } catch (error) {
+                console.error('Failed to fetch filter options:', error);
+            }
+        };
+        fetchOptions();
+    }, []);
+
+    const handleFilters = useCallback((update: Partial<SalarySlipFiltersProps>) => {
+        setFilters((prev) => ({ ...prev, ...update }));
+        setPage(0);
+    }, []);
+
+    const handleResetFilters = useCallback(() => {
+        setFilters({
+            employee: 'all',
+            department: 'all',
+            designation: 'all',
+            pay_period_start: null,
+            pay_period_end: null,
+        });
+        setPage(0);
+    }, []);
+
+    const canReset = filters.employee !== 'all' ||
+        filters.department !== 'all' ||
+        filters.designation !== 'all' ||
+        filters.pay_period_start !== null ||
+        filters.pay_period_end !== null;
+
+    const activeFiltersCount = Object.values(filters).filter(v => v !== 'all' && v !== null).length;
+
+
+    // Dialog state
+    const [openCreate, setOpenCreate] = useState(false);
+    const [openAutoAllocate, setOpenAutoAllocate] = useState(false);
+
+
     // View state
     const [openView, setOpenView] = useState(false);
     const [viewSlip, setViewSlip] = useState<any>(null);
+    const [editSlip, setEditSlip] = useState<SalarySlip | null>(null);
+
 
     // Snackbar
     const [snackbar, setSnackbar] = useState<{
@@ -96,6 +187,40 @@ export function SalarySlipsView() {
         }
     }, []);
 
+    const handleEditRow = useCallback(async (row: any) => {
+        try {
+            const fullData = await getSalarySlip(row.name);
+            setEditSlip(fullData);
+            setOpenCreate(true);
+        } catch (error: any) {
+            setSnackbar({
+                open: true,
+                message: error.message || 'Failed to load record',
+                severity: 'error',
+            });
+        }
+    }, []);
+
+    const handleDeleteRow = useCallback(async (name: string) => {
+        if (!window.confirm('Are you sure you want to delete this salary slip?')) return;
+        try {
+            await deleteSalarySlip(name);
+            setSnackbar({
+                open: true,
+                message: 'Salary slip deleted successfully',
+                severity: 'success',
+            });
+            refetch();
+        } catch (error: any) {
+            setSnackbar({
+                open: true,
+                message: error.message || 'Failed to delete record',
+                severity: 'error',
+            });
+        }
+    }, [refetch]);
+
+
     const handleChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);
     };
@@ -119,20 +244,57 @@ export function SalarySlipsView() {
 
     return (
         <DashboardContent>
-            <Box sx={{ mb: 5 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
                 <Typography variant="h4">Salary Slips</Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    View and download your monthly salary statements.
-                </Typography>
-            </Box>
+
+                <Stack direction="row" spacing={1}>
+                    <Button
+                        variant="outlined"
+                        color="primary"
+                        startIcon={<Iconify icon={"solar:import-bold-duotone" as any} />}
+                        onClick={() => setOpenAutoAllocate(true)}
+                        sx={{ borderRadius: 1.5, height: 40 }}
+                    >
+                        Auto Allocate
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<Iconify icon="mingcute:add-line" />}
+                        onClick={() => {
+                            setEditSlip(null);
+                            setOpenCreate(true);
+                        }}
+                        sx={{ borderRadius: 1.5, height: 40 }}
+                    >
+                        New Salary Slip
+                    </Button>
+                </Stack>
+            </Stack>
+
 
             <Card>
+
                 <SalarySlipTableToolbar
                     numSelected={selected.length}
                     filterName={filterName}
                     onFilterName={handleFilterByName}
                     searchPlaceholder="Search employee name..."
+                    sortBy={`${orderBy}_${order}`}
+                    onSortChange={(val) => {
+                        const index = val.lastIndexOf('_');
+                        const f = val.substring(0, index);
+                        const d = val.substring(index + 1);
+                        setOrderBy(f);
+                        setOrder(d as any);
+                    }}
+
+                    sortOptions={SORT_OPTIONS}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
                 />
+
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
@@ -171,7 +333,10 @@ export function SalarySlipsView() {
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
                                         onView={() => handleViewRow(row)}
+                                        onEdit={() => handleEditRow(row)}
+                                        onDelete={() => handleDeleteRow(row.name)}
                                     />
+
                                 ))}
 
                                 {notFound && <TableNoData searchQuery={filterName} />}
@@ -228,6 +393,49 @@ export function SalarySlipsView() {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            <SalarySlipCreateDialog
+                open={openCreate}
+                onClose={() => {
+                    setOpenCreate(false);
+                    setEditSlip(null);
+                }}
+                onSuccess={(message) => {
+                    setSnackbar({ open: true, message, severity: 'success' });
+                    refetch();
+                }}
+                onError={(error) => {
+                    setSnackbar({ open: true, message: error, severity: 'error' });
+                }}
+                slip={editSlip}
+            />
+
+
+            <SalarySlipAutoAllocateDialog
+                open={openAutoAllocate}
+                onClose={() => setOpenAutoAllocate(false)}
+                onSuccess={(message) => {
+                    setSnackbar({ open: true, message, severity: 'success' });
+                    refetch();
+                }}
+                onError={(error) => {
+                    setSnackbar({ open: true, message: error, severity: 'error' });
+                }}
+            />
+
+            <SalarySlipFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                options={filterOptions}
+            />
+
+
         </DashboardContent>
+
     );
 }

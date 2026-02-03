@@ -30,7 +30,7 @@ type UserTableToolbarProps = {
   sortBy?: string;
   onSortChange?: (value: string) => void;
   // Filter Drawer Props
-  onOpenFilter?: () => void;
+  onOpenFilter?: (event: React.MouseEvent<HTMLElement>) => void;
   canReset?: boolean;
   // Legacy Props for backward compatibility
   filterStatus?: string;

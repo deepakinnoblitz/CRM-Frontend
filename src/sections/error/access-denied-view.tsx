@@ -1,9 +1,12 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Portal from '@mui/material/Portal';
+import Backdrop from '@mui/material/Backdrop';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -19,6 +22,7 @@ import { useAuth } from 'src/auth/auth-context';
 export function AccessDeniedView() {
     const router = useRouter();
     const { user, setUser } = useAuth();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     // Redirect to dashboard if user gains valid access
     useEffect(() => {
@@ -29,12 +33,14 @@ export function AccessDeniedView() {
     }, [user, router]);
 
     const handleSignOut = async () => {
+        setIsLoggingOut(true);
         try {
             await logout();
             setUser(null);
             router.push('/sign-in');
         } catch (error) {
             console.error('Logout failed:', error);
+            setIsLoggingOut(false);
         }
     };
 
@@ -100,6 +106,15 @@ export function AccessDeniedView() {
                     Sign Out
                 </Button>
             </Box>
+
+            <Portal>
+                <Backdrop
+                    sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.modal + 1000 }}
+                    open={isLoggingOut}
+                >
+                    <CircularProgress color="inherit" />
+                </Backdrop>
+            </Portal>
         </Container>
     );
 }

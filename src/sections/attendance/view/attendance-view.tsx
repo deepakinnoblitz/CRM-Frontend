@@ -5,10 +5,13 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { IconButton } from '@mui/material';
+import Popover from '@mui/material/Popover';
 import Snackbar from '@mui/material/Snackbar';
+import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TextField from '@mui/material/TextField';
@@ -18,9 +21,10 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
-import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import TablePagination from '@mui/material/TablePagination';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -39,6 +43,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { TableNoData } from '../../user/table-no-data';
 import { TableEmptyRows } from '../../user/table-empty-rows';
 import { AttendanceTableRow } from '../attendance-table-row';
+import { AttendanceImportDialog } from '../attendance-import-dialog';
 import { UserTableHead as AttendanceTableHead } from '../../user/user-table-head';
 import { UserTableToolbar as AttendanceTableToolbar } from '../../user/user-table-toolbar';
 import { AttendanceDetailsDialog } from '../../report/attendance/attendance-details-dialog';
@@ -54,6 +59,7 @@ export function AttendanceView() {
     const [selected, setSelected] = useState<string[]>([]);
 
     const [openCreate, setOpenCreate] = useState(false);
+    const [openImport, setOpenImport] = useState(false);
     const [creating, setCreating] = useState(false);
     const [currentAttendanceId, setCurrentAttendanceId] = useState<string | null>(null);
     const [formData, setFormData] = useState<Record<string, any>>({
@@ -62,6 +68,12 @@ export function AttendanceView() {
     });
 
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
+
+    // Filter State
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [startDate, setStartDate] = useState<string | null>(null);
+    const [endDate, setEndDate] = useState<string | null>(null);
+    const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
 
     // Alert & Dialog State
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
@@ -91,7 +103,10 @@ export function AttendanceView() {
         rowsPerPage,
         filterName,
         orderBy,
-        order
+        order,
+        startDate || undefined,
+        endDate || undefined,
+        filterStatus
     );
 
     const notFound = !data.length && !!filterName;
@@ -115,9 +130,21 @@ export function AttendanceView() {
         setCurrentAttendanceId(null);
     };
 
+    const handleOpenImport = () => {
+        setOpenImport(true);
+    };
+
+    const handleCloseImport = () => {
+        setOpenImport(false);
+    };
+
     const handleInputChange = (fieldname: string, value: any) => {
         setFormData((prev: Record<string, any>) => {
             const next = { ...prev, [fieldname]: value };
+
+            if (fieldname === 'manual') {
+                next.manual = value ? 1 : 0;
+            }
 
             // Calculate working hours
             if (fieldname === 'in_time' || fieldname === 'out_time') {
@@ -127,13 +154,24 @@ export function AttendanceView() {
                     if (end.isAfter(start)) {
                         const diffMs = end.diff(start);
                         const diffHrs = diffMs / (1000 * 60 * 60);
-                        next.working_hours_decimal = diffHrs.toFixed(2);
+
                         const h = Math.floor(diffHrs);
                         const m = Math.round((diffHrs - h) * 60);
-                        next.working_hours_display = `${h}h ${m}m`;
+                        const formattedTime = `${h.toString().padStart(2, '0')}.${m.toString().padStart(2, '0')}`;
+
+                        next.working_hours_display = formattedTime;
+
+                        if (diffHrs > 9) {
+                            const otDiff = diffHrs - 9;
+                            const otH = Math.floor(otDiff);
+                            const otM = Math.round((otDiff - otH) * 60);
+                            next.overtime_display = `${otH.toString().padStart(2, '0')}.${otM.toString().padStart(2, '0')}`;
+                        } else {
+                            next.overtime_display = '00.00';
+                        }
                     } else {
-                        next.working_hours_decimal = 0;
-                        next.working_hours_display = '0h 0m';
+                        next.working_hours_display = '00.00';
+                        next.overtime_display = '00.00';
                     }
                 }
             }
@@ -257,11 +295,23 @@ export function AttendanceView() {
         setDetailsId(null);
     };
 
-    const handleSort = (id: string) => {
-        const isAsc = orderBy === id && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(id);
+    const handleOpenFilter = (event: React.MouseEvent<HTMLElement>) => {
+        setFilterAnchorEl(event.currentTarget);
     };
+
+    const handleCloseFilter = () => {
+        setFilterAnchorEl(null);
+    };
+
+    const handleResetFilters = () => {
+        setStartDate(null);
+        setEndDate(null);
+        setFilterStatus('all');
+        setFilterName('');
+        setPage(0);
+    };
+
+
 
     const handleSelectAllRows = (checked: boolean) => {
         if (checked) {
@@ -368,7 +418,54 @@ export function AttendanceView() {
             );
         }
 
+        if (type === 'checkbox') {
+            return (
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={!!formData[fieldname]}
+                            onChange={(e) => handleInputChange(fieldname, e.target.checked)}
+                        />
+                    }
+                    label={label}
+                />
+            );
+        }
+
         return <TextField {...commonProps} />;
+    };
+
+    const sortOptions = [
+        { value: 'newest', label: 'Newest First' },
+        { value: 'oldest', label: 'Oldest First' },
+        { value: 'employee_asc', label: 'Employee Asc' },
+        { value: 'employee_desc', label: 'Employee Desc' },
+    ];
+
+    const getSortByValue = () => {
+        if (orderBy === 'attendance_date') {
+            return order === 'desc' ? 'newest' : 'oldest';
+        }
+        if (orderBy === 'employee_name') {
+            return order === 'asc' ? 'employee_asc' : 'employee_desc';
+        }
+        return 'newest';
+    };
+
+    const handleSortChange = (value: string) => {
+        if (value === 'newest') {
+            setOrderBy('attendance_date');
+            setOrder('desc');
+        } else if (value === 'oldest') {
+            setOrderBy('attendance_date');
+            setOrder('asc');
+        } else if (value === 'employee_asc') {
+            setOrderBy('employee_name');
+            setOrder('asc');
+        } else if (value === 'employee_desc') {
+            setOrderBy('employee_name');
+            setOrder('desc');
+        }
     };
 
     return (
@@ -378,16 +475,27 @@ export function AttendanceView() {
                     Attendance
                 </Typography>
 
-                {permissions.write && (
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon="mingcute:add-line" />}
-                        onClick={handleOpenCreate}
-                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                    >
-                        Mark Attendance
-                    </Button>
-                )}
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                    {permissions.write && (
+                        <>
+                            <Button
+                                variant="outlined"
+                                startIcon={<Iconify icon="solar:import-bold-duotone" />}
+                                onClick={handleOpenImport}
+                            >
+                                Import
+                            </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<Iconify icon="mingcute:add-line" />}
+                                onClick={handleOpenCreate}
+                                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                            >
+                                Mark Attendance
+                            </Button>
+                        </>
+                    )}
+                </Box>
             </Box>
 
             <Card>
@@ -400,7 +508,72 @@ export function AttendanceView() {
                     }}
                     onDelete={handleBulkDelete}
                     searchPlaceholder="Search attendance..."
+                    sortOptions={sortOptions}
+                    sortBy={getSortByValue()}
+                    onSortChange={handleSortChange}
+                    onOpenFilter={handleOpenFilter}
+                    canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all'}
+                    filterStatus={filterStatus}
+                    onFilterStatus={(e) => {
+                        setFilterStatus(e.target.value);
+                        setPage(0);
+                    }}
+                    options={[
+                        { value: 'Present', label: 'Present' },
+                        { value: 'Absent', label: 'Absent' },
+                        { value: 'Half Day', label: 'Half Day' },
+                        { value: 'On Leave', label: 'On Leave' },
+                        { value: 'Holiday', label: 'Holiday' },
+                    ]}
+                    filterLabel="Status"
                 />
+
+                <Popover
+                    open={Boolean(filterAnchorEl)}
+                    anchorEl={filterAnchorEl}
+                    onClose={handleCloseFilter}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    slotProps={{
+                        paper: {
+                            sx: { p: 3, width: 280 },
+                        },
+                    }}
+                >
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <Stack spacing={3}>
+                            <Typography variant="subtitle2">Filter by Date</Typography>
+
+                            <DatePicker
+                                label="Start Date"
+                                value={startDate ? dayjs(startDate) : null}
+                                onChange={(newValue) => {
+                                    setStartDate(newValue ? newValue.format('YYYY-MM-DD') : null);
+                                    setPage(0);
+                                }}
+                            />
+
+                            <DatePicker
+                                label="End Date"
+                                value={endDate ? dayjs(endDate) : null}
+                                onChange={(newValue) => {
+                                    setEndDate(newValue ? newValue.format('YYYY-MM-DD') : null);
+                                    setPage(0);
+                                }}
+                            />
+
+                            <Button
+                                fullWidth
+                                color="inherit"
+                                variant="outlined"
+                                onClick={handleResetFilters}
+                                startIcon={<Iconify icon="solar:restart-bold" />}
+                            >
+                                Reset
+                            </Button>
+                        </Stack>
+                    </LocalizationProvider>
+                </Popover>
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
@@ -410,7 +583,6 @@ export function AttendanceView() {
                                 orderBy={orderBy}
                                 rowCount={total}
                                 numSelected={selected.length}
-                                onSort={handleSort}
                                 onSelectAllRows={(checked) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
@@ -420,6 +592,7 @@ export function AttendanceView() {
                                     { id: 'status', label: 'Status', minWidth: 100 },
                                     { id: 'in_time', label: 'In Time', minWidth: 120 },
                                     { id: 'out_time', label: 'Out Time', minWidth: 120 },
+                                    { id: 'working_hours_display', label: 'Working Hours', minWidth: 120 },
                                     { id: '', label: 'Actions', align: 'right' },
                                 ]}
                             />
@@ -438,6 +611,7 @@ export function AttendanceView() {
                                             status: row.status,
                                             inTime: row.in_time,
                                             out_time: row.out_time,
+                                            working_hours_display: row.working_hours_display,
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
@@ -511,16 +685,12 @@ export function AttendanceView() {
                                 {renderField('out_time', 'Out Time', 'time')}
                             </Box>
 
-                            {formData.working_hours_display && (
-                                <TextField
-                                    fullWidth
-                                    label="Working Hours"
-                                    value={formData.working_hours_display}
-                                    InputProps={{ readOnly: true }}
-                                    InputLabelProps={{ shrink: true }}
-                                    variant="filled"
-                                />
-                            )}
+                            <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                                {renderField('working_hours_display', 'Working Hours', 'text', [], { InputProps: { readOnly: true } })}
+                                {renderField('overtime_display', 'Overtime Hours', 'text', [], { InputProps: { readOnly: true } })}
+                            </Box>
+
+                            {renderField('manual', 'Manual', 'checkbox')}
                         </Box>
                     </LocalizationProvider>
                 </DialogContent>
@@ -575,6 +745,12 @@ export function AttendanceView() {
                     {serverAlert.message}
                 </Alert>
             </Snackbar>
+
+            <AttendanceImportDialog
+                open={openImport}
+                onClose={handleCloseImport}
+                onRefresh={refetch}
+            />
         </DashboardContent>
     );
 }

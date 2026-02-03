@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 
 import { getSalarySlipDownloadUrl } from 'src/api/salary-slips';
 
@@ -127,23 +128,13 @@ export function SalarySlipDetailsDialog({ open, onClose, slip }: Props) {
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                Salary Slip Details
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                        size="small"
-                        variant="contained"
-                        color="primary"
-                        startIcon={<Iconify icon={"solar:download-bold" as any} />}
-                        onClick={handleDownload}
-                    >
-                        Download PDF
-                    </Button>
-                    <IconButton onClick={onClose}>
-                        <Iconify icon={"mingcute:close-line" as any} />
-                    </IconButton>
-                </Box>
+            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>Salary Slip Details</Typography>
+                <IconButton onClick={onClose} sx={{ color: 'text.secondary' }}>
+                    <Iconify icon={"mingcute:close-line" as any} />
+                </IconButton>
             </DialogTitle>
+
 
             <Scrollbar sx={{ maxHeight: '85vh' }}>
                 <DialogContent sx={{ p: 4 }}>
@@ -160,6 +151,21 @@ export function SalarySlipDetailsDialog({ open, onClose, slip }: Props) {
                     </Box>
                 </DialogContent>
             </Scrollbar>
+
+            <Divider sx={{ borderStyle: 'dashed' }} />
+
+            <DialogActions sx={{ p: 2.5 }}>
+                <Box sx={{ flexGrow: 1 }} />
+                <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<Iconify icon={"solar:download-bold" as any} />}
+                    onClick={handleDownload}
+                >
+                    Download PDF
+                </Button>
+            </DialogActions>
+
         </Dialog>
     );
 }

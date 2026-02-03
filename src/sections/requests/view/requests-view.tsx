@@ -1,12 +1,15 @@
+import dayjs from 'dayjs';
 import { useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
+import Popover from '@mui/material/Popover';
 import Snackbar from '@mui/material/Snackbar';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
@@ -22,6 +25,9 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useRequests } from 'src/hooks/useRequests';
 
@@ -50,8 +56,23 @@ export function RequestsView() {
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('creation');
     const [selected, setSelected] = useState<string[]>([]);
+    const [sortBy, setSortBy] = useState('creation_desc');
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [startDate, setStartDate] = useState<string | null>(null);
+    const [endDate, setEndDate] = useState<string | null>(null);
 
-    const { data, total, refetch } = useRequests(page + 1, rowsPerPage, filterName, orderBy, order);
+    const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
+
+    const { data, total, refetch } = useRequests(
+        page + 1,
+        rowsPerPage,
+        filterName,
+        orderBy,
+        order,
+        startDate || undefined,
+        endDate || undefined,
+        filterStatus
+    );
 
     const [openCreate, setOpenCreate] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -96,6 +117,32 @@ export function RequestsView() {
         const isAsc = orderBy === property && order === 'asc';
         setOrder(isAsc ? 'desc' : 'asc');
         setOrderBy(property);
+        setSortBy(`${property}_${isAsc ? 'desc' : 'asc'}`);
+    };
+
+    const handleSortChange = (value: string) => {
+        setSortBy(value);
+        const lastUnderscoreIndex = value.lastIndexOf('_');
+        const prop = value.substring(0, lastUnderscoreIndex);
+        const ord = value.substring(lastUnderscoreIndex + 1);
+        setOrderBy(prop);
+        setOrder(ord as 'asc' | 'desc');
+    };
+
+    const handleOpenFilter = (event: React.MouseEvent<HTMLElement>) => {
+        setFilterAnchorEl(event.currentTarget);
+    };
+
+    const handleCloseFilter = () => {
+        setFilterAnchorEl(null);
+    };
+
+    const handleResetFilters = () => {
+        setStartDate(null);
+        setEndDate(null);
+        setFilterStatus('all');
+        setFilterName('');
+        setPage(0);
     };
 
     const handleSelectAllRows = (checked: boolean) => {
@@ -243,7 +290,75 @@ export function RequestsView() {
                     onFilterName={handleFilterByName}
                     searchPlaceholder="Search requests..."
                     onDelete={selected.length > 0 ? handleBulkDelete : undefined}
+                    sortBy={sortBy}
+                    onSortChange={handleSortChange}
+                    sortOptions={[
+                        { value: 'creation_desc', label: 'Newest First' },
+                        { value: 'creation_asc', label: 'Oldest First' },
+                        { value: 'employee_name_asc', label: 'Employee: A to Z' },
+                        { value: 'employee_name_desc', label: 'Employee: Z to A' },
+                    ]}
+                    onOpenFilter={handleOpenFilter}
+                    canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all'}
+                    filterStatus={filterStatus}
+                    onFilterStatus={(e) => {
+                        setFilterStatus(e.target.value);
+                        setPage(0);
+                    }}
+                    options={[
+                        { value: 'Pending', label: 'Pending' },
+                        { value: 'Approved', label: 'Approved' },
+                        { value: 'Rejected', label: 'Rejected' },
+                        { value: 'Clarification Requested', label: 'Clarification Requested' },
+                    ]}
                 />
+
+                <Popover
+                    open={Boolean(filterAnchorEl)}
+                    anchorEl={filterAnchorEl}
+                    onClose={handleCloseFilter}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    slotProps={{
+                        paper: {
+                            sx: { p: 3, width: 280 },
+                        },
+                    }}
+                >
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <Stack spacing={3}>
+                            <Typography variant="subtitle2">Filter by Date</Typography>
+
+                            <DatePicker
+                                label="Start Date"
+                                value={startDate ? dayjs(startDate) : null}
+                                onChange={(newValue) => {
+                                    setStartDate(newValue ? newValue.format('YYYY-MM-DD') : null);
+                                    setPage(0);
+                                }}
+                            />
+
+                            <DatePicker
+                                label="End Date"
+                                value={endDate ? dayjs(endDate) : null}
+                                onChange={(newValue) => {
+                                    setEndDate(newValue ? newValue.format('YYYY-MM-DD') : null);
+                                    setPage(0);
+                                }}
+                            />
+
+                            <Button
+                                fullWidth
+                                color="inherit"
+                                variant="outlined"
+                                onClick={handleResetFilters}
+                                startIcon={<Iconify icon="solar:restart-bold" />}
+                            >
+                                Reset
+                            </Button>
+                        </Stack>
+                    </LocalizationProvider>
+                </Popover>
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
@@ -385,6 +500,7 @@ export function RequestsView() {
                 open={openView}
                 onClose={() => setOpenView(false)}
                 request={viewRequest}
+                onRefresh={refetch}
             />
 
             {/* Snackbar */}

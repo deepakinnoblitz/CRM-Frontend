@@ -51,6 +51,7 @@ export const AttendanceReportPage = lazy(() => import('src/pages/reports/attenda
 export const EmployeePage = lazy(() => import('src/pages/employee'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
 export const LeavesPage = lazy(() => import('src/pages/leaves'));
+export const LeaveAllocationsPage = lazy(() => import('src/pages/leave-allocations'));
 export const PayrollPage = lazy(() => import('src/pages/payroll'));
 export const RequestsPage = lazy(() => import('src/pages/requests'));
 export const AnnouncementsPage = lazy(() => import('src/pages/announcements'));
@@ -64,6 +65,7 @@ export const ExpensesDetailsPage = lazy(() => import('src/pages/expenses/details
 export const WFHAttendancePage = lazy(() => import('src/pages/wfh-attendance'));
 export const HolidaysPage = lazy(() => import('src/pages/holidays'));
 export const CRMExpenseTrackerPage = lazy(() => import('src/pages/crm-expense-tracker'));
+export const ExpenseTrackerPage = lazy(() => import('src/pages/expense-tracker'));
 export const ReimbursementClaimsPage = lazy(() => import('src/pages/reimbursement-claims'));
 const RenewalTrackerPage = lazy(() => import('src/pages/renewals-tracker'));
 const SalarySlipsPage = lazy(() => import('src/pages/salary-slips'));
@@ -153,6 +155,7 @@ export const routesSection: RouteObject[] = [
       { path: 'employee', element: <EmployeePage /> },
       { path: 'attendance', element: <AttendancePage /> },
       { path: 'leaves', element: <LeavesPage /> },
+      { path: 'leave-allocations', element: <LeaveAllocationsPage /> },
       { path: 'payroll', element: <PayrollPage /> },
       { path: 'requests', element: <RequestsPage /> },
       { path: 'announcements', element: <AnnouncementsPage /> },
@@ -171,6 +174,7 @@ export const routesSection: RouteObject[] = [
         ],
       },
       { path: 'crm-expense-tracker', element: <CRMExpenseTrackerPage /> },
+      { path: 'expense-tracker', element: <ExpenseTrackerPage /> },
       { path: 'holidays', element: <HolidaysPage /> },
       { path: 'reimbursement-claims', element: <ReimbursementClaimsPage /> },
       { path: 'renewals-tracker', element: <RenewalTrackerPage /> },
