@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
@@ -22,6 +23,9 @@ type Props = {
     selected: boolean;
     onSelectRow: () => void;
     onView: () => void;
+    onEdit: () => void;
+    onDelete: () => void;
+
     hideCheckbox?: boolean;
     index?: number;
 };
@@ -31,9 +35,12 @@ export function SalarySlipTableRow({
     selected,
     onSelectRow,
     onView,
+    onEdit,
+    onDelete,
     hideCheckbox = false,
     index,
 }: Props) {
+
     const formatDate = (date: string) => {
         if (!date) return '-';
         return new Date(date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
@@ -103,10 +110,19 @@ export function SalarySlipTableRow({
             </TableCell>
 
             <TableCell align="right">
-                <IconButton onClick={onView} sx={{ color: 'info.main' }}>
-                    <Iconify icon={"solar:eye-bold" as any} />
-                </IconButton>
+                <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                    <IconButton onClick={onView} sx={{ color: 'info.main' }}>
+                        <Iconify icon={"solar:eye-bold" as any} />
+                    </IconButton>
+                    <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
+                        <Iconify icon={"solar:pen-bold" as any} />
+                    </IconButton>
+                    <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
+                        <Iconify icon={"solar:trash-bin-trash-bold" as any} />
+                    </IconButton>
+                </Stack>
             </TableCell>
+
         </TableRow>
     );
 }

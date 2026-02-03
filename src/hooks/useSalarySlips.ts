@@ -6,6 +6,7 @@ export function useSalarySlips(
     page: number,
     page_size: number,
     search: string,
+    filterValues: Record<string, any>,
     order_by?: string,
     order?: 'asc' | 'desc'
 ) {
@@ -21,6 +22,7 @@ export function useSalarySlips(
                 page,
                 page_size,
                 search,
+                filterValues,
                 order_by,
                 order,
             });
@@ -32,7 +34,8 @@ export function useSalarySlips(
         } finally {
             setLoading(false);
         }
-    }, [page, page_size, search, order_by, order]);
+    }, [page, page_size, search, filterValues, order_by, order]);
+
 
     useEffect(() => {
         refetch();

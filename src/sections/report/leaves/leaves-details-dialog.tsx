@@ -47,9 +47,9 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props
     const isHR = userRoles.some(r => r.includes('HR')) || userRoles.includes('Administrator') || userRoles.includes('System Manager');
     const isEmployee = !isHR;
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (isSilent = false) => {
         if (!leaveId) return;
-        setLoading(true);
+        if (!isSilent) setLoading(true);
         try {
             const data = await getHRDoc('Leave Application', leaveId);
             setLeave(data);
@@ -60,17 +60,24 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props
         } catch (err) {
             console.error('Failed to fetch leave details:', err);
         } finally {
-            setLoading(false);
+            if (!isSilent) setLoading(false);
         }
     }, [leaveId]);
 
     useEffect(() => {
         if (open && leaveId) {
             fetchData();
-        } else {
-            setLeave(null);
-            setActions([]);
+
+            // Setup 3s polling
+            const interval = setInterval(() => {
+                fetchData(true);
+            }, 3000);
+
+            return () => clearInterval(interval);
         }
+        setLeave(null);
+        setActions([]);
+        return undefined;
     }, [open, leaveId, fetchData]);
 
     const handleActionClick = (action: WorkflowAction) => {

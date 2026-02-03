@@ -49,6 +49,7 @@ export const PurchaseCollectionReportPage = lazy(() => import('src/pages/reports
 export const EmployeePage = lazy(() => import('src/pages/employee'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
 export const LeavesPage = lazy(() => import('src/pages/leaves'));
+export const LeaveAllocationsPage = lazy(() => import('src/pages/leave-allocations'));
 export const PayrollPage = lazy(() => import('src/pages/payroll'));
 export const RequestsPage = lazy(() => import('src/pages/requests'));
 export const AnnouncementsPage = lazy(() => import('src/pages/announcements'));
@@ -150,6 +151,7 @@ export const routesSection: RouteObject[] = [
       { path: 'employee', element: <EmployeePage /> },
       { path: 'attendance', element: <AttendancePage /> },
       { path: 'leaves', element: <LeavesPage /> },
+      { path: 'leave-allocations', element: <LeaveAllocationsPage /> },
       { path: 'payroll', element: <PayrollPage /> },
       { path: 'requests', element: <RequestsPage /> },
       { path: 'announcements', element: <AnnouncementsPage /> },

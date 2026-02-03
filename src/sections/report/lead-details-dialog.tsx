@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -9,6 +9,7 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
+import Snackbar from '@mui/material/Snackbar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -20,10 +21,13 @@ import { getLead, convertLead, getWorkflowStates } from 'src/api/leads';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { SalesPipeline } from '../user/sales-pipeline';
 import { LeadFollowupDetails } from '../user/lead-followup-details';
 import { LeadPipelineTimeline } from '../user/lead-pipeline-timeline';
+import { AccountDetailsDialog } from './account/account-details-dialog';
+import { ContactDetailsDialog } from './contact/contact-details-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -42,7 +46,24 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
 
     // Convert Lead State
     const [converting, setConverting] = useState(false);
-    const [convertMsg, setConvertMsg] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+    const [convertMsg, setConvertMsg] = useState<any>(null);
+
+    const [openAccount, setOpenAccount] = useState(false);
+    const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+    const [openContact, setOpenContact] = useState(false);
+    const [selectedContact, setSelectedContact] = useState<string | null>(null);
+
+    const [openConfirm, setOpenConfirm] = useState(false);
+
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' | 'info' }>({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
+
+    const handleCloseSnackbar = useCallback(() => {
+        setSnackbar((prev) => ({ ...prev, open: false }));
+    }, []);
 
     useEffect(() => {
         if (open && leadId) {
@@ -67,13 +88,30 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
         setConvertMsg(null);
         try {
             const result = await convertLead(leadId);
-            setConvertMsg({ type: 'success', text: `Lead converted successfully! Created Account: ${result.account}, Contact: ${result.contact}` });
+            setConvertMsg(result);
+
+            // Show messages in snackbar if available
+            if (result.messages && result.messages.length > 0) {
+                // For simplicity, we show the first message or a summary
+                // If there are multiple, showing them all in a snackbar might be tricky.
+                // Usually we'd show the most important one.
+                const firstMsg = result.messages[0];
+                setSnackbar({
+                    open: true,
+                    message: firstMsg.text,
+                    severity: firstMsg.type === 'success' ? 'success' : 'warning'
+                });
+            } else {
+                setSnackbar({ open: true, message: 'Lead converted successfully', severity: 'success' });
+            }
+
             // Refresh lead data to show conversion results
             const updatedLead = await getLead(leadId);
             setLead(updatedLead);
         } catch (err: any) {
             console.error(err);
-            setConvertMsg({ type: 'error', text: handleFrappeError(err, 'Failed to convert lead') });
+            const errorMsg = handleFrappeError(err, 'Failed to convert lead');
+            setSnackbar({ open: true, message: errorMsg, severity: 'error' });
         } finally {
             setConverting(false);
         }
@@ -296,43 +334,55 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
 
                         {currentTab === 'convert' && (
                             <Box sx={{ py: 3 }}>
-                                <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>
-                                    Lead Conversion Status
-                                </Typography>
-
-                                {convertMsg && (
-                                    <Alert severity={convertMsg.type} sx={{ mb: 3 }}>
-                                        {convertMsg.text}
-                                    </Alert>
-                                )}
-
                                 {lead.converted_account || lead.converted_contact ? (
-                                    <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                                        <Stack spacing={2.5}>
-                                            <Box>
-                                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                                                    Converted Account
-                                                </Typography>
-                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                                                    {lead.converted_account || 'N/A'}
-                                                </Typography>
-                                            </Box>
-
-                                            <Divider sx={{ borderStyle: 'dashed' }} />
-
-                                            <Box>
-                                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                                                    Converted Contact
-                                                </Typography>
-                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                                                    {lead.converted_contact || 'N/A'}
-                                                </Typography>
-                                            </Box>
-
-                                            <Alert severity="success" icon={<Iconify icon={"solar:check-circle-bold" as any} />}>
-                                                This lead has been successfully converted.
-                                            </Alert>
-                                        </Stack>
+                                    <Box>
+                                        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                                            <Stack spacing={2.5}>
+                                                <Box>
+                                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                                        Converted Account
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="subtitle1"
+                                                        sx={{
+                                                            fontWeight: 800,
+                                                            color: 'primary.main',
+                                                            cursor: lead.converted_account ? 'pointer' : 'default'
+                                                        }}
+                                                        onClick={() => {
+                                                            if (lead.converted_account) {
+                                                                setSelectedAccount(lead.converted_account);
+                                                                setOpenAccount(true);
+                                                            }
+                                                        }}
+                                                    >
+                                                        {lead.converted_account || 'N/A'}
+                                                    </Typography>
+                                                </Box>
+                                                <Divider sx={{ borderStyle: 'dashed' }} />
+                                                <Box>
+                                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                                        Converted Contact
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="subtitle1"
+                                                        sx={{
+                                                            fontWeight: 800,
+                                                            color: 'primary.main',
+                                                            cursor: lead.converted_contact ? 'pointer' : 'default'
+                                                        }}
+                                                        onClick={() => {
+                                                            if (lead.converted_contact) {
+                                                                setSelectedContact(lead.converted_contact);
+                                                                setOpenContact(true);
+                                                            }
+                                                        }}
+                                                    >
+                                                        {lead.converted_contact || 'N/A'}
+                                                    </Typography>
+                                                </Box>
+                                            </Stack>
+                                        </Box>
                                     </Box>
                                 ) : (
                                     <Box sx={{ py: 5, textAlign: 'center' }}>
@@ -360,7 +410,7 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
                                             size="large"
                                             color="primary"
                                             startIcon={converting ? <Iconify icon={"svg-spinners:18-dots-indicator" as any} /> : <Iconify icon={"solar:refresh-bold" as any} />}
-                                            onClick={handleConvert}
+                                            onClick={() => setOpenConfirm(true)}
                                             disabled={converting}
                                             sx={{ px: 4, height: 48, fontWeight: 800 }}
                                         >
@@ -378,6 +428,48 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
                     </Box>
                 )}
             </DialogContent>
+
+            <AccountDetailsDialog
+                open={openAccount}
+                onClose={() => setOpenAccount(false)}
+                accountId={selectedAccount}
+            />
+
+            <ContactDetailsDialog
+                open={openContact}
+                onClose={() => setOpenContact(false)}
+                contactId={selectedContact}
+            />
+
+            <ConfirmDialog
+                open={openConfirm}
+                onClose={() => setOpenConfirm(false)}
+                title="Convert Lead"
+                content="Are you sure you want to convert this lead? This will create a permanent Account and Contact record."
+                action={
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                            handleConvert();
+                            setOpenConfirm(false);
+                        }}
+                    >
+                        Convert
+                    </Button>
+                }
+            />
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Dialog>
     );
 }

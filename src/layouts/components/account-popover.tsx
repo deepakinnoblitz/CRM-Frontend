@@ -5,11 +5,14 @@ import { useState, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
+import Portal from '@mui/material/Portal';
 import Divider from '@mui/material/Divider';
 import Popover from '@mui/material/Popover';
 import MenuList from '@mui/material/MenuList';
+import Backdrop from '@mui/material/Backdrop';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
 import { useRouter, usePathname } from 'src/routes/hooks';
@@ -40,6 +43,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
   const photoURL = user?.user_image || '';
 
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleOpenPopover = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -62,9 +66,12 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
 
   const handleLogout = useCallback(async () => {
     handleClosePopover();
+    setIsLoggingOut(true);
 
     try {
       await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
     } finally {
       setUser(null);
       router.push('/sign-in');
@@ -160,6 +167,15 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
           </Button>
         </Box>
       </Popover>
+
+      <Portal>
+        <Backdrop
+          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.modal + 1000 }}
+          open={isLoggingOut}
+        >
+          <CircularProgress color="inherit" />
+        </Backdrop>
+      </Portal>
     </>
   );
 }
