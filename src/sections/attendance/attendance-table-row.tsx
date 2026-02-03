@@ -20,6 +20,7 @@ type Props = {
         status: string;
         inTime?: string;
         out_time?: string;
+        working_hours_display?: string;
     };
     selected: boolean;
     onSelectRow: VoidFunction;
@@ -121,6 +122,11 @@ export function AttendanceTableRow({
             <TableCell>
                 <Typography variant="body2" noWrap>
                     {row.out_time || '-'}
+                </Typography>
+            </TableCell>
+            <TableCell>
+                <Typography variant="body2" noWrap>
+                    {row.working_hours_display || '-'}
                 </Typography>
             </TableCell>
 

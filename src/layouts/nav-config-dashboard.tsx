@@ -95,7 +95,17 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:restart-bold-duotone" as any} />,
   },
   {
-    title: 'Recruitment',
+    title: 'Salary Slips',
+    path: '/salary-slips',
+    icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} />,
+  },
+  {
+    title: 'Company Expenses',
+    path: '/expense-tracker',
+    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+  },
+  {
+    title: 'Job Openings',
     path: '/job-openings',
     icon: <Iconify icon={"solar:buildings-bold-duotone" as any} />,
     children: [

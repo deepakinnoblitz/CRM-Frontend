@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material/styles';
@@ -5,43 +6,44 @@ import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+
+import { fCurrency } from 'src/utils/format-number';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export type RequestTableRowProps = {
+export type ExpenseTrackerTableRowProps = {
     row: {
         id: string;
-        employee_name: string;
-        subject: string;
-        workflow_state?: string;
-        creation?: string;
+        name: string;
+        type: 'Income' | 'Expense';
+        titlenotes: string;
+        amount: number;
+        creation: string;
+        date_time?: string;
     };
     selected: boolean;
     onSelectRow: () => void;
-    onView: () => void;
     onEdit: () => void;
     onDelete: () => void;
-    canEdit: boolean;
-    canDelete: boolean;
-    hideCheckbox?: boolean;
     index?: number;
+    hideCheckbox?: boolean;
 };
 
-export function RequestTableRow({
+export function ExpenseTrackerTableRow({
     row,
     selected,
     onSelectRow,
-    onView,
     onEdit,
     onDelete,
-    canEdit,
-    canDelete,
-    hideCheckbox = false,
     index,
-}: RequestTableRowProps) {
+    hideCheckbox = false,
+}: ExpenseTrackerTableRowProps) {
+    const { type, titlenotes, amount, date_time } = row;
+
     return (
         <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
             {!hideCheckbox && (
@@ -66,12 +68,6 @@ export function RequestTableRow({
                             fontWeight: 800,
                             border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
                             mx: 'auto',
-                            transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
-                            '&:hover': {
-                                bgcolor: 'primary.main',
-                                color: 'primary.contrastText',
-                                transform: 'scale(1.1)',
-                            },
                         }}
                     >
                         {index + 1}
@@ -79,44 +75,41 @@ export function RequestTableRow({
                 </TableCell>
             )}
 
-            <TableCell>{row.employee_name || '-'}</TableCell>
+            <TableCell>
+                <Typography variant="body2" noWrap>
+                    {titlenotes || '-'}
+                </Typography>
+            </TableCell>
 
-            <TableCell>{row.subject || '-'}</TableCell>
+            <TableCell>
+                <Typography variant="body2" noWrap>
+                    {date_time ? dayjs(date_time).format('DD MMM YYYY h:mm A') : '-'}
+                </Typography>
+            </TableCell>
 
             <TableCell>
                 <Label
-                    color={
-                        (row.workflow_state === 'Approved' && 'success') ||
-                        (row.workflow_state === 'Rejected' && 'error') ||
-                        (row.workflow_state === 'Clarification Requested' && 'info') ||
-                        'warning'
-                    }
+                    variant="soft"
+                    color={(type === 'Income' && 'success') || 'error'}
+                    sx={{ textTransform: 'capitalize' }}
                 >
-                    {row.workflow_state || 'Pending'}
+                    {type}
                 </Label>
             </TableCell>
 
             <TableCell>
-                {row.creation ? new Date(row.creation).toLocaleDateString() : '-'}
+                {fCurrency(amount)}
             </TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                    <IconButton size="small" color="primary" onClick={onView}>
-                        <Iconify icon="solar:eye-bold" />
+                    <IconButton size="small" color="info" onClick={onEdit}>
+                        <Iconify icon="solar:pen-bold" />
                     </IconButton>
 
-                    {/* {canEdit && (
-                        <IconButton size="small" color="info" onClick={onEdit}>
-                            <Iconify icon="solar:pen-bold" />
-                        </IconButton>
-                    )} */}
-
-                    {canDelete && (
-                        <IconButton size="small" color="error" onClick={onDelete}>
-                            <Iconify icon="solar:trash-bin-trash-bold" />
-                        </IconButton>
-                    )}
+                    <IconButton size="small" color="error" onClick={onDelete}>
+                        <Iconify icon="solar:trash-bin-trash-bold" />
+                    </IconButton>
                 </Box>
             </TableCell>
         </TableRow>

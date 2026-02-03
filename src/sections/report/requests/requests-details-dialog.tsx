@@ -1,13 +1,24 @@
+import { useState, useEffect } from 'react';
+
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
+import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
+
+import { getRequest, updateRequestStatus } from 'src/api/requests';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+
+import { useAuth } from 'src/auth/auth-context';
+
+import { ClarificationDialog } from './clarification-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -15,21 +26,115 @@ type Props = {
     open: boolean;
     onClose: () => void;
     request: any;
+    onRefresh?: () => void;
 };
 
-export function RequestDetailsDialog({ open, onClose, request }: Props) {
+export function RequestDetailsDialog({ open, onClose, request, onRefresh }: Props) {
+    const { user } = useAuth();
+    const [loading, setLoading] = useState<string | null>(null);
+    const [openClarification, setOpenClarification] = useState(false);
+    const [clarificationType, setClarificationType] = useState<'HR' | 'Employee'>('HR');
+    const [internalRequest, setInternalRequest] = useState<any>(request);
+
+    useEffect(() => {
+        setInternalRequest(request);
+    }, [request]);
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+
+        if (open && internalRequest?.name) {
+            interval = setInterval(async () => {
+                try {
+                    const latestRequest = await getRequest(internalRequest.name);
+                    setInternalRequest(latestRequest);
+                } catch (error) {
+                    console.error('Failed to poll request details:', error);
+                }
+            }, 5000);
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [open, internalRequest?.name]);
+
+    const isEmployee = user?.email === internalRequest?.owner;
+
+    const handleUpdateStatus = async (status: string, message?: string) => {
+        if (!internalRequest?.name) return;
+        setLoading(status);
+        try {
+            const updateData: any = { workflow_state: status };
+
+            if (message) {
+                if (clarificationType === 'HR') {
+                    const fields = ['hr_query', 'hr_query_2', 'hr_query_3', 'hr_query_4', 'hr_query_5'];
+                    const nextField = fields.find(f => !internalRequest[f]);
+                    if (nextField) updateData[nextField] = message;
+                } else {
+                    const fields = ['employee_reply', 'employee_reply_2', 'employee_reply_3', 'employee_reply_4', 'employee_reply_5'];
+                    const nextField = fields.find(f => !internalRequest[f]);
+                    if (nextField) updateData[nextField] = message;
+                }
+            }
+
+            await updateRequestStatus(internalRequest.name, status, updateData);
+            if (onRefresh) onRefresh();
+            setOpenClarification(false);
+            onClose();
+        } catch (error) {
+            console.error('Failed to update status:', error);
+        } finally {
+            setLoading(null);
+        }
+    };
+
     const renderStatus = (status: string) => (
         <Label
             variant="soft"
             color={
                 (status === 'Approved' && 'success') ||
                 (status === 'Rejected' && 'error') ||
+                (status === 'Clarification Requested' && 'info') ||
                 'warning'
             }
         >
             {status || 'Pending'}
         </Label>
     );
+
+    const getMessages = () => {
+        const msgs: { sender: string; text: string; side: 'left' | 'right' }[] = [];
+        for (let i = 1; i <= 5; i++) {
+            const hrField = i === 1 ? 'hr_query' : `hr_query_${i}`;
+            const empField = i === 1 ? 'employee_reply' : `employee_reply_${i}`;
+
+            if (internalRequest[hrField]) {
+                msgs.push({
+                    sender: 'HR',
+                    text: internalRequest[hrField],
+                    side: isEmployee ? 'left' : 'right'
+                });
+            }
+            if (internalRequest[empField]) {
+                msgs.push({
+                    sender: 'Employee',
+                    text: internalRequest[empField],
+                    side: isEmployee ? 'right' : 'left'
+                });
+            }
+        }
+        return msgs;
+    };
+
+    const messages = internalRequest ? getMessages() : [];
+
+    const hrQueryCount = ['hr_query', 'hr_query_2', 'hr_query_3', 'hr_query_4', 'hr_query_5'].filter(f => internalRequest?.[f]).length;
+    const employeeReplyCount = ['employee_reply', 'employee_reply_2', 'employee_reply_3', 'employee_reply_4', 'employee_reply_5'].filter(f => internalRequest?.[f]).length;
+
+    const hrLimitReached = hrQueryCount >= 5;
+    const employeeLimitReached = employeeReplyCount >= 5;
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
@@ -41,7 +146,7 @@ export function RequestDetailsDialog({ open, onClose, request }: Props) {
             </DialogTitle>
 
             <DialogContent sx={{ p: 4, m: 2, mt: 4 }}>
-                {request ? (
+                {internalRequest ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                         {/* Header Info */}
                         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5 }}>
@@ -60,15 +165,15 @@ export function RequestDetailsDialog({ open, onClose, request }: Props) {
                                 <Iconify icon={"solar:document-text-bold" as any} width={40} />
                             </Box>
                             <Box sx={{ flexGrow: 1 }}>
-                                <Typography variant="h5" sx={{ fontWeight: 800 }}>{request.subject}</Typography>
+                                <Typography variant="h5" sx={{ fontWeight: 800 }}>{internalRequest.subject}</Typography>
                                 <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                    Submitted by {request.employee_name}
+                                    Submitted by {internalRequest.employee_name}
                                 </Typography>
                             </Box>
                             <Box sx={{ textAlign: 'right' }}>
-                                {renderStatus(request.workflow_state)}
+                                {renderStatus(internalRequest.workflow_state)}
                                 <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.disabled', fontWeight: 700 }}>
-                                    ID: {request.name}
+                                    ID: {internalRequest.name}
                                 </Typography>
                             </Box>
                         </Box>
@@ -85,8 +190,8 @@ export function RequestDetailsDialog({ open, onClose, request }: Props) {
                                     gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
                                 }}
                             >
-                                <DetailItem label="Employee" value={request.employee_name} icon="solar:user-bold" />
-                                <DetailItem label="Subject" value={request.subject} icon="solar:document-text-bold" />
+                                <DetailItem label="Employee" value={internalRequest.employee_name} icon="solar:user-bold" />
+                                <DetailItem label="Subject" value={internalRequest.subject} icon="solar:document-text-bold" />
                             </Box>
                         </Box>
 
@@ -101,7 +206,7 @@ export function RequestDetailsDialog({ open, onClose, request }: Props) {
                                         '& p': { margin: 0, marginBottom: 1 },
                                         '& p:last-child': { marginBottom: 0 }
                                     }}
-                                    dangerouslySetInnerHTML={{ __html: request.message || '-' }}
+                                    dangerouslySetInnerHTML={{ __html: internalRequest.message || '-' }}
                                 />
                             </Box>
                         </Box>
@@ -110,17 +215,55 @@ export function RequestDetailsDialog({ open, onClose, request }: Props) {
                         <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
                             <SectionHeader title="Status & Approval" icon="solar:check-circle-bold" noMargin />
                             <Box sx={{ mt: 3, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                                <DetailItem label="Status" value={request.workflow_state || 'Pending'} icon="solar:flag-bold" />
-                                {request.approved_by && (
-                                    <DetailItem label="Approved By" value={request.approved_by} icon="solar:user-check-bold" />
+                                <DetailItem label="Status" value={internalRequest.workflow_state || 'Pending'} icon="solar:flag-bold" />
+                                {internalRequest.approved_by && (
+                                    <DetailItem label="Approved By" value={internalRequest.approved_by} icon="solar:user-check-bold" />
                                 )}
                                 <DetailItem
                                     label="Created On"
-                                    value={request.creation ? new Date(request.creation).toLocaleString() : '-'}
+                                    value={internalRequest.creation ? new Date(internalRequest.creation).toLocaleString() : '-'}
                                     icon="solar:calendar-bold"
                                 />
                             </Box>
                         </Box>
+
+                        {/* Clarification Chat */}
+                        {messages.length > 0 && (
+                            <Box>
+                                <SectionHeader title="Clarification History" icon="solar:chat-round-dots-bold" />
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                                    {messages.map((msg, idx) => (
+                                        <Box key={idx} sx={{
+                                            maxWidth: '75%',
+                                            alignSelf: msg.side === 'right' ? 'flex-end' : 'flex-start',
+                                            bgcolor: msg.side === 'right' ? 'primary.main' : 'background.paper',
+                                            color: msg.side === 'right' ? 'primary.contrastText' : 'text.primary',
+                                            p: 1.5,
+                                            borderRadius: 2,
+                                            borderTopRightRadius: msg.side === 'right' ? 0 : 2,
+                                            borderTopLeftRadius: msg.side === 'left' ? 0 : 2,
+                                            boxShadow: (theme) => theme.customShadows?.z1,
+                                            position: 'relative'
+                                        }}>
+                                            <Typography variant="caption" sx={{ display: 'block', mb: 0.5, fontWeight: 700, color: msg.side === 'right' ? 'inherit' : 'primary.main' }}>
+                                                {msg.sender}
+                                            </Typography>
+                                            <Typography variant="body2">{msg.text}</Typography>
+                                        </Box>
+                                    ))}
+                                    {isEmployee && employeeLimitReached && internalRequest.workflow_state === 'Clarification Requested' && (
+                                        <Typography variant="caption" color="error" sx={{ textAlign: 'center', mt: 1, fontWeight: 700 }}>
+                                            Maximum reply limit (5) reached.
+                                        </Typography>
+                                    )}
+                                    {!isEmployee && hrLimitReached && (internalRequest.workflow_state === 'Pending' || internalRequest.workflow_state === 'Clarification Requested' || !internalRequest.workflow_state) && (
+                                        <Typography variant="caption" color="error" sx={{ textAlign: 'center', mt: 1, fontWeight: 700 }}>
+                                            Maximum clarification limit (5) reached.
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </Box>
+                        )}
                     </Box>
                 ) : (
                     <Box sx={{ py: 10, textAlign: 'center' }}>
@@ -129,6 +272,79 @@ export function RequestDetailsDialog({ open, onClose, request }: Props) {
                     </Box>
                 )}
             </DialogContent>
+
+            {internalRequest && (
+                <DialogActions sx={{ p: 3, bgcolor: 'background.neutral' }}>
+                    {/* HR Actions */}
+                    {!isEmployee && (internalRequest.workflow_state === 'Pending' || internalRequest.workflow_state === 'Clarification Requested' || !internalRequest.workflow_state) && (
+                        <>
+                            <LoadingButton
+                                color="success"
+                                variant="contained"
+                                loading={loading === 'Approved'}
+                                onClick={() => handleUpdateStatus('Approved')}
+                                startIcon={<Iconify icon={"solar:check-circle-bold" as any} />}
+                            >
+                                Approve
+                            </LoadingButton>
+
+                            <LoadingButton
+                                color="error"
+                                variant="contained"
+                                loading={loading === 'Rejected'}
+                                onClick={() => handleUpdateStatus('Rejected')}
+                                startIcon={<Iconify icon={"solar:close-circle-bold" as any} />}
+                            >
+                                Reject
+                            </LoadingButton>
+
+                            <Button
+                                color="info"
+                                variant="contained"
+                                disabled={hrLimitReached}
+                                onClick={() => {
+                                    setClarificationType('HR');
+                                    setOpenClarification(true);
+                                }}
+                                startIcon={<Iconify icon={"solar:question-square-bold" as any} />}
+                            >
+                                Ask Clarification
+                            </Button>
+                        </>
+                    )}
+
+                    {/* Employee Actions */}
+                    {isEmployee && internalRequest.workflow_state === 'Clarification Requested' && (
+                        <Button
+                            color="info"
+                            variant="contained"
+                            disabled={employeeLimitReached}
+                            onClick={() => {
+                                setClarificationType('Employee');
+                                setOpenClarification(true);
+                            }}
+                            startIcon={<Iconify icon={"solar:forward-bold" as any} />}
+                        >
+                            Reply
+                        </Button>
+                    )}
+
+                    <Box sx={{ flexGrow: 1 }} />
+
+                    <Button variant="outlined" color="inherit" onClick={onClose}>
+                        Close
+                    </Button>
+                </DialogActions>
+            )}
+
+            <ClarificationDialog
+                open={openClarification}
+                onClose={() => setOpenClarification(false)}
+                onConfirm={(msg) => handleUpdateStatus(clarificationType === 'HR' ? 'Clarification Requested' : 'Pending', msg)}
+                title={clarificationType === 'HR' ? 'Ask Clarification' : 'Reply to HR'}
+                label={clarificationType === 'HR' ? 'Query' : 'Reply'}
+                loading={loading === 'Clarification Requested' || loading === 'Pending'}
+            />
         </Dialog>
     );
 }

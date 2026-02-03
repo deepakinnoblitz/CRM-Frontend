@@ -37,4 +37,4 @@ tsconfig.tsbuildinfo
 .ncurc.js
 knip.jsonc
 
-vite-config.ts
+vite.config.ts
