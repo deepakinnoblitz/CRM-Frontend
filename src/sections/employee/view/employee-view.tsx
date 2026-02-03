@@ -28,7 +28,8 @@ import { useEmployees } from 'src/hooks/useEmployees';
 
 import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { createEmployee, updateEmployee, deleteEmployee, getHRPermissions, getDocTypeMetadata, fetchSalaryComponents } from 'src/api/hr-management';
+import { createEmployee, updateEmployee, deleteEmployee } from 'src/api/employees';
+import { getHRPermissions, getDocTypeMetadata, fetchSalaryComponents } from 'src/api/hr-management';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';

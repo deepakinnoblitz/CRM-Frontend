@@ -22,13 +22,13 @@ type Props = {
         totalDays: number;
         reason: string;
         status: string;
+        halfDay?: number | boolean;
+        permissionHours?: number;
     };
     selected: boolean;
     onSelectRow: VoidFunction;
     onView: VoidFunction;
-    onEdit: VoidFunction;
     onDelete: VoidFunction;
-    canEdit?: boolean;
     canDelete?: boolean;
     hideCheckbox?: boolean;
     index?: number;
@@ -39,9 +39,7 @@ export function LeavesTableRow({
     selected,
     onSelectRow,
     onView,
-    onEdit,
     onDelete,
-    canEdit,
     canDelete,
     hideCheckbox = false,
     index,
@@ -117,7 +115,15 @@ export function LeavesTableRow({
             <TableCell>
                 <Typography variant="body2" noWrap>
                     {row.totalDays}
+                    {row.halfDay === 1 && (
+                        <Iconify icon={"solar:history-bold" as any} width={16} sx={{ ml: 0.5, color: 'info.main', verticalAlign: 'middle' }} />
+                    )}
                 </Typography>
+                {!!row.permissionHours && (
+                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                        {row.permissionHours} hrs permission
+                    </Typography>
+                )}
             </TableCell>
 
             <TableCell>
@@ -135,16 +141,6 @@ export function LeavesTableRow({
                     <IconButton size="small" onClick={onView} sx={{ color: 'info.main' }}>
                         <Iconify icon="solar:eye-bold" />
                     </IconButton>
-                    {canEdit && (
-                        <IconButton size="small" onClick={onEdit} sx={{ color: 'primary.main' }}>
-                            <Iconify icon="solar:pen-bold" />
-                        </IconButton>
-                    )}
-                    {canDelete && (
-                        <IconButton size="small" onClick={onDelete} sx={{ color: 'error.main' }}>
-                            <Iconify icon="solar:trash-bin-trash-bold" />
-                        </IconButton>
-                    )}
                 </Box>
             </TableCell>
         </TableRow>

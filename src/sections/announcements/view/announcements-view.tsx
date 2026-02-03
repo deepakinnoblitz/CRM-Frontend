@@ -36,17 +36,34 @@ import { UserTableHead as AnnouncementTableHead } from 'src/sections/user/user-t
 import { UserTableToolbar as AnnouncementTableToolbar } from 'src/sections/user/user-table-toolbar';
 import { AnnouncementDetailsDialog } from 'src/sections/report/announcements/announcements-details-dialog';
 
+import { AnnouncementsTableFiltersDrawer } from '../announcements-table-filters-drawer';
+
 // ----------------------------------------------------------------------
+
+const ANNOUNCEMENT_SORT_OPTIONS = [
+    { value: 'creation_desc', label: 'Newest First' },
+    { value: 'creation_asc', label: 'Oldest First' },
+    { value: 'announcement_name_asc', label: 'Title: A to Z' },
+    { value: 'announcement_name_desc', label: 'Title: Z to A' },
+];
 
 export function AnnouncementsView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('creation');
+    const [openFilters, setOpenFilters] = useState(false);
+    const [filters, setFilters] = useState<{
+        startDate: string | null;
+        endDate: string | null;
+    }>({
+        startDate: null,
+        endDate: null,
+    });
     const [selected, setSelected] = useState<string[]>([]);
 
-    const { data, total, refetch } = useAnnouncements(page + 1, rowsPerPage, filterName, orderBy, order);
+    const { data, total, refetch } = useAnnouncements(page + 1, rowsPerPage, filterName, filters, orderBy, order);
 
     const [openCreate, setOpenCreate] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -76,11 +93,28 @@ export function AnnouncementsView() {
         getAnnouncementPermissions().then(setPermissions);
     });
 
-    const handleSort = (property: string) => {
-        const isAsc = orderBy === property && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(property);
+    const handleSortChange = (value: string) => {
+        const parts = value.split('_');
+        const direction = parts.pop() as 'asc' | 'desc';
+        const field = parts.join('_');
+        setOrderBy(field);
+        setOrder(direction);
     };
+
+    const handleFilters = (update: Partial<typeof filters>) => {
+        setFilters((prev) => ({ ...prev, ...update }));
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            startDate: null,
+            endDate: null,
+        });
+        setFilterName('');
+    };
+
+    const canReset = filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const handleSelectAllRows = (checked: boolean) => {
         if (checked) {
@@ -223,6 +257,11 @@ export function AnnouncementsView() {
                     onFilterName={handleFilterByName}
                     searchPlaceholder="Search announcements..."
                     onDelete={selected.length > 0 ? handleBulkDelete : undefined}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
+                    sortBy={`${orderBy}_${order}`}
+                    onSortChange={handleSortChange}
+                    sortOptions={ANNOUNCEMENT_SORT_OPTIONS}
                 />
 
                 <Scrollbar>
@@ -233,15 +272,14 @@ export function AnnouncementsView() {
                                 orderBy={orderBy}
                                 rowCount={data.length}
                                 numSelected={selected.length}
-                                onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
                                 headLabel={[
-                                    { id: 'announcement_name', label: 'Title' },
-                                    { id: 'announcement', label: 'Announcement' },
-                                    { id: 'creation', label: 'Created On' },
-                                    { id: '', label: '' },
+                                    { id: 'announcement_name', label: 'Title', width: 220 },
+                                    { id: 'announcement', label: 'Announcement', width: 400 },
+                                    { id: 'creation', label: 'Created On', width: 140 },
+                                    { id: '', label: '', width: 100 }
                                 ]}
                             />
                             <TableBody>
@@ -373,6 +411,16 @@ export function AnnouncementsView() {
                         Delete
                     </Button>
                 }
+            />
+
+            <AnnouncementsTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
             />
         </DashboardContent>
     );

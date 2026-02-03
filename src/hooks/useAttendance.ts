@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { fetchAttendance } from 'src/api/hr-management';
+import { fetchAttendance } from 'src/api/attendance';
 
 export function useAttendance(page: number, pageSize: number, search: string, orderBy?: string, order?: 'asc' | 'desc') {
     const [data, setData] = useState<any[]>([]);

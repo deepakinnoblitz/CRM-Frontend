@@ -22,9 +22,7 @@ async function fetchFrappeList(params: {
     const filters: any[] = [];
 
     if (params.search) {
-        filters.push([
-            ['Timesheet', 'employee_name', 'like', `%${params.search}%`]
-        ]);
+        filters.push(['Timesheet', 'employee_name', 'like', `%${params.search}%`]);
     }
 
     const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "timesheet_date desc";
@@ -129,4 +127,60 @@ export async function getTimesheetPermissions() {
     }
 
     return (await res.json()).message || { read: false, write: false, delete: false };
+}
+
+export async function fetchProjects(params: {
+    page: number;
+    page_size: number;
+    search?: string;
+}) {
+    const filters: any[] = [];
+    if (params.search) {
+        filters.push(['Project', 'project', 'like', `%${params.search}%`]);
+    }
+
+    const query = new URLSearchParams({
+        doctype: 'Project',
+        fields: JSON.stringify(["name", "project"]),
+        filters: JSON.stringify(filters),
+        limit_start: String((params.page - 1) * params.page_size),
+        limit_page_length: String(params.page_size),
+        order_by: "project asc"
+    });
+
+    const res = await frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`);
+    if (!res.ok) throw new Error("Failed to fetch projects");
+
+    const data = await res.json();
+    return {
+        data: data.message || []
+    };
+}
+
+export async function fetchActivityTypes(params: {
+    page: number;
+    page_size: number;
+    search?: string;
+}) {
+    const filters: any[] = [];
+    if (params.search) {
+        filters.push(['Activity Type', 'activity_type', 'like', `%${params.search}%`]);
+    }
+
+    const query = new URLSearchParams({
+        doctype: 'Activity Type',
+        fields: JSON.stringify(["name", "activity_type"]),
+        filters: JSON.stringify(filters),
+        limit_start: String((params.page - 1) * params.page_size),
+        limit_page_length: String(params.page_size),
+        order_by: "activity_type asc"
+    });
+
+    const res = await frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`);
+    if (!res.ok) throw new Error("Failed to fetch activity types");
+
+    const data = await res.json();
+    return {
+        data: data.message || []
+    };
 }

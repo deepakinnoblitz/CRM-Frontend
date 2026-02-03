@@ -34,7 +34,7 @@ import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import locationData from 'src/assets/data/location_data.json';
-import { getLead, createLead, updateLead, deleteLead, convertLead, getDoctypeList, getWorkflowStates, getWorkflowActions, type ConvertLeadResponse } from 'src/api/leads';
+import { getLead, createLead, updateLead, deleteLead, convertLead, getDoctypeList, getWorkflowStates, getWorkflowActions, applyWorkflowAction, type ConvertLeadResponse } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -865,6 +865,9 @@ export function UserView() {
                 leadName={leadName}
                 service={service}
                 disabled={viewOnly}
+                onStageChange={(newStage) => {
+                  setPendingWorkflowChange({ action: `Move to ${newStage}`, next_state: newStage });
+                }}
               />
               <LeadPipelineTimeline
                 title="State History"
@@ -1239,10 +1242,14 @@ export function UserView() {
             onClick={async () => {
               if (!pendingWorkflowChange) return;
               try {
+                const action = pendingWorkflowChange.action;
                 const newStage = pendingWorkflowChange.next_state;
-                setWorkflowState(newStage);
+
                 if (currentLeadId) {
-                  await updateLead(currentLeadId, { workflow_state: newStage });
+                  // Use applyWorkflowAction instead of updateLead to respect/trigger workflow logic
+                  await applyWorkflowAction('Lead', currentLeadId, action);
+
+                  setWorkflowState(newStage);
                   const updatedLead = await getLead(currentLeadId);
                   setPipelineTimeline(updatedLead.converted_pipeline_timeline || []);
                   const newActions = await getWorkflowActions('Lead', newStage);

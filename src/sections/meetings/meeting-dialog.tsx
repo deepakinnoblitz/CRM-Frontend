@@ -68,7 +68,10 @@ const INITIAL_MEETING_STATE: Partial<Meeting> = {
     title: '',
     meet_for: 'Lead',
     lead_name: '',
+    accounts_name: '',
+    enter_id: '',
     outgoing_call_status: 'Scheduled',
+    completed_meet_status: '',
     from: '',
     to: '',
     meeting_venue: 'In Office',
@@ -76,6 +79,8 @@ const INITIAL_MEETING_STATE: Partial<Meeting> = {
     completed_meet_notes: '',
     enable_reminder: 0,
     remind_before_minutes: 60,
+    host: '',
+    participants: [],
 };
 
 export default function MeetingDialog({ open, onClose, selectedMeeting, initialData, onSuccess }: Props) {
@@ -93,12 +98,16 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
     const [leadOptions, setLeadOptions] = useState<any[]>([]);
     const [contactOptions, setContactOptions] = useState<any[]>([]);
     const [accountOptions, setAccountOptions] = useState<any[]>([]);
+    const [userOptions, setUserOptions] = useState<any[]>([]);
 
     useEffect(() => {
         if (open) {
             getDoctypeList('Lead', ['name', 'lead_name', 'converted_contact', 'converted_account']).then(setLeadOptions);
             getDoctypeList('Contacts', ['name', 'first_name', 'last_name']).then(setContactOptions);
             getDoctypeList('Accounts', ['name', 'account_name']).then(setAccountOptions);
+            getDoctypeList('User', ['name', 'full_name']).then((users) => {
+                setUserOptions(users.filter((u: any) => u.name !== 'Administrator' && u.name !== 'Guest'));
+            });
         }
     }, [open]);
 
@@ -108,6 +117,8 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                 title: selectedMeeting.title,
                 meet_for: selectedMeeting.meet_for || 'Lead',
                 outgoing_call_status: selectedMeeting.outgoing_call_status || 'Scheduled',
+                completed_meet_status: selectedMeeting.completed_meet_status || '',
+                enter_id: selectedMeeting.enter_id || '',
                 from: selectedMeeting.from.replace(' ', 'T'),
                 to: selectedMeeting.to?.replace(' ', 'T') || '',
                 meeting_venue: selectedMeeting.meeting_venue || 'In Office',
@@ -115,9 +126,11 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                 completed_meet_notes: stripHtml(selectedMeeting.completed_meet_notes || ''),
                 lead_name: selectedMeeting.lead_name || '',
                 contact_name: selectedMeeting.contact_name || '',
-                account_name: selectedMeeting.account_name || '',
+                accounts_name: selectedMeeting.accounts_name || '',
                 enable_reminder: selectedMeeting.enable_reminder || 0,
                 remind_before_minutes: selectedMeeting.remind_before_minutes || 60,
+                host: selectedMeeting.host || '',
+                participants: selectedMeeting.participants || [],
             });
         } else if (initialData) {
             setMeetingData({
@@ -138,7 +151,7 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
 
         if (meetingData.meet_for === 'Lead' && !meetingData.lead_name) errors.lead_name = true;
         if (meetingData.meet_for === 'Contact' && !meetingData.contact_name) errors.contact_name = true;
-        if (meetingData.meet_for === 'Accounts' && !meetingData.account_name) errors.account_name = true;
+        if (meetingData.meet_for === 'Accounts' && !meetingData.accounts_name) errors.accounts_name = true;
 
         if (Object.keys(errors).length > 0) {
             setFormErrors(errors);
@@ -235,15 +248,28 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                                         meet_for: e.target.value as string,
                                                         lead_name: '',
                                                         contact_name: '',
-                                                        account_name: ''
+                                                        accounts_name: ''
                                                     })}
                                                 >
                                                     <MenuItem value="Lead">Lead</MenuItem>
                                                     <MenuItem value="Contact">Contact</MenuItem>
                                                     <MenuItem value="Accounts">Account</MenuItem>
+                                                    <MenuItem value="Others">Others</MenuItem>
                                                 </Select>
                                             </FormControl>
                                         </Grid>
+
+                                        {meetingData.meet_for === 'Others' && (
+                                            <Grid size={{ xs: 12, md: 6 }}>
+                                                <TextField
+                                                    fullWidth
+                                                    label="Enter ID"
+                                                    placeholder="Enter other ID"
+                                                    value={meetingData.enter_id}
+                                                    onChange={(e) => setMeetingData({ ...meetingData, enter_id: e.target.value })}
+                                                />
+                                            </Grid>
+                                        )}
 
                                         {meetingData.meet_for === 'Lead' && (
                                             <Grid size={{ xs: 12, md: 6 }}>
@@ -260,7 +286,7 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                                             ...meetingData,
                                                             lead_name: newValue?.name || '',
                                                             contact_name: newValue?.converted_contact || '',
-                                                            account_name: newValue?.converted_account || ''
+                                                            accounts_name: newValue?.converted_account || ''
                                                         });
                                                     }}
                                                     renderInput={(params) => (
@@ -309,22 +335,22 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                                         sx: { '& .MuiAutocomplete-option': { fontSize: '0.9rem' } }
                                                     }}
                                                     getOptionLabel={(option) => typeof option === 'string' ? option : `${option.account_name} (${option.name})`}
-                                                    value={accountOptions.find(opt => opt.name === meetingData.account_name) || null}
-                                                    onChange={(_, newValue) => setMeetingData({ ...meetingData, account_name: newValue?.name || '' })}
+                                                    value={accountOptions.find(opt => opt.name === meetingData.accounts_name) || null}
+                                                    onChange={(_, newValue) => setMeetingData({ ...meetingData, accounts_name: newValue?.name || '' })}
                                                     renderInput={(params) => (
                                                         <TextField
                                                             {...params}
                                                             label="Select Account"
                                                             required
-                                                            error={!!formErrors.account_name}
-                                                            helperText={formErrors.account_name ? 'Account is required' : ''}
+                                                            error={!!formErrors.accounts_name}
+                                                            helperText={formErrors.accounts_name ? 'Account is required' : ''}
                                                         />
                                                     )}
                                                 />
                                             </Grid>
                                         )}
 
-                                        <Grid size={{ xs: 12 }}>
+                                        <Grid size={{ xs: 12, md: 6 }}>
                                             <FormControl fullWidth>
                                                 <InputLabel>Status</InputLabel>
                                                 <Select
@@ -342,6 +368,56 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                                 </Select>
                                             </FormControl>
                                         </Grid>
+
+                                        {meetingData.outgoing_call_status === 'Completed' && (
+                                            <Grid size={{ xs: 12, md: 6 }}>
+                                                <FormControl fullWidth>
+                                                    <InputLabel>Meeting Status</InputLabel>
+                                                    <Select
+                                                        label="Meeting Status"
+                                                        value={meetingData.completed_meet_status}
+                                                        onChange={(e) => setMeetingData({ ...meetingData, completed_meet_status: e.target.value as string })}
+                                                    >
+                                                        {[
+                                                            'Called – No Response',
+                                                            'Called – Phone Switched Off',
+                                                            'Called – Number Not Reachable',
+                                                            'Called – Wrong Number',
+                                                            'Called – Left Voicemail',
+                                                            'Called – Asked to Call Later',
+                                                            'Called – Spoke Briefly',
+                                                            'Spoke to Prospect – Not Available',
+                                                            'Spoke to Prospect – Confirmed Interest',
+                                                            'Spoke to Prospect – Needs More Time',
+                                                            'Spoke to Prospect – Will Revert Soon',
+                                                            'Spoke to Prospect – Awaiting Internal Discussion',
+                                                            'Demo Scheduled',
+                                                            'Demo Completed',
+                                                            'Demo Rescheduled',
+                                                            'Prospect Did Not Attend Demo',
+                                                            'Proposal / Quotation Sent',
+                                                            'Pricing Discussion Ongoing',
+                                                            'Negotiation in Progress',
+                                                            'Awaiting Prospect Approval',
+                                                            'Deal Won – Order Confirmed',
+                                                            'Deal Lost – Price Issue',
+                                                            'Deal Lost – No Requirement',
+                                                            'Deal Lost – Competitor Chosen',
+                                                            'Order Processing Started',
+                                                            'Payment Received',
+                                                            'Delivery / Implementation Started',
+                                                            'Post-Sales Follow-up Scheduled',
+                                                            'Lead Not Interested',
+                                                            'Lead Invalid',
+                                                            'Lead Closed – No Response',
+                                                            'Others'
+                                                        ].map((opt) => (
+                                                            <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                                        ))}
+                                                    </Select>
+                                                </FormControl>
+                                            </Grid>
+                                        )}
                                     </Grid>
                                 </Box>
                             </Box>
@@ -400,6 +476,39 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                     </Grid>
                                 </Grid>
                             </Box>
+
+                            {/* Stakeholders Section */}
+                           {/*</Box><Box>
+                           {/*</Box>    <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
+                           {/*</Box>        Stakeholders
+                           {/*</Box>    </Typography>
+                           {/*</Box>    <Grid container spacing={2}>
+                           {/*</Box>        <Grid size={{ xs: 12, md: 6 }}>
+                           {/*</Box>            <Autocomplete
+                           {/*</Box>                fullWidth
+                           {/*</Box>                options={userOptions}
+                           {/*</Box>                getOptionLabel={(option) => typeof option === 'string' ? option : option.full_name || option.name}
+                           {/*</Box>                value={userOptions.find(opt => opt.name === meetingData.host) || null}
+                           {/*</Box>                onChange={(_, newValue) => setMeetingData({ ...meetingData, host: newValue?.name || '' })}
+                           {/*</Box>                renderInput={(params) => <TextField {...params} label="Host" />}
+                           {/*</Box>            />
+                           {/*</Box>        </Grid>
+                           {/*</Box>        <Grid size={{ xs: 12, md: 6 }}>
+                           {/*</Box>            <Autocomplete
+                           {/*</Box>                multiple
+                           {/*</Box>                fullWidth
+                           {/*</Box>                options={userOptions}
+                           {/*</Box>                getOptionLabel={(option) => typeof option === 'string' ? option : option.full_name || option.name}
+                           {/*</Box>                value={userOptions.filter(opt => meetingData.participants?.some(p => p.user === opt.name))}
+                           {/*</Box>                onChange={(_, newValue) => setMeetingData({
+                           {/*</Box>                    ...meetingData,
+                           {/*</Box>                    participants: newValue.map(v => ({ user: v.name }))
+                           {/*</Box>                })}
+                           {/*</Box>                renderInput={(params) => <TextField {...params} label="Participants" />}
+                           {/*</Box>            />
+                           {/*</Box>        </Grid>
+                           {/*</Box>    </Grid>
+                           {/*</Box></Box>
 
                             {/* Reminder Section */}
                             <Box>

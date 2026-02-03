@@ -5,7 +5,7 @@ export interface HolidayList {
     name: string;
     holiday_list_name: string;
     year: number;
-    month: string;
+    month_year: string;
     working_days: number;
     creation?: string;
     modified?: string;
@@ -21,9 +21,9 @@ async function fetchFrappeList(params: {
     const filters: any[] = [];
 
     if (params.search) {
-        filters.push([
+        filters.push(
             ['Holiday List', 'holiday_list_name', 'like', `%${params.search}%`]
-        ]);
+        );
     }
 
     const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "year desc, month desc";
@@ -128,4 +128,15 @@ export async function getHolidayListPermissions() {
     }
 
     return (await res.json()).message || { read: false, write: false, delete: false };
+}
+
+export async function populateHolidays(month: string, year: string) {
+    const res = await frappeRequest(`/api/method/company.company.api.populate_holidays_for_ui?month=${month}&year=${year}`);
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to populate holidays"));
+    }
+
+    return (await res.json()).message;
 }

@@ -7,8 +7,9 @@ import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import Switch from '@mui/material/Switch';
 import Snackbar from '@mui/material/Snackbar';
-import Checkbox from '@mui/material/Checkbox';
+import { styled } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -28,8 +29,35 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useHolidayLists } from 'src/hooks/useHolidayLists';
 
+const Android12Switch = styled(Switch)(({ theme }) => ({
+    padding: 8,
+    '& .MuiSwitch-track': {
+        borderRadius: 22 / 2,
+        '&::before, &::after': {
+            content: '""',
+            position: 'absolute',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: 16,
+            height: 16,
+        },
+        '&::before': {
+            backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 24 24"><path fill="${encodeURIComponent(
+                '#fff',
+            )}" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>')`,
+            left: 12,
+        }
+    },
+    '& .MuiSwitch-thumb': {
+        boxShadow: 'none',
+        width: 16,
+        height: 16,
+        margin: 2,
+    },
+}));
+
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getHolidayList, createHolidayList, updateHolidayList, deleteHolidayList, getHolidayListPermissions } from 'src/api/holiday-lists';
+import { getHolidayList, createHolidayList, updateHolidayList, deleteHolidayList, getHolidayListPermissions, populateHolidays } from 'src/api/holiday-lists';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -43,7 +71,31 @@ import { UserTableHead as HolidayTableHead } from 'src/sections/user/user-table-
 import { HolidayDetailsDialog } from 'src/sections/report/holidays/holidays-details-dialog';
 import { UserTableToolbar as HolidayTableToolbar } from 'src/sections/user/user-table-toolbar';
 
+import { HolidayTableFiltersDrawer } from '../holidays-table-filters-drawer';
+
 // ----------------------------------------------------------------------
+
+const HOLIDAY_SORT_OPTIONS = [
+    { value: 'year_desc', label: 'Year: Newest First' },
+    { value: 'year_asc', label: 'Year: Oldest First' },
+    { value: 'holiday_list_name_asc', label: 'Name: A to Z' },
+    { value: 'holiday_list_name_desc', label: 'Name: Z to A' },
+];
+
+const MONTH_OPTIONS = [
+    { label: 'January', value: '1' },
+    { label: 'February', value: '2' },
+    { label: 'March', value: '3' },
+    { label: 'April', value: '4' },
+    { label: 'May', value: '5' },
+    { label: 'June', value: '6' },
+    { label: 'July', value: '7' },
+    { label: 'August', value: '8' },
+    { label: 'September', value: '9' },
+    { label: 'October', value: '10' },
+    { label: 'November', value: '11' },
+    { label: 'December', value: '12' },
+];
 
 interface Holiday {
     idx?: number;
@@ -54,7 +106,7 @@ interface Holiday {
 
 export function HolidaysView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('year');
@@ -78,12 +130,18 @@ export function HolidaysView() {
     const [workingDays, setWorkingDays] = useState('');
     const [holidays, setHolidays] = useState<Holiday[]>([]);
 
-    // Holiday entry dialog state
-    const [openHolidayDialog, setOpenHolidayDialog] = useState(false);
-    const [editingHolidayIndex, setEditingHolidayIndex] = useState<number | null>(null);
-    const [holidayDate, setHolidayDate] = useState('');
-    const [holidayDescription, setHolidayDescription] = useState('');
-    const [isWorkingDay, setIsWorkingDay] = useState(false);
+    const [openFilters, setOpenFilters] = useState(false);
+    const [filters, setFilters] = useState<{ year: string | null; month_year: string | null }>({
+        year: null,
+        month_year: null,
+    });
+
+    // Apply filters
+    const filteredData = data.filter((item) => {
+        if (filters.year && item.year.toString() !== filters.year) return false;
+        if (filters.month_year && item.month_year !== filters.month_year) return false;
+        return true;
+    });
 
     // Permissions
     const [permissions, setPermissions] = useState({ read: false, write: false, delete: false });
@@ -99,6 +157,55 @@ export function HolidaysView() {
     useEffect(() => {
         getHolidayListPermissions().then(setPermissions);
     }, []);
+
+    const [populating, setPopulating] = useState(false);
+
+    useEffect(() => {
+        const fetchHolidays = async () => {
+            if (year && month && !isEdit) {
+                setPopulating(true);
+                try {
+                    const result = await populateHolidays(month, year);
+                    setHolidays(result.holidays);
+                    setWorkingDays(result.working_days.toString());
+                } catch (error) {
+                    console.error('Failed to populate holidays:', error);
+                } finally {
+                    setPopulating(false);
+                }
+            }
+        };
+
+        fetchHolidays();
+    }, [year, month, isEdit]); // Only auto-populate for NEW lists when both are set and list is empty
+
+    useEffect(() => {
+        const count = holidays.filter(h => h.is_working_day === 1).length;
+        setWorkingDays(count.toString());
+    }, [holidays]);
+
+    const handleSortChange = (value: string) => {
+        const parts = value.split('_');
+        const direction = parts.pop() as 'asc' | 'desc';
+        const field = parts.join('_');
+        setOrderBy(field);
+        setOrder(direction);
+    };
+
+    const handleFilters = (update: Partial<typeof filters>) => {
+        setFilters((prev) => ({ ...prev, ...update }));
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            year: null,
+            month_year: null,
+        });
+        setFilterName('');
+    };
+
+    const canReset = filters.year !== null || filters.month_year !== null || !!filterName;
 
     const handleSort = (property: string) => {
         const isAsc = orderBy === property && order === 'asc';
@@ -135,7 +242,7 @@ export function HolidaysView() {
         setIsEdit(false);
         setCurrentHoliday(null);
         setHolidayListName('');
-        setYear('');
+        setYear(new Date().getFullYear().toString());
         setMonth('');
         setWorkingDays('');
         setHolidays([]);
@@ -160,7 +267,7 @@ export function HolidaysView() {
             setCurrentHoliday(fullData);
             setHolidayListName(fullData.holiday_list_name || '');
             setYear(fullData.year?.toString() || '');
-            setMonth(fullData.month || '');
+            setMonth(fullData.month_year || '');
             setWorkingDays(fullData.working_days?.toString() || '');
             setHolidays(fullData.holidays || []);
             setIsEdit(true);
@@ -199,41 +306,25 @@ export function HolidaysView() {
     };
 
     // Holiday entry management functions
-    const handleOpenHolidayDialog = () => {
-        setEditingHolidayIndex(null);
-        setHolidayDate('');
-        setHolidayDescription('');
-        setIsWorkingDay(false);
-        setOpenHolidayDialog(true);
+    const handleAddHoliday = () => {
+        setHolidays((prev) => [
+            ...prev,
+            {
+                holiday_date: dayjs().format('YYYY-MM-DD'),
+                description: '',
+                is_working_day: 0,
+            }
+        ]);
     };
 
-    const handleEditHoliday = (index: number) => {
-        const holiday = holidays[index];
-        setEditingHolidayIndex(index);
-        setHolidayDate(holiday.holiday_date);
-        setHolidayDescription(holiday.description);
-        setIsWorkingDay(holiday.is_working_day === 1);
-        setOpenHolidayDialog(true);
+    const handleHolidayChange = (index: number, field: keyof Holiday, value: any) => {
+        setHolidays((prev) =>
+            prev.map((holiday, i) => (i === index ? { ...holiday, [field]: value } : holiday))
+        );
     };
 
     const handleDeleteHoliday = (index: number) => {
         setHolidays((prev) => prev.filter((_, i) => i !== index));
-    };
-
-    const handleSaveHoliday = () => {
-        const newHoliday: Holiday = {
-            holiday_date: holidayDate,
-            description: holidayDescription,
-            is_working_day: isWorkingDay ? 1 : 0,
-        };
-
-        if (editingHolidayIndex !== null) {
-            setHolidays((prev) => prev.map((holiday, i) => (i === editingHolidayIndex ? newHoliday : holiday)));
-        } else {
-            setHolidays((prev) => [...prev, newHoliday]);
-        }
-
-        setOpenHolidayDialog(false);
     };
 
     const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -242,7 +333,7 @@ export function HolidaysView() {
         const holidayData = {
             holiday_list_name: holidayListName.trim(),
             year: parseInt(year, 10),
-            month: month.trim(),
+            month_year: month.trim(),
             working_days: parseInt(workingDays, 10) || 0,
             holidays,
         };
@@ -309,6 +400,11 @@ export function HolidaysView() {
                     onFilterName={handleFilterByName}
                     searchPlaceholder="Search holiday lists..."
                     onDelete={selected.length > 0 ? handleBulkDelete : undefined}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
+                    sortBy={`${orderBy}_${order}`}
+                    onSortChange={handleSortChange}
+                    sortOptions={HOLIDAY_SORT_OPTIONS}
                 />
 
                 <Scrollbar>
@@ -317,9 +413,8 @@ export function HolidaysView() {
                             <HolidayTableHead
                                 order={order}
                                 orderBy={orderBy}
-                                rowCount={data.length}
+                                rowCount={filteredData.length}
                                 numSelected={selected.length}
-                                onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
@@ -332,7 +427,7 @@ export function HolidaysView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
+                                {filteredData.map((row, index) => (
                                     <HolidayListTableRow
                                         key={row.name}
                                         index={page * rowsPerPage + index}
@@ -341,7 +436,7 @@ export function HolidaysView() {
                                             id: row.name,
                                             holiday_list_name: row.holiday_list_name,
                                             year: row.year,
-                                            month: row.month,
+                                            month: row.month_year,
                                             working_days: row.working_days,
                                         }}
                                         selected={selected.includes(row.name)}
@@ -371,7 +466,7 @@ export function HolidaysView() {
                                 {!empty && (
                                     <TableEmptyRows
                                         height={68}
-                                        emptyRows={Math.max(0, rowsPerPage - data.length)}
+                                        emptyRows={Math.max(0, rowsPerPage - filteredData.length)}
                                     />
                                 )}
                             </TableBody>
@@ -410,28 +505,43 @@ export function HolidaysView() {
                                     onChange={(e) => setHolidayListName(e.target.value)}
                                     required
                                     placeholder="e.g., Public Holidays 2024"
+                                    InputLabelProps={{ shrink: true }}
                                 />
 
-                                <TextField
-                                    fullWidth
-                                    label="Year"
-                                    type="number"
-                                    value={year}
-                                    onChange={(e) => setYear(e.target.value)}
-                                    required
-                                    placeholder="e.g., 2024"
-                                    inputProps={{ min: '2020', max: '2100' }}
-                                />
+                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                    <DatePicker
+                                        label="Year"
+                                        views={['year']}
+                                        value={year ? dayjs(`${year}-01-01`) : null}
+                                        onChange={(newValue) => setYear(newValue ? newValue.format('YYYY') : '')}
+                                        slotProps={{
+                                            textField: {
+                                                fullWidth: true,
+                                                required: true,
+                                                InputLabelProps: { shrink: true },
+                                            },
+                                        }}
+                                    />
+                                </LocalizationProvider>
                             </Box>
 
                             <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
                                 <TextField
+                                    select
                                     fullWidth
                                     label="Month"
                                     value={month}
                                     onChange={(e) => setMonth(e.target.value)}
-                                    placeholder="e.g., January, February"
-                                />
+                                    SelectProps={{ native: true }}
+                                    InputLabelProps={{ shrink: true }}
+                                >
+                                    <option value="" disabled>Select Month</option>
+                                    {MONTH_OPTIONS.map((option) => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </TextField>
 
                                 <TextField
                                     fullWidth
@@ -440,7 +550,9 @@ export function HolidaysView() {
                                     value={workingDays}
                                     onChange={(e) => setWorkingDays(e.target.value)}
                                     placeholder="Number of working days"
-                                    inputProps={{ min: '0', max: '31' }}
+                                    InputProps={{
+                                        readOnly: true,
+                                    }}
                                 />
                             </Box>
 
@@ -450,55 +562,74 @@ export function HolidaysView() {
                                     <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                         Holidays
                                         <Typography component="span" variant="body2" sx={{ ml: 2, color: 'primary.main', fontWeight: 600 }}>
-                                            Total: {holidays.length} holiday(s)
+                                            Total: {holidays.filter(h => h.is_working_day === 0).length} holiday(s)
                                         </Typography>
                                     </Typography>
-                                    <Button
-                                        size="small"
-                                        variant="contained"
-                                        startIcon={<Iconify icon="mingcute:add-line" />}
-                                        onClick={handleOpenHolidayDialog}
-                                    >
-                                        Add Holiday
-                                    </Button>
                                 </Box>
 
-                                <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                                <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
                                     <Table size="small">
                                         <TableHead>
-                                            <TableRow sx={{ bgcolor: 'background.neutral' }}>
-                                                <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Working Day</TableCell>
-                                                <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
+                                            <TableRow sx={{ bgcolor: 'grey.100' }}>
+                                                <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Date</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Description</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'center' }}>Working Day</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, py: 1.5, width: 80 }} />
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
                                             {holidays.length === 0 ? (
                                                 <TableRow>
                                                     <TableCell colSpan={4} align="center" sx={{ py: 3, color: 'text.secondary' }}>
-                                                        No holidays added yet. Click &quot;Add Holiday&quot; to begin.
+                                                        No holidays added yet...
                                                     </TableCell>
                                                 </TableRow>
                                             ) : (
                                                 holidays.map((holiday, index) => (
-                                                    <TableRow key={index} hover>
-                                                        <TableCell>{new Date(holiday.holiday_date).toLocaleDateString()}</TableCell>
-                                                        <TableCell>{holiday.description}</TableCell>
-                                                        <TableCell>
-                                                            {holiday.is_working_day ? (
-                                                                <Iconify icon="solar:check-circle-bold" width={20} sx={{ color: 'success.main' }} />
-                                                            ) : (
-                                                                <Typography variant="body2" sx={{ color: 'error.main', fontWeight: 700 }}>✗</Typography>
-                                                            )}
+                                                    <TableRow
+                                                        key={index}
+                                                        sx={{
+                                                            '&:nth-of-type(odd)': { bgcolor: 'grey.50' },
+                                                            '&:hover': { bgcolor: 'action.hover' }
+                                                        }}
+                                                    >
+                                                        <TableCell sx={{ minWidth: 140, py: 1.5 }}>
+                                                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                                                <DatePicker
+                                                                    value={dayjs(holiday.holiday_date)}
+                                                                    onChange={(newValue) => handleHolidayChange(index, 'holiday_date', newValue?.format('YYYY-MM-DD'))}
+                                                                    format="DD-MM-YYYY"
+                                                                    slotProps={{
+                                                                        textField: {
+                                                                            size: 'small',
+                                                                            variant: 'standard',
+                                                                            fullWidth: true,
+                                                                            InputProps: {
+                                                                                disableUnderline: true,
+                                                                            },
+                                                                        },
+                                                                    }}
+                                                                />
+                                                            </LocalizationProvider>
                                                         </TableCell>
-                                                        <TableCell align="right">
-                                                            <IconButton size="small" onClick={() => handleEditHoliday(index)} color="info">
-                                                                <Iconify icon="solar:pen-bold" width={18} />
-                                                            </IconButton>
-                                                            <IconButton size="small" onClick={() => handleDeleteHoliday(index)} color="error">
-                                                                <Iconify icon="solar:trash-bin-trash-bold" width={18} />
-                                                            </IconButton>
+                                                        <TableCell sx={{ py: 1.5 }}>
+                                                            <TextField
+                                                                size="small"
+                                                                fullWidth
+                                                                variant="standard"
+                                                                value={holiday.description}
+                                                                onChange={(e) => handleHolidayChange(index, 'description', e.target.value)}
+                                                                placeholder="Holiday description"
+                                                                InputProps={{
+                                                                    disableUnderline: true,
+                                                                }}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell sx={{ py: 1.5, textAlign: 'center' }}>
+                                                            <Android12Switch
+                                                                checked={holiday.is_working_day === 1}
+                                                                onChange={(e) => handleHolidayChange(index, 'is_working_day', e.target.checked ? 1 : 0)}
+                                                            />
                                                         </TableCell>
                                                     </TableRow>
                                                 ))
@@ -516,58 +647,6 @@ export function HolidaysView() {
                         </Button>
                     </DialogActions>
                 </form>
-            </Dialog>
-
-            {/* Holiday Entry Dialog */}
-            <Dialog open={openHolidayDialog} onClose={() => setOpenHolidayDialog(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>
-                    {editingHolidayIndex !== null ? 'Edit Holiday' : 'Add Holiday'}
-                </DialogTitle>
-                <DialogContent>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <Box sx={{ display: 'grid', gap: 3, pt: 2 }}>
-                            <DatePicker
-                                label="Holiday Date"
-                                value={holidayDate ? dayjs(holidayDate) : null}
-                                onChange={(newValue) => setHolidayDate(newValue?.format('YYYY-MM-DD') || '')}
-                                slotProps={{
-                                    textField: {
-                                        fullWidth: true,
-                                        required: true,
-                                        InputLabelProps: { shrink: true },
-                                    },
-                                }}
-                            />
-                            <TextField
-                                fullWidth
-                                label="Description"
-                                value={holidayDescription}
-                                onChange={(e) => setHolidayDescription(e.target.value)}
-                                required
-                                placeholder="e.g., New Year's Day, Independence Day"
-                            />
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        checked={isWorkingDay}
-                                        onChange={(e) => setIsWorkingDay(e.target.checked)}
-                                    />
-                                }
-                                label="Is Working Day"
-                            />
-                        </Box>
-                    </LocalizationProvider>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setOpenHolidayDialog(false)}>Cancel</Button>
-                    <Button
-                        onClick={handleSaveHoliday}
-                        variant="contained"
-                        disabled={!holidayDate || !holidayDescription}
-                    >
-                        {editingHolidayIndex !== null ? 'Update' : 'Add'}
-                    </Button>
-                </DialogActions>
             </Dialog>
 
             {/* View Dialog */}
@@ -589,16 +668,14 @@ export function HolidaysView() {
                 </Alert>
             </Snackbar>
 
-            <ConfirmDialog
-                open={confirmDelete.open}
-                onClose={() => setConfirmDelete({ open: false, id: null })}
-                title="Confirm Delete"
-                content="Are you sure you want to delete this holiday list?"
-                action={
-                    <Button onClick={handleConfirmDelete} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
-                        Delete
-                    </Button>
-                }
+            {/* Filter Drawer */}
+            <HolidayTableFiltersDrawer
+                open={openFilters}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                onResetFilters={handleResetFilters}
+                canReset={canReset}
             />
         </DashboardContent>
     );

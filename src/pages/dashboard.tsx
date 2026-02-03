@@ -16,14 +16,14 @@ export default function Page() {
   const isSalesAndCRM = user?.roles?.some(role => role.toLowerCase() === 'crm and sales');
   const isAdmin = user?.roles?.some(role => ['administrator', 'system manager'].includes(role.toLowerCase()));
 
-  // Admin and Sales/CRM see the new Sales & CRM dashboard, HR sees HR dashboard
+  // HR users see HR dashboard, Sales/CRM see their dashboards, Admin sees CRM dashboard
   const renderDashboard = () => {
+    if (isHR) return <HRDashboardView />;
+    if (isEmployee) return <HRDashboardView />;
     if (isAdmin) return <CRMDashboard />;
     if (isSalesAndCRM) return <CombinedDashboardView />;
     if (isSales) return <SalesDashboardView />;
     if (isCRM) return <CRMDashboard />;
-    if (isHR) return <HRDashboardView />;
-    if (isEmployee) return <HRDashboardView />;
     return <CRMDashboard />;
   };
 

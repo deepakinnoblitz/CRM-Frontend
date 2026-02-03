@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { fetchEmployees } from 'src/api/employees';
+import { fetchWFHAttendance } from 'src/api/wfh-attendance';
 
-export function useEmployees(page: number, pageSize: number, search: string, orderBy?: string, order?: 'asc' | 'desc') {
+export function useWFHAttendance(page: number, pageSize: number, search: string, orderBy?: string, order?: 'asc' | 'desc') {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -10,7 +10,7 @@ export function useEmployees(page: number, pageSize: number, search: string, ord
     const refetch = useCallback(async () => {
         setLoading(true);
         try {
-            const result = await fetchEmployees({
+            const result = await fetchWFHAttendance({
                 page,
                 page_size: pageSize,
                 search,
@@ -20,7 +20,7 @@ export function useEmployees(page: number, pageSize: number, search: string, ord
             setData(result.data);
             setTotal(result.total);
         } catch (error) {
-            console.error('Failed to fetch employees:', error);
+            console.error('Failed to fetch WFH attendance:', error);
         } finally {
             setLoading(false);
         }

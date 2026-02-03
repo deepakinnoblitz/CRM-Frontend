@@ -10,14 +10,19 @@ export interface Call {
     lead_name?: string;
     contact_name?: string;
     account_name?: string;
+    enter_id?: string;
     call_start_time: string;
     call_end_time?: string;
     outgoing_call_status: string;
+    completed_call_status?: string;
+    completed_call_notes?: string;
     call_purpose?: string;
     call_agenda?: string;
     color?: string;
     enable_reminder?: number;
     remind_before_minutes?: number;
+    host?: string;
+    participants?: { user: string }[];
 }
 
 export async function fetchCalls(start?: string, end?: string): Promise<Call[]> {
@@ -35,14 +40,19 @@ export async function fetchCalls(start?: string, end?: string): Promise<Call[]> 
             "lead_name",
             "contact_name",
             "account_name",
+            "enter_id",
             "call_start_time",
             "call_end_time",
             "outgoing_call_status",
+            "completed_call_status",
+            "completed_call_notes",
             "call_purpose",
             "call_agenda",
             "color",
             "enable_reminder",
-            "remind_before_minutes"
+            "remind_before_minutes",
+            "host",
+            "participants"
         ]),
         filters: JSON.stringify(filters),
         limit_page_length: "1000",

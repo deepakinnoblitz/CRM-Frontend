@@ -86,7 +86,9 @@ export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
                             </Box>
                             <Box sx={{ flexGrow: 1 }}>
                                 <Typography variant="h5" sx={{ fontWeight: 800 }}>{meeting.title}</Typography>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{meeting.meet_for} with {meeting.lead_name}</Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                    {meeting.meet_for} with {meeting.meet_for === 'Lead' ? meeting.lead_name : meeting.meet_for === 'Contact' ? meeting.contact_name : meeting.meet_for === 'Others' ? meeting.enter_id : meeting.accounts_name || '-'}
+                                </Typography>
                             </Box>
                             <Box sx={{ textAlign: 'right' }}>
                                 <Label variant="soft" color={getStatusColor(meeting.outgoing_call_status)}>
@@ -111,12 +113,16 @@ export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
                                 }}
                             >
                                 <DetailItem label="Subject" value={meeting.title} icon="solar:pen-bold" fullWidth />
+                                <DetailItem label="Enter ID" value={meeting.enter_id} icon="solar:hashtag-bold" />
                                 <DetailItem label="Meet For" value={meeting.meet_for} icon="solar:user-bold" />
-                                <DetailItem label="Reference" value={meeting.lead_name} icon="solar:link-bold" />
+                                <DetailItem label="Reference" value={meeting.meet_for === 'Lead' ? meeting.lead_name : meeting.meet_for === 'Contact' ? meeting.contact_name : meeting.accounts_name || '-'} icon="solar:link-bold" />
+                                <DetailItem label="Meeting Status" value={meeting.completed_meet_status} icon="solar:check-read-bold" />
                                 <DetailItem label="From" value={meeting.from ? new Date(meeting.from).toLocaleString() : '-'} icon="solar:clock-circle-bold" />
                                 <DetailItem label="To" value={meeting.to ? new Date(meeting.to).toLocaleString() : '-'} icon="solar:clock-circle-bold" />
                                 <DetailItem label="Venue" value={meeting.meeting_venue} icon="solar:buildings-bold" />
                                 <DetailItem label="Location" value={meeting.location} icon="solar:map-point-bold" />
+                                <DetailItem label="Host" value={meeting.host} icon="solar:user-rounded-bold" />
+                                <DetailItem label="Participants" value={meeting.participants?.map((p: any) => p.user).join(', ')} icon="solar:users-group-rounded-bold" />
                                 <DetailItem label="Owner" value={meeting.owner} icon="solar:user-rounded-bold" />
                             </Box>
                         </Box>

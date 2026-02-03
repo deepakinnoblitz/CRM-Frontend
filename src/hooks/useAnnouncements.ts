@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 import { fetchAnnouncements } from 'src/api/announcements';
 
-export function useAnnouncements(page: number, pageSize: number, search: string, orderBy?: string, order?: 'asc' | 'desc') {
+export function useAnnouncements(page: number, pageSize: number, search: string, filters: any = {}, orderBy?: string, order?: 'asc' | 'desc') {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -14,6 +14,7 @@ export function useAnnouncements(page: number, pageSize: number, search: string,
                 page,
                 page_size: pageSize,
                 search,
+                filters,
                 orderBy,
                 order
             });
