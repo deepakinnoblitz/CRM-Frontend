@@ -478,37 +478,37 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                             </Box>
 
                             {/* Stakeholders Section */}
-                            <Box>
-                                <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
-                                    Stakeholders
-                                </Typography>
-                                <Grid container spacing={2}>
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <Autocomplete
-                                            fullWidth
-                                            options={userOptions}
-                                            getOptionLabel={(option) => typeof option === 'string' ? option : option.full_name || option.name}
-                                            value={userOptions.find(opt => opt.name === meetingData.host) || null}
-                                            onChange={(_, newValue) => setMeetingData({ ...meetingData, host: newValue?.name || '' })}
-                                            renderInput={(params) => <TextField {...params} label="Host" />}
-                                        />
-                                    </Grid>
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <Autocomplete
-                                            multiple
-                                            fullWidth
-                                            options={userOptions}
-                                            getOptionLabel={(option) => typeof option === 'string' ? option : option.full_name || option.name}
-                                            value={userOptions.filter(opt => meetingData.participants?.some(p => p.user === opt.name))}
-                                            onChange={(_, newValue) => setMeetingData({
-                                                ...meetingData,
-                                                participants: newValue.map(v => ({ user: v.name }))
-                                            })}
-                                            renderInput={(params) => <TextField {...params} label="Participants" />}
-                                        />
-                                    </Grid>
-                                </Grid>
-                            </Box>
+                           {/*</Box><Box>
+                           {/*</Box>    <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
+                           {/*</Box>        Stakeholders
+                           {/*</Box>    </Typography>
+                           {/*</Box>    <Grid container spacing={2}>
+                           {/*</Box>        <Grid size={{ xs: 12, md: 6 }}>
+                           {/*</Box>            <Autocomplete
+                           {/*</Box>                fullWidth
+                           {/*</Box>                options={userOptions}
+                           {/*</Box>                getOptionLabel={(option) => typeof option === 'string' ? option : option.full_name || option.name}
+                           {/*</Box>                value={userOptions.find(opt => opt.name === meetingData.host) || null}
+                           {/*</Box>                onChange={(_, newValue) => setMeetingData({ ...meetingData, host: newValue?.name || '' })}
+                           {/*</Box>                renderInput={(params) => <TextField {...params} label="Host" />}
+                           {/*</Box>            />
+                           {/*</Box>        </Grid>
+                           {/*</Box>        <Grid size={{ xs: 12, md: 6 }}>
+                           {/*</Box>            <Autocomplete
+                           {/*</Box>                multiple
+                           {/*</Box>                fullWidth
+                           {/*</Box>                options={userOptions}
+                           {/*</Box>                getOptionLabel={(option) => typeof option === 'string' ? option : option.full_name || option.name}
+                           {/*</Box>                value={userOptions.filter(opt => meetingData.participants?.some(p => p.user === opt.name))}
+                           {/*</Box>                onChange={(_, newValue) => setMeetingData({
+                           {/*</Box>                    ...meetingData,
+                           {/*</Box>                    participants: newValue.map(v => ({ user: v.name }))
+                           {/*</Box>                })}
+                           {/*</Box>                renderInput={(params) => <TextField {...params} label="Participants" />}
+                           {/*</Box>            />
+                           {/*</Box>        </Grid>
+                           {/*</Box>    </Grid>
+                           {/*</Box></Box>
 
                             {/* Reminder Section */}
                             <Box>

@@ -443,38 +443,38 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                                 </Grid>
                             </Box>
 
-                            {/* Stakeholders Section */}
-                            <Box>
-                                <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
-                                    Stakeholders
-                                </Typography>
-                                <Grid container spacing={2}>
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <Autocomplete
-                                            fullWidth
-                                            options={userOptions}
-                                            getOptionLabel={(option) => typeof option === 'string' ? option : option.full_name || option.name}
-                                            value={userOptions.find(opt => opt.name === callData.host) || null}
-                                            onChange={(_, newValue) => setCallData({ ...callData, host: newValue?.name || '' })}
-                                            renderInput={(params) => <TextField {...params} label="Host" />}
-                                        />
-                                    </Grid>
-                                    <Grid size={{ xs: 12, md: 6 }}>
-                                        <Autocomplete
-                                            multiple
-                                            fullWidth
-                                            options={userOptions}
-                                            getOptionLabel={(option) => typeof option === 'string' ? option : option.full_name || option.name}
-                                            value={userOptions.filter(opt => callData.participants?.some(p => p.user === opt.name))}
-                                            onChange={(_, newValue) => setCallData({
-                                                ...callData,
-                                                participants: newValue.map(v => ({ user: v.name }))
-                                            })}
-                                            renderInput={(params) => <TextField {...params} label="Participants" />}
-                                        />
-                                    </Grid>
-                                </Grid>
-                            </Box>
+                           {/* Stakeholders Section */}
+                           {/*<Box>
+                           {/*    <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
+                           {/*        Stakeholders
+                           {/*    </Typography>
+                           {/*    <Grid container spacing={2}>
+                           {/*        <Grid size={{ xs: 12, md: 6 }}>
+                           {/*            <Autocomplete
+                           {/*                fullWidth
+                           {/*                options={userOptions}
+                           {/*                getOptionLabel={(option) => typeof option === 'string' ? option : option.full_name || option.name}
+                           {/*                value={userOptions.find(opt => opt.name === callData.host) || null}
+                           {/*                onChange={(_, newValue) => setCallData({ ...callData, host: newValue?.name || '' })}
+                           {/*                renderInput={(params) => <TextField {...params} label="Host" />}
+                           {/*            />
+                           {/*        </Grid>
+                           {/*        <Grid size={{ xs: 12, md: 6 }}>
+                           {/*            <Autocomplete
+                           {/*                multiple
+                           {/*                fullWidth
+                           {/*                options={userOptions}
+                           {/*                getOptionLabel={(option) => typeof option === 'string' ? option : option.full_name || option.name}
+                           {/*                value={userOptions.filter(opt => callData.participants?.some(p => p.user === opt.name))}
+                           {/*                onChange={(_, newValue) => setCallData({
+                           {/*                    ...callData,
+                           {/*                    participants: newValue.map(v => ({ user: v.name }))
+                           {/*                })}
+                           {/*                renderInput={(params) => <TextField {...params} label="Participants" />}
+                           {/*            />
+                           {/*        </Grid>
+                           {/*    </Grid>
+                           {/*</Box>
 
                             {/* Reminder Section */}
                             <Box>
