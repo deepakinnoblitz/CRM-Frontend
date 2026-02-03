@@ -2,7 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 
 import { fetchWFHAttendance } from 'src/api/wfh-attendance';
 
-export function useWFHAttendance(page: number, pageSize: number, search: string, orderBy?: string, order?: 'asc' | 'desc') {
+export function useWFHAttendance(
+    page: number,
+    pageSize: number,
+    search: string,
+    orderBy?: string,
+    order?: 'asc' | 'desc',
+    filters?: { employee?: string; status?: string; startDate?: string | null; endDate?: string | null }
+) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -15,7 +22,8 @@ export function useWFHAttendance(page: number, pageSize: number, search: string,
                 page_size: pageSize,
                 search,
                 orderBy,
-                order
+                order,
+                filters
             });
             setData(result.data);
             setTotal(result.total);
@@ -24,7 +32,7 @@ export function useWFHAttendance(page: number, pageSize: number, search: string,
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, search, orderBy, order]);
+    }, [page, pageSize, search, orderBy, order, filters]);
 
     useEffect(() => {
         refetch();

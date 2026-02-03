@@ -5,8 +5,8 @@ import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
-import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -21,7 +21,6 @@ type Props = {
         phone_number: string;
         job_title: string;
         status: string;
-        applicant_rating: number;
     };
     selected: boolean;
     onSelectRow: VoidFunction;
@@ -139,12 +138,6 @@ export function JobApplicantTableRow({
 
             <TableCell>{row.phone_number || '-'}</TableCell>
 
-            <TableCell>
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                    <Iconify icon={"solar:star-bold" as any} width={16} sx={{ color: 'warning.main' }} />
-                    <Typography variant="body2">{row.applicant_rating || 0}</Typography>
-                </Stack>
-            </TableCell>
 
             <TableCell>{renderStatus(row.status)}</TableCell>
 

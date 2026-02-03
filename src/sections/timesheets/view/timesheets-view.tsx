@@ -60,7 +60,7 @@ interface TimesheetEntry {
 
 export function TimesheetsView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('timesheet_date');
@@ -433,11 +433,6 @@ export function TimesheetsView() {
                                 orderBy={orderBy}
                                 rowCount={data.length}
                                 numSelected={selected.length}
-                                onSort={(id) => {
-                                    // Handle column header clicks mapping to composite sort values or just toggling
-                                    const isAsc = orderBy === id && order === 'asc';
-                                    handleSort(`${id}_${isAsc ? 'desc' : 'asc'}`);
-                                }}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
@@ -642,7 +637,8 @@ export function TimesheetsView() {
                             options={projects}
                             loading={loadingProjects}
                             getOptionLabel={(option) => option.project || option.name || ''}
-                            value={projects.find((p) => p.name === entryProject) || null}
+                            value={projects.find((p) => p.name === entryProject) || (entryProject ? { name: entryProject, project: entryProject } : null)}
+                            isOptionEqualToValue={(option, value) => option.name === value.name}
                             onInputChange={(event, newInputValue) => {
                                 handleSearchProjects(newInputValue);
                             }}
@@ -658,7 +654,8 @@ export function TimesheetsView() {
                             options={activityTypes}
                             loading={loadingActivityTypes}
                             getOptionLabel={(option) => option.activity_type || option.name || ''}
-                            value={activityTypes.find((at) => at.name === entryActivityType) || null}
+                            value={activityTypes.find((at) => at.name === entryActivityType) || (entryActivityType ? { name: entryActivityType, activity_type: entryActivityType } : null)}
+                            isOptionEqualToValue={(option, value) => option.name === value.name}
                             onInputChange={(event, newInputValue) => {
                                 handleSearchActivityTypes(newInputValue);
                             }}

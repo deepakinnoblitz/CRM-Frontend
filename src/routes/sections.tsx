@@ -46,6 +46,8 @@ export const EstimationReportPage = lazy(() => import('src/pages/reports/estimat
 export const InvoiceReportPage = lazy(() => import('src/pages/reports/invoice'));
 export const InvoiceCollectionReportPage = lazy(() => import('src/pages/reports/invoice-collection'));
 export const PurchaseCollectionReportPage = lazy(() => import('src/pages/reports/purchase-settlement-report'));
+export const TimesheetReportPage = lazy(() => import('src/pages/reports/timesheet'));
+export const AttendanceReportPage = lazy(() => import('src/pages/reports/attendance'));
 export const EmployeePage = lazy(() => import('src/pages/employee'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
 export const LeavesPage = lazy(() => import('src/pages/leaves'));
@@ -53,6 +55,7 @@ export const PayrollPage = lazy(() => import('src/pages/payroll'));
 export const RequestsPage = lazy(() => import('src/pages/requests'));
 export const AnnouncementsPage = lazy(() => import('src/pages/announcements'));
 export const AssetsPage = lazy(() => import('src/pages/assets'));
+export const AssetAssignmentsPage = lazy(() => import('src/pages/asset-assignments'));
 export const TimesheetsPage = lazy(() => import('src/pages/timesheets'));
 export const ExpensesListPage = lazy(() => import('src/pages/expenses/list'));
 export const ExpensesNewPage = lazy(() => import('src/pages/expenses/new'));
@@ -154,9 +157,10 @@ export const routesSection: RouteObject[] = [
       { path: 'requests', element: <RequestsPage /> },
       { path: 'announcements', element: <AnnouncementsPage /> },
       { path: 'assets', element: <AssetsPage /> },
+      { path: 'asset-assignments', element: <AssetAssignmentsPage /> },
       { path: 'timesheets', element: <TimesheetsPage /> },
       { path: 'wfh-attendance', element: <WFHAttendancePage /> },
-      { path: 'timesheet-reports', element: <TimesheetsPage /> }, // Placeholder until module is implemented
+      { path: 'timesheet-reports', element: <TimesheetReportPage /> },
       {
         path: 'expenses',
         children: [
@@ -218,6 +222,8 @@ export const routesSection: RouteObject[] = [
           { path: 'invoice', element: <InvoiceReportPage /> },
           { path: 'invoice-collection', element: <InvoiceCollectionReportPage /> },
           { path: 'purchase-settlement', element: <PurchaseCollectionReportPage /> },
+          { path: 'timesheet', element: <TimesheetReportPage /> },
+          { path: 'attendance', element: <AttendanceReportPage /> },
         ],
       },
     ],
