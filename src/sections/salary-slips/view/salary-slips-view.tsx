@@ -15,9 +15,9 @@ import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 
-import { getDoctypeList } from 'src/api/leads';
 import { useSalarySlips } from 'src/hooks/useSalarySlips';
 
+import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getSalarySlip, deleteSalarySlip, SalarySlip } from 'src/api/salary-slips';
 
