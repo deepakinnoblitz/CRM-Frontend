@@ -9,15 +9,19 @@ export interface Meeting {
     meet_for: string;
     lead_name?: string;
     contact_name?: string;
-    account_name?: string;
+    accounts_name?: string;
+    enter_id?: string;
     from: string;
     to?: string;
     outgoing_call_status: string;
+    completed_meet_status?: string;
     meeting_venue?: string;
     location?: string;
     completed_meet_notes?: string;
     enable_reminder?: number;
     remind_before_minutes?: number;
+    host?: string;
+    participants?: { user: string }[];
 }
 
 
@@ -35,15 +39,19 @@ export async function fetchMeetings(start?: string, end?: string): Promise<Meeti
             "meet_for",
             "lead_name",
             "contact_name",
-            "account_name",
+            "accounts_name",
+            "enter_id",
             "from",
             "to",
             "outgoing_call_status",
+            "completed_meet_status",
             "meeting_venue",
             "location",
             "completed_meet_notes",
             "enable_reminder",
-            "remind_before_minutes"
+            "remind_before_minutes",
+            "host",
+            "participants"
         ]),
         filters: JSON.stringify(filters),
         limit_page_length: "1000",

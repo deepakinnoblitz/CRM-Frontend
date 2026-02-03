@@ -316,3 +316,21 @@ export async function convertLead(leadName: string): Promise<ConvertLeadResponse
 
     return json.message;
 }
+export async function applyWorkflowAction(doctype: string, name: string, action: string) {
+    console.log('applyWorkflowAction calling:', { doctype, name, action });
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/company.company.frontend_api.apply_workflow_action", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype,
+            name,
+            action
+        })
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to apply workflow action"));
+    return json.message;
+}

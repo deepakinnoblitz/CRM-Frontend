@@ -96,6 +96,7 @@ export function SalesPipeline({ currentStage, stages = STAGES, leadName, service
                     return (
                         <Box
                             key={stageStr}
+                            onClick={() => !disabled && onStageChange?.(stageStr)}
                             sx={{
                                 flex: 1,
                                 display: 'flex',
@@ -108,8 +109,11 @@ export function SalesPipeline({ currentStage, stages = STAGES, leadName, service
                                 fontSize: 11,
                                 fontWeight: 'bold',
                                 textAlign: 'center',
-                                cursor: 'default',
+                                cursor: disabled ? 'default' : 'pointer',
                                 transition: theme.transitions.create(['background-color', 'color']),
+                                '&:hover': {
+                                    bgcolor: !disabled && !isActive ? alpha(bgcolor, 0.8) : bgcolor,
+                                },
                                 clipPath: index === 0
                                     ? 'polygon(0% 0%, 90% 0%, 100% 50%, 90% 100%, 0% 100%)'
                                     : index === STAGES.length - 1

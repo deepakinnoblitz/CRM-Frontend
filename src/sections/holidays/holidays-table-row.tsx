@@ -7,7 +7,19 @@ import IconButton from '@mui/material/IconButton';
 
 import { Iconify } from 'src/components/iconify';
 
+
 // ----------------------------------------------------------------------
+
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+const getMonthName = (month: string | number): string => {
+    if (!month) return '-';
+    const monthNum = typeof month === 'string' ? parseInt(month, 10) : month;
+    if (monthNum >= 1 && monthNum <= 12) {
+        return MONTH_NAMES[monthNum - 1];
+    }
+    return '-';
+};
 
 export type HolidayListTableRowProps = {
     row: {
@@ -81,7 +93,7 @@ export function HolidayListTableRow({
 
             <TableCell>{row.year || '-'}</TableCell>
 
-            <TableCell>{row.month || '-'}</TableCell>
+            <TableCell>{getMonthName(row.month)}</TableCell>
 
             <TableCell>{row.working_days || '-'}</TableCell>
 

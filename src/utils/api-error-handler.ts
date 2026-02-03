@@ -103,8 +103,15 @@ export function handleFrappeError(json: any, defaultMessage: string = "An error 
     const hasMandatorySummary = processedMessages.some(m => m.startsWith('Mandatory Fields Required'));
 
     const finalMessages = processedMessages.filter((m, index) => {
-        // Remove if it's a duplicate
-        if (processedMessages.indexOf(m) !== index) return false;
+        // Normalization for comparison - remove all spaces and lowercase
+        const normalized = m.toLowerCase().replace(/\s+/g, '');
+
+        // Remove if it's a duplicate based on normalized content
+        const firstIndex = processedMessages.findIndex(msg =>
+            msg.toLowerCase().replace(/\s+/g, '') === normalized
+        );
+
+        if (firstIndex !== index) return false;
 
         // Remove individual "Value missing" if we have a summary
         if (hasMandatorySummary && m.toLowerCase().includes('value missing')) return false;
