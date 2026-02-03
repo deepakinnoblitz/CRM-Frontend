@@ -484,6 +484,7 @@ export function EstimationCreateView() {
                             renderInput={(params) => (
                                 <TextField {...params} label="Link Deal" />
                             )}
+                            sx={{ display: 'none' }}
                         />
 
                         <TextField

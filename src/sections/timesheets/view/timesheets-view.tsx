@@ -20,6 +20,7 @@ import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
 import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
@@ -30,9 +31,9 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useTimesheets } from 'src/hooks/useTimesheets';
 
-import { fetchEmployees } from 'src/api/hr-management';
+import { fetchEmployees } from 'src/api/employees';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getTimesheet, createTimesheet, updateTimesheet, deleteTimesheet, getTimesheetPermissions } from 'src/api/timesheets';
+import { getTimesheet, createTimesheet, updateTimesheet, deleteTimesheet, getTimesheetPermissions, fetchProjects, fetchActivityTypes } from 'src/api/timesheets';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -90,6 +91,12 @@ export function TimesheetsView() {
     // Employees for dropdown
     const [employees, setEmployees] = useState<any[]>([]);
 
+    // Projects and Activity Types for dropdown
+    const [projects, setProjects] = useState<any[]>([]);
+    const [activityTypes, setActivityTypes] = useState<any[]>([]);
+    const [loadingProjects, setLoadingProjects] = useState(false);
+    const [loadingActivityTypes, setLoadingActivityTypes] = useState(false);
+
     // Permissions
     const [permissions, setPermissions] = useState({ read: false, write: false, delete: false });
 
@@ -105,6 +112,12 @@ export function TimesheetsView() {
         getTimesheetPermissions().then(setPermissions);
         fetchEmployees({ page: 1, page_size: 1000, search: '' }).then((res) => {
             setEmployees(res.data || []);
+        });
+        fetchProjects({ page: 1, page_size: 5 }).then((res: any) => {
+            setProjects(res.data || []);
+        });
+        fetchActivityTypes({ page: 1, page_size: 5 }).then((res: any) => {
+            setActivityTypes(res.data || []);
         });
     }, []);
 
@@ -203,6 +216,30 @@ export function TimesheetsView() {
     );
 
     // Entry management functions
+    const handleSearchProjects = useCallback(async (inputValue: string) => {
+        setLoadingProjects(true);
+        try {
+            const res = await fetchProjects({ page: 1, page_size: 5, search: inputValue });
+            setProjects(res.data || []);
+        } catch (error) {
+            console.error('Failed to fetch projects:', error);
+        } finally {
+            setLoadingProjects(false);
+        }
+    }, []);
+
+    const handleSearchActivityTypes = useCallback(async (inputValue: string) => {
+        setLoadingActivityTypes(true);
+        try {
+            const res = await fetchActivityTypes({ page: 1, page_size: 5, search: inputValue });
+            setActivityTypes(res.data || []);
+        } catch (error) {
+            console.error('Failed to fetch activity types:', error);
+        } finally {
+            setLoadingActivityTypes(false);
+        }
+    }, []);
+
     const handleOpenEntryDialog = () => {
         setEditingEntryIndex(null);
         setEntryProject('');
@@ -525,21 +562,37 @@ export function TimesheetsView() {
                 </DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'grid', gap: 3, pt: 2 }}>
-                        <TextField
+                        <Autocomplete
                             fullWidth
-                            label="Project"
-                            value={entryProject}
-                            onChange={(e) => setEntryProject(e.target.value)}
-                            required
-                            placeholder="Enter project name"
+                            options={projects}
+                            loading={loadingProjects}
+                            getOptionLabel={(option) => option.project || option.name || ''}
+                            value={projects.find((p) => p.name === entryProject) || null}
+                            onInputChange={(event, newInputValue) => {
+                                handleSearchProjects(newInputValue);
+                            }}
+                            onChange={(event, newValue) => {
+                                setEntryProject(newValue?.name || '');
+                            }}
+                            renderInput={(params) => (
+                                <TextField {...params} label="Project" required placeholder="Select project" />
+                            )}
                         />
-                        <TextField
+                        <Autocomplete
                             fullWidth
-                            label="Activity Type"
-                            value={entryActivityType}
-                            onChange={(e) => setEntryActivityType(e.target.value)}
-                            required
-                            placeholder="e.g., Development, Testing, Meeting"
+                            options={activityTypes}
+                            loading={loadingActivityTypes}
+                            getOptionLabel={(option) => option.activity_type || option.name || ''}
+                            value={activityTypes.find((at) => at.name === entryActivityType) || null}
+                            onInputChange={(event, newInputValue) => {
+                                handleSearchActivityTypes(newInputValue);
+                            }}
+                            onChange={(event, newValue) => {
+                                setEntryActivityType(newValue?.name || '');
+                            }}
+                            renderInput={(params) => (
+                                <TextField {...params} label="Activity Type" required placeholder="Select activity type" />
+                            )}
                         />
                         <TextField
                             fullWidth

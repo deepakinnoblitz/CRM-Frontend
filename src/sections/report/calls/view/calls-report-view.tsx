@@ -31,6 +31,8 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { CallDetailsDialog } from '../call-details-dialog';
 import { ExportFieldsDialog } from '../../export-fields-dialog';
 
@@ -41,12 +43,19 @@ export function CallsReportView() {
     const [summaryData, setSummaryData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
+    const { user } = useAuth();
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [callFor, setCallFor] = useState('all');
     const [status, setStatus] = useState('all');
-    const [owner, setOwner] = useState('all');
+    const [owner, setOwner] = useState(user?.name || 'all');
+
+    useEffect(() => {
+        if (user?.name) {
+            setOwner(user.name);
+        }
+    }, [user]);
     const [reminder, setReminder] = useState('all');
 
     // Options
@@ -192,8 +201,10 @@ export function CallsReportView() {
         setToDate(null);
         setCallFor('all');
         setStatus('all');
-        setOwner('all');
         setReminder('all');
+        if (user?.name) {
+            setOwner(user.name);
+        }
     };
 
     useEffect(() => {
@@ -278,11 +289,12 @@ export function CallsReportView() {
                             ))}
                         </Select>
                     </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 160 }}>
+                    <FormControl size="small" sx={{ minWidth: 160 }} disabled>
                         <Select
                             value={owner}
                             onChange={(e) => setOwner(e.target.value)}
                             displayEmpty
+                            inputProps={{ readOnly: true }}
                         >
                             <MenuItem value="all">Owner</MenuItem>
                             <MenuItem value="Administrator">Administrator</MenuItem>

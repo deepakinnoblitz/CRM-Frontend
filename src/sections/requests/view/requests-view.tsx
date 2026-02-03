@@ -31,7 +31,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useRequests } from 'src/hooks/useRequests';
 
-import { fetchEmployees } from 'src/api/hr-management';
+import { fetchEmployees } from 'src/api/employees';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { createRequest, updateRequest, deleteRequest, getRequestPermissions } from 'src/api/requests';
 

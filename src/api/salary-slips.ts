@@ -30,6 +30,7 @@ async function fetchFrappeList(params: {
     page: number;
     page_size: number;
     search?: string;
+    filterValues?: Record<string, any>;
     orderBy?: string;
     order?: 'asc' | 'desc';
 }) {
@@ -37,6 +38,20 @@ async function fetchFrappeList(params: {
 
     if (params.search) {
         filters.push(['Salary Slip', 'employee_name', 'like', `%${params.search}%`]);
+    }
+
+    if (params.filterValues) {
+        Object.entries(params.filterValues).forEach(([key, value]) => {
+            if (value) {
+                if (key === 'pay_period_start') {
+                    filters.push(['Salary Slip', 'pay_period_start', '>=', value]);
+                } else if (key === 'pay_period_end') {
+                    filters.push(['Salary Slip', 'pay_period_end', '<=', value]);
+                } else {
+                    filters.push(['Salary Slip', key, '=', value]);
+                }
+            }
+        });
     }
 
     const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "pay_period_start desc";
@@ -49,6 +64,7 @@ async function fetchFrappeList(params: {
         limit_page_length: String(params.page_size),
         order_by: orderByParam
     });
+
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
@@ -67,6 +83,57 @@ async function fetchFrappeList(params: {
 }
 
 export const fetchSalarySlips = (params: any) => fetchFrappeList(params);
+
+export async function createSalarySlip(data: Partial<SalarySlip>) {
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        body: JSON.stringify({ doc: { doctype: "Salary Slip", ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || "Failed to create salary slip");
+    return json.message;
+}
+
+export async function autoAllocateSalarySlips(year: number, month: number, employees?: string[]) {
+    const res = await frappeRequest("/api/method/company.company.api.generate_salary_slips_from_employee", {
+        method: "POST",
+        body: JSON.stringify({ year, month, employees: employees ? JSON.stringify(employees) : undefined })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || "Failed to generate salary slips");
+    return json.message;
+}
+
+export async function updateSalarySlip(name: string, data: Partial<SalarySlip>) {
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
+        method: "POST",
+        body: JSON.stringify({
+            doctype: "Salary Slip",
+            name,
+            fieldname: data
+        })
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || "Failed to update salary slip");
+    return json.message;
+}
+
+export async function deleteSalarySlip(name: string) {
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        body: JSON.stringify({
+            doctype: "Salary Slip",
+            name
+        })
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || "Failed to delete salary slip");
+    return json.message;
+}
+
+
 
 export async function getSalarySlip(name: string) {
     const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Salary Slip&name=${encodeURIComponent(name)}`);

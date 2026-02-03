@@ -48,6 +48,7 @@ export async function fetchEstimations(params: {
         client_name?: string;
         ref_no?: string;
         estimate_date?: string; // Expecting YYYY-MM-DD
+        deal_id?: string;
     };
 }) {
     const filters: any[] = [];
@@ -56,7 +57,7 @@ export async function fetchEstimations(params: {
     if (params.search) {
         or_filters.push(["Estimation", "ref_no", "like", `%${params.search}%`]);
         or_filters.push(["Estimation", "customer_name", "like", `%${params.search}%`]);
-        or_filters.push(["Estimation", "phone_number", "like", `%${params.search}%`]);
+        or_filters.push(["Estimation", "client_name", "like", `%${params.search}%`]);
     }
 
     if (params.filters) {
@@ -68,6 +69,9 @@ export async function fetchEstimations(params: {
         }
         if (params.filters.estimate_date) {
             filters.push(["Estimation", "estimate_date", "=", params.filters.estimate_date]);
+        }
+        if (params.filters.deal_id) {
+            filters.push(["Estimation", "deal", "=", params.filters.deal_id]);
         }
     }
 

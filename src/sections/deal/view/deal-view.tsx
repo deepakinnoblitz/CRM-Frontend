@@ -49,9 +49,9 @@ import { TableNoData } from '../../user/table-no-data';
 import { DealDetailsDialog } from '../deal-details-dialog';
 import { TableEmptyRows } from '../../user/table-empty-rows';
 import { DealTableFiltersDrawer } from '../deal-table-filters-drawer';
-import { InvoiceListView } from '../../invoice/view/invoice-list-view';
 import { UserTableHead as DealTableHead } from '../../user/user-table-head';
 import { EstimationListView } from '../../estimation/view/estimation-list-view';
+import { InvoiceManagementView } from '../../invoice/view/invoice-management-view';
 import { UserTableToolbar as DealTableToolbar } from '../../user/user-table-toolbar';
 
 // ----------------------------------------------------------------------
@@ -793,9 +793,7 @@ export function DealView() {
                     {currentTab === 'deals' && (
                         <>
                             <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-                                <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                                    Deals List
-                                </Typography>
+                                <Typography variant="h6" sx={{ flexGrow: 1 }} />
 
                                 {permissions.write && (
                                     <Button
@@ -944,7 +942,7 @@ export function DealView() {
                     )}
 
                     {currentTab === 'invoices' && (
-                        <InvoiceListView hideHeader />
+                        <InvoiceManagementView hideHeader />
                     )}
                 </Stack>
 

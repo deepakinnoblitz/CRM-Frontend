@@ -166,7 +166,7 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
                 await createInvoiceCollection(submissionData);
                 setSnackbar({ open: true, message: 'Create success!', severity: 'success' });
             }
-            setTimeout(() => router.push('/invoices?tab=collections'), 1500);
+            setTimeout(() => router.push('/deals?tab=invoices&subtab=collections'), 1500);
         } catch (error: any) {
             setSnackbar({ open: true, message: error.message || 'Something went wrong', severity: 'error' });
             console.error(error);

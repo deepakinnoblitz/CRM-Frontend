@@ -15,6 +15,8 @@ type UserType = {
   roles: string[];
   role_profile_name?: string;
   allowed_modules: string[];
+  employee?: string;
+  employee_name?: string;
 };
 
 type AuthContextType = {

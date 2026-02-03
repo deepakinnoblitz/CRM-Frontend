@@ -13,6 +13,7 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
 import { IconButton } from '@mui/material';
+import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
@@ -34,7 +35,7 @@ import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import locationData from 'src/assets/data/location_data.json';
-import { getLead, createLead, updateLead, deleteLead, convertLead, getDoctypeList, getWorkflowStates, getWorkflowActions, type ConvertLeadResponse } from 'src/api/leads';
+import { getLead, createLead, updateLead, deleteLead, convertLead, getDoctypeList, getWorkflowStates, getWorkflowActions, applyWorkflowAction, type ConvertLeadResponse } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -52,6 +53,8 @@ import { LeadFollowupDetails } from '../lead-followup-details';
 import { LeadPipelineTimeline } from '../lead-pipeline-timeline';
 import { LeadDetailsDialog } from '../../report/lead-details-dialog';
 import { UserTableFiltersDrawer } from '../user-table-filters-drawer';
+import { AccountDetailsDialog } from '../../report/account/account-details-dialog';
+import { ContactDetailsDialog } from '../../report/contact/contact-details-dialog';
 
 
 // ----------------------------------------------------------------------
@@ -143,6 +146,13 @@ export function UserView() {
     message: '',
     severity: 'success',
   });
+
+  const [openAccountNav, setOpenAccountNav] = useState(false);
+  const [selectedAccountNav, setSelectedAccountNav] = useState<string | null>(null);
+  const [openContactNav, setOpenContactNav] = useState(false);
+  const [selectedContactNav, setSelectedContactNav] = useState<string | null>(null);
+
+  const [openConvertConfirm, setOpenConvertConfirm] = useState(false);
 
   // Permissions State
   const [permissions, setPermissions] = useState<{ read: boolean; write: boolean; delete: boolean }>({
@@ -865,6 +875,9 @@ export function UserView() {
                 leadName={leadName}
                 service={service}
                 disabled={viewOnly}
+                onStageChange={(newStage) => {
+                  setPendingWorkflowChange({ action: `Move to ${newStage}`, next_state: newStage });
+                }}
               />
               <LeadPipelineTimeline
                 title="State History"
@@ -910,50 +923,91 @@ export function UserView() {
                 </Box>
               ) : convertResult ? (
                 <Box>
-                  <Alert severity="success" sx={{ mb: 2 }}>
-                    Lead converted successfully!
-                  </Alert>
 
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <TextField
-                      fullWidth
-                      label="Account Created"
-                      value={convertResult.account}
-                      InputProps={{ readOnly: true }}
-                    />
-                    <TextField
-                      fullWidth
-                      label="Contact Created"
-                      value={convertResult.contact}
-                      InputProps={{ readOnly: true }}
-                    />
 
-                    {convertResult.messages && convertResult.messages.length > 0 && (
-                      <Box sx={{ mt: 2 }}>
-                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                          Conversion Details:
+                  <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                    <Stack spacing={2.5}>
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: 'text.disabled',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            mb: 1,
+                            display: 'block',
+                          }}
+                        >
+                          Converted Account
                         </Typography>
-                        {convertResult.messages.map((msg, idx) => (
-                          <Alert key={idx} severity={msg.type as any} sx={{ mb: 1 }}>
-                            {msg.text}
-                          </Alert>
-                        ))}
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
+                            fontWeight: 800,
+                            color: 'primary.main',
+                            cursor: convertResult.account ? 'pointer' : 'default'
+                          }}
+                          onClick={() => {
+                            if (convertResult.account) {
+                              setSelectedAccountNav(convertResult.account);
+                              setOpenAccountNav(true);
+                            }
+                          }}
+                        >
+                          {convertResult.account || 'N/A'}
+                        </Typography>
                       </Box>
-                    )}
 
-                    <Button
-                      variant="outlined"
-                      onClick={() => {
-                        setConvertResult(null);
-                        setCurrentTab('general');
-                        handleCloseCreate();
-                        refetch();
-                      }}
-                      sx={{ mt: 2 }}
-                    >
-                      Close
-                    </Button>
+                      <Divider sx={{ borderStyle: 'dashed' }} />
+
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: 'text.disabled',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            mb: 1,
+                            display: 'block',
+                          }}
+                        >
+                          Converted Contact
+                        </Typography>
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
+                            fontWeight: 800,
+                            color: 'primary.main',
+                            cursor: convertResult.contact ? 'pointer' : 'default'
+                          }}
+                          onClick={() => {
+                            if (convertResult.contact) {
+                              setSelectedContactNav(convertResult.contact);
+                              setOpenContactNav(true);
+                            }
+                          }}
+                        >
+                          {convertResult.contact || 'N/A'}
+                        </Typography>
+                      </Box>
+                    </Stack>
                   </Box>
+
+                  <Button
+                    fullWidth
+                    size="large"
+                    color="inherit"
+                    variant="outlined"
+                    onClick={() => {
+                      setConvertResult(null);
+                      setCurrentTab('general');
+                      handleCloseCreate();
+                      refetch();
+                    }}
+                    sx={{ mt: 4, borderRadius: 1.5 }}
+                  >
+                    Close
+                  </Button>
                 </Box>
               ) : (
                 <Box>
@@ -997,45 +1051,7 @@ export function UserView() {
 
                   <Button
                     variant="contained"
-                    onClick={async () => {
-                      if (!companyName) {
-                        setSnackbar({
-                          open: true,
-                          message: 'Company Name is required to convert lead',
-                          severity: 'error'
-                        });
-                        return;
-                      }
-
-                      if (!email && !phoneNumber) {
-                        setSnackbar({
-                          open: true,
-                          message: 'Email or Phone Number is required to convert lead',
-                          severity: 'error'
-                        });
-                        return;
-                      }
-
-                      try {
-                        setConverting(true);
-                        const result = await convertLead(currentLeadId!);
-                        setConvertResult(result);
-                        setSnackbar({
-                          open: true,
-                          message: 'Lead converted successfully!',
-                          severity: 'success'
-                        });
-                      } catch (error: any) {
-                        console.error('Conversion error:', error);
-                        setSnackbar({
-                          open: true,
-                          message: error.message || 'Failed to convert lead',
-                          severity: 'error'
-                        });
-                      } finally {
-                        setConverting(false);
-                      }
-                    }}
+                    onClick={() => setOpenConvertConfirm(true)}
                     disabled={converting || !companyName || (!email && !phoneNumber)}
                     fullWidth
                   >
@@ -1239,10 +1255,14 @@ export function UserView() {
             onClick={async () => {
               if (!pendingWorkflowChange) return;
               try {
+                const action = pendingWorkflowChange.action;
                 const newStage = pendingWorkflowChange.next_state;
-                setWorkflowState(newStage);
+
                 if (currentLeadId) {
-                  await updateLead(currentLeadId, { workflow_state: newStage });
+                  // Use applyWorkflowAction instead of updateLead to respect/trigger workflow logic
+                  await applyWorkflowAction('Lead', currentLeadId, action);
+
+                  setWorkflowState(newStage);
                   const updatedLead = await getLead(currentLeadId);
                   setPipelineTimeline(updatedLead.converted_pipeline_timeline || []);
                   const newActions = await getWorkflowActions('Lead', newStage);
@@ -1282,6 +1302,83 @@ export function UserView() {
             handleEditRow({ id: currentLeadId });
           }
         }}
+      />
+
+      <ConfirmDialog
+        open={openConvertConfirm}
+        onClose={() => setOpenConvertConfirm(false)}
+        title="Convert Lead"
+        content="Are you sure you want to convert this lead? This will create a permanent Account and Contact record."
+        action={
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={async () => {
+              setOpenConvertConfirm(false);
+              if (!companyName) {
+                setSnackbar({
+                  open: true,
+                  message: 'Company Name is required to convert lead',
+                  severity: 'error'
+                });
+                return;
+              }
+
+              if (!email && !phoneNumber) {
+                setSnackbar({
+                  open: true,
+                  message: 'Email or Phone Number is required to convert lead',
+                  severity: 'error'
+                });
+                return;
+              }
+
+              try {
+                setConverting(true);
+                const result = await convertLead(currentLeadId!);
+                setConvertResult(result);
+
+                if (result.messages && result.messages.length > 0) {
+                  const combinedMsg = result.messages.map((m: any) => m.text).join(' | ');
+                  setSnackbar({
+                    open: true,
+                    message: combinedMsg,
+                    severity: result.messages.some((m: any) => m.type === 'warning') ? 'warning' : 'success'
+                  });
+                } else {
+                  setSnackbar({
+                    open: true,
+                    message: 'Lead converted successfully!',
+                    severity: 'success'
+                  });
+                }
+              } catch (error: any) {
+                console.error('Conversion error:', error);
+                setSnackbar({
+                  open: true,
+                  message: error.message || 'Failed to convert lead',
+                  severity: 'error'
+                });
+              } finally {
+                setConverting(false);
+              }
+            }}
+          >
+            Convert
+          </Button>
+        }
+      />
+
+      <AccountDetailsDialog
+        open={openAccountNav}
+        onClose={() => setOpenAccountNav(false)}
+        accountId={selectedAccountNav}
+      />
+
+      <ContactDetailsDialog
+        open={openContactNav}
+        onClose={() => setOpenContactNav(false)}
+        contactId={selectedContactNav}
       />
 
       <Snackbar

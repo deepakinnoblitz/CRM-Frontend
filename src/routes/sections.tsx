@@ -45,9 +45,11 @@ export const ExpenseReportPage = lazy(() => import('src/pages/reports/expense'))
 export const EstimationReportPage = lazy(() => import('src/pages/reports/estimation'));
 export const InvoiceReportPage = lazy(() => import('src/pages/reports/invoice'));
 export const InvoiceCollectionReportPage = lazy(() => import('src/pages/reports/invoice-collection'));
+export const PurchaseCollectionReportPage = lazy(() => import('src/pages/reports/purchase-settlement-report'));
 export const EmployeePage = lazy(() => import('src/pages/employee'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
 export const LeavesPage = lazy(() => import('src/pages/leaves'));
+export const LeaveAllocationsPage = lazy(() => import('src/pages/leave-allocations'));
 export const PayrollPage = lazy(() => import('src/pages/payroll'));
 export const RequestsPage = lazy(() => import('src/pages/requests'));
 export const AnnouncementsPage = lazy(() => import('src/pages/announcements'));
@@ -57,6 +59,7 @@ export const ExpensesListPage = lazy(() => import('src/pages/expenses/list'));
 export const ExpensesNewPage = lazy(() => import('src/pages/expenses/new'));
 export const ExpensesEditPage = lazy(() => import('src/pages/expenses/edit'));
 export const ExpensesDetailsPage = lazy(() => import('src/pages/expenses/details'));
+export const WFHAttendancePage = lazy(() => import('src/pages/wfh-attendance'));
 export const HolidaysPage = lazy(() => import('src/pages/holidays'));
 export const CRMExpenseTrackerPage = lazy(() => import('src/pages/crm-expense-tracker'));
 export const ExpenseTrackerPage = lazy(() => import('src/pages/expense-tracker'));
@@ -129,7 +132,7 @@ export const routesSection: RouteObject[] = [
       {
         path: 'invoices',
         children: [
-          { index: true, element: <Navigate to="/deals?tab=invoices" replace /> },
+          { index: true, element: <InvoiceListPage /> },
           { path: 'new', element: <InvoiceCreatePage /> },
           { path: ':id/edit', element: <InvoiceEditPage /> },
           { path: ':id/view', element: <InvoiceDetailsPage /> },
@@ -149,11 +152,13 @@ export const routesSection: RouteObject[] = [
       { path: 'employee', element: <EmployeePage /> },
       { path: 'attendance', element: <AttendancePage /> },
       { path: 'leaves', element: <LeavesPage /> },
+      { path: 'leave-allocations', element: <LeaveAllocationsPage /> },
       { path: 'payroll', element: <PayrollPage /> },
       { path: 'requests', element: <RequestsPage /> },
       { path: 'announcements', element: <AnnouncementsPage /> },
       { path: 'assets', element: <AssetsPage /> },
       { path: 'timesheets', element: <TimesheetsPage /> },
+      { path: 'wfh-attendance', element: <WFHAttendancePage /> },
       { path: 'timesheet-reports', element: <TimesheetsPage /> }, // Placeholder until module is implemented
       {
         path: 'expenses',
@@ -216,6 +221,7 @@ export const routesSection: RouteObject[] = [
           { path: 'estimation', element: <EstimationReportPage /> },
           { path: 'invoice', element: <InvoiceReportPage /> },
           { path: 'invoice-collection', element: <InvoiceCollectionReportPage /> },
+          { path: 'purchase-settlement', element: <PurchaseCollectionReportPage /> },
         ],
       },
     ],

@@ -29,7 +29,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useReimbursementClaims } from 'src/hooks/useReimbursementClaims';
 
-import { fetchEmployees } from 'src/api/hr-management';
+import { fetchEmployees } from 'src/api/employees';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
     getReimbursementClaim,
