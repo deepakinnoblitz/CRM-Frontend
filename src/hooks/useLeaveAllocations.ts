@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { fetchLeaveApplications } from 'src/api/leaves';
+import { fetchLeaveAllocations } from 'src/api/leave-allocations';
 
-export function useLeaveApplications(
+export function useLeaveAllocations(
     page: number,
     pageSize: number,
     search: string,
     filters: any = {},
-    orderBy: string = 'modified',
+    orderBy: string = 'creation',
     order: 'asc' | 'desc' = 'desc',
     refreshInterval?: number // Interval in ms
 ) {
@@ -18,7 +18,7 @@ export function useLeaveApplications(
     const refetch = useCallback(async (isSilent = false) => {
         if (!isSilent) setLoading(true);
         try {
-            const result = await fetchLeaveApplications({
+            const result = await fetchLeaveAllocations({
                 page,
                 page_size: pageSize,
                 search,
@@ -29,7 +29,7 @@ export function useLeaveApplications(
             setData(result.data);
             setTotal(result.total);
         } catch (error) {
-            console.error('Failed to fetch leave applications:', error);
+            console.error('Failed to fetch leave allocations:', error);
         } finally {
             if (!isSilent) setLoading(false);
         }
