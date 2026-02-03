@@ -46,6 +46,8 @@ import { UserTableHead as TimesheetTableHead } from 'src/sections/user/user-tabl
 import { UserTableToolbar as TimesheetTableToolbar } from 'src/sections/user/user-table-toolbar';
 import { TimesheetDetailsDialog } from 'src/sections/report/timesheets/timesheets-details-dialog';
 
+import { TimesheetsTableFiltersDrawer } from '../timesheets-table-filters-drawer';
+
 // ----------------------------------------------------------------------
 
 interface TimesheetEntry {
@@ -64,7 +66,14 @@ export function TimesheetsView() {
     const [orderBy, setOrderBy] = useState('timesheet_date');
     const [selected, setSelected] = useState<string[]>([]);
 
-    const { data, total, refetch } = useTimesheets(page + 1, rowsPerPage, filterName, orderBy, order);
+    const [filters, setFilters] = useState({
+        employee: 'all',
+        startDate: null as string | null,
+        endDate: null as string | null,
+    });
+    const [openFilters, setOpenFilters] = useState(false);
+
+    const { data, total, refetch } = useTimesheets(page + 1, rowsPerPage, filterName, orderBy, order, filters);
 
     const [openCreate, setOpenCreate] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -124,10 +133,60 @@ export function TimesheetsView() {
     // Calculate total hours whenever entries change
     const totalHours = entries.reduce((sum, entry) => sum + (entry.hours || 0), 0);
 
-    const handleSort = (property: string) => {
-        const isAsc = orderBy === property && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(property);
+    const handleFilters = (update: any) => {
+        setFilters((prev) => ({ ...prev, ...update }));
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            employee: 'all',
+            startDate: null,
+            endDate: null,
+        });
+        setPage(0);
+    };
+
+    const canReset =
+        filters.employee !== 'all' ||
+        !!filters.startDate ||
+        !!filters.endDate;
+
+    const employeeOptions = employees.map(emp => ({
+        value: emp.name,
+        label: `${emp.employee_name} (${emp.employee_id})`
+    }));
+
+    const handleSort = (value: string) => {
+        if (value === 'timesheet_date_desc') {
+            setOrderBy('timesheet_date');
+            setOrder('desc');
+        } else if (value === 'timesheet_date_asc') {
+            setOrderBy('timesheet_date');
+            setOrder('asc');
+        } else if (value === 'employee_name_asc') {
+            setOrderBy('employee_name');
+            setOrder('asc');
+        } else if (value === 'employee_name_desc') {
+            setOrderBy('employee_name');
+            setOrder('desc');
+        } else if (value === 'total_hours_desc') {
+            setOrderBy('total_hours');
+            setOrder('desc');
+        } else if (value === 'total_hours_asc') {
+            setOrderBy('total_hours');
+            setOrder('asc');
+        }
+    };
+
+    const getCurrentSortValue = () => {
+        if (orderBy === 'timesheet_date' && order === 'desc') return 'timesheet_date_desc';
+        if (orderBy === 'timesheet_date' && order === 'asc') return 'timesheet_date_asc';
+        if (orderBy === 'employee_name' && order === 'asc') return 'employee_name_asc';
+        if (orderBy === 'employee_name' && order === 'desc') return 'employee_name_desc';
+        if (orderBy === 'total_hours' && order === 'desc') return 'total_hours_desc';
+        if (orderBy === 'total_hours' && order === 'asc') return 'total_hours_asc';
+        return 'timesheet_date_desc';
     };
 
     const handleSelectAllRows = (checked: boolean) => {
@@ -352,6 +411,18 @@ export function TimesheetsView() {
                     onFilterName={handleFilterByName}
                     searchPlaceholder="Search timesheets..."
                     onDelete={selected.length > 0 ? handleBulkDelete : undefined}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
+                    sortBy={getCurrentSortValue()}
+                    onSortChange={handleSort}
+                    sortOptions={[
+                        { value: 'timesheet_date_desc', label: 'Newest First' },
+                        { value: 'timesheet_date_asc', label: 'Oldest First' },
+                        { value: 'employee_name_asc', label: 'Employee: A to Z' },
+                        { value: 'employee_name_desc', label: 'Employee: Z to A' },
+                        { value: 'total_hours_desc', label: 'Hours: High to Low' },
+                        { value: 'total_hours_asc', label: 'Hours: Low to High' },
+                    ]}
                 />
 
                 <Scrollbar>
@@ -362,7 +433,11 @@ export function TimesheetsView() {
                                 orderBy={orderBy}
                                 rowCount={data.length}
                                 numSelected={selected.length}
-                                onSort={handleSort}
+                                onSort={(id) => {
+                                    // Handle column header clicks mapping to composite sort values or just toggling
+                                    const isAsc = orderBy === id && order === 'asc';
+                                    handleSort(`${id}_${isAsc ? 'desc' : 'asc'}`);
+                                }}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
@@ -632,6 +707,19 @@ export function TimesheetsView() {
                 open={openView}
                 onClose={() => setOpenView(false)}
                 timesheet={viewTimesheet}
+            />
+
+            <TimesheetsTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                options={{
+                    employees: employeeOptions
+                }}
             />
 
             {/* Snackbar */}

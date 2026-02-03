@@ -33,7 +33,7 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:calendar-mark-bold-duotone" as any} />,
   },
   {
-    title: 'WFH Attendance List',
+    title: 'WFH Attendance',
     path: '/wfh-attendance',
     icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
   },

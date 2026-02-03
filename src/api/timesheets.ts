@@ -18,11 +18,28 @@ async function fetchFrappeList(params: {
     search?: string;
     orderBy?: string;
     order?: 'asc' | 'desc';
+    filters?: {
+        employee?: string;
+        startDate?: string | null;
+        endDate?: string | null;
+    };
 }) {
     const filters: any[] = [];
 
     if (params.search) {
         filters.push(['Timesheet', 'employee_name', 'like', `%${params.search}%`]);
+    }
+
+    if (params.filters) {
+        if (params.filters.employee && params.filters.employee !== 'all') {
+            filters.push(['Timesheet', 'employee', '=', params.filters.employee]);
+        }
+        if (params.filters.startDate) {
+            filters.push(['Timesheet', 'timesheet_date', '>=', params.filters.startDate]);
+        }
+        if (params.filters.endDate) {
+            filters.push(['Timesheet', 'timesheet_date', '<=', params.filters.endDate]);
+        }
     }
 
     const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "timesheet_date desc";
