@@ -78,6 +78,11 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} />,
   },
   {
+    title: 'Company Expenses',
+    path: '/expense-tracker',
+    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+  },
+  {
     title: 'Job Openings',
     path: '/job-openings',
     icon: <Iconify icon={"solar:case-bold-duotone" as any} />,

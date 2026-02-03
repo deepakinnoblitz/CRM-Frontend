@@ -21,14 +21,29 @@ async function fetchFrappeList(params: {
     search?: string;
     orderBy?: string;
     order?: 'asc' | 'desc';
+    startDate?: string;
+    endDate?: string;
+    status?: string;
 }) {
     const filters: any[] = [];
+
+    if (params.status && params.status !== 'all') {
+        filters.push(['Request', 'workflow_state', '=', params.status]);
+    }
 
     if (params.search) {
         filters.push([
             ['Request', 'subject', 'like', `%${params.search}%`],
             ['or', ['Request', 'employee_name', 'like', `%${params.search}%`]]
         ]);
+    }
+
+    if (params.startDate) {
+        filters.push(['Request', 'creation', '>=', params.startDate]);
+    }
+
+    if (params.endDate) {
+        filters.push(['Request', 'creation', '<=', `${params.endDate} 23:59:59`]);
     }
 
     const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "creation desc";
@@ -64,7 +79,7 @@ export const fetchRequests = (params: any) => fetchFrappeList(params);
 export async function createRequest(data: Partial<Request>) {
     const headers = await getAuthHeaders();
 
-    const res = await frappeRequest("/api/method/frappe.client.insert", {
+    const res = await frappeRequest("/api/method/frappe.client.submit", {
         method: "POST",
         headers,
         body: JSON.stringify({ doc: { doctype: "Request", ...data } })
@@ -94,6 +109,27 @@ export async function updateRequest(name: string, data: Partial<Request>) {
     if (!res.ok) {
         const error = await res.json();
         throw new Error(handleFrappeError(error, "Failed to update request"));
+    }
+
+    return (await res.json()).message;
+}
+
+export async function updateRequestStatus(name: string, workflowState: string, updateData?: any) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/company.company.frontend_api.update_request_status", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            name,
+            workflow_state: workflowState,
+            update_data: updateData
+        })
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to update request status"));
     }
 
     return (await res.json()).message;
