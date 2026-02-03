@@ -42,7 +42,12 @@ export const hrNavData = [
     ],
   },
   {
-    title: 'Leave Records',
+    title: 'WFH Attendance',
+    path: '/wfh-attendance',
+    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+  },
+  {
+    title: 'Leaves',
     path: '/leaves',
     icon: <Iconify icon={"solar:calendar-date-bold-duotone" as any} />,
     children: [
@@ -66,9 +71,14 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} />,
   },
   {
-    title: 'Company Expenses',
-    path: '/expenses',
-    icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
+    title: 'Asset Assignments',
+    path: '/asset-assignments',
+    icon: <Iconify icon={"solar:clipboard-list-bold-duotone" as any} />,
+  },
+  {
+    title: 'Timesheets',
+    path: '/timesheets',
+    icon: <Iconify icon={"solar:clock-circle-bold-duotone" as any} />,
   },
   {
     title: 'Holidays List',
@@ -122,6 +132,16 @@ export const hrNavData = [
   {
     title: 'Timesheet Reports',
     path: '/timesheet-reports',
+    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+  },
+  {
+    title: 'Timesheet Report',
+    path: '/timesheet-reports',
+    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+  },
+  {
+    title: 'Attendance Report',
+    path: '/reports/attendance',
     icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
   },
 ];
@@ -180,6 +200,11 @@ export const employeeNavData = [
     icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
   },
   {
+    title: 'My Attendance Report',
+    path: '/reports/attendance',
+    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+  },
+  {
     title: 'My Reimbursement Claim',
     path: '/reimbursement-claims',
     icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
@@ -217,7 +242,9 @@ export const salesNavData = [
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
-      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
+      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' },
+      { title: 'Timesheet Report', path: '/timesheet-reports' },
+      { title: 'Attendance Report', path: '/reports/attendance' }
     ]
   }
 ];
@@ -345,7 +372,9 @@ export const crmAndSalesNavData = [
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
-      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
+      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' },
+      { title: 'Timesheet Report', path: '/timesheet-reports' },
+      { title: 'Attendance Report', path: '/reports/attendance' }
     ]
   }
 ];

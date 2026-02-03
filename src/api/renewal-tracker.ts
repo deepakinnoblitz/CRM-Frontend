@@ -22,11 +22,32 @@ async function fetchFrappeList(params: {
     search?: string;
     orderBy?: string;
     order?: 'asc' | 'desc';
+    filters?: {
+        category?: string;
+        status?: string;
+        startDate?: string | null;
+        endDate?: string | null;
+    };
 }) {
     const filters: any[] = [];
 
     if (params.search) {
         filters.push(['Renewal Tracker', 'item_name', 'like', `%${params.search}%`]);
+    }
+
+    if (params.filters) {
+        if (params.filters.category && params.filters.category !== 'all') {
+            filters.push(['Renewal Tracker', 'category', '=', params.filters.category]);
+        }
+        if (params.filters.status && params.filters.status !== 'all') {
+            filters.push(['Renewal Tracker', 'status', '=', params.filters.status]);
+        }
+        if (params.filters.startDate) {
+            filters.push(['Renewal Tracker', 'renewal_date', '>=', params.filters.startDate]);
+        }
+        if (params.filters.endDate) {
+            filters.push(['Renewal Tracker', 'renewal_date', '<=', params.filters.endDate]);
+        }
     }
 
     const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "renewal_date desc";

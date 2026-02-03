@@ -3,24 +3,27 @@ import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
-import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Rating from '@mui/material/Rating';
+import Select from '@mui/material/Select';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
-import TextField from '@mui/material/TextField';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
+import InputLabel from '@mui/material/InputLabel';
+import Typography from '@mui/material/Typography';
+import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -31,11 +34,12 @@ import { useInterviews } from 'src/hooks/useInterviews';
 
 import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { getJobApplicant } from 'src/api/job-applicants';
 import {
     getInterview,
     createInterview,
-    updateInterview,
     deleteInterview,
+    updateInterview,
     getInterviewPermissions,
 } from 'src/api/interviews';
 
@@ -50,28 +54,42 @@ import { UserTableHead as InterviewTableHead } from 'src/sections/user/user-tabl
 import { InterviewDetailsDialog } from 'src/sections/interviews/interview-details-dialog';
 import { UserTableToolbar as InterviewTableToolbar } from 'src/sections/user/user-table-toolbar';
 
+import { InterviewTableFiltersDrawer } from '../interview-table-filters-drawer';
+
 // ----------------------------------------------------------------------
 
 export function InterviewsView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
-    const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('creation');
+    const [sortBy, setSortBy] = useState('creation_desc');
     const [selected, setSelected] = useState<string[]>([]);
 
-    const { data, total, refetch } = useInterviews(
+    const [filters, setFilters] = useState<any>({
+        status: 'all',
+        job_applied: 'all',
+        startDate: null,
+        endDate: null,
+    });
+
+    const [openFilters, setOpenFilters] = useState(false);
+
+    const [orderBy, order] = sortBy.split('_') as [string, 'asc' | 'desc'];
+
+    const { data, total, loading, refetch } = useInterviews(
         page + 1,
         rowsPerPage,
         filterName,
         orderBy,
-        order
+        order,
+        filters
     );
 
     const [permissions, setPermissions] = useState({ read: false, write: false, delete: false });
     const [applicants, setApplicants] = useState<any[]>([]);
     const [interviewTypes, setInterviewTypes] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
+    const [jobOpenings, setJobOpenings] = useState<any[]>([]);
 
     // Dialog states
     const [openCreate, setOpenCreate] = useState(false);
@@ -82,6 +100,13 @@ export function InterviewsView() {
     // Form state
     const [formData, setFormData] = useState<any>({
         job_applicant: '',
+        job_applied: '',
+        designation: '',
+        email_id: '',
+        phone_number: '',
+        currency: 'INR',
+        lower_range: '',
+        upper_range: '',
         scheduled_on: dayjs().format('YYYY-MM-DD'),
         from_time: '',
         to_time: '',
@@ -106,23 +131,42 @@ export function InterviewsView() {
             const perms = await getInterviewPermissions();
             setPermissions(perms);
 
-            const [applicantsList, typesList, usersList] = await Promise.all([
+            const [applicantsList, typesList, usersList, openingsList] = await Promise.all([
                 getDoctypeList('Job Applicant', ['name', 'applicant_name']),
                 getDoctypeList('Interview Type', ['name']),
                 getDoctypeList('User', ['name', 'full_name']),
+                getDoctypeList('Job Opening', ['name', 'job_title']),
             ]);
             setApplicants(applicantsList);
             setInterviewTypes(typesList);
             setUsers(usersList);
+            setJobOpenings(openingsList);
         };
         fetchData();
     }, []);
 
+    const handleFilters = useCallback((newFilters: any) => {
+        setFilters((prev: any) => ({ ...prev, ...newFilters }));
+        setPage(0);
+    }, []);
+
+    const handleResetFilters = useCallback(() => {
+        setFilters({
+            status: 'all',
+            job_applied: 'all',
+            startDate: null,
+            endDate: null,
+        });
+    }, []);
+
     const handleSort = (property: string) => {
         const isAsc = orderBy === property && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(property);
+        setSortBy(`${property}_${isAsc ? 'desc' : 'asc'}`);
     };
+
+    const handleSortChange = useCallback((value: string) => {
+        setSortBy(value);
+    }, []);
 
     const handleSelectAllRows = (checked: boolean) => {
         if (checked) {
@@ -142,6 +186,13 @@ export function InterviewsView() {
         setEditInterview(null);
         setFormData({
             job_applicant: '',
+            job_applied: '',
+            designation: '',
+            email_id: '',
+            phone_number: '',
+            currency: 'INR',
+            lower_range: '',
+            upper_range: '',
             scheduled_on: dayjs().format('YYYY-MM-DD'),
             from_time: '',
             to_time: '',
@@ -163,6 +214,13 @@ export function InterviewsView() {
             setEditInterview(fullData);
             setFormData({
                 job_applicant: fullData.job_applicant,
+                job_applied: fullData.job_applied,
+                designation: fullData.designation,
+                email_id: fullData.email_id,
+                phone_number: fullData.phone_number,
+                currency: fullData.currency || 'INR',
+                lower_range: fullData.lower_range,
+                upper_range: fullData.upper_range,
                 scheduled_on: fullData.scheduled_on,
                 from_time: fullData.from_time,
                 to_time: fullData.to_time,
@@ -236,6 +294,27 @@ export function InterviewsView() {
         }
     };
 
+    const handleApplicantChange = async (name: string) => {
+        setFormData((prev: any) => ({ ...prev, job_applicant: name }));
+        if (name) {
+            try {
+                const applicantData = await getJobApplicant(name);
+                setFormData((prev: any) => ({
+                    ...prev,
+                    job_applied: applicantData.job_opening || applicantData.job_title || '',
+                    designation: applicantData.designation || '',
+                    email_id: applicantData.email_id || '',
+                    phone_number: applicantData.phone_number || '',
+                    currency: applicantData.currency || 'INR',
+                    lower_range: applicantData.lower_range || '',
+                    upper_range: applicantData.upper_range || '',
+                }));
+            } catch (error) {
+                console.error("Failed to fetch applicant details:", error);
+            }
+        }
+    };
+
     const handleAddFeedback = () => {
         setFormData({
             ...formData,
@@ -276,8 +355,10 @@ export function InterviewsView() {
         setSnackbar({ ...snackbar, open: false });
     };
 
+    const canReset = filters.status !== 'all' || filters.job_applied !== 'all' || !!filters.startDate || !!filters.endDate;
+
     const notFound = !data.length && !!filterName;
-    const empty = !data.length && !filterName;
+    const empty = !data.length && !filterName && !canReset;
 
     return (
         <DashboardContent>
@@ -302,6 +383,16 @@ export function InterviewsView() {
                     onFilterName={handleFilterByName}
                     onDelete={handleBulkDelete}
                     searchPlaceholder="Search by applicant..."
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
+                    sortBy={sortBy}
+                    onSortChange={handleSortChange}
+                    sortOptions={[
+                        { value: 'creation_desc', label: 'Newest First' },
+                        { value: 'creation_asc', label: 'Oldest First' },
+                        { value: 'overall_status_asc', label: 'Status: A to Z' },
+                        { value: 'overall_status_desc', label: 'Status: Z to A' },
+                    ]}
                 />
 
                 <Scrollbar>
@@ -333,6 +424,7 @@ export function InterviewsView() {
                                             id: row.name,
                                             job_applicant: row.job_applicant,
                                             job_applied: row.job_applied,
+                                            designation: row.designation,
                                             scheduled_on: row.scheduled_on,
                                             from_time: row.from_time,
                                             overall_status: row.overall_status,
@@ -348,6 +440,17 @@ export function InterviewsView() {
                                 ))}
 
                                 {notFound && <TableNoData searchQuery={filterName} />}
+
+                                {!data.length && !loading && !notFound && canReset && (
+                                    <TableRow>
+                                        <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                                            <Stack spacing={1} alignItems="center">
+                                                <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                <Typography variant="body2" sx={{ color: 'text.disabled' }}>No interviews found matching your filters</Typography>
+                                            </Stack>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
 
                                 {empty && (
                                     <TableRow>
@@ -394,7 +497,7 @@ export function InterviewsView() {
                                 fullWidth
                                 label="Job Applicant"
                                 value={formData.job_applicant}
-                                onChange={(e) => setFormData({ ...formData, job_applicant: e.target.value })}
+                                onChange={(e) => handleApplicantChange(e.target.value)}
                                 required
                             >
                                 {applicants.map((app) => (
@@ -403,6 +506,71 @@ export function InterviewsView() {
                                     </MenuItem>
                                 ))}
                             </TextField>
+
+                            <TextField
+                                select
+                                fullWidth
+                                label="Job Applied"
+                                value={formData.job_applied}
+                                onChange={(e) => setFormData({ ...formData, job_applied: e.target.value })}
+                            >
+                                {jobOpenings.map((opening) => (
+                                    <MenuItem key={opening.name} value={opening.name}>
+                                        {opening.job_title || opening.name}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+
+                            <TextField
+                                fullWidth
+                                label="Designation"
+                                value={formData.designation}
+                                onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                            />
+
+                            <TextField
+                                fullWidth
+                                label="Email"
+                                value={formData.email_id}
+                                onChange={(e) => setFormData({ ...formData, email_id: e.target.value })}
+                            />
+
+                            <TextField
+                                fullWidth
+                                label="Phone"
+                                value={formData.phone_number}
+                                onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                            />
+
+                            <FormControl fullWidth>
+                                <InputLabel>Currency</InputLabel>
+                                <Select
+                                    label="Currency"
+                                    value={formData.currency}
+                                    onChange={(e: any) => setFormData({ ...formData, currency: e.target.value })}
+                                >
+                                    <MenuItem value="INR">INR</MenuItem>
+                                    <MenuItem value="USD">USD</MenuItem>
+                                    <MenuItem value="EUR">EUR</MenuItem>
+                                    <MenuItem value="GBP">GBP</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            <TextField
+                                fullWidth
+                                type="number"
+                                label="Expected Lower Range"
+                                value={formData.lower_range}
+                                onChange={(e) => setFormData({ ...formData, lower_range: e.target.value })}
+                            />
+
+                            <TextField
+                                fullWidth
+                                type="number"
+                                label="Expected Upper Range"
+                                value={formData.upper_range}
+                                onChange={(e) => setFormData({ ...formData, upper_range: e.target.value })}
+                            />
 
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                 <DatePicker
@@ -554,6 +722,16 @@ export function InterviewsView() {
                 open={openView}
                 onClose={() => setOpenView(false)}
                 interview={viewInterview}
+            />
+
+            <InterviewTableFiltersDrawer
+                open={openFilters}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                jobOpenings={jobOpenings}
             />
 
             <Snackbar

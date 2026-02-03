@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { fetchReimbursementClaims } from 'src/api/reimbursement-claims';
+import { fetchAssetAssignments } from 'src/api/asset-assignments';
 
-export function useReimbursementClaims(
+export function useAssetAssignments(
     page: number,
     pageSize: number,
-    search: string = '',
-    orderBy: string = 'date_of_expense',
-    order: 'asc' | 'desc' = 'desc',
+    search: string,
+    orderBy?: string,
+    order?: 'asc' | 'desc',
     filters?: {
-        paid?: number | string | null;
-        claim_type?: string;
+        employee?: string;
+        status?: string;
         startDate?: string | null;
         endDate?: string | null;
     }
@@ -22,20 +22,18 @@ export function useReimbursementClaims(
     const refetch = useCallback(async () => {
         setLoading(true);
         try {
-            const result = await fetchReimbursementClaims({
+            const result = await fetchAssetAssignments({
                 page,
                 page_size: pageSize,
                 search,
                 orderBy,
                 order,
-                filters,
+                filters
             });
             setData(result.data);
             setTotal(result.total);
         } catch (error) {
-            console.error('Failed to fetch reimbursement claims:', error);
-            setData([]);
-            setTotal(0);
+            console.error('Failed to fetch asset assignments:', error);
         } finally {
             setLoading(false);
         }

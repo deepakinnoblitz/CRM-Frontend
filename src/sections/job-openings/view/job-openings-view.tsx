@@ -33,6 +33,7 @@ import {
     updateJobOpening,
     deleteJobOpening,
     getJobOpeningPermissions,
+    getJobLocations,
 } from 'src/api/job-openings';
 
 import { Iconify } from 'src/components/iconify';
@@ -45,23 +46,33 @@ import { JobOpeningTableRow } from 'src/sections/job-openings/job-opening-table-
 import { UserTableHead as JobOpeningTableHead } from 'src/sections/user/user-table-head';
 import { UserTableToolbar as JobOpeningTableToolbar } from 'src/sections/user/user-table-toolbar';
 import { JobOpeningDetailsDialog } from 'src/sections/report/job-openings/job-opening-details-dialog';
+import { JobOpeningsTableFiltersDrawer } from 'src/sections/job-openings/job-openings-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
 export function JobOpeningsView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('posted_on');
     const [selected, setSelected] = useState<string[]>([]);
+    const [openFilters, setOpenFilters] = useState(false);
+    const [locations, setLocations] = useState<string[]>([]);
+    const [filters, setFilters] = useState({
+        status: 'all',
+        location: 'all',
+        startDate: null as string | null,
+        endDate: null as string | null
+    });
 
     const { data, total, refetch } = useJobOpenings(
         page + 1,
         rowsPerPage,
         filterName,
         orderBy,
-        order
+        order,
+        filters
     );
 
     const empty = !data.length && !filterName;
@@ -103,14 +114,13 @@ export function JobOpeningsView() {
             const perms = await getJobOpeningPermissions();
             setPermissions(perms);
         };
+        const fetchLocations = async () => {
+            const locs = await getJobLocations();
+            setLocations(locs);
+        };
         fetchPermissions();
+        fetchLocations();
     }, []);
-
-    const handleSort = (property: string) => {
-        const isAsc = orderBy === property && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(property);
-    };
 
     const handleSelectAllRows = (checked: boolean) => {
         if (checked) {
@@ -237,6 +247,40 @@ export function JobOpeningsView() {
         setPage(0);
     };
 
+    const handleFilters = (newFilters: Partial<typeof filters>) => {
+        setFilters((prev) => ({ ...prev, ...newFilters }));
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            status: 'all',
+            location: 'all',
+            startDate: null,
+            endDate: null
+        });
+        setPage(0);
+    };
+
+    const canReset = filters.status !== 'all' || filters.location !== 'all' || filters.startDate !== null || filters.endDate !== null;
+
+    const handleSortChange = (value: string) => {
+        if (value === 'date_desc') { setOrderBy('posted_on'); setOrder('desc'); }
+        else if (value === 'date_asc') { setOrderBy('posted_on'); setOrder('asc'); }
+        else if (value === 'title_asc') { setOrderBy('job_title'); setOrder('asc'); }
+        else if (value === 'title_desc') { setOrderBy('job_title'); setOrder('desc'); }
+        else if (value === 'location_asc') { setOrderBy('location'); setOrder('asc'); }
+        else if (value === 'location_desc') { setOrderBy('location'); setOrder('desc'); }
+        setPage(0);
+    };
+
+    const getCurrentSortValue = () => {
+        if (orderBy === 'posted_on') return order === 'desc' ? 'date_desc' : 'date_asc';
+        if (orderBy === 'job_title') return order === 'desc' ? 'title_desc' : 'title_asc';
+        if (orderBy === 'location') return order === 'desc' ? 'location_desc' : 'location_asc';
+        return 'date_desc';
+    };
+
     const handleCloseSnackbar = () => {
         setSnackbar({ ...snackbar, open: false });
     };
@@ -264,7 +308,20 @@ export function JobOpeningsView() {
                     numSelected={selected.length}
                     filterName={filterName}
                     onFilterName={handleFilterByName}
-                    onDelete={handleBulkDelete}
+                    searchPlaceholder="Search job openings..."
+                    onDelete={selected.length > 0 ? handleBulkDelete : undefined}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
+                    sortBy={getCurrentSortValue()}
+                    onSortChange={handleSortChange}
+                    sortOptions={[
+                        { value: 'date_desc', label: 'Newest First' },
+                        { value: 'date_asc', label: 'Oldest First' },
+                        { value: 'title_asc', label: 'Job Title: A to Z' },
+                        { value: 'title_desc', label: 'Job Title: Z to A' },
+                        { value: 'location_asc', label: 'Location: A to Z' },
+                        { value: 'location_desc', label: 'Location: Z to A' },
+                    ]}
                 />
 
                 <Scrollbar>
@@ -275,7 +332,6 @@ export function JobOpeningsView() {
                                 orderBy={orderBy}
                                 rowCount={data.length}
                                 numSelected={selected.length}
-                                onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
@@ -461,6 +517,18 @@ export function JobOpeningsView() {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            {/* Filters Drawer */}
+            <JobOpeningsTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                locations={locations}
+            />
         </DashboardContent>
     );
 }

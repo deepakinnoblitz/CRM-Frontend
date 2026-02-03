@@ -18,6 +18,7 @@ type Props = {
         id: string;
         job_applicant: string;
         job_applied: string;
+        designation?: string;
         scheduled_on: string;
         from_time: string;
         overall_status: string;
@@ -139,7 +140,7 @@ export function InterviewTableRow({
                             {row.job_applicant}
                         </Typography>
                         <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>
-                            {row.job_applied || 'No Job Assigned'}
+                            {row.job_applied || 'No Job Assigned'}{row.designation ? ` - ${row.designation}` : ''}
                         </Typography>
                     </Box>
                 </Stack>

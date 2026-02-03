@@ -1,11 +1,11 @@
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
-import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
-import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 
@@ -96,7 +96,6 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
         >
             <DetailItem icon="solar:letter-bold" label="Email" value={applicant.email_id} isLink href={`mailto:${applicant.email_id}`} />
             <DetailItem icon="solar:phone-bold" label="Phone" value={applicant.phone_number || '-'} isLink href={`tel:${applicant.phone_number}`} />
-            <DetailItem icon="solar:star-bold" label="Rating" value={applicant.applicant_rating?.toString() || '0'} />
             <DetailItem icon="solar:share-bold" label="Source" value={applicant.source || '-'} />
             <DetailItem icon="solar:wad-of-money-bold" label="Expected Salary" value={applicant.lower_range ? `${applicant.currency || '₹'} ${applicant.lower_range} - ${applicant.upper_range}` : 'Not Disclosed'} />
         </Box>

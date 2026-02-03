@@ -77,7 +77,54 @@ async function fetchFrappeList(doctype: string, params: {
     }
 }
 
-export const fetchWFHAttendance = (params: any) => fetchFrappeList("WFH Attendance", { ...params, searchField: "employee_name" });
+export const fetchWFHAttendance = async (params: {
+    page: number;
+    page_size: number;
+    search?: string;
+    orderBy?: string;
+    order?: 'asc' | 'desc';
+    filters?: {
+        employee?: string;
+        status?: string;
+        startDate?: string | null;
+        endDate?: string | null;
+    };
+}) => {
+    const filters: any[] = [];
+    if (params.filters) {
+        if (params.filters.employee && params.filters.employee !== 'all') {
+            filters.push(['WFH Attendance', 'employee', '=', params.filters.employee]);
+        }
+        if (params.filters.status && params.filters.status !== 'all') {
+            filters.push(['WFH Attendance', 'workflow_state', '=', params.filters.status]);
+        }
+        if (params.filters.startDate) {
+            filters.push(['WFH Attendance', 'date', '>=', params.filters.startDate]);
+        }
+        if (params.filters.endDate) {
+            filters.push(['WFH Attendance', 'date', '<=', params.filters.endDate]);
+        }
+    }
+
+    const query = new URLSearchParams({
+        page: String(params.page),
+        page_size: String(params.page_size),
+        search: params.search || '',
+        filters: JSON.stringify(filters),
+        orderBy: params.orderBy || '',
+        order: params.order || ''
+    });
+
+    const res = await frappeRequest(`/api/method/company.company.frontend_api.get_wfh_attendance_list?${query.toString()}`);
+
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(handleFrappeError(errorData, "Failed to fetch WFH Attendance list"));
+    }
+
+    const json = await res.json();
+    return json.message;
+};
 
 export async function createWFHAttendance(data: Partial<WFHAttendance>) {
     const headers = await getAuthHeaders();

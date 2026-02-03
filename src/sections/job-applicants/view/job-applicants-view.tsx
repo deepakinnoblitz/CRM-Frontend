@@ -7,7 +7,6 @@ import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import Rating from '@mui/material/Rating';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
@@ -43,23 +42,32 @@ import { JobApplicantTableRow } from 'src/sections/job-applicants/job-applicant-
 import { UserTableHead as JobApplicantTableHead } from 'src/sections/user/user-table-head';
 import { UserTableToolbar as JobApplicantTableToolbar } from 'src/sections/user/user-table-toolbar';
 import { JobApplicantDetailsDialog } from 'src/sections/job-applicants/job-applicant-details-dialog';
+import { JobApplicantsTableFiltersDrawer } from 'src/sections/job-applicants/job-applicants-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
 export function JobApplicantsView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('creation');
     const [selected, setSelected] = useState<string[]>([]);
+    const [openFilters, setOpenFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        status: 'all',
+        job_title: 'all',
+        startDate: null as string | null,
+        endDate: null as string | null
+    });
 
     const { data, total, refetch } = useJobApplicants(
         page + 1,
         rowsPerPage,
         filterName,
         orderBy,
-        order
+        order,
+        filters
     );
 
     const [permissions, setPermissions] = useState({ read: false, write: false, delete: false });
@@ -79,7 +87,6 @@ export function JobApplicantsView() {
         job_title: '',
         status: 'Received',
         source: '',
-        applicant_rating: 0,
         cover_letter: '',
         resume_attachment: '',
         resume_link: '',
@@ -110,12 +117,6 @@ export function JobApplicantsView() {
         fetchData();
     }, []);
 
-    const handleSort = (property: string) => {
-        const isAsc = orderBy === property && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(property);
-    };
-
     const handleSelectAllRows = (checked: boolean) => {
         if (checked) {
             setSelected(data.map((row) => row.name));
@@ -139,7 +140,6 @@ export function JobApplicantsView() {
             job_title: '',
             status: 'Received',
             source: '',
-            applicant_rating: 0,
             cover_letter: '',
             resume_attachment: '',
             resume_link: '',
@@ -166,7 +166,6 @@ export function JobApplicantsView() {
                 job_title: fullData.job_title,
                 status: fullData.status,
                 source: fullData.source,
-                applicant_rating: fullData.applicant_rating,
                 cover_letter: fullData.cover_letter,
                 resume_attachment: fullData.resume_attachment,
                 resume_link: fullData.resume_link,
@@ -244,6 +243,37 @@ export function JobApplicantsView() {
         setPage(0);
     };
 
+    const handleFilters = (newFilters: Partial<typeof filters>) => {
+        setFilters((prev) => ({ ...prev, ...newFilters }));
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            status: 'all',
+            job_title: 'all',
+            startDate: null,
+            endDate: null
+        });
+        setPage(0);
+    };
+
+    const canReset = filters.status !== 'all' || filters.job_title !== 'all' || filters.startDate !== null || filters.endDate !== null;
+
+    const handleSortChange = (value: string) => {
+        if (value === 'date_desc') { setOrderBy('creation'); setOrder('desc'); }
+        else if (value === 'date_asc') { setOrderBy('creation'); setOrder('asc'); }
+        else if (value === 'name_asc') { setOrderBy('applicant_name'); setOrder('asc'); }
+        else if (value === 'name_desc') { setOrderBy('applicant_name'); setOrder('desc'); }
+        setPage(0);
+    };
+
+    const getCurrentSortValue = () => {
+        if (orderBy === 'creation') return order === 'desc' ? 'date_desc' : 'date_asc';
+        if (orderBy === 'applicant_name') return order === 'desc' ? 'name_desc' : 'name_asc';
+        return 'date_desc';
+    };
+
     const handleFilterByName = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFilterName(event.target.value);
         setPage(0);
@@ -277,8 +307,18 @@ export function JobApplicantsView() {
                     numSelected={selected.length}
                     filterName={filterName}
                     onFilterName={handleFilterByName}
-                    onDelete={handleBulkDelete}
                     searchPlaceholder="Search applicants..."
+                    onDelete={selected.length > 0 ? handleBulkDelete : undefined}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
+                    sortBy={getCurrentSortValue()}
+                    onSortChange={handleSortChange}
+                    sortOptions={[
+                        { value: 'date_desc', label: 'Newest First' },
+                        { value: 'date_asc', label: 'Oldest First' },
+                        { value: 'name_asc', label: 'Name: A to Z' },
+                        { value: 'name_desc', label: 'Name: Z to A' },
+                    ]}
                 />
 
                 <Scrollbar>
@@ -289,7 +329,6 @@ export function JobApplicantsView() {
                                 orderBy={orderBy}
                                 rowCount={data.length}
                                 numSelected={selected.length}
-                                onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
@@ -297,7 +336,6 @@ export function JobApplicantsView() {
                                     { id: 'applicant_name', label: 'Name' },
                                     { id: 'job_title', label: 'Job Opening' },
                                     { id: 'phone_number', label: 'Phone' },
-                                    { id: 'applicant_rating', label: 'Rating' },
                                     { id: 'status', label: 'Status' },
                                     { id: '', label: '' },
                                 ]}
@@ -315,7 +353,6 @@ export function JobApplicantsView() {
                                             phone_number: row.phone_number,
                                             job_title: row.job_title,
                                             status: row.status,
-                                            applicant_rating: row.applicant_rating,
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
@@ -426,16 +463,6 @@ export function JobApplicantsView() {
                                 placeholder="LinkedIn, Referral, etc."
                             />
 
-                            <Box sx={{ gridColumn: 'span 2' }}>
-                                <Typography component="legend">Applicant Rating</Typography>
-                                <Rating
-                                    name="applicant-rating"
-                                    value={formData.applicant_rating}
-                                    onChange={(event, newValue) => {
-                                        setFormData({ ...formData, applicant_rating: newValue });
-                                    }}
-                                />
-                            </Box>
 
                             <TextField
                                 fullWidth
@@ -509,6 +536,18 @@ export function JobApplicantsView() {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            {/* Filters Drawer */}
+            <JobApplicantsTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                jobOpenings={jobOpenings}
+            />
         </DashboardContent>
     );
 }
