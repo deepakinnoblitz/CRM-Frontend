@@ -9,18 +9,19 @@ import { visuallyHidden } from './utils';
 
 // ----------------------------------------------------------------------
 
-type UserTableHeadProps = {
+type LeadTableHeadProps = {
   orderBy?: string;
   rowCount: number;
   numSelected: number;
   order?: 'asc' | 'desc';
   onSort?: (id: string) => void;
-  headLabel: any[];
+  headLabel: Record<string, any>[];
   onSelectAllRows: (checked: boolean) => void;
   hideCheckbox?: boolean;
+  showIndex?: boolean;
 };
 
-export function UserTableHead({
+export function LeadTableHead({
   order,
   onSort,
   orderBy,
@@ -29,7 +30,8 @@ export function UserTableHead({
   numSelected,
   onSelectAllRows,
   hideCheckbox = false,
-}: UserTableHeadProps) {
+  showIndex = false,
+}: LeadTableHeadProps) {
   return (
     <TableHead>
       <TableRow>
@@ -42,6 +44,12 @@ export function UserTableHead({
                 onSelectAllRows(event.target.checked)
               }
             />
+          </TableCell>
+        )}
+
+        {showIndex && (
+          <TableCell align="center" sx={{ fontWeight: 800, color: 'text.secondary', width: 50 }}>
+            S.No
           </TableCell>
         )}
 

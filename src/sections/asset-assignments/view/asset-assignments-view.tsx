@@ -48,11 +48,11 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
-import { UserTableHead as AssetAssignmentTableHead } from 'src/sections/user/user-table-head';
+import { TableNoData } from 'src/sections/lead/table-no-data';
+import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
+import { LeadTableHead as AssetAssignmentTableHead } from 'src/sections/lead/lead-table-head';
 import { AssetAssignmentTableRow } from 'src/sections/asset-assignments/asset-assignments-table-row';
-import { UserTableToolbar as AssetAssignmentTableToolbar } from 'src/sections/user/user-table-toolbar';
+import { LeadTableToolbar as AssetAssignmentTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 // import { AssetAssignmentTableRow } from 'src/sections/asset-assignments/asset-assignments-table-row';
 import { AssetAssignmentsTableFiltersDrawer } from 'src/sections/asset-assignments/asset-assignments-table-filters-drawer';
 

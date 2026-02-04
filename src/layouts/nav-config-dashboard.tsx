@@ -28,7 +28,7 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
     children: [
       { title: 'Employee List', path: '/employee' },
-      { title: 'Users List', path: '/employee?type=users' },
+      { title: 'Users List', path: '/users' },
     ],
   },
   {
@@ -38,14 +38,8 @@ export const hrNavData = [
     children: [
       { title: 'HR Attendance', path: '/attendance' },
       { title: 'WFH Attendance List', path: '/wfh-attendance' },
-      { title: 'Attendance Report', path: '/attendance?type=report' },
       { title: 'Import Attendance', path: '/import-attendance' },
     ],
-  },
-  {
-    title: 'WFH Attendance',
-    path: '/wfh-attendance',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
   },
   {
     title: 'Leaves',
@@ -70,11 +64,6 @@ export const hrNavData = [
     title: 'Salary Slips',
     path: '/salary-slips',
     icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} />,
-  },
-  {
-    title: 'Asset Assignments',
-    path: '/asset-assignments',
-    icon: <Iconify icon={"solar:clipboard-list-bold-duotone" as any} />,
   },
   {
     title: 'Timesheets',
@@ -131,19 +120,18 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
   },
   {
-    title: 'Timesheet Reports',
-    path: '/timesheet-reports',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+    title: 'Report',
+    path: '/reports',
+    icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
+    children: [
+      { title: 'Attendance Report', path: '/reports/attendance' },
+      { title: 'Timesheet Report', path: '/timesheet-reports' },
+    ],
   },
   {
-    title: 'Timesheet Report',
-    path: '/timesheet-reports',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
-  },
-  {
-    title: 'Attendance Report',
-    path: '/reports/attendance',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+    title: 'User Management',
+    path: '/users',
+    icon: <Iconify icon={"solar:settings-bold-duotone" as any} />,
   },
 ];
 
@@ -443,6 +431,13 @@ export function getNavData(roles: string[] = []) {
     addItems(hrNavData);
     addItems(employeeNavData);
     addItems(crmAndSalesNavData);
+    addItems([
+      {
+        title: 'User Management',
+        path: '/users',
+        icon: <Iconify icon={"solar:settings-bold-duotone" as any} />,
+      }
+    ]);
     return { hasAccess: true, navData: mergedNav };
   }
 

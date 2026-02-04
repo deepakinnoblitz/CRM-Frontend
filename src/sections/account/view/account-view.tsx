@@ -31,14 +31,14 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from '../../user/table-no-data';
+import { TableNoData } from '../../lead/table-no-data';
 import { AccountTableRow } from '../account-table-row';
-import { TableEmptyRows } from '../../user/table-empty-rows';
+import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { AccountImportDialog } from '../account-import-dialog';
 import { AccountTableFiltersDrawer } from '../account-table-filters-drawer';
-import { UserTableHead as AccountTableHead } from '../../user/user-table-head';
+import { LeadTableHead as AccountTableHead } from '../../lead/lead-table-head';
 import { AccountDetailsDialog } from '../../report/account/account-details-dialog';
-import { UserTableToolbar as AccountTableToolbar } from '../../user/user-table-toolbar';
+import { LeadTableToolbar as AccountTableToolbar } from '../../lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------
 

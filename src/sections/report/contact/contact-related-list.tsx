@@ -29,7 +29,7 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 
-import { UserTableHead as DataTableHead } from '../../user/user-table-head';
+import { LeadTableHead as DataTableHead } from '../../lead/lead-table-head';
 
 // ----------------------------------------------------------------------
 

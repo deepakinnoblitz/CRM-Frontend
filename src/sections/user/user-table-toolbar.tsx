@@ -1,20 +1,7 @@
-import type { SelectChangeEvent } from '@mui/material/Select';
-
-import React, { useState } from 'react';
-
-import Box from '@mui/material/Box';
-import Menu from '@mui/material/Menu';
-import Badge from '@mui/material/Badge';
-import Select from '@mui/material/Select';
-import Button from '@mui/material/Button';
-import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
-import { alpha } from '@mui/material/styles';
-import MenuItem from '@mui/material/MenuItem';
+import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import InputLabel from '@mui/material/InputLabel';
-import FormControl from '@mui/material/FormControl';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputAdornment from '@mui/material/InputAdornment';
 
@@ -26,66 +13,19 @@ type UserTableToolbarProps = {
   numSelected: number;
   filterName: string;
   onFilterName: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onDelete?: VoidFunction;
+  onDelete?: () => void;
+  onOpenFilter?: () => void;
+  canReset?: boolean;
   sortBy?: string;
   onSortChange?: (value: string) => void;
-  // Filter Drawer Props
-  onOpenFilter?: (event: React.MouseEvent<HTMLElement>) => void;
-  canReset?: boolean;
-  // Legacy Props for backward compatibility
-  filterStatus?: string;
-  onFilterStatus?: (event: SelectChangeEvent<string>) => void;
-  options?: { value: string; label: string }[];
-  searchPlaceholder?: string;
-  filterLabel?: string;
-  sortOptions?: { value: string; label: string }[];
 };
-
-
-const DEFAULT_SORT_OPTIONS = [
-  { value: 'modified_desc', label: 'Newest First' },
-  { value: 'modified_asc', label: 'Oldest First' },
-  { value: 'lead_name_asc', label: 'Name: A to Z' },
-  { value: 'lead_name_desc', label: 'Name: Z to A' },
-  { value: 'company_name_asc', label: 'Company: A to Z' },
-  { value: 'company_name_desc', label: 'Company: Z to A' },
-];
 
 export function UserTableToolbar({
   numSelected,
   filterName,
   onFilterName,
   onDelete,
-  sortBy = 'modified_desc',
-  onSortChange,
-  onOpenFilter,
-  canReset,
-  filterStatus,
-  onFilterStatus,
-  options,
-  searchPlaceholder = 'Search...',
-  filterLabel = 'Status',
-  sortOptions = DEFAULT_SORT_OPTIONS,
 }: UserTableToolbarProps) {
-  const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
-
-  const handleSortClick = (event: React.MouseEvent<HTMLElement>) => {
-    setSortAnchorEl(event.currentTarget);
-  };
-
-  const handleSortClose = () => {
-    setSortAnchorEl(null);
-  };
-
-  const handleSortSelect = (value: string) => {
-    if (onSortChange) {
-      onSortChange(value);
-    }
-    handleSortClose();
-  };
-
-  const currentSortLabel = sortOptions.find((opt: { value: string; label: string }) => opt.value === sortBy)?.label || 'Sort';
-
   return (
     <Toolbar
       sx={{
@@ -104,141 +44,29 @@ export function UserTableToolbar({
           {numSelected} selected
         </Typography>
       ) : (
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexGrow: 1 }}>
-          <OutlinedInput
-            fullWidth
-            value={filterName}
-            onChange={onFilterName}
-            placeholder={searchPlaceholder}
-            startAdornment={
-              <InputAdornment position="start">
-                <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
-              </InputAdornment>
-            }
-            sx={{ maxWidth: 480 }}
-          />
-
-          {options && onFilterStatus && (
-            <FormControl sx={{ minWidth: 160 }}>
-              <InputLabel id="status-filter-label">{filterLabel}</InputLabel>
-              <Select
-                labelId="status-filter-label"
-                id="status-filter"
-                value={filterStatus || 'all'}
-                label={filterLabel}
-                onChange={onFilterStatus}
-                size="medium"
-              >
-                <MenuItem value="all">
-                  All {filterLabel}
-                </MenuItem>
-                {options.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-        </Box>
+        <OutlinedInput
+          value={filterName}
+          onChange={onFilterName}
+          placeholder="Search users..."
+          startAdornment={
+            <InputAdornment position="start">
+              <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+            </InputAdornment>
+          }
+        />
       )}
 
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-        {numSelected > 0 ? (
-          <Tooltip title="Delete">
-            <IconButton onClick={onDelete}>
-              <Iconify icon="solar:trash-bin-trash-bold" />
-            </IconButton>
-          </Tooltip>
-        ) : (
-          <>
-            {onOpenFilter && (
-              <Button
-                disableRipple
-                color="inherit"
-                startIcon={
-                  <Badge color="error" variant="dot" invisible={!canReset}>
-                    <Iconify icon="ic:round-filter-list" />
-                  </Badge>
-                }
-                onClick={onOpenFilter}
-                sx={{
-                  height: 40,
-                  px: 2,
-                  bgcolor: 'background.neutral',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 1,
-                  fontWeight: 500,
-                }}
-              >
-                Filters
-              </Button>
-            )}
-
-            {onSortChange && (
-              <>
-                <Button
-                  variant="text"
-                  color="inherit"
-                  startIcon={<Iconify icon={"solar:sort-bold" as any} />}
-                  onClick={handleSortClick}
-                  sx={{
-                    minWidth: 160,
-                    height: 40,
-                    px: 2,
-                    color: 'text.primary',
-                    bgcolor: 'background.neutral',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 1,
-                    fontWeight: 500,
-                    '&:hover': {
-                      bgcolor: 'action.hover',
-                    },
-                  }}
-                >
-                  {currentSortLabel}
-                </Button>
-
-                <Menu
-                  anchorEl={sortAnchorEl}
-                  open={Boolean(sortAnchorEl)}
-                  onClose={handleSortClose}
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                  slotProps={{
-                    paper: {
-                      sx: {
-                        mt: 1,
-                        minWidth: 200,
-                        boxShadow: (theme) => theme.customShadows.z20,
-                      },
-                    },
-                  }}
-                >
-                  {sortOptions.map((option) => (
-                    <MenuItem
-                      key={option.value}
-                      selected={option.value === sortBy}
-                      onClick={() => handleSortSelect(option.value)}
-                      sx={{
-                        typography: 'body2',
-                        ...(option.value === sortBy && {
-                          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                          fontWeight: 'fontWeightSemiBold',
-                        }),
-                      }}
-                    >
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Menu>
-              </>
-            )}
-          </>
-        )}
-      </Box>
+      {numSelected > 0 ? (
+        <Tooltip title="Delete">
+          <IconButton onClick={onDelete}>
+            <Iconify icon="solar:trash-bin-trash-bold" />
+          </IconButton>
+        </Tooltip>
+      ) : (
+        <IconButton>
+          <Iconify icon="ic:round-filter-list" />
+        </IconButton>
+      )}
     </Toolbar>
   );
 }

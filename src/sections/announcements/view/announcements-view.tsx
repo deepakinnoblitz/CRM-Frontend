@@ -29,11 +29,11 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
+import { TableNoData } from 'src/sections/lead/table-no-data';
+import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
 import { AnnouncementTableRow } from 'src/sections/announcements/announcements-table-row';
-import { UserTableHead as AnnouncementTableHead } from 'src/sections/user/user-table-head';
-import { UserTableToolbar as AnnouncementTableToolbar } from 'src/sections/user/user-table-toolbar';
+import { LeadTableHead as AnnouncementTableHead } from 'src/sections/lead/lead-table-head';
+import { LeadTableToolbar as AnnouncementTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 import { AnnouncementDetailsDialog } from 'src/sections/report/announcements/announcements-details-dialog';
 
 import { AnnouncementsTableFiltersDrawer } from '../announcements-table-filters-drawer';

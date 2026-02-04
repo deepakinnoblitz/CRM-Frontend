@@ -25,11 +25,11 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
+import { TableNoData } from 'src/sections/lead/table-no-data';
+import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
 import { SalarySlipTableRow } from 'src/sections/salary-slips/salary-slip-table-row';
-import { UserTableHead as SalarySlipTableHead } from 'src/sections/user/user-table-head';
-import { UserTableToolbar as SalarySlipTableToolbar } from 'src/sections/user/user-table-toolbar';
+import { LeadTableHead as SalarySlipTableHead } from 'src/sections/lead/lead-table-head';
+import { LeadTableToolbar as SalarySlipTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 import { SalarySlipDetailsDialog } from 'src/sections/report/salary-slips/salary-slip-details-dialog';
 
 import SalarySlipCreateDialog from '../salary-slip-create-dialog';

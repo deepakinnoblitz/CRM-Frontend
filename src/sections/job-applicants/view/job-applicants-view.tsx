@@ -36,11 +36,11 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
+import { TableNoData } from 'src/sections/lead/table-no-data';
+import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
 import { JobApplicantTableRow } from 'src/sections/job-applicants/job-applicant-table-row';
-import { UserTableHead as JobApplicantTableHead } from 'src/sections/user/user-table-head';
-import { UserTableToolbar as JobApplicantTableToolbar } from 'src/sections/user/user-table-toolbar';
+import { LeadTableHead as JobApplicantTableHead } from 'src/sections/lead/lead-table-head';
+import { LeadTableToolbar as JobApplicantTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 import { JobApplicantDetailsDialog } from 'src/sections/job-applicants/job-applicant-details-dialog';
 import { JobApplicantsTableFiltersDrawer } from 'src/sections/job-applicants/job-applicants-table-filters-drawer';
 

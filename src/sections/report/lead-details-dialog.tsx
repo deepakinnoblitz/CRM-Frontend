@@ -23,9 +23,9 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { SalesPipeline } from '../user/sales-pipeline';
-import { LeadFollowupDetails } from '../user/lead-followup-details';
-import { LeadPipelineTimeline } from '../user/lead-pipeline-timeline';
+import { SalesPipeline } from '../lead/sales-pipeline';
+import { LeadFollowupDetails } from '../lead/lead-followup-details';
+import { LeadPipelineTimeline } from '../lead/lead-pipeline-timeline';
 import { AccountDetailsDialog } from './account/account-details-dialog';
 import { ContactDetailsDialog } from './contact/contact-details-dialog';
 

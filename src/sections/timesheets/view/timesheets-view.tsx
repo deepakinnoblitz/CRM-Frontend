@@ -39,11 +39,11 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
+import { TableNoData } from 'src/sections/lead/table-no-data';
+import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
 import { TimesheetTableRow } from 'src/sections/timesheets/timesheets-table-row';
-import { UserTableHead as TimesheetTableHead } from 'src/sections/user/user-table-head';
-import { UserTableToolbar as TimesheetTableToolbar } from 'src/sections/user/user-table-toolbar';
+import { LeadTableHead as TimesheetTableHead } from 'src/sections/lead/lead-table-head';
+import { LeadTableToolbar as TimesheetTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 import { TimesheetDetailsDialog } from 'src/sections/report/timesheets/timesheets-details-dialog';
 
 import { TimesheetsTableFiltersDrawer } from '../timesheets-table-filters-drawer';

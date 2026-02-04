@@ -47,12 +47,12 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
+import { TableNoData } from 'src/sections/lead/table-no-data';
+import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
 import { InterviewTableRow } from 'src/sections/interviews/interview-table-row';
-import { UserTableHead as InterviewTableHead } from 'src/sections/user/user-table-head';
+import { LeadTableHead as InterviewTableHead } from 'src/sections/lead/lead-table-head';
 import { InterviewDetailsDialog } from 'src/sections/interviews/interview-details-dialog';
-import { UserTableToolbar as InterviewTableToolbar } from 'src/sections/user/user-table-toolbar';
+import { LeadTableToolbar as InterviewTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 
 import { InterviewTableFiltersDrawer } from '../interview-table-filters-drawer';
 
