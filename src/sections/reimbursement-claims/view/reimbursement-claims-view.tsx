@@ -37,6 +37,7 @@ import {
     updateReimbursementClaim,
     deleteReimbursementClaim,
     getReimbursementClaimPermissions,
+    getClaimTypes
 } from 'src/api/reimbursement-claims';
 
 import { Iconify } from 'src/components/iconify';
@@ -49,23 +50,31 @@ import { UserTableHead as ClaimTableHead } from 'src/sections/user/user-table-he
 import { UserTableToolbar as ClaimTableToolbar } from 'src/sections/user/user-table-toolbar';
 import { ReimbursementClaimTableRow } from 'src/sections/reimbursement-claims/reimbursement-claims-table-row';
 import { ReimbursementClaimDetailsDialog } from 'src/sections/report/reimbursement-claims/reimbursement-claims-details-dialog';
-
+import { ReimbursementClaimsTableFiltersDrawer } from 'src/sections/reimbursement-claims/reimbursement-claims-table-filters-drawer';
 // ----------------------------------------------------------------------
 
 export function ReimbursementClaimsView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('date_of_expense');
     const [selected, setSelected] = useState<string[]>([]);
+    const [openFilters, setOpenFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        paid: 'all',
+        claim_type: 'all',
+        startDate: null as string | null,
+        endDate: null as string | null
+    });
 
     const { data, total, refetch } = useReimbursementClaims(
         page + 1,
         rowsPerPage,
         filterName,
         orderBy,
-        order
+        order,
+        filters
     );
 
     const [openCreate, setOpenCreate] = useState(false);
@@ -83,8 +92,9 @@ export function ReimbursementClaimsView() {
     const [amount, setAmount] = useState('');
     const [claimDetails, setClaimDetails] = useState('');
 
-    // Employees for dropdown
+    // List for dropdowns
     const [employees, setEmployees] = useState<any[]>([]);
+    const [claimTypes, setClaimTypes] = useState<any[]>([]);
 
     // Permissions
     const [permissions, setPermissions] = useState({ read: false, write: false, delete: false });
@@ -100,19 +110,14 @@ export function ReimbursementClaimsView() {
         severity: 'success',
     });
 
-    // Load permissions and employees
+    // Load permissions, employees, and claim types
     useEffect(() => {
         getReimbursementClaimPermissions().then(setPermissions);
         fetchEmployees({ page: 1, page_size: 1000, search: '' }).then((res) => {
             setEmployees(res.data || []);
         });
+        getClaimTypes().then(setClaimTypes);
     }, []);
-
-    const handleSort = (property: string) => {
-        const isAsc = orderBy === property && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(property);
-    };
 
     const handleSelectAllRows = (checked: boolean) => {
         if (checked) {
@@ -262,6 +267,40 @@ export function ReimbursementClaimsView() {
         }
     };
 
+    const handleFilters = (newFilters: Partial<typeof filters>) => {
+        setFilters((prev) => ({ ...prev, ...newFilters }));
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            paid: 'all',
+            claim_type: 'all',
+            startDate: null,
+            endDate: null
+        });
+        setPage(0);
+    };
+
+    const canReset = filters.paid !== 'all' || filters.claim_type !== 'all' || filters.startDate !== null || filters.endDate !== null;
+
+    const handleSortChange = (value: string) => {
+        if (value === 'date_desc') { setOrderBy('date_of_expense'); setOrder('desc'); }
+        else if (value === 'date_asc') { setOrderBy('date_of_expense'); setOrder('asc'); }
+        else if (value === 'amount_desc') { setOrderBy('amount'); setOrder('desc'); }
+        else if (value === 'amount_asc') { setOrderBy('amount'); setOrder('asc'); }
+        else if (value === 'employee_asc') { setOrderBy('employee_name'); setOrder('asc'); }
+        else if (value === 'employee_desc') { setOrderBy('employee_name'); setOrder('desc'); }
+        setPage(0);
+    };
+
+    const getCurrentSortValue = () => {
+        if (orderBy === 'date_of_expense') return order === 'desc' ? 'date_desc' : 'date_asc';
+        if (orderBy === 'amount') return order === 'desc' ? 'amount_desc' : 'amount_asc';
+        if (orderBy === 'employee_name') return order === 'desc' ? 'employee_desc' : 'employee_asc';
+        return 'date_desc';
+    };
+
     const handleChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);
     };
@@ -313,6 +352,18 @@ export function ReimbursementClaimsView() {
                     onFilterName={handleFilterByName}
                     searchPlaceholder="Search claims..."
                     onDelete={selected.length > 0 ? handleBulkDelete : undefined}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
+                    sortBy={getCurrentSortValue()}
+                    onSortChange={handleSortChange}
+                    sortOptions={[
+                        { value: 'date_desc', label: 'Newest First' },
+                        { value: 'date_asc', label: 'Oldest First' },
+                        { value: 'amount_desc', label: 'Amount: High to Low' },
+                        { value: 'amount_asc', label: 'Amount: Low to High' },
+                        { value: 'employee_asc', label: 'Employee: A to Z' },
+                        { value: 'employee_desc', label: 'Employee: Z to A' },
+                    ]}
                 />
 
                 <Scrollbar>
@@ -323,7 +374,6 @@ export function ReimbursementClaimsView() {
                                 orderBy={orderBy}
                                 rowCount={data.length}
                                 numSelected={selected.length}
-                                onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
@@ -431,14 +481,20 @@ export function ReimbursementClaimsView() {
                                 </Select>
                             </FormControl>
 
-                            <TextField
-                                fullWidth
-                                label="Claim Type"
-                                value={claimType}
-                                onChange={(e) => setClaimType(e.target.value)}
-                                required
-                                placeholder="e.g., Travel, Medical, Food"
-                            />
+                            <FormControl fullWidth required>
+                                <InputLabel>Claim Type</InputLabel>
+                                <Select
+                                    value={claimType}
+                                    onChange={(e) => setClaimType(e.target.value)}
+                                    label="Claim Type"
+                                >
+                                    {claimTypes.map((type) => (
+                                        <MenuItem key={type.name} value={type.name}>
+                                            {type.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
 
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                 <DatePicker
@@ -504,6 +560,17 @@ export function ReimbursementClaimsView() {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            {/* Filters Drawer */}
+            <ReimbursementClaimsTableFiltersDrawer
+                open={openFilters}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                claimTypes={claimTypes}
+            />
         </DashboardContent>
     );
 }

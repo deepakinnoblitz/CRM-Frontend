@@ -103,6 +103,44 @@ export function InterviewDetailsDialog({ open, onClose, interview }: Props) {
         </Box>
     );
 
+    const renderContactInfo = (
+        <Box sx={{ mb: 4 }}>
+            <SectionHeader title="Contact Information" icon="solar:user-id-bold" />
+            <Box
+                sx={{
+                    display: 'grid',
+                    gap: 2.5,
+                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+                }}
+            >
+                <DetailItem icon="solar:letter-bold" label="Email" value={interview.email_id || '-'} />
+                <DetailItem icon="solar:phone-bold" label="Phone" value={interview.phone_number || '-'} />
+            </Box>
+        </Box>
+    );
+
+    const renderSalaryExpectation = (
+        <Box sx={{ mb: 4 }}>
+            <SectionHeader title="Salary Expectation" icon="solar:wad-of-money-bold" />
+            <Box
+                sx={{
+                    display: 'grid',
+                    gap: 2.5,
+                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+                }}
+            >
+                <DetailItem
+                    icon="solar:dollar-minimalistic-bold"
+                    label="Expected Range"
+                    value={interview.lower_range || interview.upper_range ?
+                        `${interview.currency || 'INR'} ${interview.lower_range || '0'} - ${interview.upper_range || '0'}` :
+                        '-'
+                    }
+                />
+            </Box>
+        </Box>
+    );
+
     const renderFeedback = (
         <Box sx={{ mt: 2 }}>
             <SectionHeader title="Interviewer Feedback" icon="solar:ranking-bold" />
@@ -165,6 +203,8 @@ export function InterviewDetailsDialog({ open, onClose, interview }: Props) {
                 <DialogContent sx={{ p: 4 }}>
                     {renderHeader}
                     {renderSchedule}
+                    {renderContactInfo}
+                    {renderSalaryExpectation}
                     <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
                     {renderFeedback}
                 </DialogContent>

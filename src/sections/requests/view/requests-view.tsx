@@ -51,7 +51,7 @@ import { UserTableToolbar as RequestTableToolbar } from 'src/sections/user/user-
 
 export function RequestsView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('creation');
@@ -299,6 +299,8 @@ export function RequestsView() {
                         { value: 'employee_name_desc', label: 'Employee: Z to A' },
                     ]}
                     onOpenFilter={handleOpenFilter}
+
+
                     canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all'}
                     filterStatus={filterStatus}
                     onFilterStatus={(e) => {
@@ -368,8 +370,10 @@ export function RequestsView() {
                                 orderBy={orderBy}
                                 rowCount={data.length}
                                 numSelected={selected.length}
-                                onSort={handleSort}
+
+
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
+
                                 hideCheckbox
                                 showIndex
                                 headLabel={[

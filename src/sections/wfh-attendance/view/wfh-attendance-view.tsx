@@ -41,6 +41,7 @@ import { TableEmptyRows } from '../../user/table-empty-rows';
 import { WFHAttendanceTableRow } from '../wfh-attendance-table-row';
 import { WFHAttendanceDetailsDialog } from '../wfh-attendance-details-dialog';
 import { UserTableHead as AttendanceTableHead } from '../../user/user-table-head';
+import { WFHAttendanceTableFiltersDrawer } from '../wfh-attendance-table-filters-drawer';
 import { UserTableToolbar as AttendanceTableToolbar } from '../../user/user-table-toolbar';
 
 // ----------------------------------------------------------------------
@@ -59,6 +60,16 @@ export function WFHAttendanceView() {
     const [formData, setFormData] = useState<Record<string, any>>({
         date: dayjs().format('YYYY-MM-DD'),
     });
+
+    const [openFilters, setOpenFilters] = useState(false);
+    const [filters, setFilters] = useState<{ employee: string; status: string; startDate: string | null; endDate: string | null }>({
+        employee: 'all',
+        status: 'all',
+        startDate: null,
+        endDate: null
+    });
+
+    const canReset = filters.employee !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null;
 
     const [openDetails, setOpenDetails] = useState(false);
     const [detailsId, setDetailsId] = useState<string | null>(null);
@@ -88,7 +99,8 @@ export function WFHAttendanceView() {
         rowsPerPage,
         filterName,
         orderBy,
-        order
+        order,
+        filters
     );
 
     const notFound = !data.length && !!filterName;
@@ -105,6 +117,22 @@ export function WFHAttendanceView() {
             }
         });
     }, []);
+
+    const handleFilters = (newFilters: Partial<typeof filters>) => {
+        setFilters((prevState) => ({
+            ...prevState,
+            ...newFilters,
+        }));
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            employee: 'all',
+            status: 'all',
+            startDate: null,
+            endDate: null,
+        });
+    };
 
     const handleOpenCreate = () => {
         setFormData({
@@ -219,10 +247,36 @@ export function WFHAttendanceView() {
         setDetailsId(null);
     };
 
-    const handleSort = (id: string) => {
-        const isAsc = orderBy === id && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(id);
+    const handleSort = (value: string) => {
+        if (value === 'date_desc') {
+            setOrderBy('date');
+            setOrder('desc');
+        } else if (value === 'date_asc') {
+            setOrderBy('date');
+            setOrder('asc');
+        } else if (value === 'employee_name_asc') {
+            setOrderBy('employee_name');
+            setOrder('asc');
+        } else if (value === 'employee_name_desc') {
+            setOrderBy('employee_name');
+            setOrder('desc');
+        } else if (value === 'total_hours_desc') {
+            setOrderBy('total_hours');
+            setOrder('desc');
+        } else if (value === 'total_hours_asc') {
+            setOrderBy('total_hours');
+            setOrder('asc');
+        }
+    };
+
+    const getCurrentSortValue = () => {
+        if (orderBy === 'date' && order === 'desc') return 'date_desc';
+        if (orderBy === 'date' && order === 'asc') return 'date_asc';
+        if (orderBy === 'employee_name' && order === 'asc') return 'employee_name_asc';
+        if (orderBy === 'employee_name' && order === 'desc') return 'employee_name_desc';
+        if (orderBy === 'total_hours' && order === 'desc') return 'total_hours_desc';
+        if (orderBy === 'total_hours' && order === 'asc') return 'total_hours_asc';
+        return 'date_desc';
     };
 
     const handleSelectAllRows = (checked: boolean) => {
@@ -365,6 +419,18 @@ export function WFHAttendanceView() {
                     }}
                     onDelete={handleBulkDelete}
                     searchPlaceholder="Search entries..."
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
+                    sortBy={getCurrentSortValue()}
+                    onSortChange={handleSort}
+                    sortOptions={[
+                        { value: 'date_desc', label: 'Newest First' },
+                        { value: 'date_asc', label: 'Oldest First' },
+                        { value: 'employee_name_asc', label: 'Employee: A to Z' },
+                        { value: 'employee_name_desc', label: 'Employee: Z to A' },
+                        { value: 'total_hours_desc', label: 'Hours: High to Low' },
+                        { value: 'total_hours_asc', label: 'Hours: Low to High' },
+                    ]}
                 />
 
                 <Scrollbar>
@@ -375,7 +441,6 @@ export function WFHAttendanceView() {
                                 orderBy={orderBy}
                                 rowCount={total}
                                 numSelected={selected.length}
-                                onSort={handleSort}
                                 onSelectAllRows={(checked) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
@@ -502,6 +567,19 @@ export function WFHAttendanceView() {
                 open={openDetails}
                 onClose={handleCloseDetails}
                 wfhId={detailsId}
+            />
+
+            <WFHAttendanceTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                options={{
+                    employees: employeeOptions
+                }}
             />
 
             <Snackbar

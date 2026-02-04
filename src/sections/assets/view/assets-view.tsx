@@ -42,19 +42,35 @@ import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
 import { AssetTableRow } from 'src/sections/assets/assets-table-row';
 import { UserTableHead as AssetTableHead } from 'src/sections/user/user-table-head';
 import { AssetDetailsDialog } from 'src/sections/report/assets/assets-details-dialog';
+import { AssetsTableFiltersDrawer } from 'src/sections/assets/assets-table-filters-drawer';
 import { UserTableToolbar as AssetTableToolbar } from 'src/sections/user/user-table-toolbar';
 
 // ----------------------------------------------------------------------
 
 export function AssetsView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('creation');
     const [selected, setSelected] = useState<string[]>([]);
 
-    const { data, total, refetch } = useAssets(page + 1, rowsPerPage, filterName, orderBy, order);
+    const [filters, setFilters] = useState<{
+        status: string;
+        category: string;
+        startDate: string | null;
+        endDate: string | null;
+    }>({
+        status: 'all',
+        category: 'all',
+        startDate: null,
+        endDate: null
+    });
+
+    const [openFilters, setOpenFilters] = useState(false);
+    const canReset = filters.status !== 'all' || filters.category !== 'all' || filters.startDate !== null || filters.endDate !== null;
+
+    const { data, total, refetch } = useAssets(page + 1, rowsPerPage, filterName, orderBy, order, filters);
 
     const [openCreate, setOpenCreate] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -89,10 +105,36 @@ export function AssetsView() {
         getAssetPermissions().then(setPermissions);
     });
 
-    const handleSort = (property: string) => {
-        const isAsc = orderBy === property && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(property);
+    const handleFilters = (newFilters: Partial<typeof filters>) => {
+        setFilters((prev) => ({ ...prev, ...newFilters }));
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            status: 'all',
+            category: 'all',
+            startDate: null,
+            endDate: null
+        });
+        setPage(0);
+    };
+
+    const handleSortChange = (value: string) => {
+        if (value === 'date_desc') { setOrderBy('creation'); setOrder('desc'); }
+        else if (value === 'date_asc') { setOrderBy('creation'); setOrder('asc'); }
+        else if (value === 'cost_desc') { setOrderBy('purchase_cost'); setOrder('desc'); }
+        else if (value === 'cost_asc') { setOrderBy('purchase_cost'); setOrder('asc'); }
+        else if (value === 'name_asc') { setOrderBy('asset_name'); setOrder('asc'); }
+        else if (value === 'name_desc') { setOrderBy('asset_name'); setOrder('desc'); }
+        setPage(0);
+    };
+
+    const getCurrentSortValue = () => {
+        if (orderBy === 'creation') return order === 'desc' ? 'date_desc' : 'date_asc';
+        if (orderBy === 'purchase_cost') return order === 'desc' ? 'cost_desc' : 'cost_asc';
+        if (orderBy === 'asset_name') return order === 'desc' ? 'name_desc' : 'name_asc';
+        return 'date_desc';
     };
 
     const handleSelectAllRows = (checked: boolean) => {
@@ -256,6 +298,18 @@ export function AssetsView() {
                     onFilterName={handleFilterByName}
                     searchPlaceholder="Search assets..."
                     onDelete={selected.length > 0 ? handleBulkDelete : undefined}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
+                    sortBy={getCurrentSortValue()}
+                    onSortChange={handleSortChange}
+                    sortOptions={[
+                        { value: 'date_desc', label: 'Newest First' },
+                        { value: 'date_asc', label: 'Oldest First' },
+                        { value: 'cost_desc', label: 'Cost: High to Low' },
+                        { value: 'cost_asc', label: 'Cost: Low to High' },
+                        { value: 'name_asc', label: 'Name: A to Z' },
+                        { value: 'name_desc', label: 'Name: Z to A' },
+                    ]}
                 />
 
                 <Scrollbar>
@@ -266,7 +320,6 @@ export function AssetsView() {
                                 orderBy={orderBy}
                                 rowCount={data.length}
                                 numSelected={selected.length}
-                                onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
@@ -340,6 +393,16 @@ export function AssetsView() {
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
             </Card>
+
+            <AssetsTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+            />
 
             {/* Create/Edit Dialog */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">

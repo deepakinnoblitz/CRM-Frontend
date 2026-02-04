@@ -39,7 +39,6 @@ import SalarySlipAutoAllocateDialog from '../salary-slip-auto-allocate-dialog';
 import type { SalarySlipFiltersProps } from '../salary-slip-filters-drawer';
 
 
-
 const SORT_OPTIONS = [
     { value: 'pay_period_start_desc', label: 'Newest First' },
     { value: 'pay_period_start_asc', label: 'Oldest First' },
@@ -155,11 +154,6 @@ export function SalarySlipsView() {
         severity: 'success',
     });
 
-    const handleSort = (property: string) => {
-        const isAsc = orderBy === property && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(property);
-    };
 
     const handleSelectAllRows = (checked: boolean) => {
         if (checked) {
@@ -291,9 +285,9 @@ export function SalarySlipsView() {
                         setOrderBy(f);
                         setOrder(d as any);
                     }}
-
                     sortOptions={SORT_OPTIONS}
                     onOpenFilter={() => setOpenFilters(true)}
+
                     canReset={canReset}
                 />
 
@@ -306,7 +300,8 @@ export function SalarySlipsView() {
                                 orderBy={orderBy}
                                 rowCount={data.length}
                                 numSelected={selected.length}
-                                onSort={handleSort}
+
+
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
