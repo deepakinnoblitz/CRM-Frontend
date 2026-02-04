@@ -40,11 +40,11 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
+import { TableNoData } from 'src/sections/lead/table-no-data';
+import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
 import { JobOpeningTableRow } from 'src/sections/job-openings/job-opening-table-row';
-import { UserTableHead as JobOpeningTableHead } from 'src/sections/user/user-table-head';
-import { UserTableToolbar as JobOpeningTableToolbar } from 'src/sections/user/user-table-toolbar';
+import { LeadTableHead as JobOpeningTableHead } from 'src/sections/lead/lead-table-head';
+import { LeadTableToolbar as JobOpeningTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 import { JobOpeningDetailsDialog } from 'src/sections/report/job-openings/job-opening-details-dialog';
 import { JobOpeningsTableFiltersDrawer } from 'src/sections/job-openings/job-openings-table-filters-drawer';
 

@@ -62,12 +62,12 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
+import { TableNoData } from 'src/sections/lead/table-no-data';
+import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
 import { HolidayListTableRow } from 'src/sections/holidays/holidays-table-row';
-import { UserTableHead as HolidayTableHead } from 'src/sections/user/user-table-head';
+import { LeadTableHead as HolidayTableHead } from 'src/sections/lead/lead-table-head';
 import { HolidayDetailsDialog } from 'src/sections/report/holidays/holidays-details-dialog';
-import { UserTableToolbar as HolidayTableToolbar } from 'src/sections/user/user-table-toolbar';
+import { LeadTableToolbar as HolidayTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 
 import { HolidayTableFiltersDrawer } from '../holidays-table-filters-drawer';
 

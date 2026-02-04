@@ -40,12 +40,12 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from '../../user/table-no-data';
-import { TableEmptyRows } from '../../user/table-empty-rows';
+import { TableNoData } from '../../lead/table-no-data';
+import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { AttendanceTableRow } from '../attendance-table-row';
 import { AttendanceImportDialog } from '../attendance-import-dialog';
-import { UserTableHead as AttendanceTableHead } from '../../user/user-table-head';
-import { UserTableToolbar as AttendanceTableToolbar } from '../../user/user-table-toolbar';
+import { LeadTableHead as AttendanceTableHead } from '../../lead/lead-table-head';
+import { LeadTableToolbar as AttendanceTableToolbar } from '../../lead/lead-table-toolbar';
 import { AttendanceDetailsDialog } from '../../report/attendance/attendance-details-dialog';
 
 // ----------------------------------------------------------------------
@@ -502,7 +502,7 @@ export function AttendanceView() {
                 <AttendanceTableToolbar
                     numSelected={selected.length}
                     filterName={filterName}
-                    onFilterName={(e) => {
+                    onFilterName={(e: React.ChangeEvent<HTMLInputElement>) => {
                         setFilterName(e.target.value);
                         setPage(0);
                     }}
@@ -583,7 +583,7 @@ export function AttendanceView() {
                                 orderBy={orderBy}
                                 rowCount={total}
                                 numSelected={selected.length}
-                                onSelectAllRows={(checked) => handleSelectAllRows(checked)}
+                                onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
                                 headLabel={[

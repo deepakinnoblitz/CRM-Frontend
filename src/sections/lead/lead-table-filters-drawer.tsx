@@ -42,7 +42,7 @@ type Props = {
     };
 };
 
-export function UserTableFiltersDrawer({
+export function LeadTableFiltersDrawer({
     open,
     onOpen,
     onClose,

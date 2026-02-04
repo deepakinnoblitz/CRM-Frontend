@@ -45,14 +45,14 @@ import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { DealTableRow } from '../deal-table-row';
-import { TableNoData } from '../../user/table-no-data';
+import { TableNoData } from '../../lead/table-no-data';
 import { DealDetailsDialog } from '../deal-details-dialog';
-import { TableEmptyRows } from '../../user/table-empty-rows';
+import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { DealTableFiltersDrawer } from '../deal-table-filters-drawer';
-import { UserTableHead as DealTableHead } from '../../user/user-table-head';
+import { LeadTableHead as DealTableHead } from '../../lead/lead-table-head';
 import { EstimationListView } from '../../estimation/view/estimation-list-view';
 import { InvoiceManagementView } from '../../invoice/view/invoice-management-view';
-import { UserTableToolbar as DealTableToolbar } from '../../user/user-table-toolbar';
+import { LeadTableToolbar as DealTableToolbar } from '../../lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------
 

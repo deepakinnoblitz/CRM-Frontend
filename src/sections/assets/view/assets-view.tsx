@@ -37,13 +37,13 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
+import { TableNoData } from 'src/sections/lead/table-no-data';
+import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
 import { AssetTableRow } from 'src/sections/assets/assets-table-row';
-import { UserTableHead as AssetTableHead } from 'src/sections/user/user-table-head';
+import { LeadTableHead as AssetTableHead } from 'src/sections/lead/lead-table-head';
 import { AssetDetailsDialog } from 'src/sections/report/assets/assets-details-dialog';
 import { AssetsTableFiltersDrawer } from 'src/sections/assets/assets-table-filters-drawer';
-import { UserTableToolbar as AssetTableToolbar } from 'src/sections/user/user-table-toolbar';
+import { LeadTableToolbar as AssetTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------
 

@@ -37,12 +37,12 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
+import { TableNoData } from 'src/sections/lead/table-no-data';
+import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
 import { ExpenseTableRow } from 'src/sections/expenses/expenses-table-row';
-import { UserTableHead as ExpenseTableHead } from 'src/sections/user/user-table-head';
+import { LeadTableHead as ExpenseTableHead } from 'src/sections/lead/lead-table-head';
 import { ExpenseDetailsDialog } from 'src/sections/report/expenses/expenses-details-dialog';
-import { UserTableToolbar as ExpenseTableToolbar } from 'src/sections/user/user-table-toolbar';
+import { LeadTableToolbar as ExpenseTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------
 

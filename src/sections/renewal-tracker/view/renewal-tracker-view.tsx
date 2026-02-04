@@ -43,10 +43,10 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
-import { UserTableHead as RenewalTableHead } from 'src/sections/user/user-table-head';
-import { UserTableToolbar as RenewalTableToolbar } from 'src/sections/user/user-table-toolbar';
+import { TableNoData } from 'src/sections/lead/table-no-data';
+import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
+import { LeadTableHead as RenewalTableHead } from 'src/sections/lead/lead-table-head';
+import { LeadTableToolbar as RenewalTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 import { RenewalTrackerTableRow } from 'src/sections/renewal-tracker/renewal-tracker-table-row';
 import { RenewalDetailsDialog } from 'src/sections/report/renewal-tracker/renewal-details-dialog';
 import { RenewalTrackerTableFiltersDrawer } from 'src/sections/renewal-tracker/renewal-tracker-table-filters-drawer';

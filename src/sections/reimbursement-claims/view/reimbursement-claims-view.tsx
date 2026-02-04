@@ -44,10 +44,10 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
-import { UserTableHead as ClaimTableHead } from 'src/sections/user/user-table-head';
-import { UserTableToolbar as ClaimTableToolbar } from 'src/sections/user/user-table-toolbar';
+import { TableNoData } from 'src/sections/lead/table-no-data';
+import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
+import { LeadTableHead as ClaimTableHead } from 'src/sections/lead/lead-table-head';
+import { LeadTableToolbar as ClaimTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 import { ReimbursementClaimTableRow } from 'src/sections/reimbursement-claims/reimbursement-claims-table-row';
 import { ReimbursementClaimDetailsDialog } from 'src/sections/report/reimbursement-claims/reimbursement-claims-details-dialog';
 import { ReimbursementClaimsTableFiltersDrawer } from 'src/sections/reimbursement-claims/reimbursement-claims-table-filters-drawer';

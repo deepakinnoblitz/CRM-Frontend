@@ -36,13 +36,13 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 
-import { TableNoData } from '../../user/table-no-data';
-import { TableEmptyRows } from '../../user/table-empty-rows';
+import { TableNoData } from '../../lead/table-no-data';
+import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { WFHAttendanceTableRow } from '../wfh-attendance-table-row';
 import { WFHAttendanceDetailsDialog } from '../wfh-attendance-details-dialog';
-import { UserTableHead as AttendanceTableHead } from '../../user/user-table-head';
+import { LeadTableHead as AttendanceTableHead } from '../../lead/lead-table-head';
 import { WFHAttendanceTableFiltersDrawer } from '../wfh-attendance-table-filters-drawer';
-import { UserTableToolbar as AttendanceTableToolbar } from '../../user/user-table-toolbar';
+import { LeadTableToolbar as AttendanceTableToolbar } from '../../lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------
 
@@ -413,7 +413,7 @@ export function WFHAttendanceView() {
                 <AttendanceTableToolbar
                     numSelected={selected.length}
                     filterName={filterName}
-                    onFilterName={(e) => {
+                    onFilterName={(e: React.ChangeEvent<HTMLInputElement>) => {
                         setFilterName(e.target.value);
                         setPage(0);
                     }}
@@ -441,7 +441,7 @@ export function WFHAttendanceView() {
                                 orderBy={orderBy}
                                 rowCount={total}
                                 numSelected={selected.length}
-                                onSelectAllRows={(checked) => handleSelectAllRows(checked)}
+                                onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
                                 headLabel={[

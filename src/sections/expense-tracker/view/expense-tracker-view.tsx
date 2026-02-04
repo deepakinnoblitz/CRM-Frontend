@@ -27,14 +27,14 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from '../../user/table-no-data';
-import { TableEmptyRows } from '../../user/table-empty-rows';
+import { TableNoData } from '../../lead/table-no-data';
+import { TableEmptyRows } from '../../lead/table-empty-rows';
 import ExpenseTrackerDialog from '../expense-tracker-dialog';
 import ExpenseTrackerStatsCards from '../expense-tracker-stats-cards';
 import { ExpenseTrackerTableRow } from '../expense-tracker-table-row';
-import { UserTableHead as ExpenseTrackerTableHead } from '../../user/user-table-head';
+import { LeadTableHead as ExpenseTrackerTableHead } from '../../lead/lead-table-head';
 import ExpenseTrackerTableFiltersDrawer from '../expense-tracker-table-filters-drawer';
-import { UserTableToolbar as ExpenseTrackerTableToolbar } from '../../user/user-table-toolbar';
+import { LeadTableToolbar as ExpenseTrackerTableToolbar } from '../../lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------
 

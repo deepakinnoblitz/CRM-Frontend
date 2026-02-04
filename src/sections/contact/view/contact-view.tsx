@@ -28,15 +28,15 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from '../../user/table-no-data';
+import { TableNoData } from '../../lead/table-no-data';
 import { ContactTableRow } from '../contact-table-row';
 import { ContactFormDialog } from '../contact-form-dialog';
-import { TableEmptyRows } from '../../user/table-empty-rows';
+import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { ContactImportDialog } from '../contact-import-dialog';
 import { ContactTableFiltersDrawer } from '../contact-table-filters-drawer';
-import { UserTableHead as ContactTableHead } from '../../user/user-table-head';
+import { LeadTableHead as ContactTableHead } from '../../lead/lead-table-head';
 import { ContactDetailsDialog } from '../../report/contact/contact-details-dialog';
-import { UserTableToolbar as ContactTableToolbar } from '../../user/user-table-toolbar';
+import { LeadTableToolbar as ContactTableToolbar } from '../../lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------
 
@@ -444,7 +444,7 @@ export function ContactView() {
                 <ContactTableToolbar
                     numSelected={selected.length}
                     filterName={filterName}
-                    onFilterName={(e) => {
+                    onFilterName={(e: React.ChangeEvent<HTMLInputElement>) => {
                         setFilterName(e.target.value);
                         setPage(0);
                     }}

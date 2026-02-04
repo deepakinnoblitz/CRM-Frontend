@@ -42,12 +42,12 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { useAuth } from 'src/auth/auth-context';
 
 import { LeavesTableRow } from '../leaves-table-row';
-import { TableNoData } from '../../user/table-no-data';
-import { TableEmptyRows } from '../../user/table-empty-rows';
+import { TableNoData } from '../../lead/table-no-data';
+import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { LeavesTableFiltersDrawer } from '../leaves-table-filters-drawer';
-import { UserTableHead as LeavesTableHead } from '../../user/user-table-head';
+import { LeadTableHead as LeavesTableHead } from '../../lead/lead-table-head';
 import { LeavesDetailsDialog } from '../../report/leaves/leaves-details-dialog';
-import { UserTableToolbar as LeavesTableToolbar } from '../../user/user-table-toolbar';
+import { LeadTableToolbar as LeavesTableToolbar } from '../../lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------
 

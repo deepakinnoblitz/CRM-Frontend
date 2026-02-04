@@ -40,12 +40,12 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
+import { TableNoData } from 'src/sections/lead/table-no-data';
+import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
 import { RequestTableRow } from 'src/sections/requests/requests-table-row';
-import { UserTableHead as RequestTableHead } from 'src/sections/user/user-table-head';
+import { LeadTableHead as RequestTableHead } from 'src/sections/lead/lead-table-head';
 import { RequestDetailsDialog } from 'src/sections/report/requests/requests-details-dialog';
-import { UserTableToolbar as RequestTableToolbar } from 'src/sections/user/user-table-toolbar';
+import { LeadTableToolbar as RequestTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------
 

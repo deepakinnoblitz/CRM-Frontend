@@ -41,10 +41,10 @@ import { useAuth } from 'src/auth/auth-context';
 
 import AutoAllocateDialog from './auto-allocate-dialog';
 import { LeaveAllocationTableRow } from './leave-allocation-table-row';
-import { UserTableHead as LeavesTableHead } from '../../user/user-table-head';
+import { LeadTableHead as LeavesTableHead } from '../../lead/lead-table-head';
 import { LeaveAllocationDetailsDialog } from './leave-allocation-details-dialog';
 import { LeaveAllocationFiltersDrawer } from './leave-allocation-filters-drawer';
-import { UserTableToolbar as LeavesTableToolbar } from '../../user/user-table-toolbar';
+import { LeadTableToolbar as LeavesTableToolbar } from '../../lead/lead-table-toolbar';
 
 
 // ----------------------------------------------------------------------
