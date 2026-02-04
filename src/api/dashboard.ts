@@ -106,7 +106,6 @@ export async function fetchTodayActivities(): Promise<TodayActivities> {
         };
     }
 }
-
 export interface HRDashboardData {
     announcements: Array<{ title: string; message: string; posting_date: string }>;
     total_employees: number;
@@ -116,6 +115,48 @@ export interface HRDashboardData {
     todays_leaves: Array<{ employee_name: string; employee: string }>;
     todays_birthdays: Array<{ employee_name: string; employee: string }>;
     holidays: Array<{ date: string; description: string }>;
+}
+
+export interface EmployeeDashboardData {
+    employee_name: string;
+    employee: string;
+    weekly_attendance: Array<{
+        date: string;
+        status: string;
+        check_in: string | null;
+        check_out: string | null;
+        working_hours: number;
+    }>;
+    leave_allocations: Array<{
+        leave_type: string;
+        total_leaves_allocated: number;
+        total_leaves_taken: number;
+    }>;
+    monthly_attendance_breakdown: {
+        present: number;
+        absent: number;
+        half_day: number;
+        on_leave: number;
+        missing: number;
+        total_days: number;
+        present_percentage: number;
+    };
+    missing_timesheets: Array<{ date: string }>;
+    recent_leaves: Array<{
+        name: string;
+        leave_type: string;
+        from_date: string;
+        to_date: string;
+        workflow_state: string;
+        total_leave_days: number;
+    }>;
+    announcements: Array<{ title: string; message: string; posting_date: string }>;
+    todays_birthdays: Array<{ employee_name: string; employee: string }>;
+    todays_leaves: Array<{ employee_name: string; employee: string }>;
+    holidays: Array<{ date: string; description: string }>;
+    attendance_range?: string;
+    start_date?: string;
+    end_date?: string;
 }
 
 export async function fetchRecentAnnouncements(): Promise<any[]> {
@@ -192,6 +233,20 @@ export async function fetchHRDashboardData(): Promise<HRDashboardData> {
     if (!res.ok) {
         const error = await res.json();
         throw new Error(handleFrappeError(error, 'Failed to fetch HR dashboard data'));
+    }
+
+    const data = await res.json();
+    return data.message;
+}
+
+export async function fetchEmployeeDashboardData(range: string = 'This Month'): Promise<EmployeeDashboardData> {
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_employee_dashboard_data?attendance_range=${range}`
+    );
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch employee dashboard data'));
     }
 
     const data = await res.json();

@@ -123,7 +123,7 @@ export function HRDashboardView() {
                         title="Pending Leave Applications"
                         total={data.pending_leaves || 0}
                         color="warning"
-                        icon={<Iconify icon={"solar:calendar-date-bold-duotone" as any} width={32} />}
+                        icon={<Iconify icon={"solar:mplor-date-bold-duotone" as any} width={32} />}
                     />
                 </Grid>
 

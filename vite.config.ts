@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
         position: 'tl',
         initialIsOpen: false,
       },
-    }),
+    }), 
   ],
 
   resolve: {
@@ -39,20 +39,20 @@ export default defineConfig(({ mode }) => ({
       host: 'erp.localhost.innoblitz',
     },
     proxy: {
-      // 🔹 Frappe APIs
+      // 🔹 Frappe APIs 
       '/api': {
-        target: 'http://erp.localhost.innoblitz:8011',
+        target: 'http://erp.localhost.innoblitz:8013',
         changeOrigin: true,
         secure: false,
       },
       // 🔹 File assets
       '/files': {
-        target: 'http://erp.localhost.innoblitz:8011',
+        target: 'http://erp.localhost.innoblitz:8013',
         changeOrigin: true,
         secure: false,
       },
       '/private': {
-        target: 'http://erp.localhost.innoblitz:8011',
+        target: 'http://erp.localhost.innoblitz:8013',
         changeOrigin: true,
         secure: false,
       }
