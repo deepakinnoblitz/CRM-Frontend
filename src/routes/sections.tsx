@@ -15,6 +15,7 @@ import { AuthGuard } from 'src/auth/auth-guard';
 // ----------------------------------------------------------------------
 
 export const DashboardPage = lazy(() => import('src/pages/dashboard'));
+
 export const BlogPage = lazy(() => import('src/pages/blog'));
 export const LeadsPage = lazy(() => import('src/pages/leads'));
 export const ContactPage = lazy(() => import('src/pages/contact'));
