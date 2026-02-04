@@ -7,7 +7,7 @@ export function useSalarySlips(
     page_size: number,
     search: string,
     filterValues: Record<string, any>,
-    order_by?: string,
+    orderBy?: string,
     order?: 'asc' | 'desc'
 ) {
     const [data, setData] = useState<any[]>([]);
@@ -23,9 +23,10 @@ export function useSalarySlips(
                 page_size,
                 search,
                 filterValues,
-                order_by,
+                orderBy,
                 order,
             });
+
             setData(result.data);
             setTotal(result.total);
             setError(null);
@@ -34,7 +35,8 @@ export function useSalarySlips(
         } finally {
             setLoading(false);
         }
-    }, [page, page_size, search, filterValues, order_by, order]);
+    }, [page, page_size, search, filterValues, orderBy, order]);
+
 
 
     useEffect(() => {
