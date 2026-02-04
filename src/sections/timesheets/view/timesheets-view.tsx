@@ -33,7 +33,7 @@ import { useTimesheets } from 'src/hooks/useTimesheets';
 
 import { fetchEmployees } from 'src/api/employees';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getTimesheet, createTimesheet, updateTimesheet, deleteTimesheet, getTimesheetPermissions, fetchProjects, fetchActivityTypes } from 'src/api/timesheets';
+import { getTimesheet, fetchProjects, createTimesheet, updateTimesheet, deleteTimesheet, fetchActivityTypes, getTimesheetPermissions } from 'src/api/timesheets';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';

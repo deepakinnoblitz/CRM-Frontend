@@ -39,6 +39,7 @@ export const hrNavData = [
       { title: 'HR Attendance', path: '/attendance' },
       { title: 'WFH Attendance List', path: '/wfh-attendance' },
       { title: 'Attendance Report', path: '/attendance?type=report' },
+      { title: 'Import Attendance', path: '/import-attendance' },
     ],
   },
   {

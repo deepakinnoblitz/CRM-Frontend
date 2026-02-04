@@ -30,7 +30,7 @@ import { getDoctypeList } from 'src/api/leads';
 import { getCurrentUserInfo } from 'src/api/auth';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getHRPermissions } from 'src/api/hr-management';
-import { createWFHAttendance, getWFHAttendance, updateWFHAttendance, deleteWFHAttendance, applyWorkflowAction } from 'src/api/wfh-attendance';
+import { getWFHAttendance, createWFHAttendance, updateWFHAttendance, applyWorkflowAction } from 'src/api/wfh-attendance';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';

@@ -2,7 +2,6 @@ import dayjs from 'dayjs';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -16,11 +15,10 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 
 import { getHRDoc } from 'src/api/hr-management';
-import { getLeaveWorkflowActions, applyLeaveWorkflowAction, type WorkflowAction } from 'src/api/leaves';
+import { type WorkflowAction, getLeaveWorkflowActions, applyLeaveWorkflowAction } from 'src/api/leaves';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
 
 import { useAuth } from 'src/auth/auth-context';
 

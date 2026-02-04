@@ -1,4 +1,3 @@
-import dayjs from 'dayjs';
 import listPlugin from '@fullcalendar/list';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
