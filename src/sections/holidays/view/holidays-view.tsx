@@ -23,7 +23,6 @@ import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -57,12 +56,11 @@ const Android12Switch = styled(Switch)(({ theme }) => ({
 }));
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getHolidayList, createHolidayList, updateHolidayList, deleteHolidayList, getHolidayListPermissions, populateHolidays } from 'src/api/holiday-lists';
+import { getHolidayList, populateHolidays, createHolidayList, updateHolidayList, deleteHolidayList, getHolidayListPermissions } from 'src/api/holiday-lists';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
-import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from 'src/sections/user/table-no-data';
 import { TableEmptyRows } from 'src/sections/user/table-empty-rows';

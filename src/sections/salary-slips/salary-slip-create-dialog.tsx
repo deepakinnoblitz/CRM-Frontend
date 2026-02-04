@@ -1,7 +1,9 @@
-import dayjs, { Dayjs } from 'dayjs';
+import type { Dayjs } from 'dayjs';
+import type { SalarySlip } from 'src/api/salary-slips';
+
+import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
 
-import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -18,7 +20,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { getDoctypeList } from 'src/api/leads';
-import { createSalarySlip, updateSalarySlip, SalarySlip } from 'src/api/salary-slips';
+import { createSalarySlip, updateSalarySlip } from 'src/api/salary-slips';
 
 import { Iconify } from 'src/components/iconify';
 

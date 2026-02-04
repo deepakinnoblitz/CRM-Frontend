@@ -2,11 +2,9 @@ import dayjs from 'dayjs';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
@@ -14,17 +12,15 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
-import ListItemText from '@mui/material/ListItemText';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import LinearProgress from '@mui/material/LinearProgress';
 
 import { getHRDoc } from 'src/api/hr-management';
-import { getLeaveAllocationWorkflowActions, applyLeaveAllocationWorkflowAction, type WorkflowAction } from 'src/api/leave-allocations';
+import { type WorkflowAction, getLeaveAllocationWorkflowActions, applyLeaveAllocationWorkflowAction } from 'src/api/leave-allocations';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
 
 import { useAuth } from 'src/auth/auth-context';
 

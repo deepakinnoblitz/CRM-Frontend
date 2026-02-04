@@ -39,9 +39,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { useAuth } from 'src/auth/auth-context';
 
-import { TableNoData } from '../../user/table-no-data';
 import AutoAllocateDialog from './auto-allocate-dialog';
-import { TableEmptyRows } from '../../user/table-empty-rows';
 import { LeaveAllocationTableRow } from './leave-allocation-table-row';
 import { UserTableHead as LeavesTableHead } from '../../user/user-table-head';
 import { LeaveAllocationDetailsDialog } from './leave-allocation-details-dialog';

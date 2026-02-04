@@ -13,7 +13,7 @@ import DialogContent from '@mui/material/DialogContent';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { Box, Grid, Button, Stack, IconButton, Typography, Snackbar, Alert } from '@mui/material';
+import { Box, Grid, Alert, Button, Snackbar, IconButton, Typography } from '@mui/material';
 
 import { type ToDo, createToDo, updateToDo } from 'src/api/todo';
 

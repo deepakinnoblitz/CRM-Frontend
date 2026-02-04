@@ -23,8 +23,8 @@ import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { Checkbox, IconButton, FormControlLabel } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { IconButton, Checkbox, FormControlLabel, MenuItem, InputLabel } from '@mui/material';
 
 import { useLeaveApplications } from 'src/hooks/useLeaveApplications';
 
@@ -32,7 +32,7 @@ import { getDoctypeList } from 'src/api/leads';
 import { uploadFile } from 'src/api/data-import';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getHRPermissions } from 'src/api/hr-management';
-import { createLeaveApplication, updateLeaveApplication, deleteLeaveApplication, checkLeaveBalance, getEmployeeProbationInfo } from 'src/api/leaves';
+import { checkLeaveBalance, createLeaveApplication, deleteLeaveApplication, getEmployeeProbationInfo } from 'src/api/leaves';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';

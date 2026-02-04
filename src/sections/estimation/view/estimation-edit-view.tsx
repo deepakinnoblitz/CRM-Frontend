@@ -11,7 +11,6 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
-import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
@@ -378,7 +377,7 @@ export function EstimationEditView() {
 
             const estimationData = {
                 client_name: clientName,
-                deal: deal,
+                deal,
                 customer_name: customerName,
                 billing_name: billingName,
                 estimate_date: estimateDate,

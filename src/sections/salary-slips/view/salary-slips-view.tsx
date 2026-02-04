@@ -1,9 +1,9 @@
+import type { SalarySlip } from 'src/api/salary-slips';
+
 import { useState, useEffect, useCallback } from 'react';
 
-import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
-import Badge from '@mui/material/Badge';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
@@ -19,7 +19,7 @@ import { useSalarySlips } from 'src/hooks/useSalarySlips';
 
 import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getSalarySlip, deleteSalarySlip, SalarySlip } from 'src/api/salary-slips';
+import { getSalarySlip, deleteSalarySlip } from 'src/api/salary-slips';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -33,8 +33,10 @@ import { UserTableToolbar as SalarySlipTableToolbar } from 'src/sections/user/us
 import { SalarySlipDetailsDialog } from 'src/sections/report/salary-slips/salary-slip-details-dialog';
 
 import SalarySlipCreateDialog from '../salary-slip-create-dialog';
+import { SalarySlipFiltersDrawer } from '../salary-slip-filters-drawer';
 import SalarySlipAutoAllocateDialog from '../salary-slip-auto-allocate-dialog';
-import { SalarySlipFiltersDrawer, SalarySlipFiltersProps } from '../salary-slip-filters-drawer';
+
+import type { SalarySlipFiltersProps } from '../salary-slip-filters-drawer';
 
 
 

@@ -60,6 +60,7 @@ export const ExpensesNewPage = lazy(() => import('src/pages/expenses/new'));
 export const ExpensesEditPage = lazy(() => import('src/pages/expenses/edit'));
 export const ExpensesDetailsPage = lazy(() => import('src/pages/expenses/details'));
 export const WFHAttendancePage = lazy(() => import('src/pages/wfh-attendance'));
+export const ImportAttendancePage = lazy(() => import('src/pages/import-attendance'));
 export const HolidaysPage = lazy(() => import('src/pages/holidays'));
 export const CRMExpenseTrackerPage = lazy(() => import('src/pages/crm-expense-tracker'));
 export const ExpenseTrackerPage = lazy(() => import('src/pages/expense-tracker'));
@@ -159,6 +160,7 @@ export const routesSection: RouteObject[] = [
       { path: 'assets', element: <AssetsPage /> },
       { path: 'timesheets', element: <TimesheetsPage /> },
       { path: 'wfh-attendance', element: <WFHAttendancePage /> },
+      { path: 'import-attendance', element: <ImportAttendancePage /> },
       { path: 'timesheet-reports', element: <TimesheetsPage /> }, // Placeholder until module is implemented
       {
         path: 'expenses',
