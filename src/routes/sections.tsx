@@ -89,6 +89,7 @@ export const PurchaseCollectionListPage = lazy(() => import('src/pages/purchase-
 export const PurchaseCollectionCreatePage = lazy(() => import('src/pages/purchase-collection/new'));
 export const PurchaseCollectionEditPage = lazy(() => import('src/pages/purchase-collection/edit'));
 export const PurchaseCollectionDetailsPage = lazy(() => import('src/pages/purchase-collection/details'));
+export const UserPermissionsPage = lazy(() => import('src/pages/user-permissions'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
 
@@ -127,6 +128,7 @@ export const routesSection: RouteObject[] = [
       { index: true, element: <DashboardPage /> },
       { path: 'leads', element: <LeadsPage /> },
       { path: 'users', element: <UsersPage /> },
+      { path: 'user-permissions', element: <UserPermissionsPage /> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'contacts', element: <ContactPage /> },
       { path: 'accounts', element: <AccountsPage /> },

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -22,7 +22,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import { useUsers } from 'src/hooks/useUsers';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { createUser, updateUser, deleteUser } from 'src/api/users';
+import { createUser, updateUser, deleteUser, getUser } from 'src/api/users';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -33,34 +33,50 @@ import { TableNoData } from '../table-no-data';
 import { UserTableRow } from '../user-table-row';
 import { UserTableHead } from '../user-table-head';
 import { TableEmptyRows } from '../table-empty-rows';
+import { UserFormDialog } from '../user-form-dialog';
 import { UserDetailsDialog } from '../user-details-dialog';
 import { LeadTableToolbar } from '../../lead/lead-table-toolbar';
+import { UserTableFiltersDrawer } from '../user-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
-export function UserView() {
+export const UserView = forwardRef(({ hideHeader = false, hideActionButton = false }: { hideHeader?: boolean; hideActionButton?: boolean }, ref) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [filterName, setFilterName] = useState('');
   const [sortBy, setSortBy] = useState('creation_desc');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filters, setFilters] = useState({
+    user_type: 'all',
+    enabled: 'all',
+    permission: 'all',
+    roles: []
+  });
+  const [openFilters, setOpenFilters] = useState(false);
 
   const { data, total, loading, refetch } = useUsers(
     page + 1,
     rowsPerPage,
     filterName,
-    {},
     sortBy,
-    filterStatus
+    filters
   );
 
   const [openCreate, setOpenCreate] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     email: '',
+    first_name: '',
+    middle_name: '',
+    last_name: '',
     full_name: '',
+    username: '',
     enabled: 1 as 0 | 1,
-    send_welcome_email: 1
+    user_type: 'System User',
+    role_profile_name: '',
+    roles: [] as string[],
+    block_modules: [] as string[],
+    send_welcome_email: 1 as 0 | 1,
+    new_password: ''
   });
 
   const [snackbar, setSnackbar] = useState({
@@ -79,22 +95,63 @@ export function UserView() {
     setSelectedUser(null);
     setFormData({
       email: '',
+      first_name: '',
+      middle_name: '',
+      last_name: '',
       full_name: '',
+      username: '',
       enabled: 1,
-      send_welcome_email: 1
+      user_type: 'System User',
+      role_profile_name: '',
+      roles: [],
+      block_modules: ['Company', 'ClefinCode Chat'],
+      send_welcome_email: 1,
+      new_password: ''
     });
     setOpenCreate(true);
   };
 
-  const handleEditRow = (row: any) => {
-    setSelectedUser(row);
-    setFormData({
-      email: row.email,
-      full_name: row.full_name,
-      enabled: row.enabled,
-      send_welcome_email: 0
-    });
-    setOpenCreate(true);
+  useImperativeHandle(ref, () => ({
+    handleOpenCreate
+  }));
+
+  const handleEditRow = async (row: any) => {
+    try {
+      // Fetch full user data including roles and modules
+      const fullUserData = await getUser(row.name);
+
+      setSelectedUser(fullUserData);
+
+      // Extract roles from child table (array of {role: "Role Name"})
+      const userRoles = fullUserData.roles
+        ? fullUserData.roles.map((r: any) => r.role)
+        : [];
+
+      // Extract blocked modules from child table (array of {module: "Module Name"})
+      const blockedModules = fullUserData.block_modules
+        ? fullUserData.block_modules.map((m: any) => m.module)
+        : [];
+
+      setFormData({
+        email: fullUserData.email || '',
+        first_name: fullUserData.first_name || '',
+        middle_name: fullUserData.middle_name || '',
+        last_name: fullUserData.last_name || '',
+        full_name: fullUserData.full_name || '',
+        username: fullUserData.username || '',
+        enabled: fullUserData.enabled,
+        user_type: fullUserData.user_type || 'System User',
+        role_profile_name: fullUserData.role_profile_name || '',
+        roles: userRoles,
+        block_modules: blockedModules,
+        send_welcome_email: 0,
+        new_password: ''
+      });
+
+      setOpenCreate(true);
+    } catch (error: any) {
+      setSnackbar({ open: true, message: error.message || 'Failed to load user data', severity: 'error' });
+    }
   };
 
   const handleCloseCreate = () => setOpenCreate(false);
@@ -103,14 +160,40 @@ export function UserView() {
     try {
       if (selectedUser) {
         await updateUser(selectedUser.name, {
+          first_name: formData.first_name,
+          middle_name: formData.middle_name,
+          last_name: formData.last_name,
           full_name: formData.full_name,
-          enabled: formData.enabled
+          username: formData.username,
+          enabled: formData.enabled,
+          user_type: formData.user_type,
+          role_profile_name: formData.role_profile_name,
+          roles: formData.roles,
+          block_modules: formData.block_modules
         });
+
+        // Trigger password change if provided during update
+        if (formData.new_password) {
+          const { changeUserPassword } = await import('src/api/users');
+          await changeUserPassword(selectedUser.email, formData.new_password);
+        }
+
         setSnackbar({ open: true, message: 'User updated successfully', severity: 'success' });
       } else {
         await createUser({
-          ...formData,
-          user_type: 'System User'
+          email: formData.email,
+          first_name: formData.first_name,
+          middle_name: formData.middle_name,
+          last_name: formData.last_name,
+          full_name: formData.full_name,
+          username: formData.username,
+          enabled: formData.enabled,
+          user_type: formData.user_type,
+          role_profile_name: formData.role_profile_name,
+          roles: formData.roles,
+          block_modules: formData.block_modules,
+          send_welcome_email: formData.send_welcome_email,
+          new_password: formData.new_password
         });
         setSnackbar({ open: true, message: 'User created successfully', severity: 'success' });
       }
@@ -150,24 +233,48 @@ export function UserView() {
     setDetailsUserId(null);
   };
 
-  const notFound = !loading && !data.length && !!filterName;
+  const handleFilters = (update: any) => {
+    setFilters((prev) => ({ ...prev, ...update }));
+    setPage(0);
+  };
 
-  return (
-    <DashboardContent>
-      <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
-        <Typography variant="h4" sx={{ flexGrow: 1 }}>
-          Users
-        </Typography>
+  const handleResetFilters = () => {
+    setFilters({
+      user_type: 'all',
+      enabled: 'all',
+      permission: 'all',
+      roles: []
+    });
+    setPage(0);
+  };
 
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={handleOpenCreate}
-          sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
-        >
-          New User
-        </Button>
-      </Box>
+  const canReset =
+    filters.user_type !== 'all' ||
+    filters.enabled !== 'all' ||
+    filters.permission !== 'all' ||
+    filters.roles.length > 0;
+
+  const notFound = !loading && !data.length && (!!filterName || canReset);
+
+  const renderContent = (
+    <>
+      {!hideActionButton && (
+        <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+          <Typography variant="h4" sx={{ flexGrow: 1 }}>
+            {!hideHeader ? 'Users' : ''}
+          </Typography>
+
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={handleOpenCreate}
+            sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            New User
+          </Button>
+        </Box>
+      )
+      }
 
       <Card>
         <LeadTableToolbar
@@ -177,8 +284,8 @@ export function UserView() {
             setFilterName(e.target.value);
             setPage(0);
           }}
-          onOpenFilter={() => { }}
-          canReset={!!filterName || filterStatus !== 'all'}
+          onOpenFilter={() => setOpenFilters(true)}
+          canReset={!!filterName || canReset}
           sortBy={sortBy}
           onSortChange={setSortBy}
           searchPlaceholder="Search users..."
@@ -189,15 +296,6 @@ export function UserView() {
             { value: 'full_name_desc', label: 'Name: Z to A' },
             { value: 'email_asc', label: 'Email: A to Z' },
             { value: 'email_desc', label: 'Email: Z to A' },
-          ]}
-          filterStatus={filterStatus}
-          onFilterStatus={(e) => {
-            setFilterStatus(e.target.value);
-            setPage(0);
-          }}
-          options={[
-            { value: '1', label: 'Enabled' },
-            { value: '0', label: 'Disabled' },
           ]}
           filterLabel="Status"
         />
@@ -211,21 +309,24 @@ export function UserView() {
                 onSelectAllRows={() => { }}
                 hideCheckbox
                 headLabel={[
+                  { id: 'sno', label: 'Sno', align: 'center' },
                   { id: 'full_name', label: 'Name' },
                   { id: 'email', label: 'Email' },
                   { id: 'enabled', label: 'Status' },
                   { id: 'user_type', label: 'Type' },
+                  { id: 'permission', label: 'Permission' },
                   { id: 'creation', label: 'Created' },
                   { id: '' },
                 ]}
               />
 
               <TableBody>
-                {data.map((row) => (
+                {data.map((row, index) => (
                   <UserTableRow
                     key={row.name}
                     row={row}
                     selected={false}
+                    index={page * rowsPerPage + index}
                     onSelectRow={() => { }}
                     onEdit={() => handleEditRow(row)}
                     onDelete={() => handleDeleteRow(row.name)}
@@ -253,46 +354,32 @@ export function UserView() {
         />
       </Card>
 
-      <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
-        <DialogTitle>
-          {selectedUser ? 'Edit User' : 'New User'}
-          <IconButton onClick={handleCloseCreate} sx={{ position: 'absolute', right: 8, top: 8 }}>
-            <Iconify icon="mingcute:close-line" />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers>
-          <Box sx={{ display: 'grid', gap: 3, pt: 1 }}>
-            <TextField
-              fullWidth
-              label="Full Name"
-              value={formData.full_name}
-              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-            />
-            <TextField
-              fullWidth
-              label="Email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              disabled={!!selectedUser}
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.enabled === 1}
-                  onChange={(e) => setFormData({ ...formData, enabled: e.target.checked ? 1 : 0 })}
-                />
-              }
-              label="Enabled"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseCreate}>Cancel</Button>
-          <Button variant="contained" onClick={handleSubmit}>
-            {selectedUser ? 'Update' : 'Create'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <UserFormDialog
+        open={openCreate}
+        onClose={handleCloseCreate}
+        selectedUser={selectedUser}
+        formData={formData}
+        setFormData={setFormData}
+        onSubmit={handleSubmit}
+        onChangePassword={async (userId: string, newPassword: string) => {
+          const { changeUserPassword } = await import('src/api/users');
+          try {
+            await changeUserPassword(userId, newPassword);
+            setSnackbar({
+              open: true,
+              message: 'Password changed successfully',
+              severity: 'success'
+            });
+            handleCloseCreate(); // Close the dialog
+          } catch (error: any) {
+            setSnackbar({
+              open: true,
+              message: error.message || 'Failed to change password',
+              severity: 'error'
+            });
+          }
+        }}
+      />
 
       <ConfirmDialog
         open={openDelete}
@@ -310,6 +397,7 @@ export function UserView() {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Alert severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
@@ -330,9 +418,29 @@ export function UserView() {
           }
         }}
       />
+
+      <UserTableFiltersDrawer
+        open={openFilters}
+        onOpen={() => setOpenFilters(true)}
+        onClose={() => setOpenFilters(false)}
+        filters={filters}
+        onFilters={handleFilters}
+        canReset={canReset}
+        onResetFilters={handleResetFilters}
+      />
+    </>
+  );
+
+  if (hideHeader) {
+    return renderContent;
+  }
+
+  return (
+    <DashboardContent>
+      {renderContent}
     </DashboardContent>
   );
-}
+});
 
 // ----------------------------------------------------------------------
 

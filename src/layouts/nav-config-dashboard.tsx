@@ -127,12 +127,7 @@ export const hrNavData = [
       { title: 'Attendance Report', path: '/reports/attendance' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
     ],
-  },
-  {
-    title: 'User Management',
-    path: '/users',
-    icon: <Iconify icon={"solar:settings-bold-duotone" as any} />,
-  },
+  }
 ];
 
 
