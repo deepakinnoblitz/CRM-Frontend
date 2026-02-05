@@ -6,9 +6,8 @@ export function useUsers(
     page: number,
     pageSize: number,
     search: string,
-    filterValues?: Record<string, any>,
     sort_by?: string,
-    filterStatus?: string
+    filters?: { user_type?: string; role_profile_name?: string; enabled?: string }
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
@@ -21,9 +20,8 @@ export function useUsers(
                 page,
                 page_size: pageSize,
                 search,
-                filterValues,
                 sort_by,
-                filterStatus
+                filters
             });
             setData(result.data);
             setTotal(result.total);
@@ -32,7 +30,7 @@ export function useUsers(
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, search, filterValues, sort_by, filterStatus]);
+    }, [page, pageSize, search, sort_by, filters]);
 
     useEffect(() => {
         refetch();
