@@ -16,12 +16,6 @@ export async function fetchUploadAttendance(params: {
     order?: 'asc' | 'desc';
 }) {
     const filters: any[] = [];
-    const or_filters: any[] = [];
-
-    if (params.search) {
-        or_filters.push(["Upload Attendance", "name", "like", `%${params.search}%`]);
-        or_filters.push(["Upload Attendance", "attendance_file", "like", `%${params.search}%`]);
-    }
 
     if (params.filters) {
         if (params.filters.startDate) {
@@ -33,9 +27,13 @@ export async function fetchUploadAttendance(params: {
     }
 
     return fetchFrappeList('Upload Attendance', {
-        ...params,
+        page: params.page,
+        page_size: params.page_size,
+        search: params.search,
+        searchField: 'name',
         filters,
-        or_filters
+        orderBy: params.orderBy,
+        order: params.order
     });
 }
 
