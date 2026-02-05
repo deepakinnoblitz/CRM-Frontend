@@ -164,6 +164,7 @@ export const routesSection: RouteObject[] = [
       { path: 'asset-assignments', element: <AssetAssignmentsPage /> },
       { path: 'timesheets', element: <TimesheetsPage /> },
       { path: 'wfh-attendance', element: <WFHAttendancePage /> },
+      { path: 'import-attendance', element: <ImportAttendancePage /> },
       { path: 'timesheet-reports', element: <TimesheetReportPage /> },
       {
         path: 'expenses',
