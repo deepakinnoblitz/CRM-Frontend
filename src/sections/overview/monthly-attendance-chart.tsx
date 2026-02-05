@@ -20,6 +20,7 @@ type AttendanceBreakdown = {
     absent: number;
     half_day: number;
     on_leave: number;
+    holiday: number;
     missing: number;
     total_days: number;
     present_percentage: number;
@@ -81,13 +82,15 @@ export function MonthlyAttendanceChart({ title, subheader, data, onRangeChange, 
         const statusColors = {
             present: '#22C55E', // Green
             absent: '#FF5630',  // Red
-            half_day: '#FFAB00', // Orange
-            on_leave: '#00B8D9', // Blue
+            holiday: '#8E33FF', // Purple
+            half_day: '#FFAB00', // Amber
+            on_leave: '#00B8D9', // Cyan
             missing: '#919EAB',  // Grey
         };
 
         const values = [
             { label: 'present', value: data.present, color: statusColors.present },
+            { label: 'holiday', value: data.holiday, color: statusColors.holiday },
             { label: 'missing', value: data.missing, color: statusColors.missing },
             { label: 'absent', value: data.absent, color: statusColors.absent },
             { label: 'half_day', value: data.half_day, color: statusColors.half_day },
@@ -215,15 +218,16 @@ export function MonthlyAttendanceChart({ title, subheader, data, onRangeChange, 
             >
                 {[
                     { label: 'Present', value: data.present, color: '#22C55E' },
-                    { label: 'Missing', value: data.missing, color: '#919EAB' },
                     { label: 'Absent', value: data.absent, color: '#FF5630' },
-                    { label: 'Half Day', value: data.half_day, color: '#FFAB00' },
+                    { label: 'Holiday', value: data.holiday, color: '#8E33FF' },
                     { label: 'On Leave', value: data.on_leave, color: '#00B8D9' },
+                    { label: 'Half Day', value: data.half_day, color: '#FFAB00' },
+                    { label: 'Missing', value: data.missing, color: '#919EAB' },
                 ].map((item) => (
                     <Box key={item.label} sx={{ textAlign: 'center' }}>
                         <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5 }}>
                             <Box sx={{ width: 10, height: 10, bgcolor: item.color, borderRadius: '50%' }} />
-                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                            <Typography variant="caption" sx={{ color: item.color, fontWeight: 700 }}>
                                 {item.label}
                             </Typography>
                         </Stack>

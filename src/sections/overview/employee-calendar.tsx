@@ -1,5 +1,6 @@
 import type { CardProps } from '@mui/material/Card';
 
+import { useRef, useEffect } from 'react';
 import listPlugin from '@fullcalendar/list';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -19,12 +20,27 @@ type Props = CardProps & {
         title: string;
         start: string;
         color?: string;
+        textColor?: string;
+        backgroundColor?: string;
     }[];
     onDateChange?: (date: Date) => void;
 };
 
-export function HRCalendar({ title, subheader, events, onDateChange, ...other }: Props) {
+export function EmployeeCalendar({ title, subheader, events, onDateChange, ...other }: Props) {
     const theme = useTheme();
+    const calendarRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!calendarRef.current || !events.length) return;
+
+        // Apply colors to existing cells when events update
+        events.forEach((event) => {
+            const cell = calendarRef.current?.querySelector(`td[data-date="${event.start}"]`);
+            if (cell && event.color) {
+                (cell as HTMLElement).style.backgroundColor = alpha(event.color, 0.15);
+            }
+        });
+    }, [events]);
 
     return (
         <Card
@@ -48,6 +64,7 @@ export function HRCalendar({ title, subheader, events, onDateChange, ...other }:
             />
 
             <Box
+                ref={calendarRef}
                 sx={{
                     p: 2,
                     '& .fc': {
@@ -104,6 +121,7 @@ export function HRCalendar({ title, subheader, events, onDateChange, ...other }:
                         fontWeight: 600,
                         fontSize: '0.8rem',
                         p: 1.5,
+                        zIndex: 1,
                     },
                     '& .fc .fc-col-header-cell-cushion': {
                         color: theme.palette.text.disabled,
@@ -116,25 +134,18 @@ export function HRCalendar({ title, subheader, events, onDateChange, ...other }:
                     '& .fc .fc-scrollgrid': {
                         border: 'none',
                     },
-                    '& .fc .fc-daygrid-day': {
-                        transition: theme.transitions.duration.shorter,
-                        '&:hover': {
-                            bgcolor: alpha(theme.palette.primary.main, 0.02),
-                        },
-                    },
                     '& .fc .fc-event': {
-                        borderRadius: '8px',
-                        border: 'none',
-                        padding: '4px 8px',
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        boxShadow: `0 4px 12px 0 ${alpha(theme.palette.primary.main, 0.2)}`,
-                        cursor: 'pointer',
-                        transition: theme.transitions.duration.shorter,
+                        backgroundColor: 'transparent !important',
+                        borderColor: 'transparent !important',
+                        boxShadow: 'none !important',
+                        cursor: 'default',
                         '&:hover': {
-                            transform: 'scale(1.02)',
-                            boxShadow: `0 6px 16px 0 ${alpha(theme.palette.primary.main, 0.3)}`,
-                        },
+                            backgroundColor: 'transparent !important',
+                        }
+                    },
+                    '& .fc .fc-daygrid-day-events': {
+                        margin: 0,
+                        padding: 0,
                     },
                     '& .fc .fc-day-today': {
                         '& .fc-daygrid-day-number': {
@@ -150,23 +161,6 @@ export function HRCalendar({ title, subheader, events, onDateChange, ...other }:
                             justifyContent: 'center',
                             m: 0.5,
                         },
-                        bgcolor: 'transparent',
-                    },
-                    '& .fc .fc-list': {
-                        border: 'none',
-                        bgcolor: 'transparent',
-                    },
-                    '& .fc .fc-list-day-cushion': {
-                        bgcolor: alpha(theme.palette.primary.main, 0.05),
-                        borderRadius: '8px',
-                        m: 1,
-                    },
-                    '& .fc .fc-list-event': {
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        '&:hover td': {
-                            bgcolor: alpha(theme.palette.primary.main, 0.05),
-                        },
                     },
                 }}
             >
@@ -181,14 +175,40 @@ export function HRCalendar({ title, subheader, events, onDateChange, ...other }:
                     }}
                     height={600}
                     stickyHeaderDates
-                    eventColor={theme.palette.primary.main}
-                    eventTextColor={theme.palette.primary.contrastText}
                     displayEventTime={false}
                     datesSet={(arg) => {
                         if (onDateChange) {
                             onDateChange(arg.view.currentStart);
                         }
                     }}
+                    dayCellDidMount={(arg) => {
+                        const date = arg.date;
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const dateStr = `${year}-${month}-${day}`;
+
+                        const event = events.find((e) => e.start === dateStr);
+                        if (event && event.color) {
+                            arg.el.style.backgroundColor = alpha(event.color, 0.15);
+                        }
+                    }}
+                    eventContent={(arg) => (
+                        <Box sx={{
+                            color: arg.event.backgroundColor,
+                            fontSize: '0.6rem',
+                            fontWeight: 700,
+                            textAlign: 'center',
+                            mt: 0.5,
+                            whiteSpace: 'normal',
+                            lineHeight: 1.2,
+                            width: '100%',
+                            wordBreak: 'break-word',
+                            px: 0.5
+                        }}>
+                            {arg.event.title}
+                        </Box>
+                    )}
                 />
             </Box>
         </Card>
