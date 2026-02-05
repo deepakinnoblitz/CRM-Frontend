@@ -8,13 +8,34 @@ export async function fetchUploadAttendance(params: {
     page: number;
     page_size: number;
     search?: string;
-    filters?: any[];
+    filters?: {
+        startDate?: string;
+        endDate?: string;
+    };
     orderBy?: string;
     order?: 'asc' | 'desc';
 }) {
+    const filters: any[] = [];
+    const or_filters: any[] = [];
+
+    if (params.search) {
+        or_filters.push(["Upload Attendance", "name", "like", `%${params.search}%`]);
+        or_filters.push(["Upload Attendance", "attendance_file", "like", `%${params.search}%`]);
+    }
+
+    if (params.filters) {
+        if (params.filters.startDate) {
+            filters.push(["Upload Attendance", "upload_date", ">=", params.filters.startDate]);
+        }
+        if (params.filters.endDate) {
+            filters.push(["Upload Attendance", "upload_date", "<=", params.filters.endDate]);
+        }
+    }
+
     return fetchFrappeList('Upload Attendance', {
         ...params,
-        searchField: 'name'
+        filters,
+        or_filters
     });
 }
 

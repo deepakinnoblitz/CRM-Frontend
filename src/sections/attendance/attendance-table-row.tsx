@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
@@ -106,7 +108,7 @@ export function AttendanceTableRow({
 
             <TableCell>
                 <Typography variant="body2" noWrap>
-                    {row.attendanceDate}
+                    {dayjs(row.attendanceDate).format('DD-MM-YYYY')}
                 </Typography>
             </TableCell>
 

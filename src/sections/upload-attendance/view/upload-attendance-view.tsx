@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { useSnackbar } from 'notistack';
 import { useState, useCallback } from 'react';
 import { useBoolean } from 'minimal-shared/hooks';
@@ -25,12 +26,15 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { TableNoData, TableEmptyRows, TableHeadCustom, TableSelectedAction } from 'src/components/table/index';
 
+import { LeadTableToolbar } from '../../lead/lead-table-toolbar';
 import { UploadAttendanceTableRow } from '../upload-attendance-table-row';
 import { UploadAttendanceFormDialog } from '../upload-attendance-form-dialog';
+import { UploadAttendanceTableFiltersDrawer } from '../upload-attendance-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
+    { id: 'sno', label: 'Sno', align: 'center' },
     { id: 'name', label: 'ID' },
     { id: 'upload_date', label: 'Upload Date' },
     { id: 'att_fr_date', label: 'From Date' },
@@ -44,9 +48,15 @@ const TABLE_HEAD = [
 
 export function UploadAttendanceView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [search] = useState('');
-    const [selected, setSelected] = useState<string[]>([]);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [filterName, setFilterName] = useState('');
+    const [sortBy, setSortBy] = useState('upload_date_desc');
+    const [filters, setFilters] = useState<any>({
+        startDate: null,
+        endDate: null,
+    });
+    const [openFilters, setOpenFilters] = useState(false);
+
     const [currentRecord, setCurrentRecord] = useState<any>(null);
     const [importing, setImporting] = useState<string | null>(null);
 
@@ -56,7 +66,12 @@ export function UploadAttendanceView() {
     const { data, total, loading, refetch } = useUploadAttendance(
         page + 1,
         rowsPerPage,
-        search
+        filterName,
+        sortBy,
+        {
+            startDate: filters.startDate ? dayjs(filters.startDate).format('YYYY-MM-DD') : undefined,
+            endDate: filters.endDate ? dayjs(filters.endDate).format('YYYY-MM-DD') : undefined,
+        }
     );
 
     const handleChangePage = useCallback((event: unknown, newPage: number) => {
@@ -68,19 +83,20 @@ export function UploadAttendanceView() {
         setPage(0);
     }, []);
 
-    const handleSelectRow = useCallback((id: string) => {
-        setSelected((prev) =>
-            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-        );
+    const handleFilters = useCallback((update: any) => {
+        setFilters((prev: any) => ({ ...prev, ...update }));
+        setPage(0);
     }, []);
 
-    const handleSelectAllRows = useCallback((checked: boolean) => {
-        if (checked) {
-            setSelected(data.map((row) => row.name));
-        } else {
-            setSelected([]);
-        }
-    }, [data]);
+    const handleResetFilters = useCallback(() => {
+        setFilters({
+            startDate: null,
+            endDate: null,
+        });
+        setPage(0);
+    }, []);
+
+    const canReset = filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const handleNewRecord = useCallback(() => {
         setCurrentRecord(null);
@@ -149,45 +165,45 @@ export function UploadAttendanceView() {
             </Box>
 
             <Card>
-                {selected.length > 0 && (
-                    <TableSelectedAction
-                        dense={false}
-                        numSelected={selected.length}
-                        rowCount={data.length}
-                        onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
-                        action={
-                            <Button
-                                color="error"
-                                onClick={() => {
-                                    // Handle bulk delete if needed
-                                }}
-                            >
-                                Delete
-                            </Button>
-                        }
-                    />
-                )}
+                <LeadTableToolbar
+                    numSelected={0}
+                    filterName={filterName}
+                    onFilterName={(e) => {
+                        setFilterName(e.target.value);
+                        setPage(0);
+                    }}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    searchPlaceholder="Search attendance..."
+                    sortOptions={[
+                        { value: 'upload_date_desc', label: 'Newest Upload' },
+                        { value: 'upload_date_asc', label: 'Oldest Upload' },
+                        { value: 'att_fr_date_desc', label: 'Latest From Date' },
+                        { value: 'att_fr_date_asc', label: 'Earliest From Date' },
+                    ]}
+                    filterLabel="Status"
+                />
 
                 <Scrollbar>
                     <TableContainer sx={{ minWidth: 800 }}>
                         <Table>
                             <TableHeadCustom
-                                order="asc"
-                                orderBy="upload_date"
                                 headLabel={TABLE_HEAD}
                                 rowCount={data.length}
-                                numSelected={selected.length}
+                                numSelected={0}
                                 onSort={() => { }}
-                                onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
+                                onSelectAllRows={() => { }}
+                                hideCheckbox
                             />
 
                             <TableBody>
-                                {data.map((row) => (
+                                {data.map((row, index) => (
                                     <UploadAttendanceTableRow
                                         key={row.name}
                                         row={row}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
+                                        index={page * rowsPerPage + index}
                                         onEditRow={() => handleEditRow(row)}
                                         onDeleteRow={() => handleDeleteRow(row.name)}
                                         onImport={() => handleImport(row.name)}
@@ -222,6 +238,16 @@ export function UploadAttendanceView() {
                 onClose={formDialog.onFalse}
                 onSubmit={handleFormSubmit}
                 currentData={currentRecord}
+            />
+
+            <UploadAttendanceTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
             />
         </DashboardContent>
     );
