@@ -1,6 +1,6 @@
 import type { SalarySlip } from 'src/api/salary-slips';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
@@ -61,9 +61,9 @@ export function SalarySlipsView() {
         pay_period_end: null,
     });
 
-    const filterValues = Object.fromEntries(
+    const filterValues = useMemo(() => Object.fromEntries(
         Object.entries(filters).filter(([_, v]) => v !== 'all' && v !== null)
-    );
+    ), [filters]);
 
     const { data, total, refetch, loading } = useSalarySlips(
         page + 1,

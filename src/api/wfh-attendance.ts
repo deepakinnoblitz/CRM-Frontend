@@ -15,67 +15,7 @@ export interface WFHAttendance {
     workflow_state?: string;
 }
 
-// Generic fetch function for Frappe list
-async function fetchFrappeList(doctype: string, params: {
-    page: number;
-    page_size: number;
-    search?: string;
-    searchField?: string;
-    filters?: any[];
-    orderBy?: string;
-    order?: 'asc' | 'desc';
-}) {
-    const filters: any[] = params.filters || [];
-
-    if (params.search && params.searchField) {
-        filters.push([doctype, params.searchField, "like", `%${params.search}%`]);
-    }
-
-    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "creation desc";
-
-    const query = new URLSearchParams({
-        doctype,
-        fields: JSON.stringify(["*"]),
-        filters: JSON.stringify(filters),
-        limit_start: String((params.page - 1) * params.page_size),
-        limit_page_length: String(params.page_size),
-        order_by: orderByParam
-    });
-
-    try {
-        // Fetch data and count in parallel
-        const [res, countRes] = await Promise.all([
-            frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-            frappeRequest(`/api/method/frappe.client.get_count?doctype=${doctype}&filters=${encodeURIComponent(JSON.stringify(filters))}`)
-        ]);
-
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(handleFrappeError(errorData, `Failed to fetch ${doctype} list`));
-        }
-        if (!countRes.ok) {
-            const errorData = await countRes.json();
-            throw new Error(handleFrappeError(errorData, `Failed to fetch ${doctype} count`));
-        }
-
-        const data = await res.json();
-        const countData = await countRes.json();
-
-        return {
-            data: data.message || [],
-            total: countData.message || 0
-        };
-    } catch (error) {
-        // If handleFrappeError was already used in the if (!res.ok) block,
-        // the error thrown will already be a formatted Error object.
-        // Otherwise, it's a network error or other unexpected error.
-        if (error instanceof Error) {
-            throw error;
-        }
-        // For any other unexpected error type
-        throw new Error(handleFrappeError(error, `An unexpected error occurred while fetching ${doctype}`));
-    }
-}
+import { fetchFrappeList } from './hr-management';
 
 export const fetchWFHAttendance = async (params: {
     page: number;
@@ -106,24 +46,15 @@ export const fetchWFHAttendance = async (params: {
         }
     }
 
-    const query = new URLSearchParams({
-        page: String(params.page),
-        page_size: String(params.page_size),
-        search: params.search || '',
-        filters: JSON.stringify(filters),
-        orderBy: params.orderBy || '',
-        order: params.order || ''
+    return fetchFrappeList("WFH Attendance", {
+        page: params.page,
+        page_size: params.page_size,
+        search: params.search,
+        searchField: "employee_name",
+        filters,
+        orderBy: params.orderBy,
+        order: params.order
     });
-
-    const res = await frappeRequest(`/api/method/company.company.frontend_api.get_wfh_attendance_list?${query.toString()}`);
-
-    if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(handleFrappeError(errorData, "Failed to fetch WFH Attendance list"));
-    }
-
-    const json = await res.json();
-    return json.message;
 };
 
 export async function createWFHAttendance(data: Partial<WFHAttendance>) {

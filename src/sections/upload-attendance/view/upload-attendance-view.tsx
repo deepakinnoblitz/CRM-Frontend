@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { useSnackbar } from 'notistack';
-import { useState, useCallback } from 'react';
 import { useBoolean } from 'minimal-shared/hooks';
+import { useState, useCallback, useMemo } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -63,15 +63,17 @@ export function UploadAttendanceView() {
     const { enqueueSnackbar } = useSnackbar();
     const formDialog = useBoolean();
 
+    const dateFilters = useMemo(() => ({
+        startDate: filters.startDate ? dayjs(filters.startDate).format('YYYY-MM-DD') : undefined,
+        endDate: filters.endDate ? dayjs(filters.endDate).format('YYYY-MM-DD') : undefined,
+    }), [filters.startDate, filters.endDate]);
+
     const { data, total, loading, refetch } = useUploadAttendance(
         page + 1,
         rowsPerPage,
         filterName,
         sortBy,
-        {
-            startDate: filters.startDate ? dayjs(filters.startDate).format('YYYY-MM-DD') : undefined,
-            endDate: filters.endDate ? dayjs(filters.endDate).format('YYYY-MM-DD') : undefined,
-        }
+        dateFilters
     );
 
     const handleChangePage = useCallback((event: unknown, newPage: number) => {
