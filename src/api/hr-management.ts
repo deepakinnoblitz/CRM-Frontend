@@ -8,6 +8,7 @@ export async function fetchFrappeList(doctype: string, params: {
     search?: string;
     searchField?: string;
     filters?: any[];
+    or_filters?: any[];
     orderBy?: string;
     order?: 'asc' | 'desc';
 }) {
@@ -17,12 +18,28 @@ export async function fetchFrappeList(doctype: string, params: {
         filters.push([doctype, params.searchField, "like", `%${params.search}%`]);
     }
 
-    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "creation desc";
+    let orderByParam = "creation desc";
+    if (params.orderBy) {
+        if (params.order) {
+            orderByParam = `${params.orderBy} ${params.order}`;
+        } else {
+            // Handle combined string like "upload_date_desc" or "upload_date desc"
+            const parts = params.orderBy.split(/[ _]/);
+            const direction = parts[parts.length - 1].toLowerCase();
+            if (direction === 'asc' || direction === 'desc') {
+                parts.pop();
+                orderByParam = `${parts.join('_')} ${direction}`;
+            } else {
+                orderByParam = `${params.orderBy} desc`;
+            }
+        }
+    }
 
     const query = new URLSearchParams({
         doctype,
         fields: JSON.stringify(["*"]),
         filters: JSON.stringify(filters),
+        or_filters: params.or_filters ? JSON.stringify(params.or_filters) : "[]",
         limit_start: String((params.page - 1) * params.page_size),
         limit_page_length: String(params.page_size),
         order_by: orderByParam
@@ -31,7 +48,7 @@ export async function fetchFrappeList(doctype: string, params: {
     // Fetch data and count in parallel
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=${doctype}&filters=${encodeURIComponent(JSON.stringify(filters))}`)
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=${doctype}&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${params.or_filters ? encodeURIComponent(JSON.stringify(params.or_filters)) : "[]"}`)
     ]);
 
     if (!res.ok) {

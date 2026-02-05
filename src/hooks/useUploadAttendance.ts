@@ -7,7 +7,7 @@ export function useUploadAttendance(
     pageSize: number,
     search: string,
     orderBy?: string,
-    order?: 'asc' | 'desc'
+    filters?: { startDate?: string; endDate?: string }
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
@@ -21,7 +21,7 @@ export function useUploadAttendance(
                 page_size: pageSize,
                 search,
                 orderBy,
-                order
+                filters
             });
             setData(result.data);
             setTotal(result.total);
@@ -32,11 +32,11 @@ export function useUploadAttendance(
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, search, orderBy, order]);
+    }, [page, pageSize, search, orderBy, filters]);
 
     useEffect(() => {
         refetch();
-    }, [page, pageSize, search, orderBy, order]);
+    }, [page, pageSize, search, orderBy, filters]);
 
     return { data, total, loading, refetch };
 }

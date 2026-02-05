@@ -45,6 +45,7 @@ import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { AttendanceTableRow } from '../attendance-table-row';
 import { AttendanceImportDialog } from '../attendance-import-dialog';
 import { LeadTableHead as AttendanceTableHead } from '../../lead/lead-table-head';
+import { AttendanceTableFiltersDrawer } from '../attendance-table-filters-drawer';
 import { LeadTableToolbar as AttendanceTableToolbar } from '../../lead/lead-table-toolbar';
 import { AttendanceDetailsDialog } from '../../report/attendance/attendance-details-dialog';
 
@@ -73,7 +74,8 @@ export function AttendanceView() {
     const [filterStatus, setFilterStatus] = useState('all');
     const [startDate, setStartDate] = useState<string | null>(null);
     const [endDate, setEndDate] = useState<string | null>(null);
-    const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
+    const [filterEmployee, setFilterEmployee] = useState<string | null>(null);
+    const [openFilters, setOpenFilters] = useState(false);
 
     // Alert & Dialog State
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
@@ -106,7 +108,8 @@ export function AttendanceView() {
         order,
         startDate || undefined,
         endDate || undefined,
-        filterStatus
+        filterStatus,
+        filterEmployee
     );
 
     const notFound = !data.length && !!filterName;
@@ -295,18 +298,27 @@ export function AttendanceView() {
         setDetailsId(null);
     };
 
-    const handleOpenFilter = (event: React.MouseEvent<HTMLElement>) => {
-        setFilterAnchorEl(event.currentTarget);
+    const handleOpenFilters = () => {
+        setOpenFilters(true);
     };
 
-    const handleCloseFilter = () => {
-        setFilterAnchorEl(null);
+    const handleCloseFilters = () => {
+        setOpenFilters(false);
+    };
+
+    const handleFilters = (update: any) => {
+        if (update.startDate !== undefined) setStartDate(update.startDate);
+        if (update.endDate !== undefined) setEndDate(update.endDate);
+        if (update.status !== undefined) setFilterStatus(update.status);
+        if (update.employee !== undefined) setFilterEmployee(update.employee);
+        setPage(0);
     };
 
     const handleResetFilters = () => {
         setStartDate(null);
         setEndDate(null);
         setFilterStatus('all');
+        setFilterEmployee(null);
         setFilterName('');
         setPage(0);
     };
@@ -511,69 +523,20 @@ export function AttendanceView() {
                     sortOptions={sortOptions}
                     sortBy={getSortByValue()}
                     onSortChange={handleSortChange}
-                    onOpenFilter={handleOpenFilter}
-                    canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all'}
-                    filterStatus={filterStatus}
-                    onFilterStatus={(e) => {
-                        setFilterStatus(e.target.value);
-                        setPage(0);
-                    }}
-                    options={[
-                        { value: 'Present', label: 'Present' },
-                        { value: 'Absent', label: 'Absent' },
-                        { value: 'Half Day', label: 'Half Day' },
-                        { value: 'On Leave', label: 'On Leave' },
-                        { value: 'Holiday', label: 'Holiday' },
-                    ]}
-                    filterLabel="Status"
+                    onOpenFilter={handleOpenFilters}
+                    canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all' || !!filterEmployee}
                 />
 
-                <Popover
-                    open={Boolean(filterAnchorEl)}
-                    anchorEl={filterAnchorEl}
-                    onClose={handleCloseFilter}
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                    slotProps={{
-                        paper: {
-                            sx: { p: 3, width: 280 },
-                        },
-                    }}
-                >
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <Stack spacing={3}>
-                            <Typography variant="subtitle2">Filter by Date</Typography>
-
-                            <DatePicker
-                                label="Start Date"
-                                value={startDate ? dayjs(startDate) : null}
-                                onChange={(newValue) => {
-                                    setStartDate(newValue ? newValue.format('YYYY-MM-DD') : null);
-                                    setPage(0);
-                                }}
-                            />
-
-                            <DatePicker
-                                label="End Date"
-                                value={endDate ? dayjs(endDate) : null}
-                                onChange={(newValue) => {
-                                    setEndDate(newValue ? newValue.format('YYYY-MM-DD') : null);
-                                    setPage(0);
-                                }}
-                            />
-
-                            <Button
-                                fullWidth
-                                color="inherit"
-                                variant="outlined"
-                                onClick={handleResetFilters}
-                                startIcon={<Iconify icon="solar:restart-bold" />}
-                            >
-                                Reset
-                            </Button>
-                        </Stack>
-                    </LocalizationProvider>
-                </Popover>
+                <AttendanceTableFiltersDrawer
+                    open={openFilters}
+                    onOpen={handleOpenFilters}
+                    onClose={handleCloseFilters}
+                    filters={{ startDate, endDate, status: filterStatus, employee: filterEmployee }}
+                    onFilters={handleFilters}
+                    canReset={!!startDate || !!endDate || filterStatus !== 'all' || !!filterEmployee}
+                    onResetFilters={handleResetFilters}
+                    employeeOptions={employeeOptions}
+                />
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>

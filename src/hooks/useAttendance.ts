@@ -10,7 +10,8 @@ export function useAttendance(
     order?: 'asc' | 'desc',
     startDate?: string,
     endDate?: string,
-    filterStatus?: string
+    filterStatus?: string,
+    filterEmployee?: string | null
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
@@ -34,6 +35,11 @@ export function useAttendance(
                 filters.push(['Attendance', 'status', '=', filterStatus]);
             }
 
+            // Add employee filter
+            if (filterEmployee) {
+                filters.push(['Attendance', 'employee', '=', filterEmployee]);
+            }
+
             const result = await fetchAttendance({
                 page,
                 page_size: pageSize,
@@ -49,7 +55,7 @@ export function useAttendance(
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, search, orderBy, order, startDate, endDate, filterStatus]);
+    }, [page, pageSize, search, orderBy, order, startDate, endDate, filterStatus, filterEmployee]);
 
     useEffect(() => {
         refetch();

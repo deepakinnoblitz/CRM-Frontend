@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
+import Switch from '@mui/material/Switch';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Snackbar from '@mui/material/Snackbar';
@@ -14,15 +15,23 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
+import { styled, Theme } from '@mui/material/styles';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { useAnnouncements } from 'src/hooks/useAnnouncements';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { createAnnouncement, updateAnnouncement, deleteAnnouncement, getAnnouncementPermissions } from 'src/api/announcements';
+import {
+    Announcement,
+    createAnnouncement,
+    updateAnnouncement,
+    deleteAnnouncement,
+    getAnnouncementPermissions,
+} from 'src/api/announcements';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -37,6 +46,41 @@ import { LeadTableToolbar as AnnouncementTableToolbar } from 'src/sections/lead/
 import { AnnouncementDetailsDialog } from 'src/sections/report/announcements/announcements-details-dialog';
 
 import { AnnouncementsTableFiltersDrawer } from '../announcements-table-filters-drawer';
+
+// ----------------------------------------------------------------------
+
+const Android12Switch = styled(Switch)(({ theme }: { theme: Theme }) => ({
+    padding: 8,
+    '& .MuiSwitch-track': {
+        borderRadius: 22 / 2,
+        '&::before, &::after': {
+            content: '""',
+            position: 'absolute',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: 16,
+            height: 16,
+        },
+        '&::before': {
+            backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 24 24"><path fill="${encodeURIComponent(
+                theme.palette.getContrastText(theme.palette.primary.main)
+            )}" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>')`,
+            left: 12,
+        },
+        '&::after': {
+            backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 24 24"><path fill="${encodeURIComponent(
+                theme.palette.getContrastText(theme.palette.primary.main)
+            )}" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/></svg>')`,
+            right: 12,
+        },
+    },
+    '& .MuiSwitch-thumb': {
+        boxShadow: 'none',
+        width: 16,
+        height: 16,
+        margin: 2,
+    },
+}));
 
 // ----------------------------------------------------------------------
 
@@ -73,6 +117,7 @@ export function AnnouncementsView() {
     // Form state
     const [announcementName, setAnnouncementName] = useState('');
     const [announcement, setAnnouncement] = useState('');
+    const [isActive, setIsActive] = useState(true);
 
     // View dialog state
     const [openView, setOpenView] = useState(false);
@@ -146,6 +191,7 @@ export function AnnouncementsView() {
         setCurrentAnnouncement(null);
         setAnnouncementName('');
         setAnnouncement('');
+        setIsActive(true);
         setOpenCreate(true);
     };
 
@@ -155,12 +201,14 @@ export function AnnouncementsView() {
         setCurrentAnnouncement(null);
         setAnnouncementName('');
         setAnnouncement('');
+        setIsActive(true);
     };
 
     const handleEditRow = useCallback((row: any) => {
         setCurrentAnnouncement(row);
         setAnnouncementName(row.announcement_name || '');
         setAnnouncement(row.announcement || '');
+        setIsActive(row.is_active === 1);
         setIsEdit(true);
         setOpenCreate(true);
     }, []);
@@ -190,9 +238,10 @@ export function AnnouncementsView() {
     const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        const announcementData = {
+        const announcementData: Partial<Announcement> = {
             announcement_name: announcementName.trim(),
             announcement: announcement.trim(),
+            is_active: isActive ? 1 : 0,
         };
 
         try {
@@ -279,6 +328,7 @@ export function AnnouncementsView() {
                                     { id: 'announcement_name', label: 'Title', width: 220 },
                                     { id: 'announcement', label: 'Announcement', width: 400 },
                                     { id: 'creation', label: 'Created On', width: 140 },
+                                    { id: 'is_active', label: 'Status', width: 120 },
                                     { id: '', label: '', width: 100 }
                                 ]}
                             />
@@ -292,6 +342,7 @@ export function AnnouncementsView() {
                                             id: row.name,
                                             announcement_name: row.announcement_name,
                                             announcement: row.announcement,
+                                            is_active: row.is_active,
                                             creation: row.creation,
                                         }}
                                         selected={selected.includes(row.name)}
@@ -351,12 +402,25 @@ export function AnnouncementsView() {
                     </DialogTitle>
 
                     <DialogContent dividers>
+
                         <Box sx={{ display: 'grid', gap: 3, margin: '1rem' }}>
+
+                            <FormControlLabel
+                                control={
+                                    <Android12Switch
+                                        checked={isActive}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIsActive(e.target.checked)}
+                                    />
+                                }
+                                label="Is Active"
+                                sx={{ mb: 1 }}
+                            />
+
                             <TextField
                                 fullWidth
                                 label="Title"
                                 value={announcementName}
-                                onChange={(e) => setAnnouncementName(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAnnouncementName(e.target.value)}
                                 required
                                 placeholder="Enter announcement title"
                             />
@@ -365,12 +429,13 @@ export function AnnouncementsView() {
                                 fullWidth
                                 label="Announcement"
                                 value={announcement}
-                                onChange={(e) => setAnnouncement(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAnnouncement(e.target.value)}
                                 multiline
                                 rows={6}
                                 placeholder="Enter announcement details"
                                 required
                             />
+
                         </Box>
                     </DialogContent>
 

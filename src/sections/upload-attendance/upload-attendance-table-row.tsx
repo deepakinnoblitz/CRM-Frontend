@@ -4,8 +4,8 @@
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
+import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
-import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
@@ -18,22 +18,20 @@ import { Iconify } from 'src/components/iconify';
 
 type Props = {
     row: any;
-    selected: boolean;
-    onSelectRow: VoidFunction;
     onEditRow: VoidFunction;
     onDeleteRow: VoidFunction;
     onImport: VoidFunction;
     importing: boolean;
+    index: number;
 };
 
 export function UploadAttendanceTableRow({
     row,
-    selected,
-    onSelectRow,
     onEditRow,
     onDeleteRow,
     onImport,
-    importing
+    importing,
+    index,
 }: Props) {
     const handleImport = async () => {
         await onImport();
@@ -43,9 +41,32 @@ export function UploadAttendanceTableRow({
     const hasFile = Boolean(row.attendance_file);
 
     return (
-        <TableRow hover selected={selected}>
-            <TableCell padding="checkbox">
-                <Checkbox checked={selected} onClick={onSelectRow} />
+        <TableRow hover>
+            <TableCell align="center">
+                <Box
+                    sx={{
+                        width: 28,
+                        height: 28,
+                        display: 'flex',
+                        borderRadius: '50%',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                        color: 'primary.main',
+                        typography: 'subtitle2',
+                        fontWeight: 800,
+                        border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                        mx: 'auto',
+                        transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+                        '&:hover': {
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
+                            transform: 'scale(1.1)',
+                        },
+                    }}
+                >
+                    {index + 1}
+                </Box>
             </TableCell>
 
             <TableCell>
@@ -130,7 +151,7 @@ export function UploadAttendanceTableRow({
             <TableCell align="right">
                 <Tooltip title={isImported ? "Editing is disabled for imported records" : "Edit"}>
                     <span>
-                        <IconButton onClick={onEditRow} disabled={isImported}>
+                        <IconButton onClick={onEditRow} disabled={isImported} sx={{ color: 'primary.main' }}>
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     </span>

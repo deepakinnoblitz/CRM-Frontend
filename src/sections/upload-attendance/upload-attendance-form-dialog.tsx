@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
@@ -110,8 +111,11 @@ export function UploadAttendanceFormDialog({ open, onClose, onSubmit, currentDat
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <DialogTitle>
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 {currentData ? 'Edit Upload Attendance' : 'Upload Attendance'}
+                <IconButton onClick={handleClose} sx={{ color: 'text.secondary' }}>
+                    <Iconify icon="mingcute:close-line" />
+                </IconButton>
             </DialogTitle>
 
             <DialogContent>
@@ -188,13 +192,11 @@ export function UploadAttendanceFormDialog({ open, onClose, onSubmit, currentDat
             </DialogContent>
 
             <DialogActions>
-                <Button onClick={handleClose} disabled={uploading}>
-                    Cancel
-                </Button>
                 <Button
                     variant="contained"
                     onClick={handleSubmit}
                     disabled={uploading || !uploadDate}
+                    sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
                 >
                     {uploading ? 'Saving...' : 'Save'}
                 </Button>

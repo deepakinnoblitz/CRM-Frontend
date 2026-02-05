@@ -86,7 +86,7 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
     children: [
       { title: 'Asset List', path: '/assets' },
-      { title: 'Assets Assignment', path: '/assets?type=assignment' },
+      { title: 'Assets Assignment', path: '/asset-assignments' },
     ],
   },
   {
