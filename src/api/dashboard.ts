@@ -126,6 +126,8 @@ export interface EmployeeDashboardData {
         check_in: string | null;
         check_out: string | null;
         working_hours: number;
+        holiday_info?: string;
+        holiday_is_working_day: number;
     }>;
     leave_allocations: Array<{
         leave_type: string;
@@ -137,6 +139,7 @@ export interface EmployeeDashboardData {
         absent: number;
         half_day: number;
         on_leave: number;
+        holiday: number;
         missing: number;
         total_days: number;
         present_percentage: number;
@@ -154,7 +157,17 @@ export interface EmployeeDashboardData {
     todays_birthdays: Array<{ employee_name: string; employee: string }>;
     todays_leaves: Array<{ employee_name: string; employee: string }>;
     holidays: Array<{ date: string; description: string }>;
+    monthly_attendance_list: Array<{
+        date: string;
+        status: string;
+        check_in: string | null;
+        check_out: string | null;
+        working_hours: number;
+        holiday_info: string | null;
+        holiday_is_working_day: number;
+    }>;
     attendance_range?: string;
+    joining_date?: string | null;
     start_date?: string;
     end_date?: string;
 }
@@ -178,9 +191,8 @@ export async function fetchUpcomingRenewals(): Promise<any[]> {
     const data = await res.json();
     return data.message || [];
 }
-
-export async function fetchMonthHolidays(month?: number, year?: number): Promise<any[]> {
-    let url = '/api/method/company.company.api.get_month_holidays';
+export async function fetchMonthCalendarData(month?: number, year?: number): Promise<{ calendar_data: any[], joining_date: string | null }> {
+    let url = '/api/method/company.company.api.get_month_calendar_data';
     const params = new URLSearchParams();
     if (month) params.append('month', month.toString());
     if (year) params.append('year', year.toString());
@@ -189,10 +201,15 @@ export async function fetchMonthHolidays(month?: number, year?: number): Promise
     const res = await frappeRequest(url);
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(handleFrappeError(error, 'Failed to fetch month holidays'));
+        throw new Error(handleFrappeError(error, 'Failed to fetch calendar data'));
     }
     const data = await res.json();
-    return data.message || [];
+    return data.message || { calendar_data: [], joining_date: null };
+}
+
+export async function fetchMonthHolidays(month?: number, year?: number): Promise<any[]> {
+    const response = await fetchMonthCalendarData(month, year);
+    return (response.calendar_data || []).filter((d: any) => d.holiday_info);
 }
 
 export async function fetchTodayBirthdays(): Promise<any[]> {

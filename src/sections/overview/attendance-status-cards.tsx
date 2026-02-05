@@ -16,6 +16,8 @@ type AttendanceRecord = {
     check_in: string | null;
     check_out: string | null;
     working_hours: number;
+    holiday_info?: string;
+    holiday_is_working_day: number;
 };
 
 type Props = CardProps & {
@@ -27,9 +29,6 @@ const TOTAL_HOURS = 9;
 
 export function AttendanceStatusCards({ title, data, sx, ...other }: Props) {
     const theme = useTheme();
-
-    console.log('AttendanceStatusCards - Received data:', data);
-    console.log('AttendanceStatusCards - Data length:', data?.length);
 
     const formatHours = (duration: number) => {
         const hours = Math.floor(duration);
@@ -56,43 +55,61 @@ export function AttendanceStatusCards({ title, data, sx, ...other }: Props) {
     };
 
     const getTimelineContent = (record: AttendanceRecord) => {
-        const isToday = record.date === new Date().toISOString().split('T')[0];
+        // Correctly identify today based on local date string YYYY-MM-DD
+        const todayObj = new Date();
+        const year = todayObj.getFullYear();
+        const month = String(todayObj.getMonth() + 1).padStart(2, '0');
+        const day = String(todayObj.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
 
-        // Today - Check-in status
+        const isToday = record.date === todayStr;
+        const isHoliday = record.holiday_info && record.holiday_info.startsWith('Holiday:');
+        const isNonWorkingHoliday = isHoliday && record.holiday_is_working_day === 0;
+
+        // 1. Holiday Logic (Non-working)
+        if (isNonWorkingHoliday) {
+            return {
+                type: 'label',
+                background: 'linear-gradient(135deg, #ffa500, #ffcc80)',
+                text: record.holiday_info?.replace('Holiday: ', '') || 'Holiday',
+            };
+        }
+
+        // 2. Today's Logic
         if (isToday) {
-            if (!record.check_in) {
+            // Both check-in and check-out
+            if (record.check_in && record.check_out) {
+                const duration = record.working_hours;
+                const widthPercent = Math.min((duration / TOTAL_HOURS) * 100, 100);
                 return {
-                    type: 'label',
-                    background: 'linear-gradient(135deg, #e53935, #ff5252)',
-                    text: 'Check-in will update soon',
+                    type: 'bar',
+                    width: widthPercent,
+                    background:
+                        duration < TOTAL_HOURS
+                            ? 'linear-gradient(90deg, #ff7f7f, #ff4d4d)'
+                            : 'linear-gradient(90deg, #56ccf2, #28a745)',
+                    text: formatHours(duration),
                 };
             }
+            // Only Check-in
+            if (record.check_in) {
+                return {
+                    type: 'label',
+                    background: 'linear-gradient(135deg, #43a047, #66bb6a)',
+                    text: `Check-in captured at ${formatTime(record.check_in)}`,
+                };
+            }
+            // No In/Out for Today
             return {
                 type: 'label',
-                background: 'linear-gradient(135deg, #43a047, #66bb6a)',
-                text: `Check-in captured at ${formatTime(record.check_in)}`,
+                background: 'linear-gradient(135deg, #e53935, #ff5252)',
+                text: 'Check-in will update soon',
             };
         }
 
-        // On Leave
-        if (record.status === 'On Leave') {
-            return {
-                type: 'label',
-                background: 'linear-gradient(135deg, #2196f3, #64b5f6)',
-                text: 'On Leave',
-            };
-        }
+        // 3. Previous Days' Logic
 
-        // Absent
-        if (record.status === 'Absent') {
-            return {
-                type: 'label',
-                background: 'linear-gradient(135deg, #757575, #bdbdbd)',
-                text: 'Absent',
-            };
-        }
-
-        // Both check-in and check-out - show timeline bar
+        // Both check-in and check-out - show timeline bar (Present)
         if (record.check_in && record.check_out) {
             const duration = record.working_hours;
             const widthPercent = Math.min((duration / TOTAL_HOURS) * 100, 100);
@@ -108,33 +125,40 @@ export function AttendanceStatusCards({ title, data, sx, ...other }: Props) {
             };
         }
 
-        // Only check-in or check-out
+        // Only check-in or only check-out
         if (record.check_in || record.check_out) {
             return {
                 type: 'label',
                 background: 'linear-gradient(135deg, #fbc02d, #f57c00)',
-                text: record.check_in ? 'Check-in captured' : 'Check-out captured',
+                text: record.check_in ? 'Check-in updated' : 'Checkout updated',
             };
         }
 
-        // Not marked
+        // On Leave
+        if (record.status === 'On Leave') {
+            return {
+                type: 'label',
+                background: 'linear-gradient(135deg, #2196f3, #64b5f6)',
+                text: 'On Leave',
+            };
+        }
+
+        // Database status 'Absent' or any missing log for previous days
         return {
             type: 'label',
-            background: 'linear-gradient(135deg, #ffcc80, #ffa726)',
-            text: 'Missing',
+            background: 'linear-gradient(135deg, #757575, #bdbdbd)',
+            text: 'Absent',
         };
     };
 
     return (
         <Card
-            sx={[
-                {
-                    p: 3,
-                    boxShadow: (t) => t.customShadows?.card,
-                    border: (t) => `1px solid ${alpha(t.palette.grey[500], 0.08)}`,
-                },
-                ...(Array.isArray(sx) ? sx : [sx]),
-            ]}
+            sx={{
+                p: 3,
+                boxShadow: (themeVar) => themeVar.customShadows?.card,
+                border: (themeVar) => `1px solid ${alpha(themeVar.palette.grey[500], 0.08)}`,
+                ...sx,
+            }}
             {...other}
         >
             {/* Header */}
@@ -155,7 +179,6 @@ export function AttendanceStatusCards({ title, data, sx, ...other }: Props) {
             <Grid container spacing={2}>
                 {data.map((record, index) => {
                     const timeline = getTimelineContent(record);
-                    console.log(`Rendering card ${index}:`, record, 'Timeline:', timeline);
 
                     return (
                         <Grid key={index} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>

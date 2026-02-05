@@ -7,13 +7,13 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import {
     fetchEmployeeDashboardData,
     type EmployeeDashboardData,
-    fetchMonthHolidays
+    fetchMonthCalendarData
 } from 'src/api/dashboard';
 
 import { useAuth } from 'src/auth/auth-context';
 
-import { HRCalendar } from '../hr-calendar';
 import { HRAnnouncements } from '../hr-announcements';
+import { EmployeeCalendar } from '../employee-calendar';
 import { HRDashboardTable } from '../hr-dashboard-table';
 import { LeaveStatusCards } from '../leave-status-cards';
 import { MissingTimesheets } from '../missing-timesheets';
@@ -30,11 +30,6 @@ export function EmployeeDashboardView() {
         const loadData = async () => {
             try {
                 const dashboardData = await fetchEmployeeDashboardData();
-                console.log('Fetched Employee Dashboard Data:', dashboardData);
-                console.log('Weekly Attendance:', dashboardData.weekly_attendance);
-                console.log('Weekly Attendance Length:', dashboardData.weekly_attendance?.length);
-                console.log('First Attendance Record:', dashboardData.weekly_attendance?.[0]);
-                console.log('Announcements:', dashboardData.announcements);
                 setData(dashboardData);
             } catch (error) {
                 console.error('Failed to load employee dashboard data:', error);
@@ -60,12 +55,17 @@ export function EmployeeDashboardView() {
 
     const handleMonthChange = async (date: Date) => {
         try {
-            const holidays = await fetchMonthHolidays(date.getMonth() + 1, date.getFullYear());
+            const response = await fetchMonthCalendarData(date.getMonth() + 1, date.getFullYear());
             if (data) {
-                setData((prev: any) => ({ ...prev, holidays }));
+                setData((prev: any) => ({
+                    ...prev,
+                    monthly_attendance_list: response.calendar_data || [],
+                    joining_date: response.joining_date,
+                    holidays: (response.calendar_data || []).filter((d: any) => d.holiday_info)
+                }));
             }
         } catch (error) {
-            console.error('Failed to update holidays:', error);
+            console.error('Failed to update calendar data:', error);
         }
     };
 
@@ -114,6 +114,7 @@ export function EmployeeDashboardView() {
                             absent: 0,
                             half_day: 0,
                             on_leave: 0,
+                            holiday: 0,
                             missing: 0,
                             total_days: 0,
                             present_percentage: 0
@@ -124,15 +125,91 @@ export function EmployeeDashboardView() {
 
                 {/* 5. Calendar */}
                 <Grid size={{ xs: 12, md: 6 }}>
-                    <HRCalendar
-                        title="February 2026 Calendar"
-                        subheader="Upcoming holidays for this month"
+                    <EmployeeCalendar
+                        title={`${new Date(data.start_date || new Date()).toLocaleString('default', { month: 'long' })} ${new Date(data.start_date || new Date()).getFullYear()} Calendar`}
+                        subheader="Attendance and holidays for this month"
                         onDateChange={handleMonthChange}
-                        events={(data.holidays || []).map((h: any) => ({
-                            title: h.description,
-                            start: h.date,
-                            color: '#FF4842'
-                        }))}
+                        events={(data.monthly_attendance_list || []).map((record: any) => {
+                            const todayObj = new Date();
+                            const year = todayObj.getFullYear();
+                            const month = String(todayObj.getMonth() + 1).padStart(2, '0');
+                            const day = String(todayObj.getDate()).padStart(2, '0');
+                            const todayStr = `${year}-${month}-${day}`;
+
+                            const isToday = record.date === todayStr;
+                            const isPast = record.date < todayStr;
+                            const isHoliday = !!record.holiday_info;
+                            const isNonWorkingHoliday = isHoliday && record.holiday_is_working_day === 0;
+
+                            let eventTitle = '';
+                            let bgColor = '';
+
+                            // Check if date is before joining date
+                            const joiningDate = data.joining_date;
+                            if (joiningDate && record.date < joiningDate) {
+                                // Don't show anything for dates before joining
+                                return null;
+                            }
+
+                            // 1. Holiday Logic (Non-working) - Priority
+                            if (isNonWorkingHoliday) {
+                                eventTitle = record.holiday_info || 'Holiday';
+                                bgColor = '#B71D18'; // Dark Red for Holiday
+                            }
+                            // 2. Status Based Logic
+                            else {
+                                // Check for incomplete attendance (missing in_time or out_time)
+                                const hasInTime = !!record.check_in;
+                                const hasOutTime = !!record.check_out;
+                                const isIncomplete = (hasInTime && !hasOutTime) || (!hasInTime && hasOutTime);
+
+                                if (isIncomplete && (isPast || isToday)) {
+                                    eventTitle = 'Missing';
+                                    bgColor = '#FFC107'; // Amber/Yellow for Missing
+                                } else if (record.status === 'Present') {
+                                    eventTitle = 'Present';
+                                    bgColor = '#22C55E'; // Green
+                                } else if (record.status === 'Absent') {
+                                    eventTitle = 'Absent';
+                                    bgColor = '#FF5630'; // Red
+                                } else if (record.status === 'On Leave' || record.status === 'Leave') {
+                                    eventTitle = 'On Leave';
+                                    bgColor = '#00B8D9'; // Blue/Cyan for Leave
+                                } else if (record.status === 'Half Day') {
+                                    eventTitle = 'Half Day';
+                                    bgColor = '#FFAB00'; // Orange
+                                } else if (record.status === 'Not Marked' && isPast && joiningDate && record.date >= joiningDate) {
+                                    // Working day after joining with no attendance entry
+                                    eventTitle = 'Unmarked';
+                                    bgColor = '#9E9E9E'; // Gray for Unmarked
+                                } else if (isPast) {
+                                    // Default for past unmarked days (legacy logic)
+                                    eventTitle = 'Absent';
+                                    bgColor = '#FF5630';
+                                } else if (isToday) {
+                                    if (record.check_in) {
+                                        eventTitle = 'Present';
+                                        bgColor = '#22C55E';
+                                    } else {
+                                        // Today unmarked
+                                        return null;
+                                    }
+                                } else if (isHoliday) {
+                                    // Future Working Holiday
+                                    eventTitle = record.holiday_info || 'Holiday';
+                                    bgColor = '#B71D18';
+                                } else {
+                                    return null;
+                                }
+                            }
+
+                            return {
+                                title: eventTitle,
+                                start: record.date,
+                                color: bgColor,
+                                textColor: '#FFFFFF'
+                            };
+                        }).filter(Boolean) as any[]}
                     />
                 </Grid>
 
