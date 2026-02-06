@@ -116,6 +116,8 @@ export function TimesheetsView() {
         severity: 'success',
     });
 
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
     // Load permissions and employees
     useEffect(() => {
         getTimesheetPermissions().then(setPermissions);
@@ -221,6 +223,7 @@ export function TimesheetsView() {
         setTimesheetDate('');
         setNotes('');
         setEntries([]);
+        setFormErrors({});
         setOpenCreate(true);
     };
 
@@ -232,6 +235,7 @@ export function TimesheetsView() {
         setTimesheetDate('');
         setNotes('');
         setEntries([]);
+        setFormErrors({});
     };
 
     const handleEditRow = useCallback(async (row: any) => {
@@ -243,6 +247,7 @@ export function TimesheetsView() {
             setTimesheetDate(fullData.timesheet_date || '');
             setNotes(fullData.notes || '');
             setEntries(fullData.timesheet_entries || []);
+            setFormErrors({});
             setIsEdit(true);
             setOpenCreate(true);
         } catch (error: any) {
@@ -337,10 +342,101 @@ export function TimesheetsView() {
         }
 
         setOpenEntryDialog(false);
+        if (formErrors.entries) {
+            setFormErrors(prev => ({ ...prev, entries: '' }));
+        }
     };
 
-    const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const validateForm = () => {
+        const errors: Record<string, string> = {};
+        if (!employee) errors.employee = 'Employee is required';
+        if (!timesheetDate) errors.timesheetDate = 'Timesheet Date is required';
+        if (entries.length === 0) errors.entries = 'At least one entry is required';
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const renderField = (fieldname: string, label: string, type: string = 'text', options: any[] = [], extraProps: any = {}, required: boolean = false) => {
+        const commonProps = {
+            fullWidth: true,
+            label,
+            value: (fieldname === 'employee' ? employee : fieldname === 'timesheetDate' ? timesheetDate : notes),
+            onChange: (e: any) => {
+                const val = e.target.value;
+                if (fieldname === 'employee') setEmployee(val);
+                else if (fieldname === 'timesheetDate') setTimesheetDate(val);
+                else if (fieldname === 'notes') setNotes(val);
+
+                if (formErrors[fieldname]) {
+                    setFormErrors(prev => ({ ...prev, [fieldname]: '' }));
+                }
+            },
+            required,
+            error: !!formErrors[fieldname],
+            helperText: formErrors[fieldname],
+            InputLabelProps: { shrink: true },
+            sx: {
+                '& .MuiFormLabel-asterisk': {
+                    color: 'red',
+                },
+                ...extraProps.sx
+            },
+            ...extraProps
+        };
+
+        if (type === 'select') {
+            return (
+                <TextField {...commonProps} select SelectProps={{ native: true }}>
+                    <option value="">Select {label}</option>
+                    {options.map((opt: any) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </TextField>
+            );
+        }
+
+        if (fieldname === 'timesheetDate') {
+            const dateValue = timesheetDate ? dayjs(timesheetDate) : null;
+            return (
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                        label={label}
+                        value={dateValue}
+                        onChange={(newValue) => {
+                            const val = newValue && dayjs(newValue).isValid() ? dayjs(newValue).format('YYYY-MM-DD') : '';
+                            setTimesheetDate(val);
+                            if (formErrors.timesheetDate) setFormErrors(prev => ({ ...prev, timesheetDate: '' }));
+                        }}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                required,
+                                error: !!formErrors.timesheetDate,
+                                helperText: formErrors.timesheetDate,
+                                InputLabelProps: { shrink: true },
+                                sx: {
+                                    '& .MuiFormLabel-asterisk': {
+                                        color: 'red',
+                                    },
+                                },
+                            },
+                        }}
+                    />
+                </LocalizationProvider>
+            );
+        }
+
+        return <TextField {...commonProps} multiline={type === 'textarea'} rows={type === 'textarea' ? 3 : 1} />;
+    };
+
+    const handleCreate = async () => {
+        if (!validateForm()) {
+            setSnackbar({ open: true, message: 'Please correct the errors in the form', severity: 'error' });
+            return;
+        }
 
         const timesheetData = {
             employee: employee.trim(),
@@ -503,126 +599,95 @@ export function TimesheetsView() {
 
             {/* Create/Edit Dialog */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg">
-                <form onSubmit={handleCreate}>
-                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        {isEdit ? 'Edit Timesheet' : 'New Timesheet'}
-                        <IconButton onClick={handleCloseCreate}>
-                            <Iconify icon="mingcute:close-line" />
-                        </IconButton>
-                    </DialogTitle>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {isEdit ? 'Edit Timesheet' : 'New Timesheet'}
+                    <IconButton onClick={handleCloseCreate}>
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
 
-                    <DialogContent dividers>
-                        <Box sx={{ display: 'grid', gap: 3, p: 2 }}>
-                            <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                                <FormControl fullWidth required>
-                                    <InputLabel>Employee</InputLabel>
-                                    <Select
-                                        value={employee}
-                                        onChange={(e) => setEmployee(e.target.value)}
-                                        label="Employee"
-                                    >
-                                        {employees.map((emp) => (
-                                            <MenuItem key={emp.name} value={emp.name}>
-                                                {emp.employee_name} ({emp.employee_id})
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
+                <DialogContent dividers>
+                    <Box sx={{ display: 'grid', gap: 3, p: 2 }}>
+                        <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                            {renderField('employee', 'Employee', 'select', employeeOptions, {}, true)}
+                            {renderField('timesheetDate', 'Timesheet Date', 'date', [], {}, true)}
+                        </Box>
 
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                    <DatePicker
-                                        label="Timesheet Date"
-                                        value={timesheetDate ? dayjs(timesheetDate) : null}
-                                        onChange={(newValue) => setTimesheetDate(newValue?.format('YYYY-MM-DD') || '')}
-                                        slotProps={{
-                                            textField: {
-                                                fullWidth: true,
-                                                required: true,
-                                                InputLabelProps: { shrink: true },
-                                            },
-                                        }}
-                                    />
-                                </LocalizationProvider>
+                        {renderField('notes', 'Notes', 'textarea', [], { placeholder: 'Enter timesheet notes' })}
+
+                        {/* Timesheet Entries Child Table */}
+                        <Box sx={{ mt: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: formErrors.entries ? 'error.main' : 'text.primary' }}>
+                                    Timesheet Entries
+                                    <Typography component="span" variant="body2" sx={{ ml: 2, color: 'primary.main', fontWeight: 600 }}>
+                                        Total: {totalHours.toFixed(1)} hours
+                                    </Typography>
+                                </Typography>
+                                <Button
+                                    size="small"
+                                    variant="contained"
+                                    startIcon={<Iconify icon="mingcute:add-line" />}
+                                    onClick={handleOpenEntryDialog}
+                                >
+                                    Add Entry
+                                </Button>
                             </Box>
 
-                            <TextField
-                                fullWidth
-                                label="Notes"
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                multiline
-                                rows={2}
-                                placeholder="Enter timesheet notes"
-                            />
+                            {formErrors.entries && (
+                                <Typography variant="caption" sx={{ color: 'error.main', mb: 1, display: 'block' }}>
+                                    {formErrors.entries}
+                                </Typography>
+                            )}
 
-                            {/* Timesheet Entries Child Table */}
-                            <Box sx={{ mt: 2 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                        Timesheet Entries
-                                        <Typography component="span" variant="body2" sx={{ ml: 2, color: 'primary.main', fontWeight: 600 }}>
-                                            Total: {totalHours.toFixed(1)} hours
-                                        </Typography>
-                                    </Typography>
-                                    <Button
-                                        size="small"
-                                        variant="contained"
-                                        startIcon={<Iconify icon="mingcute:add-line" />}
-                                        onClick={handleOpenEntryDialog}
-                                    >
-                                        Add Entry
-                                    </Button>
-                                </Box>
-
-                                <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                                    <Table size="small">
-                                        <TableHead>
-                                            <TableRow sx={{ bgcolor: 'background.neutral' }}>
-                                                <TableCell sx={{ fontWeight: 700 }}>Project</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Activity Type</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Hours</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
-                                                <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
+                            <TableContainer sx={{ border: '1px solid', borderColor: formErrors.entries ? 'error.main' : 'divider', borderRadius: 1 }}>
+                                <Table size="small">
+                                    <TableHead>
+                                        <TableRow sx={{ bgcolor: 'background.neutral' }}>
+                                            <TableCell sx={{ fontWeight: 700 }}>Project</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }}>Activity Type</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }}>Hours</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
+                                            <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {entries.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={5} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                                                    No entries added yet. Click &quot;Add Entry&quot; to begin.
+                                                </TableCell>
                                             </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {entries.length === 0 ? (
-                                                <TableRow>
-                                                    <TableCell colSpan={5} align="center" sx={{ py: 3, color: 'text.secondary' }}>
-                                                        No entries added yet. Click &quot;Add Entry&quot; to begin.
+                                        ) : (
+                                            entries.map((entry, index) => (
+                                                <TableRow key={index} hover>
+                                                    <TableCell>{entry.project}</TableCell>
+                                                    <TableCell>{entry.activity_type}</TableCell>
+                                                    <TableCell>{entry.hours} hrs</TableCell>
+                                                    <TableCell>{entry.description || '-'}</TableCell>
+                                                    <TableCell align="right">
+                                                        <IconButton size="small" onClick={() => handleEditEntry(index)} color="info">
+                                                            <Iconify icon="solar:pen-bold" width={18} />
+                                                        </IconButton>
+                                                        <IconButton size="small" onClick={() => handleDeleteEntry(index)} color="error">
+                                                            <Iconify icon="solar:trash-bin-trash-bold" width={18} />
+                                                        </IconButton>
                                                     </TableCell>
                                                 </TableRow>
-                                            ) : (
-                                                entries.map((entry, index) => (
-                                                    <TableRow key={index} hover>
-                                                        <TableCell>{entry.project}</TableCell>
-                                                        <TableCell>{entry.activity_type}</TableCell>
-                                                        <TableCell>{entry.hours} hrs</TableCell>
-                                                        <TableCell>{entry.description || '-'}</TableCell>
-                                                        <TableCell align="right">
-                                                            <IconButton size="small" onClick={() => handleEditEntry(index)} color="info">
-                                                                <Iconify icon="solar:pen-bold" width={18} />
-                                                            </IconButton>
-                                                            <IconButton size="small" onClick={() => handleDeleteEntry(index)} color="error">
-                                                                <Iconify icon="solar:trash-bin-trash-bold" width={18} />
-                                                            </IconButton>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
-                            </Box>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
                         </Box>
-                    </DialogContent>
+                    </Box>
+                </DialogContent>
 
-                    <DialogActions>
-                        <Button type="submit" variant="contained">
-                            {isEdit ? 'Update' : 'Create'}
-                        </Button>
-                    </DialogActions>
-                </form>
+                <DialogActions>
+                    <Button onClick={handleCreate} variant="contained" sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}>
+                        {isEdit ? 'Update' : 'Create'}
+                    </Button>
+                </DialogActions>
             </Dialog>
 
             {/* Entry Dialog */}

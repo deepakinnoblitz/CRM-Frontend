@@ -55,8 +55,8 @@ export function EmployeeView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
-    const [order, setOrder] = useState<'asc' | 'desc'>('asc');
-    const [orderBy, setOrderBy] = useState('employee_name');
+    const [order, setOrder] = useState<'asc' | 'desc'>('desc');
+    const [orderBy, setOrderBy] = useState('creation');
     const [selected, setSelected] = useState<string[]>([]);
 
     const [openCreate, setOpenCreate] = useState(false);

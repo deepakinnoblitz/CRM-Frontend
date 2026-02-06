@@ -117,6 +117,8 @@ export function LeavesView() {
     const [openDetails, setOpenDetails] = useState(false);
     const [detailsId, setDetailsId] = useState<string | null>(null);
 
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
     // Permissions State
     const [permissions, setPermissions] = useState<{ read: boolean; write: boolean; delete: boolean }>({
         read: true,
@@ -219,6 +221,23 @@ export function LeavesView() {
         setAttachments([]);
         setTotalDays(0);
         setBalanceInfo(null);
+        setFormErrors({});
+    };
+
+    const validateForm = () => {
+        const errors: Record<string, string> = {};
+        if (!employee) errors.employee = 'Employee is required';
+        if (!leaveType) errors.leaveType = 'Leave Type is required';
+        if (!fromDate) errors.fromDate = 'From Date is required';
+        if (!toDate) errors.toDate = 'To Date is required';
+        if (!reason) errors.reason = 'Reason is required';
+
+        if (leaveType.toLowerCase() === 'permission' && (!permissionHours || Number(permissionHours) < 10)) {
+            errors.permissionHours = 'Permission duration must be at least 10 minutes';
+        }
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleCloseSnackbar = () => {
@@ -256,6 +275,11 @@ export function LeavesView() {
     const handleCreate = async () => {
         try {
             setCreating(true);
+
+            if (!validateForm()) {
+                setSnackbar({ open: true, message: 'Please correct the errors in the form', severity: 'error' });
+                return;
+            }
 
             // Upload files if any
             let attachmentUrl = '';
@@ -572,15 +596,23 @@ export function LeavesView() {
                             fullWidth
                             label="Employee"
                             value={isRestrictedEmployee && user?.employee ? `${user.employee_name} (${user.employee})` : employee}
-                            onChange={(e) => setEmployee(e.target.value)}
+                            onChange={(e) => {
+                                setEmployee(e.target.value);
+                                if (formErrors.employee) setFormErrors(prev => ({ ...prev, employee: '' }));
+                            }}
                             InputLabelProps={{ shrink: true }}
                             required
+                            error={!!formErrors.employee}
+                            helperText={formErrors.employee}
                             {...(!isRestrictedEmployee ? {
                                 select: true,
                                 SelectProps: { native: true }
                             } : {
                                 InputProps: { readOnly: true }
                             })}
+                            sx={{
+                                '& .MuiFormLabel-asterisk': { color: 'red' },
+                            }}
                         >
                             {!isRestrictedEmployee && (
                                 <>
@@ -597,10 +629,18 @@ export function LeavesView() {
                             fullWidth
                             label="Leave Type"
                             value={leaveType}
-                            onChange={(e) => setLeaveType(e.target.value)}
+                            onChange={(e) => {
+                                setLeaveType(e.target.value);
+                                if (formErrors.leaveType) setFormErrors(prev => ({ ...prev, leaveType: '' }));
+                            }}
                             SelectProps={{ native: true }}
                             InputLabelProps={{ shrink: true }}
                             required
+                            error={!!formErrors.leaveType}
+                            helperText={formErrors.leaveType}
+                            sx={{
+                                '& .MuiFormLabel-asterisk': { color: 'red' },
+                            }}
                         >
                             <option value="">Select Leave Type</option>
                             {leaveTypeOptions.map((option) => (
@@ -645,12 +685,16 @@ export function LeavesView() {
                                         setFromDate(date);
                                         setToDate(date); // Set both from and to date as same
                                         if (halfDay) setHalfDayDate(date);
+                                        if (formErrors.fromDate) setFormErrors(prev => ({ ...prev, fromDate: '', toDate: '' }));
                                     }}
                                     slotProps={{
                                         textField: {
                                             fullWidth: true,
                                             required: true,
                                             InputLabelProps: { shrink: true },
+                                            error: !!formErrors.fromDate,
+                                            helperText: formErrors.fromDate,
+                                            sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
                                         },
                                     }}
                                 />
@@ -663,12 +707,16 @@ export function LeavesView() {
                                         onChange={(newValue) => {
                                             const date = newValue?.format('YYYY-MM-DD') || '';
                                             setFromDate(date);
+                                            if (formErrors.fromDate) setFormErrors(prev => ({ ...prev, fromDate: '' }));
                                         }}
                                         slotProps={{
                                             textField: {
                                                 fullWidth: true,
                                                 required: true,
                                                 InputLabelProps: { shrink: true },
+                                                error: !!formErrors.fromDate,
+                                                helperText: formErrors.fromDate,
+                                                sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
                                             },
                                         }}
                                     />
@@ -679,12 +727,16 @@ export function LeavesView() {
                                         onChange={(newValue) => {
                                             const date = newValue?.format('YYYY-MM-DD') || '';
                                             setToDate(date);
+                                            if (formErrors.toDate) setFormErrors(prev => ({ ...prev, toDate: '' }));
                                         }}
                                         slotProps={{
                                             textField: {
                                                 fullWidth: true,
                                                 required: true,
                                                 InputLabelProps: { shrink: true },
+                                                error: !!formErrors.toDate,
+                                                helperText: formErrors.toDate,
+                                                sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
                                             },
                                         }}
                                     />
@@ -726,8 +778,16 @@ export function LeavesView() {
                             multiline
                             rows={3}
                             value={reason}
-                            onChange={(e) => setReason(e.target.value)}
+                            onChange={(e) => {
+                                setReason(e.target.value);
+                                if (formErrors.reason) setFormErrors(prev => ({ ...prev, reason: '' }));
+                            }}
                             required
+                            error={!!formErrors.reason}
+                            helperText={formErrors.reason}
+                            sx={{
+                                '& .MuiFormLabel-asterisk': { color: 'red' },
+                            }}
                         />
 
                         {/* Attachments Section - Moved to last */}

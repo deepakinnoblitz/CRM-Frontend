@@ -103,6 +103,8 @@ export function WFHAttendanceView() {
         filters
     );
 
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
     const notFound = !data.length && !!filterName;
     const empty = !data.length && !filterName && !loading;
 
@@ -138,12 +140,14 @@ export function WFHAttendanceView() {
         setFormData({
             date: dayjs().format('YYYY-MM-DD'),
         });
+        setFormErrors({});
         setOpenCreate(true);
     };
 
     const handleCloseCreate = () => {
         setOpenCreate(false);
         setCurrentId(null);
+        setFormErrors({});
     };
 
     const handleInputChange = (fieldname: string, value: any) => {
@@ -166,6 +170,10 @@ export function WFHAttendanceView() {
             }
             return next;
         });
+
+        if (formErrors[fieldname]) {
+            setFormErrors(prev => ({ ...prev, [fieldname]: '' }));
+        }
     };
 
     const handleCloseSnackbar = () => {
@@ -173,33 +181,28 @@ export function WFHAttendanceView() {
     };
 
     const validateForm = () => {
-        if (!formData.employee) return 'Employee is required';
-        if (!formData.date) return 'Date is required';
-        if (!formData.from_time) return 'From Time is required';
+        const errors: Record<string, string> = {};
 
-        // Check future date
-        const selectedDate = dayjs(formData.date);
-        const today = dayjs().startOf('day');
-        if (selectedDate.isAfter(today)) {
-            // return 'WFH Attendance cannot be marked for future dates';
-        }
+        if (!formData.employee) errors.employee = 'Employee is required';
+        if (!formData.date) errors.date = 'Date is required';
+        if (!formData.from_time) errors.from_time = 'From Time is required';
 
         // Logical time check
         if (formData.from_time && formData.to_time) {
             const start = dayjs(`2000-01-01 ${formData.from_time}`);
             const end = dayjs(`2000-01-01 ${formData.to_time}`);
             if (!end.isAfter(start)) {
-                return 'To Time must be after From Time';
+                errors.to_time = 'To Time must be after From Time';
             }
         }
 
-        return null;
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleCreate = async () => {
-        const error = validateForm();
-        if (error) {
-            setSnackbar({ open: true, message: error, severity: 'error' });
+        if (!validateForm()) {
+            setSnackbar({ open: true, message: 'Please correct the errors in the form', severity: 'error' });
             return;
         }
 
@@ -235,6 +238,7 @@ export function WFHAttendanceView() {
             const fullDoc = await getWFHAttendance(id);
             setCurrentId(id);
             setFormData({ ...fullDoc });
+            setFormErrors({});
             setOpenCreate(true);
         } catch (error) {
             console.error('Failed to load details:', error);
@@ -329,6 +333,8 @@ export function WFHAttendanceView() {
             onChange: (e: any) => handleInputChange(fieldname, e.target.value),
             InputLabelProps: { shrink: true },
             required,
+            error: !!formErrors[fieldname],
+            helperText: formErrors[fieldname],
             ...extraProps,
             sx: {
                 '& .MuiFormLabel-asterisk': {
@@ -361,6 +367,8 @@ export function WFHAttendanceView() {
                         textField: {
                             fullWidth: true,
                             required,
+                            error: !!formErrors[fieldname],
+                            helperText: formErrors[fieldname],
                             InputLabelProps: { shrink: true },
                             sx: commonProps.sx
                         }
@@ -379,6 +387,8 @@ export function WFHAttendanceView() {
                         textField: {
                             fullWidth: true,
                             required,
+                            error: !!formErrors[fieldname],
+                            helperText: formErrors[fieldname],
                             InputLabelProps: { shrink: true },
                             sx: commonProps.sx
                         }
