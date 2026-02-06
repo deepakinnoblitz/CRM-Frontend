@@ -257,17 +257,46 @@ export async function fetchHRDashboardData(): Promise<HRDashboardData> {
 }
 
 export async function fetchEmployeeDashboardData(range: string = 'This Month'): Promise<EmployeeDashboardData> {
-    const res = await frappeRequest(
-        `/api/method/company.company.frontend_api.get_employee_dashboard_data?attendance_range=${range}`
-    );
+    try {
+        const res = await frappeRequest(
+            `/api/method/company.company.frontend_api.get_employee_dashboard_data?attendance_range=${range}`
+        );
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, 'Failed to fetch employee dashboard data'));
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(handleFrappeError(error, 'Failed to fetch employee dashboard data'));
+        }
+
+        const data = await res.json();
+        return data.message;
+    } catch (error) {
+        console.error('Failed to fetch employee dashboard data:', error);
+        // Return default empty structure to prevent dashboard crash
+        return {
+            employee_name: '',
+            employee: '',
+            weekly_attendance: [],
+            leave_allocations: [],
+            monthly_attendance_breakdown: {
+                present: 0,
+                absent: 0,
+                half_day: 0,
+                on_leave: 0,
+                holiday: 0,
+                missing: 0,
+                total_days: 0,
+                present_percentage: 0
+            },
+            missing_timesheets: [],
+            recent_leaves: [],
+            announcements: [],
+            todays_birthdays: [],
+            todays_leaves: [],
+            holidays: [],
+            monthly_attendance_list: [],
+            attendance_range: range
+        };
     }
-
-    const data = await res.json();
-    return data.message;
 }
 
 // Get total employee count
