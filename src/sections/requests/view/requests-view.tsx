@@ -101,6 +101,8 @@ export function RequestsView() {
         severity: 'success',
     });
 
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
     // Load permissions
     useState(() => {
         getRequestPermissions().then(setPermissions);
@@ -176,6 +178,7 @@ export function RequestsView() {
         setEmployeeId('');
         setSubject('');
         setMessage('');
+        setFormErrors({});
         setOpenCreate(true);
     };
 
@@ -186,6 +189,77 @@ export function RequestsView() {
         setEmployeeId('');
         setSubject('');
         setMessage('');
+        setFormErrors({});
+    };
+
+    const validateForm = () => {
+        const errors: Record<string, string> = {};
+        if (!employeeId) errors.employeeId = 'Employee is required';
+        if (!subject.trim()) errors.subject = 'Subject is required';
+        if (!message.trim()) errors.message = 'Message is required';
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const renderField = (fieldname: string, label: string, type: string = 'text', options: any[] = [], extraProps: any = {}, required: boolean = false) => {
+        const valueMap: Record<string, any> = {
+            employeeId,
+            subject,
+            message
+        };
+
+        const onChangeMap: Record<string, any> = {
+            employeeId: (val: any) => {
+                setEmployeeId(val);
+                if (formErrors.employeeId) setFormErrors(prev => ({ ...prev, employeeId: '' }));
+            },
+            subject: (val: any) => {
+                setSubject(val);
+                if (formErrors.subject) setFormErrors(prev => ({ ...prev, subject: '' }));
+            },
+            message: (val: any) => {
+                setMessage(val);
+                if (formErrors.message) setFormErrors(prev => ({ ...prev, message: '' }));
+            }
+        };
+
+        const commonProps = {
+            fullWidth: true,
+            label,
+            value: valueMap[fieldname] || '',
+            onChange: (e: any) => onChangeMap[fieldname](e.target.value),
+            InputLabelProps: { shrink: true },
+            required,
+            error: !!formErrors[fieldname],
+            helperText: formErrors[fieldname],
+            ...extraProps,
+            sx: {
+                '& .MuiFormLabel-asterisk': {
+                    color: 'red',
+                },
+                ...extraProps.sx
+            }
+        };
+
+        if (type === 'select' || type === 'link') {
+            return (
+                <TextField {...commonProps} select SelectProps={{ native: true }}>
+                    <option value="">Select {label}</option>
+                    {options.map((opt: any) => (
+                        <option key={opt.name || opt} value={opt.name || opt}>
+                            {opt.label || opt.employee_name || opt.name || opt}
+                        </option>
+                    ))}
+                </TextField>
+            );
+        }
+
+        if (type === 'textarea') {
+            return <TextField {...commonProps} multiline rows={4} />;
+        }
+
+        return <TextField {...commonProps} />;
     };
 
     const handleEditRow = useCallback((row: any) => {
@@ -219,14 +293,18 @@ export function RequestsView() {
         }
     };
 
-    const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const handleCreate = async () => {
 
         const requestData = {
             employee_id: employeeId.trim(),
             subject: subject.trim(),
             message: message.trim(),
         };
+
+        if (!validateForm()) {
+            setSnackbar({ open: true, message: 'Please correct the errors in the form', severity: 'error' });
+            return;
+        }
 
         try {
             if (isEdit && currentRequest) {
@@ -445,7 +523,7 @@ export function RequestsView() {
 
             {/* Create/Edit Dialog */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
-                <form onSubmit={handleCreate}>
+                
                     <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         {isEdit ? 'Edit Request' : 'New Request'}
                         <IconButton onClick={handleCloseCreate}>
@@ -455,48 +533,18 @@ export function RequestsView() {
 
                     <DialogContent dividers>
                         <Box sx={{ display: 'grid', gap: 3, margin: '1rem' }}>
-                            <FormControl fullWidth required>
-                                <InputLabel>Employee</InputLabel>
-                                <Select
-                                    value={employeeId}
-                                    onChange={(e) => setEmployeeId(e.target.value)}
-                                    label="Employee"
-                                >
-                                    {employees.map((emp) => (
-                                        <MenuItem key={emp.name} value={emp.name}>
-                                            {emp.employee_name} ({emp.employee_id})
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-
-                            <TextField
-                                fullWidth
-                                label="Subject"
-                                value={subject}
-                                onChange={(e) => setSubject(e.target.value)}
-                                required
-                                placeholder="Enter request subject"
-                            />
-
-                            <TextField
-                                fullWidth
-                                label="Message"
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value)}
-                                multiline
-                                rows={4}
-                                placeholder="Enter request details"
-                            />
+                            {renderField('employeeId', 'Employee', 'select', employees, {}, true)}
+                            {renderField('subject', 'Subject', 'text', [], { placeholder: 'Enter request subject' }, true)}
+                            {renderField('message', 'Message', 'textarea', [], { placeholder: 'Enter request details' }, true)}
                         </Box>
                     </DialogContent>
 
                     <DialogActions>
-                        <Button type="submit" variant="contained">
+                        <Button onClick={handleCreate} variant="contained" sx={{ bgcolor: "#08a3cd", "&": { bgcolor: "#068fb3" } }}>
                             {isEdit ? 'Update' : 'Create'}
                         </Button>
                     </DialogActions>
-                </form>
+                
             </Dialog>
 
             {/* View Dialog */}

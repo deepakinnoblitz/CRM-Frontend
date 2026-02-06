@@ -110,6 +110,8 @@ export function ReimbursementClaimsView() {
         severity: 'success',
     });
 
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
     // Load permissions, employees, and claim types
     useEffect(() => {
         getReimbursementClaimPermissions().then(setPermissions);
@@ -160,6 +162,7 @@ export function ReimbursementClaimsView() {
         setDateOfExpense('');
         setAmount('');
         setClaimDetails('');
+        setFormErrors({});
         setOpenCreate(true);
     };
 
@@ -172,6 +175,7 @@ export function ReimbursementClaimsView() {
         setDateOfExpense('');
         setAmount('');
         setClaimDetails('');
+        setFormErrors({});
     };
 
     const handleEditRow = useCallback(async (row: any) => {
@@ -183,6 +187,7 @@ export function ReimbursementClaimsView() {
             setDateOfExpense(fullData.date_of_expense || '');
             setAmount(fullData.amount?.toString() || '');
             setClaimDetails(fullData.claim_details || '');
+            setFormErrors({});
             setIsEdit(true);
             setOpenCreate(true);
         } catch (error: any) {
@@ -229,8 +234,22 @@ export function ReimbursementClaimsView() {
         [refetch]
     );
 
-    const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const validateForm = () => {
+        const errors: Record<string, string> = {};
+        if (!employee) errors.employee = 'Employee is required';
+        if (!claimType) errors.claimType = 'Claim Type is required';
+        if (!dateOfExpense) errors.dateOfExpense = 'Date of Expense is required';
+        if (!amount || parseFloat(amount) <= 0) errors.amount = 'Valid Amount is required';
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleCreate = async () => {
+        if (!validateForm()) {
+            setSnackbar({ open: true, message: 'Please correct the errors in the form', severity: 'error' });
+            return;
+        }
 
         const claimData = {
             employee: employee.trim(),
@@ -321,6 +340,83 @@ export function ReimbursementClaimsView() {
 
     const notFound = !data.length && !!filterName;
     const empty = !data.length && !filterName;
+
+    const renderField = (fieldname: string, label: string, type: string = 'text', options: any[] = [], extraProps: any = {}, required: boolean = false) => {
+        const commonProps = {
+            fullWidth: true,
+            label,
+            value: (fieldname === 'employee' ? employee : fieldname === 'claim_type' ? claimType : fieldname === 'date_of_expense' ? dateOfExpense : fieldname === 'amount' ? amount : claimDetails),
+            onChange: (e: any) => {
+                const val = e.target.value;
+                if (fieldname === 'employee') setEmployee(val);
+                else if (fieldname === 'claim_type') setClaimType(val);
+                else if (fieldname === 'date_of_expense') setDateOfExpense(val);
+                else if (fieldname === 'amount') setAmount(val);
+                else if (fieldname === 'claim_details') setClaimDetails(val);
+
+                if (formErrors[fieldname]) {
+                    setFormErrors(prev => ({ ...prev, [fieldname]: '' }));
+                }
+            },
+            required,
+            error: !!formErrors[fieldname],
+            helperText: formErrors[fieldname],
+            InputLabelProps: { shrink: true },
+            sx: {
+                '& .MuiFormLabel-asterisk': {
+                    color: 'red',
+                },
+                ...extraProps.sx
+            },
+            ...extraProps
+        };
+
+        if (type === 'select') {
+            return (
+                <TextField {...commonProps} select SelectProps={{ native: true }}>
+                    <option value="">Select {label}</option>
+                    {options.map((opt: any) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </TextField>
+            );
+        }
+
+        if (fieldname === 'date_of_expense') {
+            const dateValue = dateOfExpense ? dayjs(dateOfExpense) : null;
+            return (
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                        label={label}
+                        value={dateValue}
+                        onChange={(newValue) => {
+                            const val = newValue && dayjs(newValue).isValid() ? dayjs(newValue).format('YYYY-MM-DD') : '';
+                            setDateOfExpense(val);
+                            if (formErrors.dateOfExpense) setFormErrors(prev => ({ ...prev, dateOfExpense: '' }));
+                        }}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                required,
+                                error: !!formErrors.dateOfExpense,
+                                helperText: formErrors.dateOfExpense,
+                                InputLabelProps: { shrink: true },
+                                sx: {
+                                    '& .MuiFormLabel-asterisk': {
+                                        color: 'red',
+                                    },
+                                },
+                            },
+                        }}
+                    />
+                </LocalizationProvider>
+            );
+        }
+
+        return <TextField {...commonProps} multiline={type === 'textarea'} rows={type === 'textarea' ? 4 : 1} />;
+    };
 
     return (
         <DashboardContent>
@@ -448,98 +544,36 @@ export function ReimbursementClaimsView() {
 
             {/* Create/Edit Dialog */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
-                <form onSubmit={handleCreate}>
-                    <DialogTitle
-                        sx={{
-                            m: 0,
-                            p: 2,
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                        }}
-                    >
-                        {isEdit ? 'Edit Claim' : 'New Claim'}
-                        <IconButton onClick={handleCloseCreate}>
-                            <Iconify icon="mingcute:close-line" />
-                        </IconButton>
-                    </DialogTitle>
+                <DialogTitle
+                    sx={{
+                        m: 0,
+                        p: 2,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    {isEdit ? 'Edit Claim' : 'New Claim'}
+                    <IconButton onClick={handleCloseCreate}>
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
 
-                    <DialogContent dividers>
-                        <Box sx={{ display: 'grid', gap: 3, margin: '1rem' }}>
-                            <FormControl fullWidth required>
-                                <InputLabel>Employee</InputLabel>
-                                <Select
-                                    value={employee}
-                                    onChange={(e) => setEmployee(e.target.value)}
-                                    label="Employee"
-                                >
-                                    {employees.map((emp) => (
-                                        <MenuItem key={emp.name} value={emp.name}>
-                                            {emp.employee_name} ({emp.employee_id})
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                <DialogContent dividers>
+                    <Box sx={{ display: 'grid', gap: 3, p: 2 }}>
+                        {renderField('employee', 'Employee', 'select', employees.map(emp => ({ value: emp.name, label: `${emp.employee_name} (${emp.employee_id})` })), {}, true)}
+                        {renderField('claim_type', 'Claim Type', 'select', claimTypes.map(type => ({ value: type.name, label: type.name })), {}, true)}
+                        {renderField('date_of_expense', 'Date of Expense', 'date', [], {}, true)}
+                        {renderField('amount', 'Amount', 'number', [], { placeholder: 'Enter amount', inputProps: { step: '0.01', min: '0' } }, true)}
+                        {renderField('claim_details', 'Claim Details', 'textarea', [], { placeholder: 'Enter claim details' })}
+                    </Box>
+                </DialogContent>
 
-                            <FormControl fullWidth required>
-                                <InputLabel>Claim Type</InputLabel>
-                                <Select
-                                    value={claimType}
-                                    onChange={(e) => setClaimType(e.target.value)}
-                                    label="Claim Type"
-                                >
-                                    {claimTypes.map((type) => (
-                                        <MenuItem key={type.name} value={type.name}>
-                                            {type.name}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker
-                                    label="Date of Expense"
-                                    value={dateOfExpense ? dayjs(dateOfExpense) : null}
-                                    onChange={(newValue) => setDateOfExpense(newValue?.format('YYYY-MM-DD') || '')}
-                                    slotProps={{
-                                        textField: {
-                                            fullWidth: true,
-                                            required: true,
-                                            InputLabelProps: { shrink: true },
-                                        },
-                                    }}
-                                />
-                            </LocalizationProvider>
-
-                            <TextField
-                                fullWidth
-                                label="Amount"
-                                type="number"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
-                                required
-                                placeholder="Enter amount"
-                                inputProps={{ step: '0.01', min: '0' }}
-                            />
-
-                            <TextField
-                                fullWidth
-                                label="Claim Details"
-                                value={claimDetails}
-                                onChange={(e) => setClaimDetails(e.target.value)}
-                                multiline
-                                rows={4}
-                                placeholder="Enter claim details"
-                            />
-                        </Box>
-                    </DialogContent>
-
-                    <DialogActions>
-                        <Button type="submit" variant="contained">
-                            {isEdit ? 'Update' : 'Create'}
-                        </Button>
-                    </DialogActions>
-                </form>
+                <DialogActions>
+                    <Button onClick={handleCreate} variant="contained" sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}>
+                        {isEdit ? 'Update' : 'Create'}
+                    </Button>
+                </DialogActions>
             </Dialog>
 
             {/* View Dialog */}

@@ -28,6 +28,7 @@ type Props = {
 
     hideCheckbox?: boolean;
     index?: number;
+    isHR?: boolean;
 };
 
 export function SalarySlipTableRow({
@@ -39,6 +40,7 @@ export function SalarySlipTableRow({
     onDelete,
     hideCheckbox = false,
     index,
+    isHR = false,
 }: Props) {
 
     const formatDate = (date: string) => {
@@ -114,12 +116,16 @@ export function SalarySlipTableRow({
                     <IconButton onClick={onView} sx={{ color: 'info.main' }}>
                         <Iconify icon={"solar:eye-bold" as any} />
                     </IconButton>
-                    <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
-                        <Iconify icon={"solar:pen-bold" as any} />
-                    </IconButton>
-                    <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
-                        <Iconify icon={"solar:trash-bin-trash-bold" as any} />
-                    </IconButton>
+                    {isHR && (
+                        <>
+                            <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
+                                <Iconify icon={"solar:pen-bold" as any} />
+                            </IconButton>
+                            <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
+                                <Iconify icon={"solar:trash-bin-trash-bold" as any} />
+                            </IconButton>
+                        </>
+                    )}
                 </Stack>
             </TableCell>
 

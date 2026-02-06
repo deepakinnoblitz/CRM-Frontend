@@ -18,6 +18,7 @@ import TablePagination from '@mui/material/TablePagination';
 import { useSalarySlips } from 'src/hooks/useSalarySlips';
 
 import { getDoctypeList } from 'src/api/leads';
+import { getCurrentUserInfo } from 'src/api/auth';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getSalarySlip, deleteSalarySlip } from 'src/api/salary-slips';
 
@@ -104,7 +105,15 @@ export function SalarySlipsView() {
                 console.error('Failed to fetch filter options:', error);
             }
         };
+        const checkRole = async () => {
+            const user = await getCurrentUserInfo();
+            if (user && user.roles) {
+                const hrRoles = ['HR Manager', 'HR User', 'System Manager', 'Administrator'];
+                setIsHR(user.roles.some((role: string) => hrRoles.includes(role)));
+            }
+        };
         fetchOptions();
+        checkRole();
     }, []);
 
     const handleFilters = useCallback((update: Partial<SalarySlipFiltersProps>) => {
@@ -142,6 +151,8 @@ export function SalarySlipsView() {
     const [viewSlip, setViewSlip] = useState<any>(null);
     const [editSlip, setEditSlip] = useState<SalarySlip | null>(null);
 
+
+    const [isHR, setIsHR] = useState(false);
 
     // Snackbar
     const [snackbar, setSnackbar] = useState<{
@@ -243,30 +254,32 @@ export function SalarySlipsView() {
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
                 <Typography variant="h4">Salary Slips</Typography>
 
-                <Stack direction="row" spacing={1}>
-                    <Button
-                        variant="outlined"
-                        color="primary"
-                        startIcon={<Iconify icon={"solar:import-bold-duotone" as any} />}
-                        onClick={() => setOpenAutoAllocate(true)}
-                        sx={{ borderRadius: 1.5, height: 40 }}
-                    >
-                        Auto Allocate
-                    </Button>
+                {isHR && (
+                    <Stack direction="row" spacing={1}>
+                        <Button
+                            variant="outlined"
+                            color="primary"
+                            startIcon={<Iconify icon={"solar:import-bold-duotone" as any} />}
+                            onClick={() => setOpenAutoAllocate(true)}
+                            sx={{ borderRadius: 1.5, height: 40 }}
+                        >
+                            Auto Allocate
+                        </Button>
 
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<Iconify icon="mingcute:add-line" />}
-                        onClick={() => {
-                            setEditSlip(null);
-                            setOpenCreate(true);
-                        }}
-                        sx={{ borderRadius: 1.5, height: 40 }}
-                    >
-                        New Salary Slip
-                    </Button>
-                </Stack>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<Iconify icon="mingcute:add-line" />}
+                            onClick={() => {
+                                setEditSlip(null);
+                                setOpenCreate(true);
+                            }}
+                            sx={{ borderRadius: 1.5, height: 40 }}
+                        >
+                            New Salary Slip
+                        </Button>
+                    </Stack>
+                )}
             </Stack>
 
 
@@ -332,6 +345,7 @@ export function SalarySlipsView() {
                                         onView={() => handleViewRow(row)}
                                         onEdit={() => handleEditRow(row)}
                                         onDelete={() => handleDeleteRow(row.name)}
+                                        isHR={isHR}
                                     />
 
                                 ))}
