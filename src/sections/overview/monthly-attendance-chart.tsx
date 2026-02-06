@@ -68,8 +68,8 @@ export function MonthlyAttendanceChart({ title, subheader, data, onRangeChange, 
 
         // Retina display support
         const dpr = window.devicePixelRatio || 1;
-        const w = 220;
-        const h = 220;
+        const w = 320;
+        const h = 320;
 
         canvas.width = w * dpr;
         canvas.height = h * dpr;
@@ -100,8 +100,8 @@ export function MonthlyAttendanceChart({ title, subheader, data, onRangeChange, 
         const total = data.total_days || 1;
         const cx = w / 2;
         const cy = h / 2;
-        const radius = 75;
-        const lineWidth = 30;
+        const radius = 110;
+        const lineWidth = 35;
 
         const startAngle = -Math.PI / 2;
         let progress = 0;
@@ -158,6 +158,10 @@ export function MonthlyAttendanceChart({ title, subheader, data, onRangeChange, 
             sx={[
                 {
                     p: 3,
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
                     boxShadow: (t) => t.customShadows?.card,
                     border: (t) => `1px solid ${alpha(t.palette.grey[500], 0.08)}`,
                 },

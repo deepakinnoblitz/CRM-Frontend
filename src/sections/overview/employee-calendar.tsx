@@ -37,7 +37,9 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
         events.forEach((event) => {
             const cell = calendarRef.current?.querySelector(`td[data-date="${event.start}"]`);
             if (cell && event.color) {
-                (cell as HTMLElement).style.backgroundColor = alpha(event.color, 0.15);
+                (cell as HTMLElement).style.backgroundColor = 'transparent';
+                (cell as HTMLElement).style.boxShadow = `inset 0 0 0px 1px ${alpha(event.color, 0.44)}`;
+                (cell as HTMLElement).style.border = 'none';
             }
         });
     }, [events]);
@@ -190,7 +192,9 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
 
                         const event = events.find((e) => e.start === dateStr);
                         if (event && event.color) {
-                            arg.el.style.backgroundColor = alpha(event.color, 0.15);
+                            arg.el.style.backgroundColor = 'transparent';
+                            arg.el.style.boxShadow = `inset 0 0 12px 2px ${alpha(event.color, 0.24)}`;
+                            arg.el.style.border = 'none';
                         }
                     }}
                     eventContent={(arg) => (
