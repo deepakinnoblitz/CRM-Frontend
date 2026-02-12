@@ -33,12 +33,17 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TimesheetDetailsDialog } from '../timesheets-details-dialog';
 
 // ----------------------------------------------------------------------
 
 export function TimesheetsReportView() {
     const theme = useTheme();
+    const { user } = useAuth();
+    const isHR = user?.roles?.some(role => ['HR Manager', 'HR User', 'System Manager', 'Administrator'].includes(role));
+
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -46,6 +51,12 @@ export function TimesheetsReportView() {
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [employee, setEmployee] = useState('all');
+
+    useEffect(() => {
+        if (user && !isHR && user.employee) {
+            setEmployee(user.employee);
+        }
+    }, [user, isHR]);
     const [project, setProject] = useState('all');
     const [activityType, setActivityType] = useState('all');
 
@@ -221,13 +232,16 @@ export function TimesheetsReportView() {
                             value={employee}
                             onChange={(e) => setEmployee(e.target.value)}
                             displayEmpty
+                            disabled={!isHR}
                         >
-                            <MenuItem value="all">All Employees</MenuItem>
-                            {employeeOptions.map((opt) => (
-                                <MenuItem key={opt.name} value={opt.name}>
-                                    {opt.employee_name}
-                                </MenuItem>
-                            ))}
+                            {isHR && <MenuItem value="all">All Employees</MenuItem>}
+                            {employeeOptions
+                                .filter(opt => isHR || opt.name === user?.employee)
+                                .map((opt) => (
+                                    <MenuItem key={opt.name} value={opt.name}>
+                                        {opt.employee_name}
+                                    </MenuItem>
+                                ))}
                         </Select>
                     </FormControl>
 

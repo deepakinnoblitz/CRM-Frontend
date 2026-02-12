@@ -1,6 +1,7 @@
 import type { MouseEvent } from 'react';
 
 import Box from '@mui/material/Box';
+import { Tooltip } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
@@ -20,14 +21,17 @@ type Props = {
         date_of_expense: string;
         amount: number;
         paid: number;
+        workflow_state?: string;
     };
     selected: boolean;
     onSelectRow: () => void;
     onView: () => void;
     onEdit: () => void;
     onDelete: () => void;
+    onWorkflowAction?: (action: string) => void;
     canEdit: boolean;
     canDelete: boolean;
+    isHR?: boolean;
     hideCheckbox?: boolean;
     index?: number;
 };
@@ -38,8 +42,10 @@ export function ReimbursementClaimTableRow({
     onView,
     onEdit,
     onDelete,
+    onWorkflowAction,
     canEdit,
     canDelete,
+    isHR,
     hideCheckbox = false,
     index,
 }: Props) {
@@ -96,9 +102,15 @@ export function ReimbursementClaimTableRow({
             <TableCell>
                 <Label
                     variant="soft"
-                    color={row.paid === 1 ? 'success' : 'warning'}
+                    color={
+                        (row.workflow_state === 'Approved' && 'success') ||
+                        (row.workflow_state === 'Paid' && 'success') ||
+                        (row.workflow_state === 'Rejected' && 'error') ||
+                        (row.workflow_state === 'Pending' && 'warning') ||
+                        'default'
+                    }
                 >
-                    {row.paid === 1 ? 'Paid' : 'Pending'}
+                    {row.workflow_state || (row.paid === 1 ? 'Paid' : 'Pending')}
                 </Label>
             </TableCell>
 
@@ -108,7 +120,30 @@ export function ReimbursementClaimTableRow({
                         <Iconify icon="solar:eye-bold" />
                     </IconButton>
 
-                    {canEdit && (
+                    {isHR && row.workflow_state === 'Pending' && (
+                        <>
+                            <Tooltip title="Approve">
+                                <IconButton onClick={(e) => handleClick(e, () => onWorkflowAction?.('Approve'))} color="success">
+                                    <Iconify icon="solar:check-circle-bold" />
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Reject">
+                                <IconButton onClick={(e) => handleClick(e, () => onWorkflowAction?.('Reject'))} color="error">
+                                    <Iconify icon="mingcute:close-line" />
+                                </IconButton>
+                            </Tooltip>
+                        </>
+                    )}
+
+                    {isHR && row.workflow_state === 'Approved' && (
+                        <Tooltip title="Mark as Paid">
+                            <IconButton onClick={(e) => handleClick(e, () => onWorkflowAction?.('Mark as Paid'))} color="primary">
+                                <Iconify icon="solar:hand-money-bold-duotone" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+
+                    {canEdit && row.workflow_state === 'Draft' && (
                         <IconButton onClick={(e) => handleClick(e, onEdit)} color="primary">
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>

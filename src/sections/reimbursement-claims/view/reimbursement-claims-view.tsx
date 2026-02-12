@@ -32,12 +32,13 @@ import { useReimbursementClaims } from 'src/hooks/useReimbursementClaims';
 import { fetchEmployees } from 'src/api/employees';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
-    getReimbursementClaim,
-    createReimbursementClaim,
-    updateReimbursementClaim,
-    deleteReimbursementClaim,
-    getReimbursementClaimPermissions,
-    getClaimTypes
+  applyClaimWorkflowAction,
+  createReimbursementClaim,
+  deleteReimbursementClaim,
+  getClaimTypes,
+  getReimbursementClaim,
+  getReimbursementClaimPermissions,
+  updateReimbursementClaim,
 } from 'src/api/reimbursement-claims';
 
 import { Iconify } from 'src/components/iconify';
@@ -51,9 +52,14 @@ import { LeadTableToolbar as ClaimTableToolbar } from 'src/sections/lead/lead-ta
 import { ReimbursementClaimTableRow } from 'src/sections/reimbursement-claims/reimbursement-claims-table-row';
 import { ReimbursementClaimDetailsDialog } from 'src/sections/report/reimbursement-claims/reimbursement-claims-details-dialog';
 import { ReimbursementClaimsTableFiltersDrawer } from 'src/sections/reimbursement-claims/reimbursement-claims-table-filters-drawer';
+
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 export function ReimbursementClaimsView() {
+    const { user } = useAuth();
+    const isHR = user?.roles?.some(role => ['HR Manager', 'HR User', 'System Manager', 'Administrator'].includes(role));
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
@@ -227,6 +233,27 @@ export function ReimbursementClaimsView() {
                 setSnackbar({
                     open: true,
                     message: error.message || 'Failed to delete claim',
+                    severity: 'error',
+                });
+            }
+        },
+        [refetch]
+    );
+
+    const handleWorkflowAction = useCallback(
+        async (name: string, action: string) => {
+            try {
+                await applyClaimWorkflowAction(name, action);
+                setSnackbar({
+                    open: true,
+                    message: `Action ${action} applied successfully`,
+                    severity: 'success',
+                });
+                refetch();
+            } catch (error: any) {
+                setSnackbar({
+                    open: true,
+                    message: error.message || `Failed to apply action ${action}`,
                     severity: 'error',
                 });
             }
@@ -478,7 +505,7 @@ export function ReimbursementClaimsView() {
                                     { id: 'claim_type', label: 'Claim Type' },
                                     { id: 'date_of_expense', label: 'Date' },
                                     { id: 'amount', label: 'Amount' },
-                                    { id: 'paid', label: 'Status' },
+                                    { id: 'workflow_state', label: 'Status' },
                                     { id: '', label: '' },
                                 ]}
                             />
@@ -495,14 +522,17 @@ export function ReimbursementClaimsView() {
                                             date_of_expense: row.date_of_expense,
                                             amount: row.amount,
                                             paid: row.paid,
+                                            workflow_state: row.workflow_state,
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
                                         onView={() => handleViewRow(row)}
                                         onEdit={() => handleEditRow(row)}
                                         onDelete={() => handleDeleteRow(row.name)}
+                                        onWorkflowAction={(action) => handleWorkflowAction(row.name, action)}
                                         canEdit={permissions.write}
                                         canDelete={permissions.delete}
+                                        isHR={isHR}
                                     />
                                 ))}
 

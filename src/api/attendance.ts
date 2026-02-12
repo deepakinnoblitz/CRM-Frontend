@@ -15,7 +15,7 @@ export interface Attendance {
 }
 
 // Attendance APIs
-export const fetchAttendance = (params: any) => fetchFrappeList("Attendance", { ...params, searchField: "employee_name" });
+export const fetchAttendance = (params: any) => fetchFrappeList("Attendance", { ...params, searchField: ["employee_name", "employee", "status", "attendance_date"] });
 
 export async function createAttendance(data: Partial<Attendance>) {
     const headers = await getAuthHeaders();

@@ -17,6 +17,7 @@ export interface ReimbursementClaim {
     payment_reference?: string;
     payment_proof?: string;
     approver_comments?: string;
+    workflow_state?: string;
     creation?: string;
     modified?: string;
 }
@@ -168,4 +169,25 @@ export async function getReimbursementClaimPermissions() {
     }
 
     return (await res.json()).message || { read: false, write: false, delete: false };
+}
+
+export async function applyClaimWorkflowAction(name: string, action: string) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/company.company.frontend_api.apply_workflow_action", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype: "Reimbursement Claim",
+            name,
+            action,
+        })
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to apply workflow action"));
+    }
+
+    return (await res.json()).message;
 }

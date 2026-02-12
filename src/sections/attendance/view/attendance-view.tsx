@@ -28,6 +28,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useDebounce } from 'src/hooks/useDebounce';
 import { useAttendance } from 'src/hooks/useAttendance';
 
 import { getDoctypeList } from 'src/api/leads';
@@ -39,6 +40,8 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import { useAuth } from 'src/auth/auth-context';
 
 import { TableNoData } from '../../lead/table-no-data';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
@@ -100,10 +103,15 @@ export function AttendanceView() {
         delete: true,
     });
 
+    const { user } = useAuth();
+    const isHR = user?.roles?.includes('HR') || user?.roles?.includes('Administrator');
+
+    const debouncedFilterName = useDebounce(filterName, 500);
+
     const { data, total, loading, refetch } = useAttendance(
         page + 1,
         rowsPerPage,
-        filterName,
+        debouncedFilterName,
         orderBy,
         order,
         startDate || undefined,
@@ -450,8 +458,10 @@ export function AttendanceView() {
     const sortOptions = [
         { value: 'newest', label: 'Newest First' },
         { value: 'oldest', label: 'Oldest First' },
-        { value: 'employee_asc', label: 'Employee Asc' },
-        { value: 'employee_desc', label: 'Employee Desc' },
+        ...(isHR ? [
+            { value: 'employee_asc', label: 'Employee Asc' },
+            { value: 'employee_desc', label: 'Employee Desc' },
+        ] : []),
     ];
 
     const getSortByValue = () => {
@@ -536,6 +546,7 @@ export function AttendanceView() {
                     canReset={!!startDate || !!endDate || filterStatus !== 'all' || !!filterEmployee}
                     onResetFilters={handleResetFilters}
                     employeeOptions={employeeOptions}
+                    isHR={isHR}
                 />
 
                 <Scrollbar>

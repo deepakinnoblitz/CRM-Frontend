@@ -38,6 +38,7 @@ type Props = {
         departments: Array<{ name: string }>;
         designations: Array<{ name: string }>;
     };
+    isHR?: boolean;
 };
 
 export function SalarySlipFiltersDrawer({
@@ -49,6 +50,7 @@ export function SalarySlipFiltersDrawer({
     canReset,
     onResetFilters,
     options,
+    isHR,
 }: Props) {
     const handleFilterChange = (field: keyof SalarySlipFiltersProps, value: string) => {
         onFilters({ [field]: value });
@@ -265,9 +267,9 @@ export function SalarySlipFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3 }}>
-                    {renderEmployee}
-                    {renderDepartment}
-                    {renderDesignation}
+                    {isHR && renderEmployee}
+                    {isHR && renderDepartment}
+                    {isHR && renderDesignation}
                     {renderDateRange}
                 </Stack>
             </Scrollbar>

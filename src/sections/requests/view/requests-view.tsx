@@ -29,6 +29,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useDebounce } from 'src/hooks/useDebounce';
 import { useRequests } from 'src/hooks/useRequests';
 
 import { fetchEmployees } from 'src/api/employees';
@@ -61,12 +62,14 @@ export function RequestsView() {
     const [startDate, setStartDate] = useState<string | null>(null);
     const [endDate, setEndDate] = useState<string | null>(null);
 
+    const debouncedFilterName = useDebounce(filterName, 500);
+
     const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
 
     const { data, total, refetch } = useRequests(
         page + 1,
         rowsPerPage,
-        filterName,
+        debouncedFilterName,
         orderBy,
         order,
         startDate || undefined,
@@ -373,8 +376,6 @@ export function RequestsView() {
                     sortOptions={[
                         { value: 'creation_desc', label: 'Newest First' },
                         { value: 'creation_asc', label: 'Oldest First' },
-                        { value: 'employee_name_asc', label: 'Employee: A to Z' },
-                        { value: 'employee_name_desc', label: 'Employee: Z to A' },
                     ]}
                     onOpenFilter={handleOpenFilter}
 
@@ -523,28 +524,28 @@ export function RequestsView() {
 
             {/* Create/Edit Dialog */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
-                
-                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        {isEdit ? 'Edit Request' : 'New Request'}
-                        <IconButton onClick={handleCloseCreate}>
-                            <Iconify icon="mingcute:close-line" />
-                        </IconButton>
-                    </DialogTitle>
 
-                    <DialogContent dividers>
-                        <Box sx={{ display: 'grid', gap: 3, margin: '1rem' }}>
-                            {renderField('employeeId', 'Employee', 'select', employees, {}, true)}
-                            {renderField('subject', 'Subject', 'text', [], { placeholder: 'Enter request subject' }, true)}
-                            {renderField('message', 'Message', 'textarea', [], { placeholder: 'Enter request details' }, true)}
-                        </Box>
-                    </DialogContent>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {isEdit ? 'Edit Request' : 'New Request'}
+                    <IconButton onClick={handleCloseCreate}>
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
 
-                    <DialogActions>
-                        <Button onClick={handleCreate} variant="contained" sx={{ bgcolor: "#08a3cd", "&": { bgcolor: "#068fb3" } }}>
-                            {isEdit ? 'Update' : 'Create'}
-                        </Button>
-                    </DialogActions>
-                
+                <DialogContent dividers>
+                    <Box sx={{ display: 'grid', gap: 3, margin: '1rem' }}>
+                        {renderField('employeeId', 'Employee', 'select', employees, {}, true)}
+                        {renderField('subject', 'Subject', 'text', [], { placeholder: 'Enter request subject' }, true)}
+                        {renderField('message', 'Message', 'textarea', [], { placeholder: 'Enter request details' }, true)}
+                    </Box>
+                </DialogContent>
+
+                <DialogActions>
+                    <Button onClick={handleCreate} variant="contained" sx={{ bgcolor: "#08a3cd", "&": { bgcolor: "#068fb3" } }}>
+                        {isEdit ? 'Update' : 'Create'}
+                    </Button>
+                </DialogActions>
+
             </Dialog>
 
             {/* View Dialog */}
