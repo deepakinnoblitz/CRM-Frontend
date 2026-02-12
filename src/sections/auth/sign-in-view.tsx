@@ -47,8 +47,8 @@ export function SignInView() {
       // Save logged-in user in context
       setUser(userInfo);
 
-      // Redirect to dashboard
-      router.push('/');
+      // Redirect to dashboard (Force reload to ensure auth state/cookies are synced)
+      window.location.href = '/';
     } catch {
       setError('Invalid email or password');
       setSnackbarOpen(true);
