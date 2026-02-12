@@ -257,11 +257,16 @@ export function AttendanceReportView() {
                         gridTemplateColumns: {
                             xs: 'repeat(1, 1fr)',
                             sm: 'repeat(2, 1fr)',
+                            md: 'repeat(5, 1fr)', // 5 columns for 5 cards
                         },
                     }}
                 >
-                    <SummaryCard item={{ label: 'Total Present Days', value: totalDaysPresent, indicator: 'green' }} />
-                    <SummaryCard item={{ label: 'Total Entries', value: totalEntries, indicator: 'blue' }} />
+                    <SummaryCard item={{ label: 'Present', value: reportData.filter(d => d.status === 'Present').length, indicator: 'green' }} />
+                    <SummaryCard item={{ label: 'Absent', value: reportData.filter(d => d.status === 'Absent').length, indicator: 'red' }} />
+                    <SummaryCard item={{ label: 'Half Day', value: reportData.filter(d => d.status === 'Half Day').length, indicator: 'orange' }} />
+                    <SummaryCard item={{ label: 'Holiday', value: reportData.filter(d => d.status === 'Holiday').length, indicator: 'blue' }} />
+                    <SummaryCard item={{ label: 'Missing', value: reportData.filter(d => d.status === 'Missing').length, indicator: 'orange' }} />
+                    <SummaryCard item={{ label: 'Total Entries', value: reportData.length, indicator: 'blue' }} />
                 </Box>
 
                 <Card>
@@ -374,6 +379,10 @@ function SummaryCard({ item }: { item: any }) {
     const getIcon = (label: string) => {
         const t = label.toLowerCase();
         if (t.includes('present')) return 'solar:calendar-check-bold-duotone';
+        if (t.includes('absent')) return 'solar:calendar-date-bold-duotone';
+        if (t.includes('half day')) return 'solar:clock-circle-bold-duotone';
+        if (t.includes('missing')) return 'solar:danger-circle-bold-duotone';
+        if (t.includes('holiday')) return 'solar:cup-star-bold-duotone';
         if (t.includes('entries')) return 'solar:list-bold-duotone';
         return 'solar:chart-2-bold-duotone';
     };

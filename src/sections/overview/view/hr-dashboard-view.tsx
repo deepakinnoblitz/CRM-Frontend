@@ -12,7 +12,9 @@ import {
     fetchPendingLeaveCount,
     fetchTotalEmployeeCount,
     fetchRecentAnnouncements,
-    fetchTodayLeaveEmployees
+    fetchTodayLeaveEmployees,
+    fetchMissingAttendanceChartData,
+    fetchWeeklyPresentChartData
 } from 'src/api/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -23,6 +25,8 @@ import { HRCalendar } from '../hr-calendar';
 import { HRAnnouncements } from '../hr-announcements';
 import { HRSummaryWidget } from '../hr-summary-widget';
 import { HRDashboardTable } from '../hr-dashboard-table';
+import { WeeklyPresentChart } from '../weekly-present-chart';
+import { MissingAttendanceChart } from '../missing-attendance-chart';
 
 // ----------------------------------------------------------------------
 
@@ -36,7 +40,9 @@ export function HRDashboardView() {
         missing_attendance: 0,
         todays_leaves: [],
         todays_birthdays: [],
-        holidays: []
+        holidays: [],
+        missing_attendance_chart: [],
+        weekly_present_chart: []
     });
 
     useEffect(() => {
@@ -50,7 +56,9 @@ export function HRDashboardView() {
                     stats,
                     renewals,
                     totalEmployees,
-                    pendingLeaves
+                    pendingLeaves,
+                    missingAttendanceChart,
+                    weeklyPresentChart
                 ] = await Promise.all([
                     fetchRecentAnnouncements(),
                     fetchTodayBirthdays(),
@@ -59,7 +67,9 @@ export function HRDashboardView() {
                     fetchAttendanceStats('today'),
                     fetchUpcomingRenewals(),
                     fetchTotalEmployeeCount(),
-                    fetchPendingLeaveCount()
+                    fetchPendingLeaveCount(),
+                    fetchMissingAttendanceChartData(),
+                    fetchWeeklyPresentChartData()
                 ]);
 
                 setData({
@@ -71,7 +81,9 @@ export function HRDashboardView() {
                     present_today: stats?.present || 0,
                     missing_attendance: stats?.missing || 0,
                     pending_leaves: pendingLeaves,
-                    total_employees: totalEmployees
+                    total_employees: totalEmployees,
+                    missing_attendance_chart: missingAttendanceChart,
+                    weekly_present_chart: weeklyPresentChart
                 });
             } catch (error) {
                 console.error('Failed to load HR dashboard data:', error);
@@ -133,6 +145,24 @@ export function HRDashboardView() {
                         total={data.missing_attendance || 0}
                         color="error"
                         icon={<Iconify icon={"solar:close-circle-bold-duotone" as any} width={32} />}
+                    />
+                </Grid>
+
+                {/* Missing Attendance Chart */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <MissingAttendanceChart
+                        title="Missing Attendance"
+                        subheader="Last 7 days"
+                        data={data.missing_attendance_chart}
+                    />
+                </Grid>
+
+                {/* Weekly Present Count Chart */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <WeeklyPresentChart
+                        title="Weekly Present Count"
+                        subheader="Current week (Mon-Sun)"
+                        data={data.weekly_present_chart}
                     />
                 </Grid>
 

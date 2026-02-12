@@ -326,6 +326,27 @@ export async function fetchPendingLeaveCount(): Promise<number> {
     return data.message || 0;
 }
 
+// Get missing attendance chart data (last 7 days)
+export async function fetchMissingAttendanceChartData(): Promise<Array<{ date: string; count: number }>> {
+    const res = await frappeRequest('/api/method/company.company.api.get_missing_attendance_chart_data');
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch missing attendance chart data'));
+    }
+    const data = await res.json();
+    return data.message || [];
+}
+
+// Get weekly present count chart data (current week Mon-Sun)
+export async function fetchWeeklyPresentChartData(): Promise<Array<{ date: string; day: string; count: number }>> {
+    const res = await frappeRequest('/api/method/company.company.api.get_weekly_present_chart_data');
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch weekly present chart data'));
+    }
+    const data = await res.json();
+    return data.message || [];
+}
 
 export interface SalesDashboardData {
     total_sales: number;
