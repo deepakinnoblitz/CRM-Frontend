@@ -92,6 +92,8 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
                 gap: 2.5,
                 gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
                 mb: 4,
+                ml: 2,
+                pt: 2,
             }}
         >
             <DetailItem icon="solar:letter-bold" label="Email" value={applicant.email_id} isLink href={`mailto:${applicant.email_id}`} />
@@ -102,9 +104,9 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
     );
 
     const renderResume = (
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ mt: 2, ml: 2, pt: 2 }}>
             <SectionHeader title="Application Details" icon="solar:notes-bold" />
-            <Box sx={{ display: 'grid', gap: 3, mt: 2 }}>
+            <Box sx={{ display: 'grid', gap: 3, mt: 1, ml: 1 }}>
                 <Box>
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>Cover Letter</Typography>
                     <Box sx={{ p: 2, bgcolor: 'background.neutral', borderRadius: 1 }}>

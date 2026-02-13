@@ -42,9 +42,29 @@ export async function fetchUsers(params: {
     }
 
     if (params.search) {
+        const searchLower = params.search.toLowerCase();
+
+        // Basic fields
         or_filters.push(["User", "full_name", "like", `%${params.search}%`]);
         or_filters.push(["User", "email", "like", `%${params.search}%`]);
         or_filters.push(["User", "name", "like", `%${params.search}%`]);
+        or_filters.push(["User", "user_type", "like", `%${params.search}%`]);
+
+        // Status labels
+        if ("enabled".includes(searchLower)) {
+            or_filters.push(["User", "enabled", "=", 1]);
+        }
+        if ("disabled".includes(searchLower)) {
+            or_filters.push(["User", "enabled", "=", 0]);
+        }
+
+        // Permission labels
+        if ("added".includes(searchLower)) {
+            or_filters.push(["User", "name", "in", usersWithPermissions]);
+        }
+        if ("not added".includes(searchLower)) {
+            or_filters.push(["User", "name", "not in", usersWithPermissions]);
+        }
     }
 
     // Add filters

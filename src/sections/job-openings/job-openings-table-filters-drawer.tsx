@@ -1,19 +1,17 @@
 import dayjs from 'dayjs';
-import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
+import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import InputLabel from '@mui/material/InputLabel';
-import FormControl from '@mui/material/FormControl';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { Iconify } from 'src/components/iconify';
@@ -52,109 +50,145 @@ export function JobOpeningsTableFiltersDrawer({
     onResetFilters,
     locations,
 }: Props) {
-    const handleFilterStatus = (event: SelectChangeEvent<string>) => {
-        onFilters({ status: event.target.value });
-    };
 
-    const handleFilterLocation = (event: SelectChangeEvent<string>) => {
-        onFilters({ location: event.target.value });
-    };
-
-    const handleFilterStartDate = (newValue: dayjs.Dayjs | null) => {
-        onFilters({ startDate: newValue ? newValue.format('YYYY-MM-DD') : null });
-    };
-
-    const handleFilterEndDate = (newValue: dayjs.Dayjs | null) => {
-        onFilters({ endDate: newValue ? newValue.format('YYYY-MM-DD') : null });
+    const handleFilterChange = (field: keyof FiltersProps, value: any) => {
+        onFilters({ [field]: value });
     };
 
     const renderHead = (
-        <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            sx={{ py: 2, pr: 1, pl: 2.5 }}
+        <Box
+            sx={{
+                py: 2.5,
+                pl: 3,
+                pr: 2,
+                display: 'flex',
+                alignItems: 'center',
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+            }}
         >
-            <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
                 Filters
             </Typography>
 
-            <IconButton onClick={onClose}>
-                <Iconify icon="mingcute:close-line" />
+            <IconButton
+                onClick={onResetFilters}
+                disabled={!canReset}
+                sx={{
+                    mr: 0.5,
+                    color: canReset ? 'primary.main' : 'text.disabled',
+                    '&:hover': {
+                        bgcolor: canReset ? 'primary.lighter' : 'transparent',
+                    },
+                }}
+            >
+                <Badge color="error" variant="dot" invisible={!canReset}>
+                    <Iconify icon="solar:restart-bold" width={20} />
+                </Badge>
             </IconButton>
-        </Stack>
+
+            <IconButton
+                onClick={onClose}
+                sx={{
+                    color: 'text.secondary',
+                    '&:hover': {
+                        bgcolor: 'action.hover',
+                    },
+                }}
+            >
+                <Iconify icon="mingcute:close-line" width={20} />
+            </IconButton>
+        </Box>
     );
 
     const renderStatus = (
         <Stack spacing={1.5}>
-            <Typography variant="subtitle2">Status</Typography>
-            <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                    value={filters.status}
-                    onChange={handleFilterStatus}
-                    label="Status"
-                >
-                    <MenuItem value="all">All</MenuItem>
-                    {STATUSES.map((status) => (
-                        <MenuItem key={status} value={status}>
-                            {status}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
+            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Status
+            </Typography>
+            <TextField
+                select
+                fullWidth
+                size="small"
+                value={filters.status}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+                sx={{
+                    '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                        bgcolor: 'background.neutral',
+                    },
+                }}
+            >
+                <MenuItem value="all">All</MenuItem>
+                {STATUSES.map((status) => (
+                    <MenuItem key={status} value={status}>
+                        {status}
+                    </MenuItem>
+                ))}
+            </TextField>
         </Stack>
     );
 
     const renderLocation = (
         <Stack spacing={1.5}>
-            <Typography variant="subtitle2">Location</Typography>
-            <FormControl fullWidth>
-                <InputLabel>Location</InputLabel>
-                <Select
-                    value={filters.location}
-                    onChange={handleFilterLocation}
-                    label="Location"
-                >
-                    <MenuItem value="all">All</MenuItem>
-                    {locations.map((location) => (
-                        <MenuItem key={location} value={location}>
-                            {location}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
+            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Location
+            </Typography>
+            <TextField
+                select
+                fullWidth
+                size="small"
+                value={filters.location}
+                onChange={(e) => handleFilterChange('location', e.target.value)}
+                sx={{
+                    '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                        bgcolor: 'background.neutral',
+                    },
+                }}
+            >
+                <MenuItem value="all">All</MenuItem>
+                {locations.map((location) => (
+                    <MenuItem key={location} value={location}>
+                        {location}
+                    </MenuItem>
+                ))}
+            </TextField>
         </Stack>
     );
 
     const renderDateRange = (
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Stack spacing={1.5}>
-                <Typography variant="subtitle2">Posted Date Range</Typography>
-                <DatePicker
-                    label="Start Date"
-                    value={filters.startDate ? dayjs(filters.startDate) : null}
-                    onChange={handleFilterStartDate}
-                    slotProps={{
-                        textField: {
-                            fullWidth: true,
-                            InputLabelProps: { shrink: true },
-                        },
-                    }}
-                />
-                <DatePicker
-                    label="End Date"
-                    value={filters.endDate ? dayjs(filters.endDate) : null}
-                    onChange={handleFilterEndDate}
-                    slotProps={{
-                        textField: {
-                            fullWidth: true,
-                            InputLabelProps: { shrink: true },
-                        },
-                    }}
-                />
-            </Stack>
-        </LocalizationProvider>
+        <Stack spacing={1.5}>
+            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Posted Date Range
+            </Typography>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Stack spacing={2}>
+                    <DatePicker
+                        label="Start Date"
+                        value={filters.startDate ? dayjs(filters.startDate) : null}
+                        onChange={(newValue) => handleFilterChange('startDate', newValue ? newValue.format('YYYY-MM-DD') : null)}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                size: 'small',
+                            },
+                        }}
+                    />
+                    <DatePicker
+                        label="End Date"
+                        value={filters.endDate ? dayjs(filters.endDate) : null}
+                        onChange={(newValue) => handleFilterChange('endDate', newValue ? newValue.format('YYYY-MM-DD') : null)}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                size: 'small',
+                            },
+                        }}
+                    />
+                </Stack>
+            </LocalizationProvider>
+        </Stack>
     );
 
     return (
@@ -163,37 +197,58 @@ export function JobOpeningsTableFiltersDrawer({
             open={open}
             onClose={onClose}
             slotProps={{
-                backdrop: { invisible: true },
+                paper: {
+                    sx: {
+                        width: 320,
+                        boxShadow: (theme) => theme.customShadows.z24,
+                    },
+                },
             }}
-            PaperProps={{
-                sx: { width: 280 },
+            sx={{
+                zIndex: (theme) => theme.zIndex.drawer + 100,
             }}
         >
             {renderHead}
 
-            <Divider />
-
             <Scrollbar>
-                <Stack spacing={3} sx={{ p: 2.5 }}>
+                <Stack spacing={3} sx={{ p: 3 }}>
                     {renderStatus}
-
                     {renderLocation}
-
                     {renderDateRange}
                 </Stack>
             </Scrollbar>
 
-            <Box sx={{ p: 2.5 }}>
+            <Box
+                sx={{
+                    p: 2.5,
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.neutral',
+                }}
+            >
                 <Button
                     fullWidth
                     size="large"
-                    variant="outlined"
                     color="inherit"
+                    variant="outlined"
+                    startIcon={<Iconify icon="solar:restart-bold" />}
                     onClick={onResetFilters}
                     disabled={!canReset}
-                    startIcon={<Iconify icon="solar:restart-bold" />}
+                    sx={{
+                        borderRadius: 1.5,
+                        borderColor: 'divider',
+                        fontWeight: 600,
+                        '&:hover': {
+                            borderColor: 'error.main',
+                            color: 'error.main',
+                            bgcolor: 'error.lighter',
+                        },
+                        '&.Mui-disabled': {
+                            borderColor: 'divider',
+                        },
+                    }}
                 >
-                    Clear All
+                    Clear All Filters
                 </Button>
             </Box>
         </Drawer>

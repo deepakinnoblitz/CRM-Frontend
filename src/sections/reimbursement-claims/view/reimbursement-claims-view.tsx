@@ -19,6 +19,7 @@ import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
 import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
@@ -58,10 +59,11 @@ export function ReimbursementClaimsView() {
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('date_of_expense');
+    const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
     const [openFilters, setOpenFilters] = useState(false);
     const [filters, setFilters] = useState({
+        employee: 'all',
         paid: 'all',
         claim_type: 'all',
         startDate: null as string | null,
@@ -271,7 +273,7 @@ export function ReimbursementClaimsView() {
                 await createReimbursementClaim(claimData);
                 setSnackbar({
                     open: true,
-                    message: 'Claim created successfully',
+                    message: 'Claim submitted successfully',
                     severity: 'success',
                 });
             }
@@ -293,6 +295,7 @@ export function ReimbursementClaimsView() {
 
     const handleResetFilters = () => {
         setFilters({
+            employee: 'all',
             paid: 'all',
             claim_type: 'all',
             startDate: null,
@@ -301,10 +304,12 @@ export function ReimbursementClaimsView() {
         setPage(0);
     };
 
-    const canReset = filters.paid !== 'all' || filters.claim_type !== 'all' || filters.startDate !== null || filters.endDate !== null;
+    const canReset = filters.employee !== 'all' || filters.paid !== 'all' || filters.claim_type !== 'all' || filters.startDate !== null || filters.endDate !== null;
 
     const handleSortChange = (value: string) => {
-        if (value === 'date_desc') { setOrderBy('date_of_expense'); setOrder('desc'); }
+        if (value === 'newest') { setOrderBy('modified'); setOrder('desc'); }
+        else if (value === 'oldest') { setOrderBy('modified'); setOrder('asc'); }
+        else if (value === 'date_desc') { setOrderBy('date_of_expense'); setOrder('desc'); }
         else if (value === 'date_asc') { setOrderBy('date_of_expense'); setOrder('asc'); }
         else if (value === 'amount_desc') { setOrderBy('amount'); setOrder('desc'); }
         else if (value === 'amount_asc') { setOrderBy('amount'); setOrder('asc'); }
@@ -314,10 +319,11 @@ export function ReimbursementClaimsView() {
     };
 
     const getCurrentSortValue = () => {
+        if (orderBy === 'modified') return order === 'desc' ? 'newest' : 'oldest';
         if (orderBy === 'date_of_expense') return order === 'desc' ? 'date_desc' : 'date_asc';
         if (orderBy === 'amount') return order === 'desc' ? 'amount_desc' : 'amount_asc';
         if (orderBy === 'employee_name') return order === 'desc' ? 'employee_desc' : 'employee_asc';
-        return 'date_desc';
+        return 'newest';
     };
 
     const handleChangePage = (event: unknown, newPage: number) => {
@@ -351,7 +357,12 @@ export function ReimbursementClaimsView() {
                 if (fieldname === 'employee') setEmployee(val);
                 else if (fieldname === 'claim_type') setClaimType(val);
                 else if (fieldname === 'date_of_expense') setDateOfExpense(val);
-                else if (fieldname === 'amount') setAmount(val);
+                else if (fieldname === 'amount') {
+                    // Allow only numbers and one decimal point
+                    if (/^\d*\.?\d*$/.test(val)) {
+                        setAmount(val);
+                    }
+                }
                 else if (fieldname === 'claim_details') setClaimDetails(val);
 
                 if (formErrors[fieldname]) {
@@ -453,8 +464,10 @@ export function ReimbursementClaimsView() {
                     sortBy={getCurrentSortValue()}
                     onSortChange={handleSortChange}
                     sortOptions={[
-                        { value: 'date_desc', label: 'Newest First' },
-                        { value: 'date_asc', label: 'Oldest First' },
+                        { value: 'newest', label: 'Newest First' },
+                        { value: 'oldest', label: 'Oldest First' },
+                        { value: 'date_desc', label: 'Date: Newest to Oldest' },
+                        { value: 'date_asc', label: 'Date: Oldest to Newest' },
                         { value: 'amount_desc', label: 'Amount: High to Low' },
                         { value: 'amount_asc', label: 'Amount: Low to High' },
                         { value: 'employee_asc', label: 'Employee: A to Z' },
@@ -495,6 +508,7 @@ export function ReimbursementClaimsView() {
                                             date_of_expense: row.date_of_expense,
                                             amount: row.amount,
                                             paid: row.paid,
+                                            workflow_state: row.workflow_state,
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
@@ -547,21 +561,62 @@ export function ReimbursementClaimsView() {
                 <DialogTitle
                     sx={{
                         m: 0,
-                        p: 2,
+                        p: 2.5,
                         display: 'flex',
-                        justifyContent: 'space-between',
                         alignItems: 'center',
+                        justifyContent: 'space-between',
+                        bgcolor: 'background.neutral',
                     }}
                 >
-                    {isEdit ? 'Edit Claim' : 'New Claim'}
-                    <IconButton onClick={handleCloseCreate}>
-                        <Iconify icon="mingcute:close-line" />
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        {isEdit ? 'Edit Claim' : 'New Claim'}
+                    </Typography>
+
+                    <IconButton
+                        onClick={handleCloseCreate}
+                        sx={{
+                            p: 0.75,
+                            bgcolor: 'background.paper',
+                            boxShadow: (theme) => theme.customShadows.z8,
+                            '&:hover': {
+                                bgcolor: 'background.paper',
+                                color: 'error.main',
+                            },
+                        }}
+                    >
+                        <Iconify icon="mingcute:close-line" width={20} />
                     </IconButton>
                 </DialogTitle>
 
                 <DialogContent dividers>
                     <Box sx={{ display: 'grid', gap: 3, p: 2 }}>
-                        {renderField('employee', 'Employee', 'select', employees.map(emp => ({ value: emp.name, label: `${emp.employee_name} (${emp.employee_id})` })), {}, true)}
+                        <Autocomplete
+                            fullWidth
+                            options={employees}
+                            getOptionLabel={(option) => `${option.employee_name} (${option.name})`}
+                            value={employees.find((emp) => emp.name === employee) || null}
+                            onChange={(event, newValue) => {
+                                setEmployee(newValue?.name || '');
+                                if (formErrors.employee) {
+                                    setFormErrors((prev) => ({ ...prev, employee: '' }));
+                                }
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Employee"
+                                    required
+                                    error={!!formErrors.employee}
+                                    helperText={formErrors.employee}
+                                    InputLabelProps={{ shrink: true }}
+                                    sx={{
+                                        '& .MuiFormLabel-asterisk': {
+                                            color: 'red',
+                                        },
+                                    }}
+                                />
+                            )}
+                        />
                         {renderField('claim_type', 'Claim Type', 'select', claimTypes.map(type => ({ value: type.name, label: type.name })), {}, true)}
                         {renderField('date_of_expense', 'Date of Expense', 'date', [], {}, true)}
                         {renderField('amount', 'Amount', 'number', [], { placeholder: 'Enter amount', inputProps: { step: '0.01', min: '0' } }, true)}
@@ -581,6 +636,7 @@ export function ReimbursementClaimsView() {
                 open={openView}
                 onClose={() => setOpenView(false)}
                 claim={viewClaim}
+                onRefresh={refetch}
             />
 
             {/* Snackbar */}
@@ -604,6 +660,7 @@ export function ReimbursementClaimsView() {
                 canReset={canReset}
                 onResetFilters={handleResetFilters}
                 claimTypes={claimTypes}
+                employees={employees}
             />
         </DashboardContent>
     );

@@ -18,6 +18,7 @@ import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
@@ -32,6 +33,7 @@ import { useEmployees } from 'src/hooks/useEmployees';
 
 import { getDoctypeList } from 'src/api/leads';
 import { uploadFile } from 'src/api/data-import';
+import { getStates, getCities } from 'src/api/location';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { createEmployee, updateEmployee, deleteEmployee } from 'src/api/employees';
 import { getHRPermissions, getDocTypeMetadata, fetchSalaryComponents } from 'src/api/hr-management';
@@ -70,6 +72,9 @@ export function EmployeeView() {
         department: 'all',
         designation: 'all',
         status: 'all',
+        country: '',
+        state: '',
+        city: '',
     });
     const [openFilters, setOpenFilters] = useState(false);
 
@@ -79,8 +84,11 @@ export function EmployeeView() {
         status: 'Active',
         ctc: 0,
         skip_probation: 0,
+        country: 'India',
     });
     const [fieldOptions, setFieldOptions] = useState<Record<string, any[]>>({});
+    const [stateOptions, setStateOptions] = useState<string[]>([]);
+    const [cityOptions, setCityOptions] = useState<string[]>([]);
     const [salaryComponents, setSalaryComponents] = useState<any[]>([]);
     const [serverAlert, setServerAlert] = useState<{ message: string, severity: 'success' | 'error' | 'warning' | 'info' }>({
         message: '',
@@ -113,7 +121,10 @@ export function EmployeeView() {
         order,
         filters.department,
         filters.designation,
-        filters.status
+        filters.status,
+        filters.country,
+        filters.state,
+        filters.city
     );
 
     const notFound = !data.length && !!filterName;
@@ -186,7 +197,7 @@ export function EmployeeView() {
         return formatted;
     };
 
-    const handleInputChange = (fieldname: string, value: any) => {
+    const handleInputChange = async (fieldname: string, value: any) => {
         let finalValue = value;
         if (fieldname === 'phone' || fieldname === 'office_phone_number') {
             finalValue = formatPhoneNumberCustom(value);
@@ -200,6 +211,27 @@ export function EmployeeView() {
         // Clear error when typing
         if (formErrors[fieldname]) {
             setFormErrors(prev => ({ ...prev, [fieldname]: '' }));
+        }
+
+        // Handle country change - fetch states
+        if (fieldname === 'country' && finalValue) {
+            const states = await getStates(finalValue);
+            setStateOptions(['', ...states, 'Others']);
+            // Reset state and city when country changes
+            setFormData(prev => ({ ...prev, state: '', city: '' }));
+            setCityOptions([]);
+        }
+
+        // Handle state change - fetch cities
+        if (fieldname === 'state' && finalValue && formData.country) {
+            if (finalValue === 'Others') {
+                setCityOptions(['Others']);
+            } else {
+                const cities = await getCities(formData.country, finalValue);
+                setCityOptions(['', ...cities, 'Others']);
+            }
+            // Reset city when state changes
+            setFormData(prev => ({ ...prev, city: '' }));
         }
     };
 
@@ -253,18 +285,24 @@ export function EmployeeView() {
         }
     };
 
-    const handleOpenCreate = () => {
-        setFormData({ status: 'Active', ctc: 0, skip_probation: 0 });
+    const handleOpenCreate = async () => {
+        setFormData({ status: 'Active', ctc: 0, skip_probation: 0, country: 'India' });
         setFormErrors({});
         setOpenCreate(true);
+
+        // Load states for India by default
+        const states = await getStates('India');
+        setStateOptions(['', ...states, 'Others']);
     };
 
     const handleCloseCreate = () => {
         setOpenCreate(false);
         setFormErrors({});
         setCurrentEmployeeId(null);
-        setFormData({ status: 'Active', ctc: 0, skip_probation: 0 });
+        setFormData({ status: 'Active', ctc: 0, skip_probation: 0, country: 'India' });
         setServerAlert({ message: '', severity: 'info' });
+        setStateOptions([]);
+        setCityOptions([]);
     };
 
 
@@ -340,10 +378,13 @@ export function EmployeeView() {
             department: 'all',
             designation: 'all',
             status: 'all',
+            country: '',
+            state: '',
+            city: '',
         });
     };
 
-    const canReset = filters.department !== 'all' || filters.designation !== 'all' || filters.status !== 'all';
+    const canReset = filters.department !== 'all' || filters.designation !== 'all' || filters.status !== 'all' || filters.country !== '' || filters.state !== '' || filters.city !== '';
 
     const handleBulkDelete = async () => {
         try {
@@ -356,25 +397,20 @@ export function EmployeeView() {
         }
     };
 
-    const validateForm = () => {
+    const validateForm = (): { isValid: boolean; firstErrorField?: string; firstErrorMessage?: string } => {
         const errors: Record<string, string> = {};
         const requiredFields = [
             { name: 'employee_id', label: 'Employee ID' },
             { name: 'employee_name', label: 'Employee Name' },
             { name: 'email', label: 'Email' },
             { name: 'date_of_joining', label: 'Joining Date' },
-            { name: 'status', label: 'Status' },
-            { name: 'ctc', label: 'CTC (Monthly)' }
+            { name: 'status', label: 'Status' }
         ];
 
         requiredFields.forEach(field => {
             const value = formData[field.name];
-            if (!value || (field.name === 'ctc' && (parseFloat(value) <= 0 || isNaN(parseFloat(value))))) {
-                if (field.name === 'ctc' && value && parseFloat(value) <= 0) {
-                    errors[field.name] = 'CTC must be greater than 0';
-                } else {
-                    errors[field.name] = `${field.label} is required`;
-                }
+            if (!value) {
+                errors[field.name] = `${field.label} is required`;
             }
         });
 
@@ -387,12 +423,32 @@ export function EmployeeView() {
         }
 
         setFormErrors(errors);
-        return Object.keys(errors).length === 0;
+
+        const isValid = Object.keys(errors).length === 0;
+        const firstErrorField = Object.keys(errors)[0];
+        const firstErrorMessage = errors[firstErrorField];
+
+        return { isValid, firstErrorField, firstErrorMessage };
     };
 
     const handleCreate = async () => {
-        if (!validateForm()) {
-            setSnackbar({ open: true, message: 'Please correct the errors in the form', severity: 'error' });
+        const validationResult = validateForm();
+        if (!validationResult.isValid) {
+            // Scroll to the first error field
+            if (validationResult.firstErrorField) {
+                const errorElement = document.querySelector(`[name="${validationResult.firstErrorField}"]`);
+                if (errorElement) {
+                    errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Focus the field after scrolling
+                    setTimeout(() => {
+                        (errorElement as HTMLElement).focus();
+                    }, 500);
+                }
+            }
+
+            // Show specific error message
+            const errorMessage = validationResult.firstErrorMessage || 'Please correct the errors in the form';
+            setSnackbar({ open: true, message: errorMessage, severity: 'error' });
             return;
         }
 
@@ -466,6 +522,7 @@ export function EmployeeView() {
         const commonProps = {
             fullWidth: true,
             label,
+            name: fieldname, // Add name attribute for scroll-to-error functionality
             value: formData[fieldname] || '',
             onChange: (e: any) => handleInputChange(fieldname, e.target.value),
             InputLabelProps: { shrink: true },
@@ -488,6 +545,65 @@ export function EmployeeView() {
                     defaultCountry="IN"
                     value={cleanPhoneNumber(formData[fieldname] || '')}
                     onChange={(newValue: string) => handleInputChange(fieldname, newValue)}
+                />
+            );
+        }
+
+
+
+        if (type === 'autocomplete') {
+            // Determine if field should be disabled based on dependencies
+            let disabled = false;
+            let placeholder = `Select ${label}`;
+
+            if (fieldname === 'state' && !formData.country) {
+                disabled = true;
+                placeholder = 'Please select Country first';
+            } else if (fieldname === 'city' && !formData.state) {
+                disabled = true;
+                placeholder = 'Please select State first';
+            }
+
+            return (
+                <Autocomplete
+                    fullWidth
+                    options={options}
+                    value={formData[fieldname] || ''}
+                    onChange={(event, newValue) => {
+                        // Handle both string values and objects with name property
+                        const value = typeof newValue === 'object' && newValue?.name ? newValue.name : newValue;
+                        handleInputChange(fieldname, value || '');
+                    }}
+                    getOptionLabel={(option) => {
+                        // Handle both string options and objects with name property
+                        if (typeof option === 'string') return option;
+                        if (option?.name) return option.name;
+                        return '';
+                    }}
+                    isOptionEqualToValue={(option, value) => {
+                        // Handle comparison for both strings and objects
+                        const optionValue = typeof option === 'string' ? option : option?.name;
+                        return optionValue === value;
+                    }}
+                    disabled={disabled}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label={label}
+                            placeholder={placeholder}
+                            required={required}
+                            error={!!formErrors[fieldname]}
+                            helperText={formErrors[fieldname]}
+                            InputLabelProps={{ shrink: true }}
+                            sx={{
+                                '& .MuiFormLabel-asterisk': {
+                                    color: 'red',
+                                },
+                                ...extraProps.sx
+                            }}
+                        />
+                    )}
+                    freeSolo
                 />
             );
         }
@@ -743,7 +859,9 @@ export function EmployeeView() {
                                 {renderField('phone', 'Personal Phone Number', 'phone')}
                                 {renderField('office_phone_number', 'Office Phone', 'phone')}
                                 {renderField('dob', 'Date of Birth', 'date')}
-                                {renderField('country', 'Country', 'link', fieldOptions['country'] || [])}
+                                {renderField('country', 'Country', 'autocomplete', fieldOptions['country'] || [])}
+                                {renderField('state', 'State', 'autocomplete', stateOptions)}
+                                {renderField('city', 'City', 'autocomplete', cityOptions)}
                                 {renderField('profile_picture', 'Profile Picture', 'file')}
                             </Box>
 
@@ -751,9 +869,9 @@ export function EmployeeView() {
                             <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>Employment Details</Typography>
                             <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
                                 {renderField('department', 'Department', 'link', fieldOptions['department'] || [])}
-                                {renderField('designation', 'Designation', 'link', fieldOptions['designation'] || [])}
+                                {renderField('designation', 'Designation', 'text')}
                                 {renderField('date_of_joining', 'Joining Date', 'date', [], {}, true)}
-                                {renderField('user', 'User Login (Email)', 'link', fieldOptions['user'] || [])}
+                                {renderField('user', 'User Login (Email)', 'autocomplete', fieldOptions['user'] || [])}
                                 {renderField('status', 'Status', 'select', ['Active', 'Inactive'], {}, true)}
                                 {renderField('skip_probation', 'Skip Probation', 'checkbox')}
                             </Box>
@@ -762,7 +880,7 @@ export function EmployeeView() {
                             <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>Financial & Bank Details</Typography>
                             <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
                                 {renderField('bank_name', 'Bank Name')}
-                                {renderField('bank_account', 'Bank Account')}
+                                {renderField('bank_account', 'Bank Account', 'autocomplete', fieldOptions['bank_account'] || [])}
                                 {renderField('pf_number', 'PF Number')}
                                 {renderField('esi_no', 'ESI No')}
                             </Box>
@@ -770,17 +888,40 @@ export function EmployeeView() {
 
                             {/* Section 4: Salary & breakdown */}
                             <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>Salary Details (Auto-calculated)</Typography>
+
+                            {/* CTC Field - Full Width */}
+                            <Box sx={{ mb: 3 }}>
+                                {renderField('ctc', 'CTC (Monthly)', 'number', [], { onBlur: handleCTCOnBlur }, false)}
+                            </Box>
+
+                            {/* Two Column Layout: Earnings and Deductions */}
                             <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3}>
-                                {renderField('ctc', 'CTC (Monthly)', 'number', [], { onBlur: handleCTCOnBlur }, true)}
-                                {renderField('basic_pay', 'Basic Pay', 'number')}
-                                {renderField('hra', 'HRA', 'number')}
-                                {renderField('conveyance_allowances', 'Conveyance Allowances', 'number')}
-                                {renderField('medical_allowances', 'Medical Allowances', 'number')}
-                                {renderField('other_allowances', 'Other Allowances', 'number')}
-                                {renderField('pf', 'PF Deduction', 'number')}
-                                {renderField('health_insurance', 'ESI/Health Insurance', 'number')}
-                                {renderField('professional_tax', 'Professional Tax', 'number')}
-                                {renderField('loan_recovery', 'Loan Recovery', 'number')}
+                                {/* Left Column - Earnings */}
+                                <Box>
+                                    {/* <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: 'success.main' }}>
+                                        Earnings
+                                    </Typography> */}
+                                    <Box display="flex" flexDirection="column" gap={2}>
+                                        {renderField('basic_pay', 'Basic Pay', 'number')}
+                                        {renderField('hra', 'HRA', 'number')}
+                                        {renderField('conveyance_allowances', 'Conveyance Allowances', 'number')}
+                                        {renderField('medical_allowances', 'Medical Allowances', 'number')}
+                                        {renderField('other_allowances', 'Other Allowances', 'number')}
+                                    </Box>
+                                </Box>
+
+                                {/* Right Column - Deductions */}
+                                <Box>
+                                    {/* <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: 'error.main' }}>
+                                        Deductions
+                                    </Typography> */}
+                                    <Box display="flex" flexDirection="column" gap={2}>
+                                        {renderField('pf', 'PF Deduction', 'number')}
+                                        {renderField('health_insurance', 'ESI/Health Insurance', 'number')}
+                                        {renderField('professional_tax', 'Professional Tax', 'number')}
+                                        {renderField('loan_recovery', 'Loan Recovery', 'number')}
+                                    </Box>
+                                </Box>
                             </Box>
                         </Box>
                     </LocalizationProvider>

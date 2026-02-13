@@ -483,7 +483,7 @@ export function RenewalTrackerView() {
             />
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
                 <form onSubmit={handleCreate}>
                     <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         {isEdit ? 'Edit Renewal' : 'New Renewal'}
@@ -604,7 +604,6 @@ export function RenewalTrackerView() {
                     </DialogContent>
 
                     <DialogActions>
-                        <Button onClick={handleCloseCreate}>Cancel</Button>
                         <Button type="submit" variant="contained">
                             {isEdit ? 'Update' : 'Create'}
                         </Button>

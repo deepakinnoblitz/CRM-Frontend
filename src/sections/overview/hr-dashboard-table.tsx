@@ -19,9 +19,10 @@ type Props = CardProps & {
     subheader?: string;
     tableData: any[];
     headLabel: { id: string; label: string }[];
+    emptyMessage?: string;
 };
 
-export function HRDashboardTable({ title, subheader, tableData, headLabel, ...other }: Props) {
+export function HRDashboardTable({ title, subheader, tableData, headLabel, emptyMessage, ...other }: Props) {
     return (
         <Card {...other}>
             <CardHeader title={title} subheader={subheader} sx={{ mb: 3 }} />
@@ -42,7 +43,7 @@ export function HRDashboardTable({ title, subheader, tableData, headLabel, ...ot
                                 <TableRow>
                                     <TableCell colSpan={headLabel.length} align="center" sx={{ py: 3 }}>
                                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                            No data found
+                                            {emptyMessage || 'No data found'}
                                         </Typography>
                                     </TableCell>
                                 </TableRow>

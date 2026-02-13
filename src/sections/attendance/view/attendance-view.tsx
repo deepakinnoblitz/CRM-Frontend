@@ -18,6 +18,7 @@ import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
@@ -639,7 +640,28 @@ export function AttendanceView() {
                             gridTemplateColumns="1fr"
                             gap={3}
                         >
-                            {renderField('employee', 'Employee', 'select', employeeOptions, {}, true)}
+                            <Autocomplete
+                                fullWidth
+                                options={employeeOptions}
+                                getOptionLabel={(option) => option.employee_name ? `${option.employee_name} (${option.name})` : (option.name || '')}
+                                value={employeeOptions.find((opt) => opt.name === formData.employee) || null}
+                                onChange={(event, newValue) => {
+                                    handleInputChange('employee', newValue?.name || '');
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Employee"
+                                        required
+                                        InputLabelProps={{ shrink: true }}
+                                        sx={{
+                                            '& .MuiFormLabel-asterisk': {
+                                                color: 'red',
+                                            },
+                                        }}
+                                    />
+                                )}
+                            />
                             {renderField('attendance_date', 'Attendance Date', 'date', [], {}, true)}
                             {renderField('status', 'Status', 'select', ['Present', 'Absent', 'Half Day', 'On Leave', 'Holiday'], {}, true)}
 

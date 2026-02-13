@@ -14,6 +14,7 @@ import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -294,7 +295,7 @@ export function JobOpeningsView() {
                 {permissions.write && (
                     <Button
                         variant="contained"
-                        color="primary"
+                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
                         startIcon={<Iconify icon="mingcute:add-line" />}
                         onClick={handleOpenCreate}
                     >
@@ -405,7 +406,35 @@ export function JobOpeningsView() {
 
             {/* Create/Edit Dialog */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
-                <DialogTitle>{editJob ? 'Edit Job Opening' : 'New Job Opening'}</DialogTitle>
+                <DialogTitle
+                    sx={{
+                        m: 0,
+                        p: 2.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        bgcolor: 'background.neutral',
+                    }}
+                >
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        {editJob ? 'Edit Job Opening' : 'New Job Opening'}
+                    </Typography>
+
+                    <IconButton
+                        onClick={handleCloseCreate}
+                        sx={{
+                            p: 0.75,
+                            bgcolor: 'background.paper',
+                            boxShadow: (theme) => theme.customShadows.z8,
+                            '&:hover': {
+                                bgcolor: 'background.paper',
+                                color: 'error.main',
+                            },
+                        }}
+                    >
+                        <Iconify icon="mingcute:close-line" width={20} />
+                    </IconButton>
+                </DialogTitle>
                 <DialogContent>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <Stack spacing={3} sx={{ mt: 2 }}>
@@ -491,9 +520,6 @@ export function JobOpeningsView() {
                     </LocalizationProvider>
                 </DialogContent>
                 <DialogActions>
-                    <Button variant="outlined" onClick={handleCloseCreate}>
-                        Cancel
-                    </Button>
                     <Button variant="contained" onClick={handleSubmit}>
                         {editJob ? 'Update' : 'Create'}
                     </Button>

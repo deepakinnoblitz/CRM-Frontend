@@ -1,15 +1,14 @@
 import dayjs from 'dayjs';
 
 import Box from '@mui/material/Box';
-import Badge from '@mui/material/Badge';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
+import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
-import Divider from '@mui/material/Divider';
-import MenuItem from '@mui/material/MenuItem';
+import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Autocomplete from '@mui/material/Autocomplete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -20,60 +19,35 @@ import { Scrollbar } from 'src/components/scrollbar';
 // ----------------------------------------------------------------------
 
 type FiltersProps = {
+    employee: string;
     status: string;
-    job_applied: string;
     startDate: string | null;
     endDate: string | null;
 };
 
 type Props = {
     open: boolean;
+    onOpen: () => void;
     onClose: () => void;
     filters: FiltersProps;
-    onFilters: (newFilters: Partial<FiltersProps>) => void;
+    onFilters: (update: Partial<FiltersProps>) => void;
     canReset: boolean;
     onResetFilters: () => void;
-    jobOpenings: any[];
+    employees: any[];
 };
 
-const STATUS_OPTIONS = [
-    'Applied',
-    'Screening',
-    'Shortlisted',
-    'Scheduled',
-    'In Progress',
-    'Completed',
-    'No-Show',
-    'Cancelled',
-    'Rescheduled',
-    'Selected',
-    'Rejected',
-    'On Hold',
-];
-
-export function InterviewTableFiltersDrawer({
+export function RequestsTableFiltersDrawer({
     open,
+    onOpen,
     onClose,
     filters,
     onFilters,
     canReset,
     onResetFilters,
-    jobOpenings,
+    employees,
 }: Props) {
-    const handleFilterStatus = (event: React.ChangeEvent<HTMLInputElement>) => {
-        onFilters({ status: event.target.value });
-    };
-
-    const handleFilterJobApplied = (event: React.ChangeEvent<HTMLInputElement>) => {
-        onFilters({ job_applied: event.target.value });
-    };
-
-    const handleFilterStartDate = (newValue: dayjs.Dayjs | null) => {
-        onFilters({ startDate: newValue ? newValue.format('YYYY-MM-DD') : null });
-    };
-
-    const handleFilterEndDate = (newValue: dayjs.Dayjs | null) => {
-        onFilters({ endDate: newValue ? newValue.format('YYYY-MM-DD') : null });
+    const handleFilterChange = (field: keyof FiltersProps, value: any) => {
+        onFilters({ [field]: value });
     };
 
     const renderHead = (
@@ -108,10 +82,51 @@ export function InterviewTableFiltersDrawer({
                 </Badge>
             </IconButton>
 
-            <IconButton onClick={onClose}>
-                <Iconify icon="mingcute:close-line" />
+            <IconButton
+                onClick={onClose}
+                sx={{
+                    color: 'text.secondary',
+                    '&:hover': {
+                        bgcolor: 'action.hover',
+                    },
+                }}
+            >
+                <Iconify icon="mingcute:close-line" width={20} />
             </IconButton>
         </Box>
+    );
+
+    const renderEmployee = (
+        <Stack spacing={1.5}>
+            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Employee
+            </Typography>
+            <Autocomplete
+                fullWidth
+                options={employees}
+                getOptionLabel={(option) => option.employee_name || option.name || ''}
+                value={employees.find((emp) => emp.name === filters.employee) || null}
+                onChange={(event, newValue) => {
+                    handleFilterChange('employee', newValue?.name || 'all');
+                }}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Search employee..."
+                        size="small"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+            />
+        </Stack>
     );
 
     const renderStatus = (
@@ -122,49 +137,30 @@ export function InterviewTableFiltersDrawer({
             <TextField
                 select
                 fullWidth
-                size="small"
                 value={filters.status}
-                onChange={handleFilterStatus}
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                    },
-                }}
-            >
-                <MenuItem value="all">All</MenuItem>
-                {STATUS_OPTIONS.map((option) => (
-                    <MenuItem key={option} value={option}>
-                        {option}
-                    </MenuItem>
-                ))}
-            </TextField>
-        </Stack>
-    );
-
-    const renderJobApplied = (
-        <Stack spacing={1.5}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Job Applied
-            </Typography>
-            <TextField
-                select
-                fullWidth
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+                SelectProps={{ native: true }}
                 size="small"
-                value={filters.job_applied}
-                onChange={handleFilterJobApplied}
                 sx={{
                     '& .MuiOutlinedInput-root': {
                         borderRadius: 1.5,
                         bgcolor: 'background.neutral',
+                        '&:hover': {
+                            bgcolor: 'action.hover',
+                        },
                     },
                 }}
             >
-                <MenuItem value="all">All</MenuItem>
-                {jobOpenings.map((opening) => (
-                    <MenuItem key={opening.name} value={opening.name}>
-                        {opening.job_title || opening.name}
-                    </MenuItem>
+                <option value="all">All Statuses</option>
+                {[
+                    { value: 'Pending', label: 'Pending' },
+                    { value: 'Approved', label: 'Approved' },
+                    { value: 'Rejected', label: 'Rejected' },
+                    { value: 'Clarification Requested', label: 'Clarification Requested' },
+                ].map((option) => (
+                    <option key={option.value} value={option.value}>
+                        {option.label}
+                    </option>
                 ))}
             </TextField>
         </Stack>
@@ -173,41 +169,29 @@ export function InterviewTableFiltersDrawer({
     const renderDateRange = (
         <Stack spacing={1.5}>
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Scheduled Date Range
+                Date Range
             </Typography>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <Stack spacing={2}>
                     <DatePicker
                         label="Start Date"
                         value={filters.startDate ? dayjs(filters.startDate) : null}
-                        onChange={handleFilterStartDate}
+                        onChange={(newValue) => handleFilterChange('startDate', newValue?.format('YYYY-MM-DD') || null)}
                         slotProps={{
                             textField: {
                                 fullWidth: true,
                                 size: 'small',
-                                sx: {
-                                    '& .MuiOutlinedInput-root': {
-                                        borderRadius: 1.5,
-                                        bgcolor: 'background.neutral',
-                                    },
-                                },
                             },
                         }}
                     />
                     <DatePicker
                         label="End Date"
                         value={filters.endDate ? dayjs(filters.endDate) : null}
-                        onChange={handleFilterEndDate}
+                        onChange={(newValue) => handleFilterChange('endDate', newValue?.format('YYYY-MM-DD') || null)}
                         slotProps={{
                             textField: {
                                 fullWidth: true,
                                 size: 'small',
-                                sx: {
-                                    '& .MuiOutlinedInput-root': {
-                                        borderRadius: 1.5,
-                                        bgcolor: 'background.neutral',
-                                    },
-                                },
                             },
                         }}
                     />
@@ -235,12 +219,10 @@ export function InterviewTableFiltersDrawer({
         >
             {renderHead}
 
-            <Divider />
-
             <Scrollbar>
-                <Stack spacing={3} sx={{ p: 2.5 }}>
+                <Stack spacing={3} sx={{ p: 3 }}>
+                    {renderEmployee}
                     {renderStatus}
-                    {renderJobApplied}
                     {renderDateRange}
                 </Stack>
             </Scrollbar>
@@ -258,7 +240,7 @@ export function InterviewTableFiltersDrawer({
                     size="large"
                     color="inherit"
                     variant="outlined"
-                    startIcon={<Iconify icon="solar:restart-bold" />}
+                    startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
                     onClick={onResetFilters}
                     disabled={!canReset}
                     sx={{

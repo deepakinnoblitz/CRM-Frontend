@@ -74,6 +74,8 @@ import { HolidayTableFiltersDrawer } from '../holidays-table-filters-drawer';
 // ----------------------------------------------------------------------
 
 const HOLIDAY_SORT_OPTIONS = [
+    { value: 'modified_desc', label: 'Newest First' },
+    { value: 'modified_asc', label: 'Oldest First' },
     { value: 'year_desc', label: 'Year: Newest First' },
     { value: 'year_asc', label: 'Year: Oldest First' },
     { value: 'holiday_list_name_asc', label: 'Name: A to Z' },
@@ -107,7 +109,7 @@ export function HolidaysView() {
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('year');
+    const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
 
     const { data, total, refetch } = useHolidayLists(page + 1, rowsPerPage, filterName, orderBy, order);
