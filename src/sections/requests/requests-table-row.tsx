@@ -83,18 +83,7 @@ export function RequestTableRow({
 
             <TableCell>{row.subject || '-'}</TableCell>
 
-            <TableCell>
-                <Label
-                    color={
-                        (row.workflow_state === 'Approved' && 'success') ||
-                        (row.workflow_state === 'Rejected' && 'error') ||
-                        (row.workflow_state === 'Clarification Requested' && 'info') ||
-                        'warning'
-                    }
-                >
-                    {row.workflow_state || 'Pending'}
-                </Label>
-            </TableCell>
+            <TableCell>{row.subject || '-'}</TableCell>
 
             <TableCell>
                 {row.creation ? new Date(row.creation).toLocaleDateString() : '-'}

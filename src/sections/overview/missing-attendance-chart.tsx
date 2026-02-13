@@ -102,7 +102,7 @@ export function MissingAttendanceChart({ title, subheader, data, sx, ...other }:
         },
         dataLabels: {
             enabled: true,
-            offsetY: -10,
+            offsetY: -25,
             style: {
                 fontSize: '12px',
                 fontWeight: 700,

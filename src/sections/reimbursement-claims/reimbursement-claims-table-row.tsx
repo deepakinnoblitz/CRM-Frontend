@@ -20,6 +20,7 @@ type Props = {
         date_of_expense: string;
         amount: number;
         paid: number;
+        workflow_state?: string;
     };
     selected: boolean;
     onSelectRow: () => void;
@@ -96,9 +97,9 @@ export function ReimbursementClaimTableRow({
             <TableCell>
                 <Label
                     variant="soft"
-                    color={row.paid === 1 ? 'success' : 'warning'}
+                    color={row.paid === 1 || row.workflow_state === 'Approved' ? 'success' : (row.workflow_state === 'Rejected' ? 'error' : 'warning')}
                 >
-                    {row.paid === 1 ? 'Paid' : 'Pending'}
+                    {row.workflow_state || (row.paid === 1 ? 'Paid' : 'Pending')}
                 </Label>
             </TableCell>
 

@@ -105,7 +105,7 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
   },
   {
-    title: 'Job Openings',
+    title: 'Recruitment',
     path: '/job-openings',
     icon: <Iconify icon={"solar:buildings-bold-duotone" as any} />,
     children: [

@@ -208,8 +208,19 @@ export async function fetchMonthCalendarData(month?: number, year?: number): Pro
 }
 
 export async function fetchMonthHolidays(month?: number, year?: number): Promise<any[]> {
-    const response = await fetchMonthCalendarData(month, year);
-    return (response.calendar_data || []).filter((d: any) => d.holiday_info);
+    let url = '/api/method/company.company.api.get_month_holidays';
+    const params = new URLSearchParams();
+    if (month) params.append('month', month.toString());
+    if (year) params.append('year', year.toString());
+    if (params.toString()) url += `?${params.toString()}`;
+
+    const res = await frappeRequest(url);
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch holidays'));
+    }
+    const data = await res.json();
+    return data.message || [];
 }
 
 export async function fetchTodayBirthdays(): Promise<any[]> {

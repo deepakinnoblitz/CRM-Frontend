@@ -36,9 +36,6 @@ export function WeeklyPresentChart({ title, subheader, data, sx, ...other }: Pro
                 borderRadius: 8,
                 columnWidth: '50%',
                 distributed: false,
-                dataLabels: {
-                    position: 'top',
-                },
             },
         },
         fill: {
@@ -121,7 +118,7 @@ export function WeeklyPresentChart({ title, subheader, data, sx, ...other }: Pro
                 },
             },
             padding: {
-                top: 10,
+                top: 20,
                 right: 10,
                 bottom: 0,
                 left: 0,

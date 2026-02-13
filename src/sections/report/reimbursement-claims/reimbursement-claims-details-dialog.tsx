@@ -1,16 +1,26 @@
+import { useState, useEffect } from 'react';
+
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+
+import { updateReimbursementClaim, WorkflowAction, getReimbursementClaimWorkflowActions, applyReimbursementClaimWorkflowAction } from 'src/api/reimbursement-claims';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import { useAuth } from 'src/auth/auth-context';
 
 // ----------------------------------------------------------------------
 
@@ -18,10 +28,60 @@ type Props = {
     open: boolean;
     onClose: () => void;
     claim: any;
+    onRefresh?: () => void;
 };
 
-export function ReimbursementClaimDetailsDialog({ open, onClose, claim }: Props) {
+export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefresh }: Props) {
+    const { user } = useAuth();
+    const [submitting, setSubmitting] = useState<boolean>(false);
+    const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+    const [comment, setComment] = useState('');
+    const [actions, setActions] = useState<WorkflowAction[]>([]);
+    const [selectedAction, setSelectedAction] = useState<WorkflowAction | null>(null);
+
+    useEffect(() => {
+        if (open && claim) {
+            fetchActions();
+        }
+    }, [open, claim]);
+
+    const fetchActions = async () => {
+        try {
+            const workflowActions = await getReimbursementClaimWorkflowActions(claim.workflow_state || 'Draft');
+            setActions(workflowActions);
+        } catch (error) {
+            console.error('Failed to fetch workflow actions:', error);
+        }
+    };
+
     if (!claim) return null;
+
+    const handleActionClick = (action: WorkflowAction) => {
+        setSelectedAction(action);
+        setComment('');
+        setCommentDialogOpen(true);
+    };
+
+    const handleApplyAction = async () => {
+        if (!selectedAction) return;
+        setSubmitting(true);
+        try {
+            await applyReimbursementClaimWorkflowAction(claim.name, selectedAction.action, comment);
+            if (onRefresh) onRefresh();
+            setCommentDialogOpen(false);
+            onClose();
+        } catch (error) {
+            console.error('Failed to apply workflow action:', error);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const getActionColor = (action: string) => {
+        if (['Approve', 'Approved', 'Pay', 'Paid'].includes(action)) return 'success';
+        if (['Reject', 'Rejected', 'Cancel', 'Cancelled'].includes(action)) return 'error';
+        return 'primary';
+    };
 
     const renderHeader = (
         <Box sx={{ p: 3, display: 'flex', alignItems: 'center', bgcolor: 'background.neutral' }}>
@@ -53,7 +113,7 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim }: Props)
                     ₹{claim.amount?.toLocaleString() || 0}
                 </Typography>
                 <Label variant="soft" color={claim.paid === 1 ? 'success' : 'warning'}>
-                    {claim.paid === 1 ? 'Paid' : 'Pending'}
+                    {claim.workflow_state || (claim.paid === 1 ? 'Paid' : 'Pending')}
                 </Label>
             </Stack>
         </Box>
@@ -72,11 +132,11 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim }: Props)
                 <DialogContent sx={{ p: 0 }}>
                     {renderHeader}
 
-                    <Box sx={{ p: 3 }}>
+                    <Box sx={{ p: 3, marginLeft: 2 }}>
                         <Stack spacing={3}>
                             {/* Claim Information */}
                             <Box>
-                                <SectionHeader title="Claim Information" icon="solar:document-bold" />
+                                <SectionHeader title="Claim Information" icon="" />
                                 <Box
                                     sx={{
                                         display: 'grid',
@@ -93,8 +153,8 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim }: Props)
 
                             {/* Settlement Details */}
                             {(claim.paid === 1 || claim.approved_by || claim.paid_by) && (
-                                <Box>
-                                    <SectionHeader title="Settlement Details" icon="solar:checklist-bold" />
+                                <Box sx={{ pt: 3 }}>
+                                    <SectionHeader title="Settlement Details" icon="" />
                                     <Box
                                         sx={{
                                             display: 'grid',
@@ -103,6 +163,7 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim }: Props)
                                         }}
                                     >
                                         <DetailItem label="Approved By" value={claim.approved_by || '-'} icon="solar:user-bold" />
+                                        <DetailItem label="Status" value={claim.workflow_state || (claim.paid === 1 ? 'Paid' : 'Pending')} icon="solar:flag-bold" />
                                         <DetailItem label="Paid By" value={claim.paid_by || '-'} icon="solar:user-bold" />
                                         <DetailItem label="Paid Date" value={claim.paid_date ? new Date(claim.paid_date).toLocaleDateString() : '-'} icon="solar:calendar-bold" />
                                         <DetailItem label="Payment Reference" value={claim.payment_reference || '-'} icon="solar:bill-bold" />
@@ -111,20 +172,27 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim }: Props)
                             )}
 
                             {/* Claim Details / Notes */}
-                            {claim.claim_details && (
-                                <Box>
+                            {(claim.claim_details || claim.approver_comments) && (
+                                <Box sx={{ pt: 3 }}>
                                     <SectionHeader title="Details & Notes" icon="solar:notes-bold" />
-                                    <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                                        <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: 'pre-wrap' }}>
-                                            {claim.claim_details}
-                                        </Typography>
-                                    </Box>
+                                    <Stack spacing={2}>
+                                        {claim.claim_details && (
+                                            <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, mb: 1, display: 'block', textTransform: 'uppercase' }}>
+                                                    Claim Details
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: 'pre-wrap' }}>
+                                                    {claim.claim_details}
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                    </Stack>
                                 </Box>
                             )}
 
                             {/* Attachments */}
                             {(claim.receipt || claim.payment_proof) && (
-                                <Box>
+                                <Box sx={{ pt: 3 }}>
                                     <SectionHeader
                                         title="Attachments"
                                         icon="solar:link-bold"
@@ -169,7 +237,7 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim }: Props)
                                     sx={{
                                         display: 'grid',
                                         gap: 2,
-                                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+                                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(3, 1fr)' },
                                         mt: 2
                                     }}
                                 >
@@ -191,8 +259,52 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim }: Props)
                     </Box>
                 </DialogContent>
             </Scrollbar>
+
+            {actions.length > 0 && (
+                <DialogActions sx={{ p: 3, bgcolor: 'background.neutral', gap: 1.5 }}>
+                    {actions.map((action) => (
+                        <LoadingButton
+                            key={action.action}
+                            color={getActionColor(action.action) as any}
+                            variant="contained"
+                            loading={submitting && selectedAction?.action === action.action}
+                            onClick={() => handleActionClick(action)}
+                            sx={{ fontWeight: 800, px: 3 }}
+                        >
+                            {action.action}
+                        </LoadingButton>
+                    ))}
+                </DialogActions>
+            )}
+
+            <ConfirmDialog
+                open={commentDialogOpen}
+                onClose={() => setCommentDialogOpen(false)}
+                title={selectedAction?.action || 'Confirm'}
+                content={`Are you sure you want to perform the action "${selectedAction?.action}"?`}
+                icon={getActionIcon(selectedAction?.action || '')}
+                iconColor={getActionColor(selectedAction?.action || '') + '.main'}
+                action={
+                    <LoadingButton
+                        variant="contained"
+                        color={getActionColor(selectedAction?.action || '') as any}
+                        loading={submitting}
+                        onClick={handleApplyAction}
+                        sx={{ borderRadius: 1.5, minWidth: 100 }}
+                    >
+                        Confirm
+                    </LoadingButton>
+                }
+            />
         </Dialog>
     );
+}
+
+function getActionIcon(action: string) {
+    if (['Approve', 'Approved'].includes(action)) return 'solar:check-circle-bold';
+    if (['Reject', 'Rejected', 'Cancel', 'Cancelled'].includes(action)) return 'solar:close-circle-bold';
+    if (['Pay', 'Paid'].includes(action)) return 'solar:wad-of-money-bold';
+    return 'solar:question-circle-bold';
 }
 
 // ----------------------------------------------------------------------

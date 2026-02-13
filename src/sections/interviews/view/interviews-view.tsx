@@ -367,7 +367,7 @@ export function InterviewsView() {
                 {permissions.write && (
                     <Button
                         variant="contained"
-                        color="primary"
+                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
                         startIcon={<Iconify icon="mingcute:add-line" />}
                         onClick={handleOpenCreate}
                     >
@@ -488,7 +488,35 @@ export function InterviewsView() {
 
             {/* Create/Edit Dialog */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-                <DialogTitle>{editInterview ? 'Edit Interview' : 'Schedule Interview'}</DialogTitle>
+                <DialogTitle
+                    sx={{
+                        m: 0,
+                        p: 2.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        bgcolor: 'background.neutral',
+                    }}
+                >
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        {editInterview ? 'Edit Interview' : 'Schedule Interview'}
+                    </Typography>
+
+                    <IconButton
+                        onClick={handleCloseCreate}
+                        sx={{
+                            p: 0.75,
+                            bgcolor: 'background.paper',
+                            boxShadow: (theme) => theme.customShadows.z8,
+                            '&:hover': {
+                                bgcolor: 'background.paper',
+                                color: 'error.main',
+                            },
+                        }}
+                    >
+                        <Iconify icon="mingcute:close-line" width={20} />
+                    </IconButton>
+                </DialogTitle>
                 <DialogContent>
                     <Stack spacing={3} sx={{ mt: 2 }}>
                         <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
@@ -708,9 +736,6 @@ export function InterviewsView() {
                     </Stack>
                 </DialogContent>
                 <DialogActions>
-                    <Button variant="outlined" onClick={handleCloseCreate}>
-                        Cancel
-                    </Button>
                     <Button variant="contained" onClick={handleSubmit}>
                         {editInterview ? 'Update' : 'Schedule'}
                     </Button>

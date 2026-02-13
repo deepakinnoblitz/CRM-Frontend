@@ -10,7 +10,10 @@ export function useEmployees(
     order?: 'asc' | 'desc',
     filterDepartment?: string,
     filterDesignation?: string,
-    filterStatus?: string
+    filterStatus?: string,
+    filterCountry?: string,
+    filterState?: string,
+    filterCity?: string
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
@@ -36,6 +39,21 @@ export function useEmployees(
                 filters.push(['Employee', 'status', '=', filterStatus]);
             }
 
+            // Add country filter (text search)
+            if (filterCountry && filterCountry.trim() !== '') {
+                filters.push(['Employee', 'country', 'like', `%${filterCountry}%`]);
+            }
+
+            // Add state filter (text search)
+            if (filterState && filterState.trim() !== '') {
+                filters.push(['Employee', 'state', 'like', `%${filterState}%`]);
+            }
+
+            // Add city filter (text search)
+            if (filterCity && filterCity.trim() !== '') {
+                filters.push(['Employee', 'city', 'like', `%${filterCity}%`]);
+            }
+
             const result = await fetchEmployees({
                 page,
                 page_size: pageSize,
@@ -51,7 +69,7 @@ export function useEmployees(
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, search, orderBy, order, filterDepartment, filterDesignation, filterStatus]);
+    }, [page, pageSize, search, orderBy, order, filterDepartment, filterDesignation, filterStatus, filterCountry, filterState, filterCity]);
 
     useEffect(() => {
         refetch();

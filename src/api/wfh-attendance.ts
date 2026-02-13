@@ -33,25 +33,35 @@ export const fetchWFHAttendance = async (params: {
     const filters: any[] = [];
     if (params.filters) {
         if (params.filters.employee && params.filters.employee !== 'all') {
-            filters.push(['WFH Attendance', 'employee', '=', params.filters.employee]);
+            filters.push(['employee', '=', params.filters.employee]);
         }
         if (params.filters.status && params.filters.status !== 'all') {
-            filters.push(['WFH Attendance', 'workflow_state', '=', params.filters.status]);
+            filters.push(['workflow_state', '=', params.filters.status]);
         }
         if (params.filters.startDate) {
-            filters.push(['WFH Attendance', 'date', '>=', params.filters.startDate]);
+            filters.push(['date', '>=', params.filters.startDate]);
         }
         if (params.filters.endDate) {
-            filters.push(['WFH Attendance', 'date', '<=', params.filters.endDate]);
+            filters.push(['date', '<=', params.filters.endDate]);
         }
+    }
+
+    const or_filters: any[] = [];
+    if (params.search) {
+        const searchVal = `%${params.search}%`;
+        or_filters.push(['employee_name', 'like', searchVal]);
+        or_filters.push(['employee', 'like', searchVal]);
+        or_filters.push(['employee_id', 'like', searchVal]);
+        or_filters.push(['name', 'like', searchVal]);
+        or_filters.push(['workflow_state', 'like', searchVal]);
+        or_filters.push(['task_description', 'like', searchVal]);
     }
 
     return fetchFrappeList("WFH Attendance", {
         page: params.page,
         page_size: params.page_size,
-        search: params.search,
-        searchField: "employee_name",
         filters,
+        or_filters,
         orderBy: params.orderBy,
         order: params.order
     });

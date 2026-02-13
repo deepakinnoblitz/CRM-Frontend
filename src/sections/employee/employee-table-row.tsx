@@ -82,9 +82,12 @@ export function EmployeeTableRow({
             )}
 
             <TableCell component="th" scope="row">
-                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="subtitle2" noWrap>
+                <Box>
+                    <Typography variant="subtitle2" noWrap sx={{ textTransform: 'capitalize' }}>
                         {row.name}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
+                        {row.id}
                     </Typography>
                 </Box>
             </TableCell>
