@@ -570,7 +570,7 @@ export function LeavesView() {
                                             fontWeight: 500
                                         }}
                                     >
-                                        Balance ({leaveType.toLowerCase() === 'permission' ? 'Minutes' : 'Days'})
+                                        Available {leaveType.toLowerCase() === 'permission' ? 'Minutes' : 'Days'}
                                     </Typography>
                                     <Typography
                                         variant="h3"
@@ -584,6 +584,12 @@ export function LeavesView() {
                                 </Box>
                             )}
                         </Box>
+                    )}
+
+                    {leaveType && balanceInfo && totalDays > balanceInfo.remaining && (
+                        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+                            Insufficient {leaveType} balance. You have <strong>{balanceInfo.remaining} {leaveType.toLowerCase() === 'permission' ? 'minutes' : 'days'}</strong> available, but you are requesting <strong>{totalDays} {leaveType.toLowerCase() === 'permission' ? 'minutes' : 'days'}</strong>.
+                        </Alert>
                     )}
 
                     <Box
@@ -654,220 +660,230 @@ export function LeavesView() {
                             ))}
                         </TextField>
 
-                        {/* Half Day checkbox - only for Paid Leave and Unpaid Leave - Show BEFORE date pickers */}
-                        {leaveType && (leaveType.toLowerCase() === 'paid leave' || leaveType.toLowerCase() === 'unpaid leave') && (
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        checked={halfDay}
-                                        onChange={(e) => {
-                                            setHalfDay(e.target.checked);
-                                            if (e.target.checked && fromDate) {
-                                                setToDate(fromDate); // When enabling half day, set to date same as from date
-                                                setHalfDayDate(fromDate);
-                                            }
-                                        }}
-                                    />
-                                }
-                                label="Half Day"
-                            />
-                        )}
-
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            {/* For Permission leave type OR Half Day, show only one date picker */}
-                            {(leaveType.toLowerCase() === 'permission' || halfDay) ? (
-                                <DatePicker
-                                    label={leaveType.toLowerCase() === 'permission' ? "Permission Date" : "Leave Date"}
-                                    value={fromDate ? dayjs(fromDate) : null}
-                                    format="DD-MM-YYYY"
-                                    onChange={(newValue) => {
-                                        const date = newValue?.format('YYYY-MM-DD') || '';
-                                        setFromDate(date);
-                                        setToDate(date); // Set both from and to date as same
-                                        if (halfDay) setHalfDayDate(date);
-                                        if (formErrors.fromDate) setFormErrors(prev => ({ ...prev, fromDate: '', toDate: '' }));
-                                    }}
-                                    slotProps={{
-                                        textField: {
-                                            fullWidth: true,
-                                            required: true,
-                                            InputLabelProps: { shrink: true },
-                                            error: !!formErrors.fromDate,
-                                            helperText: formErrors.fromDate,
-                                            sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
-                                        },
-                                    }}
-                                />
-                            ) : (
-                                <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
-                                    <DatePicker
-                                        label="From Date"
-                                        value={fromDate ? dayjs(fromDate) : null}
-                                        format="DD-MM-YYYY"
-                                        onChange={(newValue) => {
-                                            const date = newValue?.format('YYYY-MM-DD') || '';
-                                            setFromDate(date);
-                                            if (formErrors.fromDate) setFormErrors(prev => ({ ...prev, fromDate: '' }));
-                                        }}
-                                        slotProps={{
-                                            textField: {
-                                                fullWidth: true,
-                                                required: true,
-                                                InputLabelProps: { shrink: true },
-                                                error: !!formErrors.fromDate,
-                                                helperText: formErrors.fromDate,
-                                                sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
-                                            },
-                                        }}
-                                    />
-                                    <DatePicker
-                                        label="To Date"
-                                        value={toDate ? dayjs(toDate) : null}
-                                        format="DD-MM-YYYY"
-                                        onChange={(newValue) => {
-                                            const date = newValue?.format('YYYY-MM-DD') || '';
-                                            setToDate(date);
-                                            if (formErrors.toDate) setFormErrors(prev => ({ ...prev, toDate: '' }));
-                                        }}
-                                        slotProps={{
-                                            textField: {
-                                                fullWidth: true,
-                                                required: true,
-                                                InputLabelProps: { shrink: true },
-                                                error: !!formErrors.toDate,
-                                                helperText: formErrors.toDate,
-                                                sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
-                                            },
-                                        }}
-                                    />
-                                </Box>
-                            )}
-
-                            {/* Permission Duration Picker - only for Permission leave type */}
-                            {leaveType && leaveType.toLowerCase() === 'permission' && (
-                                <TimePicker
-                                    label="Permission Duration (HH:mm)"
-                                    value={permissionHours ? dayjs().startOf('day').add(Number(permissionHours), 'minutes') : null}
-                                    onChange={(newValue: dayjs.Dayjs | null) => {
-                                        if (newValue) {
-                                            const totalMinutes = newValue.hour() * 60 + newValue.minute();
-                                            setPermissionHours(totalMinutes.toString());
-                                        } else {
-                                            setPermissionHours('');
+                        {/* Show other fields only if Employee and Leave Type are selected */}
+                        {employee && leaveType && (
+                            <>
+                                {/* Half Day checkbox - only for Paid Leave and Unpaid Leave - Show BEFORE date pickers */}
+                                {leaveType && (leaveType.toLowerCase() === 'paid leave' || leaveType.toLowerCase() === 'unpaid leave') && (
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                checked={halfDay}
+                                                onChange={(e) => {
+                                                    setHalfDay(e.target.checked);
+                                                    if (e.target.checked && fromDate) {
+                                                        setToDate(fromDate); // When enabling half day, set to date same as from date
+                                                        setHalfDayDate(fromDate);
+                                                    }
+                                                }}
+                                            />
                                         }
-                                    }}
-                                    ampm={false}
-                                    views={['hours', 'minutes']}
-                                    format="HH:mm"
-                                    slotProps={{
-                                        textField: {
-                                            fullWidth: true,
-                                            required: true,
-                                            helperText: "Select hours and minutes. Minimum 10 minutes required.",
-                                            error: permissionHours !== '' && Number(permissionHours) < 10,
-                                            InputLabelProps: { shrink: true }
-                                        }
-                                    }}
-                                />
-                            )}
-                        </LocalizationProvider>
+                                        label="Half Day"
+                                    />
+                                )}
 
-                        <TextField
-                            fullWidth
-                            label="Reason"
-                            multiline
-                            rows={3}
-                            value={reason}
-                            onChange={(e) => {
-                                setReason(e.target.value);
-                                if (formErrors.reason) setFormErrors(prev => ({ ...prev, reason: '' }));
-                            }}
-                            required
-                            error={!!formErrors.reason}
-                            helperText={formErrors.reason}
-                            sx={{
-                                '& .MuiFormLabel-asterisk': { color: 'red' },
-                            }}
-                        />
-
-                        {/* Attachments Section - Moved to last */}
-                        <Box
-                            sx={{
-                                p: 3,
-                                borderRadius: 2,
-                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
-                                border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
-                            }}
-                        >
-                            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
-                                <Typography variant="h6">Attachments</Typography>
-
-                                <Button
-                                    variant="contained"
-                                    component="label"
-                                    color="primary"
-                                    size="small"
-                                    startIcon={<Iconify icon={"solar:upload-bold" as any} />}
-                                    disabled={uploading}
-                                >
-                                    {uploading ? 'Uploading...' : 'Upload File'}
-                                    <input type="file" hidden onChange={handleFileUpload} />
-                                </Button>
-                            </Stack>
-
-                            <Stack spacing={1}>
-                                {attachments.length === 0 ? (
-                                    <Stack alignItems="center" justifyContent="center" sx={{ py: 3, color: 'text.disabled' }}>
-                                        <Iconify icon={"solar:file-bold" as any} width={40} height={40} sx={{ mb: 1, opacity: 0.48 }} />
-                                        <Typography variant="body2">No attachments yet</Typography>
-                                    </Stack>
-                                ) : (
-                                    attachments.map((file: any, index) => (
-                                        <Stack
-                                            key={index}
-                                            direction="row"
-                                            alignItems="center"
-                                            sx={{
-                                                px: 1.5,
-                                                py: 0.75,
-                                                borderRadius: 1.5,
-                                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                    {/* For Permission leave type OR Half Day, show only one date picker */}
+                                    {(leaveType.toLowerCase() === 'permission' || halfDay) ? (
+                                        <DatePicker
+                                            label={leaveType.toLowerCase() === 'permission' ? "Permission Date" : "Leave Date"}
+                                            value={fromDate ? dayjs(fromDate) : null}
+                                            format="DD-MM-YYYY"
+                                            onChange={(newValue) => {
+                                                const date = newValue?.format('YYYY-MM-DD') || '';
+                                                setFromDate(date);
+                                                setToDate(date); // Set both from and to date as same
+                                                if (halfDay) setHalfDayDate(date);
+                                                if (formErrors.fromDate) setFormErrors(prev => ({ ...prev, fromDate: '', toDate: '' }));
                                             }}
-                                        >
-                                            <Iconify icon={"solar:link-bold" as any} width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
-                                            <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
-                                                {typeof file === 'string' ? file : (file.url || file.name)}
-                                            </Typography>
-                                            <Button
-                                                size="small"
-                                                color="inherit"
-                                                onClick={() => handleRemoveAttachment(index)}
-                                                sx={{
-                                                    px: 1.5,
-                                                    py: 0,
-                                                    height: 26,
-                                                    borderRadius: 1.5,
-                                                    minWidth: 'auto',
-                                                    typography: 'caption',
-                                                    bgcolor: 'background.paper',
-                                                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.24)}`,
-                                                    '&:hover': {
-                                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                            slotProps={{
+                                                textField: {
+                                                    fullWidth: true,
+                                                    required: true,
+                                                    InputLabelProps: { shrink: true },
+                                                    error: !!formErrors.fromDate,
+                                                    helperText: formErrors.fromDate,
+                                                    sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
+                                                },
+                                            }}
+                                        />
+                                    ) : (
+                                        <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                                            <DatePicker
+                                                label="From Date"
+                                                value={fromDate ? dayjs(fromDate) : null}
+                                                format="DD-MM-YYYY"
+                                                onChange={(newValue) => {
+                                                    const date = newValue?.format('YYYY-MM-DD') || '';
+                                                    setFromDate(date);
+                                                    if (formErrors.fromDate) setFormErrors(prev => ({ ...prev, fromDate: '' }));
+                                                }}
+                                                slotProps={{
+                                                    textField: {
+                                                        fullWidth: true,
+                                                        required: true,
+                                                        InputLabelProps: { shrink: true },
+                                                        error: !!formErrors.fromDate,
+                                                        helperText: formErrors.fromDate,
+                                                        sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
                                                     },
                                                 }}
-                                            >
-                                                Remove
-                                            </Button>
-                                        </Stack>
-                                    ))
-                                )}
-                            </Stack>
-                        </Box>
+                                            />
+                                            <DatePicker
+                                                label="To Date"
+                                                value={toDate ? dayjs(toDate) : null}
+                                                format="DD-MM-YYYY"
+                                                onChange={(newValue) => {
+                                                    const date = newValue?.format('YYYY-MM-DD') || '';
+                                                    setToDate(date);
+                                                    if (formErrors.toDate) setFormErrors(prev => ({ ...prev, toDate: '' }));
+                                                }}
+                                                slotProps={{
+                                                    textField: {
+                                                        fullWidth: true,
+                                                        required: true,
+                                                        InputLabelProps: { shrink: true },
+                                                        error: !!formErrors.toDate,
+                                                        helperText: formErrors.toDate,
+                                                        sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
+                                                    },
+                                                }}
+                                            />
+                                        </Box>
+                                    )}
+
+                                    {/* Permission Duration Picker - only for Permission leave type */}
+                                    {leaveType && leaveType.toLowerCase() === 'permission' && (
+                                        <TimePicker
+                                            label="Permission Duration (HH:mm)"
+                                            value={permissionHours ? dayjs().startOf('day').add(Number(permissionHours), 'minutes') : null}
+                                            onChange={(newValue: dayjs.Dayjs | null) => {
+                                                if (newValue) {
+                                                    const totalMinutes = newValue.hour() * 60 + newValue.minute();
+                                                    setPermissionHours(totalMinutes.toString());
+                                                } else {
+                                                    setPermissionHours('');
+                                                }
+                                            }}
+                                            ampm={false}
+                                            views={['hours', 'minutes']}
+                                            format="HH:mm"
+                                            slotProps={{
+                                                textField: {
+                                                    fullWidth: true,
+                                                    required: true,
+                                                    helperText: "Select hours and minutes. Minimum 10 minutes required.",
+                                                    error: permissionHours !== '' && Number(permissionHours) < 10,
+                                                    InputLabelProps: { shrink: true }
+                                                }
+                                            }}
+                                        />
+                                    )}
+                                </LocalizationProvider>
+
+                                <TextField
+                                    fullWidth
+                                    label="Reason"
+                                    multiline
+                                    rows={3}
+                                    value={reason}
+                                    onChange={(e) => {
+                                        setReason(e.target.value);
+                                        if (formErrors.reason) setFormErrors(prev => ({ ...prev, reason: '' }));
+                                    }}
+                                    required
+                                    error={!!formErrors.reason}
+                                    helperText={formErrors.reason}
+                                    sx={{
+                                        '& .MuiFormLabel-asterisk': { color: 'red' },
+                                    }}
+                                />
+
+                                {/* Attachments Section - Moved to last */}
+                                <Box
+                                    sx={{
+                                        p: 3,
+                                        borderRadius: 2,
+                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                        border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
+                                    }}
+                                >
+                                    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
+                                        <Typography variant="h6">Attachments</Typography>
+
+                                        <Button
+                                            variant="contained"
+                                            component="label"
+                                            color="primary"
+                                            size="small"
+                                            startIcon={<Iconify icon={"solar:upload-bold" as any} />}
+                                            disabled={uploading}
+                                        >
+                                            {uploading ? 'Uploading...' : 'Upload File'}
+                                            <input type="file" hidden onChange={handleFileUpload} />
+                                        </Button>
+                                    </Stack>
+
+                                    <Stack spacing={1}>
+                                        {attachments.length === 0 ? (
+                                            <Stack alignItems="center" justifyContent="center" sx={{ py: 3, color: 'text.disabled' }}>
+                                                <Iconify icon={"solar:file-bold" as any} width={40} height={40} sx={{ mb: 1, opacity: 0.48 }} />
+                                                <Typography variant="body2">No attachments yet</Typography>
+                                            </Stack>
+                                        ) : (
+                                            attachments.map((file: any, index) => (
+                                                <Stack
+                                                    key={index}
+                                                    direction="row"
+                                                    alignItems="center"
+                                                    sx={{
+                                                        px: 1.5,
+                                                        py: 0.75,
+                                                        borderRadius: 1.5,
+                                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                                    }}
+                                                >
+                                                    <Iconify icon={"solar:link-bold" as any} width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
+                                                    <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
+                                                        {typeof file === 'string' ? file : (file.url || file.name)}
+                                                    </Typography>
+                                                    <Button
+                                                        size="small"
+                                                        color="inherit"
+                                                        onClick={() => handleRemoveAttachment(index)}
+                                                        sx={{
+                                                            px: 1.5,
+                                                            py: 0,
+                                                            height: 26,
+                                                            borderRadius: 1.5,
+                                                            minWidth: 'auto',
+                                                            typography: 'caption',
+                                                            bgcolor: 'background.paper',
+                                                            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.24)}`,
+                                                            '&:hover': {
+                                                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                                            },
+                                                        }}
+                                                    >
+                                                        Remove
+                                                    </Button>
+                                                </Stack>
+                                            ))
+                                        )}
+                                    </Stack>
+                                </Box>
+                            </>
+                        )}
                     </Box>
                 </DialogContent>
 
                 <DialogActions>
-                    <Button variant="contained" onClick={handleCreate} disabled={creating || uploading} sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}>
+                    <Button
+                        variant="contained"
+                        onClick={handleCreate}
+                        disabled={creating || uploading || (balanceInfo && totalDays > balanceInfo.remaining) || false}
+                        sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
                         {creating ? 'Submitting...' : 'Submit Application'}
                     </Button>
                 </DialogActions>
