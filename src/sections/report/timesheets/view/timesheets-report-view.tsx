@@ -12,12 +12,14 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
+import TextField from '@mui/material/TextField';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import FormControl from '@mui/material/FormControl';
+import Autocomplete from '@mui/material/Autocomplete';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
@@ -48,6 +50,7 @@ export function TimesheetsReportView() {
     const [employee, setEmployee] = useState('all');
     const [project, setProject] = useState('all');
     const [activityType, setActivityType] = useState('all');
+    const [sortBy, setSortBy] = useState('date_asc');
 
     // Options
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
@@ -118,14 +121,44 @@ export function TimesheetsReportView() {
             if (activityType !== 'all') filters.activity_type = activityType;
 
             const result = await runReport('Timesheet Report', filters);
-            setReportData(result.result || []);
+            let finalData = result.result || [];
+
+            // Sort Data
+            finalData = [...finalData].sort((a, b) => {
+                const dateA = a.timesheet_date || '';
+                const dateB = b.timesheet_date || '';
+                const nameA = (a.employee_name || '').toLowerCase();
+                const nameB = (b.employee_name || '').toLowerCase();
+
+                if (dateA === 'TOTAL') return 1;
+                if (dateB === 'TOTAL') return -1;
+
+                switch (sortBy) {
+                    case 'date_asc':
+                        if (dateA !== dateB) return dateA.localeCompare(dateB);
+                        return nameA.localeCompare(nameB);
+                    case 'date_desc':
+                        if (dateB !== dateA) return dateB.localeCompare(dateA);
+                        return nameA.localeCompare(nameB);
+                    case 'name_asc':
+                        if (nameA !== nameB) return nameA.localeCompare(nameB);
+                        return dateB.localeCompare(dateA);
+                    case 'name_desc':
+                        if (nameA !== nameB) return nameB.localeCompare(nameA);
+                        return dateB.localeCompare(dateA);
+                    default:
+                        return 0;
+                }
+            });
+
+            setReportData(finalData);
             setPage(0);
         } catch (error) {
             console.error('Failed to fetch timesheet report:', error);
         } finally {
             setLoading(false);
         }
-    }, [fromDate, toDate, employee, project, activityType]);
+    }, [fromDate, toDate, employee, project, activityType, sortBy]);
 
     useEffect(() => {
         fetchReport();
@@ -137,6 +170,7 @@ export function TimesheetsReportView() {
         setEmployee('all');
         setProject('all');
         setActivityType('all');
+        setSortBy('date_asc');
     };
 
     useEffect(() => {
@@ -194,83 +228,135 @@ export function TimesheetsReportView() {
                     sx={{
                         p: 2.5,
                         display: 'flex',
+                        flexDirection: 'column',   // 🔥 make vertical
                         gap: 2,
-                        flexWrap: 'wrap',
-                        alignItems: 'center',
                         bgcolor: 'background.neutral',
                         border: (t) => `1px solid ${t.palette.divider}`,
                     }}
                 >
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <DatePicker
-                            label="From Date"
-                            value={fromDate}
-                            onChange={(newValue) => setFromDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+
+                    {/* 🔹 Top Row – Filters */}
+                    <Stack direction="row" gap={1.5} alignItems="center" flexWrap="wrap">
+
+                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DatePicker
+                                label="From Date"
+                                format="DD/MM/YYYY"
+                                value={fromDate}
+                                onChange={(newValue) => setFromDate(newValue)}
+                                slotProps={{ textField: { size: 'small', sx: { width: 170 } } }}
+                            />
+                            <DatePicker
+                                label="To Date"
+                                format="DD/MM/YYYY"
+                                value={toDate}
+                                onChange={(newValue) => setToDate(newValue)}
+                                slotProps={{ textField: { size: 'small', sx: { width: 170 } } }}
+                            />
+                        </LocalizationProvider>
+
+                        {/* Employee */}
+                        <Autocomplete
+                            size="small"
+                            sx={{ minWidth: 180 }}
+                            options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
+                            getOptionLabel={(option) =>
+                                option.name === 'all'
+                                    ? option.employee_name
+                                    : `${option.employee_name} (${option.name})`
+                            }
+                            value={
+                                employee === 'all'
+                                    ? { name: 'all', employee_name: 'All Employees' }
+                                    : employeeOptions.find((opt) => opt.name === employee) || null
+                            }
+                            onChange={(event, newValue) => setEmployee(newValue?.name || 'all')}
+                            renderOption={(props, option) => (
+                                <Box component="li" {...props} sx={{ fontSize: '0.85rem' }}>
+                                    {option.name === 'all'
+                                        ? option.employee_name
+                                        : `${option.employee_name} (${option.name})`}
+                                </Box>
+                            )}
+                            renderInput={(params) => (
+                                <TextField {...params} label="Employee" placeholder="Select Employee" />
+                            )}
                         />
-                        <DatePicker
-                            label="To Date"
-                            value={toDate}
-                            onChange={(newValue) => setToDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+
+                        {/* Project */}
+                        <Autocomplete
+                            size="small"
+                            sx={{ minWidth: 180 }}
+                            options={[{ name: 'all', project: 'All Projects' }, ...projectOptions]}
+                            getOptionLabel={(option) => option.project || ''}
+                            value={
+                                project === 'all'
+                                    ? { name: 'all', project: 'All Projects' }
+                                    : projectOptions.find((opt) => opt.name === project) || null
+                            }
+                            onChange={(event, newValue) => setProject(newValue?.name || 'all')}
+                            renderOption={(props, option) => (
+                                <Box component="li" {...props} sx={{ fontSize: '0.85rem' }}>
+                                    {option.project}
+                                </Box>
+                            )}
+                            renderInput={(params) => (
+                                <TextField {...params} label="Project" placeholder="Select Project" />
+                            )}
                         />
-                    </LocalizationProvider>
 
-                    <FormControl size="small" sx={{ minWidth: 160 }}>
-                        <Select
-                            value={employee}
-                            onChange={(e) => setEmployee(e.target.value)}
-                            displayEmpty
+                        {/* Activity */}
+                        <Autocomplete
+                            size="small"
+                            sx={{ minWidth: 170 }}
+                            options={[{ name: 'all', activity_type: 'All Activities' }, ...activityTypeOptions]}
+                            getOptionLabel={(option) => option.activity_type || ''}
+                            value={
+                                activityType === 'all'
+                                    ? { name: 'all', activity_type: 'All Activities' }
+                                    : activityTypeOptions.find((opt) => opt.name === activityType) || null
+                            }
+                            onChange={(event, newValue) => setActivityType(newValue?.name || 'all')}
+                            renderOption={(props, option) => (
+                                <Box component="li" {...props} sx={{ fontSize: '0.85rem' }}>
+                                    {option.activity_type}
+                                </Box>
+                            )}
+                            renderInput={(params) => (
+                                <TextField {...params} label="Activity" placeholder="Select Activity" />
+                            )}
+                        />
+
+                        {/* Sort */}
+                        <FormControl size="small" sx={{ minWidth: 140 }}>
+                            <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                                <MenuItem value="date_asc" sx={{ fontSize: '0.85rem' }}>Date ↓ (Asc)</MenuItem>
+                                <MenuItem value="date_desc" sx={{ fontSize: '0.85rem' }}>Date ↑ (Desc)</MenuItem>
+                                <MenuItem value="name_asc" sx={{ fontSize: '0.85rem' }}>Name: A to Z</MenuItem>
+                                <MenuItem value="name_desc" sx={{ fontSize: '0.85rem' }}>Name: Z to A</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                    </Stack>
+
+                    {/* 🔹 Bottom Row – Export Button */}
+                    <Stack direction="row" justifyContent="flex-end">
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                            onClick={handleExport}
+                            sx={{
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#068fb3' }, marginRight: 2, marginTop: 2
+                            }}
                         >
-                            <MenuItem value="all">All Employees</MenuItem>
-                            {employeeOptions.map((opt) => (
-                                <MenuItem key={opt.name} value={opt.name}>
-                                    {opt.employee_name}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                            Export
+                        </Button>
+                    </Stack>
 
-                    <FormControl size="small" sx={{ minWidth: 160 }}>
-                        <Select
-                            value={project}
-                            onChange={(e) => setProject(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">All Projects</MenuItem>
-                            {projectOptions.map((opt) => (
-                                <MenuItem key={opt.name} value={opt.name}>
-                                    {opt.project}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-
-                    <FormControl size="small" sx={{ minWidth: 160 }}>
-                        <Select
-                            value={activityType}
-                            onChange={(e) => setActivityType(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">All Activities</MenuItem>
-                            {activityTypeOptions.map((opt) => (
-                                <MenuItem key={opt.name} value={opt.name}>
-                                    {opt.activity_type}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-
-                    <Box sx={{ flexGrow: 1 }} />
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={handleExport}
-                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                    >
-                        Export
-                    </Button>
                 </Card>
+
 
                 <Box
                     sx={{
@@ -282,8 +368,8 @@ export function TimesheetsReportView() {
                         },
                     }}
                 >
-                    <SummaryCard item={{ label: 'Total Hours', value: totalHours, indicator: 'green', suffix: 'hrs' }} />
                     <SummaryCard item={{ label: 'Total Entries', value: totalEntries, indicator: 'blue' }} />
+                    <SummaryCard item={{ label: 'Total Hours', value: totalHours, indicator: 'green', suffix: 'hrs' }} />
                 </Box>
 
                 <Card>

@@ -5,9 +5,12 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import { styled } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Autocomplete from '@mui/material/Autocomplete';
+import DialogContent from '@mui/material/DialogContent';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -105,30 +108,59 @@ export function SalarySlipFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Employee
             </Typography>
-            <TextField
-                select
+            <Autocomplete
                 fullWidth
-                value={filters.employee}
-                onChange={(e) => handleFilterChange('employee', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
+                options={['all', ...options.employees.map((emp) => emp.name)]}
+                getOptionLabel={(option) => {
+                    if (option === 'all') return 'All Employees';
+                    const employee = options.employees.find((emp) => emp.name === option);
+                    return employee ? (employee.employee_name || employee.name) : option;
                 }}
-            >
-                <option value="all">All Employees</option>
-                {options.employees.map((emp) => (
-                    <option key={emp.name} value={emp.name}>
-                        {emp.employee_name || emp.name}
-                    </option>
-                ))}
-            </TextField>
+                value={filters.employee || 'all'}
+                onChange={(event, newValue) => {
+                    handleFilterChange('employee', newValue === 'all' ? 'all' : (newValue || 'all'));
+                }}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Search employee..."
+                        size="small"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+                renderOption={(props, option) => {
+                    if (option === 'all') {
+                        const { key, ...itemProps } = props as any;
+                        return (
+                            <li key="all" {...itemProps}>
+                                All Employees
+                            </li>
+                        );
+                    }
+                    const employee = options.employees.find((emp) => emp.name === option);
+                    const { key, ...optionProps } = props as any;
+                    return (
+                        <li key={key} {...optionProps}>
+                            <Stack spacing={0.5}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                    {employee?.employee_name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    ID: {employee?.name}
+                                </Typography>
+                            </Stack>
+                        </li>
+                    );
+                }}
+            />
         </Stack>
     );
 
@@ -137,30 +169,30 @@ export function SalarySlipFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Department
             </Typography>
-            <TextField
-                select
+            <Autocomplete
                 fullWidth
-                value={filters.department}
-                onChange={(e) => handleFilterChange('department', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
+                options={['All Departments', ...options.departments.map((dept) => dept.name)]}
+                value={filters.department === 'all' ? 'All Departments' : filters.department}
+                onChange={(event, newValue) => {
+                    handleFilterChange('department', newValue === 'All Departments' ? 'all' : (newValue || 'all'));
                 }}
-            >
-                <option value="all">All Departments</option>
-                {options.departments.map((dept) => (
-                    <option key={dept.name} value={dept.name}>
-                        {dept.name}
-                    </option>
-                ))}
-            </TextField>
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Search department..."
+                        size="small"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+            />
         </Stack>
     );
 
@@ -170,11 +202,10 @@ export function SalarySlipFiltersDrawer({
                 Designation
             </Typography>
             <TextField
-                select
                 fullWidth
-                value={filters.designation}
-                onChange={(e) => handleFilterChange('designation', e.target.value)}
-                SelectProps={{ native: true }}
+                placeholder="Search designation..."
+                value={filters.designation === 'all' ? '' : filters.designation}
+                onChange={(e) => handleFilterChange('designation', e.target.value || 'all')}
                 size="small"
                 sx={{
                     '& .MuiOutlinedInput-root': {
@@ -185,14 +216,7 @@ export function SalarySlipFiltersDrawer({
                         },
                     },
                 }}
-            >
-                <option value="all">All Designations</option>
-                {options.designations.map((desig) => (
-                    <option key={desig.name} value={desig.name}>
-                        {desig.name}
-                    </option>
-                ))}
-            </TextField>
+            />
         </Stack>
     );
 
@@ -204,6 +228,7 @@ export function SalarySlipFiltersDrawer({
             <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
                     label="From"
+                    format="DD-MM-YYYY"
                     value={filters.pay_period_start ? dayjs(filters.pay_period_start) : null}
                     onChange={(newValue) => {
                         onFilters({ pay_period_start: newValue ? dayjs(newValue).format('YYYY-MM-DD') : null });
@@ -223,6 +248,7 @@ export function SalarySlipFiltersDrawer({
                 />
                 <DatePicker
                     label="To"
+                    format="DD-MM-YYYY"
                     value={filters.pay_period_end ? dayjs(filters.pay_period_end) : null}
                     onChange={(newValue) => {
                         onFilters({ pay_period_end: newValue ? dayjs(newValue).format('YYYY-MM-DD') : null });

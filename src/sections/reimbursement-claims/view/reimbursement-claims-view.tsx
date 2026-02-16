@@ -5,18 +5,23 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
+import Switch from '@mui/material/Switch';
+import { styled } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
+import Checkbox from '@mui/material/Checkbox';
+import TableCell from '@mui/material/TableCell'
 import TableBody from '@mui/material/TableBody';
 import TextField from '@mui/material/TextField';
-import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
+import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
@@ -25,6 +30,7 @@ import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -44,6 +50,7 @@ import {
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from 'src/sections/lead/table-no-data';
 import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
@@ -52,9 +59,40 @@ import { LeadTableToolbar as ClaimTableToolbar } from 'src/sections/lead/lead-ta
 import { ReimbursementClaimTableRow } from 'src/sections/reimbursement-claims/reimbursement-claims-table-row';
 import { ReimbursementClaimDetailsDialog } from 'src/sections/report/reimbursement-claims/reimbursement-claims-details-dialog';
 import { ReimbursementClaimsTableFiltersDrawer } from 'src/sections/reimbursement-claims/reimbursement-claims-table-filters-drawer';
+
+import { useAuth } from 'src/auth/auth-context';
+
+const Android12Switch = styled(Switch)(({ theme }) => ({
+    padding: 8,
+    '& .MuiSwitch-track': {
+        borderRadius: 22 / 2,
+        '&::before, &::after': {
+            content: '""',
+            position: 'absolute',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: 16,
+            height: 16,
+        },
+        '&::before': {
+            backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 24 24"><path fill="${encodeURIComponent(
+                '#fff',
+            )}" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>')`,
+            left: 12,
+        }
+    },
+    '& .MuiSwitch-thumb': {
+        boxShadow: 'none',
+        width: 16,
+        height: 16,
+        margin: 2,
+    },
+}));
+
 // ----------------------------------------------------------------------
 
 export function ReimbursementClaimsView() {
+    const { user } = useAuth();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
@@ -94,6 +132,15 @@ export function ReimbursementClaimsView() {
     const [amount, setAmount] = useState('');
     const [claimDetails, setClaimDetails] = useState('');
 
+    // Payment Details (for Edit)
+    const [paymentReference, setPaymentReference] = useState('');
+    const [paidDate, setPaidDate] = useState<string | null>(null);
+    const [paid, setPaid] = useState(false);
+    const [approvedBy, setApprovedBy] = useState('');
+    const [paidBy, setPaidBy] = useState('');
+    const [approverComments, setApproverComments] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+
     // List for dropdowns
     const [employees, setEmployees] = useState<any[]>([]);
     const [claimTypes, setClaimTypes] = useState<any[]>([]);
@@ -113,6 +160,9 @@ export function ReimbursementClaimsView() {
     });
 
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+    const [confirmMarkPaidOpen, setConfirmMarkPaidOpen] = useState(false);
+    const [pendingPayClaim, setPendingPayClaim] = useState<any>(null);
 
     // Load permissions, employees, and claim types
     useEffect(() => {
@@ -164,6 +214,13 @@ export function ReimbursementClaimsView() {
         setDateOfExpense('');
         setAmount('');
         setClaimDetails('');
+        setClaimDetails('');
+        setPaymentReference('');
+        setPaidDate(null);
+        setPaid(false);
+        setApprovedBy('');
+        setPaidBy('');
+        setApproverComments('');
         setFormErrors({});
         setOpenCreate(true);
     };
@@ -189,6 +246,12 @@ export function ReimbursementClaimsView() {
             setDateOfExpense(fullData.date_of_expense || '');
             setAmount(fullData.amount?.toString() || '');
             setClaimDetails(fullData.claim_details || '');
+            setPaymentReference(fullData.payment_reference || '');
+            setPaidDate(fullData.paid_date || null);
+            setPaid(fullData.paid === 1);
+            setApprovedBy(fullData.approved_by || '');
+            setPaidBy(fullData.paid_by || '');
+            setApproverComments(fullData.approver_comments || '');
             setFormErrors({});
             setIsEdit(true);
             setOpenCreate(true);
@@ -236,6 +299,8 @@ export function ReimbursementClaimsView() {
         [refetch]
     );
 
+    const isApprovedOrPaid = isEdit && currentClaim && (currentClaim.workflow_state === 'Approved' || currentClaim.workflow_state === 'Paid');
+
     const validateForm = () => {
         const errors: Record<string, string> = {};
         if (!employee) errors.employee = 'Employee is required';
@@ -249,7 +314,59 @@ export function ReimbursementClaimsView() {
 
     const handleCreate = async () => {
         if (!validateForm()) {
-            setSnackbar({ open: true, message: 'Please correct the errors in the form', severity: 'error' });
+            const errors: Record<string, string> = {};
+            if (!employee) errors.employee = 'Employee';
+            if (!claimType) errors.claimType = 'Claim Type';
+            if (!dateOfExpense) errors.dateOfExpense = 'Date of Expense';
+            if (!amount || parseFloat(amount) <= 0) errors.amount = 'Valid Amount';
+
+            const missingFields = Object.values(errors).join(', ');
+            setSnackbar({
+                open: true,
+                message: `Please provide: ${missingFields}`,
+                severity: 'error'
+            });
+            return;
+        }
+
+        // For approved/paid claims, only send settlement details
+        if (isApprovedOrPaid) {
+            const settlementData = {
+                payment_reference: paymentReference,
+                paid_date: paidDate || undefined,
+                paid: paid ? 1 : 0,
+                approved_by: approvedBy,
+                paid_by: paidBy,
+                approver_comments: approverComments
+            };
+
+            try {
+                setSubmitting(true);
+                await updateReimbursementClaim(currentClaim.name, settlementData);
+
+                if (currentClaim.workflow_state === 'Approved') {
+                    setPendingPayClaim(currentClaim);
+                    if (!paymentReference) setPaymentReference('');
+                    if (!paidDate) setPaidDate(dayjs().format('YYYY-MM-DD'));
+                    setConfirmMarkPaidOpen(true);
+                }
+
+                setSnackbar({
+                    open: true,
+                    message: 'Settlement details updated successfully',
+                    severity: 'success',
+                });
+                handleCloseCreate();
+                refetch();
+            } catch (error: any) {
+                setSnackbar({
+                    open: true,
+                    message: error.message || 'Operation failed',
+                    severity: 'error',
+                });
+            } finally {
+                setSubmitting(false);
+            }
             return;
         }
 
@@ -259,11 +376,38 @@ export function ReimbursementClaimsView() {
             date_of_expense: dateOfExpense,
             amount: parseFloat(amount) || 0,
             claim_details: claimDetails.trim(),
+            ...(isEdit && user?.roles.some(r => ['System Manager', 'HR', 'HR User', 'HR Manager', 'Accounts Manager'].includes(r)) ? {
+                payment_reference: paymentReference,
+                paid_date: paidDate || undefined,
+                paid: paid ? 1 : 0,
+                approved_by: approvedBy,
+                paid_by: paidBy,
+                approver_comments: approverComments
+            } : {})
         };
 
         try {
+            setSubmitting(true);
             if (isEdit && currentClaim) {
                 await updateReimbursementClaim(currentClaim.name, claimData);
+
+                // If the claim is Approved but NOT paid, ask to mark as paid
+                // We check existing state + new state. If we just saved it and it's Approved, we check if 'paid' toggle was off.
+                // If the user already toggled 'paid' in the form, claimData.paid would be 1, so we don't need to ask.
+                // We also need to check if the current workflow state (which might have been updated) is 'Approved'.
+                // Since we don't have the fresh claim object here without refetching, we rely on the fact we just saved it.
+                // Usage: User opens Approved claim -> Updates -> Dialog closes -> Prompt opens.
+
+                // Construct a temporary updated claim object to check status
+                const updatedWorkflowState = currentClaim.workflow_state; // Status doesn't change on simple update usually unless workflow action involved, but here we assume it stays Approved
+
+                if (updatedWorkflowState === 'Approved') {
+                    setPendingPayClaim({ ...currentClaim, ...claimData });
+                    if (!paymentReference) setPaymentReference('');
+                    if (!paidDate) setPaidDate(dayjs().format('YYYY-MM-DD'));
+                    setConfirmMarkPaidOpen(true);
+                }
+
                 setSnackbar({
                     open: true,
                     message: 'Claim updated successfully',
@@ -285,6 +429,47 @@ export function ReimbursementClaimsView() {
                 message: error.message || 'Operation failed',
                 severity: 'error',
             });
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleMarkPaidConfirm = async () => {
+        if (!pendingPayClaim) return;
+
+        if (!paidDate) {
+            setSnackbar({ open: true, message: 'Please select a Paid Date', severity: 'error' });
+            return;
+        }
+
+        try {
+            setSubmitting(true);
+            await updateReimbursementClaim(pendingPayClaim.name, {
+                paid: 1,
+                paid_date: paidDate,
+                payment_reference: paymentReference,
+                workflow_state: 'Paid', // Explicitly set if workflow transition allows, or rely on backend hook
+                // If using workflow actions, we might need applyReimbursementClaimWorkflowAction here instead,
+                // but typically update with 'Paid' status or field might trigger it depending on backend.
+                // Given previous code uses updateReimbursementClaim for settlement, we stick to that.
+            });
+
+            setSnackbar({
+                open: true,
+                message: 'Claim marked as Paid successfully',
+                severity: 'success',
+            });
+            setConfirmMarkPaidOpen(false);
+            setPendingPayClaim(null);
+            refetch();
+        } catch (error: any) {
+            setSnackbar({
+                open: true,
+                message: error.message || 'Failed to mark as paid',
+                severity: 'error',
+            });
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -351,7 +536,17 @@ export function ReimbursementClaimsView() {
         const commonProps = {
             fullWidth: true,
             label,
-            value: (fieldname === 'employee' ? employee : fieldname === 'claim_type' ? claimType : fieldname === 'date_of_expense' ? dateOfExpense : fieldname === 'amount' ? amount : claimDetails),
+            value: (() => {
+                if (fieldname === 'employee') return employee;
+                if (fieldname === 'claim_type') return claimType;
+                if (fieldname === 'date_of_expense') return dateOfExpense;
+                if (fieldname === 'amount') return amount;
+                if (fieldname === 'payment_reference') return paymentReference;
+                if (fieldname === 'approved_by') return approvedBy;
+                if (fieldname === 'paid_by') return paidBy;
+                if (fieldname === 'approver_comments') return approverComments;
+                return claimDetails;
+            })(),
             onChange: (e: any) => {
                 const val = e.target.value;
                 if (fieldname === 'employee') setEmployee(val);
@@ -364,6 +559,10 @@ export function ReimbursementClaimsView() {
                     }
                 }
                 else if (fieldname === 'claim_details') setClaimDetails(val);
+                else if (fieldname === 'payment_reference') setPaymentReference(val);
+                else if (fieldname === 'approved_by') setApprovedBy(val);
+                else if (fieldname === 'paid_by') setPaidBy(val);
+                else if (fieldname === 'approver_comments') setApproverComments(val);
 
                 if (formErrors[fieldname]) {
                     setFormErrors(prev => ({ ...prev, [fieldname]: '' }));
@@ -376,6 +575,22 @@ export function ReimbursementClaimsView() {
             sx: {
                 '& .MuiFormLabel-asterisk': {
                     color: 'red',
+                },
+                '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: 'unset', // Important for Safari/Chrome
+                    color: 'text.primary',
+                    opacity: 1,
+                    pointerEvents: 'none', // Prevent interaction
+                },
+                '& .MuiInputLabel-root.Mui-disabled': {
+                    color: 'text.secondary', // Keep label color normal
+                },
+                '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(0, 0, 0, 0.23)', // Keep border normal
+                },
+                '& .MuiInputBase-input[readonly]': {
+                    cursor: 'default',
+                    pointerEvents: 'none',
                 },
                 ...extraProps.sx
             },
@@ -395,8 +610,8 @@ export function ReimbursementClaimsView() {
             );
         }
 
-        if (fieldname === 'date_of_expense') {
-            const dateValue = dateOfExpense ? dayjs(dateOfExpense) : null;
+        if (fieldname === 'date_of_expense' || fieldname === 'paid_date') {
+            const dateValue = fieldname === 'date_of_expense' ? (dateOfExpense ? dayjs(dateOfExpense) : null) : (paidDate ? dayjs(paidDate) : null);
             return (
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <DatePicker
@@ -404,15 +619,19 @@ export function ReimbursementClaimsView() {
                         value={dateValue}
                         onChange={(newValue) => {
                             const val = newValue && dayjs(newValue).isValid() ? dayjs(newValue).format('YYYY-MM-DD') : '';
-                            setDateOfExpense(val);
-                            if (formErrors.dateOfExpense) setFormErrors(prev => ({ ...prev, dateOfExpense: '' }));
+                            if (fieldname === 'date_of_expense') {
+                                setDateOfExpense(val);
+                                if (formErrors.dateOfExpense) setFormErrors(prev => ({ ...prev, dateOfExpense: '' }));
+                            } else {
+                                setPaidDate(val || null);
+                            }
                         }}
                         slotProps={{
                             textField: {
                                 fullWidth: true,
                                 required,
-                                error: !!formErrors.dateOfExpense,
-                                helperText: formErrors.dateOfExpense,
+                                error: !!formErrors[fieldname === 'date_of_expense' ? 'dateOfExpense' : fieldname],
+                                helperText: formErrors[fieldname === 'date_of_expense' ? 'dateOfExpense' : fieldname],
                                 InputLabelProps: { shrink: true },
                                 sx: {
                                     '& .MuiFormLabel-asterisk': {
@@ -515,7 +734,7 @@ export function ReimbursementClaimsView() {
                                         onView={() => handleViewRow(row)}
                                         onEdit={() => handleEditRow(row)}
                                         onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit={permissions.write}
+                                        canEdit={permissions.write && (row.workflow_state === 'Approved' || row.workflow_state === 'Paid')}
                                         canDelete={permissions.delete}
                                     />
                                 ))}
@@ -557,7 +776,7 @@ export function ReimbursementClaimsView() {
             </Card>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
                 <DialogTitle
                     sx={{
                         m: 0,
@@ -568,7 +787,7 @@ export function ReimbursementClaimsView() {
                         bgcolor: 'background.neutral',
                     }}
                 >
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
                         {isEdit ? 'Edit Claim' : 'New Claim'}
                     </Typography>
 
@@ -595,6 +814,7 @@ export function ReimbursementClaimsView() {
                             options={employees}
                             getOptionLabel={(option) => `${option.employee_name} (${option.name})`}
                             value={employees.find((emp) => emp.name === employee) || null}
+                            disabled={isApprovedOrPaid}
                             onChange={(event, newValue) => {
                                 setEmployee(newValue?.name || '');
                                 if (formErrors.employee) {
@@ -613,23 +833,88 @@ export function ReimbursementClaimsView() {
                                         '& .MuiFormLabel-asterisk': {
                                             color: 'red',
                                         },
+                                        '& .MuiInputBase-input.Mui-disabled': {
+                                            WebkitTextFillColor: 'unset',
+                                            color: 'text.primary',
+                                            opacity: 1,
+                                            pointerEvents: 'none',
+                                        },
+                                        '& .MuiInputLabel-root.Mui-disabled': {
+                                            color: 'text.secondary',
+                                        },
+                                        '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: 'rgba(0, 0, 0, 0.23)',
+                                        },
                                     }}
                                 />
                             )}
                         />
-                        {renderField('claim_type', 'Claim Type', 'select', claimTypes.map(type => ({ value: type.name, label: type.name })), {}, true)}
-                        {renderField('date_of_expense', 'Date of Expense', 'date', [], {}, true)}
-                        {renderField('amount', 'Amount', 'number', [], { placeholder: 'Enter amount', inputProps: { step: '0.01', min: '0' } }, true)}
-                        {renderField('claim_details', 'Claim Details', 'textarea', [], { placeholder: 'Enter claim details' })}
+                        {renderField('claim_type', 'Claim Type', 'select', claimTypes.map(type => ({ value: type.name, label: type.name })), { disabled: isApprovedOrPaid }, true)}
+                        {renderField('date_of_expense', 'Date of Expense', 'date', [], { inputProps: { readOnly: isApprovedOrPaid }, disabled: isApprovedOrPaid }, true)}
+                        {renderField('amount', 'Amount', 'number', [], { placeholder: 'Enter amount', inputProps: { step: '0.01', min: '0' }, disabled: isApprovedOrPaid }, true)}
+                        {renderField('claim_details', 'Claim Details', 'textarea', [], { placeholder: 'Enter claim details', disabled: isApprovedOrPaid })}
+
+                        {isEdit && user?.roles.some(r => ['System Manager', 'HR', 'HR User', 'HR Manager', 'Accounts Manager'].includes(r)) &&
+                            (currentClaim?.workflow_state === 'Approved' || currentClaim?.workflow_state === 'Paid') && (
+                                <>
+                                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', mt: 1, gridColumn: { md: 'span 2' } }}>Settlement Details</Typography>
+
+                                    <FormControlLabel
+                                        control={<Android12Switch checked={paid} onChange={(e) => setPaid(e.target.checked)} />}
+                                        label="Paid"
+                                        sx={{ gridColumn: { md: 'span 2' } }}
+                                    />
+
+                                    {paid && (
+                                        <>
+                                            {renderField('paid_date', 'Paid Date', 'date', [], {})}
+
+                                            {renderField('payment_reference', 'Payment Reference', 'text', [], { placeholder: 'Enter payment reference' })}
+
+                                            {renderField('approver_comments', 'Notes', 'textarea', [], { placeholder: 'Enter notes', sx: { gridColumn: { sm: 'span 2' } } })}
+                                        </>
+                                    )}
+                                </>
+                            )}
                     </Box>
                 </DialogContent>
 
-                <DialogActions>
-                    <Button onClick={handleCreate} variant="contained" sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}>
+                <DialogActions sx={{ px: 3, pb: 3 }}>
+                    <LoadingButton
+                        onClick={handleCreate}
+                        variant="contained"
+                        loading={submitting}
+                        sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' }, px: 3 }}
+                    >
                         {isEdit ? 'Update' : 'Create'}
-                    </Button>
+                    </LoadingButton>
                 </DialogActions>
             </Dialog>
+
+            <ConfirmDialog
+                open={confirmMarkPaidOpen}
+                onClose={() => setConfirmMarkPaidOpen(false)}
+                title="Mark Paid"
+                icon="solar:question-circle-bold"
+                iconColor="info.main"
+                content={
+                    <Box sx={{ pt: 1, textAlign: 'left' }}>
+                        <Typography sx={{ mb: 2, textAlign: 'center' }}>
+                            Do you want to mark the Status as Paid?
+                        </Typography>
+                    </Box>
+                }
+                action={
+                    <LoadingButton
+                        variant="contained"
+                        color="primary"
+                        loading={submitting}
+                        onClick={handleMarkPaidConfirm}
+                    >
+                        Confirm
+                    </LoadingButton>
+                }
+            />
 
             {/* View Dialog */}
             <ReimbursementClaimDetailsDialog

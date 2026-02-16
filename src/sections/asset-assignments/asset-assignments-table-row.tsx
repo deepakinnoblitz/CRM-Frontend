@@ -95,11 +95,7 @@ export function AssetAssignmentTableRow({
             <TableCell onClick={onView}>{fDate(row.assigned_on)}</TableCell>
 
             <TableCell onClick={onView}>
-                {isActive ? (
-                    <Label color="success">Active</Label>
-                ) : (
-                    fDate(row.returned_on)
-                )}
+                {row.returned_on ? fDate(row.returned_on) : '-'}
             </TableCell>
 
             <TableCell align="right">

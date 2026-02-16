@@ -25,7 +25,7 @@ export function Logo({
   isSingle = true,
   ...other
 }: LogoProps) {
-  const logoUrl = 'http://erp.innoblitz.in/assets/Innoblitz_logo_updated.png';
+  const logoUrl = '/assets/logo/Innoblitz_logo.png';
 
   const singleLogo = (
     <Box

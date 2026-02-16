@@ -10,6 +10,8 @@ import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
+import { fTimeDist } from 'src/utils/format-time';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
@@ -25,6 +27,7 @@ type Props = {
         fromTime?: string;
         toTime?: string;
         totalHours?: string;
+        modified?: string;
     };
     selected: boolean;
     onSelectRow: VoidFunction;
@@ -150,7 +153,10 @@ export function WFHAttendanceTableRow({
                 </TableCell>
 
                 <TableCell align="right">
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, alignItems: 'center' }}>
+                        <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 1, fontSize: 12 }}>
+                            {row.modified ? fTimeDist(row.modified) : '-'}
+                        </Box>
                         <IconButton size="small" onClick={onView} sx={{ color: 'info.main' }}>
                             <Iconify icon="solar:eye-bold" />
                         </IconButton>

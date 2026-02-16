@@ -22,6 +22,8 @@ export interface SalarySlip {
     health_insurance?: number;
     loan_recovery?: number;
     lop?: number;
+    status: string;
+    docstatus: number;
     creation?: string;
     modified?: string;
 }
@@ -94,16 +96,6 @@ export async function createSalarySlip(data: Partial<SalarySlip>) {
     return json.message;
 }
 
-export async function autoAllocateSalarySlips(year: number, month: number, employees?: string[]) {
-    const res = await frappeRequest("/api/method/company.company.api.generate_salary_slips_from_employee", {
-        method: "POST",
-        body: JSON.stringify({ year, month, employees: employees ? JSON.stringify(employees) : undefined })
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.message || "Failed to generate salary slips");
-    return json.message;
-}
-
 export async function updateSalarySlip(name: string, data: Partial<SalarySlip>) {
     const res = await frappeRequest("/api/method/frappe.client.set_value", {
         method: "POST",
@@ -157,4 +149,50 @@ export async function getSalarySlipPermissions() {
 
 export function getSalarySlipDownloadUrl(name: string) {
     return `/api/method/frappe.utils.print_format.download_pdf?doctype=Salary%20Slip&name=${encodeURIComponent(name)}`;
+}
+
+export async function previewSalarySlip(employee: string, start_date: string, end_date: string) {
+    const res = await frappeRequest("/api/method/company.company.frontend_api.preview_salary_slip", {
+        method: "POST",
+        body: JSON.stringify({ employee, start_date, end_date })
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to preview salary slip");
+    }
+
+    return (await res.json()).message;
+}
+
+export async function generateSalarySlipFromEmployee(employee: string, year: number, month: number) {
+    const res = await frappeRequest("/api/method/company.company.api.generate_salary_slips_from_employee", {
+        method: "POST",
+        body: JSON.stringify({
+            year,
+            month,
+            employees: JSON.stringify([employee])
+        })
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to generate salary slip");
+    }
+
+    return (await res.json()).message;
+}
+
+export async function generateSalarySlipsForEmployees(year: number, month: number, employees: string[]) {
+    const res = await frappeRequest("/api/method/company.company.api.generate_salary_slips_from_employee", {
+        method: "POST",
+        body: JSON.stringify({
+            year,
+            month,
+            employees: JSON.stringify(employees)
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || "Failed to generate salary slips");
+    return json.message;
 }

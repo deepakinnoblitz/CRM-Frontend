@@ -7,6 +7,7 @@ import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -19,6 +20,8 @@ type Props = {
         pay_period_end: string;
         gross_pay: number;
         net_pay: number;
+        status: string;
+        docstatus: number;
     };
     selected: boolean;
     onSelectRow: () => void;
@@ -88,17 +91,9 @@ export function SalarySlipTableRow({
             )}
 
             <TableCell>
-                <Box
-                    onClick={onView}
-                    sx={{
-                        color: 'primary.main',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        '&:hover': { textDecoration: 'underline' },
-                    }}
-                >
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
                     {row.employee_name}
-                </Box>
+                </Typography>
             </TableCell>
 
             <TableCell>{periodLabel}</TableCell>
@@ -111,6 +106,23 @@ export function SalarySlipTableRow({
                 </Typography>
             </TableCell>
 
+            <TableCell>
+                <Label
+                    variant="soft"
+                    color={
+                        (row.docstatus === 1 && 'success') ||
+                        (row.docstatus === 0 && 'warning') ||
+                        (row.docstatus === 2 && 'error') ||
+                        'default'
+                    }
+                >
+                    {(row.docstatus === 1 && 'Submitted') ||
+                        (row.docstatus === 0 && 'Draft') ||
+                        (row.docstatus === 2 && 'Cancelled') ||
+                        row.status || 'Unknown'}
+                </Label>
+            </TableCell>
+
             <TableCell align="right">
                 <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                     <IconButton onClick={onView} sx={{ color: 'info.main' }}>
@@ -118,12 +130,16 @@ export function SalarySlipTableRow({
                     </IconButton>
                     {isHR && (
                         <>
-                            <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
-                                <Iconify icon={"solar:pen-bold" as any} />
-                            </IconButton>
+                            {/* {row.docstatus === 0 && (
+                                <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
+                                    <Iconify icon={"solar:pen-bold" as any} />
+                                </IconButton>
+                            )} */}
+                            {row.docstatus === 0 && (
                             <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
                                 <Iconify icon={"solar:trash-bin-trash-bold" as any} />
                             </IconButton>
+                            )}
                         </>
                     )}
                 </Stack>

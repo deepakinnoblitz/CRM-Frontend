@@ -36,13 +36,13 @@ export const hrNavData = [
     path: '/attendance',
     icon: <Iconify icon={"solar:calendar-mark-bold-duotone" as any} />,
     children: [
-      { title: 'HR Attendance', path: '/attendance' },
-      { title: 'WFH Attendance List', path: '/wfh-attendance' },
+      { title: 'Attendance List', path: '/attendance' },
+      { title: 'WFH Attendance', path: '/wfh-attendance' },
       { title: 'Import Attendance', path: '/import-attendance' },
     ],
   },
   {
-    title: 'Leaves',
+    title: 'Leaves Records',
     path: '/leaves',
     icon: <Iconify icon={"solar:calendar-date-bold-duotone" as any} />,
     children: [

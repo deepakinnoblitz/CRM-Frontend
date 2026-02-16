@@ -4,6 +4,7 @@ import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
+import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 
 import { Iconify } from 'src/components/iconify';
@@ -17,38 +18,42 @@ type Props = {
 };
 
 export function TimesheetDetailsDialog({ open, onClose, timesheet }: Props) {
+    const theme = useTheme();
+
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Timesheet Details</Typography>
-                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500], bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows?.z1 }}>
+                <IconButton onClick={onClose} sx={{ color: theme.palette.grey[500] }}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 4, m: 2, mt: 4 }}>
+            <DialogContent dividers sx={{ p: 4 }}>
                 {timesheet ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {/* Header Info */}
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
                             <Box
                                 sx={{
-                                    width: 80,
-                                    height: 80,
-                                    borderRadius: 2,
+                                    width: 64,
+                                    height: 64,
+                                    borderRadius: 1.5,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    bgcolor: 'success.lighter',
-                                    color: 'success.main',
+                                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                                    color: 'primary.main',
                                 }}
                             >
-                                <Iconify icon={"solar:clock-circle-bold" as any} width={40} />
+                                <Iconify icon={"solar:clock-circle-bold-duotone" as any} width={32} />
                             </Box>
                             <Box sx={{ flexGrow: 1 }}>
-                                <Typography variant="h5" sx={{ fontWeight: 800 }}>{timesheet.employee_name}</Typography>
+                                <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                                    {timesheet.employee_name}
+                                </Typography>
                                 <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                    {timesheet.timesheet_date ? new Date(timesheet.timesheet_date).toLocaleDateString() : '-'}
+                                    Date: {timesheet.timesheet_date ? new Date(timesheet.timesheet_date).toLocaleDateString() : '-'}
                                 </Typography>
                             </Box>
                             <Box sx={{ textAlign: 'right' }}>
@@ -63,57 +68,69 @@ export function TimesheetDetailsDialog({ open, onClose, timesheet }: Props) {
 
                         <Divider sx={{ borderStyle: 'dashed' }} />
 
-                        {/* Timesheet Information */}
+                        {/* Timesheet Information Section */}
                         <Box>
-                            <SectionHeader title="Timesheet Information" icon="solar:document-bold" />
+                            <SectionHeader title="Timesheet Information" icon="solar:document-bold-duotone" />
                             <Box
                                 sx={{
                                     display: 'grid',
-                                    gap: 3,
-                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+                                    gap: 2.5,
+                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                 }}
                             >
-                                <DetailItem label="Employee" value={timesheet.employee_name} icon="solar:user-bold" />
-                                <DetailItem
+                                <DetailCard label="Employee" value={timesheet.employee_name} icon="solar:user-rounded-bold-duotone" />
+                                <DetailCard
                                     label="Date"
                                     value={timesheet.timesheet_date ? new Date(timesheet.timesheet_date).toLocaleDateString() : '-'}
-                                    icon="solar:calendar-bold"
+                                    icon="solar:calendar-date-bold-duotone"
                                 />
-                                <DetailItem label="Total Hours" value={`${timesheet.total_hours || 0} hours`} icon="solar:clock-circle-bold" />
+                                <DetailCard
+                                    label="Total Hours"
+                                    value={`${timesheet.total_hours || 0} hours`}
+                                    icon="solar:history-bold-duotone"
+                                    highlight
+                                />
                             </Box>
                         </Box>
 
-                        {/* Notes */}
+                        {/* Notes Section */}
                         {timesheet.notes && (
                             <Box>
-                                <SectionHeader title="Notes" icon="solar:notes-bold" />
-                                <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: 'pre-wrap' }}>
+                                <SectionHeader title="Notes" icon="solar:notes-bold-duotone" />
+                                <Box
+                                    sx={{
+                                        p: 3,
+                                        bgcolor: alpha(theme.palette.primary.main, 0.04),
+                                        borderRadius: 2,
+                                        border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                                    }}
+                                >
+                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
                                         {timesheet.notes}
                                     </Typography>
                                 </Box>
                             </Box>
                         )}
 
-                        {/* Timesheet Entries */}
+                        {/* Timesheet Entries Section */}
                         {timesheet.timesheet_entries && timesheet.timesheet_entries.length > 0 && (
                             <Box>
-                                <SectionHeader title="Timesheet Entries" icon="solar:list-bold" />
+                                <SectionHeader title="Timesheet Entries" icon="solar:list-bold-duotone" />
                                 <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
                                     <Box sx={{ overflowX: 'auto' }}>
                                         <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
                                             <Box component="thead" sx={{ bgcolor: 'background.neutral' }}>
                                                 <Box component="tr">
-                                                    <Box component="th" sx={{ p: 2, textAlign: 'left', fontWeight: 700, borderBottom: '1px solid', borderColor: 'divider' }}>
+                                                    <Box component="th" sx={{ p: 2, textAlign: 'left', fontWeight: 700, borderBottom: '1px solid', borderColor: 'divider', fontSize: '0.875rem' }}>
                                                         Project
                                                     </Box>
-                                                    <Box component="th" sx={{ p: 2, textAlign: 'left', fontWeight: 700, borderBottom: '1px solid', borderColor: 'divider' }}>
+                                                    <Box component="th" sx={{ p: 2, textAlign: 'left', fontWeight: 700, borderBottom: '1px solid', borderColor: 'divider', fontSize: '0.875rem' }}>
                                                         Activity Type
                                                     </Box>
-                                                    <Box component="th" sx={{ p: 2, textAlign: 'left', fontWeight: 700, borderBottom: '1px solid', borderColor: 'divider' }}>
+                                                    <Box component="th" sx={{ p: 2, textAlign: 'left', fontWeight: 700, borderBottom: '1px solid', borderColor: 'divider', fontSize: '0.875rem' }}>
                                                         Hours
                                                     </Box>
-                                                    <Box component="th" sx={{ p: 2, textAlign: 'left', fontWeight: 700, borderBottom: '1px solid', borderColor: 'divider' }}>
+                                                    <Box component="th" sx={{ p: 2, textAlign: 'left', fontWeight: 700, borderBottom: '1px solid', borderColor: 'divider', fontSize: '0.875rem' }}>
                                                         Description
                                                     </Box>
                                                 </Box>
@@ -132,12 +149,12 @@ export function TimesheetDetailsDialog({ open, onClose, timesheet }: Props) {
                                                             </Typography>
                                                         </Box>
                                                         <Box component="td" sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-                                                            <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                                                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main' }}>
                                                                 {entry.hours} hrs
                                                             </Typography>
                                                         </Box>
                                                         <Box component="td" sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-                                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
                                                                 {entry.description || '-'}
                                                             </Typography>
                                                         </Box>
@@ -152,7 +169,7 @@ export function TimesheetDetailsDialog({ open, onClose, timesheet }: Props) {
                     </Box>
                 ) : (
                     <Box sx={{ py: 10, textAlign: 'center' }}>
-                        <Iconify icon={"solar:ghost-bold" as any} width={64} sx={{ color: 'text.disabled', mb: 2 }} />
+                        <Iconify icon={"solar:ghost-bold-duotone" as any} width={64} sx={{ color: 'text.disabled', mb: 2 }} />
                         <Typography variant="h6" sx={{ color: 'text.secondary' }}>No Timesheet Found</Typography>
                     </Box>
                 )}
@@ -161,29 +178,43 @@ export function TimesheetDetailsDialog({ open, onClose, timesheet }: Props) {
     );
 }
 
-function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: string, noMargin?: boolean }) {
+// ----------------------------------------------------------------------
+
+function SectionHeader({ title, icon }: { title: string; icon: string }) {
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
-            <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+            <Box sx={{ display: 'flex', p: 0.75, borderRadius: 1, bgcolor: 'primary.main', color: 'common.white' }}>
+                <Iconify icon={icon as any} width={18} />
+            </Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary' }}>
                 {title}
             </Typography>
         </Box>
     );
 }
 
-function DetailItem({ label, value, icon }: { label: string; value?: string | null; icon: string }) {
+function DetailCard({ label, value, icon, highlight = false }: { label: string; value?: string | null; icon: string; highlight?: boolean }) {
     return (
-        <Box>
-            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
-                {label}
-            </Typography>
+        <Box
+            sx={{
+                p: 2,
+                borderRadius: 2,
+                bgcolor: (theme) => highlight ? alpha(theme.palette.primary.main, 0.08) : 'background.neutral',
+                border: (theme) => highlight ? `1px solid ${alpha(theme.palette.primary.main, 0.2)}` : 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5
+            }}
+        >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                    {value || '-'}
+                <Iconify icon={icon as any} width={20} sx={{ color: highlight ? 'primary.main' : 'text.disabled' }} />
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase' }}>
+                    {label}
                 </Typography>
             </Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: highlight ? 'primary.main' : 'text.primary' }}>
+                {value || '-'}
+            </Typography>
         </Box>
     );
 }

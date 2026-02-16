@@ -1,10 +1,11 @@
-
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
+
+import { fTimeDist } from 'src/utils/format-time';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -18,6 +19,7 @@ export type RequestTableRowProps = {
         subject: string;
         workflow_state?: string;
         creation?: string;
+        modified?: string;
     };
     selected: boolean;
     onSelectRow: () => void;
@@ -42,6 +44,17 @@ export function RequestTableRow({
     hideCheckbox = false,
     index,
 }: RequestTableRowProps) {
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'Approved': return 'success';
+            case 'Rejected': return 'error';
+            case 'Pending':
+            case 'Clarification Requested': return 'warning';
+            case 'Open': return 'info';
+            default: return 'default';
+        }
+    };
+
     return (
         <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
             {!hideCheckbox && (
@@ -83,29 +96,20 @@ export function RequestTableRow({
 
             <TableCell>{row.subject || '-'}</TableCell>
 
-            <TableCell>{row.subject || '-'}</TableCell>
-
             <TableCell>
-                {row.creation ? new Date(row.creation).toLocaleDateString() : '-'}
+                <Label color={getStatusColor(row.workflow_state || '')}>
+                    {row.workflow_state || 'Open'}
+                </Label>
             </TableCell>
 
             <TableCell align="right">
-                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
+                    <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 2, fontSize: 12 }}>
+                        {row.modified ? fTimeDist(row.modified) : '-'}
+                    </Box>
                     <IconButton size="small" color="primary" onClick={onView}>
                         <Iconify icon="solar:eye-bold" />
                     </IconButton>
-
-                    {/* {canEdit && (
-                        <IconButton size="small" color="info" onClick={onEdit}>
-                            <Iconify icon="solar:pen-bold" />
-                        </IconButton>
-                    )} */}
-
-                    {canDelete && (
-                        <IconButton size="small" color="error" onClick={onDelete}>
-                            <Iconify icon="solar:trash-bin-trash-bold" />
-                        </IconButton>
-                    )}
                 </Box>
             </TableCell>
         </TableRow>
