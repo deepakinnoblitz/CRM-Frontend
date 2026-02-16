@@ -90,3 +90,38 @@ export function fToNow(date: DatePickerFormat): string {
 
   return dayjs(date).toNow(true);
 }
+
+// ----------------------------------------------------------------------
+
+/**
+ * @output 3 m, 2 h, 1 w, 1 M, 1 y
+ */
+export function fTimeDist(date: DatePickerFormat): string {
+  if (!isValidDate(date)) {
+    return 'Invalid date';
+  }
+
+  const now = dayjs();
+  const d = dayjs(date);
+
+  const diffInSeconds = now.diff(d, 'second');
+  if (diffInSeconds < 60) return `now`;
+
+  const diffInMinutes = now.diff(d, 'minute');
+  if (diffInMinutes < 60) return `${diffInMinutes} m`;
+
+  const diffInHours = now.diff(d, 'hour');
+  if (diffInHours < 24) return `${diffInHours} h`;
+
+  const diffInDays = now.diff(d, 'day');
+  if (diffInDays < 7) return `${diffInDays} d`;
+
+  const diffInWeeks = now.diff(d, 'week');
+  if (diffInWeeks < 4) return `${diffInWeeks} w`;
+
+  const diffInMonths = now.diff(d, 'month');
+  if (diffInMonths < 12) return `${diffInMonths} M`;
+
+  const diffInYears = now.diff(d, 'year');
+  return `${diffInYears} y`;
+}

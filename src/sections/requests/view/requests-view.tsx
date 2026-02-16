@@ -404,7 +404,7 @@ export function RequestsView() {
                                 headLabel={[
                                     { id: 'employee_name', label: 'Employee Name' },
                                     { id: 'subject', label: 'Subject' },
-                                    { id: 'creation', label: 'Created On' },
+                                    { id: 'workflow_state', label: 'Status' },
                                     { id: '', label: '' },
                                 ]}
                             />
@@ -420,6 +420,7 @@ export function RequestsView() {
                                             subject: row.subject,
                                             workflow_state: row.workflow_state,
                                             creation: row.creation,
+                                            modified: row.modified,
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
@@ -468,7 +469,7 @@ export function RequestsView() {
             </Card>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
 
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {isEdit ? 'Edit Request' : 'New Request'}

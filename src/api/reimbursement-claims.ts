@@ -195,7 +195,7 @@ export async function getReimbursementClaimWorkflowActions(currentState: string)
     return data.actions || [];
 }
 
-export async function applyReimbursementClaimWorkflowAction(name: string, action: string, comment?: string) {
+export async function applyReimbursementClaimWorkflowAction(name: string, action: string, comment?: string, paymentDetails?: any) {
     const headers = await getAuthHeaders();
 
     const res = await frappeRequest("/api/method/company.company.frontend_api.apply_workflow_action", {
@@ -205,7 +205,8 @@ export async function applyReimbursementClaimWorkflowAction(name: string, action
             doctype: "Reimbursement Claim",
             name,
             action,
-            comment
+            comment,
+            payment_details: paymentDetails
         })
     });
 

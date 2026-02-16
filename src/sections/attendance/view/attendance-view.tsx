@@ -57,7 +57,7 @@ export function AttendanceView() {
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('attendance_date');
+    const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
 
     const [openCreate, setOpenCreate] = useState(false);
@@ -451,13 +451,18 @@ export function AttendanceView() {
     const sortOptions = [
         { value: 'newest', label: 'Newest First' },
         { value: 'oldest', label: 'Oldest First' },
+        { value: 'date_asc', label: 'Date Asc' },
+        { value: 'date_desc', label: 'Date Desc' },
         { value: 'employee_asc', label: 'Employee Asc' },
         { value: 'employee_desc', label: 'Employee Desc' },
     ];
 
     const getSortByValue = () => {
-        if (orderBy === 'attendance_date') {
+        if (orderBy === 'modified') {
             return order === 'desc' ? 'newest' : 'oldest';
+        }
+        if (orderBy === 'attendance_date') {
+            return order === 'asc' ? 'date_asc' : 'date_desc';
         }
         if (orderBy === 'employee_name') {
             return order === 'asc' ? 'employee_asc' : 'employee_desc';
@@ -467,11 +472,17 @@ export function AttendanceView() {
 
     const handleSortChange = (value: string) => {
         if (value === 'newest') {
-            setOrderBy('attendance_date');
+            setOrderBy('modified');
             setOrder('desc');
         } else if (value === 'oldest') {
+            setOrderBy('modified');
+            setOrder('asc');
+        } else if (value === 'date_asc') {
             setOrderBy('attendance_date');
             setOrder('asc');
+        } else if (value === 'date_desc') {
+            setOrderBy('attendance_date');
+            setOrder('desc');
         } else if (value === 'employee_asc') {
             setOrderBy('employee_name');
             setOrder('asc');
@@ -557,7 +568,7 @@ export function AttendanceView() {
                                     { id: 'in_time', label: 'In Time', minWidth: 120 },
                                     { id: 'out_time', label: 'Out Time', minWidth: 120 },
                                     { id: 'working_hours_display', label: 'Working Hours', minWidth: 120 },
-                                    { id: '', label: 'Actions', align: 'right' },
+                                    { id: '', label: '', align: 'right' },
                                 ]}
                             />
 
@@ -576,6 +587,7 @@ export function AttendanceView() {
                                             inTime: row.in_time,
                                             out_time: row.out_time,
                                             working_hours_display: row.working_hours_display,
+                                            modified: row.modified,
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}

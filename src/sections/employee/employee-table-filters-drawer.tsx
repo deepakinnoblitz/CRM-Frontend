@@ -86,8 +86,8 @@ export default function EmployeeTableFiltersDrawer({
         fetchCitiesForState();
     }, [filters.state, filters.country]);
 
-    const handleFilterDepartment = (event: React.ChangeEvent<HTMLInputElement>) => {
-        onFilters({ department: event.target.value });
+    const handleFilterDepartment = (event: any, value: string | null) => {
+        onFilters({ department: value || 'all' });
     };
 
     const handleFilterDesignation = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,30 +181,30 @@ export default function EmployeeTableFiltersDrawer({
                         <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                             Department
                         </Typography>
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            value={filters.department}
-                            onChange={handleFilterDepartment}
-                            SelectProps={{ native: true }}
-                            size="small"
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    borderRadius: 1.5,
-                                    bgcolor: 'background.neutral',
-                                    '&:hover': {
-                                        bgcolor: 'action.hover',
-                                    },
-                                },
+                            options={['All Departments', ...departmentOptions.map((dept: any) => dept.name)]}
+                            value={filters.department === 'all' ? 'All Departments' : filters.department}
+                            onChange={(event, newValue) => {
+                                handleFilterDepartment(event, newValue === 'All Departments' ? 'all' : newValue);
                             }}
-                        >
-                            <option value="all">All Departments</option>
-                            {departmentOptions.map((dept: any) => (
-                                <option key={dept.name} value={dept.name}>
-                                    {dept.name}
-                                </option>
-                            ))}
-                        </TextField>
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder="Select department..."
+                                    size="small"
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 1.5,
+                                            bgcolor: 'background.neutral',
+                                            '&:hover': {
+                                                bgcolor: 'action.hover',
+                                            },
+                                        },
+                                    }}
+                                />
+                            )}
+                        />
                     </Stack>
 
                     <Stack spacing={1.5}>

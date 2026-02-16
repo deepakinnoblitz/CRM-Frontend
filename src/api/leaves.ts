@@ -166,3 +166,25 @@ export async function applyLeaveWorkflowAction(name: string, action: string, com
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to apply workflow action"));
     return json.message;
 }
+
+export async function updateLeaveStatus(name: string, workflowState: string, updateData?: any) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/company.company.frontend_api.update_doc_status", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype: "Leave Application",
+            name,
+            workflow_state: workflowState,
+            update_data: updateData
+        })
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to update leave status"));
+    }
+
+    return (await res.json()).message;
+}

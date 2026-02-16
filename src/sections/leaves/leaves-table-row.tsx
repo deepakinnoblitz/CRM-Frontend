@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
@@ -5,6 +7,8 @@ import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+
+import { fTimeDist } from 'src/utils/format-time';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -24,6 +28,7 @@ type Props = {
         status: string;
         halfDay?: number | boolean;
         permissionHours?: number;
+        modified?: string;
     };
     selected: boolean;
     onSelectRow: VoidFunction;
@@ -49,10 +54,13 @@ export function LeavesTableRow({
             case 'Approved': return 'success';
             case 'Rejected': return 'error';
             case 'Pending': return 'warning';
+            case 'Clarification Requested': return 'warning';
             case 'Open': return 'info';
             default: return 'default';
         }
     };
+
+    const isPermission = row.leaveType.trim().toLowerCase() === 'permission';
 
     return (
         <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
@@ -107,37 +115,42 @@ export function LeavesTableRow({
                     {row.leaveType}
                 </Typography>
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ minWidth: 120 }}>
                 <Typography variant="body2" noWrap>
-                    {row.fromDate} to {row.toDate}
+                    {dayjs(row.fromDate).format('DD-MM-YYYY')} to {dayjs(row.toDate).format('DD-MM-YYYY')}
                 </Typography>
             </TableCell>
-            <TableCell>
-                <Typography variant="body2" noWrap>
-                    {row.totalDays}
-                    {row.halfDay === 1 && (
-                        <Iconify icon={"solar:history-bold" as any} width={16} sx={{ ml: 0.5, color: 'info.main', verticalAlign: 'middle' }} />
-                    )}
-                </Typography>
+            <TableCell align="center">
+                {!isPermission && (
+                    <Typography variant="body2" noWrap>
+                        {row.totalDays}
+                        {row.halfDay === 1 && (
+                            <Iconify icon={"solar:history-bold" as any} width={16} sx={{ ml: 0.5, color: 'info.main', verticalAlign: 'middle' }} />
+                        )}
+                    </Typography>
+                )}
                 {!!row.permissionHours && (
                     <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                        {row.permissionHours} hrs permission
+                        {row.permissionHours} {isPermission ? 'mins' : 'hrs'} permission
                     </Typography>
                 )}
             </TableCell>
 
-            <TableCell>
+            {/* <TableCell>
                 <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
                     {row.reason}
                 </Typography>
-            </TableCell>
+            </TableCell> */}
 
             <TableCell>
                 <Label color={getStatusColor(row.status)}>{row.status}</Label>
             </TableCell>
 
-            <TableCell align="right">
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+            <TableCell align="right" sx={{ pr: 3, minWidth: 100 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, alignItems: 'center' }}>
+                    <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 1, fontSize: 12 }}>
+                        {row.modified ? fTimeDist(row.modified) : '-'}
+                    </Box>
                     <IconButton size="small" onClick={onView} sx={{ color: 'info.main' }}>
                         <Iconify icon="solar:eye-bold" />
                     </IconButton>

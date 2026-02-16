@@ -491,7 +491,7 @@ export function WFHAttendanceView() {
                                     { id: 'from_time', label: 'From', minWidth: 100 },
                                     { id: 'to_time', label: 'To', minWidth: 100 },
                                     { id: 'total_hours', label: 'Hours', minWidth: 80 },
-                                    { id: '', label: 'Actions', align: 'right' },
+                                    { id: '', label: '', align: 'right' },
                                 ]}
                             />
 
@@ -510,6 +510,7 @@ export function WFHAttendanceView() {
                                             fromTime: row.from_time,
                                             toTime: row.to_time,
                                             totalHours: row.total_hours,
+                                            modified: row.modified,
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
