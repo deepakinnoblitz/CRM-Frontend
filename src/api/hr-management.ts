@@ -13,20 +13,9 @@ export async function fetchFrappeList(doctype: string, params: {
     order?: 'asc' | 'desc';
 }) {
     const filters: any[] = params.filters || [];
-    const or_filters: any[] = params.or_filters || [];
 
     if (params.search && params.searchField) {
-        if (Array.isArray(params.searchField)) {
-            params.searchField.forEach(field => {
-                or_filters.push([doctype, field, "like", `%${params.search}%`]);
-            });
-        } else if (typeof params.searchField === 'string' && params.searchField.includes(',')) {
-            params.searchField.split(',').forEach(field => {
-                or_filters.push([doctype, field.trim(), "like", `%${params.search}%`]);
-            });
-        } else {
-            filters.push([doctype, params.searchField as string, "like", `%${params.search}%`]);
-        }
+        filters.push([doctype, params.searchField, "like", `%${params.search}%`]);
     }
 
     let orderByParam = "creation desc";
@@ -46,29 +35,32 @@ export async function fetchFrappeList(doctype: string, params: {
         }
     }
 
-    const res = await frappeRequest("/api/method/company.company.frontend_api.get_list_enhanced", {
-        method: "POST",
-        body: JSON.stringify({
-            doctype,
-            fields: ["*"],
-            filters,
-            or_filters,
-            limit_start: (params.page - 1) * params.page_size,
-            limit_page_length: params.page_size,
-            order_by: orderByParam
-        })
+    const query = new URLSearchParams({
+        doctype,
+        fields: JSON.stringify(["*"]),
+        filters: JSON.stringify(filters),
+        or_filters: params.or_filters ? JSON.stringify(params.or_filters) : "[]",
+        limit_start: String((params.page - 1) * params.page_size),
+        limit_page_length: String(params.page_size),
+        order_by: orderByParam
     });
+
+    // Fetch data and count in parallel
+    const [res, countRes] = await Promise.all([
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=${doctype}&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${params.or_filters ? encodeURIComponent(JSON.stringify(params.or_filters)) : "[]"}`)
+    ]);
 
     if (!res.ok) {
         const error = await res.json();
         throw new Error(handleFrappeError(error, `Failed to fetch ${doctype}`));
     }
-    const json = await res.json();
-    const result = json.message || { data: [], total: 0 };
+    const data = await res.json();
+    const countData = await countRes.json();
 
     return {
-        data: result.data || [],
-        total: result.total || 0
+        data: data.message || [],
+        total: countData.message || 0
     };
 }
 

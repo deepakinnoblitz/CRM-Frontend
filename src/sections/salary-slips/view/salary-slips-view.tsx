@@ -313,7 +313,7 @@ export function SalarySlipsView() {
                         setOrderBy(f);
                         setOrder(d as any);
                     }}
-                    sortOptions={isHR ? SORT_OPTIONS : SORT_OPTIONS.filter(option => !option.value.includes('employee'))}
+                    sortOptions={SORT_OPTIONS}
                     onOpenFilter={() => setOpenFilters(true)}
 
                     canReset={canReset}
@@ -461,7 +461,6 @@ export function SalarySlipsView() {
                 canReset={canReset}
                 onResetFilters={handleResetFilters}
                 options={filterOptions}
-                isHR={isHR}
             />
 
             {/* Delete Confirmation Dialog */}

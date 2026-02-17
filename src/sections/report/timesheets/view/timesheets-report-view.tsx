@@ -35,17 +35,12 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
-import { useAuth } from 'src/auth/auth-context';
-
 import { TimesheetDetailsDialog } from '../timesheets-details-dialog';
 
 // ----------------------------------------------------------------------
 
 export function TimesheetsReportView() {
     const theme = useTheme();
-    const { user } = useAuth();
-    const isHR = user?.roles?.some(role => ['HR Manager', 'HR User', 'System Manager', 'Administrator'].includes(role));
-
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -53,12 +48,6 @@ export function TimesheetsReportView() {
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [employee, setEmployee] = useState('all');
-
-    useEffect(() => {
-        if (user && !isHR && user.employee) {
-            setEmployee(user.employee);
-        }
-    }, [user, isHR]);
     const [project, setProject] = useState('all');
     const [activityType, setActivityType] = useState('all');
     const [sortBy, setSortBy] = useState('date_asc');

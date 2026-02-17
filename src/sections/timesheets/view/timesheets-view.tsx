@@ -29,7 +29,6 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
-import { useDebounce } from 'src/hooks/useDebounce';
 import { useTimesheets } from 'src/hooks/useTimesheets';
 
 import { fetchEmployees } from 'src/api/employees';
@@ -47,8 +46,6 @@ import { LeadTableHead as TimesheetTableHead } from 'src/sections/lead/lead-tabl
 import { LeadTableToolbar as TimesheetTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 import { TimesheetDetailsDialog } from 'src/sections/report/timesheets/timesheets-details-dialog';
 
-import { useAuth } from 'src/auth/auth-context';
-
 import { TimesheetsTableFiltersDrawer } from '../timesheets-table-filters-drawer';
 
 // ----------------------------------------------------------------------
@@ -62,9 +59,6 @@ interface TimesheetEntry {
 }
 
 export function TimesheetsView() {
-    const { user } = useAuth();
-    const isHR = user?.roles?.includes('HR') || user?.roles?.includes('Administrator');
-
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
@@ -520,10 +514,8 @@ export function TimesheetsView() {
                     sortOptions={[
                         { value: 'timesheet_date_desc', label: 'Newest First' },
                         { value: 'timesheet_date_asc', label: 'Oldest First' },
-                        ...(isHR ? [
-                            { value: 'employee_name_asc', label: 'Employee: A to Z' },
-                            { value: 'employee_name_desc', label: 'Employee: Z to A' },
-                        ] : []),
+                        { value: 'employee_name_asc', label: 'Employee: A to Z' },
+                        { value: 'employee_name_desc', label: 'Employee: Z to A' },
                         { value: 'total_hours_desc', label: 'Hours: High to Low' },
                         { value: 'total_hours_asc', label: 'Hours: Low to High' },
                     ]}
@@ -818,7 +810,6 @@ export function TimesheetsView() {
                 options={{
                     employees: employeeOptions
                 }}
-                isHR={isHR}
             />
 
             {/* Snackbar */}
