@@ -37,11 +37,16 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { AttendanceDetailsDialog } from '../attendance-details-dialog';
 
 // ----------------------------------------------------------------------
 
 export function AttendanceReportView() {
+    const { user } = useAuth();
+    const isHR = user?.roles?.some(role => ['HR Manager', 'HR User', 'System Manager', 'Administrator'].includes(role));
+
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -49,6 +54,12 @@ export function AttendanceReportView() {
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [employee, setEmployee] = useState('all');
+
+    useEffect(() => {
+        if (user && !isHR && user.employee) {
+            setEmployee(user.employee);
+        }
+    }, [user, isHR]);
     const [status, setStatus] = useState('all');
     const [sortBy, setSortBy] = useState('date_asc');
 

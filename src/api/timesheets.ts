@@ -112,7 +112,7 @@ export async function updateTimesheet(name: string, data: Partial<Timesheet>) {
 export async function deleteTimesheet(name: string) {
     const headers = await getAuthHeaders();
 
-    const res = await frappeRequest("/api/method/frappe.client.delete", {
+    const res = await frappeRequest("/api/method/company.company.frontend_api.delete_doc_enhanced", {
         method: "POST",
         headers,
         body: JSON.stringify({ doctype: "Timesheet", name })

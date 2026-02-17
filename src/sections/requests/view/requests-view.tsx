@@ -30,6 +30,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useDebounce } from 'src/hooks/useDebounce';
 import { useRequests } from 'src/hooks/useRequests';
 
 import { fetchEmployees } from 'src/api/employees';
@@ -70,7 +71,7 @@ export function RequestsView() {
     const { data, total, refetch } = useRequests(
         page + 1,
         rowsPerPage,
-        filterName,
+        debouncedFilterName,
         orderBy,
         order,
         startDate || undefined,
@@ -379,8 +380,6 @@ export function RequestsView() {
                     sortOptions={[
                         { value: 'creation_desc', label: 'Newest First' },
                         { value: 'creation_asc', label: 'Oldest First' },
-                        { value: 'employee_name_asc', label: 'Employee: A to Z' },
-                        { value: 'employee_name_desc', label: 'Employee: Z to A' },
                     ]}
                     onOpenFilter={() => setOpenFilters(true)}
                     canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all' || filterEmployee !== 'all'}

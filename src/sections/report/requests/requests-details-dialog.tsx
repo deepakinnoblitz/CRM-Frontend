@@ -225,7 +225,7 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh }: Prop
                             <Box sx={{ mt: 3, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
                                 <DetailItem label="Status" value={internalRequest.workflow_state || 'Pending'} icon="solar:flag-bold" />
                                 {internalRequest.approved_by && (
-                                    <DetailItem label="Approved By" value={internalRequest.approved_by} icon="solar:user-check-bold" />
+                                    <DetailItem label="Viewed By" value={internalRequest.approved_by} icon="solar:user-check-bold" />
                                 )}
                                 <DetailItem
                                     label="Created On"

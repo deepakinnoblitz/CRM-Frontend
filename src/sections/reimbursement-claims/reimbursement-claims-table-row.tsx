@@ -3,6 +3,7 @@ import type { MouseEvent } from 'react';
 import dayjs from 'dayjs';
 
 import Box from '@mui/material/Box';
+import { Tooltip } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
@@ -29,8 +30,10 @@ type Props = {
     onView: () => void;
     onEdit: () => void;
     onDelete: () => void;
+    onWorkflowAction?: (action: string) => void;
     canEdit: boolean;
     canDelete: boolean;
+    isHR?: boolean;
     hideCheckbox?: boolean;
     index?: number;
 };
@@ -41,8 +44,10 @@ export function ReimbursementClaimTableRow({
     onView,
     onEdit,
     onDelete,
+    onWorkflowAction,
     canEdit,
     canDelete,
+    isHR,
     hideCheckbox = false,
     index,
 }: Props) {

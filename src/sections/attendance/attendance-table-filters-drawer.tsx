@@ -28,6 +28,7 @@ type Props = {
     canReset: boolean;
     onResetFilters: () => void;
     employeeOptions: any[];
+    isHR?: boolean;
 };
 
 export function AttendanceTableFiltersDrawer({
@@ -39,6 +40,7 @@ export function AttendanceTableFiltersDrawer({
     canReset,
     onResetFilters,
     employeeOptions,
+    isHR = true,
 }: Props) {
     const renderHead = (
         <Box
@@ -245,6 +247,36 @@ export function AttendanceTableFiltersDrawer({
                                 <option value="Holiday">Holiday</option>
                             </TextField>
                         </Stack>
+
+                        {isHR && (
+                            <Stack spacing={1.5}>
+                                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                    Employee
+                                </Typography>
+                                <Autocomplete
+                                    options={employeeOptions}
+                                    getOptionLabel={(option) => option.employee_name || option.name}
+                                    value={employeeOptions.find(opt => opt.name === filters.employee) || null}
+                                    onChange={(event, newValue) => onFilters({ employee: newValue ? newValue.name : null })}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            placeholder="Select Employee"
+                                            size="small"
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    borderRadius: 1.5,
+                                                    bgcolor: 'background.neutral',
+                                                    '&:hover': {
+                                                        bgcolor: 'action.hover',
+                                                    },
+                                                },
+                                            }}
+                                        />
+                                    )}
+                                />
+                            </Stack>
+                        )}
 
                     </Stack>
                 </LocalizationProvider>

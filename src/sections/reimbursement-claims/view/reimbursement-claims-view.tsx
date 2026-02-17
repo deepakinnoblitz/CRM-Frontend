@@ -39,12 +39,13 @@ import { useReimbursementClaims } from 'src/hooks/useReimbursementClaims';
 import { fetchEmployees } from 'src/api/employees';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
-    getReimbursementClaim,
-    createReimbursementClaim,
-    updateReimbursementClaim,
-    deleteReimbursementClaim,
-    getReimbursementClaimPermissions,
-    getClaimTypes
+  applyClaimWorkflowAction,
+  createReimbursementClaim,
+  deleteReimbursementClaim,
+  getClaimTypes,
+  getReimbursementClaim,
+  getReimbursementClaimPermissions,
+  updateReimbursementClaim,
 } from 'src/api/reimbursement-claims';
 
 import { Iconify } from 'src/components/iconify';
@@ -710,7 +711,7 @@ export function ReimbursementClaimsView() {
                                     { id: 'claim_type', label: 'Claim Type' },
                                     { id: 'date_of_expense', label: 'Date' },
                                     { id: 'amount', label: 'Amount' },
-                                    { id: 'paid', label: 'Status' },
+                                    { id: 'workflow_state', label: 'Status' },
                                     { id: '', label: '' },
                                 ]}
                             />
@@ -736,6 +737,7 @@ export function ReimbursementClaimsView() {
                                         onDelete={() => handleDeleteRow(row.name)}
                                         canEdit={permissions.write && (row.workflow_state === 'Approved' || row.workflow_state === 'Paid')}
                                         canDelete={permissions.delete}
+                                        isHR={isHR}
                                     />
                                 ))}
 

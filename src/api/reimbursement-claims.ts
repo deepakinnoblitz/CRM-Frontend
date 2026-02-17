@@ -17,6 +17,7 @@ export interface ReimbursementClaim {
     payment_reference?: string;
     payment_proof?: string;
     approver_comments?: string;
+    workflow_state?: string;
     creation?: string;
     modified?: string;
     workflow_state?: string;

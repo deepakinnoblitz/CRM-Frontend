@@ -15,19 +15,7 @@ export interface Attendance {
 }
 
 // Attendance APIs
-export const fetchAttendance = (params: any) => {
-    const { search, ...rest } = params;
-    const or_filters: any[] = [];
-
-    if (search) {
-        or_filters.push(["Attendance", "employee_name", "like", `%${search}%`]);
-        or_filters.push(["Attendance", "employee", "like", `%${search}%`]);
-        or_filters.push(["Attendance", "status", "like", `%${search}%`]);
-        or_filters.push(["Attendance", "attendance_date", "like", `%${search}%`]);
-    }
-
-    return fetchFrappeList("Attendance", { ...rest, or_filters });
-};
+export const fetchAttendance = (params: any) => fetchFrappeList("Attendance", { ...params, searchField: ["employee_name", "employee", "status", "attendance_date"] });
 
 export async function createAttendance(data: Partial<Attendance>) {
     const headers = await getAuthHeaders();
