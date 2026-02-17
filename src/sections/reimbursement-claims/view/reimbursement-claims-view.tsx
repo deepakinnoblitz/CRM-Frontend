@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -101,12 +101,17 @@ export function ReimbursementClaimsView() {
     const [selected, setSelected] = useState<string[]>([]);
     const [openFilters, setOpenFilters] = useState(false);
     const [filters, setFilters] = useState({
-        employee: 'all',
+        employee: null as string | null,
         paid: 'all',
         claim_type: 'all',
         startDate: null as string | null,
         endDate: null as string | null
     });
+
+    const claimsFilters = useMemo(() => ({
+        ...filters,
+        employee: filters.employee || 'all',
+    }), [filters]);
 
     const { data, total, refetch } = useReimbursementClaims(
         page + 1,
@@ -114,7 +119,7 @@ export function ReimbursementClaimsView() {
         filterName,
         orderBy,
         order,
-        filters
+        claimsFilters
     );
 
     const [openCreate, setOpenCreate] = useState(false);
@@ -480,7 +485,7 @@ export function ReimbursementClaimsView() {
 
     const handleResetFilters = () => {
         setFilters({
-            employee: 'all',
+            employee: null,
             paid: 'all',
             claim_type: 'all',
             startDate: null,
@@ -489,7 +494,7 @@ export function ReimbursementClaimsView() {
         setPage(0);
     };
 
-    const canReset = filters.employee !== 'all' || filters.paid !== 'all' || filters.claim_type !== 'all' || filters.startDate !== null || filters.endDate !== null;
+    const canReset = filters.employee !== null || filters.paid !== 'all' || filters.claim_type !== 'all' || filters.startDate !== null || filters.endDate !== null;
 
     const handleSortChange = (value: string) => {
         if (value === 'newest') { setOrderBy('modified'); setOrder('desc'); }
@@ -879,7 +884,7 @@ export function ReimbursementClaimsView() {
                     </Box>
                 </DialogContent>
 
-                <DialogActions sx={{ px: 3, pb: 3 }}>
+                <DialogActions sx={{ px: 3, pb: 2, pt: 2 }}>
                     <LoadingButton
                         onClick={handleCreate}
                         variant="contained"

@@ -102,3 +102,28 @@ export async function getHRPermissions(doctype: string) {
     const json = await res.json();
     return json.message || { read: false, write: false, delete: false };
 }
+
+// Create Department API
+interface CreateDepartmentParams {
+    department_name: string;
+    department_code?: string;
+    department_head?: string;
+    status?: string;
+    description?: string;
+}
+
+export async function createDepartment(data: CreateDepartmentParams) {
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        body: JSON.stringify({
+            doc: {
+                doctype: "Department",
+                ...data
+            }
+        })
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create department"));
+    return json.message;
+}

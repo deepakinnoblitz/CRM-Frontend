@@ -50,8 +50,8 @@ async function fetchFrappeList(params: {
         if (params.filters.employee && params.filters.employee !== 'all') {
             filters.push(['Reimbursement Claim', 'employee', '=', params.filters.employee]);
         }
-        if (params.filters.paid !== undefined && params.filters.paid !== null && params.filters.paid !== 'all') {
-            filters.push(['Reimbursement Claim', 'paid', '=', params.filters.paid === 'paid' ? 1 : 0]);
+        if (params.filters.paid && params.filters.paid !== 'all') {
+            filters.push(['Reimbursement Claim', 'workflow_state', '=', params.filters.paid]);
         }
         if (params.filters.claim_type && params.filters.claim_type !== 'all') {
             filters.push(['Reimbursement Claim', 'claim_type', '=', params.filters.claim_type]);

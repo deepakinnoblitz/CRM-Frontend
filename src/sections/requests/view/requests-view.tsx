@@ -61,7 +61,7 @@ export function RequestsView() {
     const [selected, setSelected] = useState<string[]>([]);
     const [sortBy, setSortBy] = useState('creation_desc');
     const [filterStatus, setFilterStatus] = useState('all');
-    const [filterEmployee, setFilterEmployee] = useState('all');
+    const [filterEmployee, setFilterEmployee] = useState<string | null>(null);
     const [startDate, setStartDate] = useState<string | null>(null);
     const [endDate, setEndDate] = useState<string | null>(null);
 
@@ -76,7 +76,7 @@ export function RequestsView() {
         startDate || undefined,
         endDate || undefined,
         filterStatus,
-        filterEmployee
+        filterEmployee || 'all'
     );
 
     const [openCreate, setOpenCreate] = useState(false);
@@ -136,9 +136,9 @@ export function RequestsView() {
         setOrder(ord as 'asc' | 'desc');
     };
 
-    const handleFilters = useCallback((update: Partial<{ status: string; employee: string; startDate: string | null; endDate: string | null }>) => {
+    const handleFilters = useCallback((update: Partial<{ status: string; employee: string | null; startDate: string | null; endDate: string | null }>) => {
         if ('status' in update) setFilterStatus(update.status || 'all');
-        if ('employee' in update) setFilterEmployee(update.employee || 'all');
+        if ('employee' in update) setFilterEmployee(update.employee || null);
         if ('startDate' in update) setStartDate(update.startDate || null);
         if ('endDate' in update) setEndDate(update.endDate || null);
         setPage(0);
@@ -148,7 +148,7 @@ export function RequestsView() {
         setStartDate(null);
         setEndDate(null);
         setFilterStatus('all');
-        setFilterEmployee('all');
+        setFilterEmployee(null);
         setFilterName('');
         setPage(0);
     };
@@ -383,7 +383,7 @@ export function RequestsView() {
                         { value: 'employee_name_desc', label: 'Employee: Z to A' },
                     ]}
                     onOpenFilter={() => setOpenFilters(true)}
-                    canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all' || filterEmployee !== 'all'}
+                    canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all' || filterEmployee !== null}
                 />
 
 
@@ -562,7 +562,7 @@ export function RequestsView() {
                     endDate,
                 }}
                 onFilters={handleFilters}
-                canReset={!!startDate || !!endDate || filterStatus !== 'all' || filterEmployee !== 'all'}
+                canReset={!!startDate || !!endDate || filterStatus !== 'all' || filterEmployee !== null}
                 onResetFilters={handleResetFilters}
                 employees={employees}
             />
