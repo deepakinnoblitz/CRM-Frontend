@@ -89,10 +89,17 @@ export function LeadTableToolbar({
   return (
     <Toolbar
       sx={{
-        height: 96,
+        height: { xs: 'auto', md: 96 },
         display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        alignItems: { xs: 'stretch', md: 'center' },
+        gap: { xs: 2, md: 0 },
+        py: { xs: 2, md: 0 },
+        p: (theme) => ({
+          xs: theme.spacing(2, 2),
+          md: theme.spacing(0, 1, 0, 3)
+        }),
         justifyContent: 'space-between',
-        p: (theme) => theme.spacing(0, 1, 0, 3),
         ...(numSelected > 0 && {
           color: 'primary.main',
           bgcolor: 'primary.lighter',
@@ -104,7 +111,14 @@ export function LeadTableToolbar({
           {numSelected} selected
         </Typography>
       ) : (
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexGrow: 1 }}>
+        <Box sx={{
+          display: 'flex',
+          gap: 2,
+          alignItems: 'center',
+          flexGrow: 1,
+          flexDirection: { xs: 'column', sm: 'row' },
+          width: '100%'
+        }}>
           <OutlinedInput
             fullWidth
             value={filterName}
@@ -115,7 +129,7 @@ export function LeadTableToolbar({
                 <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
               </InputAdornment>
             }
-            sx={{ maxWidth: 480 }}
+            sx={{ maxWidth: { xs: '100%', md: 480 } }}
           />
 
           {options && onFilterStatus && (
@@ -143,7 +157,13 @@ export function LeadTableToolbar({
         </Box>
       )}
 
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+      <Box sx={{
+        display: 'flex',
+        gap: 1,
+        alignItems: 'center',
+        justifyContent: { xs: 'flex-start', md: 'flex-end' },
+        width: { xs: '100%', md: 'auto' }
+      }}>
         {numSelected > 0 ? (
           <Tooltip title="Delete">
             <IconButton onClick={onDelete}>
@@ -163,6 +183,7 @@ export function LeadTableToolbar({
                 }
                 onClick={onOpenFilter}
                 sx={{
+                  flexGrow: { xs: 1, md: 0 },
                   height: 40,
                   px: 2,
                   bgcolor: 'background.neutral',
@@ -184,7 +205,8 @@ export function LeadTableToolbar({
                   startIcon={<Iconify icon={"solar:sort-bold" as any} />}
                   onClick={handleSortClick}
                   sx={{
-                    minWidth: 160,
+                    flexGrow: { xs: 1, md: 0 },
+                    minWidth: { xs: '0', md: 160 },
                     height: 40,
                     px: 2,
                     color: 'text.primary',

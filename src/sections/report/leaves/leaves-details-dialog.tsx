@@ -333,13 +333,14 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props
                 </Stack>
 
                 <Stack
-                    direction="row"
+                    direction={{ xs: 'column', sm: 'row' }}
                     alignItems="center"
                     justifyContent="space-between"
                     sx={{
                         p: 2,
                         borderRadius: 1.5,
                         bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                        gap: { xs: 2, sm: 0 }
                     }}
                 >
                     <Stack spacing={0.5} sx={{ flex: 1, textAlign: 'center' }}>
@@ -351,7 +352,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props
                         </Typography>
                     </Stack>
 
-                    <Divider orientation="vertical" flexItem sx={{ mx: 2, borderStyle: 'dashed' }} />
+                    <Divider orientation="vertical" flexItem sx={{ mx: 2, borderStyle: 'dashed', display: { xs: 'none', sm: 'block' } }} />
 
                     <Stack spacing={0.5} sx={{ flex: 1, textAlign: 'center' }}>
                         <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, lineHeight: 1.5 }}>
@@ -384,7 +385,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props
             <Stack spacing={2}>
                 <DetailRow label="Applied On" value={dayjs(leave?.creation).format('DD MMM YYYY HH:mm')} icon="solar:calendar-bold" />
                 <Divider />
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                     <DetailRow label="From Date" value={dayjs(leave?.from_date).format('DD MMM YYYY')} icon="solar:calendar-date-bold" />
                     <DetailRow label="To Date" value={dayjs(leave?.to_date).format('DD MMM YYYY')} icon="solar:calendar-date-bold" />
                 </Box>

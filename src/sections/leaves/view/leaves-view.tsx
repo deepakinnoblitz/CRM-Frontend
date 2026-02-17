@@ -63,9 +63,12 @@ const LEAVE_SORT_OPTIONS = [
 export function LeavesView() {
     const { user } = useAuth();
 
+    const isHR = user?.roles?.some((role: string) =>
+        ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
+    );
+
     // Check if user is restricted to their own employee ID
-    const isRestrictedEmployee = user?.roles.includes('Employee') &&
-        !user?.roles.some(role => ['HR Manager', 'HR User', 'System Manager', 'Administrator'].includes(role));
+    const isRestrictedEmployee = user?.roles.includes('Employee') && !isHR;
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
@@ -518,7 +521,7 @@ export function LeavesView() {
                         <Box
                             sx={{
                                 display: 'grid',
-                                gridTemplateColumns: '1fr 1fr',
+                                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
                                 gap: 2,
                                 mb: 3,
                             }}
@@ -702,7 +705,7 @@ export function LeavesView() {
                                     }}
                                 />
                             ) : (
-                                <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                                <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
                                     <DatePicker
                                         label="From Date"
                                         value={fromDate ? dayjs(fromDate) : null}
@@ -802,7 +805,12 @@ export function LeavesView() {
                                 border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
                             }}
                         >
-                            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
+                            <Stack
+                                direction={{ xs: 'column', sm: 'row' }}
+                                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                justifyContent="space-between"
+                                sx={{ mb: 2.5, gap: 1.5 }}
+                            >
                                 <Typography variant="h6">Attachments</Typography>
 
                                 <Button
@@ -870,7 +878,17 @@ export function LeavesView() {
                 </DialogContent>
 
                 <DialogActions>
-                    <Button variant="contained" onClick={handleCreate} disabled={creating || uploading} sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}>
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        onClick={handleCreate}
+                        disabled={creating || uploading}
+                        sx={{
+                            bgcolor: '#08a3cd',
+                            '&:hover': { bgcolor: '#068fb3' },
+                            width: { xs: '100%', sm: 'auto' }
+                        }}
+                    >
                         {creating ? 'Submitting...' : 'Submit Application'}
                     </Button>
                 </DialogActions>
@@ -919,6 +937,7 @@ export function LeavesView() {
                     leaveTypes: leaveTypeOptions.map((opt) => opt.name),
                 }}
                 employeeOptions={employeeOptions}
+                isHR={isHR}
             />
         </DashboardContent>
     );

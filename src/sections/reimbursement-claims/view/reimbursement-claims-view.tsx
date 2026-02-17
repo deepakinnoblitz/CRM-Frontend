@@ -108,6 +108,10 @@ export function ReimbursementClaimsView() {
         endDate: null as string | null
     });
 
+    const isHR = user?.roles.some((role: string) =>
+        ['HR Manager', 'HR User', 'System Manager', 'Administrator'].includes(role)
+    );
+
     const claimsFilters = useMemo(() => ({
         ...filters,
         employee: filters.employee || 'all',
@@ -951,6 +955,7 @@ export function ReimbursementClaimsView() {
                 onResetFilters={handleResetFilters}
                 claimTypes={claimTypes}
                 employees={employees}
+                isHR={isHR}
             />
         </DashboardContent>
     );

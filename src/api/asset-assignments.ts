@@ -95,11 +95,17 @@ export async function createAssetAssignment(data: Partial<AssetAssignment>) {
     });
 
     if (!res.ok) {
-        const error = await res.json();
+        let error;
+        try {
+            error = await res.json();
+        } catch (e) {
+            throw new Error("Server or Database error. Please check your data or contact admin.");
+        }
         throw new Error(handleFrappeError(error, "Failed to create asset assignment"));
     }
 
-    return (await res.json()).message;
+    const result = await res.json();
+    return result.message;
 }
 
 export async function updateAssetAssignment(name: string, data: Partial<AssetAssignment>) {
