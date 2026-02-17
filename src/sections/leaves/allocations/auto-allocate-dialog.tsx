@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { useState } from 'react';
 
 import Box from '@mui/material/Box';
@@ -8,6 +9,7 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
+import MenuItem from '@mui/material/MenuItem';
 import TableBody from '@mui/material/TableBody';
 import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
@@ -19,10 +21,13 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
-import {getLeaveAllocationPreview, autoAllocateMonthlyLeaves, type EmployeeAllocationPreview} from 'src/api/leave-allocations';
+import { getLeaveAllocationPreview, autoAllocateMonthlyLeaves, type EmployeeAllocationPreview } from 'src/api/leave-allocations';
 
-import {Iconify} from 'src/components/iconify';
+import { Iconify } from 'src/components/iconify';
 
 interface AutoAllocateDialogProps {
     open: boolean;
@@ -40,9 +45,12 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
     const [loading, setLoading] = useState(false);
     const [allocating, setAllocating] = useState(false);
 
+    const [searchQuery, setSearchQuery] = useState('');
+
     const handleClose = () => {
         setStep('input');
         setPreviewData([]);
+        setSearchQuery('');
         onClose();
     };
 
@@ -62,6 +70,7 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
     const handleBack = () => {
         setStep('input');
         setPreviewData([]);
+        setSearchQuery('');
     };
 
     const handleAllocate = async () => {
@@ -79,6 +88,11 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
 
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'];
+
+    const filteredData = previewData.filter(row =>
+        row.employee_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        row.employee_id.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
         <Dialog
@@ -101,23 +115,29 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                 {step === 'input' ? (
                     <Box sx={{ mt: 2 }}>
                         <Stack direction="row" spacing={2}>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    views={['year']}
+                                    label="Year"
+                                    value={dayjs().year(year)}
+                                    onChange={(newValue) => setYear(newValue ? newValue.year() : new Date().getFullYear())}
+                                    slotProps={{ textField: { fullWidth: true } }}
+                                />
+                            </LocalizationProvider>
                             <TextField
-                                fullWidth
-                                label="Year"
-                                type="number"
-                                value={year}
-                                onChange={(e) => setYear(parseInt(e.target.value))}
-                                InputLabelProps={{ shrink: true }}
-                            />
-                            <TextField
+                                select
                                 fullWidth
                                 label="Month"
-                                type="number"
                                 value={month}
                                 onChange={(e) => setMonth(parseInt(e.target.value))}
                                 InputLabelProps={{ shrink: true }}
-                                inputProps={{ min: 1, max: 12 }}
-                            />
+                            >
+                                {monthNames.map((name, index) => (
+                                    <MenuItem key={name} value={index + 1}>
+                                        {name}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
                         </Stack>
                         <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
                             This will allocate Paid Leave (1 day), Unpaid Leave (30 days), and Permission (120 minutes) to all active employees for {monthNames[month - 1]} {year}.
@@ -125,10 +145,24 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                     </Box>
                 ) : (
                     <Box>
-                        <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
-                            Preview for {monthNames[month - 1]} {year} • {previewData.length} employee(s)
-                        </Typography>
-                        <TableContainer sx={{ maxHeight: 600, border: 1, borderColor: 'divider', borderRadius: 2 }}>
+                        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                            <Typography variant="subtitle2" sx={{ color: 'text.secondary', mt: 3 }}>
+                                Preview for {monthNames[month - 1]} {year} • {filteredData.length} employee(s)
+                            </Typography>
+                            <TextField
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search employee..."
+                                size="small"
+                                InputProps={{
+                                    startAdornment: (
+                                        <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', mr: 1 }} />
+                                    ),
+                                }}
+                                sx={{ mt: 5, mb: 2 }}
+                            />
+                        </Stack>
+                        <TableContainer sx={{ border: 1, borderColor: 'divider', borderRadius: 2 }}>
                             <Table stickyHeader>
                                 <TableHead>
                                     <TableRow>
@@ -140,7 +174,7 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {previewData.map((row, idx) => (
+                                    {filteredData.map((row, idx) => (
                                         <TableRow key={row.employee} hover>
                                             <TableCell sx={{ color: 'text.secondary' }}>{idx + 1}</TableCell>
                                             <TableCell>
@@ -215,7 +249,7 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                 )}
             </DialogContent>
 
-            <DialogActions sx={{ p: 2.5, pt: 0 }}>
+            <DialogActions sx={{ p: 2.5, pt: 2 }}>
                 {step === 'preview' && (
                     <Button onClick={handleBack} sx={{ mr: 'auto' }}>
                         Back

@@ -70,7 +70,7 @@ export function TimesheetDetailsDialog({ open, onClose, timesheet }: Props) {
 
                         {/* Timesheet Information Section */}
                         <Box>
-                            <SectionHeader title="Timesheet Information" icon="solar:document-bold-duotone" />
+                            <SectionHeader title="Timesheet Information" icon="" />
                             <Box
                                 sx={{
                                     display: 'grid',
@@ -115,7 +115,7 @@ export function TimesheetDetailsDialog({ open, onClose, timesheet }: Props) {
                         {/* Timesheet Entries Section */}
                         {timesheet.timesheet_entries && timesheet.timesheet_entries.length > 0 && (
                             <Box>
-                                <SectionHeader title="Timesheet Entries" icon="solar:list-bold-duotone" />
+                                <SectionHeader title="Timesheet Entries" icon="" />
                                 <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
                                     <Box sx={{ overflowX: 'auto' }}>
                                         <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -180,12 +180,14 @@ export function TimesheetDetailsDialog({ open, onClose, timesheet }: Props) {
 
 // ----------------------------------------------------------------------
 
-function SectionHeader({ title, icon }: { title: string; icon: string }) {
+function SectionHeader({ title, icon }: { title: string; icon?: string }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
-            <Box sx={{ display: 'flex', p: 0.75, borderRadius: 1, bgcolor: 'primary.main', color: 'common.white' }}>
-                <Iconify icon={icon as any} width={18} />
-            </Box>
+            {icon && (
+                <Box sx={{ display: 'flex', p: 0.75, borderRadius: 1, bgcolor: 'primary.main', color: 'common.white' }}>
+                    <Iconify icon={icon as any} width={18} />
+                </Box>
+            )}
             <Typography variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary' }}>
                 {title}
             </Typography>

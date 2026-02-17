@@ -624,7 +624,7 @@ export function WFHAttendanceView() {
 
                 <DialogActions>
                     <Button variant="contained" onClick={handleCreate} disabled={creating} sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}>
-                        {creating ? 'Saving...' : (currentId ? 'Update Entry' : 'Save Entry')}
+                        {creating ? 'Saving...' : (currentId ? 'Update Entry' : 'Submit')}
                     </Button>
                 </DialogActions>
             </Dialog>

@@ -76,11 +76,13 @@ export function LeavesView() {
     const [filters, setFilters] = useState<{
         status: string;
         leave_type: string;
+        employee: string | null;
         startDate: string | null;
         endDate: string | null;
     }>({
         status: 'all',
         leave_type: 'all',
+        employee: null,
         startDate: null,
         endDate: null,
     });
@@ -131,7 +133,7 @@ export function LeavesView() {
         rowsPerPage,
         filterName,
         {
-            ...(isRestrictedEmployee && user?.employee ? { employee: user.employee } : {}),
+            ...(isRestrictedEmployee && user?.employee ? { employee: user.employee } : (filters.employee ? { employee: filters.employee } : {})),
             ...(filters.status !== 'all' ? { workflow_state: filters.status } : {}),
             ...(filters.leave_type !== 'all' ? { leave_type: filters.leave_type } : {}),
             ...(filters.startDate ? { start_date: filters.startDate } : {}),
@@ -355,6 +357,7 @@ export function LeavesView() {
         setFilters({
             status: 'all',
             leave_type: 'all',
+            employee: null,
             startDate: null,
             endDate: null,
         });
@@ -369,7 +372,7 @@ export function LeavesView() {
         setOpenFilters(false);
     };
 
-    const canReset = filters.status !== 'all' || filters.leave_type !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
+    const canReset = filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== null || filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const onChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);
@@ -915,6 +918,7 @@ export function LeavesView() {
                     statuses: ['Pending', 'Approved', 'Rejected', 'Clarification Requested'],
                     leaveTypes: leaveTypeOptions.map((opt) => opt.name),
                 }}
+                employeeOptions={employeeOptions}
             />
         </DashboardContent>
     );

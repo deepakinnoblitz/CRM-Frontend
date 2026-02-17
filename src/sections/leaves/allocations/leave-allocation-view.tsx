@@ -68,13 +68,13 @@ export function LeaveAllocationView() {
     const [filters, setFilters] = useState<{
         status: string;
         leave_type: string;
-        employee: string;
+        employee: string | null;
         startDate: string | null;
         endDate: string | null;
     }>({
         status: 'all',
         leave_type: 'all',
-        employee: 'all',
+        employee: null,
         startDate: null,
         endDate: null,
     });
@@ -118,7 +118,7 @@ export function LeaveAllocationView() {
         {
             ...(filters.status !== 'all' ? { workflow_state: filters.status } : {}),
             ...(filters.leave_type !== 'all' ? { leave_type: filters.leave_type } : {}),
-            ...(filters.employee !== 'all' ? { employee: filters.employee } : {}),
+            ...(filters.employee ? { employee: filters.employee } : {}),
             ...(filters.startDate ? { from_date: ['>=', filters.startDate] } : {}),
             ...(filters.endDate ? { to_date: ['<=', filters.endDate] } : {}),
         },
@@ -253,7 +253,7 @@ export function LeaveAllocationView() {
 
                     sortOptions={SORT_OPTIONS}
                     onOpenFilter={() => setOpenFilters(true)}
-                    canReset={filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== 'all' || filters.startDate !== null || filters.endDate !== null}
+                    canReset={filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== null || filters.startDate !== null || filters.endDate !== null}
                 />
 
                 <Scrollbar>
@@ -446,12 +446,12 @@ export function LeaveAllocationView() {
                 onClose={() => setOpenFilters(false)}
                 filters={filters}
                 onFilters={(update) => setFilters({ ...filters, ...update })}
-                canReset={filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== 'all' || filters.startDate !== null || filters.endDate !== null}
+                canReset={filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== null || filters.startDate !== null || filters.endDate !== null}
                 onResetFilters={() => {
                     setFilters({
                         status: 'all',
                         leave_type: 'all',
-                        employee: 'all',
+                        employee: null,
                         startDate: null,
                         endDate: null,
                     });

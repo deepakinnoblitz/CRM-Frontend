@@ -19,7 +19,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 // ----------------------------------------------------------------------
 
 type FiltersProps = {
-    employee: string;
+    employee: string | null;
     status: string;
     startDate: string | null;
     endDate: string | null;
@@ -103,12 +103,14 @@ export function RequestsTableFiltersDrawer({
             </Typography>
             <Autocomplete
                 fullWidth
-                options={employees}
-                getOptionLabel={(option) => option.employee_name || option.name || ''}
-                value={employees.find((emp) => emp.name === filters.employee) || null}
-                onChange={(event, newValue) => {
-                    handleFilterChange('employee', newValue?.name || 'all');
+                options={['all', ...employees.map((e) => e.name)]}
+                getOptionLabel={(option) => {
+                    if (option === 'all') return 'All Employees';
+                    const employee = employees.find((e) => e.name === option);
+                    return employee ? `${employee.employee_name} (${employee.name})` : option;
                 }}
+                value={filters.employee || 'all'}
+                onChange={(event, newValue) => onFilters({ employee: newValue === 'all' ? null : newValue })}
                 renderInput={(params) => (
                     <TextField
                         {...params}
@@ -125,6 +127,30 @@ export function RequestsTableFiltersDrawer({
                         }}
                     />
                 )}
+                renderOption={(props, option) => {
+                    if (option === 'all') {
+                        const { key, ...itemProps } = props as any;
+                        return (
+                            <li key="all" {...itemProps}>
+                                All Employees
+                            </li>
+                        );
+                    }
+                    const employee = employees.find((e) => e.name === option);
+                    const { key, ...optionProps } = props as any;
+                    return (
+                        <li key={key} {...optionProps}>
+                            <Stack spacing={0.5}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                    {employee?.employee_name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    ID: {employee?.name}
+                                </Typography>
+                            </Stack>
+                        </li>
+                    );
+                }}
             />
         </Stack>
     );

@@ -8,6 +8,7 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Autocomplete from '@mui/material/Autocomplete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -20,7 +21,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 type FiltersProps = {
     status: string;
     leave_type: string;
-    employee: string;
+    employee: string | null;
     startDate: string | null;
     endDate: string | null;
 };
@@ -169,30 +170,57 @@ export function LeaveAllocationFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Employee
             </Typography>
-            <TextField
-                select
+            <Autocomplete
                 fullWidth
-                value={filters.employee}
-                onChange={(e) => handleFilterChange('employee', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
+                options={['all', ...options.employees.map((e) => e.name)]}
+                getOptionLabel={(option) => {
+                    if (option === 'all') return 'All Employees';
+                    const employee = options.employees.find((e) => e.name === option);
+                    return employee ? `${employee.employee_name} (${employee.name})` : option;
                 }}
-            >
-                <option value="all">All Employees</option>
-                {options.employees.map((emp) => (
-                    <option key={emp.name} value={emp.name}>
-                        {emp.employee_name || emp.name}
-                    </option>
-                ))}
-            </TextField>
+                value={filters.employee || 'all'}
+                onChange={(event, newValue) => onFilters({ employee: newValue === 'all' ? null : newValue })}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Search employee..."
+                        size="small"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+                renderOption={(props, option) => {
+                    if (option === 'all') {
+                        const { key, ...itemProps } = props as any;
+                        return (
+                            <li key="all" {...itemProps}>
+                                All Employees
+                            </li>
+                        );
+                    }
+                    const employee = options.employees.find((e) => e.name === option);
+                    const { key, ...optionProps } = props as any;
+                    return (
+                        <li key={key} {...optionProps}>
+                            <Stack spacing={0.5}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                    {employee?.employee_name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    ID: {employee?.name}
+                                </Typography>
+                            </Stack>
+                        </li>
+                    );
+                }}
+            />
         </Stack>
     );
 
@@ -265,9 +293,9 @@ export function LeaveAllocationFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3 }}>
+                    {renderEmployee}
                     {renderStatus}
                     {renderLeaveType}
-                    {renderEmployee}
                     {renderDateRange}
                 </Stack>
             </Scrollbar>
