@@ -248,7 +248,15 @@ export default function SalarySlipCreateDialog({ open, onClose, onSuccess, onErr
                                 label="Pay Period Start"
                                 format="DD-MM-YYYY"
                                 value={formData.pay_period_start}
-                                onChange={(newValue) => setFormData({ ...formData, pay_period_start: newValue as Dayjs })}
+                                onChange={(newValue) => {
+                                    if (newValue) {
+                                        setFormData({
+                                            ...formData,
+                                            pay_period_start: newValue,
+                                            pay_period_end: newValue.endOf('month'),
+                                        });
+                                    }
+                                }}
                                 slotProps={{ textField: { fullWidth: true } }}
                             />
                             <DatePicker

@@ -136,9 +136,9 @@ export function SalarySlipTableRow({
                                 </IconButton>
                             )} */}
                             {row.docstatus === 0 && (
-                            <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
-                                <Iconify icon={"solar:trash-bin-trash-bold" as any} />
-                            </IconButton>
+                                <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
+                                    <Iconify icon={"solar:trash-bin-trash-bold" as any} />
+                                </IconButton>
                             )}
                         </>
                     )}
