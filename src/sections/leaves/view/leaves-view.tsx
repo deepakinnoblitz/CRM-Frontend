@@ -427,13 +427,12 @@ export function LeavesView() {
                                 hideCheckbox
                                 showIndex
                                 headLabel={[
-                                    { id: 'employee', label: 'Employee' },
-                                    { id: 'leave_type', label: 'Lead Type' },
-                                    { id: 'from_date', label: 'Duration' },
-                                    { id: 'total_days', label: 'Days' },
-                                    { id: 'reason', label: 'Reason' },
-                                    { id: 'workflow_state', label: 'Status' },
-                                    { id: '', label: '' },
+                                    { id: 'employee', label: 'Employee', minWidth: 180 },
+                                    { id: 'leave_type', label: 'Leave Type', minWidth: 140 },
+                                    { id: 'from_date', label: 'Duration', minWidth: 120 },
+                                    { id: 'total_days', label: 'Days', align: 'center', minWidth: 100 },
+                                    { id: 'workflow_state', label: 'Status', minWidth: 120 },
+                                    { id: 'actions', label: '', align: 'right', minWidth: 100 },
                                 ]}
                             />
 
@@ -455,6 +454,7 @@ export function LeavesView() {
                                             status: row.workflow_state || row.status || 'Pending',
                                             halfDay: row.half_day,
                                             permissionHours: row.permission_hours,
+                                            modified: row.modified,
                                         }}
                                         selected={false}
                                         onSelectRow={() => { }}
@@ -468,7 +468,7 @@ export function LeavesView() {
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
+                                        <TableCell colSpan={8}>
                                             <EmptyContent
                                                 title="No leave applications"
                                                 description="You haven't submitted any leave requests yet."

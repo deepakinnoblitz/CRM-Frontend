@@ -1,18 +1,18 @@
 import dayjs from 'dayjs';
 
 import Box from '@mui/material/Box';
+import Badge from '@mui/material/Badge';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
 import Drawer from '@mui/material/Drawer';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import InputLabel from '@mui/material/InputLabel';
-import FormControl from '@mui/material/FormControl';
+import Autocomplete from '@mui/material/Autocomplete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { Iconify } from 'src/components/iconify';
@@ -21,6 +21,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 // ----------------------------------------------------------------------
 
 type FiltersProps = {
+    employee: string;
     paid: string;
     claim_type: string;
     startDate: string | null;
@@ -35,6 +36,7 @@ type Props = {
     canReset: boolean;
     onResetFilters: () => void;
     claimTypes: any[];
+    employees: any[];
 };
 
 export function ReimbursementClaimsTableFiltersDrawer({
@@ -45,12 +47,17 @@ export function ReimbursementClaimsTableFiltersDrawer({
     canReset,
     onResetFilters,
     claimTypes,
+    employees,
 }: Props) {
-    const handleFilterStatus = (event: SelectChangeEvent<string>) => {
+    const handleFilterStatus = (event: React.ChangeEvent<HTMLInputElement>) => {
         onFilters({ paid: event.target.value });
     };
 
-    const handleFilterType = (event: SelectChangeEvent<string>) => {
+    const handleFilterEmployee = (newValue: any) => {
+        onFilters({ employee: newValue?.name || 'all' });
+    };
+
+    const handleFilterType = (event: React.ChangeEvent<HTMLInputElement>) => {
         onFilters({ claim_type: event.target.value });
     };
 
@@ -63,89 +70,176 @@ export function ReimbursementClaimsTableFiltersDrawer({
     };
 
     const renderHead = (
-        <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            sx={{ py: 2, pr: 1, pl: 2.5 }}
+        <Box
+            sx={{
+                py: 2.5,
+                pl: 3,
+                pr: 2,
+                display: 'flex',
+                alignItems: 'center',
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+            }}
         >
-            <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
                 Filters
             </Typography>
 
-            <IconButton onClick={onClose}>
-                <Iconify icon="mingcute:close-line" />
+            <IconButton
+                onClick={onResetFilters}
+                disabled={!canReset}
+                sx={{
+                    mr: 0.5,
+                    color: canReset ? 'primary.main' : 'text.disabled',
+                    '&:hover': {
+                        bgcolor: canReset ? 'primary.lighter' : 'transparent',
+                    },
+                }}
+            >
+                <Badge color="error" variant="dot" invisible={!canReset}>
+                    <Iconify icon="solar:restart-bold" width={20} />
+                </Badge>
             </IconButton>
+
+            <IconButton
+                onClick={onClose}
+                sx={{
+                    color: 'text.secondary',
+                    '&:hover': {
+                        bgcolor: 'action.hover',
+                    },
+                }}
+            >
+                <Iconify icon="mingcute:close-line" width={20} />
+            </IconButton>
+        </Box>
+    );
+
+    const renderEmployee = (
+        <Stack spacing={1.5}>
+            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Employee
+            </Typography>
+            <Autocomplete
+                fullWidth
+                options={employees}
+                getOptionLabel={(option) => (typeof option === 'string' ? option : `${option.employee_name} (${option.name})`)}
+                value={employees.find((emp) => emp.name === filters.employee) || null}
+                onChange={(event, newValue) => handleFilterEmployee(newValue)}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Search employee..."
+                        size="small"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                            },
+                        }}
+                    />
+                )}
+            />
         </Stack>
     );
 
     const renderStatus = (
         <Stack spacing={1.5}>
-            <Typography variant="subtitle2">Status</Typography>
-            <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                    value={filters.paid}
-                    onChange={handleFilterStatus}
-                    label="Status"
-                >
-                    <MenuItem value="all">All</MenuItem>
-                    <MenuItem value="paid">Paid</MenuItem>
-                    <MenuItem value="Pending">Pending</MenuItem>
-                </Select>
-            </FormControl>
+            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Status
+            </Typography>
+            <TextField
+                select
+                fullWidth
+                size="small"
+                value={filters.paid}
+                onChange={handleFilterStatus}
+                sx={{
+                    '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                        bgcolor: 'background.neutral',
+                    },
+                }}
+            >
+                <MenuItem value="all">All</MenuItem>
+                <MenuItem value="paid">Paid</MenuItem>
+                <MenuItem value="Pending">Pending</MenuItem>
+            </TextField>
         </Stack>
     );
 
     const renderType = (
         <Stack spacing={1.5}>
-            <Typography variant="subtitle2">Claim Type</Typography>
-            <FormControl fullWidth>
-                <InputLabel>Claim Type</InputLabel>
-                <Select
-                    value={filters.claim_type}
-                    onChange={handleFilterType}
-                    label="Claim Type"
-                >
-                    <MenuItem value="all">All</MenuItem>
-                    {claimTypes.map((type) => (
-                        <MenuItem key={type.name} value={type.name}>
-                            {type.name}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
+            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Claim Type
+            </Typography>
+            <TextField
+                select
+                fullWidth
+                size="small"
+                value={filters.claim_type}
+                onChange={handleFilterType}
+                sx={{
+                    '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                        bgcolor: 'background.neutral',
+                    },
+                }}
+            >
+                <MenuItem value="all">All</MenuItem>
+                {claimTypes.map((type) => (
+                    <MenuItem key={type.name} value={type.name}>
+                        {type.name}
+                    </MenuItem>
+                ))}
+            </TextField>
         </Stack>
     );
 
     const renderDateRange = (
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Stack spacing={1.5}>
-                <Typography variant="subtitle2">Expense Date Range</Typography>
-                <DatePicker
-                    label="Start Date"
-                    value={filters.startDate ? dayjs(filters.startDate) : null}
-                    onChange={handleFilterStartDate}
-                    slotProps={{
-                        textField: {
-                            fullWidth: true,
-                            InputLabelProps: { shrink: true },
-                        },
-                    }}
-                />
-                <DatePicker
-                    label="End Date"
-                    value={filters.endDate ? dayjs(filters.endDate) : null}
-                    onChange={handleFilterEndDate}
-                    slotProps={{
-                        textField: {
-                            fullWidth: true,
-                            InputLabelProps: { shrink: true },
-                        },
-                    }}
-                />
-            </Stack>
-        </LocalizationProvider>
+        <Stack spacing={1.5}>
+            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Expense Date Range
+            </Typography>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Stack spacing={2}>
+                    <DatePicker
+                        label="Start Date"
+                        value={filters.startDate ? dayjs(filters.startDate) : null}
+                        onChange={handleFilterStartDate}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                size: 'small',
+                                sx: {
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                    },
+                                },
+                            },
+                        }}
+                    />
+                    <DatePicker
+                        label="End Date"
+                        value={filters.endDate ? dayjs(filters.endDate) : null}
+                        onChange={handleFilterEndDate}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                size: 'small',
+                                sx: {
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                    },
+                                },
+                            },
+                        }}
+                    />
+                </Stack>
+            </LocalizationProvider>
+        </Stack>
     );
 
     return (
@@ -154,10 +248,15 @@ export function ReimbursementClaimsTableFiltersDrawer({
             open={open}
             onClose={onClose}
             slotProps={{
-                backdrop: { invisible: true },
+                paper: {
+                    sx: {
+                        width: 320,
+                        boxShadow: (theme) => theme.customShadows.z24,
+                    },
+                },
             }}
-            PaperProps={{
-                sx: { width: 280 },
+            sx={{
+                zIndex: (theme) => theme.zIndex.drawer + 100,
             }}
         >
             {renderHead}
@@ -166,23 +265,44 @@ export function ReimbursementClaimsTableFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 2.5 }}>
+                    {renderEmployee}
                     {renderStatus}
                     {renderType}
                     {renderDateRange}
                 </Stack>
             </Scrollbar>
 
-            <Box sx={{ p: 2.5 }}>
+            <Box
+                sx={{
+                    p: 2.5,
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.neutral',
+                }}
+            >
                 <Button
                     fullWidth
                     size="large"
-                    variant="outlined"
                     color="inherit"
+                    variant="outlined"
+                    startIcon={<Iconify icon="solar:restart-bold" />}
                     onClick={onResetFilters}
                     disabled={!canReset}
-                    startIcon={<Iconify icon="solar:restart-bold" />}
+                    sx={{
+                        borderRadius: 1.5,
+                        borderColor: 'divider',
+                        fontWeight: 600,
+                        '&:hover': {
+                            borderColor: 'error.main',
+                            color: 'error.main',
+                            bgcolor: 'error.lighter',
+                        },
+                        '&.Mui-disabled': {
+                            borderColor: 'divider',
+                        },
+                    }}
                 >
-                    Clear All
+                    Clear All Filters
                 </Button>
             </Box>
         </Drawer>

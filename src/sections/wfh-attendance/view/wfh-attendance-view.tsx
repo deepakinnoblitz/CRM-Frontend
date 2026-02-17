@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { IconButton } from '@mui/material';
@@ -15,6 +16,8 @@ import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
+import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
@@ -47,6 +50,7 @@ import { LeadTableToolbar as AttendanceTableToolbar } from '../../lead/lead-tabl
 // ----------------------------------------------------------------------
 
 export function WFHAttendanceView() {
+    const theme = useTheme();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
@@ -344,6 +348,32 @@ export function WFHAttendanceView() {
             }
         };
 
+        if (fieldname === 'employee') {
+            return (
+                <Autocomplete
+                    fullWidth
+                    options={options}
+                    getOptionLabel={(option: any) => (option.employee_name ? `${option.employee_name} (${option.name})` : (option.name || option))}
+                    isOptionEqualToValue={(option: any, value: any) => option.name === (value.name || value)}
+                    value={options.find((opt: any) => opt.name === formData[fieldname]) || null}
+                    onChange={(event: any, newValue: any) => {
+                        handleInputChange(fieldname, newValue?.name || '');
+                    }}
+                    renderInput={(params: any) => (
+                        <TextField
+                            {...params}
+                            label={label}
+                            required={required}
+                            error={!!formErrors[fieldname]}
+                            helperText={formErrors[fieldname]}
+                            InputLabelProps={{ shrink: true }}
+                            sx={commonProps.sx}
+                        />
+                    )}
+                />
+            );
+        }
+
         if (type === 'select' || type === 'link') {
             return (
                 <TextField {...commonProps} select SelectProps={{ native: true }}>
@@ -461,7 +491,7 @@ export function WFHAttendanceView() {
                                     { id: 'from_time', label: 'From', minWidth: 100 },
                                     { id: 'to_time', label: 'To', minWidth: 100 },
                                     { id: 'total_hours', label: 'Hours', minWidth: 80 },
-                                    { id: '', label: 'Actions', align: 'right' },
+                                    { id: '', label: '', align: 'right' },
                                 ]}
                             />
 
@@ -480,6 +510,7 @@ export function WFHAttendanceView() {
                                             fromTime: row.from_time,
                                             toTime: row.to_time,
                                             totalHours: row.total_hours,
+                                            modified: row.modified,
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
@@ -531,7 +562,7 @@ export function WFHAttendanceView() {
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {currentId ? 'Edit WFH Entry' : 'New WFH Entry'}
-                    <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
+                    <IconButton onClick={handleCloseCreate} sx={{ color: theme.palette.grey[500] }}>
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
                 </DialogTitle>
@@ -544,6 +575,40 @@ export function WFHAttendanceView() {
                             gridTemplateColumns="1fr"
                             gap={3}
                         >
+                            {formData.from_time && formData.to_time && (
+                                <Box
+                                    sx={{
+                                        p: 1.5,
+                                        borderRadius: 1.5,
+                                        bgcolor: alpha(theme.palette.primary.main, 0.04),
+                                        border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between'
+                                    }}
+                                >
+                                    <Stack direction="row" spacing={1.5} alignItems="center">
+                                        <Box
+                                            sx={{
+                                                p: 0.75,
+                                                borderRadius: 1,
+                                                bgcolor: '#08a3cd',
+                                                color: 'common.white',
+                                                display: 'flex'
+                                            }}
+                                        >
+                                            <Iconify icon={"solar:clock-square-bold-duotone" as any} width={22} />
+                                        </Box>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.secondary' }}>
+                                            Total Calculated Hours
+                                        </Typography>
+                                    </Stack>
+                                    <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                                        {formData.total_hours || '0.00'}
+                                    </Typography>
+                                </Box>
+                            )}
+
                             {renderField('employee', 'Employee', 'select', employeeOptions, {}, true)}
                             {renderField('date', 'Date', 'date', [], {}, true)}
 
@@ -551,15 +616,6 @@ export function WFHAttendanceView() {
                                 {renderField('from_time', 'From Time', 'time', [], {}, true)}
                                 {renderField('to_time', 'To Time', 'time', [], {}, false)}
                             </Box>
-
-                            <TextField
-                                fullWidth
-                                label="Total Hours"
-                                value={formData.total_hours || ''}
-                                InputProps={{ readOnly: true }}
-                                InputLabelProps={{ shrink: true }}
-                                variant="filled"
-                            />
 
                             {renderField('task_description', 'Task Description', 'text', [], { multiline: true, rows: 3 })}
                         </Box>

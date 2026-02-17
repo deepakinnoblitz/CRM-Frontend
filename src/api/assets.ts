@@ -157,22 +157,45 @@ export async function getAssetPermissions() {
     return (await res.json()).message || { read: false, write: false, delete: false };
 }
 
-export async function getAssetCategories(): Promise<string[]> {
+export async function getAssetCategories(): Promise<any[]> {
     try {
-        const res = await frappeRequest("/api/method/frappe.client.get_list?doctype=Asset&fields=[\"category\"]&distinct=true");
+        const res = await frappeRequest("/api/method/frappe.client.get_list?doctype=Asset Category&fields=[\"name\",\"category_name\"]&limit_page_length=999");
 
         if (!res.ok) {
-            return [];
+            // Fallback to distinct list from Asset if Asset Category doesn't exist or fails
+            const assetRes = await frappeRequest("/api/method/frappe.client.get_list?doctype=Asset&fields=[\"category\"]&distinct=true");
+            if (!assetRes.ok) return [];
+            const data = await assetRes.json();
+            return (data.message || []).map((item: any) => ({ name: item.category, category_name: item.category }));
         }
 
         const data = await res.json();
-        const categories: string[] = (data.message || [])
-            .map((item: any) => item.category)
-            .filter((category: string) => category && category.trim() !== '');
-
-        return Array.from(new Set(categories)).sort();
+        return data.message || [];
     } catch (error) {
         console.error('Failed to fetch asset categories:', error);
         return [];
     }
+}
+
+export async function createAssetCategory(categoryName: string, description?: string) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: "Asset Category",
+                category_name: categoryName,
+                description
+            }
+        })
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to create asset category"));
+    }
+
+    return (await res.json()).message;
 }

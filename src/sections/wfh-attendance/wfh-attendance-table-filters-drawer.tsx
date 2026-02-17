@@ -8,6 +8,7 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Autocomplete from '@mui/material/Autocomplete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -33,7 +34,7 @@ type Props = {
     canReset: boolean;
     onResetFilters: () => void;
     options: {
-        employees: { value: string; label: string }[];
+        employees: any[];
     };
 };
 
@@ -102,30 +103,29 @@ export function WFHAttendanceTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Employee
             </Typography>
-            <TextField
-                select
+            <Autocomplete
                 fullWidth
-                value={filters.employee}
-                onChange={(e) => handleFilterChange('employee', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
+                options={[{ name: 'all', employee_name: 'All Employees' }, ...options.employees]}
+                getOptionLabel={(option: any) => option.employee_name || option.name || ''}
+                isOptionEqualToValue={(option: any, value: any) => option.name === (value.name || value)}
+                value={options.employees.find((emp: any) => emp.name === filters.employee) || (filters.employee === 'all' ? { name: 'all', employee_name: 'All Employees' } : null)}
+                onChange={(event: any, newValue: any) => {
+                    handleFilterChange('employee', newValue?.name || 'all');
                 }}
-            >
-                <option value="all">All Employees</option>
-                {options.employees.map((option) => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </TextField>
+                renderInput={(params: any) => (
+                    <TextField
+                        {...params}
+                        placeholder="Search employee..."
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                            },
+                        }}
+                    />
+                )}
+            />
         </Stack>
     );
 

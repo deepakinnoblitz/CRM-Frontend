@@ -54,6 +54,7 @@ import { LeadTableHead as AssetAssignmentTableHead } from 'src/sections/lead/lea
 import { AssetAssignmentTableRow } from 'src/sections/asset-assignments/asset-assignments-table-row';
 import { LeadTableToolbar as AssetAssignmentTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 // import { AssetAssignmentTableRow } from 'src/sections/asset-assignments/asset-assignments-table-row';
+import { AssetAssignmentImportDialog } from 'src/sections/asset-assignments/asset-assignment-import-dialog';
 import { AssetAssignmentsTableFiltersDrawer } from 'src/sections/asset-assignments/asset-assignments-table-filters-drawer';
 
 // ----------------------------------------------------------------------
@@ -87,6 +88,7 @@ export function AssetAssignmentsView() {
     const [isEdit, setIsEdit] = useState(false);
     const [currentAssignment, setCurrentAssignment] = useState<any>(null);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
+    const [openImport, setOpenImport] = useState(false);
 
     // View state
     const [openView, setOpenView] = useState(false);
@@ -292,14 +294,23 @@ export function AssetAssignmentsView() {
                 </Typography>
 
                 {permissions.write && (
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon="mingcute:add-line" />}
-                        onClick={handleOpenCreate}
-                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                    >
-                        New Assignment
-                    </Button>
+                    <Stack direction="row" spacing={1}>
+                        <Button
+                            variant="outlined"
+                            startIcon={<Iconify icon="solar:import-bold-duotone" />}
+                            onClick={() => setOpenImport(true)}
+                        >
+                            Import
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon="mingcute:add-line" />}
+                            onClick={handleOpenCreate}
+                            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                        >
+                            New Assignment
+                        </Button>
+                    </Stack>
                 )}
             </Box>
 
@@ -427,9 +438,24 @@ export function AssetAssignmentsView() {
                             <Autocomplete
                                 fullWidth
                                 options={assets}
-                                getOptionLabel={(option) => option.asset_name}
+                                getOptionLabel={(option) => `${option.asset_name} (${option.name})`}
                                 value={selectedAsset}
                                 onChange={(event, newValue) => setSelectedAsset(newValue)}
+                                renderOption={(props, option) => {
+                                    const { key, ...optionProps } = props as any;
+                                    return (
+                                        <li key={key} {...optionProps}>
+                                            <Stack spacing={0.5}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                    {option.asset_name}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                    ID: {option.name}
+                                                </Typography>
+                                            </Stack>
+                                        </li>
+                                    );
+                                }}
                                 renderInput={(params) => (
                                     <TextField {...params} label="Asset" required placeholder="Select asset" />
                                 )}
@@ -439,9 +465,24 @@ export function AssetAssignmentsView() {
                             <Autocomplete
                                 fullWidth
                                 options={employees}
-                                getOptionLabel={(option) => option.employee_name}
+                                getOptionLabel={(option) => `${option.employee_name} (${option.name})`}
                                 value={selectedEmployee}
                                 onChange={(event, newValue) => setSelectedEmployee(newValue)}
+                                renderOption={(props, option) => {
+                                    const { key, ...optionProps } = props as any;
+                                    return (
+                                        <li key={key} {...optionProps}>
+                                            <Stack spacing={0.5}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                    {option.employee_name}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                    ID: {option.name}
+                                                </Typography>
+                                            </Stack>
+                                        </li>
+                                    );
+                                }}
                                 renderInput={(params) => (
                                     <TextField {...params} label="Employee" required placeholder="Select employee" />
                                 )}
@@ -450,6 +491,7 @@ export function AssetAssignmentsView() {
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                 <DatePicker
                                     label="Assigned On"
+                                    format="DD-MM-YYYY"
                                     value={assignedOn ? dayjs(assignedOn) : null}
                                     onChange={(newValue) => setAssignedOn(newValue?.format('YYYY-MM-DD') || '')}
                                     slotProps={{
@@ -465,6 +507,7 @@ export function AssetAssignmentsView() {
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                 <DatePicker
                                     label="Returned On"
+                                    format="DD-MM-YYYY"
                                     value={returnedOn ? dayjs(returnedOn) : null}
                                     onChange={(newValue) => setReturnedOn(newValue?.format('YYYY-MM-DD') || '')}
                                     slotProps={{
@@ -499,147 +542,127 @@ export function AssetAssignmentsView() {
 
             {/* View Dialog */}
             <Dialog open={openView} onClose={() => setOpenView(false)} fullWidth maxWidth="md">
-                <DialogTitle sx={{ m: 0, p: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Stack direction="row" alignItems="center" spacing={1.5}>
-                        <Typography variant="h5" sx={{ fontWeight: 800 }}>Assignment Details</Typography>
-                    </Stack>
+                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800 }}>Assignment Details</Typography>
                     <IconButton
                         onClick={() => setOpenView(false)}
                         sx={{
                             color: 'text.disabled',
+                            bgcolor: 'background.paper',
+                            boxShadow: (theme) => theme.customShadows?.z1,
                             '&:hover': {
                                 color: 'error.main',
                                 bgcolor: (theme) => alpha(theme.palette.error.main, 0.08)
                             }
                         }}
                     >
-                        <Iconify icon="mingcute:close-line" width={24} />
+                        <Iconify icon="mingcute:close-line" />
                     </IconButton>
                 </DialogTitle>
-                <DialogContent sx={{ p: 4, pt: 0 }}>
+                <DialogContent sx={{ p: 4, m: 2, mt: 4 }}>
                     {viewAssignment && (
-                        <Stack spacing={3}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                             {/* Header Summary Card */}
-                            <Box
-                                sx={{
-                                    p: 3,
-                                    borderRadius: 2,
-                                    bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
-                                    boxShadow: (theme) => theme.customShadows?.z12,
-                                    border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.12)}`,
-                                    position: 'relative',
-                                    overflow: 'hidden',
-                                }}
-                            >
-                                <Stack direction="row" alignItems="center" spacing={2.5} sx={{ mb: 3 }}>
-                                    <Box
-                                        sx={{
-                                            width: 54,
-                                            height: 54,
-                                            borderRadius: 1.5,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: 'common.white',
-                                            background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.info.main} 100%)`,
-                                            boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.primary.main, 0.24)}`,
-                                        }}
-                                    >
-                                        <Iconify icon={"solar:laptop-bold-duotone" as any} width={32} />
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-                                            {viewAssignment.asset_name}
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                            Asset ID: {viewAssignment.asset}
-                                        </Typography>
-                                    </Box>
-                                </Stack>
-
-                                <Stack
-                                    direction="row"
-                                    alignItems="center"
-                                    justifyContent="space-between"
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
+                                <Box
                                     sx={{
-                                        p: 2,
-                                        borderRadius: 1.5,
-                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                        width: 80,
+                                        height: 80,
+                                        borderRadius: 2,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        bgcolor: 'info.lighter',
+                                        color: 'info.main',
+                                        boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.info.main, 0.16)}`,
                                     }}
                                 >
-                                    <Stack spacing={0.5} sx={{ flex: 1, textAlign: 'center' }}>
-                                        <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, lineHeight: 1.5 }}>
-                                            EMPLOYEE
-                                        </Typography>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                                            {viewAssignment.employee_name || 'N/A'}
-                                        </Typography>
-                                    </Stack>
+                                    <Iconify icon={"solar:laptop-bold-duotone" as any} width={40} />
+                                </Box>
+                                <Box sx={{ flexGrow: 1 }}>
+                                    <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                                        {viewAssignment.asset_name}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                        Asset ID: {viewAssignment.asset}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ textAlign: 'right' }}>
+                                    <Label
+                                        color={viewAssignment.returned_on ? 'default' : 'success'}
+                                        variant="soft"
+                                        sx={{ textTransform: 'uppercase', height: 24, px: 1.5 }}
+                                    >
+                                        {viewAssignment.returned_on ? 'RETURNED' : 'ACTIVE'}
+                                    </Label>
+                                </Box>
+                            </Box>
 
-                                    <Divider orientation="vertical" flexItem sx={{ mx: 2, borderStyle: 'dashed' }} />
+                            <Divider sx={{ borderStyle: 'dashed' }} />
 
-                                    <Stack spacing={0.5} sx={{ flex: 1, textAlign: 'center' }}>
-                                        <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, lineHeight: 1.5 }}>
-                                            STATUS
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                                            <Label
-                                                color={viewAssignment.returned_on ? 'default' : 'success'}
-                                                variant="filled"
-                                                sx={{ textTransform: 'uppercase', height: 24, px: 1.5 }}
-                                            >
-                                                {viewAssignment.returned_on ? 'RETURNED' : 'ACTIVE'}
-                                            </Label>
-                                        </Box>
-                                    </Stack>
-                                </Stack>
+                            {/* Assignment Information */}
+                            <Box>
+                                <SectionHeader title="Assignment Information" icon="solar:user-id-bold" />
+                                <Box
+                                    sx={{
+                                        display: 'grid',
+                                        gap: 3,
+                                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+                                    }}
+                                >
+                                    <DetailItem
+                                        label="Employee"
+                                        value={viewAssignment.employee_name}
+                                        icon="solar:user-bold"
+                                    />
+                                    <DetailItem
+                                        label="Employee ID"
+                                        value={viewAssignment.assigned_to}
+                                        icon="solar:hashtag-bold"
+                                    />
+                                </Box>
                             </Box>
 
                             {/* Date Details */}
-                            <Stack spacing={2}>
-                                <DetailRow
-                                    label="Assigned On"
-                                    value={dayjs(viewAssignment.assigned_on).format('DD MMM YYYY')}
-                                    icon="solar:calendar-bold"
-                                />
-                                {viewAssignment.returned_on && (
-                                    <>
-                                        <Divider />
-                                        <DetailRow
+                            <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                                <SectionHeader title="Lifecycle Details" icon="solar:calendar-bold" noMargin />
+                                <Box sx={{ mt: 3, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                                    <DetailItem
+                                        label="Assigned On"
+                                        value={dayjs(viewAssignment.assigned_on).format('DD MMM YYYY')}
+                                        icon="solar:calendar-line-duotone"
+                                    />
+                                    {viewAssignment.returned_on && (
+                                        <DetailItem
                                             label="Returned On"
                                             value={dayjs(viewAssignment.returned_on).format('DD MMM YYYY')}
                                             icon="solar:calendar-check-bold"
                                         />
-                                    </>
-                                )}
-                            </Stack>
+                                    )}
+                                </Box>
+                            </Box>
 
                             {/* Remarks Section */}
                             {viewAssignment.remarks && (
-                                <Box sx={{
-                                    p: 2,
-                                    borderRadius: 1.5,
-                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
-                                    border: (theme) => `1px solid ${theme.palette.divider}`
-                                }}>
-                                    <Typography variant="caption" sx={{
-                                        color: 'text.disabled',
-                                        fontWeight: 700,
-                                        textTransform: 'uppercase',
-                                        mb: 1,
-                                        display: 'block'
-                                    }}>
-                                        Remarks
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
-                                        {viewAssignment.remarks}
-                                    </Typography>
+                                <Box>
+                                    <SectionHeader title="Remarks" icon="solar:notes-bold" />
+                                    <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                            {viewAssignment.remarks}
+                                        </Typography>
+                                    </Box>
                                 </Box>
                             )}
-                        </Stack>
+                        </Box>
                     )}
                 </DialogContent>
             </Dialog>
+
+            <AssetAssignmentImportDialog
+                open={openImport}
+                onClose={() => setOpenImport(false)}
+                onRefresh={refetch}
+            />
 
             {/* Snackbar */}
             <Snackbar
@@ -664,34 +687,33 @@ export function AssetAssignmentsView() {
                     </Button>
                 }
             />
-        </DashboardContent>
+        </DashboardContent >
     );
 }
 
-function DetailRow({ label, value, icon }: { label: string; value?: string | null; icon: string }) {
+function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: string, noMargin?: boolean }) {
     return (
-        <Stack direction="row" spacing={2} alignItems="center">
-            <Box
-                sx={{
-                    p: 1,
-                    borderRadius: 1.25,
-                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                    color: 'primary.main',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}
-            >
-                <Iconify icon={icon as any} width={22} />
-            </Box>
-            <Box>
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.25 }}>
-                    {label}
-                </Typography>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
+            <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {title}
+            </Typography>
+        </Box>
+    );
+}
+
+function DetailItem({ label, value, icon }: { label: string; value?: string | null; icon: string }) {
+    return (
+        <Box>
+            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
+                {label}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>
                     {value || '-'}
                 </Typography>
             </Box>
-        </Stack>
+        </Box>
     );
 }

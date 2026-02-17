@@ -15,12 +15,14 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 
 import { getHRDoc } from 'src/api/hr-management';
-import { type WorkflowAction, getLeaveWorkflowActions, applyLeaveWorkflowAction } from 'src/api/leaves';
+import { type WorkflowAction, getLeaveWorkflowActions, updateLeaveStatus } from 'src/api/leaves';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 import { useAuth } from 'src/auth/auth-context';
+
+import { ClarificationDialog } from '../requests/clarification-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -39,6 +41,9 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props
     const [commentDialogOpen, setCommentDialogOpen] = useState(false);
     const [comment, setComment] = useState('');
     const [selectedAction, setSelectedAction] = useState<WorkflowAction | null>(null);
+
+    const [openClarification, setOpenClarification] = useState(false);
+    const [clarificationType, setClarificationType] = useState<'HR' | 'Employee'>('HR');
 
     const { user } = useAuth();
     const userRoles = user?.roles || [];
@@ -81,25 +86,62 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props
     const handleActionClick = (action: WorkflowAction) => {
         setSelectedAction(action);
         const lowerAction = action.action.toLowerCase();
-        if (lowerAction.includes('approve') || lowerAction.includes('reject')) {
+
+        if (lowerAction.includes('clarification') || lowerAction.includes('query')) {
+            setClarificationType('HR');
+            setOpenClarification(true);
+        } else if (lowerAction.includes('reply')) {
+            setClarificationType('Employee');
+            setOpenClarification(true);
+        } else if (lowerAction.includes('approve') || lowerAction.includes('reject')) {
             handleApplyAction(action);
         } else {
             setCommentDialogOpen(true);
         }
     };
 
-    const handleApplyAction = async (actionOverride?: WorkflowAction) => {
+    const handleApplyAction = async (actionOverride?: WorkflowAction, message?: string) => {
         const actionToApply = actionOverride || selectedAction;
         if (!actionToApply || !leaveId) return;
 
         try {
             setSubmitting(true);
-            await applyLeaveWorkflowAction(leaveId, actionToApply.action, comment);
+            const status = actionToApply.next_state || actionToApply.action;
+            const updateData: any = {};
+
+            if (message) {
+                if (clarificationType === 'HR') {
+                    const fields = ['hr_query', 'hr_query_2', 'hr_query_3', 'hr_query_4', 'hr_query_5'];
+                    const nextField = fields.find(f => !leave[f]);
+                    if (nextField) updateData[nextField] = message;
+                } else {
+                    const fields = ['employee_reply', 'employee_reply_2', 'employee_reply_3', 'employee_reply_4', 'employee_reply_5'];
+                    const nextField = fields.find(f => !leave[f]);
+                    if (nextField) updateData[nextField] = message;
+                }
+            }
+
+            if (comment) {
+                // If there's a generic comment, we could handle it too, but here we focus on clarifications
+            }
+
+            await updateLeaveStatus(leaveId, status, updateData);
+
             setComment('');
             setCommentDialogOpen(false);
+            setOpenClarification(false);
             setSelectedAction(null);
+
             await fetchData();
             if (onRefresh) onRefresh();
+
+            // Only close if not a clarification/reply
+            const lowerAction = actionToApply.action.toLowerCase();
+            const isClarify = lowerAction.includes('clarification') || lowerAction.includes('query') || lowerAction.includes('reply');
+
+            if (!isClarify) {
+                onClose();
+            }
         } catch (error) {
             console.error('Failed to apply action:', error);
         } finally {
@@ -163,69 +205,91 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props
     const filteredActions = actions.filter(action => {
         const lowerAction = action.action.toLowerCase();
         const isClarification = lowerAction.includes('clarification') || lowerAction.includes('query');
+        const isReply = lowerAction.includes('reply');
 
         // If it's a clarification action and the limit is reached for the user's role
-        if (isClarification) {
-            if (isHR && hrQueryCount >= 5) return false;
-            if (isEmployee && empReplyCount >= 5) return false;
-        }
+        if (isClarification && isHR && hrQueryCount >= 5) return false;
+        if (isReply && isEmployee && empReplyCount >= 5) return false;
+
         return true;
     });
 
     const renderConversation = conversation.length > 0 && (
-        <Stack spacing={2} sx={{ mt: 3 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={"solar:chat-round-dots-bold-duotone" as any} width={20} sx={{ color: 'text.secondary' }} />
-                Clarifications & Messages
-            </Typography>
-
-            <Stack spacing={2}>
-                {conversation.map((msg, index) => {
+        <Box>
+            <SectionHeader title="Clarification History" icon="solar:chat-round-dots-bold" />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                {conversation.map((msg, idx) => {
                     const isSelf = (isHR && msg.type === 'hr') || (isEmployee && msg.type === 'employee');
 
                     return (
-                        <Stack
-                            key={index}
-                            direction="row"
-                            spacing={1.5}
-                            justifyContent={isSelf ? 'flex-end' : 'flex-start'}
-                        >
-                            {!isSelf && (
-                                <Box sx={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: '50%',
-                                    bgcolor: msg.type === 'hr' ? 'info.main' : 'warning.main',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: 'common.white',
-                                    flexShrink: 0
-                                }}>
-                                    <Iconify icon={msg.type === 'hr' ? ("solar:user-bold" as any) : ("solar:user-id-bold" as any)} width={18} />
-                                </Box>
-                            )}
-                            <Box sx={{
+                        <Box
+                            key={idx}
+                            sx={{
+                                position: 'relative',
                                 maxWidth: '85%',
-                                p: 1.5,
-                                borderRadius: 1.5,
+                                alignSelf: isSelf ? 'flex-end' : 'flex-start',
                                 bgcolor: isSelf ? 'primary.main' : 'background.paper',
                                 color: isSelf ? 'primary.contrastText' : 'text.primary',
-                                boxShadow: (theme) => theme.customShadows?.z1,
-                                border: (theme) => !isSelf ? `1px solid ${theme.palette.divider}` : 'none'
-                            }}>
-                                <Typography variant="caption" sx={{ display: 'block', mb: 0.5, fontWeight: 700, textAlign: isSelf ? 'right' : 'left', color: isSelf ? 'inherit' : 'primary.main' }}>
-                                    {msg.type === 'hr' ? 'HR Message' : 'Employee Reply'}
+                                p: 1.5,
+                                px: 2,
+                                borderRadius: 1.5,
+                                borderTopRightRadius: isSelf ? 0 : 1.5,
+                                borderTopLeftRadius: !isSelf ? 0 : 1.5,
+                                boxShadow: (theme) => theme.customShadows?.z1 || '0 1px 2px rgba(0,0,0,0.1)',
+                                '&::before': {
+                                    content: '""',
+                                    position: 'absolute',
+                                    top: 0,
+                                    width: 0,
+                                    height: 0,
+                                    borderStyle: 'solid',
+                                    ...(isSelf
+                                        ? {
+                                            right: -10,
+                                            borderWidth: '0 0 12px 12px',
+                                            borderColor: (theme) => `transparent transparent transparent ${theme.palette.primary.main}`,
+                                        }
+                                        : {
+                                            left: -10,
+                                            borderWidth: '0 12px 12px 0',
+                                            borderColor: (theme) => `transparent ${theme.palette.background.paper} transparent transparent`,
+                                        }),
+                                },
+                            }}
+                        >
+                            {!isSelf && (
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        display: 'block',
+                                        mb: 0.5,
+                                        fontWeight: 700,
+                                        color: 'primary.main',
+                                        fontSize: '0.7rem',
+                                        textTransform: 'uppercase',
+                                    }}
+                                >
+                                    {msg.type === 'hr' ? 'HR' : (leave?.employee_name || 'Employee')}
                                 </Typography>
-                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                                    {msg.text}
-                                </Typography>
-                            </Box>
-                        </Stack>
+                            )}
+                            <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
+                                {msg.text}
+                            </Typography>
+                        </Box>
                     );
                 })}
-            </Stack>
-        </Stack>
+                {isEmployee && empReplyCount >= 5 && leave?.workflow_state === 'Clarification Requested' && (
+                    <Typography variant="caption" color="error" sx={{ textAlign: 'center', mt: 1, fontWeight: 700 }}>
+                        Maximum reply limit (5) reached.
+                    </Typography>
+                )}
+                {isHR && hrQueryCount >= 5 && (leave?.workflow_state === 'Pending' || leave?.workflow_state === 'Clarification Requested' || !leave?.workflow_state) && (
+                    <Typography variant="caption" color="error" sx={{ textAlign: 'center', mt: 1, fontWeight: 700 }}>
+                        Maximum clarification limit (5) reached.
+                    </Typography>
+                )}
+            </Box>
+        </Box>
     );
 
     const renderDetails = (
@@ -440,13 +504,33 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <ClarificationDialog
+                open={openClarification}
+                onClose={() => setOpenClarification(false)}
+                onConfirm={(msg) => handleApplyAction(undefined, msg)}
+                title={clarificationType === 'HR' ? 'Ask Clarification' : 'Reply to HR'}
+                label={clarificationType === 'HR' ? 'Query' : 'Reply'}
+                loading={submitting}
+            />
         </>
+    );
+}
+
+function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: string; noMargin?: boolean }) {
+    return (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
+            <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {title}
+            </Typography>
+        </Box>
     );
 }
 
 function DetailRow({ label, value, icon }: { label: string; value?: string | null; icon: string }) {
     return (
-        <Stack direction="row" spacing={2} alignItems="center">
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ width: 1 }}>
             <Box
                 sx={{
                     p: 1,

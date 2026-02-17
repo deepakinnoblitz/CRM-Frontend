@@ -1,9 +1,12 @@
+import dayjs from 'dayjs';
+
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -33,7 +36,7 @@ export function SalarySlipDetailsDialog({ open, onClose, slip }: Props) {
 
     const formatDate = (date: string) => {
         if (!date) return '-';
-        return new Date(date).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+        return dayjs(date).format('DD-MM-YYYY');
     };
 
     const renderHeader = (
@@ -49,7 +52,7 @@ export function SalarySlipDetailsDialog({ open, onClose, slip }: Props) {
                 border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
             }}
         >
-            <Typography variant="h5" sx={{ mb: 1, fontWeight: 800, color: 'primary.main', letterSpacing: 1.5 }}>
+            <Typography variant="h5" sx={{ mb: 1, fontWeight: 800, color: 'primary.main' }}>
                 SALARY SLIP
             </Typography>
             <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
@@ -73,12 +76,37 @@ export function SalarySlipDetailsDialog({ open, onClose, slip }: Props) {
                     gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
                 }}
             >
-                <InfoRow label="Employee ID" value={slip.employee} />
-                <InfoRow label="Employee Name" value={slip.employee_name} />
-                <InfoRow label="Department" value={slip.department || '-'} />
-                <InfoRow label="Designation" value={slip.designation || '-'} />
+                <InfoRow label="Employee" value={slip.employee} />
                 <InfoRow label="Bank Name" value={slip.bank_name || '-'} />
-                <InfoRow label="Account No" value={slip.account_no || '-'} />
+                <InfoRow label="Employee Name" value={slip.employee_name} />
+                <InfoRow label="Email" value={slip.email || '-'} />
+                <InfoRow label="Department" value={slip.department || '-'} />
+                <InfoRow label="Personal Email" value={slip.personal_email || '-'} />
+                <InfoRow label="Designation" value={slip.designation || '-'} />
+                <InfoRow label="Date of Joining" value={formatDate(slip.date_of_joining)} />
+                <Box />
+            </Box>
+        </Box>
+    );
+
+    const renderAttendanceSummary = (
+        <Box sx={{ mb: 4 }}>
+            <SectionHeader title="Attendance Summary" icon="solar:calendar-date-bold" color="warning.main" />
+            <Box
+                sx={{
+                    p: 3,
+                    borderRadius: 2,
+                    display: 'grid',
+                    gap: 3,
+                    bgcolor: (theme) => alpha(theme.palette.warning.main, 0.04),
+                    border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.12)}`,
+                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+                }}
+            >
+                <InfoRow label="No of Leave" value={slip.no_of_leave || 0} />
+                <InfoRow label="Total Working Days" value={slip.total_working_days || 0} />
+                <InfoRow label="LOP Days" value={slip.lop_days || 0} />
+                <InfoRow label="No of Paid Leave" value={slip.no_of_paid_leave || 0} />
             </Box>
         </Box>
     );
@@ -162,6 +190,7 @@ export function SalarySlipDetailsDialog({ open, onClose, slip }: Props) {
                 <DialogContent sx={{ p: 4 }}>
                     {renderHeader}
                     {renderEmployeeDetails}
+                    {renderAttendanceSummary}
                     <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
                     {renderSalaryBreakdown}
                     {renderNetPay}

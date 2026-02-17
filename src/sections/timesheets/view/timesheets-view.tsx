@@ -162,7 +162,7 @@ export function TimesheetsView() {
 
     const employeeOptions = employees.map(emp => ({
         value: emp.name,
-        label: `${emp.employee_name} (${emp.employee_id})`
+        label: `${emp.employee_name} (${emp.name || emp.employee_id})`
     }));
 
     const handleSort = (value: string) => {
@@ -617,7 +617,35 @@ export function TimesheetsView() {
                 <DialogContent dividers>
                     <Box sx={{ display: 'grid', gap: 3, p: 2 }}>
                         <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                            {renderField('employee', 'Employee', 'select', employeeOptions, {}, true)}
+                            <Autocomplete
+                                fullWidth
+                                options={employees}
+                                getOptionLabel={(option) => option.employee_name ? `${option.employee_name} (${option.name || option.employee_id})` : option.employee_id || ''}
+                                isOptionEqualToValue={(option, value) => option.name === (value?.name || value)}
+                                value={employees.find((emp) => emp.name === employee) || null}
+                                onChange={(event, newValue) => {
+                                    setEmployee(newValue?.name || '');
+                                    if (formErrors.employee) {
+                                        setFormErrors(prev => ({ ...prev, employee: '' }));
+                                    }
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Employee"
+                                        required
+                                        error={!!formErrors.employee}
+                                        helperText={formErrors.employee}
+                                        InputLabelProps={{ shrink: true }}
+                                        placeholder="Search employee..."
+                                        sx={{
+                                            '& .MuiFormLabel-asterisk': {
+                                                color: 'red',
+                                            },
+                                        }}
+                                    />
+                                )}
+                            />
                             {renderField('timesheetDate', 'Timesheet Date', 'date', [], {}, true)}
                         </Box>
 

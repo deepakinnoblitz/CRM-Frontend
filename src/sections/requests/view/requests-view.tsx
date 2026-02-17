@@ -21,6 +21,7 @@ import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
 import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
@@ -48,6 +49,8 @@ import { LeadTableHead as RequestTableHead } from 'src/sections/lead/lead-table-
 import { RequestDetailsDialog } from 'src/sections/report/requests/requests-details-dialog';
 import { LeadTableToolbar as RequestTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 
+import { RequestsTableFiltersDrawer } from '../requests-table-filters-drawer';
+
 // ----------------------------------------------------------------------
 
 export function RequestsView() {
@@ -59,12 +62,11 @@ export function RequestsView() {
     const [selected, setSelected] = useState<string[]>([]);
     const [sortBy, setSortBy] = useState('creation_desc');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [filterEmployee, setFilterEmployee] = useState('all');
     const [startDate, setStartDate] = useState<string | null>(null);
     const [endDate, setEndDate] = useState<string | null>(null);
 
-    const debouncedFilterName = useDebounce(filterName, 500);
-
-    const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
+    const [openFilters, setOpenFilters] = useState(false);
 
     const { data, total, refetch } = useRequests(
         page + 1,
@@ -74,7 +76,8 @@ export function RequestsView() {
         order,
         startDate || undefined,
         endDate || undefined,
-        filterStatus
+        filterStatus,
+        filterEmployee
     );
 
     const [openCreate, setOpenCreate] = useState(false);
@@ -134,18 +137,19 @@ export function RequestsView() {
         setOrder(ord as 'asc' | 'desc');
     };
 
-    const handleOpenFilter = (event: React.MouseEvent<HTMLElement>) => {
-        setFilterAnchorEl(event.currentTarget);
-    };
-
-    const handleCloseFilter = () => {
-        setFilterAnchorEl(null);
-    };
+    const handleFilters = useCallback((update: Partial<{ status: string; employee: string; startDate: string | null; endDate: string | null }>) => {
+        if ('status' in update) setFilterStatus(update.status || 'all');
+        if ('employee' in update) setFilterEmployee(update.employee || 'all');
+        if ('startDate' in update) setStartDate(update.startDate || null);
+        if ('endDate' in update) setEndDate(update.endDate || null);
+        setPage(0);
+    }, []);
 
     const handleResetFilters = () => {
         setStartDate(null);
         setEndDate(null);
         setFilterStatus('all');
+        setFilterEmployee('all');
         setFilterName('');
         setPage(0);
     };
@@ -377,69 +381,10 @@ export function RequestsView() {
                         { value: 'creation_desc', label: 'Newest First' },
                         { value: 'creation_asc', label: 'Oldest First' },
                     ]}
-                    onOpenFilter={handleOpenFilter}
-
-
-                    canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all'}
-                    filterStatus={filterStatus}
-                    onFilterStatus={(e) => {
-                        setFilterStatus(e.target.value);
-                        setPage(0);
-                    }}
-                    options={[
-                        { value: 'Pending', label: 'Pending' },
-                        { value: 'Approved', label: 'Approved' },
-                        { value: 'Rejected', label: 'Rejected' },
-                        { value: 'Clarification Requested', label: 'Clarification Requested' },
-                    ]}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all' || filterEmployee !== 'all'}
                 />
 
-                <Popover
-                    open={Boolean(filterAnchorEl)}
-                    anchorEl={filterAnchorEl}
-                    onClose={handleCloseFilter}
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                    slotProps={{
-                        paper: {
-                            sx: { p: 3, width: 280 },
-                        },
-                    }}
-                >
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <Stack spacing={3}>
-                            <Typography variant="subtitle2">Filter by Date</Typography>
-
-                            <DatePicker
-                                label="Start Date"
-                                value={startDate ? dayjs(startDate) : null}
-                                onChange={(newValue) => {
-                                    setStartDate(newValue ? newValue.format('YYYY-MM-DD') : null);
-                                    setPage(0);
-                                }}
-                            />
-
-                            <DatePicker
-                                label="End Date"
-                                value={endDate ? dayjs(endDate) : null}
-                                onChange={(newValue) => {
-                                    setEndDate(newValue ? newValue.format('YYYY-MM-DD') : null);
-                                    setPage(0);
-                                }}
-                            />
-
-                            <Button
-                                fullWidth
-                                color="inherit"
-                                variant="outlined"
-                                onClick={handleResetFilters}
-                                startIcon={<Iconify icon="solar:restart-bold" />}
-                            >
-                                Reset
-                            </Button>
-                        </Stack>
-                    </LocalizationProvider>
-                </Popover>
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
@@ -459,7 +404,6 @@ export function RequestsView() {
                                     { id: 'employee_name', label: 'Employee Name' },
                                     { id: 'subject', label: 'Subject' },
                                     { id: 'workflow_state', label: 'Status' },
-                                    { id: 'creation', label: 'Created On' },
                                     { id: '', label: '' },
                                 ]}
                             />
@@ -475,6 +419,7 @@ export function RequestsView() {
                                             subject: row.subject,
                                             workflow_state: row.workflow_state,
                                             creation: row.creation,
+                                            modified: row.modified,
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
@@ -523,7 +468,7 @@ export function RequestsView() {
             </Card>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
 
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {isEdit ? 'Edit Request' : 'New Request'}
@@ -534,7 +479,33 @@ export function RequestsView() {
 
                 <DialogContent dividers>
                     <Box sx={{ display: 'grid', gap: 3, margin: '1rem' }}>
-                        {renderField('employeeId', 'Employee', 'select', employees, {}, true)}
+                        <Autocomplete
+                            fullWidth
+                            options={employees}
+                            getOptionLabel={(option) => option.employee_name || option.name || ''}
+                            isOptionEqualToValue={(option, value) => option.name === (value?.name || value)}
+                            value={employees.find((emp) => emp.name === employeeId) || null}
+                            onChange={(event, newValue) => {
+                                setEmployeeId(newValue?.name || '');
+                                if (formErrors.employeeId) setFormErrors(prev => ({ ...prev, employeeId: '' }));
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Employee"
+                                    required
+                                    error={!!formErrors.employeeId}
+                                    helperText={formErrors.employeeId}
+                                    InputLabelProps={{ shrink: true }}
+                                    placeholder="Search employee..."
+                                    sx={{
+                                        '& .MuiFormLabel-asterisk': {
+                                            color: 'red',
+                                        },
+                                    }}
+                                />
+                            )}
+                        />
                         {renderField('subject', 'Subject', 'text', [], { placeholder: 'Enter request subject' }, true)}
                         {renderField('message', 'Message', 'textarea', [], { placeholder: 'Enter request details' }, true)}
                     </Box>
@@ -578,6 +549,21 @@ export function RequestsView() {
                         Delete
                     </Button>
                 }
+            />
+            <RequestsTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={{
+                    status: filterStatus,
+                    employee: filterEmployee,
+                    startDate,
+                    endDate,
+                }}
+                onFilters={handleFilters}
+                canReset={!!startDate || !!endDate || filterStatus !== 'all' || filterEmployee !== 'all'}
+                onResetFilters={handleResetFilters}
+                employees={employees}
             />
         </DashboardContent>
     );

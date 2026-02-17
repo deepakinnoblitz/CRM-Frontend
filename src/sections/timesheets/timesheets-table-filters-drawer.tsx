@@ -8,6 +8,7 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Autocomplete from '@mui/material/Autocomplete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -103,30 +104,31 @@ export function TimesheetsTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Employee
             </Typography>
-            <TextField
-                select
+            <Autocomplete
                 fullWidth
-                value={filters.employee}
-                onChange={(e) => handleFilterChange('employee', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
+                options={options.employees}
+                getOptionLabel={(option) => typeof option === 'string' ? option : option.label || ''}
+                value={options.employees.find((emp) => emp.value === filters.employee) || null}
+                onChange={(event, newValue) => {
+                    handleFilterChange('employee', newValue?.value || 'all');
                 }}
-            >
-                <option value="all">All Employees</option>
-                {options.employees.map((option) => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </TextField>
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Search employee..."
+                        size="small"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+            />
         </Stack>
     );
 

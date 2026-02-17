@@ -72,6 +72,7 @@ export function HRDashboardView() {
                     fetchWeeklyPresentChartData()
                 ]);
 
+                console.log('Holidays data received:', holidays);
                 setData({
                     announcements,
                     todays_birthdays: birthdays,
@@ -135,7 +136,7 @@ export function HRDashboardView() {
                         title="Pending Leave Applications"
                         total={data.pending_leaves || 0}
                         color="warning"
-                        icon={<Iconify icon={"solar:mplor-date-bold-duotone" as any} width={32} />}
+                        icon={<Iconify icon={"solar:calendar-date-bold-duotone" as any} width={32} />}
                     />
                 </Grid>
 
@@ -172,10 +173,11 @@ export function HRDashboardView() {
                         title="Today's Leave"
                         tableData={data.todays_leaves}
                         headLabel={[
-                            { id: 'index', label: '#' },
+                            { id: 'index', label: 'S.No' },
                             { id: 'employee_name', label: 'Employee Name' },
                             { id: 'leave_type', label: 'Leave Type' },
                         ]}
+                        emptyMessage="No leave today"
                     />
                 </Grid>
 
@@ -185,10 +187,11 @@ export function HRDashboardView() {
                         title="Today's Birthdays"
                         tableData={data.todays_birthdays}
                         headLabel={[
-                            { id: 'index', label: '#' },
+                            { id: 'index', label: 'S.No' },
                             { id: 'employee_name', label: 'Employee Name' },
                             { id: 'employee', label: 'Employee ID' },
                         ]}
+                        emptyMessage="No birthdays today"
                     />
                 </Grid>
 
@@ -198,13 +201,14 @@ export function HRDashboardView() {
                         title="Upcoming Renewals"
                         tableData={data.renewals || []}
                         headLabel={[
-                            { id: 'index', label: '#' },
+                            { id: 'index', label: 'S.No' },
                             { id: 'item_name', label: 'Item Name' },
                             { id: 'category', label: 'Category' },
                             { id: 'renewal_date', label: 'Renewal Date' },
                             { id: 'amount', label: 'Amount' },
                             { id: 'status', label: 'Status' },
                         ]}
+                        emptyMessage="No upcoming renewals"
                     />
                 </Grid>
 
@@ -214,11 +218,15 @@ export function HRDashboardView() {
                         title="Holiday Calendar"
                         subheader="Upcoming holidays for this month"
                         onDateChange={handleMonthChange}
-                        events={data.holidays.map((h: any) => ({
-                            title: h.description,
-                            start: h.holiday_date,
-                            color: '#FF4842'
-                        }))}
+                        events={(() => {
+                            const mappedEvents = data.holidays.map((h: any) => ({
+                                title: h.description,
+                                start: h.holiday_date,
+                                color: '#FF4842'
+                            }));
+                            console.log('Mapped holiday events:', mappedEvents);
+                            return mappedEvents;
+                        })()}
                     />
                 </Grid>
             </Grid>

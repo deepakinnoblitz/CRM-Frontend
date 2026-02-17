@@ -42,9 +42,29 @@ export async function fetchUsers(params: {
     }
 
     if (params.search) {
+        const searchLower = params.search.toLowerCase();
+
+        // Basic fields
         or_filters.push(["User", "full_name", "like", `%${params.search}%`]);
         or_filters.push(["User", "email", "like", `%${params.search}%`]);
         or_filters.push(["User", "name", "like", `%${params.search}%`]);
+        or_filters.push(["User", "user_type", "like", `%${params.search}%`]);
+
+        // Status labels
+        if ("enabled".includes(searchLower)) {
+            or_filters.push(["User", "enabled", "=", 1]);
+        }
+        if ("disabled".includes(searchLower)) {
+            or_filters.push(["User", "enabled", "=", 0]);
+        }
+
+        // Permission labels
+        if ("added".includes(searchLower)) {
+            or_filters.push(["User", "name", "in", usersWithPermissions]);
+        }
+        if ("not added".includes(searchLower)) {
+            or_filters.push(["User", "name", "not in", usersWithPermissions]);
+        }
     }
 
     // Add filters
@@ -241,6 +261,12 @@ export async function deleteUser(name: string) {
 export async function getUser(name: string) {
     const res = await frappeRequest(`/api/method/frappe.client.get?doctype=User&name=${encodeURIComponent(name)}`);
     if (!res.ok) throw new Error("Failed to fetch user details");
+    return (await res.json()).message;
+}
+
+export async function fetchUserPermissions(user: string) {
+    const res = await frappeRequest(`/api/method/frappe.client.get_list?doctype=User Permission&filters=${JSON.stringify([["User Permission", "user", "=", user]])}&fields=["*"]&limit_page_length=999`);
+    if (!res.ok) throw new Error("Failed to fetch user permissions");
     return (await res.json()).message;
 }
 

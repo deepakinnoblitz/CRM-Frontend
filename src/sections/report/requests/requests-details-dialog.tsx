@@ -81,8 +81,16 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh }: Prop
 
             await updateRequestStatus(internalRequest.name, status, updateData);
             if (onRefresh) onRefresh();
-            setOpenClarification(false);
-            onClose();
+
+            // For clarify actions, don't close, just refresh local data
+            if (status === 'Clarification Requested' || (isEmployee && status === 'Pending')) {
+                setOpenClarification(false);
+                const latestRequest = await getRequest(internalRequest.name);
+                setInternalRequest(latestRequest);
+            } else {
+                setOpenClarification(false);
+                onClose();
+            }
         } catch (error) {
             console.error('Failed to update status:', error);
         } finally {
@@ -119,7 +127,7 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh }: Prop
             }
             if (internalRequest[empField]) {
                 msgs.push({
-                    sender: 'Employee',
+                    sender: internalRequest.employee_name || 'Employee',
                     text: internalRequest[empField],
                     side: isEmployee ? 'right' : 'left'
                 });
@@ -149,7 +157,7 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh }: Prop
                 {internalRequest ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                         {/* Header Info */}
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
                             <Box
                                 sx={{
                                     width: 80,
@@ -212,7 +220,7 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh }: Prop
                         </Box>
 
                         {/* Status & Approval */}
-                        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                        {/* <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
                             <SectionHeader title="Status & Approval" icon="solar:check-circle-bold" noMargin />
                             <Box sx={{ mt: 3, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
                                 <DetailItem label="Status" value={internalRequest.workflow_state || 'Pending'} icon="solar:flag-bold" />
@@ -225,32 +233,73 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh }: Prop
                                     icon="solar:calendar-bold"
                                 />
                             </Box>
-                        </Box>
+                        </Box> */}
 
                         {/* Clarification Chat */}
                         {messages.length > 0 && (
                             <Box>
                                 <SectionHeader title="Clarification History" icon="solar:chat-round-dots-bold" />
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                                    {messages.map((msg, idx) => (
-                                        <Box key={idx} sx={{
-                                            maxWidth: '75%',
-                                            alignSelf: msg.side === 'right' ? 'flex-end' : 'flex-start',
-                                            bgcolor: msg.side === 'right' ? 'primary.main' : 'background.paper',
-                                            color: msg.side === 'right' ? 'primary.contrastText' : 'text.primary',
-                                            p: 1.5,
-                                            borderRadius: 2,
-                                            borderTopRightRadius: msg.side === 'right' ? 0 : 2,
-                                            borderTopLeftRadius: msg.side === 'left' ? 0 : 2,
-                                            boxShadow: (theme) => theme.customShadows?.z1,
-                                            position: 'relative'
-                                        }}>
-                                            <Typography variant="caption" sx={{ display: 'block', mb: 0.5, fontWeight: 700, color: msg.side === 'right' ? 'inherit' : 'primary.main' }}>
-                                                {msg.sender}
-                                            </Typography>
-                                            <Typography variant="body2">{msg.text}</Typography>
-                                        </Box>
-                                    ))}
+                                    {messages.map((msg, idx) => {
+                                        const isSelf = msg.side === 'right';
+
+                                        return (
+                                            <Box
+                                                key={idx}
+                                                sx={{
+                                                    position: 'relative',
+                                                    maxWidth: '85%',
+                                                    alignSelf: isSelf ? 'flex-end' : 'flex-start',
+                                                    bgcolor: isSelf ? 'primary.main' : 'background.paper',
+                                                    color: isSelf ? 'primary.contrastText' : 'text.primary',
+                                                    p: 1.5,
+                                                    px: 2,
+                                                    borderRadius: 1.5,
+                                                    borderTopRightRadius: isSelf ? 0 : 1.5,
+                                                    borderTopLeftRadius: !isSelf ? 0 : 1.5,
+                                                    boxShadow: (theme) => theme.customShadows?.z1 || '0 1px 2px rgba(0,0,0,0.1)',
+                                                    '&::before': {
+                                                        content: '""',
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        width: 0,
+                                                        height: 0,
+                                                        borderStyle: 'solid',
+                                                        ...(isSelf
+                                                            ? {
+                                                                right: -10,
+                                                                borderWidth: '0 0 12px 12px',
+                                                                borderColor: (theme) => `transparent transparent transparent ${theme.palette.primary.main}`,
+                                                            }
+                                                            : {
+                                                                left: -10,
+                                                                borderWidth: '0 12px 12px 0',
+                                                                borderColor: (theme) => `transparent ${theme.palette.background.paper} transparent transparent`,
+                                                            }),
+                                                    },
+                                                }}
+                                            >
+                                                {!isSelf && (
+                                                    <Typography
+                                                        variant="caption"
+                                                        sx={{
+                                                            display: 'block',
+                                                            mb: 0.5,
+                                                            fontWeight: 700,
+                                                            color: 'primary.main',
+                                                            fontSize: '0.7rem',
+                                                            textTransform: 'uppercase',
+                                                        }}
+                                                    >
+                                                        {msg.sender}
+                                                    </Typography>
+                                                )}
+                                                <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
+                                                    {msg.text}
+                                                </Typography>
+                                            </Box>
+                                        );
+                                    })}
                                     {isEmployee && employeeLimitReached && internalRequest.workflow_state === 'Clarification Requested' && (
                                         <Typography variant="caption" color="error" sx={{ textAlign: 'center', mt: 1, fontWeight: 700 }}>
                                             Maximum reply limit (5) reached.
@@ -275,6 +324,7 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh }: Prop
 
             {internalRequest && (
                 <DialogActions sx={{ p: 3, bgcolor: 'background.neutral' }}>
+                    <Box sx={{ flexGrow: 1 }} />
                     {/* HR Actions */}
                     {!isEmployee && (internalRequest.workflow_state === 'Pending' || internalRequest.workflow_state === 'Clarification Requested' || !internalRequest.workflow_state) && (
                         <>
@@ -328,12 +378,6 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh }: Prop
                             Reply
                         </Button>
                     )}
-
-                    <Box sx={{ flexGrow: 1 }} />
-
-                    <Button variant="outlined" color="inherit" onClick={onClose}>
-                        Close
-                    </Button>
                 </DialogActions>
             )}
 

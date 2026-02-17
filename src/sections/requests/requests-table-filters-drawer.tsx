@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -8,6 +9,9 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Autocomplete from '@mui/material/Autocomplete';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -15,9 +19,10 @@ import { Scrollbar } from 'src/components/scrollbar';
 // ----------------------------------------------------------------------
 
 type FiltersProps = {
-    vendor_name: string;
-    payment_type: string;
-    payment_terms: string;
+    employee: string;
+    status: string;
+    startDate: string | null;
+    endDate: string | null;
 };
 
 type Props = {
@@ -28,22 +33,10 @@ type Props = {
     onFilters: (update: Partial<FiltersProps>) => void;
     canReset: boolean;
     onResetFilters: () => void;
-    options: {
-        vendors: { name: string; first_name: string }[];
-        payment_types: { name: string }[];
-    };
+    employees: any[];
 };
 
-const PAYMENT_TERMS_OPTIONS = [
-    'Next day Payment',
-    'Due On Receipt',
-    '15 days',
-    '30 days',
-    '60 days',
-    '1 Year',
-];
-
-export function PurchaseTableFiltersDrawer({
+export function RequestsTableFiltersDrawer({
     open,
     onOpen,
     onClose,
@@ -51,9 +44,9 @@ export function PurchaseTableFiltersDrawer({
     onFilters,
     canReset,
     onResetFilters,
-    options,
+    employees,
 }: Props) {
-    const handleFilterChange = (field: keyof FiltersProps, value: string) => {
+    const handleFilterChange = (field: keyof FiltersProps, value: any) => {
         onFilters({ [field]: value });
     };
 
@@ -103,28 +96,24 @@ export function PurchaseTableFiltersDrawer({
         </Box>
     );
 
-    const renderVendor = (
+    const renderEmployee = (
         <Stack spacing={1.5}>
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Vendor
+                Employee
             </Typography>
             <Autocomplete
                 fullWidth
-                size="small"
-                value={
-                    filters.vendor_name === 'all'
-                        ? null
-                        : options.vendors.find((c) => c.name === filters.vendor_name) || null
-                }
+                options={employees}
+                getOptionLabel={(option) => option.employee_name || option.name || ''}
+                value={employees.find((emp) => emp.name === filters.employee) || null}
                 onChange={(event, newValue) => {
-                    handleFilterChange('vendor_name', newValue ? newValue.name : 'all');
+                    handleFilterChange('employee', newValue?.name || 'all');
                 }}
-                options={options.vendors}
-                getOptionLabel={(option) => `${option.first_name} (${option.name})`}
                 renderInput={(params) => (
                     <TextField
                         {...params}
-                        placeholder="Search vendors..."
+                        placeholder="Search employee..."
+                        size="small"
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
@@ -140,53 +129,16 @@ export function PurchaseTableFiltersDrawer({
         </Stack>
     );
 
-    const renderPaymentType = (
+    const renderStatus = (
         <Stack spacing={1.5}>
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Payment Type
-            </Typography>
-            <Autocomplete
-                fullWidth
-                size="small"
-                value={
-                    filters.payment_type === 'all'
-                        ? null
-                        : options.payment_types.find((p) => p.name === filters.payment_type) || null
-                }
-                onChange={(event, newValue) => {
-                    handleFilterChange('payment_type', newValue ? newValue.name : 'all');
-                }}
-                options={options.payment_types}
-                getOptionLabel={(option) => option.name}
-                renderInput={(params) => (
-                    <TextField
-                        {...params}
-                        placeholder="Search payment types..."
-                        sx={{
-                            '& .MuiOutlinedInput-root': {
-                                borderRadius: 1.5,
-                                bgcolor: 'background.neutral',
-                                '&:hover': {
-                                    bgcolor: 'action.hover',
-                                },
-                            },
-                        }}
-                    />
-                )}
-            />
-        </Stack>
-    );
-
-    const renderPaymentTerms = (
-        <Stack spacing={1.5}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Payment Terms
+                Status
             </Typography>
             <TextField
                 select
                 fullWidth
-                value={filters.payment_terms}
-                onChange={(e) => handleFilterChange('payment_terms', e.target.value)}
+                value={filters.status}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
                 SelectProps={{ native: true }}
                 size="small"
                 sx={{
@@ -199,13 +151,52 @@ export function PurchaseTableFiltersDrawer({
                     },
                 }}
             >
-                <option value="all">All Payment Terms</option>
-                {PAYMENT_TERMS_OPTIONS.map((term) => (
-                    <option key={term} value={term}>
-                        {term}
+                <option value="all">All Statuses</option>
+                {[
+                    { value: 'Pending', label: 'Pending' },
+                    { value: 'Approved', label: 'Approved' },
+                    { value: 'Rejected', label: 'Rejected' },
+                    { value: 'Clarification Requested', label: 'Clarification Requested' },
+                ].map((option) => (
+                    <option key={option.value} value={option.value}>
+                        {option.label}
                     </option>
                 ))}
             </TextField>
+        </Stack>
+    );
+
+    const renderDateRange = (
+        <Stack spacing={1.5}>
+            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Date Range
+            </Typography>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Stack spacing={2}>
+                    <DatePicker
+                        label="Start Date"
+                        value={filters.startDate ? dayjs(filters.startDate) : null}
+                        onChange={(newValue) => handleFilterChange('startDate', newValue?.format('YYYY-MM-DD') || null)}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                size: 'small',
+                            },
+                        }}
+                    />
+                    <DatePicker
+                        label="End Date"
+                        value={filters.endDate ? dayjs(filters.endDate) : null}
+                        onChange={(newValue) => handleFilterChange('endDate', newValue?.format('YYYY-MM-DD') || null)}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                size: 'small',
+                            },
+                        }}
+                    />
+                </Stack>
+            </LocalizationProvider>
         </Stack>
     );
 
@@ -217,7 +208,7 @@ export function PurchaseTableFiltersDrawer({
             slotProps={{
                 paper: {
                     sx: {
-                        width: 340,
+                        width: 320,
                         boxShadow: (theme) => theme.customShadows.z24,
                     },
                 },
@@ -230,9 +221,9 @@ export function PurchaseTableFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3 }}>
-                    {renderVendor}
-                    {renderPaymentType}
-                    {renderPaymentTerms}
+                    {renderEmployee}
+                    {renderStatus}
+                    {renderDateRange}
                 </Stack>
             </Scrollbar>
 

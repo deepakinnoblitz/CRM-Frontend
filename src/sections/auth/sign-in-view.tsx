@@ -162,7 +162,7 @@ export function SignInView() {
       >
         <Box
           component="img"
-          src="http://erp.innoblitz.in/assets/Innoblitz%20Logo%20Full.png"
+          src="/assets/logo/Innoblitz%20Logo%20Full.png"
           alt="Innoblitz Logo"
           sx={{
             width: 180,

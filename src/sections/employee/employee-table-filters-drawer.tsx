@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
@@ -6,6 +8,9 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Autocomplete from '@mui/material/Autocomplete';
+
+import { getCountries, getStates, getCities } from 'src/api/location';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -20,6 +25,9 @@ type Props = {
         department: string;
         designation: string;
         status: string;
+        country: string;
+        state: string;
+        city: string;
     };
     onFilters: (update: any) => void;
     canReset: boolean;
@@ -39,8 +47,47 @@ export default function EmployeeTableFiltersDrawer({
     departmentOptions,
     designationOptions,
 }: Props) {
-    const handleFilterDepartment = (event: React.ChangeEvent<HTMLInputElement>) => {
-        onFilters({ department: event.target.value });
+    const [countryOptions, setCountryOptions] = useState<string[]>([]);
+    const [stateOptions, setStateOptions] = useState<string[]>([]);
+    const [cityOptions, setCityOptions] = useState<string[]>([]);
+
+    // Fetch countries on mount
+    useEffect(() => {
+        const fetchCountries = async () => {
+            const countries = await getCountries();
+            setCountryOptions(countries);
+        };
+        fetchCountries();
+    }, []);
+
+    // Fetch states when country changes
+    useEffect(() => {
+        const fetchStatesForCountry = async () => {
+            if (filters.country) {
+                const states = await getStates(filters.country);
+                setStateOptions(states);
+            } else {
+                setStateOptions([]);
+            }
+        };
+        fetchStatesForCountry();
+    }, [filters.country]);
+
+    // Fetch cities when state changes
+    useEffect(() => {
+        const fetchCitiesForState = async () => {
+            if (filters.state && filters.country) {
+                const cities = await getCities(filters.country, filters.state);
+                setCityOptions(cities);
+            } else {
+                setCityOptions([]);
+            }
+        };
+        fetchCitiesForState();
+    }, [filters.state, filters.country]);
+
+    const handleFilterDepartment = (event: any, value: string | null) => {
+        onFilters({ department: value || 'all' });
     };
 
     const handleFilterDesignation = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,6 +96,18 @@ export default function EmployeeTableFiltersDrawer({
 
     const handleFilterStatus = (event: React.ChangeEvent<HTMLInputElement>) => {
         onFilters({ status: event.target.value });
+    };
+
+    const handleFilterCountry = (event: any, value: string | null) => {
+        onFilters({ country: value || '', state: '', city: '' });
+    };
+
+    const handleFilterState = (event: any, value: string | null) => {
+        onFilters({ state: value || '', city: '' });
+    };
+
+    const handleFilterCity = (event: any, value: string | null) => {
+        onFilters({ city: value || '' });
     };
 
     const renderHead = (
@@ -122,60 +181,116 @@ export default function EmployeeTableFiltersDrawer({
                         <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                             Department
                         </Typography>
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            value={filters.department}
-                            onChange={handleFilterDepartment}
-                            SelectProps={{ native: true }}
-                            size="small"
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    borderRadius: 1.5,
-                                    bgcolor: 'background.neutral',
-                                    '&:hover': {
-                                        bgcolor: 'action.hover',
-                                    },
-                                },
+                            options={['All Departments', ...departmentOptions.map((dept: any) => dept.name)]}
+                            value={filters.department === 'all' ? 'All Departments' : filters.department}
+                            onChange={(event, newValue) => {
+                                handleFilterDepartment(event, newValue === 'All Departments' ? 'all' : newValue);
                             }}
-                        >
-                            <option value="all">All Departments</option>
-                            {departmentOptions.map((dept: any) => (
-                                <option key={dept.name} value={dept.name}>
-                                    {dept.name}
-                                </option>
-                            ))}
-                        </TextField>
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder="Select department..."
+                                    size="small"
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 1.5,
+                                            bgcolor: 'background.neutral',
+                                            '&:hover': {
+                                                bgcolor: 'action.hover',
+                                            },
+                                        },
+                                    }}
+                                />
+                            )}
+                        />
                     </Stack>
 
                     <Stack spacing={1.5}>
                         <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                            Designation
+                            Country
                         </Typography>
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            value={filters.designation}
-                            onChange={handleFilterDesignation}
-                            SelectProps={{ native: true }}
-                            size="small"
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    borderRadius: 1.5,
-                                    bgcolor: 'background.neutral',
-                                    '&:hover': {
-                                        bgcolor: 'action.hover',
-                                    },
-                                },
-                            }}
-                        >
-                            <option value="all">All Designations</option>
-                            {designationOptions.map((desig: any) => (
-                                <option key={desig.name} value={desig.name}>
-                                    {desig.name}
-                                </option>
-                            ))}
-                        </TextField>
+                            options={countryOptions}
+                            value={filters.country || null}
+                            onChange={handleFilterCountry}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder="Select country..."
+                                    size="small"
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 1.5,
+                                            bgcolor: 'background.neutral',
+                                            '&:hover': {
+                                                bgcolor: 'action.hover',
+                                            },
+                                        },
+                                    }}
+                                />
+                            )}
+                        />
+                    </Stack>
+
+                    <Stack spacing={1.5}>
+                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                            State
+                        </Typography>
+                        <Autocomplete
+                            fullWidth
+                            options={stateOptions}
+                            value={filters.state || null}
+                            onChange={handleFilterState}
+                            disabled={!filters.country}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder={filters.country ? "Select state..." : "Select country first"}
+                                    size="small"
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 1.5,
+                                            bgcolor: 'background.neutral',
+                                            '&:hover': {
+                                                bgcolor: 'action.hover',
+                                            },
+                                        },
+                                    }}
+                                />
+                            )}
+                        />
+                    </Stack>
+
+                    <Stack spacing={1.5}>
+                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                            City
+                        </Typography>
+                        <Autocomplete
+                            fullWidth
+                            options={cityOptions}
+                            value={filters.city || null}
+                            onChange={handleFilterCity}
+                            disabled={!filters.state}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder={filters.state ? "Select city..." : "Select state first"}
+                                    size="small"
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 1.5,
+                                            bgcolor: 'background.neutral',
+                                            '&:hover': {
+                                                bgcolor: 'action.hover',
+                                            },
+                                        },
+                                    }}
+                                />
+                            )}
+                        />
                     </Stack>
 
                     <Stack spacing={1.5}>

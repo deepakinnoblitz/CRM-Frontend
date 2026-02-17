@@ -25,8 +25,13 @@ export const fetchRequests = (params: {
     startDate?: string;
     endDate?: string;
     status?: string;
-}) => {
+    employee?: string;
+}) {
     const filters: any[] = [];
+
+    if (params.employee && params.employee !== 'all') {
+        filters.push(['Request', 'employee_id', '=', params.employee]);
+    }
 
     if (params.status && params.status !== 'all') {
         filters.push(['Request', 'workflow_state', '=', params.status]);
