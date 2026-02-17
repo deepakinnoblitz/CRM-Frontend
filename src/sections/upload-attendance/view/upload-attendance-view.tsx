@@ -1,12 +1,13 @@
 import dayjs from 'dayjs';
-import { useSnackbar } from 'notistack';
 import { useBoolean } from 'minimal-shared/hooks';
 import { useState, useCallback, useMemo } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import Snackbar from '@mui/material/Snackbar';
 import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
@@ -24,6 +25,7 @@ import {
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { TableNoData, TableEmptyRows, TableHeadCustom, TableSelectedAction } from 'src/components/table/index';
 
 import { LeadTableToolbar } from '../../lead/lead-table-toolbar';
@@ -60,8 +62,27 @@ export function UploadAttendanceView() {
     const [currentRecord, setCurrentRecord] = useState<any>(null);
     const [importing, setImporting] = useState<string | null>(null);
 
-    const { enqueueSnackbar } = useSnackbar();
+    const [snackbar, setSnackbar] = useState<{
+        open: boolean;
+        message: string;
+        severity: 'success' | 'error' | 'info' | 'warning';
+    }>({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
+
     const formDialog = useBoolean();
+
+
+    const [deleteDialog, setDeleteDialog] = useState<{
+        open: boolean;
+        recordId: string;
+    }>({
+        open: false,
+        recordId: '',
+    });
+
 
     const dateFilters = useMemo(() => ({
         startDate: filters.startDate ? dayjs(filters.startDate).format('YYYY-MM-DD') : undefined,
@@ -110,30 +131,37 @@ export function UploadAttendanceView() {
         formDialog.onTrue();
     }, [formDialog]);
 
-    const handleDeleteRow = useCallback(async (id: string) => {
-        if (window.confirm('Are you sure you want to delete this record?')) {
-            try {
-                await deleteUploadAttendance(id);
-                enqueueSnackbar('Record deleted successfully');
-                refetch();
-            } catch (error: any) {
-                enqueueSnackbar(error.message || 'Failed to delete record', { variant: 'error' });
-            }
+    const handleDeleteRow = useCallback((id: string) => {
+        setDeleteDialog({ open: true, recordId: id });
+    }, []);
+
+    const handleConfirmDelete = useCallback(async () => {
+        try {
+            await deleteUploadAttendance(deleteDialog.recordId);
+            setSnackbar({ open: true, message: 'Record deleted successfully', severity: 'success' });
+            setDeleteDialog({ open: false, recordId: '' });
+            refetch();
+        } catch (error: any) {
+            setSnackbar({ open: true, message: error.message || 'Failed to delete record', severity: 'error' });
+            setDeleteDialog({ open: false, recordId: '' });
         }
-    }, [refetch]);
+    }, [deleteDialog.recordId, refetch]);
+
+
 
     const handleImport = useCallback(async (id: string) => {
         setImporting(id);
         try {
-            const result = await importAttendance(id);
-            enqueueSnackbar('Import completed successfully', { variant: 'success' });
+            await importAttendance(id);
+            setSnackbar({ open: true, message: 'Import completed successfully', severity: 'success' });
             refetch();
         } catch (error: any) {
-            enqueueSnackbar(error.message || 'Failed to import attendance', { variant: 'error' });
+            setSnackbar({ open: true, message: error.message || 'Failed to import attendance', severity: 'error' });
         } finally {
             setImporting(null);
         }
     }, [refetch]);
+
 
     const handleFormSubmit = useCallback(async (formData: any) => {
         try {
@@ -251,6 +279,40 @@ export function UploadAttendanceView() {
                 canReset={canReset}
                 onResetFilters={handleResetFilters}
             />
+
+            <ConfirmDialog
+                open={deleteDialog.open}
+                onClose={() => setDeleteDialog({ open: false, recordId: '' })}
+                title="Delete Record"
+                content="Are you sure you want to delete this record? This action cannot be undone."
+                action={
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleConfirmDelete}
+                        sx={{ borderRadius: 1.5, minWidth: 100 }}
+                    >
+                        Delete
+                    </Button>
+                }
+            />
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert
+                    onClose={() => setSnackbar({ ...snackbar, open: false })}
+                    severity={snackbar.severity}
+                    sx={{ width: '100%' }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </DashboardContent>
+
+
     );
 }

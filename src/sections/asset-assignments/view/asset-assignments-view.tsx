@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -32,6 +32,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useAssetAssignments } from 'src/hooks/useAssetAssignments';
 
+import { frappeRequest } from 'src/utils/csrf';
+
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
     getEmployees,
@@ -57,9 +59,16 @@ import { LeadTableToolbar as AssetAssignmentTableToolbar } from 'src/sections/le
 import { AssetAssignmentImportDialog } from 'src/sections/asset-assignments/asset-assignment-import-dialog';
 import { AssetAssignmentsTableFiltersDrawer } from 'src/sections/asset-assignments/asset-assignments-table-filters-drawer';
 
+import { useAuth } from 'src/auth/auth-context';
+
 // ----------------------------------------------------------------------
 
 export function AssetAssignmentsView() {
+    const { user } = useAuth();
+
+    const isHR = user?.roles?.some((role: string) =>
+        ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
+    );
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
@@ -82,7 +91,12 @@ export function AssetAssignmentsView() {
     const [openFilters, setOpenFilters] = useState(false);
     const canReset = filters.employee !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null;
 
-    const { data, total, refetch } = useAssetAssignments(page + 1, rowsPerPage, filterName, orderBy, order, filters);
+    const effectiveFilters = useMemo(() => ({
+        ...filters,
+        employee: isHR ? filters.employee : (user?.employee || 'all'),
+    }), [filters, isHR, user]);
+
+    const { data, total, refetch } = useAssetAssignments(page + 1, rowsPerPage, filterName, orderBy, order, effectiveFilters);
 
     const [openCreate, setOpenCreate] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -240,6 +254,24 @@ export function AssetAssignmentsView() {
         if (!selectedAsset || !selectedEmployee || !assignedOn) {
             setSnackbar({ open: true, message: 'Please fill in all required fields', severity: 'error' });
             return;
+        }
+
+        // Pre-validation: Check if asset is already assigned
+        try {
+            const checkUrl = `/api/method/company.company.frontend_api.check_asset_availability?asset=${selectedAsset.name}${isEdit && currentAssignment ? `&name=${currentAssignment.name}` : ''}`;
+            const checkRes = await frappeRequest(checkUrl);
+            const checkData = await checkRes.json();
+
+            if (checkData.message && checkData.message.is_assigned) {
+                setSnackbar({
+                    open: true,
+                    message: `Asset Already Assigned: ${checkData.message.employee_name} (${checkData.message.assigned_to}) currently has this asset.`,
+                    severity: 'error'
+                });
+                return;
+            }
+        } catch (error) {
+            console.error('Pre-validation failed:', error);
         }
 
         const assignmentData = {
@@ -421,6 +453,7 @@ export function AssetAssignmentsView() {
                 onFilters={handleFilters}
                 canReset={canReset}
                 onResetFilters={handleResetFilters}
+                isHR={isHR}
             />
 
             {/* Create/Edit Dialog */}

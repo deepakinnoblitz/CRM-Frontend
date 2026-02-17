@@ -46,6 +46,7 @@ type Props = {
     onFilters: (newFilters: Partial<FiltersProps>) => void;
     canReset: boolean;
     onResetFilters: () => void;
+    isHR?: boolean;
 };
 
 export function AssetAssignmentsTableFiltersDrawer({
@@ -55,6 +56,7 @@ export function AssetAssignmentsTableFiltersDrawer({
     onFilters,
     canReset,
     onResetFilters,
+    isHR,
 }: Props) {
     const [employees, setEmployees] = useState<Array<{ name: string; employee_name: string }>>([]);
 
@@ -267,7 +269,7 @@ export function AssetAssignmentsTableFiltersDrawer({
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3, pt: 2.5 }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        {renderEmployee}
+                        {isHR && renderEmployee}
                         {renderStatus}
                         {renderDateRange}
                     </LocalizationProvider>

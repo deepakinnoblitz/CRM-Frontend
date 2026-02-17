@@ -37,13 +37,17 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { AttendanceDetailsDialog } from '../attendance-details-dialog';
 
-// ----------------------------------------------------------------------
 
 export function AttendanceReportView() {
+    const { user } = useAuth();
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+
+    const [isHR, setIsHR] = useState(false);
 
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
@@ -51,6 +55,18 @@ export function AttendanceReportView() {
     const [employee, setEmployee] = useState('all');
     const [status, setStatus] = useState('all');
     const [sortBy, setSortBy] = useState('date_asc');
+
+    useEffect(() => {
+        if (user && user.roles) {
+            const hrRoles = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
+            const hasHRRole = user.roles.some((role: string) => hrRoles.includes(role));
+            setIsHR(hasHRRole);
+            if (!hasHRRole && user.employee) {
+                setEmployee(user.employee);
+            }
+        }
+    }, [user]);
+
 
     // Options
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
@@ -156,10 +172,15 @@ export function AttendanceReportView() {
     const handleReset = () => {
         setFromDate(null);
         setToDate(null);
-        setEmployee('all');
+        if (isHR) {
+            setEmployee('all');
+        } else if (user?.employee) {
+            setEmployee(user.employee);
+        }
         setStatus('all');
         setSortBy('date_asc');
     };
+
 
     useEffect(() => {
         getDoctypeList('Employee', ['name', 'employee_name']).then(setEmployeeOptions);
@@ -258,6 +279,23 @@ export function AttendanceReportView() {
                         onChange={(event, newValue) => {
                             setEmployee(newValue?.name || 'all');
                         }}
+                        disabled={!isHR}
+                        renderOption={(props, option) => (
+                            <Box component="li" {...props} sx={{ fontSize: '0.85rem' }}>
+                                {option.name === 'all' ? (
+                                    option.employee_name
+                                ) : (
+                                    <Stack spacing={0.5}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                            {option.employee_name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                )}
+                            </Box>
+                        )}
                         renderInput={(params) => (
                             <TextField
                                 {...params}
@@ -266,6 +304,8 @@ export function AttendanceReportView() {
                             />
                         )}
                     />
+
+
 
                     <FormControl size="small" sx={{ minWidth: 140 }}>
                         <Select

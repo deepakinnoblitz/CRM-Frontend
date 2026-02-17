@@ -48,11 +48,19 @@ import { LeadTableHead as RequestTableHead } from 'src/sections/lead/lead-table-
 import { RequestDetailsDialog } from 'src/sections/report/requests/requests-details-dialog';
 import { LeadTableToolbar as RequestTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { RequestsTableFiltersDrawer } from '../requests-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
 export function RequestsView() {
+    const { user } = useAuth();
+
+    const isHR = user?.roles?.some((role: string) =>
+        ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
+    );
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
@@ -67,6 +75,8 @@ export function RequestsView() {
 
     const [openFilters, setOpenFilters] = useState(false);
 
+    const effectiveEmployee = isHR ? filterEmployee : user?.employee;
+
     const { data, total, refetch } = useRequests(
         page + 1,
         rowsPerPage,
@@ -76,9 +86,8 @@ export function RequestsView() {
         startDate || undefined,
         endDate || undefined,
         filterStatus,
-        filterEmployee || 'all'
+        effectiveEmployee || 'all'
     );
-
     const [openCreate, setOpenCreate] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
     const [currentRequest, setCurrentRequest] = useState<any>(null);
@@ -565,6 +574,7 @@ export function RequestsView() {
                 canReset={!!startDate || !!endDate || filterStatus !== 'all' || filterEmployee !== null}
                 onResetFilters={handleResetFilters}
                 employees={employees}
+                isHR={isHR}
             />
         </DashboardContent>
     );

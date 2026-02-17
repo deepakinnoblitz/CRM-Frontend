@@ -63,9 +63,21 @@ export function SalarySlipsView() {
         pay_period_end: null,
     });
 
-    const filterValues = useMemo(() => Object.fromEntries(
-        Object.entries(filters).filter(([_, v]) => v !== 'all' && v !== null)
-    ), [filters]);
+    const [isHR, setIsHR] = useState(false);
+
+    const filterValues = useMemo(() => {
+        const baseFilters: Record<string, any> = Object.fromEntries(
+            Object.entries(filters).filter(([_, v]) => v !== 'all' && v !== null)
+        );
+
+        if (!isHR) {
+            baseFilters.docstatus = 1;
+        }
+
+        return baseFilters;
+    }, [filters, isHR]);
+
+
 
     const { data, total, refetch, loading } = useSalarySlips(
         page + 1,
@@ -153,7 +165,7 @@ export function SalarySlipsView() {
     const [editSlip, setEditSlip] = useState<SalarySlip | null>(null);
 
 
-    const [isHR, setIsHR] = useState(false);
+
 
     // Delete confirmation
     const [deleteDialog, setDeleteDialog] = useState<{
@@ -461,6 +473,7 @@ export function SalarySlipsView() {
                 canReset={canReset}
                 onResetFilters={handleResetFilters}
                 options={filterOptions}
+                isHR={isHR}
             />
 
             {/* Delete Confirmation Dialog */}

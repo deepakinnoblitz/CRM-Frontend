@@ -39,6 +39,7 @@ type Props = {
         leaveTypes: string[];
     };
     employeeOptions: any[];
+    isHR?: boolean;
 };
 
 export function LeavesTableFiltersDrawer({
@@ -51,6 +52,7 @@ export function LeavesTableFiltersDrawer({
     onResetFilters,
     options,
     employeeOptions,
+    isHR,
 }: Props) {
     const handleFilterChange = (field: keyof FiltersProps, value: string) => {
         onFilters({ [field]: value });
@@ -294,7 +296,7 @@ export function LeavesTableFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3 }}>
-                    {renderEmployee}
+                    {isHR && renderEmployee}
                     {renderStatus}
                     {renderLeaveType}
                     {renderDateRange}

@@ -70,6 +70,11 @@ interface TimesheetEntry {
 
 export function TimesheetsView() {
     const { user } = useAuth();
+
+    const isHR = user?.roles?.some((role: string) =>
+        ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
+    );
+
     const router = useRouter();
     const [searchParams] = useSearchParams();
     const [page, setPage] = useState(0);
@@ -88,8 +93,8 @@ export function TimesheetsView() {
 
     const timesheetFilters = useMemo(() => ({
         ...filters,
-        employee: filters.employee || 'all',
-    }), [filters]);
+        employee: isHR ? (filters.employee || 'all') : (user?.employee || 'all'),
+    }), [filters, isHR, user]);
 
     const { data, total, refetch } = useTimesheets(page + 1, rowsPerPage, filterName, orderBy, order, timesheetFilters);
 
@@ -254,13 +259,16 @@ export function TimesheetsView() {
     const handleOpenCreate = useCallback(() => {
         setIsEdit(false);
         setCurrentTimesheet(null);
-        setEmployee(user?.employee || '');
+        // Pre-fill with current user's employee ID
+        const currentEmployee = user?.employee || '';
+        setEmployee(currentEmployee);
         setTimesheetDate('');
         setNotes('');
         setEntries([]);
         setFormErrors({});
         setOpenCreate(true);
     }, [user]);
+
 
     // Deep linking for new timesheet
     useEffect(() => {
@@ -722,8 +730,8 @@ export function TimesheetsView() {
                                         : option.employee_id || ''
                                 }
                                 isOptionEqualToValue={(option, value) => option.name === (value?.name || value)}
-                                value={employees.find((emp) => emp.name === employee) || null}
-                                readOnly={!isEdit}
+                                value={employees.find((emp) => emp.name === employee) || (employee && user?.employee === employee ? { name: user.employee, employee_name: user.employee_name } : null)}
+                                readOnly={isEdit}
                                 onChange={(event, newValue) => {
                                     setEmployee(newValue?.name || '');
                                     if (formErrors.employee) {
@@ -746,10 +754,11 @@ export function TimesheetsView() {
                                         }}
                                         inputProps={{
                                             ...params.inputProps,
-                                            readOnly: !isEdit,
+                                            readOnly: isEdit,
                                         }}
                                     />
                                 )}
+
                             />
                             {renderField('timesheetDate', 'Timesheet Date', 'date', [], {}, true)}
                         </Box>
@@ -881,7 +890,20 @@ export function TimesheetsView() {
                 maxWidth="sm"
                 fullWidth
             >
-                <DialogTitle>{editingEntryIndex !== null ? 'Edit Entry' : 'Add Entry'}</DialogTitle>
+                <DialogTitle
+                    sx={{
+                        m: 0,
+                        p: 2,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    {editingEntryIndex !== null ? 'Edit Entry' : 'Add Entry'}
+                    <IconButton onClick={() => setOpenEntryDialog(false)}>
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'grid', gap: 3, pt: 2 }}>
                         <Autocomplete
@@ -953,7 +975,6 @@ export function TimesheetsView() {
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenEntryDialog(false)}>Cancel</Button>
                     <Button
                         onClick={handleSaveEntry}
                         variant="contained"
@@ -980,6 +1001,7 @@ export function TimesheetsView() {
                 canReset={canReset}
                 onResetFilters={handleResetFilters}
                 employees={employees}
+                isHR={isHR}
             />
 
             {/* Snackbar */}

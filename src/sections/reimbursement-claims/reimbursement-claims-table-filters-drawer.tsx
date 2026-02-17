@@ -37,6 +37,7 @@ type Props = {
     onResetFilters: () => void;
     claimTypes: any[];
     employees: any[];
+    isHR?: boolean;
 };
 
 export function ReimbursementClaimsTableFiltersDrawer({
@@ -48,6 +49,7 @@ export function ReimbursementClaimsTableFiltersDrawer({
     onResetFilters,
     claimTypes,
     employees,
+    isHR,
 }: Props) {
     const handleFilterStatus = (event: React.ChangeEvent<HTMLInputElement>) => {
         onFilters({ paid: event.target.value });
@@ -298,7 +300,7 @@ export function ReimbursementClaimsTableFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 2.5 }}>
-                    {renderEmployee}
+                    {isHR && renderEmployee}
                     {renderStatus}
                     {renderType}
                     {renderDateRange}

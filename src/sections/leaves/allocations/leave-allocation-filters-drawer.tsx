@@ -39,6 +39,7 @@ type Props = {
         leaveTypes: string[];
         employees: Array<{ name: string; employee_name?: string }>;
     };
+    isHR?: boolean;
 };
 
 export function LeaveAllocationFiltersDrawer({
@@ -50,7 +51,9 @@ export function LeaveAllocationFiltersDrawer({
     canReset,
     onResetFilters,
     options,
+    isHR,
 }: Props) {
+
     const handleFilterChange = (field: keyof FiltersProps, value: string) => {
         onFilters({ [field]: value });
     };

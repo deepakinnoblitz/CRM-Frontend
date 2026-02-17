@@ -41,6 +41,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from '../../lead/table-no-data';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { AttendanceTableRow } from '../attendance-table-row';
@@ -53,6 +55,8 @@ import { AttendanceDetailsDialog } from '../../report/attendance/attendance-deta
 // ----------------------------------------------------------------------
 
 export function AttendanceView() {
+    const { user } = useAuth();
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
@@ -101,6 +105,12 @@ export function AttendanceView() {
         delete: true,
     });
 
+    const isHR = user?.roles?.some((role: string) =>
+        ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
+    );
+
+    const effectiveEmployee = isHR ? filterEmployee : user?.employee;
+
     const { data, total, loading, refetch } = useAttendance(
         page + 1,
         rowsPerPage,
@@ -110,7 +120,7 @@ export function AttendanceView() {
         startDate || undefined,
         endDate || undefined,
         filterStatus,
-        filterEmployee
+        effectiveEmployee
     );
 
     const notFound = !data.length && !!filterName;
@@ -548,6 +558,7 @@ export function AttendanceView() {
                     canReset={!!startDate || !!endDate || filterStatus !== 'all' || !!filterEmployee}
                     onResetFilters={handleResetFilters}
                     employeeOptions={employeeOptions}
+                    isHR={isHR}
                 />
 
                 <Scrollbar>
@@ -677,12 +688,12 @@ export function AttendanceView() {
                             {renderField('attendance_date', 'Attendance Date', 'date', [], {}, true)}
                             {renderField('status', 'Status', 'select', ['Present', 'Absent', 'Half Day', 'On Leave', 'Holiday'], {}, true)}
 
-                            <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
                                 {renderField('in_time', 'In Time', 'time')}
                                 {renderField('out_time', 'Out Time', 'time')}
                             </Box>
 
-                            <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
                                 {renderField('working_hours_display', 'Working Hours', 'text', [], { InputProps: { readOnly: true } })}
                                 {renderField('overtime_display', 'Overtime Hours', 'text', [], { InputProps: { readOnly: true } })}
                             </Box>
