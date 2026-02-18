@@ -125,3 +125,45 @@ export function fTimeDist(date: DatePickerFormat): string {
   const diffInYears = now.diff(d, 'year');
   return `${diffInYears} y`;
 }
+// ----------------------------------------------------------------------
+
+/**
+ * @output Today, Yesterday, 17 Apr 2022
+ */
+export function fDateSeparator(date: DatePickerFormat): string {
+  if (!isValidDate(date)) {
+    return 'Invalid date';
+  }
+
+  const d = dayjs(date);
+  const now = dayjs();
+
+  if (d.isSame(now, 'day')) {
+    return 'Today';
+  }
+  if (d.isSame(now.subtract(1, 'day'), 'day')) {
+    return 'Yesterday';
+  }
+
+  return fDate(date);
+}
+
+// ----------------------------------------------------------------------
+
+/**
+ * @output 12:00 am (if today), 17/04/2022 (otherwise)
+ */
+export function fToChatTime(date: DatePickerFormat): string {
+  if (!isValidDate(date)) {
+    return 'Invalid date';
+  }
+
+  const d = dayjs(date);
+  const now = dayjs();
+
+  if (d.isSame(now, 'day')) {
+    return d.format('h:mm A');
+  }
+
+  return d.format(formatPatterns.split.date);
+}

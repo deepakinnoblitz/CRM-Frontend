@@ -5,7 +5,13 @@ import { useBoolean } from 'minimal-shared/hooks';
 
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
-import { useTheme } from '@mui/material/styles';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import { useTheme, alpha } from '@mui/material/styles';
+
+import { RouterLink } from 'src/routes/components';
+
+import ChatNotifications from 'src/sections/chat/chat-notifications';
 
 import { useAuth } from 'src/auth/auth-context';
 
@@ -81,6 +87,39 @@ export function DashboardLayout({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 0.75 } }}>
           {/** @slot Searchbar */}
           {/* <Searchbar /> */}
+
+          <ChatNotifications>
+            <Box
+              component={RouterLink as any}
+              href="/chat"
+              sx={{
+                lineHeight: 0,
+                display: 'inline-flex',
+                mr: 3,
+                transition: theme.transitions.create(['all'], {
+                  duration: theme.transitions.duration.shorter,
+                }),
+                '&:hover': {
+                  transform: 'translateY(-1px)',
+                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))',
+                },
+                '&:active': {
+                  transform: 'translateY(0) scale(0.98)',
+                },
+              }}
+            >
+              <Box
+                component="img"
+                src="/assets/icons/Innochat_button.png"
+                sx={{
+                  width: 140, // Increased size as requested by intent
+                  height: 'auto',
+                  display: 'block',
+                }}
+              />
+            </Box>
+          </ChatNotifications>
+
 
           {/** @slot Account drawer */}
           <AccountPopover data={_account} />
