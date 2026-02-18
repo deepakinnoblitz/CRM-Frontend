@@ -47,9 +47,9 @@ const StyledLogCard = styled(Box)(({ theme }) => ({
         'border-color',
     ]),
     '&:hover': {
-        transform: 'translateX(4px)',
+        transform: 'translateY(-4px)',
         backgroundColor: theme.palette.background.paper,
-        boxShadow: (themeVar: any) => themeVar.customShadows?.z4,
+        boxShadow: (themeVar: any) => themeVar.customShadows?.z8,
         borderColor: alpha(theme.palette.primary.main, 0.2),
     },
 }));
@@ -295,51 +295,83 @@ export function MissingTimesheets({ title, data, holidays, sx, ...other }: Props
                             Log All
                         </Button>
                     </Stack>
-                    <Stack spacing={1.5}>
-                        {data.slice(0, 3).map((item, index) => (
-                            <StyledLogCard key={index}>
-                                <Box
+                    <Box
+                        sx={{
+                            overflowX: 'auto',
+                            pb: 1,
+                            '&::-webkit-scrollbar': {
+                                height: 6,
+                            },
+                            '&::-webkit-scrollbar-track': {
+                                background: alpha(theme.palette.grey[500], 0.08),
+                                borderRadius: 3,
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                                background: alpha(theme.palette.primary.main, 0.24),
+                                borderRadius: 3,
+                                '&:hover': {
+                                    background: alpha(theme.palette.primary.main, 0.4),
+                                },
+                            },
+                        }}
+                    >
+                        <Stack direction="row" spacing={2} sx={{ minWidth: 'max-content' }}>
+                            {data.slice(0, 3).map((item, index) => (
+                                <StyledLogCard
+                                    key={index}
                                     sx={{
-                                        width: 40,
-                                        height: 40,
-                                        borderRadius: 1.5,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        bgcolor:
-                                            index === 0
-                                                ? alpha(theme.palette.error.main, 0.1)
-                                                : alpha(theme.palette.warning.main, 0.1),
-                                        color: index === 0 ? 'error.main' : 'warning.main',
+                                        minWidth: 280,
+                                        flexDirection: 'column',
+                                        alignItems: 'flex-start',
+                                        gap: 1.5,
                                     }}
                                 >
-                                    <Iconify
-                                        icon={
-                                            index === 0 ? 'solar:target-bold-duotone' : 'solar:clock-circle-bold-duotone'
-                                        }
-                                        width={24}
-                                    />
-                                </Box>
-                                <Stack sx={{ flexGrow: 1 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                                        {fDate(item.date, 'DD MMM YYYY')}
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
-                                        {index === 0 ? 'CRITICAL: Oldest entry' : 'Log pending'}
-                                    </Typography>
-                                </Stack>
-                                <Button
-                                    size="small"
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={() => handleLogDate(item.date)}
-                                    sx={{ borderRadius: 1, fontWeight: 800 }}
-                                >
-                                    Log Now
-                                </Button>
-                            </StyledLogCard>
-                        ))}
-                    </Stack>
+                                    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ width: '100%' }}>
+                                        <Box
+                                            sx={{
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: 1.5,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                bgcolor:
+                                                    index === 0
+                                                        ? alpha(theme.palette.error.main, 0.1)
+                                                        : alpha(theme.palette.warning.main, 0.1),
+                                                color: index === 0 ? 'error.main' : 'warning.main',
+                                            }}
+                                        >
+                                            <Iconify
+                                                icon={
+                                                    index === 0 ? 'solar:target-bold-duotone' : 'solar:clock-circle-bold-duotone'
+                                                }
+                                                width={24}
+                                            />
+                                        </Box>
+                                        <Stack sx={{ flexGrow: 1 }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                                                {fDate(item.date, 'DD MMM YYYY')}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                                                {index === 0 ? 'CRITICAL: Oldest entry' : 'Log pending'}
+                                            </Typography>
+                                        </Stack>
+                                    </Stack>
+                                    <Button
+                                        fullWidth
+                                        size="small"
+                                        variant="contained"
+                                        color="primary"
+                                        onClick={() => handleLogDate(item.date)}
+                                        sx={{ borderRadius: 1, fontWeight: 800 }}
+                                    >
+                                        Log Now
+                                    </Button>
+                                </StyledLogCard>
+                            ))}
+                        </Stack>
+                    </Box>
                 </Box>
             ) : (
                 <Stack spacing={2} alignItems="center" sx={{ py: 4, textAlign: 'center' }}>

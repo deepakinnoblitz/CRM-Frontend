@@ -147,10 +147,21 @@ export function WFHAttendanceView() {
         });
     };
 
-    const handleOpenCreate = () => {
-        setFormData({
-            date: dayjs().format('YYYY-MM-DD'),
-        });
+    const handleOpenCreate = async () => {
+        // Fetch current user's employee data
+        try {
+            const userInfo = await getCurrentUserInfo();
+            setFormData({
+                date: dayjs().format('YYYY-MM-DD'),
+                employee: userInfo?.employee || '',
+            });
+        } catch (error) {
+            console.error('Failed to fetch current user info:', error);
+            setFormData({
+                date: dayjs().format('YYYY-MM-DD'),
+            });
+        }
+
         setFormErrors({});
         setOpenCreate(true);
     };
@@ -366,6 +377,8 @@ export function WFHAttendanceView() {
                     onChange={(event: any, newValue: any) => {
                         handleInputChange(fieldname, newValue?.name || '');
                     }}
+                    readOnly={!isHR}
+                    disabled={!isHR}
                     renderInput={(params: any) => (
                         <TextField
                             {...params}
