@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -39,6 +39,8 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from '../../lead/table-no-data';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { WFHAttendanceTableRow } from '../wfh-attendance-table-row';
@@ -50,6 +52,7 @@ import { LeadTableToolbar as AttendanceTableToolbar } from '../../lead/lead-tabl
 // ----------------------------------------------------------------------
 
 export function WFHAttendanceView() {
+    const { user } = useAuth();
     const theme = useTheme();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -98,15 +101,19 @@ export function WFHAttendanceView() {
         write: true,
     });
 
+    const effectiveFilters = useMemo(() => ({
+        ...filters,
+        employee: isHR ? filters.employee : (user?.employee || 'all'),
+    }), [filters, isHR, user]);
+
     const { data, total, loading, refetch } = useWFHAttendance(
         page + 1,
         rowsPerPage,
         filterName,
         orderBy,
         order,
-        filters
+        effectiveFilters
     );
-
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
     const notFound = !data.length && !!filterName;
@@ -115,11 +122,11 @@ export function WFHAttendanceView() {
     useEffect(() => {
         getHRPermissions('WFH Attendance').then(setPermissions);
         getDoctypeList('Employee', ['name', 'employee_name']).then(setEmployeeOptions).catch(console.error);
-        getCurrentUserInfo().then((user) => {
-            if (user && user.roles) {
+        getCurrentUserInfo().then((userInfo) => {
+            if (userInfo && userInfo.roles) {
                 // Broaden HR detection to include Admins/System Managers
-                const hrRoles = ['HR Manager', 'HR User', 'System Manager', 'Administrator'];
-                setIsHR(user.roles.some((role: string) => hrRoles.includes(role)));
+                const hrRoles = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
+                setIsHR(userInfo.roles.some((role: string) => hrRoles.includes(role)));
             }
         });
     }, []);
@@ -659,6 +666,7 @@ export function WFHAttendanceView() {
                 options={{
                     employees: employeeOptions
                 }}
+                isHR={isHR}
             />
 
             <Snackbar

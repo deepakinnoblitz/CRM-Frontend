@@ -49,6 +49,8 @@ import { LeadTableHead as RequestTableHead } from 'src/sections/lead/lead-table-
 import { RequestDetailsDialog } from 'src/sections/report/requests/requests-details-dialog';
 import { LeadTableToolbar as RequestTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { RequestsTableFiltersDrawer } from '../requests-table-filters-drawer';
 
 // ----------------------------------------------------------------------

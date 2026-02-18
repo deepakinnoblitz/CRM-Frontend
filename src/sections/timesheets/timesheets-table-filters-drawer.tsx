@@ -33,6 +33,7 @@ type Props = {
     canReset: boolean;
     onResetFilters: () => void;
     employees: any[];
+    isHR?: boolean;
 };
 
 export function TimesheetsTableFiltersDrawer({
@@ -44,6 +45,7 @@ export function TimesheetsTableFiltersDrawer({
     canReset,
     onResetFilters,
     employees,
+    isHR,
 }: Props) {
     const handleFilterChange = (field: keyof FiltersProps, value: any) => {
         onFilters({ [field]: value });
@@ -209,7 +211,7 @@ export function TimesheetsTableFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3 }}>
-                    {renderEmployee}
+                    {isHR && renderEmployee}
                     {renderDateRange}
                 </Stack>
             </Scrollbar>

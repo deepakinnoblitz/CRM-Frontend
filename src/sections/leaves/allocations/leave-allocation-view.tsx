@@ -59,6 +59,10 @@ const SORT_OPTIONS = [
 export function LeaveAllocationView() {
     const { user } = useAuth();
 
+    const isHR = user?.roles?.some((role: string) =>
+        ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
+    );
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
@@ -461,6 +465,7 @@ export function LeaveAllocationView() {
                     leaveTypes: leaveTypeOptions.map((type) => type.name),
                     employees: employeeOptions,
                 }}
+                isHR={isHR}
             />
 
             <Snackbar
