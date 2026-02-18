@@ -10,8 +10,6 @@ import {
     type EmployeeDashboardData,
 } from 'src/api/dashboard';
 
-import { MonthlyAttendanceChart } from 'src/sections/overview/monthly-attendance-chart';
-
 import { useAuth } from 'src/auth/auth-context';
 
 import { HRAnnouncements } from '../hr-announcements';
@@ -19,7 +17,8 @@ import { EmployeeCalendar } from '../employee-calendar';
 import { HRDashboardTable } from '../hr-dashboard-table';
 import { LeaveStatusCards } from '../leave-status-cards';
 import { MissingTimesheets } from '../missing-timesheets';
-import { AttendanceStatusCards } from '../attendance-status-cards';
+import { PremiumWorkingHours } from '../premium-working-hours';
+import { CalendarAttendanceChart } from '../calendar-attendance-chart';
 
 // ----------------------------------------------------------------------
 
@@ -92,11 +91,11 @@ export function EmployeeDashboardView() {
                     />
                 </Grid>
 
-                {/* 2. Last Seven Days Working Hours (Attendance Cards) */}
+                {/* 2. Last Seven Days Working Hours (Premium Widget) */}
                 <Grid size={{ xs: 12 }}>
-                    <AttendanceStatusCards
-                        title="Last Seven Days Working Hours"
+                    <PremiumWorkingHours
                         data={data.weekly_attendance || []}
+                        weeklyTarget={45}
                     />
                 </Grid>
 
@@ -105,26 +104,13 @@ export function EmployeeDashboardView() {
                     <LeaveStatusCards data={data.leave_allocations || []} />
                 </Grid>
 
-                {/* 4. Monthly Attendance Chart */}
+                {/* 4. Calendar Attendance Chart */}
                 <Grid size={{ xs: 12, md: 6 }}>
-                    <MonthlyAttendanceChart
-                        title="Monthly Attendance Chart"
-                        subheader={
-                            data.attendance_range ? `Period: ${data.attendance_range}` : 'Last synced just now'
-                        }
-                        data={
-                            data.monthly_attendance_breakdown || {
-                                present: 0,
-                                absent: 0,
-                                half_day: 0,
-                                on_leave: 0,
-                                holiday: 0,
-                                missing: 0,
-                                total_days: 0,
-                                present_percentage: 0,
-                            }
-                        }
-                        onRangeChange={handleAttendanceRangeChange}
+                    <CalendarAttendanceChart
+                        title="Monthly Attendance Overview"
+                        subheader={`Period: ${new Date(data.start_date || new Date()).toLocaleString('default', { month: 'long' })} ${new Date(data.start_date || new Date()).getFullYear()}`}
+                        calendarData={data.monthly_attendance_list || []}
+                        joiningDate={data.joining_date}
                     />
                 </Grid>
 
@@ -236,6 +222,7 @@ export function EmployeeDashboardView() {
                             { id: 'index', label: '#' },
                             { id: 'employee_name', label: 'Employee Name' },
                         ]}
+                        emptyMessage="No birthday today"
                     />
                 </Grid>
 
@@ -249,6 +236,7 @@ export function EmployeeDashboardView() {
                             { id: 'employee_name', label: 'Employee Name' },
                             { id: 'employee', label: 'Employee ID' },
                         ]}
+                        emptyMessage="No leave today"
                     />
                 </Grid>
 
