@@ -376,6 +376,17 @@ export function AttendanceView() {
     };
 
     const renderField = (fieldname: string, label: string, type: string = 'text', options: any[] = [], extraProps: any = {}, required: boolean = false) => {
+
+        // ✅ HIDDEN FIELD HANDLING (ADD THIS)
+        if (type === 'hidden' || extraProps?.hidden) {
+            return (
+                <input
+                    type="hidden"
+                    name={fieldname}
+                    value={formData[fieldname] || ''}
+                />
+            );
+        }
         const commonProps = {
             fullWidth: true,
             label,
@@ -686,7 +697,7 @@ export function AttendanceView() {
                                 )}
                             />
                             {renderField('attendance_date', 'Attendance Date', 'date', [], {}, true)}
-                            {renderField('status', 'Status', 'select', ['Present', 'Absent', 'Half Day', 'On Leave', 'Holiday'], {}, true)}
+                            {renderField('status', 'Status', 'select', ['Present', 'Absent', 'Half Day', 'On Leave', 'Holiday'], { hidden : true })}
 
                             <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
                                 {renderField('in_time', 'In Time', 'time')}

@@ -24,6 +24,8 @@ export function WeeklyPresentChart({ title, subheader, data, sx, ...other }: Pro
     const categories = data.map((item) => item.day);
     const series = data.map((item) => item.count || 0);
 
+    const maxValue = Math.max(...series, 0);
+
     const chartOptions = useChart({
         chart: {
             type: 'bar',
@@ -36,6 +38,9 @@ export function WeeklyPresentChart({ title, subheader, data, sx, ...other }: Pro
                 borderRadius: 8,
                 columnWidth: '50%',
                 distributed: false,
+                dataLabels: {
+                    position: 'top',
+                },
             },
         },
         fill: {
@@ -68,6 +73,8 @@ export function WeeklyPresentChart({ title, subheader, data, sx, ...other }: Pro
             },
         },
         yaxis: {
+            min: 0,
+            max: maxValue + 1, // Ensure headroom for labels
             title: {
                 text: 'Present Count',
                 offsetX: 10,
