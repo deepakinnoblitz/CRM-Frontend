@@ -77,6 +77,7 @@ const JobApplicantsPage = lazy(() => import('src/pages/job-applicants'));
 const InterviewPage = lazy(() => import('src/pages/interviews'));
 export const ProfilePage = lazy(() => import('src/pages/profile'));
 export const MyProfilePage = lazy(() => import('src/pages/my-profile'));
+export const ChatPage = lazy(() => import('src/pages/chat'));
 export const AccessDeniedPage = lazy(() => import('src/pages/access-denied'));
 
 export const PurchaseListPage = lazy(() => import('src/pages/purchase/list'));
@@ -133,6 +134,7 @@ export const routesSection: RouteObject[] = [
       { path: 'user-permissions', element: <UserPermissionsPage /> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'my-profile', element: <MyProfilePage /> },
+      { path: 'chat', element: <ChatPage /> },
 
       { path: 'contacts', element: <ContactPage /> },
       { path: 'accounts', element: <AccountsPage /> },

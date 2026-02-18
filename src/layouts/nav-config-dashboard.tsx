@@ -298,7 +298,12 @@ export const crmNavData = [
       { title: 'Calls Report', path: '/reports/calls' },
       { title: 'Meeting Report', path: '/reports/meeting' },
     ]
-  }
+  },
+  {
+    title: 'Chat',
+    path: '/chat',
+    icon: <Iconify icon={"solar:chat-round-dots-bold-duotone" as any} />,
+  },
 ];
 
 // ----------------------  CRM and Sales NavBar ---------------------------------------------------
