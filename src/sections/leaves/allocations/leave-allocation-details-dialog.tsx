@@ -119,7 +119,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
     };
 
     const renderContent = allocation && (
-        <Stack spacing={3.5} sx={{marginTop: 3}}>
+        <Stack spacing={3.5} sx={{ marginTop: 3 }}>
             {/* Profile Header */}
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
                 <Box

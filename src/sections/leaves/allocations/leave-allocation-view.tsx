@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { alpha } from '@mui/material/styles';
@@ -98,6 +99,9 @@ export function LeaveAllocationView() {
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
     const [leaveTypeOptions, setLeaveTypeOptions] = useState<any[]>([]);
 
+    // Validation State
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [selectedAllocationId, setSelectedAllocationId] = useState<string | null>(null);
     const [openAutoAllocate, setOpenAutoAllocate] = useState(false);
@@ -137,7 +141,24 @@ export function LeaveAllocationView() {
         getDoctypeList('Leave Type', ['name']).then(setLeaveTypeOptions);
     }, []);
 
+    const validateForm = () => {
+        const errors: Record<string, string> = {};
+        if (!employee) errors.employee = 'Employee is required';
+        if (!leaveType) errors.leaveType = 'Leave Type is required';
+        if (!fromDate) errors.fromDate = 'From Date is required';
+        if (!toDate) errors.toDate = 'To Date is required';
+        if (!totalLeaves) errors.totalLeaves = 'Total Leaves is required';
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
     const handleSubmit = async () => {
+        if (!validateForm()) {
+            setSnackbar({ open: true, message: 'Please fill in all required fields', severity: 'error' });
+            return;
+        }
+
         try {
             setCreating(true);
             const payload = {
@@ -195,6 +216,8 @@ export function LeaveAllocationView() {
         setFromDate('');
         setToDate('');
         setTotalLeaves('');
+        setTotalLeaves('');
+        setFormErrors({});
         setIsEdit(false);
         setSelectedAllocationName(null);
     };
@@ -349,13 +372,20 @@ export function LeaveAllocationView() {
                             fullWidth
                             label="Employee"
                             value={employee}
-                            onChange={(e) => setEmployee(e.target.value)}
+                            onChange={(e) => {
+                                setEmployee(e.target.value);
+                                if (formErrors.employee) setFormErrors(prev => ({ ...prev, employee: '' }));
+                            }}
                             SelectProps={{ native: true }}
                             InputLabelProps={{ shrink: true }}
+                            required
+                            error={!!formErrors.employee}
+                            helperText={formErrors.employee}
+                            sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
                         >
                             <option value="">Select Employee</option>
                             {employeeOptions.map((opt) => (
-                                <option key={opt.name} value={opt.name}>{opt.employee_name}</option>
+                                <option key={opt.name} value={opt.name}>{opt.employee_name} ({opt.name})</option>
                             ))}
                         </TextField>
 
@@ -364,9 +394,16 @@ export function LeaveAllocationView() {
                             fullWidth
                             label="Leave Type"
                             value={leaveType}
-                            onChange={(e) => setLeaveType(e.target.value)}
+                            onChange={(e) => {
+                                setLeaveType(e.target.value);
+                                if (formErrors.leaveType) setFormErrors(prev => ({ ...prev, leaveType: '' }));
+                            }}
                             SelectProps={{ native: true }}
                             InputLabelProps={{ shrink: true }}
+                            required
+                            error={!!formErrors.leaveType}
+                            helperText={formErrors.leaveType}
+                            sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
                         >
                             <option value="">Select Leave Type</option>
                             {leaveTypeOptions.map((opt) => (
@@ -379,14 +416,38 @@ export function LeaveAllocationView() {
                                 <DatePicker
                                     label="From Date"
                                     value={fromDate ? dayjs(fromDate) : null}
-                                    onChange={(val) => setFromDate(val?.format('YYYY-MM-DD') || '')}
-                                    slotProps={{ textField: { fullWidth: true } }}
+                                    onChange={(val) => {
+                                        setFromDate(val?.format('YYYY-MM-DD') || '');
+                                        if (formErrors.fromDate) setFormErrors(prev => ({ ...prev, fromDate: '' }));
+                                    }}
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            required: true,
+                                            error: !!formErrors.fromDate,
+                                            helperText: formErrors.fromDate,
+                                            InputLabelProps: { shrink: true },
+                                            sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
+                                        }
+                                    }}
                                 />
                                 <DatePicker
                                     label="To Date"
                                     value={toDate ? dayjs(toDate) : null}
-                                    onChange={(val) => setToDate(val?.format('YYYY-MM-DD') || '')}
-                                    slotProps={{ textField: { fullWidth: true } }}
+                                    onChange={(val) => {
+                                        setToDate(val?.format('YYYY-MM-DD') || '');
+                                        if (formErrors.toDate) setFormErrors(prev => ({ ...prev, toDate: '' }));
+                                    }}
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            required: true,
+                                            error: !!formErrors.toDate,
+                                            helperText: formErrors.toDate,
+                                            InputLabelProps: { shrink: true },
+                                            sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
+                                        }
+                                    }}
                                 />
                             </Box>
                         </LocalizationProvider>
@@ -396,7 +457,14 @@ export function LeaveAllocationView() {
                             label="Total Leaves Allocated"
                             type="number"
                             value={totalLeaves}
-                            onChange={(e) => setTotalLeaves(e.target.value)}
+                            onChange={(e) => {
+                                setTotalLeaves(e.target.value);
+                                if (formErrors.totalLeaves) setFormErrors(prev => ({ ...prev, totalLeaves: '' }));
+                            }}
+                            required
+                            error={!!formErrors.totalLeaves}
+                            helperText={formErrors.totalLeaves}
+                            sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
                         />
                     </Box>
                 </DialogContent>
@@ -472,8 +540,13 @@ export function LeaveAllocationView() {
                 open={snackbar.open}
                 autoHideDuration={6000}
                 onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                 message={snackbar.message}
-            />
+            >
+                <Alert onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </DashboardContent>
     );
 }
