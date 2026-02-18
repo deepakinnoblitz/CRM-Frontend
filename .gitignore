@@ -37,3 +37,5 @@ tsconfig.tsbuildinfo
 .ncurc.js
 knip.jsonc
 vite.config.ts
+yarn.lock
+package-lock.json
