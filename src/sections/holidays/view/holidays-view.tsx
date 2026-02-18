@@ -130,6 +130,9 @@ export function HolidaysView() {
     const [workingDays, setWorkingDays] = useState('');
     const [holidays, setHolidays] = useState<Holiday[]>([]);
 
+    // Validation state
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
     const [openFilters, setOpenFilters] = useState(false);
     const [filters, setFilters] = useState<{ year: string | null; month_year: string | null }>({
         year: null,
@@ -257,7 +260,9 @@ export function HolidaysView() {
         setYear('');
         setMonth('');
         setWorkingDays('');
+        setWorkingDays('');
         setHolidays([]);
+        setFormErrors({});
     };
 
     const handleEditRow = useCallback(async (row: any) => {
@@ -327,8 +332,21 @@ export function HolidaysView() {
         setHolidays((prev) => prev.filter((_, i) => i !== index));
     };
 
-    const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const validateForm = () => {
+        const errors: Record<string, string> = {};
+        if (!holidayListName.trim()) errors.holidayListName = 'Holiday List Name is required';
+        if (!year) errors.year = 'Year is required';
+        if (!month) errors.month = 'Month is required';
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleCreate = async () => {
+        if (!validateForm()) {
+            setSnackbar({ open: true, message: 'Please fill in all required fields', severity: 'error' });
+            return;
+        }
 
         const holidayData = {
             holiday_list_name: holidayListName.trim(),
@@ -487,166 +505,183 @@ export function HolidaysView() {
 
             {/* Create/Edit Dialog */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg">
-                <form onSubmit={handleCreate}>
-                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        {isEdit ? 'Edit Holiday List' : 'New Holiday List'}
-                        <IconButton onClick={handleCloseCreate}>
-                            <Iconify icon="mingcute:close-line" />
-                        </IconButton>
-                    </DialogTitle>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {isEdit ? 'Edit Holiday List' : 'New Holiday List'}
+                    <IconButton onClick={handleCloseCreate}>
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
 
-                    <DialogContent dividers>
-                        <Box sx={{ display: 'grid', gap: 3, p: 2 }}>
-                            <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                                <TextField
-                                    fullWidth
-                                    label="Holiday List Name"
-                                    value={holidayListName}
-                                    onChange={(e) => setHolidayListName(e.target.value)}
-                                    required
-                                    placeholder="e.g., Public Holidays 2024"
-                                    InputLabelProps={{ shrink: true }}
-                                />
+                <DialogContent dividers>
+                    <Box sx={{ display: 'grid', gap: 3, p: 2 }}>
+                        <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                            <TextField
+                                fullWidth
+                                label="Holiday List Name"
+                                value={holidayListName}
+                                onChange={(e) => {
+                                    setHolidayListName(e.target.value);
+                                    if (formErrors.holidayListName) setFormErrors(prev => ({ ...prev, holidayListName: '' }));
+                                }}
+                                required
+                                error={!!formErrors.holidayListName}
+                                helperText={formErrors.holidayListName}
+                                placeholder="e.g., Public Holidays 2024"
+                                InputLabelProps={{ shrink: true }}
+                                sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
+                            />
 
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                    <DatePicker
-                                        label="Year"
-                                        views={['year']}
-                                        value={year ? dayjs(`${year}-01-01`) : null}
-                                        onChange={(newValue) => setYear(newValue ? newValue.format('YYYY') : '')}
-                                        slotProps={{
-                                            textField: {
-                                                fullWidth: true,
-                                                required: true,
-                                                InputLabelProps: { shrink: true },
-                                            },
-                                        }}
-                                    />
-                                </LocalizationProvider>
-                            </Box>
-
-                            <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                                <TextField
-                                    select
-                                    fullWidth
-                                    label="Month"
-                                    value={month}
-                                    onChange={(e) => setMonth(e.target.value)}
-                                    SelectProps={{ native: true }}
-                                    InputLabelProps={{ shrink: true }}
-                                >
-                                    <option value="" disabled>Select Month</option>
-                                    {MONTH_OPTIONS.map((option) => (
-                                        <option key={option.value} value={option.value}>
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </TextField>
-
-                                <TextField
-                                    fullWidth
-                                    label="Working Days"
-                                    type="number"
-                                    value={workingDays}
-                                    onChange={(e) => setWorkingDays(e.target.value)}
-                                    placeholder="Number of working days"
-                                    InputProps={{
-                                        readOnly: true,
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Year"
+                                    views={['year']}
+                                    value={year ? dayjs(`${year}-01-01`) : null}
+                                    onChange={(newValue) => {
+                                        setYear(newValue ? newValue.format('YYYY') : '');
+                                        if (formErrors.year) setFormErrors(prev => ({ ...prev, year: '' }));
+                                    }}
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            required: true,
+                                            error: !!formErrors.year,
+                                            helperText: formErrors.year,
+                                            InputLabelProps: { shrink: true },
+                                            sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
+                                        },
                                     }}
                                 />
+                            </LocalizationProvider>
+                        </Box>
+
+                        <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                            <TextField
+                                select
+                                fullWidth
+                                label="Month"
+                                value={month}
+                                onChange={(e) => {
+                                    setMonth(e.target.value);
+                                    if (formErrors.month) setFormErrors(prev => ({ ...prev, month: '' }));
+                                }}
+                                SelectProps={{ native: true }}
+                                InputLabelProps={{ shrink: true }}
+                                required
+                                error={!!formErrors.month}
+                                helperText={formErrors.month}
+                                sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
+                            >
+                                <option value="" disabled>Select Month</option>
+                                {MONTH_OPTIONS.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </TextField>
+
+                            <TextField
+                                fullWidth
+                                label="Working Days"
+                                type="number"
+                                value={workingDays}
+                                onChange={(e) => setWorkingDays(e.target.value)}
+                                placeholder="Number of working days"
+                                InputProps={{
+                                    readOnly: true,
+                                }}
+                            />
+                        </Box>
+
+                        {/* Holidays Child Table */}
+                        <Box sx={{ mt: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                                    Holidays
+                                    <Typography component="span" variant="body2" sx={{ ml: 2, color: 'primary.main', fontWeight: 600 }}>
+                                        Total: {holidays.filter(h => h.is_working_day === 0).length} holiday(s)
+                                    </Typography>
+                                </Typography>
                             </Box>
 
-                            {/* Holidays Child Table */}
-                            <Box sx={{ mt: 2 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                        Holidays
-                                        <Typography component="span" variant="body2" sx={{ ml: 2, color: 'primary.main', fontWeight: 600 }}>
-                                            Total: {holidays.filter(h => h.is_working_day === 0).length} holiday(s)
-                                        </Typography>
-                                    </Typography>
-                                </Box>
-
-                                <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-                                    <Table size="small">
-                                        <TableHead>
-                                            <TableRow sx={{ bgcolor: 'grey.100' }}>
-                                                <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Date</TableCell>
-                                                <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Description</TableCell>
-                                                <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'center' }}>Working Day</TableCell>
-                                                <TableCell sx={{ fontWeight: 700, py: 1.5, width: 80 }} />
+                            <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+                                <Table size="small">
+                                    <TableHead>
+                                        <TableRow sx={{ bgcolor: 'grey.100' }}>
+                                            <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Date</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Description</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'center' }}>Working Day</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, py: 1.5, width: 80 }} />
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {holidays.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={4} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                                                    No holidays added yet...
+                                                </TableCell>
                                             </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {holidays.length === 0 ? (
-                                                <TableRow>
-                                                    <TableCell colSpan={4} align="center" sx={{ py: 3, color: 'text.secondary' }}>
-                                                        No holidays added yet...
-                                                    </TableCell>
-                                                </TableRow>
-                                            ) : (
-                                                holidays.map((holiday, index) => (
-                                                    <TableRow
-                                                        key={index}
-                                                        sx={{
-                                                            '&:nth-of-type(odd)': { bgcolor: 'grey.50' },
-                                                            '&:hover': { bgcolor: 'action.hover' }
-                                                        }}
-                                                    >
-                                                        <TableCell sx={{ minWidth: 140, py: 1.5 }}>
-                                                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                                                <DatePicker
-                                                                    value={dayjs(holiday.holiday_date)}
-                                                                    onChange={(newValue) => handleHolidayChange(index, 'holiday_date', newValue?.format('YYYY-MM-DD'))}
-                                                                    format="DD-MM-YYYY"
-                                                                    slotProps={{
-                                                                        textField: {
-                                                                            size: 'small',
-                                                                            variant: 'standard',
-                                                                            fullWidth: true,
-                                                                            InputProps: {
-                                                                                disableUnderline: true,
-                                                                            },
+                                        ) : (
+                                            holidays.map((holiday, index) => (
+                                                <TableRow
+                                                    key={index}
+                                                    sx={{
+                                                        '&:nth-of-type(odd)': { bgcolor: 'grey.50' },
+                                                        '&:hover': { bgcolor: 'action.hover' }
+                                                    }}
+                                                >
+                                                    <TableCell sx={{ minWidth: 140, py: 1.5 }}>
+                                                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                                            <DatePicker
+                                                                value={dayjs(holiday.holiday_date)}
+                                                                onChange={(newValue) => handleHolidayChange(index, 'holiday_date', newValue?.format('YYYY-MM-DD'))}
+                                                                format="DD-MM-YYYY"
+                                                                slotProps={{
+                                                                    textField: {
+                                                                        size: 'small',
+                                                                        variant: 'standard',
+                                                                        fullWidth: true,
+                                                                        InputProps: {
+                                                                            disableUnderline: true,
                                                                         },
-                                                                    }}
-                                                                />
-                                                            </LocalizationProvider>
-                                                        </TableCell>
-                                                        <TableCell sx={{ py: 1.5 }}>
-                                                            <TextField
-                                                                size="small"
-                                                                fullWidth
-                                                                variant="standard"
-                                                                value={holiday.description}
-                                                                onChange={(e) => handleHolidayChange(index, 'description', e.target.value)}
-                                                                placeholder="Holiday description"
-                                                                InputProps={{
-                                                                    disableUnderline: true,
+                                                                    },
                                                                 }}
                                                             />
-                                                        </TableCell>
-                                                        <TableCell sx={{ py: 1.5, textAlign: 'center' }}>
-                                                            <Android12Switch
-                                                                checked={holiday.is_working_day === 1}
-                                                                onChange={(e) => handleHolidayChange(index, 'is_working_day', e.target.checked ? 1 : 0)}
-                                                            />
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
-                            </Box>
+                                                        </LocalizationProvider>
+                                                    </TableCell>
+                                                    <TableCell sx={{ py: 1.5 }}>
+                                                        <TextField
+                                                            size="small"
+                                                            fullWidth
+                                                            variant="standard"
+                                                            value={holiday.description}
+                                                            onChange={(e) => handleHolidayChange(index, 'description', e.target.value)}
+                                                            placeholder="Holiday description"
+                                                            InputProps={{
+                                                                disableUnderline: true,
+                                                            }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell sx={{ py: 1.5, textAlign: 'center' }}>
+                                                        <Android12Switch
+                                                            checked={holiday.is_working_day === 1}
+                                                            onChange={(e) => handleHolidayChange(index, 'is_working_day', e.target.checked ? 1 : 0)}
+                                                        />
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
                         </Box>
-                    </DialogContent>
+                    </Box>
+                </DialogContent>
 
-                    <DialogActions>
-                        <Button type="submit" variant="contained">
-                            {isEdit ? 'Update' : 'Create'}
-                        </Button>
-                    </DialogActions>
-                </form>
+                <DialogActions>
+                    <Button onClick={handleCreate} variant="contained">
+                        {isEdit ? 'Update' : 'Create'}
+                    </Button>
+                </DialogActions>
             </Dialog>
 
             {/* View Dialog */}

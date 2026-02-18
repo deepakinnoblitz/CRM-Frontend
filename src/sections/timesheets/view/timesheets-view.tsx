@@ -46,6 +46,7 @@ import {
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from 'src/sections/lead/table-no-data';
 import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
@@ -147,6 +148,13 @@ export function TimesheetsView() {
 
     const [holidays, setHolidays] = useState<any[]>([]);
 
+    // Delete confirmation state
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+    const [confirmEntryDelete, setConfirmEntryDelete] = useState(false);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [deletingEntryIndex, setDeletingEntryIndex] = useState<number | null>(null);
+
     // Load permissions and employees
     useEffect(() => {
         getTimesheetPermissions().then(setPermissions);
@@ -247,6 +255,7 @@ export function TimesheetsView() {
             });
             setSelected([]);
             refetch();
+            setConfirmBulkDelete(false);
         } catch (error: any) {
             setSnackbar({
                 open: true,
@@ -335,21 +344,30 @@ export function TimesheetsView() {
     }, []);
 
     const handleDeleteRow = useCallback(
-        async (name: string) => {
-            try {
-                await deleteTimesheet(name);
-                setSnackbar({ open: true, message: 'Timesheet deleted successfully', severity: 'success' });
-                refetch();
-            } catch (error: any) {
-                setSnackbar({
-                    open: true,
-                    message: error.message || 'Failed to delete timesheet',
-                    severity: 'error',
-                });
-            }
+        (name: string) => {
+            setDeleteId(name);
+            setConfirmDelete(true);
         },
-        [refetch]
+        []
     );
+
+    const handleConfirmDelete = async () => {
+        if (!deleteId) return;
+        try {
+            await deleteTimesheet(deleteId);
+            setSnackbar({ open: true, message: 'Timesheet deleted successfully', severity: 'success' });
+            refetch();
+        } catch (error: any) {
+            setSnackbar({
+                open: true,
+                message: error.message || 'Failed to delete timesheet',
+                severity: 'error',
+            });
+        } finally {
+            setDeleteId(null);
+            setConfirmDelete(false);
+        }
+    };
 
     // Entry management functions
     const handleSearchProjects = useCallback(async (inputValue: string) => {
@@ -396,7 +414,16 @@ export function TimesheetsView() {
     };
 
     const handleDeleteEntry = (index: number) => {
-        setEntries((prev) => prev.filter((_, i) => i !== index));
+        setDeletingEntryIndex(index);
+        setConfirmEntryDelete(true);
+    };
+
+    const handleConfirmDeleteEntry = () => {
+        if (deletingEntryIndex !== null) {
+            setEntries((prev) => prev.filter((_, i) => i !== deletingEntryIndex));
+        }
+        setConfirmEntryDelete(false);
+        setDeletingEntryIndex(null);
     };
 
     const handleSaveEntry = () => {
@@ -611,7 +638,7 @@ export function TimesheetsView() {
                     filterName={filterName}
                     onFilterName={handleFilterByName}
                     searchPlaceholder="Search timesheets..."
-                    onDelete={selected.length > 0 ? handleBulkDelete : undefined}
+                    onDelete={selected.length > 0 ? () => setConfirmBulkDelete(true) : undefined}
                     onOpenFilter={() => setOpenFilters(true)}
                     canReset={canReset}
                     sortBy={getCurrentSortValue()}
@@ -698,6 +725,51 @@ export function TimesheetsView() {
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
             </Card>
+
+            {/* Single Delete Confirmation */}
+            <ConfirmDialog
+                open={confirmDelete}
+                onClose={() => {
+                    setConfirmDelete(false);
+                    setDeleteId(null);
+                }}
+                title="Delete Timesheet"
+                content="Are you sure you want to delete this timesheet? This action cannot be undone."
+                action={
+                    <Button variant="contained" color="error" onClick={handleConfirmDelete}>
+                        Delete
+                    </Button>
+                }
+            />
+
+            {/* Bulk Delete Confirmation */}
+            <ConfirmDialog
+                open={confirmBulkDelete}
+                onClose={() => setConfirmBulkDelete(false)}
+                title="Delete Timesheets"
+                content={`Are you sure you want to delete ${selected.length} selected timesheet(s)? This action cannot be undone.`}
+                action={
+                    <Button variant="contained" color="error" onClick={handleBulkDelete}>
+                        Delete
+                    </Button>
+                }
+            />
+
+            {/* Entry Delete Confirmation */}
+            <ConfirmDialog
+                open={confirmEntryDelete}
+                onClose={() => {
+                    setConfirmEntryDelete(false);
+                    setDeletingEntryIndex(null);
+                }}
+                title="Delete Entry"
+                content="Are you sure you want to delete this entry? This action cannot be undone."
+                action={
+                    <Button variant="contained" color="error" onClick={handleConfirmDeleteEntry}>
+                        Delete
+                    </Button>
+                }
+            />
 
             {/* Create/Edit Dialog */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg">
