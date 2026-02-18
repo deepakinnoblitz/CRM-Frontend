@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -7,9 +8,7 @@ import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import Select from '@mui/material/Select';
 import Snackbar from '@mui/material/Snackbar';
-import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -17,9 +16,7 @@ import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import InputLabel from '@mui/material/InputLabel';
 import DialogTitle from '@mui/material/DialogTitle';
-import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -29,11 +26,22 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useRouter } from 'src/routes/hooks';
+
 import { useTimesheets } from 'src/hooks/useTimesheets';
 
 import { fetchEmployees } from 'src/api/employees';
+import { fetchMonthHolidays } from 'src/api/dashboard';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getTimesheet, fetchProjects, createTimesheet, updateTimesheet, deleteTimesheet, fetchActivityTypes, getTimesheetPermissions } from 'src/api/timesheets';
+import {
+    getTimesheet,
+    fetchProjects,
+    createTimesheet,
+    updateTimesheet,
+    deleteTimesheet,
+    fetchActivityTypes,
+    getTimesheetPermissions,
+} from 'src/api/timesheets';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -45,6 +53,8 @@ import { TimesheetTableRow } from 'src/sections/timesheets/timesheets-table-row'
 import { LeadTableHead as TimesheetTableHead } from 'src/sections/lead/lead-table-head';
 import { LeadTableToolbar as TimesheetTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 import { TimesheetDetailsDialog } from 'src/sections/report/timesheets/timesheets-details-dialog';
+
+import { useAuth } from 'src/auth/auth-context';
 
 import { TimesheetsTableFiltersDrawer } from '../timesheets-table-filters-drawer';
 
@@ -59,6 +69,14 @@ interface TimesheetEntry {
 }
 
 export function TimesheetsView() {
+    const { user } = useAuth();
+
+    const isHR = user?.roles?.some((role: string) =>
+        ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
+    );
+
+    const router = useRouter();
+    const [searchParams] = useSearchParams();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
@@ -73,7 +91,12 @@ export function TimesheetsView() {
     });
     const [openFilters, setOpenFilters] = useState(false);
 
-    const { data, total, refetch } = useTimesheets(page + 1, rowsPerPage, filterName, orderBy, order, filters);
+    const timesheetFilters = useMemo(() => ({
+        ...filters,
+        employee: isHR ? (filters.employee || 'all') : (user?.employee || 'all'),
+    }), [filters, isHR, user]);
+
+    const { data, total, refetch } = useTimesheets(page + 1, rowsPerPage, filterName, orderBy, order, timesheetFilters);
 
     const [openCreate, setOpenCreate] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -110,13 +133,19 @@ export function TimesheetsView() {
     const [permissions, setPermissions] = useState({ read: false, write: false, delete: false });
 
     // Snackbar
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    const [snackbar, setSnackbar] = useState<{
+        open: boolean;
+        message: string;
+        severity: 'success' | 'error';
+    }>({
         open: false,
         message: '',
         severity: 'success',
     });
 
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+    const [holidays, setHolidays] = useState<any[]>([]);
 
     // Load permissions and employees
     useEffect(() => {
@@ -129,6 +158,9 @@ export function TimesheetsView() {
         });
         fetchActivityTypes({ page: 1, page_size: 5 }).then((res: any) => {
             setActivityTypes(res.data || []);
+        });
+        fetchMonthHolidays().then((res) => {
+            setHolidays(res || []);
         });
     }, []);
 
@@ -154,9 +186,9 @@ export function TimesheetsView() {
         !!filters.startDate ||
         !!filters.endDate;
 
-    const employeeOptions = employees.map(emp => ({
+    const employeeOptions = employees.map((emp) => ({
         value: emp.name,
-        label: `${emp.employee_name} (${emp.name || emp.employee_id})`
+        label: `${emp.employee_name} (${emp.name || emp.employee_id})`,
     }));
 
     const handleSort = (value: string) => {
@@ -208,24 +240,46 @@ export function TimesheetsView() {
     const handleBulkDelete = async () => {
         try {
             await Promise.all(selected.map((name) => deleteTimesheet(name)));
-            setSnackbar({ open: true, message: `${selected.length} timesheet(s) deleted successfully`, severity: 'success' });
+            setSnackbar({
+                open: true,
+                message: `${selected.length} timesheet(s) deleted successfully`,
+                severity: 'success',
+            });
             setSelected([]);
             refetch();
         } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Failed to delete timesheets', severity: 'error' });
+            setSnackbar({
+                open: true,
+                message: error.message || 'Failed to delete timesheets',
+                severity: 'error',
+            });
         }
     };
 
-    const handleOpenCreate = () => {
+    const handleOpenCreate = useCallback(() => {
         setIsEdit(false);
         setCurrentTimesheet(null);
-        setEmployee('');
+        // Pre-fill with current user's employee ID
+        const currentEmployee = user?.employee || '';
+        setEmployee(currentEmployee);
         setTimesheetDate('');
         setNotes('');
         setEntries([]);
         setFormErrors({});
         setOpenCreate(true);
-    };
+    }, [user]);
+
+
+    // Deep linking for new timesheet
+    useEffect(() => {
+        const date = searchParams.get('date');
+        const action = searchParams.get('action');
+
+        if (action === 'new' && date) {
+            handleOpenCreate();
+            setTimesheetDate(date);
+        }
+    }, [searchParams, handleOpenCreate]);
 
     const handleCloseCreate = () => {
         setOpenCreate(false);
@@ -236,6 +290,12 @@ export function TimesheetsView() {
         setNotes('');
         setEntries([]);
         setFormErrors({});
+
+        // Redirect back to dashboard if opened via deep link
+        const action = searchParams.get('action');
+        if (action === 'new') {
+            router.push('/');
+        }
     };
 
     const handleEditRow = useCallback(async (row: any) => {
@@ -251,7 +311,11 @@ export function TimesheetsView() {
             setIsEdit(true);
             setOpenCreate(true);
         } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Failed to load timesheet', severity: 'error' });
+            setSnackbar({
+                open: true,
+                message: error.message || 'Failed to load timesheet',
+                severity: 'error',
+            });
         }
     }, []);
 
@@ -262,7 +326,11 @@ export function TimesheetsView() {
             setViewTimesheet(fullData);
             setOpenView(true);
         } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Failed to load timesheet', severity: 'error' });
+            setSnackbar({
+                open: true,
+                message: error.message || 'Failed to load timesheet',
+                severity: 'error',
+            });
         }
     }, []);
 
@@ -273,7 +341,11 @@ export function TimesheetsView() {
                 setSnackbar({ open: true, message: 'Timesheet deleted successfully', severity: 'success' });
                 refetch();
             } catch (error: any) {
-                setSnackbar({ open: true, message: error.message || 'Failed to delete timesheet', severity: 'error' });
+                setSnackbar({
+                    open: true,
+                    message: error.message || 'Failed to delete timesheet',
+                    severity: 'error',
+                });
             }
         },
         [refetch]
@@ -343,25 +415,45 @@ export function TimesheetsView() {
 
         setOpenEntryDialog(false);
         if (formErrors.entries) {
-            setFormErrors(prev => ({ ...prev, entries: '' }));
+            setFormErrors((prev) => ({ ...prev, entries: '' }));
         }
     };
 
     const validateForm = () => {
         const errors: Record<string, string> = {};
         if (!employee) errors.employee = 'Employee is required';
-        if (!timesheetDate) errors.timesheetDate = 'Timesheet Date is required';
+        if (!timesheetDate) {
+            errors.timesheetDate = 'Timesheet Date is required';
+        } else {
+            const isHoliday = holidays.some((h) => h.date === timesheetDate);
+            const isSunday = dayjs(timesheetDate).day() === 0;
+
+            if (isHoliday) {
+                const holiday = holidays.find((h) => h.date === timesheetDate);
+                errors.timesheetDate = `Cannot create timesheet on a holiday: ${holiday?.description || 'Holiday'}`;
+            } else if (isSunday) {
+                errors.timesheetDate = 'Cannot create timesheet on a Sunday';
+            }
+        }
         if (entries.length === 0) errors.entries = 'At least one entry is required';
 
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
     };
 
-    const renderField = (fieldname: string, label: string, type: string = 'text', options: any[] = [], extraProps: any = {}, required: boolean = false) => {
+    const renderField = (
+        fieldname: string,
+        label: string,
+        type: string = 'text',
+        options: any[] = [],
+        extraProps: any = {},
+        required: boolean = false
+    ) => {
         const commonProps = {
             fullWidth: true,
             label,
-            value: (fieldname === 'employee' ? employee : fieldname === 'timesheetDate' ? timesheetDate : notes),
+            value:
+                fieldname === 'employee' ? employee : fieldname === 'timesheetDate' ? timesheetDate : notes,
             onChange: (e: any) => {
                 const val = e.target.value;
                 if (fieldname === 'employee') setEmployee(val);
@@ -369,7 +461,7 @@ export function TimesheetsView() {
                 else if (fieldname === 'notes') setNotes(val);
 
                 if (formErrors[fieldname]) {
-                    setFormErrors(prev => ({ ...prev, [fieldname]: '' }));
+                    setFormErrors((prev) => ({ ...prev, [fieldname]: '' }));
                 }
             },
             required,
@@ -380,9 +472,9 @@ export function TimesheetsView() {
                 '& .MuiFormLabel-asterisk': {
                     color: 'red',
                 },
-                ...extraProps.sx
+                ...extraProps.sx,
             },
-            ...extraProps
+            ...extraProps,
         };
 
         if (type === 'select') {
@@ -406,9 +498,11 @@ export function TimesheetsView() {
                         label={label}
                         value={dateValue}
                         onChange={(newValue) => {
-                            const val = newValue && dayjs(newValue).isValid() ? dayjs(newValue).format('YYYY-MM-DD') : '';
+                            const val =
+                                newValue && dayjs(newValue).isValid() ? dayjs(newValue).format('YYYY-MM-DD') : '';
                             setTimesheetDate(val);
-                            if (formErrors.timesheetDate) setFormErrors(prev => ({ ...prev, timesheetDate: '' }));
+                            if (formErrors.timesheetDate)
+                                setFormErrors((prev) => ({ ...prev, timesheetDate: '' }));
                         }}
                         slotProps={{
                             textField: {
@@ -429,18 +523,29 @@ export function TimesheetsView() {
             );
         }
 
-        return <TextField {...commonProps} multiline={type === 'textarea'} rows={type === 'textarea' ? 3 : 1} />;
+        return (
+            <TextField
+                {...commonProps}
+                multiline={type === 'textarea'}
+                rows={type === 'textarea' ? 3 : 1}
+            />
+        );
     };
 
     const handleCreate = async () => {
         if (!validateForm()) {
-            setSnackbar({ open: true, message: 'Please correct the errors in the form', severity: 'error' });
+            setSnackbar({
+                open: true,
+                message: 'Please correct the errors in the form',
+                severity: 'error',
+            });
             return;
         }
 
         const timesheetData = {
             employee: employee.trim(),
             timesheet_date: timesheetDate,
+            total_hours: totalHours,
             notes: notes.trim(),
             timesheet_entries: entries,
         };
@@ -576,10 +681,7 @@ export function TimesheetsView() {
                                 )}
 
                                 {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={Math.max(0, rowsPerPage - data.length)}
-                                    />
+                                    <TableEmptyRows height={68} emptyRows={Math.max(0, rowsPerPage - data.length)} />
                                 )}
                             </TableBody>
                         </Table>
@@ -599,7 +701,15 @@ export function TimesheetsView() {
 
             {/* Create/Edit Dialog */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg">
-                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <DialogTitle
+                    sx={{
+                        m: 0,
+                        p: 2,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
                     {isEdit ? 'Edit Timesheet' : 'New Timesheet'}
                     <IconButton onClick={handleCloseCreate}>
                         <Iconify icon="mingcute:close-line" />
@@ -608,17 +718,24 @@ export function TimesheetsView() {
 
                 <DialogContent dividers>
                     <Box sx={{ display: 'grid', gap: 3, p: 2 }}>
-                        <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                        <Box
+                            sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}
+                        >
                             <Autocomplete
                                 fullWidth
                                 options={employees}
-                                getOptionLabel={(option) => option.employee_name ? `${option.employee_name} (${option.name || option.employee_id})` : option.employee_id || ''}
+                                getOptionLabel={(option) =>
+                                    option.employee_name
+                                        ? `${option.employee_name} (${option.name || option.employee_id})`
+                                        : option.employee_id || ''
+                                }
                                 isOptionEqualToValue={(option, value) => option.name === (value?.name || value)}
-                                value={employees.find((emp) => emp.name === employee) || null}
+                                value={employees.find((emp) => emp.name === employee) || (employee && user?.employee === employee ? { name: user.employee, employee_name: user.employee_name } : null)}
+                                readOnly={isEdit}
                                 onChange={(event, newValue) => {
                                     setEmployee(newValue?.name || '');
                                     if (formErrors.employee) {
-                                        setFormErrors(prev => ({ ...prev, employee: '' }));
+                                        setFormErrors((prev) => ({ ...prev, employee: '' }));
                                     }
                                 }}
                                 renderInput={(params) => (
@@ -635,20 +752,44 @@ export function TimesheetsView() {
                                                 color: 'red',
                                             },
                                         }}
+                                        inputProps={{
+                                            ...params.inputProps,
+                                            readOnly: isEdit,
+                                        }}
                                     />
                                 )}
+
                             />
                             {renderField('timesheetDate', 'Timesheet Date', 'date', [], {}, true)}
                         </Box>
 
-                        {renderField('notes', 'Notes', 'textarea', [], { placeholder: 'Enter timesheet notes' })}
+                        {renderField('notes', 'Notes', 'textarea', [], {
+                            placeholder: 'Enter timesheet notes',
+                        })}
 
                         {/* Timesheet Entries Child Table */}
                         <Box sx={{ mt: 2 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: formErrors.entries ? 'error.main' : 'text.primary' }}>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    mb: 2,
+                                }}
+                            >
+                                <Typography
+                                    variant="subtitle1"
+                                    sx={{
+                                        fontWeight: 700,
+                                        color: formErrors.entries ? 'error.main' : 'text.primary',
+                                    }}
+                                >
                                     Timesheet Entries
-                                    <Typography component="span" variant="body2" sx={{ ml: 2, color: 'primary.main', fontWeight: 600 }}>
+                                    <Typography
+                                        component="span"
+                                        variant="body2"
+                                        sx={{ ml: 2, color: 'primary.main', fontWeight: 600 }}
+                                    >
                                         Total: {totalHours.toFixed(1)} hours
                                     </Typography>
                                 </Typography>
@@ -668,7 +809,13 @@ export function TimesheetsView() {
                                 </Typography>
                             )}
 
-                            <TableContainer sx={{ border: '1px solid', borderColor: formErrors.entries ? 'error.main' : 'divider', borderRadius: 1 }}>
+                            <TableContainer
+                                sx={{
+                                    border: '1px solid',
+                                    borderColor: formErrors.entries ? 'error.main' : 'divider',
+                                    borderRadius: 1,
+                                }}
+                            >
                                 <Table size="small">
                                     <TableHead>
                                         <TableRow sx={{ bgcolor: 'background.neutral' }}>
@@ -676,13 +823,19 @@ export function TimesheetsView() {
                                             <TableCell sx={{ fontWeight: 700 }}>Activity Type</TableCell>
                                             <TableCell sx={{ fontWeight: 700 }}>Hours</TableCell>
                                             <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
+                                            <TableCell align="right" sx={{ fontWeight: 700 }}>
+                                                Actions
+                                            </TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
                                         {entries.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={5} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                                                <TableCell
+                                                    colSpan={5}
+                                                    align="center"
+                                                    sx={{ py: 3, color: 'text.secondary' }}
+                                                >
                                                     No entries added yet. Click &quot;Add Entry&quot; to begin.
                                                 </TableCell>
                                             </TableRow>
@@ -694,10 +847,18 @@ export function TimesheetsView() {
                                                     <TableCell>{entry.hours} hrs</TableCell>
                                                     <TableCell>{entry.description || '-'}</TableCell>
                                                     <TableCell align="right">
-                                                        <IconButton size="small" onClick={() => handleEditEntry(index)} color="info">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => handleEditEntry(index)}
+                                                            color="info"
+                                                        >
                                                             <Iconify icon="solar:pen-bold" width={18} />
                                                         </IconButton>
-                                                        <IconButton size="small" onClick={() => handleDeleteEntry(index)} color="error">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => handleDeleteEntry(index)}
+                                                            color="error"
+                                                        >
                                                             <Iconify icon="solar:trash-bin-trash-bold" width={18} />
                                                         </IconButton>
                                                     </TableCell>
@@ -712,16 +873,36 @@ export function TimesheetsView() {
                 </DialogContent>
 
                 <DialogActions>
-                    <Button onClick={handleCreate} variant="contained" sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}>
+                    <Button
+                        onClick={handleCreate}
+                        variant="contained"
+                        sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
                         {isEdit ? 'Update' : 'Create'}
                     </Button>
                 </DialogActions>
             </Dialog>
 
             {/* Entry Dialog */}
-            <Dialog open={openEntryDialog} onClose={() => setOpenEntryDialog(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>
+            <Dialog
+                open={openEntryDialog}
+                onClose={() => setOpenEntryDialog(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle
+                    sx={{
+                        m: 0,
+                        p: 2,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
                     {editingEntryIndex !== null ? 'Edit Entry' : 'Add Entry'}
+                    <IconButton onClick={() => setOpenEntryDialog(false)}>
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
                 </DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'grid', gap: 3, pt: 2 }}>
@@ -730,7 +911,10 @@ export function TimesheetsView() {
                             options={projects}
                             loading={loadingProjects}
                             getOptionLabel={(option) => option.project || option.name || ''}
-                            value={projects.find((p) => p.name === entryProject) || (entryProject ? { name: entryProject, project: entryProject } : null)}
+                            value={
+                                projects.find((p) => p.name === entryProject) ||
+                                (entryProject ? { name: entryProject, project: entryProject } : null)
+                            }
                             isOptionEqualToValue={(option, value) => option.name === value.name}
                             onInputChange={(event, newInputValue) => {
                                 handleSearchProjects(newInputValue);
@@ -747,7 +931,12 @@ export function TimesheetsView() {
                             options={activityTypes}
                             loading={loadingActivityTypes}
                             getOptionLabel={(option) => option.activity_type || option.name || ''}
-                            value={activityTypes.find((at) => at.name === entryActivityType) || (entryActivityType ? { name: entryActivityType, activity_type: entryActivityType } : null)}
+                            value={
+                                activityTypes.find((at) => at.name === entryActivityType) ||
+                                (entryActivityType
+                                    ? { name: entryActivityType, activity_type: entryActivityType }
+                                    : null)
+                            }
                             isOptionEqualToValue={(option, value) => option.name === value.name}
                             onInputChange={(event, newInputValue) => {
                                 handleSearchActivityTypes(newInputValue);
@@ -756,7 +945,12 @@ export function TimesheetsView() {
                                 setEntryActivityType(newValue?.name || '');
                             }}
                             renderInput={(params) => (
-                                <TextField {...params} label="Activity Type" required placeholder="Select activity type" />
+                                <TextField
+                                    {...params}
+                                    label="Activity Type"
+                                    required
+                                    placeholder="Select activity type"
+                                />
                             )}
                         />
                         <TextField
@@ -781,7 +975,6 @@ export function TimesheetsView() {
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenEntryDialog(false)}>Cancel</Button>
                     <Button
                         onClick={handleSaveEntry}
                         variant="contained"
@@ -807,9 +1000,8 @@ export function TimesheetsView() {
                 onFilters={handleFilters}
                 canReset={canReset}
                 onResetFilters={handleResetFilters}
-                options={{
-                    employees: employeeOptions
-                }}
+                employees={employees}
+                isHR={isHR}
             />
 
             {/* Snackbar */}

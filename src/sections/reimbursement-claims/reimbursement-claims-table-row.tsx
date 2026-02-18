@@ -1,5 +1,7 @@
 import type { MouseEvent } from 'react';
 
+import dayjs from 'dayjs';
+
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
@@ -90,7 +92,7 @@ export function ReimbursementClaimTableRow({
 
             <TableCell>{row.claim_type}</TableCell>
 
-            <TableCell>{new Date(row.date_of_expense).toLocaleDateString()}</TableCell>
+            <TableCell>{dayjs(row.date_of_expense).format('DD/MM/YYYY')}</TableCell>
 
             <TableCell>₹{row.amount?.toLocaleString() || 0}</TableCell>
 
@@ -105,15 +107,15 @@ export function ReimbursementClaimTableRow({
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                    <IconButton onClick={(e) => handleClick(e, onView)} color="info">
-                        <Iconify icon="solar:eye-bold" />
-                    </IconButton>
-
-                    {canEdit && (
+                    {canEdit && row.workflow_state !== 'Paid' && (
                         <IconButton onClick={(e) => handleClick(e, onEdit)} color="primary">
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
+
+                    <IconButton onClick={(e) => handleClick(e, onView)} color="info">
+                        <Iconify icon="solar:eye-bold" />
+                    </IconButton>
 
                     {canDelete && (
                         <IconButton onClick={(e) => handleClick(e, onDelete)} color="error">

@@ -131,6 +131,32 @@ export function UserFormDialog({
     const showNewPassword = useBoolean();
     const showConfirmPassword = useBoolean();
 
+    // Validation state
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+    const validate = () => {
+        const newErrors: { [key: string]: string } = {};
+
+        if (!formData.email) {
+            newErrors.email = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+            newErrors.email = 'Invalid email format';
+        }
+
+        if (!formData.first_name) {
+            newErrors.first_name = 'First Name is required';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmitWrapper = () => {
+        if (validate()) {
+            onSubmit();
+        }
+    };
+
     useEffect(() => {
         if (open) {
             // Fetch roles and modules when dialog opens
@@ -305,9 +331,13 @@ export function UserFormDialog({
                         required
                         label="Email"
                         value={formData.email || ''}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onChange={(e) => {
+                            setFormData({ ...formData, email: e.target.value });
+                            if (errors.email) setErrors({ ...errors, email: '' });
+                        }}
                         disabled={!!selectedUser}
-                        helperText={selectedUser ? 'Email cannot be changed' : ''}
+                        error={!!errors.email}
+                        helperText={errors.email || (selectedUser ? 'Email cannot be changed' : '')}
                     />
                 </Grid>
 
@@ -327,7 +357,12 @@ export function UserFormDialog({
                         required
                         label="First Name"
                         value={formData.first_name || ''}
-                        onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                        onChange={(e) => {
+                            setFormData({ ...formData, first_name: e.target.value });
+                            if (errors.first_name) setErrors({ ...errors, first_name: '' });
+                        }}
+                        error={!!errors.first_name}
+                        helperText={errors.first_name}
                     />
                 </Grid>
 
@@ -425,7 +460,7 @@ export function UserFormDialog({
         <Box sx={{ p: 3 }}>
             <Stack spacing={3}>
                 <Typography variant="body2" color="text.secondary">
-                    Select modules to block. Unselected modules will be allowed.
+                    Select modules to allow. Unselected modules will be blocked.
                 </Typography>
 
                 <Stack direction="row" spacing={2}>
@@ -443,7 +478,7 @@ export function UserFormDialog({
                             <FormControlLabel
                                 control={
                                     <Android12Switch
-                                        checked={(formData.block_modules || []).includes(module.name)}
+                                        checked={!(formData.block_modules || []).includes(module.name)}
                                         onChange={() => handleModuleToggle(module.name)}
                                         size="small"
                                     />
@@ -603,7 +638,7 @@ export function UserFormDialog({
             </DialogContent>
 
             <DialogActions>
-                <Button variant="contained" onClick={onSubmit}>
+                <Button variant="contained" onClick={handleSubmitWrapper}>
                     {selectedUser ? 'Update' : 'Create'}
                 </Button>
             </DialogActions>

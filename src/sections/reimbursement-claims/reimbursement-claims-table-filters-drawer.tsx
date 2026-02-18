@@ -21,7 +21,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 // ----------------------------------------------------------------------
 
 type FiltersProps = {
-    employee: string;
+    employee: string | null;
     paid: string;
     claim_type: string;
     startDate: string | null;
@@ -37,6 +37,7 @@ type Props = {
     onResetFilters: () => void;
     claimTypes: any[];
     employees: any[];
+    isHR?: boolean;
 };
 
 export function ReimbursementClaimsTableFiltersDrawer({
@@ -48,13 +49,14 @@ export function ReimbursementClaimsTableFiltersDrawer({
     onResetFilters,
     claimTypes,
     employees,
+    isHR,
 }: Props) {
     const handleFilterStatus = (event: React.ChangeEvent<HTMLInputElement>) => {
         onFilters({ paid: event.target.value });
     };
 
     const handleFilterEmployee = (newValue: any) => {
-        onFilters({ employee: newValue?.name || 'all' });
+        onFilters({ employee: newValue?.name === 'all' ? null : (newValue?.name || null) });
     };
 
     const handleFilterType = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,10 +124,14 @@ export function ReimbursementClaimsTableFiltersDrawer({
             </Typography>
             <Autocomplete
                 fullWidth
-                options={employees}
-                getOptionLabel={(option) => (typeof option === 'string' ? option : `${option.employee_name} (${option.name})`)}
-                value={employees.find((emp) => emp.name === filters.employee) || null}
-                onChange={(event, newValue) => handleFilterEmployee(newValue)}
+                options={['all', ...employees.map((e) => e.name)]}
+                getOptionLabel={(option) => {
+                    if (option === 'all') return 'All Employees';
+                    const employee = employees.find((e) => e.name === option);
+                    return employee ? `${employee.employee_name} (${employee.name})` : option;
+                }}
+                value={filters.employee || 'all'}
+                onChange={(event, newValue) => handleFilterEmployee({ name: newValue === 'all' ? null : newValue })}
                 renderInput={(params) => (
                     <TextField
                         {...params}
@@ -135,10 +141,37 @@ export function ReimbursementClaimsTableFiltersDrawer({
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
                                 bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
                             },
                         }}
                     />
                 )}
+                renderOption={(props, option) => {
+                    if (option === 'all') {
+                        const { key, ...itemProps } = props as any;
+                        return (
+                            <li key="all" {...itemProps}>
+                                All Employees
+                            </li>
+                        );
+                    }
+                    const employee = employees.find((e) => e.name === option);
+                    const { key, ...optionProps } = props as any;
+                    return (
+                        <li key={key} {...optionProps}>
+                            <Stack spacing={0.5}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                    {employee?.employee_name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    ID: {employee?.name}
+                                </Typography>
+                            </Stack>
+                        </li>
+                    );
+                }}
             />
         </Stack>
     );
@@ -162,8 +195,10 @@ export function ReimbursementClaimsTableFiltersDrawer({
                 }}
             >
                 <MenuItem value="all">All</MenuItem>
-                <MenuItem value="paid">Paid</MenuItem>
+                <MenuItem value="Paid">Paid</MenuItem>
                 <MenuItem value="Pending">Pending</MenuItem>
+                <MenuItem value="Approved">Approved</MenuItem>
+                <MenuItem value="Rejected">Rejected</MenuItem>
             </TextField>
         </Stack>
     );
@@ -265,7 +300,7 @@ export function ReimbursementClaimsTableFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 2.5 }}>
-                    {renderEmployee}
+                    {isHR && renderEmployee}
                     {renderStatus}
                     {renderType}
                     {renderDateRange}

@@ -63,9 +63,12 @@ const LEAVE_SORT_OPTIONS = [
 export function LeavesView() {
     const { user } = useAuth();
 
+    const isHR = user?.roles?.some((role: string) =>
+        ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
+    );
+
     // Check if user is restricted to their own employee ID
-    const isRestrictedEmployee = user?.roles.includes('Employee') &&
-        !user?.roles.some(role => ['HR Manager', 'HR User', 'System Manager', 'Administrator'].includes(role));
+    const isRestrictedEmployee = user?.roles.includes('Employee') && !isHR;
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
@@ -76,11 +79,13 @@ export function LeavesView() {
     const [filters, setFilters] = useState<{
         status: string;
         leave_type: string;
+        employee: string | null;
         startDate: string | null;
         endDate: string | null;
     }>({
         status: 'all',
         leave_type: 'all',
+        employee: null,
         startDate: null,
         endDate: null,
     });
@@ -131,7 +136,7 @@ export function LeavesView() {
         rowsPerPage,
         filterName,
         {
-            ...(isRestrictedEmployee && user?.employee ? { employee: user.employee } : {}),
+            ...(isRestrictedEmployee && user?.employee ? { employee: user.employee } : (filters.employee ? { employee: filters.employee } : {})),
             ...(filters.status !== 'all' ? { workflow_state: filters.status } : {}),
             ...(filters.leave_type !== 'all' ? { leave_type: filters.leave_type } : {}),
             ...(filters.startDate ? { start_date: filters.startDate } : {}),
@@ -355,6 +360,7 @@ export function LeavesView() {
         setFilters({
             status: 'all',
             leave_type: 'all',
+            employee: null,
             startDate: null,
             endDate: null,
         });
@@ -369,7 +375,7 @@ export function LeavesView() {
         setOpenFilters(false);
     };
 
-    const canReset = filters.status !== 'all' || filters.leave_type !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
+    const canReset = filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== null || filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const onChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);
@@ -427,13 +433,12 @@ export function LeavesView() {
                                 hideCheckbox
                                 showIndex
                                 headLabel={[
-                                    { id: 'employee', label: 'Employee' },
-                                    { id: 'leave_type', label: 'Lead Type' },
-                                    { id: 'from_date', label: 'Duration' },
-                                    { id: 'total_days', label: 'Days' },
-                                    { id: 'reason', label: 'Reason' },
-                                    { id: 'workflow_state', label: 'Status' },
-                                    { id: '', label: '' },
+                                    { id: 'employee', label: 'Employee', minWidth: 180 },
+                                    { id: 'leave_type', label: 'Leave Type', minWidth: 140 },
+                                    { id: 'from_date', label: 'Duration', minWidth: 120 },
+                                    { id: 'total_days', label: 'Days', align: 'center', minWidth: 100 },
+                                    { id: 'workflow_state', label: 'Status', minWidth: 120 },
+                                    { id: 'actions', label: '', align: 'right', minWidth: 100 },
                                 ]}
                             />
 
@@ -455,6 +460,7 @@ export function LeavesView() {
                                             status: row.workflow_state || row.status || 'Pending',
                                             halfDay: row.half_day,
                                             permissionHours: row.permission_hours,
+                                            modified: row.modified,
                                         }}
                                         selected={false}
                                         onSelectRow={() => { }}
@@ -468,7 +474,7 @@ export function LeavesView() {
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
+                                        <TableCell colSpan={8}>
                                             <EmptyContent
                                                 title="No leave applications"
                                                 description="You haven't submitted any leave requests yet."
@@ -515,7 +521,7 @@ export function LeavesView() {
                         <Box
                             sx={{
                                 display: 'grid',
-                                gridTemplateColumns: '1fr 1fr',
+                                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
                                 gap: 2,
                                 mb: 3,
                             }}
@@ -931,6 +937,8 @@ export function LeavesView() {
                     statuses: ['Pending', 'Approved', 'Rejected', 'Clarification Requested'],
                     leaveTypes: leaveTypeOptions.map((opt) => opt.name),
                 }}
+                employeeOptions={employeeOptions}
+                isHR={isHR}
             />
         </DashboardContent>
     );

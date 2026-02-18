@@ -28,6 +28,7 @@ type Props = {
     canReset: boolean;
     onResetFilters: () => void;
     employeeOptions: any[];
+    isHR?: boolean;
 };
 
 export function AttendanceTableFiltersDrawer({
@@ -39,6 +40,7 @@ export function AttendanceTableFiltersDrawer({
     canReset,
     onResetFilters,
     employeeOptions,
+    isHR,
 }: Props) {
     const renderHead = (
         <Box
@@ -108,6 +110,65 @@ export function AttendanceTableFiltersDrawer({
             <Scrollbar>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Stack spacing={3} sx={{ p: 3 }}>
+
+                        {isHR && (
+                            <Stack spacing={1.5}>
+                                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                    Employee
+                                </Typography>
+                                <Autocomplete
+                                    fullWidth
+                                    options={['all', ...employeeOptions.map((e) => e.name)]}
+                                    getOptionLabel={(option) => {
+                                        if (option === 'all') return 'All Employees';
+                                        const employee = employeeOptions.find((e) => e.name === option);
+                                        return employee ? `${employee.employee_name} (${employee.name})` : option;
+                                    }}
+                                    value={filters.employee || 'all'}
+                                    onChange={(event, newValue) => onFilters({ employee: newValue === 'all' ? null : newValue })}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            placeholder="Search employee..."
+                                            size="small"
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    borderRadius: 1.5,
+                                                    bgcolor: 'background.neutral',
+                                                    '&:hover': {
+                                                        bgcolor: 'action.hover',
+                                                    },
+                                                },
+                                            }}
+                                        />
+                                    )}
+                                    renderOption={(props, option) => {
+                                        if (option === 'all') {
+                                            const { key, ...itemProps } = props as any;
+                                            return (
+                                                <li key="all" {...itemProps}>
+                                                    All Employees
+                                                </li>
+                                            );
+                                        }
+                                        const employee = employeeOptions.find((e) => e.name === option);
+                                        const { key, ...optionProps } = props as any;
+                                        return (
+                                            <li key={key} {...optionProps}>
+                                                <Stack spacing={0.5}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                        {employee?.employee_name}
+                                                    </Typography>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                        ID: {employee?.name}
+                                                    </Typography>
+                                                </Stack>
+                                            </li>
+                                        );
+                                    }}
+                                />
+                            </Stack>
+                        )}
 
                         <Stack spacing={1.5}>
                             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
@@ -187,34 +248,6 @@ export function AttendanceTableFiltersDrawer({
                                 <option value="On Leave">On Leave</option>
                                 <option value="Holiday">Holiday</option>
                             </TextField>
-                        </Stack>
-
-                        <Stack spacing={1.5}>
-                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                Employee
-                            </Typography>
-                            <Autocomplete
-                                options={employeeOptions}
-                                getOptionLabel={(option) => option.employee_name || option.name}
-                                value={employeeOptions.find(opt => opt.name === filters.employee) || null}
-                                onChange={(event, newValue) => onFilters({ employee: newValue ? newValue.name : null })}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        placeholder="Select Employee"
-                                        size="small"
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                borderRadius: 1.5,
-                                                bgcolor: 'background.neutral',
-                                                '&:hover': {
-                                                    bgcolor: 'action.hover',
-                                                },
-                                            },
-                                        }}
-                                    />
-                                )}
-                            />
                         </Stack>
 
                     </Stack>

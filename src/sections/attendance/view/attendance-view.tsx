@@ -41,6 +41,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from '../../lead/table-no-data';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { AttendanceTableRow } from '../attendance-table-row';
@@ -53,11 +55,13 @@ import { AttendanceDetailsDialog } from '../../report/attendance/attendance-deta
 // ----------------------------------------------------------------------
 
 export function AttendanceView() {
+    const { user } = useAuth();
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('attendance_date');
+    const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
 
     const [openCreate, setOpenCreate] = useState(false);
@@ -101,6 +105,12 @@ export function AttendanceView() {
         delete: true,
     });
 
+    const isHR = user?.roles?.some((role: string) =>
+        ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
+    );
+
+    const effectiveEmployee = isHR ? filterEmployee : user?.employee;
+
     const { data, total, loading, refetch } = useAttendance(
         page + 1,
         rowsPerPage,
@@ -110,7 +120,7 @@ export function AttendanceView() {
         startDate || undefined,
         endDate || undefined,
         filterStatus,
-        filterEmployee
+        effectiveEmployee
     );
 
     const notFound = !data.length && !!filterName;
@@ -462,13 +472,18 @@ export function AttendanceView() {
     const sortOptions = [
         { value: 'newest', label: 'Newest First' },
         { value: 'oldest', label: 'Oldest First' },
+        { value: 'date_asc', label: 'Date Asc' },
+        { value: 'date_desc', label: 'Date Desc' },
         { value: 'employee_asc', label: 'Employee Asc' },
         { value: 'employee_desc', label: 'Employee Desc' },
     ];
 
     const getSortByValue = () => {
-        if (orderBy === 'attendance_date') {
+        if (orderBy === 'modified') {
             return order === 'desc' ? 'newest' : 'oldest';
+        }
+        if (orderBy === 'attendance_date') {
+            return order === 'asc' ? 'date_asc' : 'date_desc';
         }
         if (orderBy === 'employee_name') {
             return order === 'asc' ? 'employee_asc' : 'employee_desc';
@@ -478,11 +493,17 @@ export function AttendanceView() {
 
     const handleSortChange = (value: string) => {
         if (value === 'newest') {
-            setOrderBy('attendance_date');
+            setOrderBy('modified');
             setOrder('desc');
         } else if (value === 'oldest') {
+            setOrderBy('modified');
+            setOrder('asc');
+        } else if (value === 'date_asc') {
             setOrderBy('attendance_date');
             setOrder('asc');
+        } else if (value === 'date_desc') {
+            setOrderBy('attendance_date');
+            setOrder('desc');
         } else if (value === 'employee_asc') {
             setOrderBy('employee_name');
             setOrder('asc');
@@ -548,6 +569,7 @@ export function AttendanceView() {
                     canReset={!!startDate || !!endDate || filterStatus !== 'all' || !!filterEmployee}
                     onResetFilters={handleResetFilters}
                     employeeOptions={employeeOptions}
+                    isHR={isHR}
                 />
 
                 <Scrollbar>
@@ -568,7 +590,7 @@ export function AttendanceView() {
                                     { id: 'in_time', label: 'In Time', minWidth: 120 },
                                     { id: 'out_time', label: 'Out Time', minWidth: 120 },
                                     { id: 'working_hours_display', label: 'Working Hours', minWidth: 120 },
-                                    { id: '', label: 'Actions', align: 'right' },
+                                    { id: '', label: '', align: 'right' },
                                 ]}
                             />
 
@@ -587,6 +609,7 @@ export function AttendanceView() {
                                             inTime: row.in_time,
                                             out_time: row.out_time,
                                             working_hours_display: row.working_hours_display,
+                                            modified: row.modified,
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
@@ -676,12 +699,12 @@ export function AttendanceView() {
                             {renderField('attendance_date', 'Attendance Date', 'date', [], {}, true)}
                             {renderField('status', 'Status', 'select', ['Present', 'Absent', 'Half Day', 'On Leave', 'Holiday'], { hidden : true })}
 
-                            <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
                                 {renderField('in_time', 'In Time', 'time')}
                                 {renderField('out_time', 'Out Time', 'time')}
                             </Box>
 
-                            <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
                                 {renderField('working_hours_display', 'Working Hours', 'text', [], { InputProps: { readOnly: true } })}
                                 {renderField('overtime_display', 'Overtime Hours', 'text', [], { InputProps: { readOnly: true } })}
                             </Box>

@@ -8,6 +8,8 @@ import { alpha, useTheme } from '@mui/material/styles';
 
 import { fDate } from 'src/utils/format-time';
 
+import { Iconify } from 'src/components/iconify';
+
 // ----------------------------------------------------------------------
 
 type AttendanceRecord = {
@@ -54,8 +56,7 @@ export function AttendanceStatusCards({ title, data, sx, ...other }: Props) {
         }
     };
 
-    const getTimelineContent = (record: AttendanceRecord) => {
-        // Correctly identify today based on local date string YYYY-MM-DD
+    const getStatusStyle = (record: AttendanceRecord) => {
         const todayObj = new Date();
         const year = todayObj.getFullYear();
         const month = String(todayObj.getMonth() + 1).padStart(2, '0');
@@ -66,88 +67,67 @@ export function AttendanceStatusCards({ title, data, sx, ...other }: Props) {
         const isHoliday = record.holiday_info && record.holiday_info.startsWith('Holiday:');
         const isNonWorkingHoliday = isHoliday && record.holiday_is_working_day === 0;
 
-        // 1. Holiday Logic (Non-working)
+        // Muted Professional Palette
+        const COLORS = {
+            holiday: { bg: '#FFF5CC', text: '#B76E00', dot: '#FFAB00' },
+            present: { bg: '#E3F9E5', text: '#1B806A', dot: '#22C55E' },
+            late: { bg: '#FFF5CC', text: '#B76E00', dot: '#FFAB00' },
+            absent: { bg: '#FFE9D5', text: '#B71D18', dot: '#FF5630' },
+            info: { bg: '#CAFDF5', text: '#006C9C', dot: '#00B8D9' },
+        };
+
         if (isNonWorkingHoliday) {
             return {
-                type: 'label',
-                background: 'linear-gradient(135deg, #ffa500, #ffcc80)',
-                text: record.holiday_info?.replace('Holiday: ', '') || 'Holiday',
+                label: record.holiday_info?.replace('Holiday: ', '') || 'Holiday',
+                ...COLORS.holiday,
             };
         }
 
-        // 2. Today's Logic
         if (isToday) {
-            // Both check-in and check-out
             if (record.check_in && record.check_out) {
-                const duration = record.working_hours;
-                const widthPercent = Math.min((duration / TOTAL_HOURS) * 100, 100);
+                const isOvertime = record.working_hours >= TOTAL_HOURS;
                 return {
-                    type: 'bar',
-                    width: widthPercent,
-                    background:
-                        duration < TOTAL_HOURS
-                            ? 'linear-gradient(90deg, #ff7f7f, #ff4d4d)'
-                            : 'linear-gradient(90deg, #56ccf2, #28a745)',
-                    text: formatHours(duration),
+                    label: formatHours(record.working_hours),
+                    ...(isOvertime ? COLORS.present : COLORS.absent),
                 };
             }
-            // Only Check-in
             if (record.check_in) {
                 return {
-                    type: 'label',
-                    background: 'linear-gradient(135deg, #43a047, #66bb6a)',
-                    text: `Check-in captured at ${formatTime(record.check_in)}`,
+                    label: 'In Office',
+                    ...COLORS.info,
                 };
             }
-            // No In/Out for Today
             return {
-                type: 'label',
-                background: 'linear-gradient(135deg, #e53935, #ff5252)',
-                text: 'Check-in will update soon',
+                label: 'Check-in pending',
+                ...COLORS.absent,
             };
         }
 
-        // 3. Previous Days' Logic
-
-        // Both check-in and check-out - show timeline bar (Present)
         if (record.check_in && record.check_out) {
-            const duration = record.working_hours;
-            const widthPercent = Math.min((duration / TOTAL_HOURS) * 100, 100);
-
+            const isOvertime = record.working_hours >= TOTAL_HOURS;
             return {
-                type: 'bar',
-                width: widthPercent,
-                background:
-                    duration < TOTAL_HOURS
-                        ? 'linear-gradient(90deg, #ff7f7f, #ff4d4d)'
-                        : 'linear-gradient(90deg, #56ccf2, #28a745)',
-                text: formatHours(duration),
+                label: 'Present',
+                ...(isOvertime ? COLORS.present : COLORS.late),
             };
         }
 
-        // Only check-in or only check-out
         if (record.check_in || record.check_out) {
             return {
-                type: 'label',
-                background: 'linear-gradient(135deg, #fbc02d, #f57c00)',
-                text: record.check_in ? 'Check-in updated' : 'Checkout updated',
+                label: 'Log Missing',
+                ...COLORS.late,
             };
         }
 
-        // On Leave
         if (record.status === 'On Leave') {
             return {
-                type: 'label',
-                background: 'linear-gradient(135deg, #2196f3, #64b5f6)',
-                text: 'On Leave',
+                label: 'On Leave',
+                ...COLORS.info,
             };
         }
 
-        // Database status 'Absent' or any missing log for previous days
         return {
-            type: 'label',
-            background: 'linear-gradient(135deg, #757575, #bdbdbd)',
-            text: 'Absent',
+            label: 'Absent',
+            ...COLORS.absent,
         };
     };
 
@@ -156,126 +136,198 @@ export function AttendanceStatusCards({ title, data, sx, ...other }: Props) {
             sx={{
                 p: 3,
                 boxShadow: (themeVar) => themeVar.customShadows?.card,
-                border: (themeVar) => `1px solid ${alpha(themeVar.palette.grey[500], 0.08)}`,
+                backgroundColor: 'background.paper',
+                border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
                 ...sx,
             }}
             {...other}
         >
-            {/* Header */}
-            <Typography
-                variant="h6"
-                sx={{
-                    mb: 3,
-                    textAlign: 'center',
-                    pb: 1,
-                    borderBottom: `2px solid ${theme.palette.primary.main}`,
-                    fontWeight: 700,
-                }}
+            <Box
+                sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.25 }}
             >
-                {title}
-            </Typography>
+                <Iconify icon="solar:history-bold-duotone" width={26} sx={{ color: 'primary.main' }} />
+                <Typography
+                    variant="h6"
+                    sx={{
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        letterSpacing: 2,
+                        color: 'text.primary',
+                    }}
+                >
+                    {title}
+                </Typography>
+            </Box>
 
-            {/* Grid of cards */}
-            <Grid container spacing={2}>
+            <Grid container spacing={2.5}>
                 {data.map((record, index) => {
-                    const timeline = getTimelineContent(record);
+                    const status = getStatusStyle(record);
+                    const dayName = fDate(record.date, 'ddd');
+                    const dayDate = fDate(record.date, 'DD MMM');
 
                     return (
                         <Grid key={index} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                             <Card
                                 sx={{
-                                    p: 2,
-                                    border: `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
-                                    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
-                                    transition: 'all 0.25s ease',
+                                    p: 2.5,
+                                    position: 'relative',
+                                    backgroundColor: alpha(theme.palette.grey[500], 0.02),
+                                    border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                                    borderRadius: 2,
+                                    transition: theme.transitions.create(
+                                        ['transform', 'box-shadow', 'border-color', 'background-color'],
+                                        {
+                                            duration: theme.transitions.duration.shorter,
+                                        }
+                                    ),
                                     '&:hover': {
                                         transform: 'translateY(-4px)',
-                                        boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                                        boxShadow: (themeVar) => themeVar.customShadows?.z12,
+                                        backgroundColor: 'background.paper',
+                                        borderColor: theme.palette.primary.main,
                                     },
                                 }}
                             >
-                                {/* Date Header */}
-                                <Typography
-                                    variant="subtitle2"
-                                    sx={{
-                                        color: 'primary.main',
-                                        fontWeight: 700,
-                                        mb: 1.5,
-                                        fontSize: '0.875rem',
-                                    }}
-                                >
-                                    {fDate(record.date, 'DD-MM-YYYY')}
-                                </Typography>
-
-                                {/* Timeline Bar/Label */}
-                                <Box
-                                    sx={{
-                                        position: 'relative',
-                                        height: 32,
-                                        borderRadius: 2,
-                                        background: alpha(theme.palette.grey[500], 0.08),
-                                        overflow: 'hidden',
-                                        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)',
-                                        mb: 1.5,
-                                    }}
-                                >
-                                    {timeline.type === 'bar' ? (
-                                        <Box
-                                            sx={{
-                                                position: 'absolute',
-                                                left: 0,
-                                                width: `${timeline.width}%`,
-                                                height: '100%',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: '#fff',
-                                                fontSize: '0.8125rem',
-                                                fontWeight: 600,
-                                                borderRadius: 2,
-                                                background: timeline.background,
-                                                transition: 'all 0.3s ease',
-                                            }}
-                                        >
-                                            {timeline.text}
-                                        </Box>
-                                    ) : (
-                                        <Box
-                                            sx={{
-                                                width: '100%',
-                                                height: '100%',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: '#fff',
-                                                fontSize: '0.8125rem',
-                                                fontWeight: 600,
-                                                borderRadius: 2,
-                                                background: timeline.background,
-                                                textShadow: '0 1px 2px rgba(0,0,0,0.25)',
-                                            }}
-                                        >
-                                            {timeline.text}
-                                        </Box>
-                                    )}
-                                </Box>
-
-                                {/* Footer - Check-in/out times */}
                                 <Box
                                     sx={{
                                         display: 'flex',
                                         justifyContent: 'space-between',
-                                        fontSize: '0.75rem',
-                                        color: 'text.secondary',
+                                        alignItems: 'flex-start',
+                                        mb: 3,
                                     }}
                                 >
-                                    <Typography variant="caption" component="span">
-                                        <strong>In:</strong> {formatTime(record.check_in)}
-                                    </Typography>
-                                    <Typography variant="caption" component="span">
-                                        <strong>Out:</strong> {formatTime(record.check_out)}
-                                    </Typography>
+                                    <Box>
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                color: 'text.disabled',
+                                                display: 'block',
+                                                lineHeight: 1,
+                                                letterSpacing: 1,
+                                                fontWeight: 700,
+                                                textTransform: 'uppercase',
+                                                mb: 0.5,
+                                            }}
+                                        >
+                                            {dayName}
+                                        </Typography>
+                                        <Typography variant="h5" sx={{ fontWeight: 900, color: 'text.primary' }}>
+                                            {dayDate}
+                                        </Typography>
+                                    </Box>
+
+                                    <Box
+                                        className="status-pill"
+                                        sx={{
+                                            px: 1.5,
+                                            py: 0.75,
+                                            borderRadius: '12px',
+                                            fontSize: '0.65rem',
+                                            fontWeight: 900,
+                                            color: status.text,
+                                            backgroundColor: status.bg,
+                                            transition: theme.transitions.create(['transform', 'background-color']),
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 0.75,
+                                            letterSpacing: 0.8,
+                                            textTransform: 'uppercase',
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: status.dot }}
+                                        />
+                                        {status.label}
+                                    </Box>
                                 </Box>
+
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                        <Box
+                                            sx={{
+                                                p: 1,
+                                                borderRadius: 1.5,
+                                                bgcolor: alpha(theme.palette.grey[500], 0.04),
+                                                color: 'text.secondary',
+                                                display: 'flex',
+                                                border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                                            }}
+                                        >
+                                            <Iconify icon="solar:history-bold-duotone" width={18} />
+                                        </Box>
+                                        <Box>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    color: 'text.disabled',
+                                                    display: 'block',
+                                                    lineHeight: 1,
+                                                    fontWeight: 700,
+                                                    textTransform: 'uppercase',
+                                                    mb: 0.5,
+                                                }}
+                                            >
+                                                Check-in
+                                            </Typography>
+                                            <Typography
+                                                variant="subtitle2"
+                                                sx={{ fontWeight: 700, color: 'text.primary' }}
+                                            >
+                                                {formatTime(record.check_in)}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                        <Box
+                                            sx={{
+                                                p: 1,
+                                                borderRadius: 1.5,
+                                                bgcolor: alpha(theme.palette.grey[500], 0.04),
+                                                color: 'text.secondary',
+                                                display: 'flex',
+                                                border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                                            }}
+                                        >
+                                            <Iconify icon="solar:restart-bold" width={18} />
+                                        </Box>
+                                        <Box>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    color: 'text.disabled',
+                                                    display: 'block',
+                                                    lineHeight: 1,
+                                                    fontWeight: 700,
+                                                    textTransform: 'uppercase',
+                                                    mb: 0.5,
+                                                }}
+                                            >
+                                                Check-out
+                                            </Typography>
+                                            <Typography
+                                                variant="subtitle2"
+                                                sx={{ fontWeight: 700, color: 'text.primary' }}
+                                            >
+                                                {formatTime(record.check_out)}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                </Box>
+
+                                {record.working_hours > 0 && (
+                                    <Box
+                                        sx={{
+                                            position: 'absolute',
+                                            bottom: -10,
+                                            right: -10,
+                                            opacity: 0.05,
+                                            transform: 'rotate(-15deg)',
+                                        }}
+                                    >
+                                        <Iconify icon="solar:clock-circle-bold-duotone" width={80} />
+                                    </Box>
+                                )}
                             </Card>
                         </Grid>
                     );

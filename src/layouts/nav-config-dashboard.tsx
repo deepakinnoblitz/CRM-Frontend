@@ -36,13 +36,13 @@ export const hrNavData = [
     path: '/attendance',
     icon: <Iconify icon={"solar:calendar-mark-bold-duotone" as any} />,
     children: [
-      { title: 'HR Attendance', path: '/attendance' },
-      { title: 'WFH Attendance List', path: '/wfh-attendance' },
+      { title: 'Attendance List', path: '/attendance' },
+      { title: 'WFH Attendance', path: '/wfh-attendance' },
       { title: 'Import Attendance', path: '/import-attendance' },
     ],
   },
   {
-    title: 'Leaves',
+    title: 'Leaves Records',
     path: '/leaves',
     icon: <Iconify icon={"solar:calendar-date-bold-duotone" as any} />,
     children: [
@@ -140,9 +140,10 @@ export const employeeNavData = [
   },
   {
     title: 'My Profile',
-    path: '/employee',
+    path: '/my-profile',
     icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
   },
+
   {
     title: 'My Attendance',
     path: '/attendance',
@@ -174,25 +175,25 @@ export const employeeNavData = [
     icon: <Iconify icon={"solar:bill-bold-duotone" as any} />,
   },
   {
-    title: 'My Asset List',
-    path: '/assets',
-    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
-  },
-  {
-    title: 'My Timesheet Report',
-    path: '/timesheet-reports',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
-  },
-  {
-    title: 'My Attendance Report',
-    path: '/reports/attendance',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
-  },
-  {
     title: 'My Reimbursement Claim',
     path: '/reimbursement-claims',
     icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
   },
+  {
+    title: 'My Asset List',
+    path: '/asset-assignments',
+    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
+  },
+  {
+    title: 'Timesheet Report',
+    path: '/timesheet-reports',
+    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+  },
+  {
+    title: 'Attendance Report',
+    path: '/reports/attendance',
+    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+  }
 ];
 
 // ----------------------  Sales NavBar ---------------------------------------------------

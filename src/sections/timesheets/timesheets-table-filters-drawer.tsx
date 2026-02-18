@@ -19,7 +19,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 // ----------------------------------------------------------------------
 
 type FiltersProps = {
-    employee: string;
+    employee: string | null;
     startDate: string | null;
     endDate: string | null;
 };
@@ -32,9 +32,8 @@ type Props = {
     onFilters: (update: Partial<FiltersProps>) => void;
     canReset: boolean;
     onResetFilters: () => void;
-    options: {
-        employees: { value: string; label: string }[];
-    };
+    employees: any[];
+    isHR?: boolean;
 };
 
 export function TimesheetsTableFiltersDrawer({
@@ -45,7 +44,8 @@ export function TimesheetsTableFiltersDrawer({
     onFilters,
     canReset,
     onResetFilters,
-    options,
+    employees,
+    isHR,
 }: Props) {
     const handleFilterChange = (field: keyof FiltersProps, value: any) => {
         onFilters({ [field]: value });
@@ -104,12 +104,14 @@ export function TimesheetsTableFiltersDrawer({
             </Typography>
             <Autocomplete
                 fullWidth
-                options={options.employees}
-                getOptionLabel={(option) => typeof option === 'string' ? option : option.label || ''}
-                value={options.employees.find((emp) => emp.value === filters.employee) || null}
-                onChange={(event, newValue) => {
-                    handleFilterChange('employee', newValue?.value || 'all');
+                options={['all', ...employees.map((e) => e.name)]}
+                getOptionLabel={(option) => {
+                    if (option === 'all') return 'All Employees';
+                    const employee = employees.find((e) => e.name === option);
+                    return employee ? `${employee.employee_name} (${employee.name})` : option;
                 }}
+                value={filters.employee || 'all'}
+                onChange={(event, newValue) => onFilters({ employee: newValue === 'all' ? null : newValue })}
                 renderInput={(params) => (
                     <TextField
                         {...params}
@@ -126,6 +128,30 @@ export function TimesheetsTableFiltersDrawer({
                         }}
                     />
                 )}
+                renderOption={(props, option) => {
+                    if (option === 'all') {
+                        const { key, ...itemProps } = props as any;
+                        return (
+                            <li key="all" {...itemProps}>
+                                All Employees
+                            </li>
+                        );
+                    }
+                    const employee = employees.find((e) => e.name === option);
+                    const { key, ...optionProps } = props as any;
+                    return (
+                        <li key={key} {...optionProps}>
+                            <Stack spacing={0.5}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                    {employee?.employee_name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    ID: {employee?.name}
+                                </Typography>
+                            </Stack>
+                        </li>
+                    );
+                }}
             />
         </Stack>
     );
@@ -185,7 +211,7 @@ export function TimesheetsTableFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3 }}>
-                    {renderEmployee}
+                    {isHR && renderEmployee}
                     {renderDateRange}
                 </Stack>
             </Scrollbar>

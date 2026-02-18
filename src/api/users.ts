@@ -264,6 +264,12 @@ export async function getUser(name: string) {
     return (await res.json()).message;
 }
 
+export async function fetchUserPermissions(user: string) {
+    const res = await frappeRequest(`/api/method/frappe.client.get_list?doctype=User Permission&filters=${JSON.stringify([["User Permission", "user", "=", user]])}&fields=["*"]&limit_page_length=999`);
+    if (!res.ok) throw new Error("Failed to fetch user permissions");
+    return (await res.json()).message;
+}
+
 export async function getRoleProfiles() {
     const res = await frappeRequest('/api/method/frappe.client.get_list?doctype=Role Profile&fields=["name"]&limit_page_length=999');
     if (!res.ok) throw new Error("Failed to fetch role profiles");

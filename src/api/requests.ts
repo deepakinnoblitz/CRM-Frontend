@@ -1,6 +1,8 @@
 import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
+import { fetchFrappeList } from './hr-management';
+
 export interface Request {
     name: string;
     employee_id: string;
@@ -14,18 +16,8 @@ export interface Request {
     modified?: string;
 }
 
-// Generic fetch function for Request list
-async function fetchFrappeList(params: {
-    page: number;
-    page_size: number;
-    search?: string;
-    orderBy?: string;
-    order?: 'asc' | 'desc';
-    startDate?: string;
-    endDate?: string;
-    status?: string;
-    employee?: string;
-}) {
+// Request APIs
+export const fetchRequests = (params: any) => {
     const filters: any[] = [];
 
     if (params.employee && params.employee !== 'all') {
@@ -36,13 +28,6 @@ async function fetchFrappeList(params: {
         filters.push(['Request', 'workflow_state', '=', params.status]);
     }
 
-    if (params.search) {
-        filters.push([
-            ['Request', 'subject', 'like', `%${params.search}%`],
-            ['or', ['Request', 'employee_name', 'like', `%${params.search}%`]]
-        ]);
-    }
-
     if (params.startDate) {
         filters.push(['Request', 'creation', '>=', params.startDate]);
     }
@@ -51,35 +36,18 @@ async function fetchFrappeList(params: {
         filters.push(['Request', 'creation', '<=', `${params.endDate} 23:59:59`]);
     }
 
-    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "creation desc";
+    if (params.search) {
+        filters.push([
+            ['Request', 'subject', 'like', `%${params.search}%`],
+            ['or', ['Request', 'employee_name', 'like', `%${params.search}%`]]
+        ]);
+    }
 
-    const query = new URLSearchParams({
-        doctype: 'Request',
-        fields: JSON.stringify(["*"]),
-        filters: JSON.stringify(filters),
-        limit_start: String((params.page - 1) * params.page_size),
-        limit_page_length: String(params.page_size),
-        order_by: orderByParam
+    return fetchFrappeList("Request", {
+        ...params,
+        filters: filters.length > 0 ? filters : undefined
     });
-
-    // Fetch data and count in parallel
-    const [res, countRes] = await Promise.all([
-        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Request&filters=${encodeURIComponent(JSON.stringify(filters))}`)
-    ]);
-
-    if (!res.ok) throw new Error("Failed to fetch requests");
-
-    const data = await res.json();
-    const countData = await countRes.json();
-
-    return {
-        data: data.message || [],
-        total: countData.message || 0
-    };
-}
-
-export const fetchRequests = (params: any) => fetchFrappeList(params);
+};
 
 export async function createRequest(data: Partial<Request>) {
     const headers = await getAuthHeaders();

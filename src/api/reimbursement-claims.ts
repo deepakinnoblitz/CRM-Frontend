@@ -50,8 +50,8 @@ async function fetchFrappeList(params: {
         if (params.filters.employee && params.filters.employee !== 'all') {
             filters.push(['Reimbursement Claim', 'employee', '=', params.filters.employee]);
         }
-        if (params.filters.paid !== undefined && params.filters.paid !== null && params.filters.paid !== 'all') {
-            filters.push(['Reimbursement Claim', 'paid', '=', params.filters.paid === 'paid' ? 1 : 0]);
+        if (params.filters.paid && params.filters.paid !== 'all') {
+            filters.push(['Reimbursement Claim', 'workflow_state', '=', params.filters.paid]);
         }
         if (params.filters.claim_type && params.filters.claim_type !== 'all') {
             filters.push(['Reimbursement Claim', 'claim_type', '=', params.filters.claim_type]);
@@ -195,7 +195,7 @@ export async function getReimbursementClaimWorkflowActions(currentState: string)
     return data.actions || [];
 }
 
-export async function applyReimbursementClaimWorkflowAction(name: string, action: string, comment?: string) {
+export async function applyReimbursementClaimWorkflowAction(name: string, action: string, comment?: string, paymentDetails?: any) {
     const headers = await getAuthHeaders();
 
     const res = await frappeRequest("/api/method/company.company.frontend_api.apply_workflow_action", {
@@ -205,7 +205,8 @@ export async function applyReimbursementClaimWorkflowAction(name: string, action
             doctype: "Reimbursement Claim",
             name,
             action,
-            comment
+            comment,
+            payment_details: paymentDetails
         })
     });
 

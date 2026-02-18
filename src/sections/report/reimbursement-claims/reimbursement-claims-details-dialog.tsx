@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
@@ -12,6 +13,9 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { updateReimbursementClaim, WorkflowAction, getReimbursementClaimWorkflowActions, applyReimbursementClaimWorkflowAction } from 'src/api/reimbursement-claims';
 
@@ -39,6 +43,15 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
     const [actions, setActions] = useState<WorkflowAction[]>([]);
     const [selectedAction, setSelectedAction] = useState<WorkflowAction | null>(null);
 
+    // Edit Payment Logic
+    const [editPaymentOpen, setEditPaymentOpen] = useState(false);
+    const [editPaymentReference, setEditPaymentReference] = useState('');
+    const [editPaymentDate, setEditPaymentDate] = useState<string | null>(null);
+
+    // Payment Logic
+    const [paymentReference, setPaymentReference] = useState('');
+    const [paymentDate, setPaymentDate] = useState<string | null>(dayjs().format('YYYY-MM-DD'));
+
     useEffect(() => {
         if (open && claim) {
             fetchActions();
@@ -48,7 +61,9 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
     const fetchActions = async () => {
         try {
             const workflowActions = await getReimbursementClaimWorkflowActions(claim.workflow_state || 'Draft');
-            setActions(workflowActions);
+            // Filter out Pay and Mark Paid actions
+            const filteredActions = workflowActions.filter(action => !['Pay', 'Mark Paid'].includes(action.action));
+            setActions(filteredActions);
         } catch (error) {
             console.error('Failed to fetch workflow actions:', error);
         }
@@ -59,6 +74,8 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
     const handleActionClick = (action: WorkflowAction) => {
         setSelectedAction(action);
         setComment('');
+        setPaymentReference('');
+        setPaymentDate(dayjs().format('YYYY-MM-DD'));
         setCommentDialogOpen(true);
     };
 
@@ -66,12 +83,41 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
         if (!selectedAction) return;
         setSubmitting(true);
         try {
-            await applyReimbursementClaimWorkflowAction(claim.name, selectedAction.action, comment);
+            const paymentDetails = selectedAction.action === 'Pay' ? {
+                payment_reference: paymentReference,
+                paid_date: paymentDate,
+                paid_by: user?.email
+            } : undefined;
+
+            await applyReimbursementClaimWorkflowAction(claim.name, selectedAction.action, comment, paymentDetails);
             if (onRefresh) onRefresh();
             setCommentDialogOpen(false);
             onClose();
         } catch (error) {
             console.error('Failed to apply workflow action:', error);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleOpenEditPayment = () => {
+        setEditPaymentReference(claim.payment_reference || '');
+        setEditPaymentDate(claim.paid_date || dayjs().format('YYYY-MM-DD'));
+        setEditPaymentOpen(true);
+    };
+
+    const handleUpdatePayment = async () => {
+        setSubmitting(true);
+        try {
+            await updateReimbursementClaim(claim.name, {
+                payment_reference: editPaymentReference,
+                paid_date: editPaymentDate || undefined
+            });
+            if (onRefresh) onRefresh();
+            setEditPaymentOpen(false);
+            onClose();
+        } catch (error) {
+            console.error('Failed to update payment details:', error);
         } finally {
             setSubmitting(false);
         }
@@ -104,7 +150,7 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
             <Box sx={{ flexGrow: 1 }}>
                 <Typography variant="h6">{claim.employee_name}</Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    {claim.claim_type} • {new Date(claim.date_of_expense).toLocaleDateString()}
+                    {claim.claim_type} • {dayjs(claim.date_of_expense).format('DD/MM/YYYY')}
                 </Typography>
             </Box>
 
@@ -145,16 +191,19 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                                     }}
                                 >
                                     <DetailItem label="Claim Type" value={claim.claim_type} icon="solar:tag-bold" />
-                                    <DetailItem label="Date of Expense" value={new Date(claim.date_of_expense).toLocaleDateString()} icon="solar:calendar-bold" />
+                                    <DetailItem label="Date of Expense" value={dayjs(claim.date_of_expense).format('DD/MM/YYYY')} icon="solar:calendar-bold" />
                                     <DetailItem label="Amount" value={`₹${claim.amount?.toLocaleString() || 0}`} icon="solar:wad-of-money-bold" />
                                     <DetailItem label="Status" value={claim.paid === 1 ? 'Paid' : 'Pending'} icon="solar:info-circle-bold" />
                                 </Box>
                             </Box>
 
                             {/* Settlement Details */}
-                            {(claim.paid === 1 || claim.approved_by || claim.paid_by) && (
+                            {(claim.workflow_state === 'Paid' || claim.paid === 1) && (
                                 <Box sx={{ pt: 3 }}>
-                                    <SectionHeader title="Settlement Details" icon="" />
+                                    <SectionHeader
+                                        title="Settlement Details"
+                                        icon=""
+                                    />
                                     <Box
                                         sx={{
                                             display: 'grid',
@@ -165,7 +214,7 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                                         <DetailItem label="Approved By" value={claim.approved_by || '-'} icon="solar:user-bold" />
                                         <DetailItem label="Status" value={claim.workflow_state || (claim.paid === 1 ? 'Paid' : 'Pending')} icon="solar:flag-bold" />
                                         <DetailItem label="Paid By" value={claim.paid_by || '-'} icon="solar:user-bold" />
-                                        <DetailItem label="Paid Date" value={claim.paid_date ? new Date(claim.paid_date).toLocaleDateString() : '-'} icon="solar:calendar-bold" />
+                                        <DetailItem label="Paid Date" value={claim.paid_date ? dayjs(claim.paid_date).format('DD/MM/YYYY') : '-'} icon="solar:calendar-bold" />
                                         <DetailItem label="Payment Reference" value={claim.payment_reference || '-'} icon="solar:bill-bold" />
                                     </Box>
                                 </Box>
@@ -243,11 +292,11 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                                 >
                                     <Box>
                                         <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Created On</Typography>
-                                        <Typography variant="body2">{new Date(claim.creation).toLocaleString()}</Typography>
+                                        <Typography variant="body2">{dayjs(claim.creation).format('DD/MM/YYYY HH:mm')}</Typography>
                                     </Box>
                                     <Box>
                                         <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Last Modified</Typography>
-                                        <Typography variant="body2">{new Date(claim.modified).toLocaleString()}</Typography>
+                                        <Typography variant="body2">{dayjs(claim.modified).format('DD/MM/YYYY HH:mm')}</Typography>
                                     </Box>
                                     <Box>
                                         <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Record ID</Typography>
@@ -281,7 +330,32 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                 open={commentDialogOpen}
                 onClose={() => setCommentDialogOpen(false)}
                 title={selectedAction?.action || 'Confirm'}
-                content={`Are you sure you want to perform the action "${selectedAction?.action}"?`}
+                content={
+                    selectedAction?.action === 'Pay' ? (
+                        <Box sx={{ pt: 1 }}>
+                            <Typography sx={{ mb: 2 }}>Are you sure you want to mark this claim as <b>Paid</b>?</Typography>
+                            <Stack spacing={2}>
+                                <TextField
+                                    fullWidth
+                                    label="Payment Reference"
+                                    value={paymentReference}
+                                    onChange={(e) => setPaymentReference(e.target.value)}
+                                    placeholder="Check number, Transaction ID, etc."
+                                />
+                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                    <DatePicker
+                                        label="Payment Date"
+                                        value={paymentDate ? dayjs(paymentDate) : null}
+                                        onChange={(newValue) => setPaymentDate(newValue ? dayjs(newValue).format('YYYY-MM-DD') : null)}
+                                        slotProps={{ textField: { fullWidth: true } }}
+                                    />
+                                </LocalizationProvider>
+                            </Stack>
+                        </Box>
+                    ) : (
+                        `Are you sure you want to perform the action "${selectedAction?.action}"?`
+                    )
+                }
                 icon={getActionIcon(selectedAction?.action || '')}
                 iconColor={getActionColor(selectedAction?.action || '') + '.main'}
                 action={
@@ -293,6 +367,44 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                         sx={{ borderRadius: 1.5, minWidth: 100 }}
                     >
                         Confirm
+                    </LoadingButton>
+                }
+            />
+
+            <ConfirmDialog
+                open={editPaymentOpen}
+                onClose={() => setEditPaymentOpen(false)}
+                title="Edit Payment Details"
+                content={
+                    <Box sx={{ pt: 1 }}>
+                        <Stack spacing={2}>
+                            <TextField
+                                fullWidth
+                                label="Payment Reference"
+                                value={editPaymentReference}
+                                onChange={(e) => setEditPaymentReference(e.target.value)}
+                                placeholder="Check number, Transaction ID, etc."
+                            />
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Payment Date"
+                                    value={editPaymentDate ? dayjs(editPaymentDate) : null}
+                                    onChange={(newValue) => setEditPaymentDate(newValue ? dayjs(newValue).format('YYYY-MM-DD') : null)}
+                                    slotProps={{ textField: { fullWidth: true } }}
+                                />
+                            </LocalizationProvider>
+                        </Stack>
+                    </Box>
+                }
+                action={
+                    <LoadingButton
+                        variant="contained"
+                        color="primary"
+                        loading={submitting}
+                        onClick={handleUpdatePayment}
+                        sx={{ borderRadius: 1.5, minWidth: 100 }}
+                    >
+                        Update
                     </LoadingButton>
                 }
             />

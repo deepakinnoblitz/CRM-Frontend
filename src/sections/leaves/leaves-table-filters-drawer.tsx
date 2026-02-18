@@ -8,6 +8,7 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Autocomplete from '@mui/material/Autocomplete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -18,6 +19,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 // ----------------------------------------------------------------------
 
 type FiltersProps = {
+    employee: string | null;
     status: string;
     leave_type: string;
     startDate: string | null;
@@ -36,6 +38,8 @@ type Props = {
         statuses: string[];
         leaveTypes: string[];
     };
+    employeeOptions: any[];
+    isHR?: boolean;
 };
 
 export function LeavesTableFiltersDrawer({
@@ -47,6 +51,8 @@ export function LeavesTableFiltersDrawer({
     canReset,
     onResetFilters,
     options,
+    employeeOptions,
+    isHR,
 }: Props) {
     const handleFilterChange = (field: keyof FiltersProps, value: string) => {
         onFilters({ [field]: value });
@@ -96,6 +102,65 @@ export function LeavesTableFiltersDrawer({
                 <Iconify icon="mingcute:close-line" width={20} />
             </IconButton>
         </Box>
+    );
+
+    const renderEmployee = (
+        <Stack spacing={1.5}>
+            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Employee
+            </Typography>
+            <Autocomplete
+                fullWidth
+                options={['all', ...employeeOptions.map((e) => e.name)]}
+                getOptionLabel={(option) => {
+                    if (option === 'all') return 'All Employees';
+                    const employee = employeeOptions.find((e) => e.name === option);
+                    return employee ? `${employee.employee_name} (${employee.name})` : option;
+                }}
+                value={filters.employee || 'all'}
+                onChange={(event, newValue) => onFilters({ employee: newValue === 'all' ? null : newValue })}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Search employee..."
+                        size="small"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+                renderOption={(props, option) => {
+                    if (option === 'all') {
+                        const { key, ...itemProps } = props as any;
+                        return (
+                            <li key="all" {...itemProps}>
+                                All Employees
+                            </li>
+                        );
+                    }
+                    const employee = employeeOptions.find((e) => e.name === option);
+                    const { key, ...optionProps } = props as any;
+                    return (
+                        <li key={key} {...optionProps}>
+                            <Stack spacing={0.5}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                    {employee?.employee_name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    ID: {employee?.name}
+                                </Typography>
+                            </Stack>
+                        </li>
+                    );
+                }}
+            />
+        </Stack>
     );
 
     const renderStatus = (
@@ -231,6 +296,7 @@ export function LeavesTableFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3 }}>
+                    {isHR && renderEmployee}
                     {renderStatus}
                     {renderLeaveType}
                     {renderDateRange}

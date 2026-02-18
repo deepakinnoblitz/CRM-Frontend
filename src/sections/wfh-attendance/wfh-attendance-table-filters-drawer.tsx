@@ -36,6 +36,7 @@ type Props = {
     options: {
         employees: any[];
     };
+    isHR?: boolean;
 };
 
 export function WFHAttendanceTableFiltersDrawer({
@@ -47,6 +48,7 @@ export function WFHAttendanceTableFiltersDrawer({
     canReset,
     onResetFilters,
     options,
+    isHR,
 }: Props) {
     const handleFilterChange = (field: keyof FiltersProps, value: any) => {
         onFilters({ [field]: value });
@@ -220,7 +222,7 @@ export function WFHAttendanceTableFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3 }}>
-                    {renderEmployee}
+                    {isHR && renderEmployee}
                     {renderStatus}
                     {renderDateRange}
                 </Stack>

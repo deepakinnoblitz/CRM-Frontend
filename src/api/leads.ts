@@ -163,7 +163,7 @@ export async function deleteLead(name: string) {
 }
 
 
-export async function getDoctypeList(doctype: string, fields?: string[]) {
+export async function getDoctypeList(doctype: string, fields?: string[], filters?: Record<string, any>) {
     const params: any = {
         doctype,
         limit_page_length: '1000',
@@ -171,6 +171,10 @@ export async function getDoctypeList(doctype: string, fields?: string[]) {
 
     if (fields) {
         params.fields = JSON.stringify(fields);
+    }
+
+    if (filters) {
+        params.filters = JSON.stringify(filters);
     }
 
     const query = new URLSearchParams(params);

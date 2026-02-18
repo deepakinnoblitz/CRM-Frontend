@@ -64,7 +64,7 @@ export function PurchaseTableFiltersDrawer({
                 pl: 3,
                 pr: 2,
                 display: 'flex',
-                alignItems: 'center',   
+                alignItems: 'center',
                 borderBottom: '1px solid',
                 borderColor: 'divider',
             }}

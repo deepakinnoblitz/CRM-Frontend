@@ -25,6 +25,7 @@ import { getSalarySlip, deleteSalarySlip } from 'src/api/salary-slips';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from 'src/sections/lead/table-no-data';
 import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
@@ -62,9 +63,21 @@ export function SalarySlipsView() {
         pay_period_end: null,
     });
 
-    const filterValues = useMemo(() => Object.fromEntries(
-        Object.entries(filters).filter(([_, v]) => v !== 'all' && v !== null)
-    ), [filters]);
+    const [isHR, setIsHR] = useState(false);
+
+    const filterValues = useMemo(() => {
+        const baseFilters: Record<string, any> = Object.fromEntries(
+            Object.entries(filters).filter(([_, v]) => v !== 'all' && v !== null)
+        );
+
+        if (!isHR) {
+            baseFilters.docstatus = 1;
+        }
+
+        return baseFilters;
+    }, [filters, isHR]);
+
+
 
     const { data, total, refetch, loading } = useSalarySlips(
         page + 1,
@@ -152,7 +165,16 @@ export function SalarySlipsView() {
     const [editSlip, setEditSlip] = useState<SalarySlip | null>(null);
 
 
-    const [isHR, setIsHR] = useState(false);
+
+
+    // Delete confirmation
+    const [deleteDialog, setDeleteDialog] = useState<{
+        open: boolean;
+        slipName: string;
+    }>({
+        open: false,
+        slipName: '',
+    });
 
     // Snackbar
     const [snackbar, setSnackbar] = useState<{
@@ -208,15 +230,19 @@ export function SalarySlipsView() {
         }
     }, []);
 
-    const handleDeleteRow = useCallback(async (name: string) => {
-        if (!window.confirm('Are you sure you want to delete this salary slip?')) return;
+    const handleDeleteRow = useCallback((name: string) => {
+        setDeleteDialog({ open: true, slipName: name });
+    }, []);
+
+    const handleConfirmDelete = useCallback(async () => {
         try {
-            await deleteSalarySlip(name);
+            await deleteSalarySlip(deleteDialog.slipName);
             setSnackbar({
                 open: true,
                 message: 'Salary slip deleted successfully',
                 severity: 'success',
             });
+            setDeleteDialog({ open: false, slipName: '' });
             refetch();
         } catch (error: any) {
             setSnackbar({
@@ -224,8 +250,9 @@ export function SalarySlipsView() {
                 message: error.message || 'Failed to delete record',
                 severity: 'error',
             });
+            setDeleteDialog({ open: false, slipName: '' });
         }
-    }, [refetch]);
+    }, [deleteDialog.slipName, refetch]);
 
 
     const handleChangePage = (event: unknown, newPage: number) => {
@@ -263,7 +290,7 @@ export function SalarySlipsView() {
                             onClick={() => setOpenAutoAllocate(true)}
                             sx={{ borderRadius: 1.5, height: 40 }}
                         >
-                            Auto Allocate
+                            Bulk Allocate
                         </Button>
 
                         <Button
@@ -323,6 +350,7 @@ export function SalarySlipsView() {
                                     { id: 'pay_period_start', label: 'Pay Period' },
                                     { id: 'gross_pay', label: 'Gross Pay', align: 'right' },
                                     { id: 'net_pay', label: 'Net Pay', align: 'right' },
+                                    { id: 'status', label: 'Status' },
                                     { id: '', label: '', align: 'right' },
                                 ]}
                             />
@@ -339,6 +367,8 @@ export function SalarySlipsView() {
                                             pay_period_end: row.pay_period_end,
                                             gross_pay: row.gross_pay,
                                             net_pay: row.net_pay,
+                                            status: row.status,
+                                            docstatus: row.docstatus,
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
@@ -443,8 +473,26 @@ export function SalarySlipsView() {
                 canReset={canReset}
                 onResetFilters={handleResetFilters}
                 options={filterOptions}
+                isHR={isHR}
             />
 
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                open={deleteDialog.open}
+                onClose={() => setDeleteDialog({ open: false, slipName: '' })}
+                title="Delete Salary Slip"
+                content="Are you sure you want to delete this salary slip? This action cannot be undone."
+                action={
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleConfirmDelete}
+                        sx={{ borderRadius: 1.5, minWidth: 100 }}
+                    >
+                        Delete
+                    </Button>
+                }
+            />
 
         </DashboardContent>
 

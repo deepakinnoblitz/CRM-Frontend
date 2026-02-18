@@ -104,7 +104,7 @@ export const UserView = forwardRef(({ hideHeader = false, hideActionButton = fal
       user_type: 'System User',
       role_profile_name: '',
       roles: [],
-      block_modules: ['Company', 'ClefinCode Chat'],
+      block_modules: [],
       send_welcome_email: 1,
       new_password: ''
     });

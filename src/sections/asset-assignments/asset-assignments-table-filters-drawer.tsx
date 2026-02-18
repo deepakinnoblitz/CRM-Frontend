@@ -3,21 +3,22 @@ import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
+import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
-import Divider from '@mui/material/Divider';
+import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import InputLabel from '@mui/material/InputLabel';
-import FormControl from '@mui/material/FormControl';
+import { Theme, alpha } from '@mui/material/styles';
+import Autocomplete from '@mui/material/Autocomplete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { getEmployees } from 'src/api/asset-assignments';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
@@ -45,6 +46,7 @@ type Props = {
     onFilters: (newFilters: Partial<FiltersProps>) => void;
     canReset: boolean;
     onResetFilters: () => void;
+    isHR?: boolean;
 };
 
 export function AssetAssignmentsTableFiltersDrawer({
@@ -54,6 +56,7 @@ export function AssetAssignmentsTableFiltersDrawer({
     onFilters,
     canReset,
     onResetFilters,
+    isHR,
 }: Props) {
     const [employees, setEmployees] = useState<Array<{ name: string; employee_name: string }>>([]);
 
@@ -65,11 +68,11 @@ export function AssetAssignmentsTableFiltersDrawer({
         fetchEmployeeList();
     }, []);
 
-    const handleFilterEmployee = (event: SelectChangeEvent<string>) => {
-        onFilters({ employee: event.target.value });
+    const handleFilterEmployee = (newValue: string | null) => {
+        onFilters({ employee: newValue || 'all' });
     };
 
-    const handleFilterStatus = (event: SelectChangeEvent<string>) => {
+    const handleFilterStatus = (event: React.ChangeEvent<HTMLInputElement>) => {
         onFilters({ status: event.target.value });
     };
 
@@ -82,79 +85,163 @@ export function AssetAssignmentsTableFiltersDrawer({
     };
 
     const renderHead = (
-        <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            sx={{ py: 2, pr: 1, pl: 2.5 }}
+        <Box
+            sx={{
+                py: 2.5,
+                pl: 3,
+                pr: 2,
+                display: 'flex',
+                alignItems: 'center',
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+            }}
         >
-            <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            <Typography variant="subtitle1" sx={{ flexGrow: 1, fontWeight: 600 }}>
                 Filters
             </Typography>
 
-            <IconButton onClick={onClose}>
-                <Iconify icon="mingcute:close-line" />
-            </IconButton>
-        </Stack>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Badge
+                    color="error"
+                    variant="dot"
+                    invisible={!canReset}
+                    sx={{
+                        [`& .MuiBadge-badge`]: {
+                            top: 8,
+                            right: 8,
+                        },
+                    }}
+                >
+                    <IconButton size="small" onClick={onResetFilters} disabled={!canReset}>
+                        <Iconify icon="solar:restart-bold" />
+                    </IconButton>
+                </Badge>
+
+                <IconButton size="small" onClick={onClose}>
+                    <Iconify icon="mingcute:close-line" />
+                </IconButton>
+            </Box>
+        </Box>
     );
 
     const renderEmployee = (
         <Stack spacing={1.5}>
-            <Typography variant="subtitle2">Employee</Typography>
-            <FormControl fullWidth>
-                <InputLabel>Select Employee</InputLabel>
-                <Select
-                    value={filters.employee}
-                    onChange={handleFilterEmployee}
-                    label="Select Employee"
-                >
-                    <MenuItem value="all">All</MenuItem>
-                    {employees.map((option) => (
-                        <MenuItem key={option.name} value={option.name}>
-                            {option.employee_name}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
+            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Employee
+            </Typography>
+            <Autocomplete
+                fullWidth
+                size="small"
+                options={['all', ...employees.map((e) => e.name)]}
+                getOptionLabel={(option) => {
+                    if (option === 'all') return 'All Employees';
+                    const employee = employees.find((e) => e.name === option);
+                    return employee ? `${employee.employee_name} (${employee.name})` : option;
+                }}
+                value={filters.employee}
+                onChange={(event, newValue) => handleFilterEmployee(newValue)}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Search employee..."
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                            },
+                        }}
+                    />
+                )}
+                renderOption={(props, option) => {
+                    if (option === 'all') return <li {...props} key="all">All Employees</li>;
+                    const employee = employees.find((e) => e.name === option);
+                    const { key, ...optionProps } = props as any;
+                    return (
+                        <li key={key} {...optionProps}>
+                            <Stack spacing={0.5}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                    {employee?.employee_name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    ID: {employee?.name}
+                                </Typography>
+                            </Stack>
+                        </li>
+                    );
+                }}
+            />
         </Stack>
     );
 
     const renderStatus = (
         <Stack spacing={1.5}>
-            <Typography variant="subtitle2">Status</Typography>
-            <FormControl fullWidth>
-                <InputLabel>Select Status</InputLabel>
-                <Select
-                    value={filters.status}
-                    onChange={handleFilterStatus}
-                    label="Select Status"
-                >
-                    <MenuItem value="all">All</MenuItem>
-                    {STATUSES.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                            {option.label}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
+            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Status
+            </Typography>
+            <TextField
+                select
+                fullWidth
+                size="small"
+                value={filters.status}
+                onChange={handleFilterStatus}
+                sx={{
+                    '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                        bgcolor: 'background.neutral',
+                    },
+                }}
+            >
+                <MenuItem value="all">All Status</MenuItem>
+                {STATUSES.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                    </MenuItem>
+                ))}
+            </TextField>
         </Stack>
     );
 
     const renderDateRange = (
         <Stack spacing={1.5}>
-            <Typography variant="subtitle2">Assignment Date</Typography>
+            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Assignment Date
+            </Typography>
             <Stack spacing={2}>
                 <DatePicker
                     label="Start Date"
+                    format="DD-MM-YYYY"
                     value={filters.startDate ? dayjs(filters.startDate) : null}
                     onChange={handleFilterStartDate}
-                    slotProps={{ textField: { fullWidth: true } }}
+                    slotProps={{
+                        textField: {
+                            fullWidth: true,
+                            size: 'small',
+                            sx: {
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 1.5,
+                                    bgcolor: 'background.neutral',
+                                },
+                            },
+                        }
+                    }}
                 />
                 <DatePicker
                     label="End Date"
+                    format="DD-MM-YYYY"
                     value={filters.endDate ? dayjs(filters.endDate) : null}
                     onChange={handleFilterEndDate}
-                    slotProps={{ textField: { fullWidth: true } }}
+                    slotProps={{
+                        textField: {
+                            fullWidth: true,
+                            size: 'small',
+                            sx: {
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 1.5,
+                                    bgcolor: 'background.neutral',
+                                },
+                            },
+                        }
+                    }}
                 />
             </Stack>
         </Stack>
@@ -165,38 +252,59 @@ export function AssetAssignmentsTableFiltersDrawer({
             anchor="right"
             open={open}
             onClose={onClose}
-            PaperProps={{
-                sx: {
-                    width: 280,
-                    border: 'none',
-                    overflow: 'hidden',
+            slotProps={{
+                paper: {
+                    sx: {
+                        width: 320,
+                        boxShadow: (theme: Theme) => (theme.customShadows as any).z24,
+                    },
                 },
+            }}
+            sx={{
+                zIndex: (theme) => theme.zIndex.drawer + 100,
             }}
         >
             {renderHead}
 
-            <Divider />
-
             <Scrollbar>
-                <Stack spacing={3} sx={{ p: 2.5 }}>
+                <Stack spacing={3} sx={{ p: 3, pt: 2.5 }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        {renderEmployee}
+                        {isHR && renderEmployee}
                         {renderStatus}
                         {renderDateRange}
                     </LocalizationProvider>
                 </Stack>
             </Scrollbar>
 
-            <Box sx={{ p: 2.5 }}>
+            <Box
+                sx={{
+                    p: 2.5,
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.neutral',
+                }}
+            >
                 <Button
                     fullWidth
                     size="large"
-                    type="submit"
                     color="inherit"
                     variant="outlined"
-                    disabled={!canReset}
-                    onClick={onResetFilters}
                     startIcon={<Iconify icon="solar:restart-bold" />}
+                    onClick={onResetFilters}
+                    disabled={!canReset}
+                    sx={{
+                        borderRadius: 1.5,
+                        borderColor: 'divider',
+                        fontWeight: 600,
+                        '&:hover': {
+                            borderColor: 'error.main',
+                            color: 'error.main',
+                            bgcolor: 'error.lighter',
+                        },
+                        '&.Mui-disabled': {
+                            borderColor: 'divider',
+                        },
+                    }}
                 >
                     Clear All Filters
                 </Button>

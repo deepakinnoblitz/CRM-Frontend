@@ -12,18 +12,22 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
+import TextField from '@mui/material/TextField';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import FormControl from '@mui/material/FormControl';
+import Autocomplete from '@mui/material/Autocomplete';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+
+import { fDate, formatPatterns } from 'src/utils/format-time';
 
 import { runReport } from 'src/api/reports';
 import { getDoctypeList } from 'src/api/leads';
@@ -33,19 +37,36 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { AttendanceDetailsDialog } from '../attendance-details-dialog';
 
-// ----------------------------------------------------------------------
 
 export function AttendanceReportView() {
+    const { user } = useAuth();
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+
+    const [isHR, setIsHR] = useState(false);
 
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [employee, setEmployee] = useState('all');
     const [status, setStatus] = useState('all');
+    const [sortBy, setSortBy] = useState('date_asc');
+
+    useEffect(() => {
+        if (user && user.roles) {
+            const hrRoles = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
+            const hasHRRole = user.roles.some((role: string) => hrRoles.includes(role));
+            setIsHR(hasHRRole);
+            if (!hasHRRole && user.employee) {
+                setEmployee(user.employee);
+            }
+        }
+    }, [user]);
+
 
     // Options
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
@@ -95,6 +116,10 @@ export function AttendanceReportView() {
     };
 
     const fetchReport = useCallback(async () => {
+        if (!fromDate || !toDate) {
+            setReportData([]);
+            return;
+        }
         setLoading(true);
         try {
             const filters: any = {};
@@ -104,14 +129,41 @@ export function AttendanceReportView() {
             if (status !== 'all') filters.status = status;
 
             const result = await runReport('Attendance Report', filters);
-            setReportData(result.result || []);
+            let finalData = result.result || [];
+
+            // Sort Data
+            finalData = [...finalData].sort((a, b) => {
+                const dateA = a.attendance_date;
+                const dateB = b.attendance_date;
+                const nameA = (a.employee_name || '').toLowerCase();
+                const nameB = (b.employee_name || '').toLowerCase();
+
+                switch (sortBy) {
+                    case 'date_asc':
+                        if (dateA !== dateB) return dateA.localeCompare(dateB);
+                        return nameA.localeCompare(nameB);
+                    case 'date_desc':
+                        if (dateB !== dateA) return dateB.localeCompare(dateA);
+                        return nameA.localeCompare(nameB);
+                    case 'name_asc':
+                        if (nameA !== nameB) return nameA.localeCompare(nameB);
+                        return dateB.localeCompare(dateA);
+                    case 'name_desc':
+                        if (nameA !== nameB) return nameB.localeCompare(nameA);
+                        return dateB.localeCompare(dateA);
+                    default:
+                        return 0;
+                }
+            });
+
+            setReportData(finalData);
             setPage(0);
         } catch (error) {
             console.error('Failed to fetch attendance report:', error);
         } finally {
             setLoading(false);
         }
-    }, [fromDate, toDate, employee, status]);
+    }, [fromDate, toDate, employee, status, sortBy]);
 
     useEffect(() => {
         fetchReport();
@@ -120,16 +172,23 @@ export function AttendanceReportView() {
     const handleReset = () => {
         setFromDate(null);
         setToDate(null);
-        setEmployee('all');
+        if (isHR) {
+            setEmployee('all');
+        } else if (user?.employee) {
+            setEmployee(user.employee);
+        }
         setStatus('all');
+        setSortBy('date_asc');
     };
+
 
     useEffect(() => {
         getDoctypeList('Employee', ['name', 'employee_name']).then(setEmployeeOptions);
     }, []);
 
     const handleExport = () => {
-        const worksheet = XLSX.utils.json_to_sheet(reportData);
+        const exportData = reportData.map(({ docstatus, ...rest }) => rest);
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
         XLSX.writeFile(workbook, "Attendance_Report.xlsx");
@@ -184,11 +243,12 @@ export function AttendanceReportView() {
 
                 <Card
                     sx={{
-                        p: 2.5,
+                        p: 1.5,
                         display: 'flex',
-                        gap: 2,
-                        flexWrap: 'wrap',
+                        gap: 1.5,
+                        flexWrap: 'nowrap',
                         alignItems: 'center',
+                        overflowX: 'auto',
                         bgcolor: 'background.neutral',
                         border: (t) => `1px solid ${t.palette.divider}`,
                     }}
@@ -196,46 +256,82 @@ export function AttendanceReportView() {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="From Date"
+                            format="DD/MM/YYYY"
                             value={fromDate}
                             onChange={(newValue) => setFromDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{ textField: { size: 'small', sx: { width: 180 } } }}
                         />
                         <DatePicker
                             label="To Date"
+                            format="DD/MM/YYYY"
                             value={toDate}
                             onChange={(newValue) => setToDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{ textField: { size: 'small', sx: { width: 180 } } }}
                         />
                     </LocalizationProvider>
 
-                    <FormControl size="small" sx={{ minWidth: 160 }}>
-                        <Select
-                            value={employee}
-                            onChange={(e) => setEmployee(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">All Employees</MenuItem>
-                            {employeeOptions.map((opt) => (
-                                <MenuItem key={opt.name} value={opt.name}>
-                                    {opt.employee_name}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                    <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 200 }}
+                        options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
+                        getOptionLabel={(option) => option.name === 'all' ? option.employee_name : `${option.employee_name} (${option.name})`}
+                        value={employee === 'all' ? { name: 'all', employee_name: 'All Employees' } : (employeeOptions.find((opt) => opt.name === employee) || null)}
+                        onChange={(event, newValue) => {
+                            setEmployee(newValue?.name || 'all');
+                        }}
+                        disabled={!isHR}
+                        renderOption={(props, option) => (
+                            <Box component="li" {...props} sx={{ fontSize: '0.85rem' }}>
+                                {option.name === 'all' ? (
+                                    option.employee_name
+                                ) : (
+                                    <Stack spacing={0.5}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                            {option.employee_name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                )}
+                            </Box>
+                        )}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Employee"
+                                placeholder="Select Employee"
+                            />
+                        )}
+                    />
 
-                    <FormControl size="small" sx={{ minWidth: 160 }}>
+
+
+                    <FormControl size="small" sx={{ minWidth: 140 }}>
                         <Select
                             value={status}
                             onChange={(e) => setStatus(e.target.value)}
                             displayEmpty
                         >
-                            <MenuItem value="all">All Statuses</MenuItem>
+                            <MenuItem value="all">All Status</MenuItem>
                             <MenuItem value="Present">Present</MenuItem>
                             <MenuItem value="Absent">Absent</MenuItem>
                             <MenuItem value="On Leave">On Leave</MenuItem>
                             <MenuItem value="Half Day">Half Day</MenuItem>
                             <MenuItem value="Holiday">Holiday</MenuItem>
                             <MenuItem value="Missing">Missing</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                        >
+                            <MenuItem value="date_asc">Date ↓ (Asc)</MenuItem>
+                            <MenuItem value="date_desc">Date ↑ (Desc)</MenuItem>
+                            <MenuItem value="name_asc">Name: A to Z</MenuItem>
+                            <MenuItem value="name_desc">Name: Z to A</MenuItem>
                         </Select>
                     </FormControl>
 
@@ -257,16 +353,16 @@ export function AttendanceReportView() {
                         gridTemplateColumns: {
                             xs: 'repeat(1, 1fr)',
                             sm: 'repeat(2, 1fr)',
-                            md: 'repeat(5, 1fr)', // 5 columns for 5 cards
+                            md: 'repeat(6, 1fr)', // 6 columns for 6 cards
                         },
                     }}
                 >
+                    <SummaryCard item={{ label: 'Total Entries', value: reportData.length, indicator: 'blue' }} />
                     <SummaryCard item={{ label: 'Present', value: reportData.filter(d => d.status === 'Present').length, indicator: 'green' }} />
                     <SummaryCard item={{ label: 'Absent', value: reportData.filter(d => d.status === 'Absent').length, indicator: 'red' }} />
                     <SummaryCard item={{ label: 'Half Day', value: reportData.filter(d => d.status === 'Half Day').length, indicator: 'orange' }} />
-                    <SummaryCard item={{ label: 'Holiday', value: reportData.filter(d => d.status === 'Holiday').length, indicator: 'blue' }} />
                     <SummaryCard item={{ label: 'Missing', value: reportData.filter(d => d.status === 'Missing').length, indicator: 'orange' }} />
-                    <SummaryCard item={{ label: 'Total Entries', value: reportData.length, indicator: 'blue' }} />
+                    <SummaryCard item={{ label: 'Holiday', value: reportData.filter(d => d.status === 'Holiday').length, indicator: 'blue' }} />
                 </Box>
 
                 <Card>
@@ -293,15 +389,21 @@ export function AttendanceReportView() {
                                 </TableHead>
                                 <TableBody>
                                     {reportData
-                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                        .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
                                         .map((row, index) => {
                                             const isSelected = selected.indexOf(row.name) !== -1;
                                             return (
-                                                <TableRow key={row.name} hover role="checkbox" aria-checked={isSelected} selected={isSelected}>
+                                                <TableRow
+                                                    key={`${row.employee}-${row.attendance_date}-${index}`}
+                                                    hover
+                                                    role="checkbox"
+                                                    aria-checked={isSelected}
+                                                    selected={isSelected}
+                                                >
                                                     <TableCell padding="checkbox">
                                                         <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                     </TableCell>
-                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.attendance_date}</TableCell>
+                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.attendance_date, 'DD/MM/YYYY')}</TableCell>
                                                     <TableCell>
                                                         <Typography variant="subtitle2">{row.employee_name}</Typography>
                                                         <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
@@ -315,9 +417,11 @@ export function AttendanceReportView() {
                                                     <TableCell>{row.out_time || '---'}</TableCell>
                                                     <TableCell sx={{ fontWeight: 'bold' }}>{row.working_hours_display || '---'}</TableCell>
                                                     <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
-                                                        <IconButton onClick={() => handleViewDetails(row.name)} sx={{ color: 'info.main' }}>
-                                                            <Iconify icon={"solar:eye-bold" as any} />
-                                                        </IconButton>
+                                                        {row.status !== 'Holiday' && (
+                                                            <IconButton onClick={() => handleViewDetails(row.name)} sx={{ color: 'info.main' }}>
+                                                                <Iconify icon={"solar:eye-bold" as any} />
+                                                            </IconButton>
+                                                        )}
                                                     </TableCell>
                                                 </TableRow>
                                             );
@@ -326,10 +430,19 @@ export function AttendanceReportView() {
                                     {reportData.length === 0 && !loading && (
                                         <TableRow>
                                             <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                                                <Stack spacing={1} alignItems="center">
-                                                    <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
-                                                </Stack>
+                                                {!fromDate || !toDate ? (
+                                                    <Stack spacing={1} alignItems="center">
+                                                        <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                        <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                            Please Select Filters
+                                                        </Typography>
+                                                    </Stack>
+                                                ) : (
+                                                    <Stack spacing={1} alignItems="center">
+                                                        <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                        <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
+                                                    </Stack>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     )}
@@ -378,7 +491,7 @@ function SummaryCard({ item }: { item: any }) {
 
     const getIcon = (label: string) => {
         const t = label.toLowerCase();
-        if (t.includes('present')) return 'solar:calendar-check-bold-duotone';
+        if (t.includes('present')) return 'solar:check-circle-bold-duotone';
         if (t.includes('absent')) return 'solar:calendar-date-bold-duotone';
         if (t.includes('half day')) return 'solar:clock-circle-bold-duotone';
         if (t.includes('missing')) return 'solar:danger-circle-bold-duotone';
@@ -392,7 +505,7 @@ function SummaryCard({ item }: { item: any }) {
     return (
         <Card
             sx={{
-                p: 3,
+                p: 1.5,
                 boxShadow: 'none',
                 position: 'relative',
                 overflow: 'hidden',
@@ -405,11 +518,11 @@ function SummaryCard({ item }: { item: any }) {
                 },
             }}
         >
-            <Stack direction="row" alignItems="center" spacing={2.5}>
+            <Stack direction="row" alignItems="center" spacing={1}>
                 <Box
                     sx={{
-                        width: 48,
-                        height: 48,
+                        width: 30,
+                        height: 30,
                         flexShrink: 0,
                         display: 'flex',
                         borderRadius: 1.5,
@@ -419,11 +532,11 @@ function SummaryCard({ item }: { item: any }) {
                         bgcolor: alpha(color, 0.1),
                     }}
                 >
-                    <Iconify icon={getIcon(item.label) as any} width={28} />
+                    <Iconify icon={getIcon(item.label) as any} width={18} />
                 </Box>
 
-                <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, mb: 0.5 }}>
+                <Box sx={{ flexGrow: 1, pl: 1, }}>
+                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, mb: 0.2 }}>
                         {item.label}
                     </Typography>
                     <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800 }}>

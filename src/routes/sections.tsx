@@ -76,7 +76,9 @@ const JobOpeningsPage = lazy(() => import('src/pages/job-openings'));
 const JobApplicantsPage = lazy(() => import('src/pages/job-applicants'));
 const InterviewPage = lazy(() => import('src/pages/interviews'));
 export const ProfilePage = lazy(() => import('src/pages/profile'));
+export const MyProfilePage = lazy(() => import('src/pages/my-profile'));
 export const AccessDeniedPage = lazy(() => import('src/pages/access-denied'));
+
 export const PurchaseListPage = lazy(() => import('src/pages/purchase/list'));
 export const PurchaseNewPage = lazy(() => import('src/pages/purchase/new'));
 export const PurchaseEditPage = lazy(() => import('src/pages/purchase/edit'));
@@ -130,6 +132,8 @@ export const routesSection: RouteObject[] = [
       { path: 'users', element: <UsersPage /> },
       { path: 'user-permissions', element: <UserPermissionsPage /> },
       { path: 'profile', element: <ProfilePage /> },
+      { path: 'my-profile', element: <MyProfilePage /> },
+
       { path: 'contacts', element: <ContactPage /> },
       { path: 'accounts', element: <AccountsPage /> },
       { path: 'deals', element: <DealsPage /> },

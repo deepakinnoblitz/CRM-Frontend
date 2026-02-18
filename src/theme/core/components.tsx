@@ -153,6 +153,25 @@ const MuiRadio: Components<Theme>['MuiRadio'] = {
   },
 };
 
+const MuiAutocomplete: Components<Theme>['MuiAutocomplete'] = {
+  styleOverrides: {
+    paper: ({ theme }) => ({
+      boxShadow: theme.vars.customShadows.dropdown,
+      borderRadius: theme.shape.borderRadius * 1.5,
+      border: `1px solid ${varAlpha(theme.vars.palette.grey['500Channel'], 0.12)}`,
+    }),
+    listbox: ({ theme }) => ({
+      padding: theme.spacing(0.5, 0),
+    }),
+    option: ({ theme }) => ({
+      padding: theme.spacing(0.75, 1.5),
+      '&[aria-selected="true"]': {
+        backgroundColor: theme.vars.palette.action.selected,
+      },
+    }),
+  },
+};
+
 // ----------------------------------------------------------------------
 
 export const components = {
@@ -167,5 +186,6 @@ export const components = {
   MuiTableCell,
   MuiCardHeader,
   MuiOutlinedInput,
+  MuiAutocomplete,
   MuiFormControlLabel,
 };

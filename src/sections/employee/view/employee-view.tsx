@@ -9,6 +9,7 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
@@ -18,7 +19,6 @@ import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
-import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
@@ -27,6 +27,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useEmployees } from 'src/hooks/useEmployees';
@@ -46,7 +47,12 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { TableNoData } from '../../lead/table-no-data';
 import { EmployeeTableRow } from '../employee-table-row';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
+import { DepartmentCreateDialog } from '../department-create-dialog';
 import EmployeeTableFiltersDrawer from '../employee-table-filters-drawer';
+
+// ----------------------------------------------------------------------
+
+const filter = createFilterOptions<any>();
 import { LeadTableHead as EmployeeTableHead } from '../../lead/lead-table-head';
 import { EmployeeDetailsDialog } from '../../report/employee/employee-details-dialog';
 import { LeadTableToolbar as EmployeeTableToolbar } from '../../lead/lead-table-toolbar';
@@ -60,6 +66,10 @@ export function EmployeeView() {
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('creation');
     const [selected, setSelected] = useState<string[]>([]);
+
+    // Department Create Dialog State
+    const [openDepartmentCreate, setOpenDepartmentCreate] = useState(false);
+    const [departmentSearch, setDepartmentSearch] = useState('');
 
     const [openCreate, setOpenCreate] = useState(false);
     const [creating, setCreating] = useState(false);
@@ -608,6 +618,97 @@ export function EmployeeView() {
             );
         }
 
+        if (fieldname === 'department') {
+            return (
+                <Autocomplete
+                    fullWidth
+                    options={options}
+                    value={formData[fieldname] || ''}
+                    onChange={(event, newValue: any) => {
+                        if (newValue?.isNew || newValue === 'Create Department' || newValue?.name === 'Create Department') {
+                            setOpenDepartmentCreate(true);
+                            setDepartmentSearch(newValue?.inputValue || '');
+                        } else {
+                            const value = typeof newValue === 'object' && newValue?.name ? newValue.name : newValue;
+                            handleInputChange(fieldname, value || '');
+                        }
+                    }}
+                    filterOptions={(currentOptions, params) => {
+                        const filtered = filter(currentOptions, params);
+                        const { inputValue } = params;
+                        const hasCreateOption = filtered.some((option: any) =>
+                            (typeof option === 'string' ? option : option.name) === 'Create Department' || option.isNew
+                        );
+                        if (!hasCreateOption) {
+                            filtered.push({
+                                inputValue: inputValue || '',
+                                name: 'Create Department',
+                                isNew: true,
+                            });
+                        }
+                        return filtered;
+                    }}
+                    renderOption={(props, option) => (
+                        <Box component="li" {...props} sx={{
+                            typography: 'body2',
+                            ...(option.isNew && {
+                                color: 'primary.main',
+                                fontWeight: 600,
+                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                mt: 0.5,
+                                py: 3, minHeight: '56px',
+                                '&:hover': {
+                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                }
+                            })
+                        }}>
+                            {option.isNew ? (
+                                <Stack direction="row" alignItems="center" spacing={1.5}>
+                                    <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Create Department</Typography>
+                                </Stack>
+                            ) : (
+                                typeof option === 'string' ? option : option.name
+                            )}
+                        </Box>
+                    )}
+                    getOptionLabel={(option) => {
+                        // Handle both string options and objects with name property
+                        if (typeof option === 'string') return option;
+                        if (option?.name) return option.name;
+                        return '';
+                    }}
+                    isOptionEqualToValue={(option, value) => {
+                        // Handle comparison for both strings and objects
+                        const optionValue = typeof option === 'string' ? option : option?.name;
+                        return optionValue === value;
+                    }}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label={label}
+                            placeholder={`Select ${label}`}
+                            required={required}
+                            error={!!formErrors[fieldname]}
+                            helperText={formErrors[fieldname]}
+                            InputLabelProps={{ shrink: true }}
+                            sx={{
+                                '& .MuiFormLabel-asterisk': {
+                                    color: 'red',
+                                },
+                                ...extraProps.sx
+                            }}
+                        />
+                    )}
+                    freeSolo
+                    selectOnFocus
+                    clearOnBlur
+                    handleHomeEndKeys
+                />
+            );
+        }
+
         if (type === 'select' || type === 'link') {
             return (
                 <TextField {...commonProps} select SelectProps={{ native: true }}>
@@ -850,7 +951,7 @@ export function EmployeeView() {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <Box sx={{ p: 2 }}>
                             {/* Section 1: Personal Information */}
-                            <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>Personal Information</Typography>
+                            <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Personal Information</Typography>
                             <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
                                 {renderField('employee_id', 'Employee ID', 'text', [], {}, true)}
                                 {renderField('employee_name', 'Employee Name', 'text', [], {}, true)}
@@ -866,7 +967,7 @@ export function EmployeeView() {
                             </Box>
 
                             {/* Section 2: Employment Details */}
-                            <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>Employment Details</Typography>
+                            <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Employment Details</Typography>
                             <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
                                 {renderField('department', 'Department', 'link', fieldOptions['department'] || [])}
                                 {renderField('designation', 'Designation', 'text')}
@@ -877,7 +978,7 @@ export function EmployeeView() {
                             </Box>
 
                             {/* Section 3: Financial & Bank Details */}
-                            <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>Financial & Bank Details</Typography>
+                            <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Financial & Bank Details</Typography>
                             <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
                                 {renderField('bank_name', 'Bank Name')}
                                 {renderField('bank_account', 'Bank Account', 'autocomplete', fieldOptions['bank_account'] || [])}
@@ -887,7 +988,7 @@ export function EmployeeView() {
 
 
                             {/* Section 4: Salary & breakdown */}
-                            <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>Salary Details (Auto-calculated)</Typography>
+                            <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Salary Details (Auto-calculated)</Typography>
 
                             {/* CTC Field - Full Width */}
                             <Box sx={{ mb: 3 }}>
@@ -989,6 +1090,22 @@ export function EmployeeView() {
                 onResetFilters={handleResetFilters}
                 departmentOptions={fieldOptions['department'] || []}
                 designationOptions={fieldOptions['designation'] || []}
+            />
+
+            <DepartmentCreateDialog
+                open={openDepartmentCreate}
+                onClose={() => setOpenDepartmentCreate(false)}
+                onCreate={(newDepartment) => {
+                    // Optimistically add to options and set value
+                    setFieldOptions(prev => ({
+                        ...prev,
+                        department: [...(prev['department'] || []), { name: newDepartment }]
+                    }));
+                    // Update form data
+                    handleInputChange('department', newDepartment);
+
+                    setSnackbar({ open: true, message: 'Department created successfully', severity: 'success' });
+                }}
             />
         </DashboardContent>
     );

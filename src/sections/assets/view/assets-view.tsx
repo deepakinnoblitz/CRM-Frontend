@@ -3,11 +3,13 @@ import { useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
+import { alpha } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
@@ -17,20 +19,23 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
+import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
-import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useAssets } from 'src/hooks/useAssets';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { createAsset, updateAsset, deleteAsset, getAssetPermissions } from 'src/api/assets';
+import { createAsset, updateAsset, deleteAsset, getAssetPermissions, getAssetCategories, createAssetCategory } from 'src/api/assets';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -40,6 +45,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { TableNoData } from 'src/sections/lead/table-no-data';
 import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
 import { AssetTableRow } from 'src/sections/assets/assets-table-row';
+import { AssetImportDialog } from 'src/sections/assets/asset-import-dialog';
 import { LeadTableHead as AssetTableHead } from 'src/sections/lead/lead-table-head';
 import { AssetDetailsDialog } from 'src/sections/report/assets/assets-details-dialog';
 import { AssetsTableFiltersDrawer } from 'src/sections/assets/assets-table-filters-drawer';
@@ -76,6 +82,7 @@ export function AssetsView() {
     const [isEdit, setIsEdit] = useState(false);
     const [currentAsset, setCurrentAsset] = useState<any>(null);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
+    const [openImport, setOpenImport] = useState(false);
 
     // View state
     const [openView, setOpenView] = useState(false);
@@ -99,6 +106,16 @@ export function AssetsView() {
         message: '',
         severity: 'success',
     });
+
+    const [categories, setCategories] = useState<any[]>([]);
+    const [loadingCategories, setLoadingLoadingCategories] = useState(false);
+    const [openCreateCategory, setOpenCreateCategory] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [newCategoryDescription, setNewCategoryDescription] = useState('');
+    const [creatingCategory, setCreatingCategory] = useState(false);
+
+    // Initialize filter options
+    const filter = createFilterOptions<any>();
 
     // Load permissions
     useState(() => {
@@ -173,6 +190,19 @@ export function AssetsView() {
         setCurrentStatus('Available');
         setDescription('');
         setOpenCreate(true);
+        loadCategories();
+    };
+
+    const loadCategories = async () => {
+        setLoadingLoadingCategories(true);
+        try {
+            const categoryData = await getAssetCategories();
+            setCategories(categoryData);
+        } catch (error) {
+            console.error('Failed to load categories', error);
+        } finally {
+            setLoadingLoadingCategories(false);
+        }
     };
 
     const handleCloseCreate = () => {
@@ -199,6 +229,7 @@ export function AssetsView() {
         setDescription(row.description || '');
         setIsEdit(true);
         setOpenCreate(true);
+        loadCategories();
     }, []);
 
     const handleViewRow = useCallback((row: any) => {
@@ -251,6 +282,24 @@ export function AssetsView() {
         }
     };
 
+    const handleCreateCategory = async () => {
+        if (!newCategoryName.trim()) return;
+        setCreatingCategory(true);
+        try {
+            const created = await createAssetCategory(newCategoryName.trim(), newCategoryDescription.trim());
+            setCategory(created.name);
+            setSnackbar({ open: true, message: 'Category created successfully', severity: 'success' });
+            await loadCategories();
+            setOpenCreateCategory(false);
+            setNewCategoryName('');
+            setNewCategoryDescription('');
+        } catch (error: any) {
+            setSnackbar({ open: true, message: error.message || 'Failed to create category', severity: 'error' });
+        } finally {
+            setCreatingCategory(false);
+        }
+    };
+
     const handleChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);
     };
@@ -280,14 +329,23 @@ export function AssetsView() {
                 </Typography>
 
                 {permissions.write && (
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon="mingcute:add-line" />}
-                        onClick={handleOpenCreate}
-                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                    >
-                        New Asset
-                    </Button>
+                    <Stack direction="row" spacing={1}>
+                        <Button
+                            variant="outlined"
+                            startIcon={<Iconify icon="solar:import-bold-duotone" />}
+                            onClick={() => setOpenImport(true)}
+                        >
+                            Import
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon="mingcute:add-line" />}
+                            onClick={handleOpenCreate}
+                            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                        >
+                            New Asset
+                        </Button>
+                    </Stack>
                 )}
             </Box>
 
@@ -404,6 +462,83 @@ export function AssetsView() {
                 onResetFilters={handleResetFilters}
             />
 
+            {/* Create Category Dialog */}
+            <Dialog
+                open={openCreateCategory}
+                onClose={() => setOpenCreateCategory(false)}
+                fullWidth
+                maxWidth="xs"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (theme) => theme.customShadows?.z24 || theme.shadows[24],
+                    }
+                }}
+            >
+                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                        <Iconify icon={"solar:folder-plus-bold" as any} width={24} sx={{ color: 'primary.main' }} />
+                        <Typography variant="h6">New Category</Typography>
+                    </Stack>
+                    <IconButton
+                        aria-label="close"
+                        onClick={() => setOpenCreateCategory(false)}
+                        sx={{ color: (theme) => theme.palette.grey[500] }}
+                    >
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+
+                <DialogContent dividers>
+                    <Box sx={{ py: 1.5 }}>
+                        <TextField
+                            fullWidth
+                            label="Category Name"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            placeholder="e.g., Laptops, Furniture"
+                            autoFocus
+                            sx={{
+                                mb: 3,
+                                '& .MuiOutlinedInput-root': {
+                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                    borderRadius: 1.5,
+                                }
+                            }}
+                        />
+
+                        <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            label="Description"
+                            value={newCategoryDescription}
+                            onChange={(e) => setNewCategoryDescription(e.target.value)}
+                            placeholder="Enter category description..."
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                    borderRadius: 1.5,
+                                }
+                            }}
+                        />
+                    </Box>
+                </DialogContent>
+
+                <DialogActions sx={{ p: 2.5 }}>
+                    <LoadingButton
+                        variant="contained"
+                        color="primary"
+                        onClick={handleCreateCategory}
+                        loading={creatingCategory}
+                        disabled={!newCategoryName.trim()}
+                        sx={{ borderRadius: 1, minWidth: 100 }}
+                    >
+                        Create
+                    </LoadingButton>
+                </DialogActions>
+            </Dialog>
+
             {/* Create/Edit Dialog */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
                 <form onSubmit={handleCreate}>
@@ -427,19 +562,86 @@ export function AssetsView() {
 
                             <TextField
                                 fullWidth
-                                label="Asset Tag"
+                                label="Asset Tag / Serial Number"
                                 value={assetTag}
                                 onChange={(e) => setAssetTag(e.target.value)}
                                 required
-                                placeholder="Enter asset tag/ID"
+                                placeholder="Enter Tag / Serial Number"
                             />
 
-                            <TextField
+                            <Autocomplete
                                 fullWidth
-                                label="Category"
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                placeholder="e.g., Laptop, Furniture"
+                                options={categories}
+                                value={categories.find(c => c.name === category) || (category ? { name: category, category_name: category } : null)}
+                                onChange={async (event, newValue) => {
+                                    if (newValue?.isCreateNew) {
+                                        setOpenCreateCategory(true);
+                                    } else {
+                                        setCategory(newValue?.name || '');
+                                    }
+                                }}
+                                filterOptions={(options, params) => {
+                                    const filtered = filter(options, params);
+
+                                    // Add static "Add Category" button at the bottom
+                                    filtered.push({
+                                        category_name: 'Create new Asset Category',
+                                        name: 'create_new_category',
+                                        isCreateNew: true
+                                    });
+
+                                    return filtered;
+                                }}
+                                selectOnFocus
+                                clearOnBlur
+                                handleHomeEndKeys
+                                getOptionLabel={(option) => {
+                                    // Value selected with enter, right from the input
+                                    if (typeof option === 'string') {
+                                        return option;
+                                    }
+                                    // Add "xxx" option created dynamically
+                                    if (option.inputValue) {
+                                        return option.inputValue;
+                                    }
+                                    // Regular option
+                                    return option.category_name || '';
+                                }}
+                                renderOption={(props, option) => {
+                                    const { key, ...optionProps } = props as any;
+                                    return (
+                                        <li key={key} {...optionProps}>
+                                            <Box sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                color: option.isCreateNew ? 'primary.main' : 'inherit',
+                                                fontWeight: option.isCreateNew ? 600 : 400,
+                                                py: 0.5,
+                                                width: '100%'
+                                            }}>
+                                                {option.isCreateNew && <Iconify icon="mingcute:add-line" sx={{ mr: 1, width: 16 }} />}
+                                                {option.category_name}
+                                            </Box>
+                                        </li>
+                                    );
+                                }}
+                                loading={loadingCategories}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Category"
+                                        placeholder="Search or create category..."
+                                        InputProps={{
+                                            ...params.InputProps,
+                                            endAdornment: (
+                                                <>
+                                                    {loadingCategories ? <CircularProgress color="inherit" size={20} /> : null}
+                                                    {params.InputProps.endAdornment}
+                                                </>
+                                            ),
+                                        }}
+                                    />
+                                )}
                             />
 
                             <FormControl fullWidth required>
@@ -506,6 +708,12 @@ export function AssetsView() {
                 open={openView}
                 onClose={() => setOpenView(false)}
                 asset={viewAsset}
+            />
+
+            <AssetImportDialog
+                open={openImport}
+                onClose={() => setOpenImport(false)}
+                onRefresh={refetch}
             />
 
             {/* Snackbar */}
