@@ -27,7 +27,11 @@ export const fetchLeaveAllocations = (params: any) => {
     if (params.filters) {
         Object.entries(params.filters).forEach(([key, value]) => {
             if (value && value !== 'all') {
-                filters.push(["Leave Allocation", key, "=", value]);
+                if (Array.isArray(value)) {
+                    filters.push(["Leave Allocation", key, value[0], value[1]]);
+                } else {
+                    filters.push(["Leave Allocation", key, "=", value]);
+                }
             }
         });
     }

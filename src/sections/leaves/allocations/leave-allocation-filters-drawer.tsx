@@ -228,49 +228,53 @@ export function LeaveAllocationFiltersDrawer({
     );
 
     const renderDateRange = (
-        <Stack spacing={1.5}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+        <Stack spacing={2.5}>
+            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 700 }}>
                 Date Range
             </Typography>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                    label="From Date"
-                    value={filters.startDate ? dayjs(filters.startDate) : null}
-                    onChange={(newValue) => {
-                        onFilters({ startDate: newValue ? dayjs(newValue).format('YYYY-MM-DD') : null });
-                    }}
-                    slotProps={{
-                        textField: {
-                            fullWidth: true,
-                            size: 'small',
-                            sx: {
-                                '& .MuiOutlinedInput-root': {
-                                    borderRadius: 1.5,
-                                    bgcolor: 'background.neutral',
+                <Stack spacing={2}>
+                    <DatePicker
+                        label="From Date"
+                        value={filters.startDate ? dayjs(filters.startDate) : null}
+                        onChange={(newValue) => {
+                            onFilters({ startDate: newValue ? dayjs(newValue).format('YYYY-MM-DD') : null });
+                        }}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                size: 'medium',
+                                InputLabelProps: { shrink: true },
+                                sx: {
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.paper',
+                                    },
                                 },
                             },
-                        },
-                    }}
-                />
-                <DatePicker
-                    label="To Date"
-                    value={filters.endDate ? dayjs(filters.endDate) : null}
-                    onChange={(newValue) => {
-                        onFilters({ endDate: newValue ? dayjs(newValue).format('YYYY-MM-DD') : null });
-                    }}
-                    slotProps={{
-                        textField: {
-                            fullWidth: true,
-                            size: 'small',
-                            sx: {
-                                '& .MuiOutlinedInput-root': {
-                                    borderRadius: 1.5,
-                                    bgcolor: 'background.neutral',
+                        }}
+                    />
+                    <DatePicker
+                        label="To Date"
+                        value={filters.endDate ? dayjs(filters.endDate) : null}
+                        onChange={(newValue) => {
+                            onFilters({ endDate: newValue ? dayjs(newValue).format('YYYY-MM-DD') : null });
+                        }}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                size: 'medium',
+                                InputLabelProps: { shrink: true },
+                                sx: {
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.paper',
+                                    },
                                 },
                             },
-                        },
-                    }}
-                />
+                        }}
+                    />
+                </Stack>
             </LocalizationProvider>
         </Stack>
     );
