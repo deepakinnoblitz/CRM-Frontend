@@ -117,25 +117,52 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
     // Get status info
     const getStatusInfo = (record: AttendanceRecord) => {
         const isToday = record.date === todayStr;
-        const isHoliday = !!record.holiday_info;
-        const isNonWorking = isHoliday && record.holiday_is_working_day === 0;
+        const status = record.status;
+        const holiday = record.holiday_info;
+        const isNonWorking = holiday && record.holiday_is_working_day === 0;
 
-        if (isNonWorking) return {
-            label: record.holiday_info || 'Weekend',
-            color: theme.palette.info.main,
-            dotColor: theme.palette.info.main,
-            bgcolor: alpha(theme.palette.info.main, 0.12)
+        // Colors mapping
+        const colors: Record<string, string> = {
+            'Present': theme.palette.success.main,
+            'In Office': theme.palette.info.main,
+            'Missing': theme.palette.warning.main,
+            'Missing Log': theme.palette.warning.main,
+            'Half Day': theme.palette.warning.main,
+            'On Leave': theme.palette.success.main,
+            'Holiday': theme.palette.error.main,
+            'Absent': theme.palette.error.main,
+            'Updating...': theme.palette.warning.main,
+            'Not Marked': theme.palette.error.main,
+            'Weekly Off': theme.palette.error.main,
         };
 
-        if (isToday) {
-            if (record.check_in && record.check_out) return { label: 'Present', color: theme.palette.success.main, dotColor: theme.palette.success.main, bgcolor: alpha(theme.palette.success.main, 0.12) };
-            if (record.check_in) return { label: 'In Office', color: theme.palette.info.main, dotColor: theme.palette.info.main, bgcolor: alpha(theme.palette.info.main, 0.12) };
-            return { label: 'Updating...', color: theme.palette.warning.main, dotColor: theme.palette.warning.main, bgcolor: alpha(theme.palette.warning.main, 0.12) };
+        let label = status;
+        if (status === 'Missing') label = 'Missing Log';
+        if (status === 'Not Marked') label = isToday ? 'Updating...' : 'Absent';
+
+        // Special case for today: if only check-in exists
+        if (isToday && record.check_in && !record.check_out) {
+            label = 'In Office';
         }
 
-        if (record.check_in && record.check_out) return { label: 'Present', color: theme.palette.success.main, dotColor: theme.palette.success.main, bgcolor: alpha(theme.palette.success.main, 0.12) };
-        if (record.check_in || record.check_out) return { label: 'Missing Log', color: theme.palette.warning.main, dotColor: theme.palette.warning.main, bgcolor: alpha(theme.palette.warning.main, 0.12) };
-        return { label: 'Absent', color: theme.palette.error.main, dotColor: theme.palette.error.main, bgcolor: alpha(theme.palette.error.main, 0.12) };
+        const color = colors[label] || (isNonWorking ? theme.palette.error.main : theme.palette.grey[500]);
+
+        // For non-working days (holidays/weekends) without logs, show specific holiday info in the small pill
+        if (isNonWorking && !record.check_in && !record.check_out && (status === 'Holiday' || status === 'Weekly Off' || status === 'Not Marked')) {
+            return {
+                label: holiday || label,
+                color,
+                dotColor: color,
+                bgcolor: alpha(color, 0.12)
+            };
+        }
+
+        return {
+            label,
+            color,
+            dotColor: color,
+            bgcolor: alpha(color, 0.12)
+        };
     };
 
     return (
@@ -154,59 +181,43 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
             />
 
             <Box sx={{ px: 3, pb: 4 }}>
-                {/* Analytics Summary */}
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 4 }}>
-                    <GlassSummaryCard sx={{ flex: 1 }}>
-                        <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', display: 'flex' }}>
-                            <Iconify icon={"solar:clock-circle-bold-duotone" as any} width={28} />
-                        </Box>
-                        <Box>
-                            <Typography variant="h4" sx={{ lineHeight: 1, fontWeight: 900 }}>{totalHours.toFixed(1)}h</Typography>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Weekly Total</Typography>
-                        </Box>
-                    </GlassSummaryCard>
-                    <GlassSummaryCard sx={{ flex: 1 }}>
-                        <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.info.main, 0.1), color: 'info.main', display: 'flex' }}>
-                            <Iconify icon={"solar:chart-2-bold-duotone" as any} width={28} />
-                        </Box>
-                        <Box>
-                            <Typography variant="h4" sx={{ lineHeight: 1, fontWeight: 900 }}>{avgHours.toFixed(1)}h</Typography>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Daily Avg</Typography>
-                        </Box>
-                    </GlassSummaryCard>
-                    <GlassSummaryCard sx={{ flex: 1 }}>
-                        <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.success.main, 0.1), color: 'success.main', display: 'flex' }}>
-                            <Iconify icon={"solar:user-check-bold-duotone" as any} width={28} />
-                        </Box>
-                        <Box>
-                            <Typography variant="h4" sx={{ lineHeight: 1, fontWeight: 900 }}>{daysPresent}/{data.length}</Typography>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Days Present</Typography>
-                        </Box>
-                    </GlassSummaryCard>
-                </Stack>
 
-                {/* 4-3 Grid Layout (Desktop) / Vertical Stack (Mobile) */}
+                {/* 3-4 Grid Layout (Desktop) / Vertical Stack (Mobile) */}
                 <Box
                     sx={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(12, 1fr)',
-                        rowGap: 4,
-                        columnGap: 2.5,
+                        rowGap: 5,
+                        columnGap: 4,
                         width: '100%',
-                        py: 2
+                        py: 3
                     }}
                 >
                     {data.map((record, index) => {
                         const status = getStatusInfo(record);
                         const isToday = record.date === todayStr;
+                        const isNonWorking = record.holiday_info && record.holiday_is_working_day === 0;
 
-                        // Grid Logic: 4 items in row 1 (span 3), 3 items in row 2 (span 4)
-                        const gridSpan = index < 4 ? 3 : 4;
+                        // Grid Logic: 3 items in row 1 (span 4), 4 items in row 2 (span 3)
+                        const gridSpan = index < 3 ? 4 : 3;
 
                         const progress = Math.min((record.working_hours / 9) * 100, 100);
-                        const hoursLabel = record.working_hours > 0
-                            ? `${record.working_hours.toFixed(1)}h`
-                            : (record.holiday_info ? 'HOLIDAY' : 'RELAX');
+
+                        // Improved hours label logic (Center text)
+                        let centerLabel = `${record.working_hours.toFixed(1)}h`;
+                        if (record.working_hours === 0) {
+                            if (isNonWorking && (record.status === 'Holiday' || record.status === 'Weekly Off' || record.status === 'Not Marked')) {
+                                centerLabel = record.holiday_info ? record.holiday_info.toUpperCase() : 'HOLIDAY';
+                            } else if (status.label === 'In Office') {
+                                centerLabel = 'IN OFFICE';
+                            } else if (status.label === 'Missing Log') {
+                                centerLabel = 'MISSING LOG';
+                            } else if (isToday && status.label === 'Updating...') {
+                                centerLabel = '---';
+                            } else {
+                                centerLabel = status.label.toUpperCase();
+                            }
+                        }
 
                         return (
                             <Box
@@ -257,27 +268,34 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                     isToday={isToday}
                                     statusColor={status.dotColor}
                                     sx={{
-                                        p: 2.5,
+                                        p: 3,
                                         height: '100%',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         justifyContent: 'center',
-                                        minHeight: 110
+                                        minHeight: 120
                                     }}
                                 >
                                     <Box sx={{ width: '100%' }}>
                                         <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
-                                            <Typography variant="h6" sx={{ fontWeight: 800, color: record.working_hours > 9 ? 'primary.main' : 'text.primary' }}>
-                                                {hoursLabel}
-                                                {record.working_hours > 9 && (
-                                                    <Typography component="span" variant="caption" sx={{ ml: 0.5, color: 'success.main', fontWeight: 900, verticalAlign: 'middle' }}>
-                                                        +{(record.working_hours - 9).toFixed(1)}
-                                                    </Typography>
-                                                )}
+                                            <Typography
+                                                variant="h6"
+                                                sx={{
+                                                    fontWeight: 800,
+                                                    lineHeight: 1.2,
+                                                    fontSize: centerLabel.length > 20 ? '0.75rem' : (centerLabel.length > 12 ? '0.875rem' : '1.125rem'),
+                                                    color: record.working_hours >= 9 ? 'success.main' :
+                                                        (record.working_hours > 0 ? 'error.main' :
+                                                            (centerLabel.includes('HOLIDAY') || centerLabel.includes('SATURDAY') || centerLabel.includes('SUNDAY') ? 'error.main' : 'text.primary'))
+                                                }}
+                                            >
+                                                {centerLabel}
                                             </Typography>
-                                            <StatusPill bgcolor={status.bgcolor} color={status.dotColor} sx={{ px: 1, py: 0.35, fontSize: '0.65rem', fontWeight: 800 }}>
-                                                {status.label}
-                                            </StatusPill>
+                                            {status.label.toUpperCase() !== centerLabel && (
+                                                <StatusPill bgcolor={status.bgcolor} color={status.dotColor} sx={{ px: 1, py: 0.35, fontSize: '0.65rem', fontWeight: 800 }}>
+                                                    {status.label}
+                                                </StatusPill>
+                                            )}
                                         </Stack>
 
                                         {record.working_hours > 0 && (
