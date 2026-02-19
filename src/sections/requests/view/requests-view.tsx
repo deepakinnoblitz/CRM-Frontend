@@ -35,7 +35,7 @@ import { useRequests } from 'src/hooks/useRequests';
 import { getCurrentUserInfo } from 'src/api/auth';
 import { fetchEmployees } from 'src/api/employees';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { createRequest, updateRequest, deleteRequest, getRequestPermissions } from 'src/api/requests';
+import { createRequest, updateRequest, deleteRequest, getRequestPermissions, applyRequestWorkflowAction, updateRequestStatus, getRequest } from 'src/api/requests';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -56,7 +56,13 @@ import { RequestsTableFiltersDrawer } from '../requests-table-filters-drawer';
 // ----------------------------------------------------------------------
 
 export function RequestsView() {
+  const { user } = useAuth();
+  const isHR = user?.roles?.some((role: string) =>
+    ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
+  );
+
   const [page, setPage] = useState(0);
+
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [filterName, setFilterName] = useState('');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
@@ -315,7 +321,41 @@ export function RequestsView() {
     }
   };
 
+  const handleApplyAction = async (id: string, action: string) => {
+    try {
+      await applyRequestWorkflowAction(id, action);
+      setSnackbar({ open: true, message: `Request ${action}ed successfully`, severity: 'success' });
+      await refetch();
+    } catch (error: any) {
+      setSnackbar({ open: true, message: error.message || `Failed to ${action} request`, severity: 'error' });
+    }
+  };
+
+  const handleClarify = async (id: string, clarificationMessage: string) => {
+    try {
+      const request = await getRequest(id);
+      // Assuming Request doctype has hr_query fields similar to Leave Application
+      const fields = ['hr_query', 'hr_query_2', 'hr_query_3', 'hr_query_4', 'hr_query_5'];
+      const nextField = fields.find(f => !request[f]);
+
+      if (!nextField) {
+        throw new Error('Maximum clarification limit reached');
+      }
+
+      const updateData = { [nextField]: clarificationMessage };
+      await updateRequestStatus(id, 'Clarification Requested', updateData);
+
+      setSnackbar({ open: true, message: 'Clarification requested successfully', severity: 'success' });
+      await refetch();
+    } catch (error: any) {
+      setSnackbar({ open: true, message: error.message || 'Failed to request clarification', severity: 'error' });
+      throw error;
+    }
+  };
+
   const handleCreate = async () => {
+
+
 
     const requestData = {
       employee_id: employeeId.trim(),
@@ -445,7 +485,12 @@ export function RequestsView() {
                     onDelete={() => handleDeleteRow(row.name)}
                     canEdit={permissions.write}
                     canDelete={permissions.delete}
+                    onApplyAction={(action) => handleApplyAction(row.name, action)}
+                    onClarify={(clarificationMessage) => handleClarify(row.name, clarificationMessage)}
+                    isHR={isHR}
                   />
+
+
                 ))}
 
                 {notFound && <TableNoData searchQuery={filterName} />}
