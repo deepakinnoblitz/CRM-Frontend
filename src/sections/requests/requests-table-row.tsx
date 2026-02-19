@@ -1,14 +1,23 @@
+import { useState } from 'react';
+
 import Box from '@mui/material/Box';
+import Popover from '@mui/material/Popover';
 import { alpha } from '@mui/material/styles';
+import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
 
 import { fTimeDist } from 'src/utils/format-time';
 
+import { getRequestWorkflowActions, type WorkflowAction } from 'src/api/requests';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+
+import { ClarificationDialog } from '../report/requests/clarification-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -30,7 +39,11 @@ export type RequestTableRowProps = {
     canDelete: boolean;
     hideCheckbox?: boolean;
     index?: number;
+    onApplyAction: (action: string) => void;
+    onClarify: (message: string) => Promise<void>;
+    isHR?: boolean;
 };
+
 
 export function RequestTableRow({
     row,
@@ -43,8 +56,77 @@ export function RequestTableRow({
     canDelete,
     hideCheckbox = false,
     index,
+    onApplyAction,
+    onClarify,
+    isHR,
 }: RequestTableRowProps) {
+    const [openMenu, setOpenMenu] = useState<HTMLElement | null>(null);
+    const [actions, setActions] = useState<WorkflowAction[]>([]);
+    const [loadingActions, setLoadingActions] = useState(false);
+    const [openClarification, setOpenClarification] = useState(false);
+    const [submittingClarification, setSubmittingClarification] = useState(false);
+
+    const handleOpenMenu = async (event: React.MouseEvent<HTMLElement>) => {
+        setOpenMenu(event.currentTarget);
+        try {
+            setLoadingActions(true);
+            const availableActions = await getRequestWorkflowActions(row.workflow_state || 'Open');
+            setActions(availableActions);
+        } catch (error) {
+            console.error('Failed to fetch actions:', error);
+        } finally {
+            setLoadingActions(false);
+        }
+    };
+
+    const handleCloseMenu = () => {
+        setOpenMenu(null);
+    };
+
+    const handleAction = (action: string) => {
+        const lowerAction = action.toLowerCase();
+        if (lowerAction.includes('clarification') || lowerAction.includes('query') || lowerAction.includes('reply')) {
+            setOpenClarification(true);
+        } else {
+            onApplyAction(action);
+        }
+        handleCloseMenu();
+    };
+
+    const handleClarifyConfirm = async (message: string) => {
+        try {
+            setSubmittingClarification(true);
+            await onClarify(message);
+            setOpenClarification(false);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setSubmittingClarification(false);
+        }
+    };
+
+    const getActionColor = (action: string) => {
+        const lower = action.toLowerCase();
+        if (lower.includes('approve')) return 'success.main';
+        if (lower.includes('reject')) return 'error.main';
+        if (lower.includes('clarification') || lower.includes('query')) return 'warning.main';
+        if (lower.includes('reply')) return 'info.main';
+        return 'primary.main';
+    };
+
+    const getActionIcon = (action: string): any => {
+        const lower = action.toLowerCase();
+        if (lower.includes('approve')) return 'solar:check-circle-bold';
+        if (lower.includes('reject')) return 'mingcute:close-line';
+        if (lower.includes('clarification') || lower.includes('query')) return 'solar:question-square-bold';
+        if (lower.includes('reply')) return 'solar:chat-round-dots-bold';
+        return 'solar:pen-bold';
+    };
+
+    const showActions = isHR && (row.workflow_state === 'Pending' || row.workflow_state === 'Open' || row.workflow_state === 'Clarification Requested');
+
     const getStatusColor = (status: string) => {
+
         switch (status) {
             case 'Approved': return 'success';
             case 'Rejected': return 'error';
@@ -110,8 +192,55 @@ export function RequestTableRow({
                     <IconButton size="small" color="primary" onClick={onView}>
                         <Iconify icon="solar:eye-bold" />
                     </IconButton>
+
+                    {showActions && (
+                        <IconButton size="small" onClick={handleOpenMenu} sx={{ color: 'warning.main' }}>
+                            <Iconify icon="eva:more-vertical-fill" />
+                        </IconButton>
+                    )}
                 </Box>
             </TableCell>
+
+            <Popover
+                open={!!openMenu}
+                anchorEl={openMenu}
+                onClose={handleCloseMenu}
+                anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{
+                    sx: { width: 140, p: 1 },
+                }}
+            >
+                {loadingActions ? (
+                    <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}>
+                        <Iconify icon={"svg-spinners:18-dots-indicator" as any} />
+                    </Box>
+                ) : (
+                    <>
+                        {actions.map((action) => (
+                            <MenuItem key={action.action} onClick={() => handleAction(action.action)} sx={{ color: getActionColor(action.action) }}>
+                                <Iconify icon={getActionIcon(action.action)} sx={{ mr: 2 }} />
+                                {action.action}
+                            </MenuItem>
+                        ))}
+                        {actions.length === 0 && (
+                            <Typography variant="caption" sx={{ p: 1, color: 'text.disabled', textAlign: 'center', display: 'block' }}>
+                                No actions available
+                            </Typography>
+                        )}
+                    </>
+                )}
+            </Popover>
+
+            <ClarificationDialog
+                open={openClarification}
+                onClose={() => setOpenClarification(false)}
+                onConfirm={handleClarifyConfirm}
+                title="Ask Clarification"
+                label="Query"
+                loading={submittingClarification}
+            />
         </TableRow>
     );
+
 }
