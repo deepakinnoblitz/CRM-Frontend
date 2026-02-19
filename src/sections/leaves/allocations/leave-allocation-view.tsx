@@ -18,6 +18,7 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
@@ -95,6 +96,7 @@ export function LeaveAllocationView() {
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
     const [totalLeaves, setTotalLeaves] = useState('');
+    const [status, setStatus] = useState('Open');
 
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
     const [leaveTypeOptions, setLeaveTypeOptions] = useState<any[]>([]);
@@ -167,6 +169,7 @@ export function LeaveAllocationView() {
                 from_date: fromDate,
                 to_date: toDate,
                 total_leaves_allocated: Number(totalLeaves),
+                status,
             };
 
             if (isEdit && selectedAllocationName) {
@@ -192,6 +195,7 @@ export function LeaveAllocationView() {
         setFromDate(row.from_date);
         setToDate(row.to_date);
         setTotalLeaves(String(row.total_leaves_allocated));
+        setStatus(row.workflow_state || row.status || 'Open');
         setIsEdit(true);
         setOpenCreate(true);
     };
@@ -216,7 +220,7 @@ export function LeaveAllocationView() {
         setFromDate('');
         setToDate('');
         setTotalLeaves('');
-        setTotalLeaves('');
+        setStatus('Open');
         setFormErrors({});
         setIsEdit(false);
         setSelectedAllocationName(null);
@@ -367,49 +371,49 @@ export function LeaveAllocationView() {
                 </DialogTitle>
                 <DialogContent dividers>
                     <Box display="grid" gridTemplateColumns="1fr" gap={3} sx={{ mt: 1 }}>
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="Employee"
-                            value={employee}
-                            onChange={(e) => {
-                                setEmployee(e.target.value);
-                                if (formErrors.employee) setFormErrors(prev => ({ ...prev, employee: '' }));
+                            options={employeeOptions}
+                            getOptionLabel={(opt) => `${opt.employee_name} (${opt.name})`}
+                            value={employeeOptions.find((opt) => opt.name === employee) || null}
+                            onChange={(event, newValue) => {
+                                setEmployee(newValue ? newValue.name : '');
+                                if (formErrors.employee) setFormErrors((prev) => ({ ...prev, employee: '' }));
                             }}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            required
-                            error={!!formErrors.employee}
-                            helperText={formErrors.employee}
-                            sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
-                        >
-                            <option value="">Select Employee</option>
-                            {employeeOptions.map((opt) => (
-                                <option key={opt.name} value={opt.name}>{opt.employee_name} ({opt.name})</option>
-                            ))}
-                        </TextField>
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Employee"
+                                    required
+                                    error={!!formErrors.employee}
+                                    helperText={formErrors.employee}
+                                    InputLabelProps={{ shrink: true }}
+                                    sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
+                                />
+                            )}
+                        />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="Leave Type"
-                            value={leaveType}
-                            onChange={(e) => {
-                                setLeaveType(e.target.value);
-                                if (formErrors.leaveType) setFormErrors(prev => ({ ...prev, leaveType: '' }));
+                            options={leaveTypeOptions}
+                            getOptionLabel={(opt) => opt.name}
+                            value={leaveTypeOptions.find((opt) => opt.name === leaveType) || null}
+                            onChange={(event, newValue) => {
+                                setLeaveType(newValue ? newValue.name : '');
+                                if (formErrors.leaveType) setFormErrors((prev) => ({ ...prev, leaveType: '' }));
                             }}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            required
-                            error={!!formErrors.leaveType}
-                            helperText={formErrors.leaveType}
-                            sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
-                        >
-                            <option value="">Select Leave Type</option>
-                            {leaveTypeOptions.map((opt) => (
-                                <option key={opt.name} value={opt.name}>{opt.name}</option>
-                            ))}
-                        </TextField>
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Leave Type"
+                                    required
+                                    error={!!formErrors.leaveType}
+                                    helperText={formErrors.leaveType}
+                                    InputLabelProps={{ shrink: true }}
+                                    sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
+                                />
+                            )}
+                        />
 
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                             <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
@@ -466,6 +470,22 @@ export function LeaveAllocationView() {
                             helperText={formErrors.totalLeaves}
                             sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
                         />
+
+                        <TextField
+                            select
+                            fullWidth
+                            label="Status"
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            SelectProps={{ native: true }}
+                            InputLabelProps={{ shrink: true }}
+                            required
+                            sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
+                        >
+                            <option value="Approved">Approved</option>
+                            <option value="Draft">Draft</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </TextField>
                     </Box>
                 </DialogContent>
                 <DialogActions>

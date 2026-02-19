@@ -188,7 +188,7 @@ function SectionHeader({ title, icon }: { title: string; icon?: string }) {
                     <Iconify icon={icon as any} width={18} />
                 </Box>
             )}
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', fontSize: 12 }}>
                 {title}
             </Typography>
         </Box>

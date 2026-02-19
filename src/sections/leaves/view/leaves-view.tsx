@@ -31,8 +31,8 @@ import { useLeaveApplications } from 'src/hooks/useLeaveApplications';
 import { getDoctypeList } from 'src/api/leads';
 import { uploadFile } from 'src/api/data-import';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getHRPermissions } from 'src/api/hr-management';
-import { checkLeaveBalance, createLeaveApplication, deleteLeaveApplication, getEmployeeProbationInfo } from 'src/api/leaves';
+import { getHRPermissions, getHRDoc } from 'src/api/hr-management';
+import { applyLeaveWorkflowAction, checkLeaveBalance, createLeaveApplication, deleteLeaveApplication, getEmployeeProbationInfo, updateLeaveStatus } from 'src/api/leaves';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -343,6 +343,37 @@ export function LeavesView() {
         setDetailsId(null);
     };
 
+    const handleApplyAction = async (id: string, action: string) => {
+        try {
+            await applyLeaveWorkflowAction(id, action);
+            setSnackbar({ open: true, message: `Leave application ${action}ed successfully`, severity: 'success' });
+            await refetch();
+        } catch (error: any) {
+            setSnackbar({ open: true, message: error.message || `Failed to ${action} leave application`, severity: 'error' });
+        }
+    };
+
+    const handleClarify = async (id: string, message: string) => {
+        try {
+            const leave = await getHRDoc('Leave Application', id);
+            const fields = ['hr_query', 'hr_query_2', 'hr_query_3', 'hr_query_4', 'hr_query_5'];
+            const nextField = fields.find(f => !leave[f]);
+
+            if (!nextField) {
+                throw new Error('Maximum clarification limit reached');
+            }
+
+            const updateData = { [nextField]: message };
+            await updateLeaveStatus(id, 'Clarification Requested', updateData);
+
+            setSnackbar({ open: true, message: 'Clarification requested successfully', severity: 'success' });
+            await refetch();
+        } catch (error: any) {
+            setSnackbar({ open: true, message: error.message || 'Failed to request clarification', severity: 'error' });
+            throw error;
+        }
+    };
+
     const handleSortChange = (value: string) => {
         const parts = value.split('_');
         const direction = parts.pop() as 'asc' | 'desc';
@@ -466,7 +497,10 @@ export function LeavesView() {
                                         onSelectRow={() => { }}
                                         onView={() => handleOpenDetails(row.name)}
                                         onDelete={() => handleDeleteClick(row.name)}
+                                        onApplyAction={(action) => handleApplyAction(row.name, action)}
+                                        onClarify={(message) => handleClarify(row.name, message)}
                                         canDelete={permissions.delete}
+                                        isHR={isHR}
                                     />
                                 ))}
 
@@ -507,7 +541,7 @@ export function LeavesView() {
             </Card>
 
             {/* CREATE/EDIT DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     New Leave Application
                     <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
