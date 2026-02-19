@@ -105,7 +105,7 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId }: Props) {
 
                         {/* Attendance Details Grid */}
                         <Box>
-                            <SectionHeader title="Attendance Information" icon="solar:clock-circle-bold-duotone" />
+                            <SectionHeader title="Attendance Information" icon="" />
                             <Box
                                 sx={{
                                     display: 'grid',
@@ -127,7 +127,7 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId }: Props) {
 
                         {/* Task Description Section */}
                         <Box>
-                            <SectionHeader title="Task Description" icon="solar:notes-bold-duotone" />
+                            <SectionHeader title="Task Description" icon="" />
                             <Box
                                 sx={{
                                     p: 3,
@@ -158,10 +158,7 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId }: Props) {
 function SectionHeader({ title, icon }: { title: string; icon: string }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
-            <Box sx={{ display: 'flex', p: 0.75, borderRadius: 1, bgcolor: 'primary.main', color: 'common.white' }}>
-                <Iconify icon={icon as any} width={18} />
-            </Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', fontSize: 12 }}>
                 {title}
             </Typography>
         </Box>

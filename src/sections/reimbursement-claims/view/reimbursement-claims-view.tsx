@@ -39,6 +39,7 @@ import { useReimbursementClaims } from 'src/hooks/useReimbursementClaims';
 import { fetchEmployees } from 'src/api/employees';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
+    applyReimbursementClaimWorkflowAction,
     getReimbursementClaim,
     createReimbursementClaim,
     updateReimbursementClaim,
@@ -307,6 +308,16 @@ export function ReimbursementClaimsView() {
         },
         [refetch]
     );
+
+    const handleApplyAction = async (id: string, action: string) => {
+        try {
+            await applyReimbursementClaimWorkflowAction(id, action);
+            setSnackbar({ open: true, message: `Claim ${action}ed successfully`, severity: 'success' });
+            await refetch();
+        } catch (error: any) {
+            setSnackbar({ open: true, message: error.message || `Failed to ${action} claim`, severity: 'error' });
+        }
+    };
 
     const isApprovedOrPaid = isEdit && currentClaim && (currentClaim.workflow_state === 'Approved' || currentClaim.workflow_state === 'Paid');
 
@@ -743,8 +754,10 @@ export function ReimbursementClaimsView() {
                                         onView={() => handleViewRow(row)}
                                         onEdit={() => handleEditRow(row)}
                                         onDelete={() => handleDeleteRow(row.name)}
+                                        onApplyAction={(action) => handleApplyAction(row.name, action)}
                                         canEdit={permissions.write && (row.workflow_state === 'Approved' || row.workflow_state === 'Paid')}
                                         canDelete={permissions.delete}
+                                        isHR={isHR}
                                     />
                                 ))}
 

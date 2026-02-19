@@ -1,9 +1,12 @@
 import type { MouseEvent } from 'react';
 
 import dayjs from 'dayjs';
+import { useState } from 'react';
 
 import Box from '@mui/material/Box';
+import Popover from '@mui/material/Popover';
 import { alpha } from '@mui/material/styles';
+import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
@@ -29,8 +32,10 @@ type Props = {
     onView: () => void;
     onEdit: () => void;
     onDelete: () => void;
+    onApplyAction: (action: string) => void;
     canEdit: boolean;
     canDelete: boolean;
+    isHR?: boolean;
     hideCheckbox?: boolean;
     index?: number;
 };
@@ -41,89 +46,138 @@ export function ReimbursementClaimTableRow({
     onView,
     onEdit,
     onDelete,
+    onApplyAction,
     canEdit,
     canDelete,
+    isHR,
     hideCheckbox = false,
     index,
 }: Props) {
+    const [openMenu, setOpenMenu] = useState<HTMLElement | null>(null);
+
+    const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
+        setOpenMenu(event.currentTarget);
+    };
+
+    const handleCloseMenu = () => {
+        setOpenMenu(null);
+    };
+
+    const handleAction = (action: string) => {
+        onApplyAction(action);
+        handleCloseMenu();
+    };
+
     const handleClick = (event: MouseEvent<HTMLButtonElement>, action: () => void) => {
         event.stopPropagation();
         action();
     };
 
-    return (
-        <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
-            {!hideCheckbox && (
-                <TableCell padding="checkbox">
-                    <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
-                </TableCell>
-            )}
+    const showActions = isHR && (row.workflow_state === 'Pending' || row.workflow_state === 'Clarification Requested');
 
-            {typeof index === 'number' && (
-                <TableCell align="center">
-                    <Box
-                        sx={{
-                            width: 28,
-                            height: 28,
-                            display: 'flex',
-                            borderRadius: '50%',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                            color: 'primary.main',
-                            typography: 'subtitle2',
-                            fontWeight: 800,
-                            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
-                            mx: 'auto',
-                            transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
-                            '&:hover': {
-                                bgcolor: 'primary.main',
-                                color: 'primary.contrastText',
-                                transform: 'scale(1.1)',
-                            },
-                        }}
+    return (
+        <>
+            <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
+                {!hideCheckbox && (
+                    <TableCell padding="checkbox">
+                        <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
+                    </TableCell>
+                )}
+
+                {typeof index === 'number' && (
+                    <TableCell align="center">
+                        <Box
+                            sx={{
+                                width: 28,
+                                height: 28,
+                                display: 'flex',
+                                borderRadius: '50%',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                color: 'primary.main',
+                                typography: 'subtitle2',
+                                fontWeight: 800,
+                                border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                                mx: 'auto',
+                                transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+                                '&:hover': {
+                                    bgcolor: 'primary.main',
+                                    color: 'primary.contrastText',
+                                    transform: 'scale(1.1)',
+                                },
+                            }}
+                        >
+                            {index + 1}
+                        </Box>
+                    </TableCell>
+                )}
+
+                <TableCell>{row.employee_name}</TableCell>
+
+                <TableCell>{row.claim_type}</TableCell>
+
+                <TableCell>{dayjs(row.date_of_expense).format('DD/MM/YYYY')}</TableCell>
+
+                <TableCell>₹{row.amount?.toLocaleString() || 0}</TableCell>
+
+                <TableCell>
+                    <Label
+                        variant="soft"
+                        color={row.paid === 1 || row.workflow_state === 'Approved' ? 'success' : (row.workflow_state === 'Rejected' ? 'error' : 'warning')}
                     >
-                        {index + 1}
+                        {row.workflow_state || (row.paid === 1 ? 'Paid' : 'Pending')}
+                    </Label>
+                </TableCell>
+
+                <TableCell align="right">
+                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end', alignItems: 'center' }}>
+                        {canEdit && row.workflow_state !== 'Paid' && (
+                            <IconButton onClick={(e) => handleClick(e, onEdit)} color="primary">
+                                <Iconify icon="solar:pen-bold" />
+                            </IconButton>
+                        )}
+
+                        <IconButton onClick={(e) => handleClick(e, onView)} color="info">
+                            <Iconify icon="solar:eye-bold" />
+                        </IconButton>
+
+                        {canDelete && (
+                            <IconButton onClick={(e) => handleClick(e, onDelete)} color="error">
+                                <Iconify icon="solar:trash-bin-trash-bold" />
+                            </IconButton>
+                        )}
+
+                        {showActions && (
+                            <IconButton onClick={handleOpenMenu} color="warning">
+                                <Iconify icon="eva:more-vertical-fill" />
+                            </IconButton>
+                        )}
                     </Box>
                 </TableCell>
-            )}
+            </TableRow>
 
-            <TableCell>{row.employee_name}</TableCell>
+            <Popover
+                open={!!openMenu}
+                anchorEl={openMenu}
+                onClose={handleCloseMenu}
+                anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{
+                    sx: { width: 160, p: 1 },
+                }}
+            >
+                <MenuItem onClick={() => handleAction('Approve')} sx={{ color: 'success.main' }}>
+                    <Iconify icon={"solar:check-circle-bold" as any} sx={{ mr: 2 }} />
+                    Approve
+                </MenuItem>
 
-            <TableCell>{row.claim_type}</TableCell>
-
-            <TableCell>{dayjs(row.date_of_expense).format('DD/MM/YYYY')}</TableCell>
-
-            <TableCell>₹{row.amount?.toLocaleString() || 0}</TableCell>
-
-            <TableCell>
-                <Label
-                    variant="soft"
-                    color={row.paid === 1 || row.workflow_state === 'Approved' ? 'success' : (row.workflow_state === 'Rejected' ? 'error' : 'warning')}
-                >
-                    {row.workflow_state || (row.paid === 1 ? 'Paid' : 'Pending')}
-                </Label>
-            </TableCell>
-
-            <TableCell align="right">
-                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                    {canEdit && row.workflow_state !== 'Paid' && (
-                        <IconButton onClick={(e) => handleClick(e, onEdit)} color="primary">
-                            <Iconify icon="solar:pen-bold" />
-                        </IconButton>
-                    )}
-
-                    <IconButton onClick={(e) => handleClick(e, onView)} color="info">
-                        <Iconify icon="solar:eye-bold" />
-                    </IconButton>
-
-                    {canDelete && (
-                        <IconButton onClick={(e) => handleClick(e, onDelete)} color="error">
-                            <Iconify icon="solar:trash-bin-trash-bold" />
-                        </IconButton>
-                    )}
-                </Box>
-            </TableCell>
-        </TableRow>
+                <MenuItem onClick={() => handleAction('Reject')} sx={{ color: 'error.main' }}>
+                    <Iconify icon={"mingcute:close-line" as any} sx={{ mr: 2 }} />
+                    Reject
+                </MenuItem>
+            </Popover>
+        </>
     );
 }
+
