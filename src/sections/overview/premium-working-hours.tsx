@@ -277,12 +277,19 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                     }}
                                 >
                                     <Box sx={{ width: '100%' }}>
-                                        <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            alignItems="center"
+                                            justifyContent={isNonWorking && record.working_hours === 0 ? "center" : "space-between"}
+                                            sx={{ mb: 1.5 }}
+                                        >
                                             <Typography
                                                 variant="h6"
                                                 sx={{
                                                     fontWeight: 800,
                                                     lineHeight: 1.2,
+                                                    textAlign: isNonWorking && record.working_hours === 0 ? 'center' : 'inherit',
                                                     fontSize: centerLabel.length > 20 ? '0.75rem' : (centerLabel.length > 12 ? '0.875rem' : '1.125rem'),
                                                     color: record.working_hours >= 9 ? 'success.main' :
                                                         (record.working_hours > 0 ? 'error.main' :
@@ -291,7 +298,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                             >
                                                 {centerLabel}
                                             </Typography>
-                                            {status.label.toUpperCase() !== centerLabel && (
+                                            {!isNonWorking && status.label.toUpperCase() !== centerLabel && (
                                                 <StatusPill bgcolor={status.bgcolor} color={status.dotColor} sx={{ px: 1, py: 0.35, fontSize: '0.65rem', fontWeight: 800 }}>
                                                     {status.label}
                                                 </StatusPill>
@@ -317,20 +324,22 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                             </Box>
                                         )}
 
-                                        <Stack direction="row" spacing={2} sx={{ color: 'text.secondary' }}>
-                                            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flex: 1 }}>
-                                                <Iconify icon={"solar:login-3-bold-duotone" as any} width={16} sx={{ color: 'text.disabled' }} />
-                                                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
-                                                    {formatTime(record.check_in)}
-                                                </Typography>
+                                        {!(isNonWorking && record.working_hours === 0) && (
+                                            <Stack direction="row" spacing={2} sx={{ color: 'text.secondary' }}>
+                                                <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flex: 1 }}>
+                                                    <Iconify icon={"solar:login-3-bold-duotone" as any} width={16} sx={{ color: 'text.disabled' }} />
+                                                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
+                                                        {formatTime(record.check_in)}
+                                                    </Typography>
+                                                </Stack>
+                                                <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flex: 1 }}>
+                                                    <Iconify icon={"solar:logout-3-bold-duotone" as any} width={16} sx={{ color: 'text.disabled' }} />
+                                                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
+                                                        {formatTime(record.check_out)}
+                                                    </Typography>
+                                                </Stack>
                                             </Stack>
-                                            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flex: 1 }}>
-                                                <Iconify icon={"solar:logout-3-bold-duotone" as any} width={16} sx={{ color: 'text.disabled' }} />
-                                                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
-                                                    {formatTime(record.check_out)}
-                                                </Typography>
-                                            </Stack>
-                                        </Stack>
+                                        )}
                                     </Box>
 
                                     {isToday && (
