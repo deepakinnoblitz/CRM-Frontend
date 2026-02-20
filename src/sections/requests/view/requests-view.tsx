@@ -62,6 +62,8 @@ export function RequestsView() {
     ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
   );
 
+  const isRestrictedEmployee = user?.roles.includes('Employee') && !isHR;
+
   const [page, setPage] = useState(0);
 
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -223,9 +225,9 @@ export function RequestsView() {
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
-    if (!employeeId) errors.employeeId = 'Employee is required';
-    if (!subject.trim()) errors.subject = 'Subject is required';
-    if (!message.trim()) errors.message = 'Message is required';
+    if (!employeeId) errors.employeeId = 'Employee selection is required';
+    if (!subject.trim()) errors.subject = 'Please provide a subject for your request';
+    if (!message.trim()) errors.message = 'Please enter the details of your request';
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -370,7 +372,11 @@ export function RequestsView() {
     };
 
     if (!validateForm()) {
-      setSnackbar({ open: true, message: 'Please correct the errors in the form', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: 'Missing required information. Please check the highlighted fields.',
+        severity: 'error'
+      });
       return;
     }
 
@@ -547,35 +553,75 @@ export function RequestsView() {
 
         <DialogContent dividers>
           <Box sx={{ display: 'grid', gap: 3, margin: '1rem' }}>
-            <Autocomplete
-              fullWidth
-              options={employees}
-              getOptionLabel={(option) => option.employee_name || option.name || ''}
-              isOptionEqualToValue={(option, value) => option.name === (value?.name || value)}
-              value={employees.find((emp) => emp.name === employeeId) || null}
-              onChange={(event, newValue) => {
-                setEmployeeId(newValue?.name || '');
-                if (formErrors.employeeId) setFormErrors(prev => ({ ...prev, employeeId: '' }));
-              }}
-              readOnly={!isEdit}
-              disabled={!isEdit}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Employee"
-                  required
-                  error={!!formErrors.employeeId}
-                  helperText={formErrors.employeeId}
-                  InputLabelProps={{ shrink: true }}
-                  placeholder="Search employee..."
-                  sx={{
-                    '& .MuiFormLabel-asterisk': {
-                      color: 'red',
-                    },
-                  }}
-                />
-              )}
-            />
+            {isRestrictedEmployee && !isEdit ? (
+              <TextField
+                fullWidth
+                label="Employee"
+                value={`${user?.employee_name} (${user?.employee})`}
+                InputLabelProps={{ shrink: true }}
+                InputProps={{ readOnly: true }}
+                required
+                sx={{
+                  '& .MuiFormLabel-asterisk': {
+                    color: 'red',
+                  },
+                }}
+              />
+            ) : (
+              <Autocomplete
+                fullWidth
+                options={employees}
+                getOptionLabel={(option) => {
+                  if (typeof option === 'string') {
+                    const emp = employees.find((e) => e.name === option);
+                    return emp ? `${emp.employee_name} (${emp.name})` : option;
+                  }
+                  return `${option.employee_name} (${option.name})`;
+                }}
+                isOptionEqualToValue={(option, value) => {
+                  const valId = typeof value === 'string' ? value : value?.name;
+                  return option.name === valId;
+                }}
+                value={employees.find((emp) => emp.name === employeeId) || null}
+                onChange={(event, newValue) => {
+                  setEmployeeId(newValue?.name || '');
+                  if (formErrors.employeeId) setFormErrors(prev => ({ ...prev, employeeId: '' }));
+                }}
+                readOnly={!isHR && !isEdit}
+                disabled={!isHR && !isEdit}
+                renderOption={(props, option) => {
+                  const { key, ...optionProps } = props as any;
+                  return (
+                    <li key={key} {...optionProps}>
+                      <Stack spacing={0.5}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                          {option.employee_name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          ID: {option.name}
+                        </Typography>
+                      </Stack>
+                    </li>
+                  );
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Employee"
+                    required
+                    error={!!formErrors.employeeId}
+                    helperText={formErrors.employeeId}
+                    InputLabelProps={{ shrink: true }}
+                    placeholder="Search employee..."
+                    sx={{
+                      '& .MuiFormLabel-asterisk': {
+                        color: 'red',
+                      },
+                    }}
+                  />
+                )}
+              />
+            )}
             {renderField('subject', 'Subject', 'text', [], { placeholder: 'Enter request subject' }, true)}
             {renderField('message', 'Message', 'textarea', [], { placeholder: 'Enter request details' }, true)}
           </Box>
@@ -583,7 +629,7 @@ export function RequestsView() {
 
         <DialogActions>
           <Button onClick={handleCreate} variant="contained" sx={{ bgcolor: "#08a3cd", "&": { bgcolor: "#068fb3" } }}>
-            {isEdit ? 'Update' : 'Create'}
+            {isEdit ? 'Update' : 'Submit'}
           </Button>
         </DialogActions>
 
