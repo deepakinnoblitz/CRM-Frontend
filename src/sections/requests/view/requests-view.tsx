@@ -34,6 +34,7 @@ import { useRequests } from 'src/hooks/useRequests';
 
 import { getCurrentUserInfo } from 'src/api/auth';
 import { fetchEmployees } from 'src/api/employees';
+import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { createRequest, updateRequest, deleteRequest, getRequestPermissions, applyRequestWorkflowAction, updateRequestStatus, getRequest } from 'src/api/requests';
 
@@ -302,6 +303,11 @@ export function RequestsView() {
   const handleViewRow = useCallback((row: any) => {
     setViewRequest(row);
     setOpenView(true);
+
+    // Mark as read and trigger sidebar refresh
+    markAsRead('Request', row.name).then(() => {
+      window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+    });
   }, []);
 
   const handleDeleteRow = useCallback((id: string) => {

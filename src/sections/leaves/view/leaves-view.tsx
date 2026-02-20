@@ -34,6 +34,7 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { getHRPermissions, getHRDoc } from 'src/api/hr-management';
 import { applyLeaveWorkflowAction, checkLeaveBalance, createLeaveApplication, deleteLeaveApplication, getEmployeeProbationInfo, updateLeaveStatus } from 'src/api/leaves';
 
+import { markAsRead } from 'src/api/unread-counts';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
@@ -336,6 +337,11 @@ export function LeavesView() {
     const handleOpenDetails = (id: string) => {
         setDetailsId(id);
         setOpenDetails(true);
+
+        // Mark as read and trigger sidebar refresh
+        markAsRead('Leave Application', id).then(() => {
+            window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+        });
     };
 
     const handleCloseDetails = () => {

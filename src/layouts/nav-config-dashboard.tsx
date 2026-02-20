@@ -11,6 +11,7 @@ export type NavItem = {
   children?: {
     title: string;
     path: string;
+    info?: React.ReactNode;
   }[];
 };
 

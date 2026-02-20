@@ -226,7 +226,11 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
         />
       )}
 
-      {item.info && item.info}
+      {item.info && (
+        <Box component="span" sx={{ ml: item.children ? 1.5 : 1 }}>
+          {item.info}
+        </Box>
+      )}
     </ListItemButton>
   );
 
@@ -254,7 +258,7 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
               borderRadius: 1,
             }
           }}>
-            {item.children.map((child) => {
+            {item.children.map((child: any) => {
               const isChildActived = child.path === pathname;
 
               return (
@@ -302,6 +306,12 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
                     }}
                   />
                   {child.title}
+
+                  {child.info && (
+                    <Box component="span" sx={{ ml: 2 }}>
+                      {child.info}
+                    </Box>
+                  )}
                 </ListItemButton>
               );
             })}
