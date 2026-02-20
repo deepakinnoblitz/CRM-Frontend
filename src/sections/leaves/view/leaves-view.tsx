@@ -16,6 +16,7 @@ import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
@@ -30,11 +31,11 @@ import { useLeaveApplications } from 'src/hooks/useLeaveApplications';
 
 import { getDoctypeList } from 'src/api/leads';
 import { uploadFile } from 'src/api/data-import';
+import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getHRPermissions, getHRDoc } from 'src/api/hr-management';
 import { applyLeaveWorkflowAction, checkLeaveBalance, createLeaveApplication, deleteLeaveApplication, getEmployeeProbationInfo, updateLeaveStatus } from 'src/api/leaves';
 
-import { markAsRead } from 'src/api/unread-counts';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
@@ -648,37 +649,65 @@ export function LeavesView() {
                         gridTemplateColumns="1fr"
                         gap={3}
                     >
-                        <TextField
-                            fullWidth
-                            label="Employee"
-                            value={isRestrictedEmployee && user?.employee ? `${user.employee_name} (${user.employee})` : employee}
-                            onChange={(e) => {
-                                setEmployee(e.target.value);
-                                if (formErrors.employee) setFormErrors(prev => ({ ...prev, employee: '' }));
-                            }}
-                            InputLabelProps={{ shrink: true }}
-                            required
-                            error={!!formErrors.employee}
-                            helperText={formErrors.employee}
-                            {...(!isRestrictedEmployee ? {
-                                select: true,
-                                SelectProps: { native: true }
-                            } : {
-                                InputProps: { readOnly: true }
-                            })}
-                            sx={{
-                                '& .MuiFormLabel-asterisk': { color: 'red' },
-                            }}
-                        >
-                            {!isRestrictedEmployee && (
-                                <>
-                                    <option value="">Select Employee</option>
-                                    {employeeOptions.map((option) => (
-                                        <option key={option.name} value={option.name}>{option.employee_name} ({option.name})</option>
-                                    ))}
-                                </>
-                            )}
-                        </TextField>
+                        {isRestrictedEmployee ? (
+                            <TextField
+                                fullWidth
+                                label="Employee"
+                                value={`${user?.employee_name} (${user?.employee})`}
+                                InputLabelProps={{ shrink: true }}
+                                InputProps={{ readOnly: true }}
+                                required
+                                sx={{
+                                    '& .MuiFormLabel-asterisk': { color: 'red' },
+                                }}
+                            />
+                        ) : (
+                            <Autocomplete
+                                fullWidth
+                                options={employeeOptions}
+                                getOptionLabel={(option) => {
+                                    if (typeof option === 'string') {
+                                        const emp = employeeOptions.find((e) => e.name === option);
+                                        return emp ? `${emp.employee_name} (${emp.name})` : option;
+                                    }
+                                    return `${option.employee_name} (${option.name})`;
+                                }}
+                                value={employeeOptions.find((e) => e.name === employee) || null}
+                                onChange={(event, newValue) => {
+                                    setEmployee(newValue ? newValue.name : '');
+                                    if (formErrors.employee) setFormErrors(prev => ({ ...prev, employee: '' }));
+                                }}
+                                renderOption={(props, option) => {
+                                    const { key, ...optionProps } = props as any;
+                                    return (
+                                        <li key={key} {...optionProps}>
+                                            <Stack spacing={0.5}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                    {option.employee_name}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                    ID: {option.name}
+                                                </Typography>
+                                            </Stack>
+                                        </li>
+                                    );
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Employee"
+                                        required
+                                        error={!!formErrors.employee}
+                                        helperText={formErrors.employee}
+                                        InputLabelProps={{ shrink: true }}
+                                        placeholder="Search by name or ID..."
+                                        sx={{
+                                            '& .MuiFormLabel-asterisk': { color: 'red' },
+                                        }}
+                                    />
+                                )}
+                            />
+                        )}
 
                         <TextField
                             select
