@@ -31,6 +31,7 @@ import { useWFHAttendance } from 'src/hooks/useWFHAttendance';
 
 import { getDoctypeList } from 'src/api/leads';
 import { getCurrentUserInfo } from 'src/api/auth';
+ import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getHRPermissions } from 'src/api/hr-management';
 import { getWFHAttendance, createWFHAttendance, updateWFHAttendance, applyWorkflowAction } from 'src/api/wfh-attendance';
@@ -253,6 +254,11 @@ export function WFHAttendanceView() {
     const handleViewRow = async (id: string) => {
         setDetailsId(id);
         setOpenDetails(true);
+
+        // Mark as read and trigger sidebar refresh
+        markAsRead('WFH Attendance', id).then(() => {
+            window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+        });
     };
 
     const handleEditRow = async (id: string) => {
