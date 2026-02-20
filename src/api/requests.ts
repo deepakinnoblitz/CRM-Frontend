@@ -16,6 +16,11 @@ export interface Request {
     modified?: string;
 }
 
+export interface WorkflowAction {
+    action: string;
+    next_state: string;
+}
+
 // Request APIs
 export const fetchRequests = (params: any) => {
     const filters: any[] = [];
@@ -143,4 +148,36 @@ export async function getRequestPermissions() {
     }
 
     return (await res.json()).message || { read: false, write: false, delete: false };
+}
+
+export async function getRequestWorkflowActions(currentState: string): Promise<WorkflowAction[]> {
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_workflow_states?doctype=Request&current_state=${encodeURIComponent(currentState)}`
+    );
+
+    if (!res.ok) {
+        return [];
+    }
+
+    const data = (await res.json()).message || { actions: [] };
+    return data.actions || [];
+}
+
+export async function applyRequestWorkflowAction(name: string, action: string, comment?: string) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/company.company.frontend_api.apply_workflow_action", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype: "Request",
+            name,
+            action,
+            comment
+        })
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to apply workflow action"));
+    return json.message;
 }

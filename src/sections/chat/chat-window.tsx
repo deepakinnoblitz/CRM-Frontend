@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
@@ -15,6 +16,7 @@ import { fDateTime, fDateSeparator } from 'src/utils/format-time';
 import { chatApi } from 'src/api/chat';
 
 import { Iconify } from 'src/components/iconify';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import ChatInfo from './chat-info';
 import ChatAudioPlayer from './chat-audio-player';
@@ -52,6 +54,7 @@ type Props = {
 export default function ChatWindow({ user, channel, socket, isConnected, onRefresh }: Props) {
     const [messages, setMessages] = useState<any[]>([]);
     const [showInfo, setShowInfo] = useState(false);
+    const [confirmDeleteMessage, setConfirmDeleteMessage] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const lastMessage = messages[messages.length - 1];
@@ -88,6 +91,7 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
         if (socket) {
             const handleMessage = async (data: any) => {
                 const eventRoom = data.room || data.room_name;
+                // Check if the event is for the current room
                 const isRelevantRoom = eventRoom === channel.room;
 
                 if (isRelevantRoom) {
@@ -109,32 +113,42 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                     } else if (data.realtime_type === 'trigger_channel_status') {
                         if (onRefresh) onRefresh();
                     } else {
-                        await fetchMessages();
+                        // For new messages, only fetch if it's not a local optimistic update
+                        // or if it's from another user
+                        if (data.user !== user.full_name) {
+                            await fetchMessages();
+                        }
                         if (onRefresh) onRefresh();
                     }
                 }
             };
 
+            // Listen to specific room events
             socket.on(channel.room, handleMessage);
-            socket.on('msg', handleMessage);
+            // Listen to general update_room events which might carry the deletion
             socket.on('update_room', handleMessage);
 
             return () => {
                 socket.off(channel.room, handleMessage);
-                socket.off('msg', handleMessage);
                 socket.off('update_room', handleMessage);
             };
         }
         return undefined;
     }, [socket, channel.room, fetchMessages, onRefresh]);
 
-    const handleDelete = useCallback(async (messageName: string) => {
+    const handleDelete = useCallback((messageName: string) => {
+        setConfirmDeleteMessage(messageName);
+    }, []);
+
+    const handleConfirmDelete = async () => {
+        if (!confirmDeleteMessage) return;
+
         try {
-            await chatApi.deleteMessage(messageName);
+            await chatApi.deleteMessage(confirmDeleteMessage);
             // Local update if socket is slow or for immediate feedback
             setMessages((prev) =>
                 prev.map((msg) =>
-                    msg.message_name === messageName
+                    msg.message_name === confirmDeleteMessage
                         ? {
                             ...msg,
                             content: '<p class="deleted-message-text" style="color:#666; font-style:italic; margin:0;">This message was deleted</p>',
@@ -148,8 +162,10 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
             );
         } catch (error) {
             console.error('Failed to delete message', error);
+        } finally {
+            setConfirmDeleteMessage(null);
         }
-    }, []);
+    };
 
     const handleCloseChannel = async () => {
         try {
@@ -208,7 +224,19 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
         setMessages((prev) => [...prev, localMsg]);
 
         try {
-            await chatApi.sendMessage(messageData as any);
+            const response = await chatApi.sendMessage(messageData as any);
+            const newMessageName = response?.message?.results?.[0]?.new_message_name;
+
+            if (newMessageName) {
+                setMessages((prev) =>
+                    prev.map((m) =>
+                        m.id_message_local_from_app === localId
+                            ? { ...m, message_name: newMessageName }
+                            : m
+                    )
+                );
+            }
+
             // Refresh sidebar to update last message preview
             if (onRefresh) onRefresh();
         } catch (error) {
@@ -314,6 +342,17 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                     </Typography>
                 </Box>
             )}
+            <ConfirmDialog
+                open={!!confirmDeleteMessage}
+                onClose={() => setConfirmDeleteMessage(null)}
+                title="Delete Message"
+                content="Are you sure you want to delete this message? This action cannot be undone."
+                action={
+                    <Button variant="contained" color="error" onClick={handleConfirmDelete}>
+                        Delete
+                    </Button>
+                }
+            />
         </Stack>
     );
 }
