@@ -111,6 +111,8 @@ export function EmployeeDashboardView() {
                         subheader={`Period: ${new Date(data.start_date || new Date()).toLocaleString('default', { month: 'long' })} ${new Date(data.start_date || new Date()).getFullYear()}`}
                         calendarData={data.monthly_attendance_list || []}
                         joiningDate={data.joining_date}
+                        breakdown={data.monthly_attendance_breakdown} // Pass backend breakdown
+                        sx={{ pt: 5 }}
                     />
                 </Grid>
 

@@ -422,6 +422,7 @@ export function AttendanceView() {
                     label={label}
                     value={formData[fieldname] ? dayjs(formData[fieldname]) : null}
                     onChange={(newValue) => handleInputChange(fieldname, newValue?.format('YYYY-MM-DD') || '')}
+                    format="DD-MM-YYYY"
                     slotProps={{
                         textField: {
                             fullWidth: true,
@@ -697,7 +698,7 @@ export function AttendanceView() {
                                 )}
                             />
                             {renderField('attendance_date', 'Attendance Date', 'date', [], {}, true)}
-                            {renderField('status', 'Status', 'select', ['Present', 'Absent', 'Half Day', 'On Leave', 'Holiday' , 'Missing'], { hidden : false })}
+                            {renderField('status', 'Status', 'select', ['Present', 'Absent', 'Half Day', 'On Leave', 'Holiday', 'Missing'], { hidden : false })}
 
                             <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
                                 {renderField('in_time', 'In Time', 'time')}

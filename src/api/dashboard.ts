@@ -139,7 +139,8 @@ export interface EmployeeDashboardData {
         holiday: number;
         missing: number;
         total_days: number;
-        present_percentage: number;
+        calendar_total: number;
+        attendance_percentage: number;
     };
     missing_timesheets: Array<{ date: string }>;
     recent_leaves: Array<{
@@ -301,7 +302,8 @@ export async function fetchEmployeeDashboardData(
                 holiday: 0,
                 missing: 0,
                 total_days: 0,
-                present_percentage: 0,
+                calendar_total: 0,
+                attendance_percentage: 0,
             },
             missing_timesheets: [],
             recent_leaves: [],
