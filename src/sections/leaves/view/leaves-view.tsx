@@ -231,11 +231,11 @@ export function LeavesView() {
 
     const validateForm = () => {
         const errors: Record<string, string> = {};
-        if (!employee) errors.employee = 'Employee is required';
-        if (!leaveType) errors.leaveType = 'Leave Type is required';
-        if (!fromDate) errors.fromDate = 'From Date is required';
-        if (!toDate) errors.toDate = 'To Date is required';
-        if (!reason) errors.reason = 'Reason is required';
+        if (!employee) errors.employee = 'Employee selection is required';
+        if (!leaveType) errors.leaveType = 'Please select a leave type';
+        if (!fromDate) errors.fromDate = 'Start date is required';
+        if (!toDate) errors.toDate = 'End date is required';
+        if (!reason) errors.reason = 'Please provide a reason for your leave';
 
         if (leaveType.toLowerCase() === 'permission' && (!permissionHours || Number(permissionHours) < 10)) {
             errors.permissionHours = 'Permission duration must be at least 10 minutes';
@@ -282,7 +282,11 @@ export function LeavesView() {
             setCreating(true);
 
             if (!validateForm()) {
-                setSnackbar({ open: true, message: 'Please correct the errors in the form', severity: 'error' });
+                setSnackbar({
+                    open: true,
+                    message: 'Missing required information. Please check the highlighted fields.',
+                    severity: 'error'
+                });
                 return;
             }
 
@@ -801,6 +805,9 @@ export function LeavesView() {
                                                 if (newValue) {
                                                     const totalMinutes = newValue.hour() * 60 + newValue.minute();
                                                     setPermissionHours(totalMinutes.toString());
+                                                    if (totalMinutes >= 10 && formErrors.permissionHours) {
+                                                        setFormErrors(prev => ({ ...prev, permissionHours: '' }));
+                                                    }
                                                 } else {
                                                     setPermissionHours('');
                                                 }
@@ -812,8 +819,8 @@ export function LeavesView() {
                                                 textField: {
                                                     fullWidth: true,
                                                     required: true,
-                                                    helperText: "Select hours and minutes. Minimum 10 minutes required.",
-                                                    error: permissionHours !== '' && Number(permissionHours) < 10,
+                                                    helperText: formErrors.permissionHours || "Select hours and minutes. Minimum 10 minutes required.",
+                                                    error: !!formErrors.permissionHours,
                                                     InputLabelProps: { shrink: true }
                                                 }
                                             }}
