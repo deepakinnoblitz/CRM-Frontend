@@ -400,10 +400,12 @@ export function getNavData(roles: string[] = []) {
   const addItems = (data: NavItem[]) => {
     data.forEach((item) => {
       if (!seenPaths.has(item.path)) {
-        const newItem = { ...item };
-        if (item.children) {
-          newItem.children = [...item.children];
-        }
+        const newItem = {
+          ...item,
+          ...(item.children && {
+            children: item.children.map((child) => ({ ...child })),
+          }),
+        };
         mergedNav.push(newItem);
         seenPaths.add(item.path);
       } else {
