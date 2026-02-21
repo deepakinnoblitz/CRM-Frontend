@@ -11,6 +11,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useRouter } from 'src/routes/hooks';
 
 import { logout } from 'src/api/auth';
+import { CONFIG } from 'src/config-global';
 import { hasValidRole } from 'src/layouts/nav-config-dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -61,7 +62,7 @@ export function AccessDeniedView() {
             >
                 <Box
                     component="img"
-                    src="http://erp.innoblitz.in/assets/Innoblitz%20Logo%20Full.png"
+                    src={`${CONFIG.assetsDir}/logo/Innoblitz%20Logo%20Full.png`}
                     alt="Innoblitz Logo"
                     sx={{
                         width: 200,

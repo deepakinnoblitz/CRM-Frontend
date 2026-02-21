@@ -13,6 +13,8 @@ import { RouterLink } from 'src/routes/components';
 
 import { useUnreadCounts } from 'src/hooks/useUnreadCounts';
 
+import { CONFIG } from 'src/config-global';
+
 import { Label } from 'src/components/label';
 
 import ChatNotifications from 'src/sections/chat/chat-notifications';
@@ -268,7 +270,7 @@ export function DashboardLayout({
             >
               <Box
                 component="img"
-                src="/assets/icons/Innochat_button.png"
+                src={`${CONFIG.assetsDir}/icons/Innochat_button.png`}
                 sx={{
                   width: 140, // Increased size as requested by intent
                   height: 'auto',

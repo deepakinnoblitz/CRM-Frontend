@@ -25,6 +25,7 @@ import { Box, Card, Grid, Stack, Alert, Button, Snackbar, IconButton, Typography
 
 import { stripHtml } from 'src/utils/string';
 
+import { CONFIG } from 'src/config-global';
 import { getCall, type Call } from 'src/api/calls';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getMeeting, type Meeting } from 'src/api/meetings';
@@ -667,21 +668,21 @@ export function EventsView() {
                         {[
                             {
                                 label: 'Calls',
-                                icon: '/assets/company/crm/assets/images/calls-3d-white.png',
+                                icon: `${CONFIG.assetsDir}/images/calls-3d-white.png`,
                                 color: 'primary',
                                 sub: 'Schedule a call',
                                 handler: handleOpenCallDialog,
                             },
                             {
                                 label: 'Meeting',
-                                icon: '/assets/company/crm/assets/images/meeting-3d-white.png',
+                                icon: `${CONFIG.assetsDir}/images/meeting-3d-white.png`,
                                 color: 'success',
                                 sub: 'Schedule a meeting',
                                 handler: handleOpenMeetingDialog,
                             },
                             {
                                 label: 'To-do',
-                                icon: '/assets/company/crm/assets/images/todo-3d-white.png',
+                                icon: `${CONFIG.assetsDir}/images/todo-3d-white.png`,
                                 color: 'warning',
                                 sub: 'Create a task',
                                 handler: handleOpenTodoDialog,

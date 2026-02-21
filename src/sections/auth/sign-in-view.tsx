@@ -13,12 +13,12 @@ import InputAdornment from '@mui/material/InputAdornment';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { CONFIG } from 'src/config-global';
 import { login, getCurrentUserInfo } from 'src/api/auth';
 
 import { Iconify } from 'src/components/iconify';
 
 import { useAuth } from 'src/auth/auth-context';
-
 
 // ----------------------------------------------------------------------
 
@@ -162,7 +162,7 @@ export function SignInView() {
       >
         <Box
           component="img"
-          src="/assets/logo/Innoblitz%20Logo%20Full.png"
+          src={`${CONFIG.assetsDir}/logo/Innoblitz%20Logo%20Full.png`}
           alt="Innoblitz Logo"
           sx={{
             width: 180,

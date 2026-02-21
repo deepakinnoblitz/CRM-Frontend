@@ -1,12 +1,14 @@
 import Box, { BoxProps } from '@mui/material/Box';
 
+import { CONFIG } from 'src/config-global';
+
 // ----------------------------------------------------------------------
 
 export default function ChatPlaceholderIcon({ ...other }: BoxProps) {
     return (
         <Box
             component="img"
-            src="/assets/icons/start_conversation.png" // Assuming I'll move it here
+            src={`${CONFIG.assetsDir}/icons/start_conversation.png`} // Assuming I'll move it here
             sx={{
                 width: '100%',
                 height: '100%',
