@@ -447,8 +447,12 @@ export function RequestsView() {
           sortOptions={[
             { value: 'creation_desc', label: 'Newest First' },
             { value: 'creation_asc', label: 'Oldest First' },
-            { value: 'employee_name_asc', label: 'Employee: A to Z' },
-            { value: 'employee_name_desc', label: 'Employee: Z to A' },
+            { value: 'employee_id_asc', label: 'Employee ID: Low to High' },
+            { value: 'employee_id_desc', label: 'Employee ID: High to Low' },
+            { value: 'employee_name_asc', label: 'Employee Name: A to Z' },
+            { value: 'employee_name_desc', label: 'Employee Name: Z to A' },
+            { value: 'subject_asc', label: 'Subject: A to Z' },
+            { value: 'subject_desc', label: 'Subject: Z to A' },
           ]}
           onOpenFilter={() => setOpenFilters(true)}
           canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all' || filterEmployee !== null}
@@ -466,6 +470,7 @@ export function RequestsView() {
 
 
                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
+                onSort={handleSort}
 
                 hideCheckbox
                 showIndex
@@ -484,11 +489,22 @@ export function RequestsView() {
                     hideCheckbox
                     row={{
                       id: row.name,
+                      name: row.name,
+                      employee_id: row.employee_id,
                       employee_name: row.employee_name,
                       subject: row.subject,
                       workflow_state: row.workflow_state,
                       creation: row.creation,
                       modified: row.modified,
+                      owner: row.owner,
+                      hrQueryCount: [1, 2, 3, 4, 5].filter(i => {
+                        const field = i === 1 ? 'hr_query' : `hr_query_${i}`;
+                        return row[field] && String(row[field]).trim();
+                      }).length,
+                      empReplyCount: [1, 2, 3, 4, 5].filter(i => {
+                        const field = i === 1 ? 'employee_reply' : `employee_reply_${i}`;
+                        return row[field] && String(row[field]).trim();
+                      }).length,
                     }}
                     selected={selected.includes(row.name)}
                     onSelectRow={() => handleSelectRow(row.name)}

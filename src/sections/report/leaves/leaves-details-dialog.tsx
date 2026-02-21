@@ -214,70 +214,89 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props
         return true;
     });
 
-    const renderConversation = conversation.length > 0 && (
-        <Box>
+    const renderConversation = (
+        <Box sx={{ height: 1, display: 'flex', flexDirection: 'column' }}>
             <SectionHeader title="Clarification History" icon="solar:chat-round-dots-bold" />
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                {conversation.map((msg, idx) => {
-                    const isSelf = (isHR && msg.type === 'hr') || (isEmployee && msg.type === 'employee');
+            <Box
+                sx={{
+                    flexGrow: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                    p: 2.5,
+                    bgcolor: 'background.neutral',
+                    borderRadius: 2,
+                    overflowY: 'auto',
+                    minHeight: 400,
+                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                }}
+            >
+                {conversation.length > 0 ? (
+                    conversation.map((msg, idx) => {
+                        const isSelf = (isHR && msg.type === 'hr') || (isEmployee && msg.type === 'employee');
 
-                    return (
-                        <Box
-                            key={idx}
-                            sx={{
-                                position: 'relative',
-                                maxWidth: '85%',
-                                alignSelf: isSelf ? 'flex-end' : 'flex-start',
-                                bgcolor: isSelf ? 'primary.main' : 'background.paper',
-                                color: isSelf ? 'primary.contrastText' : 'text.primary',
-                                p: 1.5,
-                                px: 2,
-                                borderRadius: 1.5,
-                                borderTopRightRadius: isSelf ? 0 : 1.5,
-                                borderTopLeftRadius: !isSelf ? 0 : 1.5,
-                                boxShadow: (theme) => theme.customShadows?.z1 || '0 1px 2px rgba(0,0,0,0.1)',
-                                '&::before': {
-                                    content: '""',
-                                    position: 'absolute',
-                                    top: 0,
-                                    width: 0,
-                                    height: 0,
-                                    borderStyle: 'solid',
-                                    ...(isSelf
-                                        ? {
-                                            right: -10,
-                                            borderWidth: '0 0 12px 12px',
-                                            borderColor: (theme) => `transparent transparent transparent ${theme.palette.primary.main}`,
-                                        }
-                                        : {
-                                            left: -10,
-                                            borderWidth: '0 12px 12px 0',
-                                            borderColor: (theme) => `transparent ${theme.palette.background.paper} transparent transparent`,
-                                        }),
-                                },
-                            }}
-                        >
-                            {!isSelf && (
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        display: 'block',
-                                        mb: 0.5,
-                                        fontWeight: 700,
-                                        color: 'primary.main',
-                                        fontSize: '0.7rem',
-                                        textTransform: 'uppercase',
-                                    }}
-                                >
-                                    {msg.type === 'hr' ? 'HR' : (leave?.employee_name || 'Employee')}
+                        return (
+                            <Box
+                                key={idx}
+                                sx={{
+                                    position: 'relative',
+                                    maxWidth: '85%',
+                                    alignSelf: isSelf ? 'flex-end' : 'flex-start',
+                                    bgcolor: isSelf ? 'primary.main' : 'background.paper',
+                                    color: isSelf ? 'primary.contrastText' : 'text.primary',
+                                    p: 1.5,
+                                    px: 2,
+                                    borderRadius: 1.5,
+                                    borderTopRightRadius: isSelf ? 0 : 1.5,
+                                    borderTopLeftRadius: !isSelf ? 0 : 1.5,
+                                    boxShadow: (theme) => theme.customShadows?.z1 || '0 1px 2px rgba(0,0,0,0.1)',
+                                    '&::before': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        top: 0,
+                                        width: 0,
+                                        height: 0,
+                                        borderStyle: 'solid',
+                                        ...(isSelf
+                                            ? {
+                                                right: -10,
+                                                borderWidth: '0 0 12px 12px',
+                                                borderColor: (theme) => `transparent transparent transparent ${theme.palette.primary.main}`,
+                                            }
+                                            : {
+                                                left: -10,
+                                                borderWidth: '0 12px 12px 0',
+                                                borderColor: (theme) => `transparent ${theme.palette.background.paper} transparent transparent`,
+                                            }),
+                                    },
+                                }}
+                            >
+                                {!isSelf && (
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            display: 'block',
+                                            mb: 0.5,
+                                            fontWeight: 700,
+                                            color: 'primary.main',
+                                            fontSize: '0.7rem',
+                                            textTransform: 'uppercase',
+                                        }}
+                                    >
+                                        {msg.type === 'hr' ? 'HR' : (leave?.employee_name || 'Employee')}
+                                    </Typography>
+                                )}
+                                <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
+                                    {msg.text}
                                 </Typography>
-                            )}
-                            <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
-                                {msg.text}
-                            </Typography>
-                        </Box>
-                    );
-                })}
+                            </Box>
+                        );
+                    })
+                ) : (
+                    <Box sx={{ height: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.5 }}>
+                        <Typography variant="body2">No comments yet</Typography>
+                    </Box>
+                )}
                 {isEmployee && empReplyCount >= 5 && leave?.workflow_state === 'Clarification Requested' && (
                     <Typography variant="caption" color="error" sx={{ textAlign: 'center', mt: 1, fontWeight: 700 }}>
                         Maximum reply limit (5) reached.
@@ -292,140 +311,22 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props
         </Box>
     );
 
-    const renderDetails = (
-        <Stack spacing={3}>
-            {/* Header Summary Card */}
-            <Box
-                sx={{
-                    p: 3,
-                    borderRadius: 2,
-                    bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
-                    boxShadow: (theme) => theme.customShadows?.z12,
-                    border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.12)}`,
-                    position: 'relative',
-                    overflow: 'hidden',
-                }}
-            >
-                <Stack direction="row" alignItems="center" spacing={2.5} sx={{ mb: 3 }}>
-                    <Box
-                        sx={{
-                            width: 54,
-                            height: 54,
-                            borderRadius: 1.5,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'common.white',
-                            background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.info.main} 100%)`,
-                            boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.primary.main, 0.24)}`,
-                        }}
-                    >
-                        <Iconify icon={"solar:user-bold-duotone" as any} width={32} />
-                    </Box>
-                    <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-                            {leave?.employee_name}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                            {leave?.employee}
-                        </Typography>
-                    </Box>
-                </Stack>
-
-                <Stack
-                    direction={{ xs: 'column', sm: 'row' }}
-                    alignItems="center"
-                    justifyContent="space-between"
-                    sx={{
-                        p: 2,
-                        borderRadius: 1.5,
-                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
-                        gap: { xs: 2, sm: 0 }
-                    }}
-                >
-                    <Stack spacing={0.5} sx={{ flex: 1, textAlign: 'center' }}>
-                        <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, lineHeight: 1.5 }}>
-                            TYPE
-                        </Typography>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                            {leave?.leave_type || 'N/A'}
-                        </Typography>
-                    </Stack>
-
-                    <Divider orientation="vertical" flexItem sx={{ mx: 2, borderStyle: 'dashed', display: { xs: 'none', sm: 'block' } }} />
-
-                    <Stack spacing={0.5} sx={{ flex: 1, textAlign: 'center' }}>
-                        <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, lineHeight: 1.5 }}>
-                            DURATION
-                        </Typography>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                            {leave?.leave_type?.toLowerCase() === 'permission'
-                                ? `${leave?.permission_hours} mins`
-                                : `${leave?.total_days} days`
-                            }
-                        </Typography>
-                    </Stack>
-
-                    <Divider orientation="vertical" flexItem sx={{ mx: 2, borderStyle: 'dashed' }} />
-
-                    <Stack spacing={0.5} sx={{ flex: 1, textAlign: 'center' }}>
-                        <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, lineHeight: 1.5 }}>
-                            STATUS
-                        </Typography>
-                        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                            <Label color={getStatusColor(leave?.workflow_state)} variant="filled" sx={{ textTransform: 'uppercase', height: 24, px: 1.5 }}>
-                                {leave?.workflow_state || 'Pending'}
-                            </Label>
-                        </Box>
-                    </Stack>
-                </Stack>
-            </Box>
-
-            {/* Date Details */}
-            <Stack spacing={2}>
-                <DetailRow label="Applied On" value={dayjs(leave?.creation).format('DD MMM YYYY HH:mm')} icon="solar:calendar-bold" />
-                <Divider />
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                    <DetailRow label="From Date" value={dayjs(leave?.from_date).format('DD MMM YYYY')} icon="solar:calendar-date-bold" />
-                    <DetailRow label="To Date" value={dayjs(leave?.to_date).format('DD MMM YYYY')} icon="solar:calendar-date-bold" />
-                </Box>
-                {leave?.half_day === 1 && (
-                    <DetailRow label="Half Day" value={`Yes (${dayjs(leave?.half_day_date).format('DD MMM YYYY')})`} icon="solar:history-bold" />
-                )}
-            </Stack>
-
-            {/* Reason Section */}
-            <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${theme.palette.divider}` }}>
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                    Reason
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
-                    {leave?.reson || 'No reason specified'}
-                </Typography>
-            </Box>
-
-            {/* Attachments */}
-            {leave?.attachment && (
-                <Button
-                    href={leave.attachment}
-                    target="_blank"
-                    variant="outlined"
-                    size="small"
-                    startIcon={<Iconify icon={"solar:link-bold" as any} />}
-                    sx={{ alignSelf: 'flex-start', borderRadius: 1.5 }}
-                >
-                    View Attachment
-                </Button>
-            )}
-
-            {/* Conversation History */}
-            {renderConversation}
-        </Stack>
-    );
+    const hasHistory = conversation.length > 0;
 
     return (
         <>
-            <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+            <Dialog
+                open={open}
+                onClose={onClose}
+                fullWidth
+                maxWidth={hasHistory ? 'lg' : 'md'}
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (theme) => theme.customShadows?.z24,
+                    }
+                }}
+            >
                 <DialogTitle sx={{ m: 0, p: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Stack direction="row" alignItems="center" spacing={1.5}>
                         <Typography variant="h5" sx={{ fontWeight: 800 }}>Application Details</Typography>
@@ -441,7 +342,128 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props
                             <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
                         </Box>
                     ) : leave ? (
-                        renderDetails
+                        <Box
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: { xs: '1fr', lg: 'repeat(12, 1fr)' },
+                                gap: 3,
+                            }}
+                        >
+                            {/* Left Column: Details */}
+                            <Box sx={{ gridColumn: { lg: hasHistory ? 'span 8' : 'span 12' } }}>
+                                <Stack spacing={3}>
+                                    {/* Header Summary Card */}
+                                    <Box
+                                        sx={{
+                                            p: 3,
+                                            borderRadius: 2,
+                                            bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
+                                            boxShadow: (theme) => theme.customShadows?.z12,
+                                            border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.12)}`,
+                                            position: 'relative',
+                                            overflow: 'hidden',
+                                        }}
+                                    >
+                                        <Stack direction="row" alignItems="center" spacing={2.5} sx={{ mb: 3 }}>
+                                            <Box
+                                                sx={{
+                                                    width: 54,
+                                                    height: 54,
+                                                    borderRadius: 1.5,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: 'common.white',
+                                                    background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.info.main} 100%)`,
+                                                    boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.primary.main, 0.24)}`,
+                                                }}
+                                            >
+                                                <Iconify icon={"solar:user-bold-duotone" as any} width={32} />
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+                                                    {leave?.employee_name}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                                    {leave?.employee}
+                                                </Typography>
+                                            </Box>
+                                        </Stack>
+
+                                        <Stack
+                                            direction="row"
+                                            spacing={4}
+                                            sx={{
+                                                p: 2,
+                                                borderRadius: 1.5,
+                                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                            }}
+                                        >
+                                            <Stack spacing={0.5}>
+                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800 }}>TYPE</Typography>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{leave?.leave_type || 'N/A'}</Typography>
+                                            </Stack>
+                                            <Stack spacing={0.5}>
+                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800 }}>DURATION</Typography>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                                                    {leave?.leave_type?.toLowerCase() === 'permission'
+                                                        ? `${leave?.permission_hours} mins`
+                                                        : `${leave?.total_days} days`
+                                                    }
+                                                </Typography>
+                                            </Stack>
+                                            <Stack spacing={0.5}>
+                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800 }}>STATUS</Typography>
+                                                <Label color={getStatusColor(leave?.workflow_state)} variant="filled" sx={{ textTransform: 'uppercase', height: 22, px: 1 }}>
+                                                    {leave?.workflow_state || 'Pending'}
+                                                </Label>
+                                            </Stack>
+                                        </Stack>
+                                    </Box>
+
+                                    {/* Date Details */}
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
+                                        <DetailRow label="Applied On" value={dayjs(leave?.creation).format('DD MMM YYYY HH:mm')} icon="solar:calendar-bold" />
+                                        <DetailRow label="Half Day" value={leave?.half_day === 1 ? `Yes (${dayjs(leave?.half_day_date).format('DD MMM YYYY')})` : 'No'} icon="solar:history-bold" />
+                                        <DetailRow label="From Date" value={dayjs(leave?.from_date).format('DD MMM YYYY')} icon="solar:calendar-date-bold" />
+                                        <DetailRow label="To Date" value={dayjs(leave?.to_date).format('DD MMM YYYY')} icon="solar:calendar-date-bold" />
+                                    </Box>
+
+                                    <Divider />
+
+                                    {/* Reason Section */}
+                                    <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${theme.palette.divider}` }}>
+                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                            Reason
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
+                                            {leave?.reson || 'No reason specified'}
+                                        </Typography>
+                                    </Box>
+
+                                    {/* Attachments */}
+                                    {leave?.attachment && (
+                                        <Button
+                                            href={leave.attachment}
+                                            target="_blank"
+                                            variant="outlined"
+                                            size="small"
+                                            startIcon={<Iconify icon={"solar:link-bold" as any} />}
+                                            sx={{ alignSelf: 'flex-start', borderRadius: 1.5 }}
+                                        >
+                                            View Attachment
+                                        </Button>
+                                    )}
+                                </Stack>
+                            </Box>
+
+                            {/* Right Column: Conversation */}
+                            {hasHistory && (
+                                <Box sx={{ gridColumn: { lg: 'span 4' } }}>
+                                    {renderConversation}
+                                </Box>
+                            )}
+                        </Box>
                     ) : (
                         <Box sx={{ py: 10, textAlign: 'center' }}>
                             <Iconify icon={"solar:ghost-bold" as any} width={64} sx={{ color: 'text.disabled', mb: 2 }} />
@@ -470,7 +492,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props
                         </DialogActions>
                     </>
                 )}
-            </Dialog>
+            </Dialog >
 
             <Dialog open={commentDialogOpen} onClose={() => setCommentDialogOpen(false)} fullWidth maxWidth="xs">
                 <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
