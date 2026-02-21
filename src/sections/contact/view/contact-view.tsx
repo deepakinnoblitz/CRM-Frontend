@@ -18,6 +18,7 @@ import { useContacts } from 'src/hooks/useContacts';
 import { getString } from 'src/utils/string';
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
+import { CONFIG } from 'src/config-global';
 import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 import locationData from 'src/assets/data/location_data.json';
@@ -497,7 +498,7 @@ export function ContactView() {
                                             companyName: getString(row.company_name) || '',
                                             email: getString(row.email) || '',
                                             phone: getString(row.phone) || '',
-                                            avatarUrl: '/assets/images/avatar/avatar-25.webp',
+                                            avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
                                             sourceLead: row.source_lead ? `${getString(row.source_lead)} - ${leadOptions.find(l => l.name === getString(row.source_lead))?.lead_name || ''}` : '',
                                         }}
                                         selected={selected.includes(row.name)}

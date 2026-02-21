@@ -73,9 +73,6 @@ export default function ChatSidebar({ user, channels, selectedChannel, onSelectC
                     <IconButton size="small" color="inherit" onClick={onOpenContacts}>
                         <Iconify icon="mingcute:add-line" width={24} />
                     </IconButton>
-                    <IconButton size="small" color="inherit">
-                        <Iconify icon="mingcute:close-line" width={24} />
-                    </IconButton>
                 </Stack>
             </Stack>
 
@@ -92,7 +89,20 @@ export default function ChatSidebar({ user, channels, selectedChannel, onSelectC
                                 <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
                             </InputAdornment>
                         ),
-                        sx: { bgcolor: 'background.neutral', border: 'none', '& fieldset': { border: 'none' } }
+                        sx: {
+                            bgcolor: '#FFFFFF',
+                            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.16)}`,
+                            borderRadius: 1,
+                            transition: (theme) => theme.transitions.create(['border-color', 'box-shadow']),
+                            '&:hover': {
+                                borderColor: 'text.primary',
+                            },
+                            '&.Mui-focused': {
+                                boxShadow: (theme) => `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
+                                borderColor: 'primary.main',
+                            },
+                            '& fieldset': { border: 'none' }
+                        }
                     }}
                 />
             </Box>
@@ -100,13 +110,11 @@ export default function ChatSidebar({ user, channels, selectedChannel, onSelectC
             <Box sx={{
                 flexGrow: 1,
                 overflowY: 'auto',
-                // Hide scrollbar for Chrome, Safari and Opera
-                '&::-webkit-scrollbar': {
-                    display: 'none'
-                },
-                // Hide scrollbar for IE, Edge and Firefox
-                msOverflowStyle: 'none',  // IE and Edge
-                scrollbarWidth: 'none',  // Firefox
+                px: 1,
+                // Hide scrollbar
+                '&::-webkit-scrollbar': { display: 'none' },
+                msOverflowStyle: 'none',
+                scrollbarWidth: 'none',
             }}>
                 {loading ? renderLoading : (
                     <List disablePadding>
@@ -116,16 +124,30 @@ export default function ChatSidebar({ user, channels, selectedChannel, onSelectC
                                 selected={selectedChannel?.room === channel.room}
                                 onClick={() => onSelectChannel(channel)}
                                 sx={{
-                                    py: 1,
-                                    px: 2.5,
-                                    borderRadius: 1.5, // Rounded corners for better aesthetics
-                                    mb: 0.5, // Slight spacing between items
+                                    py: 1.5,
+                                    px: 1.5,
+                                    borderRadius: 1,
+                                    mb: 0.5,
+                                    transition: (theme) => theme.transitions.create(['background-color']),
                                     '&.Mui-selected': {
-                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08), // Lighter selected background
+                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
                                         '&:hover': {
                                             bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
+                                        },
+                                        '&::before': {
+                                            content: '""',
+                                            position: 'absolute',
+                                            left: 0,
+                                            height: '60%',
+                                            width: 4,
+                                            borderRadius: '0 4px 4px 0',
+                                            bgcolor: 'primary.main',
+                                            background: (theme) => `linear-gradient(to bottom, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
                                         }
                                     },
+                                    '&:hover': {
+                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                    }
                                 }}
                             >
                                 <Box sx={{ position: 'relative', mr: 2 }}>

@@ -33,6 +33,7 @@ import { useLeads } from 'src/hooks/useLeads';
 import { getString } from 'src/utils/string';
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
+import { CONFIG } from 'src/config-global';
 import { DashboardContent } from 'src/layouts/dashboard';
 import locationData from 'src/assets/data/location_data.json';
 import { getLead, createLead, updateLead, deleteLead, convertLead, getDoctypeList, getWorkflowStates, getWorkflowActions, applyWorkflowAction, type ConvertLeadResponse } from 'src/api/leads';
@@ -1160,7 +1161,7 @@ export function LeadView() {
                           email: getString(row.email) ?? '-',
                           status: getString(row.status) ?? '-',
                           workflow_state: getString(row.workflow_state) ?? '-',
-                          avatarUrl: '/assets/images/avatar/avatar-25.webp',
+                          avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
                           isVerified: true,
                           country: getString(row.country) ?? '-',
                         }}

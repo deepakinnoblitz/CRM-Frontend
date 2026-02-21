@@ -179,9 +179,18 @@ export default function ChatView() {
 
 
     return (
-        <Container maxWidth="xl">
-
-            <Card sx={{ height: '82vh', display: 'flex', mt: 1 }}>
+        <Container maxWidth="xl" sx={{ height: '100%', py: 3 }}>
+            <Box
+                sx={{
+                    height: '82vh',
+                    display: 'flex',
+                    bgcolor: '#FFFFFF',
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
+                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
+                }}
+            >
                 <ChatSidebar
                     user={user}
                     channels={enrichedChannels}
@@ -227,7 +236,7 @@ export default function ChatView() {
                         </Stack>
                     )}
                 </Box>
-            </Card>
+            </Box>
 
             <ChatContactDialog
                 open={openContacts}
