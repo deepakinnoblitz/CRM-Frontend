@@ -503,6 +503,14 @@ export function LeavesView() {
                                             halfDay: row.half_day,
                                             permissionHours: row.permission_hours,
                                             modified: row.modified,
+                                            hrQueryCount: [1, 2, 3, 4, 5].filter(i => {
+                                                const field = i === 1 ? 'hr_query' : `hr_query_${i}`;
+                                                return row[field] && String(row[field]).trim();
+                                            }).length,
+                                            empReplyCount: [1, 2, 3, 4, 5].filter(i => {
+                                                const field = i === 1 ? 'employee_reply' : `employee_reply_${i}`;
+                                                return row[field] && String(row[field]).trim();
+                                            }).length,
                                         }}
                                         selected={false}
                                         onSelectRow={() => { }}

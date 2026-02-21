@@ -24,11 +24,16 @@ import { ClarificationDialog } from '../report/requests/clarification-dialog';
 export type RequestTableRowProps = {
     row: {
         id: string;
+        name: string;
+        employee_id: string;
         employee_name: string;
         subject: string;
         workflow_state?: string;
         creation?: string;
         modified?: string;
+        owner?: string;
+        hrQueryCount?: number;
+        empReplyCount?: number;
     };
     selected: boolean;
     onSelectRow: () => void;
@@ -82,6 +87,20 @@ export function RequestTableRow({
     const handleCloseMenu = () => {
         setOpenMenu(null);
     };
+
+    const filteredActions = actions.filter((action) => {
+        const lowerAction = action.action.toLowerCase();
+        const isClarification = lowerAction.includes('clarification') || lowerAction.includes('query');
+        const isReply = lowerAction.includes('reply');
+
+        const hrCount = row.hrQueryCount || 0;
+        const empCount = row.empReplyCount || 0;
+
+        if (isClarification && isHR && hrCount >= 5) return false;
+        if (isReply && !isHR && empCount >= 5) return false;
+
+        return true;
+    });
 
     const handleAction = (action: string) => {
         const lowerAction = action.toLowerCase();
@@ -174,7 +193,16 @@ export function RequestTableRow({
                 </TableCell>
             )}
 
-            <TableCell>{row.employee_name || '-'}</TableCell>
+            <TableCell>
+                <Box>
+                    <Typography variant="subtitle2" noWrap>
+                        {row.employee_name || '-'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        {row.employee_id || '-'}
+                    </Typography>
+                </Box>
+            </TableCell>
 
             <TableCell>{row.subject || '-'}</TableCell>
 
@@ -208,7 +236,7 @@ export function RequestTableRow({
                 anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 PaperProps={{
-                    sx: { width: 140, p: 1 },
+                    sx: { width: 180, p: 1 },
                 }}
             >
                 {loadingActions ? (
@@ -217,7 +245,7 @@ export function RequestTableRow({
                     </Box>
                 ) : (
                     <>
-                        {actions.map((action) => (
+                        {filteredActions.map((action) => (
                             <MenuItem key={action.action} onClick={() => handleAction(action.action)} sx={{ color: getActionColor(action.action) }}>
                                 <Iconify icon={getActionIcon(action.action)} sx={{ mr: 2 }} />
                                 {action.action}

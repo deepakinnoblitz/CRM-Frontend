@@ -7,6 +7,8 @@ import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 
+import { fDate } from 'src/utils/format-time';
+
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -53,7 +55,7 @@ export function TimesheetDetailsDialog({ open, onClose, timesheet }: Props) {
                                     {timesheet.employee_name}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                    Date: {timesheet.timesheet_date ? new Date(timesheet.timesheet_date).toLocaleDateString() : '-'}
+                                    Date: {timesheet.timesheet_date ? fDate(timesheet.timesheet_date, 'DD-MM-YYYY') : '-'}
                                 </Typography>
                             </Box>
                             <Box sx={{ textAlign: 'right' }}>
@@ -81,7 +83,7 @@ export function TimesheetDetailsDialog({ open, onClose, timesheet }: Props) {
                                 <DetailCard label="Employee" value={timesheet.employee_name} icon="solar:user-rounded-bold-duotone" />
                                 <DetailCard
                                     label="Date"
-                                    value={timesheet.timesheet_date ? new Date(timesheet.timesheet_date).toLocaleDateString() : '-'}
+                                    value={timesheet.timesheet_date ? fDate(timesheet.timesheet_date, 'DD-MM-YYYY') : '-'}
                                     icon="solar:calendar-date-bold-duotone"
                                 />
                                 <DetailCard

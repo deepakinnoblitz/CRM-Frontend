@@ -54,7 +54,6 @@ export function LeaveAllocationTableRow({
             case 'Approved': return 'success';
             case 'Cancelled': return 'error';
             case 'Draft': return 'warning';
-            case 'Open': return 'info';
             default: return 'default';
         }
     };

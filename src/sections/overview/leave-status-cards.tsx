@@ -25,7 +25,7 @@ export function LeaveStatusCards({ data, sx, ...other }: Props) {
     const theme = useTheme();
 
     // Find specific leave types
-    const sickLeave = data.find((l) => l.leave_type === 'Sick Leave - Paid');
+    const sickLeave = data.find((l) => l.leave_type === 'Paid Leave');
     const unpaidLeave = data.find((l) => l.leave_type === 'Unpaid Leave');
     const permission = data.find((l) => l.leave_type === 'Permission');
 
@@ -36,7 +36,7 @@ export function LeaveStatusCards({ data, sx, ...other }: Props) {
 
     return (
         <Grid container spacing={3} sx={sx} {...other}>
-            {/* Sick Leave - Paid */}
+            {/* Paid Leave */}
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                 <Card
                     sx={{
@@ -64,7 +64,7 @@ export function LeaveStatusCards({ data, sx, ...other }: Props) {
                             color: '#0f172a',
                         }}
                     >
-                        Sick Leave - Paid
+                        Paid Leave
                     </Typography>
 
                     {/* Stats Row */}

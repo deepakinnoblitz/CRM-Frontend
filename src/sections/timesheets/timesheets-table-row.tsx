@@ -5,6 +5,8 @@ import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 
+import { fDate } from 'src/utils/format-time';
+
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -79,7 +81,7 @@ export function TimesheetTableRow({
             <TableCell>{row.employee_name || '-'}</TableCell>
 
             <TableCell>
-                {row.timesheet_date ? new Date(row.timesheet_date).toLocaleDateString() : '-'}
+                {row.timesheet_date ? fDate(row.timesheet_date, 'DD-MM-YYYY') : '-'}
             </TableCell>
 
             <TableCell>{row.total_hours ? `${row.total_hours} hrs` : '-'}</TableCell>
