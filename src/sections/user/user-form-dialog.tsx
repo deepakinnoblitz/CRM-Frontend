@@ -147,6 +147,17 @@ export function UserFormDialog({
             newErrors.first_name = 'First Name is required';
         }
 
+        // New user password validation
+        if (!selectedUser) {
+            if (!newPassword) {
+                newErrors.password = 'Password is required';
+            } else if (newPassword.length < 6) {
+                newErrors.password = 'Password must be at least 6 characters';
+            } else if (newPassword !== confirmPassword) {
+                newErrors.password = 'Passwords do not match';
+            }
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -187,8 +198,13 @@ export function UserFormDialog({
 
     useEffect(() => {
         if (newPassword && confirmPassword && newPassword === confirmPassword) {
-            if (formData.new_password !== newPassword) {
-                setFormData({ ...formData, new_password: newPassword });
+            // Only sync if it meets minimum length to prevent backend crash on super-weak passwords
+            if (newPassword.length >= 6) {
+                if (formData.new_password !== newPassword) {
+                    setFormData({ ...formData, new_password: newPassword });
+                }
+            } else if (formData.new_password !== '') {
+                setFormData({ ...formData, new_password: '' });
             }
         } else if (!newPassword && !confirmPassword) {
             if (formData.new_password !== '') {
@@ -275,9 +291,12 @@ export function UserFormDialog({
             }
         } else {
             // For new user, update formData
-            setFormData({ ...formData, new_password: newPassword });
-            setNewPassword('');
-            setConfirmPassword('');
+            if (newPassword.length < 6) {
+                setFormData({ ...formData, new_password: '' }); // Reset if invalid
+            } else {
+                setFormData({ ...formData, new_password: newPassword });
+            }
+            // Don't reset newPassword/confirmPassword yet, let user see it's synced
             setPasswordError('');
         }
     };
@@ -505,7 +524,13 @@ export function UserFormDialog({
                     label="New Password"
                     type={showNewPassword.value ? 'text' : 'password'}
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
+                    onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        if (errors.password) setErrors({ ...errors, password: '' });
+                    }}
+                    autoComplete="new-password"
+                    error={!!errors.password}
+                    helperText={errors.password}
                     InputProps={{
                         endAdornment: (
                             <InputAdornment position="end">
@@ -523,6 +548,9 @@ export function UserFormDialog({
                     type={showConfirmPassword.value ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    autoComplete="new-password"
+                    error={!!newPassword && !!confirmPassword && newPassword !== confirmPassword}
+                    helperText={!!newPassword && !!confirmPassword && newPassword !== confirmPassword ? 'Passwords do not match' : ''}
                     InputProps={{
                         endAdornment: (
                             <InputAdornment position="end">
