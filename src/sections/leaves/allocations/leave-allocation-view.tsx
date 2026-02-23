@@ -96,7 +96,7 @@ export function LeaveAllocationView() {
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
     const [totalLeaves, setTotalLeaves] = useState('');
-    const [status, setStatus] = useState('Open');
+    const [status, setStatus] = useState('Approved');
 
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
     const [leaveTypeOptions, setLeaveTypeOptions] = useState<any[]>([]);
@@ -195,7 +195,7 @@ export function LeaveAllocationView() {
         setFromDate(row.from_date);
         setToDate(row.to_date);
         setTotalLeaves(String(row.total_leaves_allocated));
-        setStatus(row.workflow_state || row.status || 'Open');
+        setStatus(row.status || 'Approved');
         setIsEdit(true);
         setOpenCreate(true);
     };
@@ -220,7 +220,7 @@ export function LeaveAllocationView() {
         setFromDate('');
         setToDate('');
         setTotalLeaves('');
-        setStatus('Open');
+        setStatus('Approved');
         setFormErrors({});
         setIsEdit(false);
         setSelectedAllocationName(null);
@@ -419,6 +419,7 @@ export function LeaveAllocationView() {
                             <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
                                 <DatePicker
                                     label="From Date"
+                                    format="DD-MM-YYYY"
                                     value={fromDate ? dayjs(fromDate) : null}
                                     onChange={(val) => {
                                         setFromDate(val?.format('YYYY-MM-DD') || '');
@@ -437,6 +438,7 @@ export function LeaveAllocationView() {
                                 />
                                 <DatePicker
                                     label="To Date"
+                                    format="DD-MM-YYYY"
                                     value={toDate ? dayjs(toDate) : null}
                                     onChange={(val) => {
                                         setToDate(val?.format('YYYY-MM-DD') || '');

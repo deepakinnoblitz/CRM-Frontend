@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -62,6 +62,8 @@ export function RequestsView() {
     ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
   );
 
+  const isRestrictedEmployee = user?.roles.includes('Employee') && !isHR;
+
   const [page, setPage] = useState(0);
 
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -77,6 +79,8 @@ export function RequestsView() {
 
   const [openFilters, setOpenFilters] = useState(false);
 
+  const effectiveEmployee = isHR ? (filterEmployee || 'all') : (user?.employee || 'all');
+
   const { data, total, refetch } = useRequests(
     page + 1,
     rowsPerPage,
@@ -86,7 +90,7 @@ export function RequestsView() {
     startDate || undefined,
     endDate || undefined,
     filterStatus,
-    filterEmployee || 'all'
+    effectiveEmployee
   );
 
   const [openCreate, setOpenCreate] = useState(false);
@@ -118,17 +122,13 @@ export function RequestsView() {
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Load permissions
-  useState(() => {
+  // Load permissions and employees
+  useEffect(() => {
     getRequestPermissions().then(setPermissions);
-  });
-
-  // Load employees for dropdown
-  useState(() => {
     fetchEmployees({ page: 1, page_size: 1000, search: '' }).then((res) => {
       setEmployees(res.data || []);
     });
-  });
+  }, []);
 
   const handleSort = (property: string) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -223,9 +223,9 @@ export function RequestsView() {
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
-    if (!employeeId) errors.employeeId = 'Employee is required';
-    if (!subject.trim()) errors.subject = 'Subject is required';
-    if (!message.trim()) errors.message = 'Message is required';
+    if (!employeeId) errors.employeeId = 'Employee selection is required';
+    if (!subject.trim()) errors.subject = 'Please provide a subject for your request';
+    if (!message.trim()) errors.message = 'Please enter the details of your request';
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -370,7 +370,11 @@ export function RequestsView() {
     };
 
     if (!validateForm()) {
-      setSnackbar({ open: true, message: 'Please correct the errors in the form', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: 'Missing required information. Please check the highlighted fields.',
+        severity: 'error'
+      });
       return;
     }
 
@@ -441,8 +445,12 @@ export function RequestsView() {
           sortOptions={[
             { value: 'creation_desc', label: 'Newest First' },
             { value: 'creation_asc', label: 'Oldest First' },
-            { value: 'employee_name_asc', label: 'Employee: A to Z' },
-            { value: 'employee_name_desc', label: 'Employee: Z to A' },
+            { value: 'employee_id_asc', label: 'Employee ID: Low to High' },
+            { value: 'employee_id_desc', label: 'Employee ID: High to Low' },
+            { value: 'employee_name_asc', label: 'Employee Name: A to Z' },
+            { value: 'employee_name_desc', label: 'Employee Name: Z to A' },
+            { value: 'subject_asc', label: 'Subject: A to Z' },
+            { value: 'subject_desc', label: 'Subject: Z to A' },
           ]}
           onOpenFilter={() => setOpenFilters(true)}
           canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all' || filterEmployee !== null}
@@ -460,6 +468,7 @@ export function RequestsView() {
 
 
                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
+                onSort={handleSort}
 
                 hideCheckbox
                 showIndex
@@ -478,11 +487,22 @@ export function RequestsView() {
                     hideCheckbox
                     row={{
                       id: row.name,
+                      name: row.name,
+                      employee_id: row.employee_id,
                       employee_name: row.employee_name,
                       subject: row.subject,
                       workflow_state: row.workflow_state,
                       creation: row.creation,
                       modified: row.modified,
+                      owner: row.owner,
+                      hrQueryCount: [1, 2, 3, 4, 5].filter(i => {
+                        const field = i === 1 ? 'hr_query' : `hr_query_${i}`;
+                        return row[field] && String(row[field]).trim();
+                      }).length,
+                      empReplyCount: [1, 2, 3, 4, 5].filter(i => {
+                        const field = i === 1 ? 'employee_reply' : `employee_reply_${i}`;
+                        return row[field] && String(row[field]).trim();
+                      }).length,
                     }}
                     selected={selected.includes(row.name)}
                     onSelectRow={() => handleSelectRow(row.name)}
@@ -547,35 +567,75 @@ export function RequestsView() {
 
         <DialogContent dividers>
           <Box sx={{ display: 'grid', gap: 3, margin: '1rem' }}>
-            <Autocomplete
-              fullWidth
-              options={employees}
-              getOptionLabel={(option) => option.employee_name || option.name || ''}
-              isOptionEqualToValue={(option, value) => option.name === (value?.name || value)}
-              value={employees.find((emp) => emp.name === employeeId) || null}
-              onChange={(event, newValue) => {
-                setEmployeeId(newValue?.name || '');
-                if (formErrors.employeeId) setFormErrors(prev => ({ ...prev, employeeId: '' }));
-              }}
-              readOnly={!isEdit}
-              disabled={!isEdit}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Employee"
-                  required
-                  error={!!formErrors.employeeId}
-                  helperText={formErrors.employeeId}
-                  InputLabelProps={{ shrink: true }}
-                  placeholder="Search employee..."
-                  sx={{
-                    '& .MuiFormLabel-asterisk': {
-                      color: 'red',
-                    },
-                  }}
-                />
-              )}
-            />
+            {isRestrictedEmployee && !isEdit ? (
+              <TextField
+                fullWidth
+                label="Employee"
+                value={`${user?.employee_name} (${user?.employee})`}
+                InputLabelProps={{ shrink: true }}
+                InputProps={{ readOnly: true }}
+                required
+                sx={{
+                  '& .MuiFormLabel-asterisk': {
+                    color: 'red',
+                  },
+                }}
+              />
+            ) : (
+              <Autocomplete
+                fullWidth
+                options={employees}
+                getOptionLabel={(option) => {
+                  if (typeof option === 'string') {
+                    const emp = employees.find((e) => e.name === option);
+                    return emp ? `${emp.employee_name} (${emp.name})` : option;
+                  }
+                  return `${option.employee_name} (${option.name})`;
+                }}
+                isOptionEqualToValue={(option, value) => {
+                  const valId = typeof value === 'string' ? value : value?.name;
+                  return option.name === valId;
+                }}
+                value={employees.find((emp) => emp.name === employeeId) || null}
+                onChange={(event, newValue) => {
+                  setEmployeeId(newValue?.name || '');
+                  if (formErrors.employeeId) setFormErrors(prev => ({ ...prev, employeeId: '' }));
+                }}
+                readOnly={!isHR && !isEdit}
+                disabled={!isHR && !isEdit}
+                renderOption={(props, option) => {
+                  const { key, ...optionProps } = props as any;
+                  return (
+                    <li key={key} {...optionProps}>
+                      <Stack spacing={0.5}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                          {option.employee_name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          ID: {option.name}
+                        </Typography>
+                      </Stack>
+                    </li>
+                  );
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Employee"
+                    required
+                    error={!!formErrors.employeeId}
+                    helperText={formErrors.employeeId}
+                    InputLabelProps={{ shrink: true }}
+                    placeholder="Search employee..."
+                    sx={{
+                      '& .MuiFormLabel-asterisk': {
+                        color: 'red',
+                      },
+                    }}
+                  />
+                )}
+              />
+            )}
             {renderField('subject', 'Subject', 'text', [], { placeholder: 'Enter request subject' }, true)}
             {renderField('message', 'Message', 'textarea', [], { placeholder: 'Enter request details' }, true)}
           </Box>
@@ -583,7 +643,7 @@ export function RequestsView() {
 
         <DialogActions>
           <Button onClick={handleCreate} variant="contained" sx={{ bgcolor: "#08a3cd", "&": { bgcolor: "#068fb3" } }}>
-            {isEdit ? 'Update' : 'Create'}
+            {isEdit ? 'Update' : 'Submit'}
           </Button>
         </DialogActions>
 
@@ -634,6 +694,7 @@ export function RequestsView() {
         canReset={!!startDate || !!endDate || filterStatus !== 'all' || filterEmployee !== null}
         onResetFilters={handleResetFilters}
         employees={employees}
+        isHR={isHR}
       />
     </DashboardContent>
   );

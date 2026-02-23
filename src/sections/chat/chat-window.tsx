@@ -14,6 +14,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import { fDateTime, fDateSeparator } from 'src/utils/format-time';
 
 import { chatApi } from 'src/api/chat';
+import { CONFIG } from 'src/config-global';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -268,6 +269,7 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                 sx={{
                     py: 1,
                     px: 2,
+                    p: 2,
                     cursor: 'pointer',
                     '&:hover': { bgcolor: 'action.hover' },
                     borderBottom: (theme) => `solid 1px ${theme.palette.divider}`
@@ -705,7 +707,7 @@ function ChatInput({ onSend }: ChatInputProps) {
                             <InputAdornment position="end">
                                 {message.trim() ? (
                                     <IconButton onClick={handleSend} edge="end">
-                                        <Box component="img" src="/assets/icons/send_icon.png" sx={{ width: 42, height: 42 }} />
+                                        <Box component="img" src={`${CONFIG.assetsDir}/icons/send_icon.png`} sx={{ width: 42, height: 42 }} />
                                     </IconButton>
                                 ) : (
                                     <IconButton

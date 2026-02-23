@@ -293,9 +293,13 @@ export function SalarySlipFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3 }}>
-                    {isHR && renderEmployee}
-                    {renderDepartment}
-                    {renderDesignation}
+                    {isHR && (
+                        <>
+                            {renderEmployee}
+                            {renderDepartment}
+                            {renderDesignation}
+                        </>
+                    )}
                     {renderDateRange}
                 </Stack>
             </Scrollbar>

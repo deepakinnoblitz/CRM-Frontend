@@ -120,7 +120,7 @@ export function UserFormDialog({
     const [loadingPermissions, setLoadingPermissions] = useState(false);
     const [openPermissionDialog, setOpenPermissionDialog] = useState(false);
     const [permissionFormData, setPermissionFormData] = useState({
-        allow: '',
+        allow: 'Employee',
         for_value: ''
     });
 
@@ -313,7 +313,7 @@ export function UserFormDialog({
                 for_value: permissionFormData.for_value,
             });
             setOpenPermissionDialog(false);
-            setPermissionFormData({ allow: '', for_value: '' });
+            setPermissionFormData({ allow: 'Employee', for_value: '' });
             loadUserPermissions();
         } catch (error: any) {
             console.error('Failed to create permission:', error);

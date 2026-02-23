@@ -167,7 +167,7 @@ export function MyProfileView() {
                                         gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                     }}
                                 >
-                                    <DetailItem label="Bank Name" value={employee.bank_name} icon="solar:bank-bold" />
+                                    <DetailItem label="Bank Name" value={employee.bank_name} icon="solar:buildings-bold" />
                                     <DetailItem label="Bank Account" value={employee.bank_account} icon="solar:card-bold" />
                                     <DetailItem label="PF Number" value={employee.pf_number} icon="solar:document-bold" />
                                     <DetailItem label="ESI No" value={employee.esi_no} icon="solar:health-bold" />

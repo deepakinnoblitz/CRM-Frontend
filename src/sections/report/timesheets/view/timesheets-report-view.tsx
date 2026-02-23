@@ -27,6 +27,8 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { fDate } from 'src/utils/format-time';
+
 import { runReport } from 'src/api/reports';
 import { getDoctypeList } from 'src/api/leads';
 import { getTimesheet } from 'src/api/timesheets';
@@ -264,14 +266,14 @@ export function TimesheetsReportView() {
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                             <DatePicker
                                 label="From Date"
-                                format="DD/MM/YYYY"
+                                format="DD-MM-YYYY"
                                 value={fromDate}
                                 onChange={(newValue) => setFromDate(newValue)}
                                 slotProps={{ textField: { size: 'small', sx: { width: 170 } } }}
                             />
                             <DatePicker
                                 label="To Date"
-                                format="DD/MM/YYYY"
+                                format="DD-MM-YYYY"
                                 value={toDate}
                                 onChange={(newValue) => setToDate(newValue)}
                                 slotProps={{ textField: { size: 'small', sx: { width: 170 } } }}
@@ -441,7 +443,7 @@ export function TimesheetsReportView() {
                                                     <TableCell padding="checkbox">
                                                         <Checkbox checked={isSelected} onClick={(event) => handleClick(event, rowId)} />
                                                     </TableCell>
-                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.timesheet_date}</TableCell>
+                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.timesheet_date, 'DD-MM-YYYY')}</TableCell>
                                                     <TableCell>
                                                         <Typography variant="subtitle2">{row.employee_name}</Typography>
                                                         <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>

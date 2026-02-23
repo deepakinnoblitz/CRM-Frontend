@@ -465,7 +465,7 @@ export function TimesheetsView() {
         if (entries.length === 0) errors.entries = 'At least one entry is required';
 
         setFormErrors(errors);
-        return Object.keys(errors).length === 0;
+        return errors;
     };
 
     const renderField = (
@@ -523,6 +523,7 @@ export function TimesheetsView() {
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <DatePicker
                         label={label}
+                        format="DD-MM-YYYY"
                         value={dateValue}
                         onChange={(newValue) => {
                             const val =
@@ -560,10 +561,12 @@ export function TimesheetsView() {
     };
 
     const handleCreate = async () => {
-        if (!validateForm()) {
+        const errors = validateForm();
+        if (Object.keys(errors).length > 0) {
+            const firstError = Object.values(errors)[0];
             setSnackbar({
                 open: true,
-                message: 'Please correct the errors in the form',
+                message: firstError || 'Please correct the errors in the form',
                 severity: 'error',
             });
             return;

@@ -8,6 +8,8 @@ import { styled } from '@mui/material/styles';
 
 import { RouterLink } from 'src/routes/components';
 
+import { CONFIG } from 'src/config-global';
+
 import { logoClasses } from './classes';
 
 // ----------------------------------------------------------------------
@@ -25,7 +27,7 @@ export function Logo({
   isSingle = true,
   ...other
 }: LogoProps) {
-  const logoUrl = '/assets/logo/Innoblitz_logo.png';
+  const logoUrl = `${CONFIG.assetsDir}/logo/Innoblitz_logo.png`;
 
   const singleLogo = (
     <Box

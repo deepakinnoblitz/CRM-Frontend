@@ -49,7 +49,9 @@ const GlassSummaryCard = styled(Box)(({ theme }) => ({
     },
 }));
 
-const TimelineDayCard = styled(Card)<{ isToday?: boolean; statusColor?: string }>(
+const TimelineDayCard = styled(Card, {
+    shouldForwardProp: (prop) => prop !== 'isToday' && prop !== 'statusColor',
+})<{ isToday?: boolean; statusColor?: string }>(
     ({ theme, isToday, statusColor }) => ({
         padding: theme.spacing(2),
         borderRadius: 20,
@@ -131,7 +133,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
             'On Leave': theme.palette.success.main,
             'Holiday': theme.palette.error.main,
             'Absent': theme.palette.error.main,
-            'Updating...': theme.palette.warning.main,
+            'Updating...': theme.palette.info.main,
             'Not Marked': theme.palette.error.main,
             'Weekly Off': theme.palette.error.main,
         };
@@ -213,7 +215,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                             } else if (status.label === 'Missing Log') {
                                 centerLabel = 'MISSING LOG';
                             } else if (isToday && status.label === 'Updating...') {
-                                centerLabel = '---';
+                                centerLabel = 'Will Update Soon';
                             } else {
                                 centerLabel = status.label.toUpperCase();
                             }
@@ -293,7 +295,8 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                                     fontSize: centerLabel.length > 20 ? '0.75rem' : (centerLabel.length > 12 ? '0.875rem' : '1.125rem'),
                                                     color: record.working_hours >= 9 ? 'success.main' :
                                                         (record.working_hours > 0 ? 'error.main' :
-                                                            (centerLabel.includes('HOLIDAY') || centerLabel.includes('SATURDAY') || centerLabel.includes('SUNDAY') ? 'error.main' : 'text.primary'))
+                                                            (centerLabel.includes('HOLIDAY') || centerLabel.includes('SATURDAY') || centerLabel.includes('SUNDAY') ? 'error.main' :
+                                                                (centerLabel === 'Will Update Soon' ? 'info.main' : 'text.primary')))
                                                 }}
                                             >
                                                 {centerLabel}

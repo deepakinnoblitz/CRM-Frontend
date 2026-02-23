@@ -76,9 +76,9 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
       console.error('Logout failed:', error);
     } finally {
       setUser(null);
-      router.push('/sign-in');
+      window.location.href = '/';
     }
-  }, [handleClosePopover, router, setUser]);
+  }, [handleClosePopover, setUser]);
 
   return (
     <>

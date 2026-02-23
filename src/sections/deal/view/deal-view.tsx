@@ -35,6 +35,7 @@ import { useDeals } from 'src/hooks/useDeals';
 
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
+import { CONFIG } from 'src/config-global';
 import { uploadFile } from 'src/api/data-import';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { createDeal, updateDeal, deleteDeal, getDealPermissions } from 'src/api/deals';
@@ -880,7 +881,7 @@ export function DealView() {
                                                                 value: row.value ?? 0,
                                                                 stage: row.stage ?? '-',
                                                                 expectedCloseDate: row.expected_close_date ?? '-',
-                                                                avatarUrl: '/assets/images/avatar/avatar-25.webp',
+                                                                avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
                                                             }}
                                                             selected={selected.includes(row.name)}
                                                             onSelectRow={() => handleSelectRow(row.name)}
