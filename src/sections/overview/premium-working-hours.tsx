@@ -49,7 +49,9 @@ const GlassSummaryCard = styled(Box)(({ theme }) => ({
     },
 }));
 
-const TimelineDayCard = styled(Card)<{ isToday?: boolean; statusColor?: string }>(
+const TimelineDayCard = styled(Card, {
+    shouldForwardProp: (prop) => prop !== 'isToday' && prop !== 'statusColor',
+})<{ isToday?: boolean; statusColor?: string }>(
     ({ theme, isToday, statusColor }) => ({
         padding: theme.spacing(2),
         borderRadius: 20,

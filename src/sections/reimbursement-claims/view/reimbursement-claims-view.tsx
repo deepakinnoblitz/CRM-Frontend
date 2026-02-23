@@ -113,10 +113,12 @@ export function ReimbursementClaimsView() {
         ['HR Manager', 'HR User', 'System Manager', 'Administrator'].includes(role)
     );
 
+    const effectiveEmployee = isHR ? (filters.employee || 'all') : (user?.employee || 'all');
+
     const claimsFilters = useMemo(() => ({
         ...filters,
-        employee: filters.employee || 'all',
-    }), [filters]);
+        employee: effectiveEmployee,
+    }), [filters, isHR, effectiveEmployee]);
 
     const { data, total, refetch } = useReimbursementClaims(
         page + 1,

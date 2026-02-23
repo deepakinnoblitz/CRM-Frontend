@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -118,9 +118,9 @@ export function AssetsView() {
     const filter = createFilterOptions<any>();
 
     // Load permissions
-    useState(() => {
+    useEffect(() => {
         getAssetPermissions().then(setPermissions);
-    });
+    }, []);
 
     const handleFilters = (newFilters: Partial<typeof filters>) => {
         setFilters((prev) => ({ ...prev, ...newFilters }));

@@ -92,7 +92,7 @@ export async function createUserPermission(data: {
         user: data.user,
         allow: data.allow,
         for_value: data.for_value,
-        apply_to_all_doctypes: data.apply_to_all_doctypes ?? 0,
+        apply_to_all_doctypes: data.apply_to_all_doctypes ?? 1,
         is_default: data.is_default ?? 0
     };
 

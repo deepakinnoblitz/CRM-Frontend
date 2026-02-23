@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -79,6 +79,8 @@ export function RequestsView() {
 
   const [openFilters, setOpenFilters] = useState(false);
 
+  const effectiveEmployee = isHR ? (filterEmployee || 'all') : (user?.employee || 'all');
+
   const { data, total, refetch } = useRequests(
     page + 1,
     rowsPerPage,
@@ -88,7 +90,7 @@ export function RequestsView() {
     startDate || undefined,
     endDate || undefined,
     filterStatus,
-    filterEmployee || 'all'
+    effectiveEmployee
   );
 
   const [openCreate, setOpenCreate] = useState(false);
@@ -120,17 +122,13 @@ export function RequestsView() {
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Load permissions
-  useState(() => {
+  // Load permissions and employees
+  useEffect(() => {
     getRequestPermissions().then(setPermissions);
-  });
-
-  // Load employees for dropdown
-  useState(() => {
     fetchEmployees({ page: 1, page_size: 1000, search: '' }).then((res) => {
       setEmployees(res.data || []);
     });
-  });
+  }, []);
 
   const handleSort = (property: string) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -696,6 +694,7 @@ export function RequestsView() {
         canReset={!!startDate || !!endDate || filterStatus !== 'all' || filterEmployee !== null}
         onResetFilters={handleResetFilters}
         employees={employees}
+        isHR={isHR}
       />
     </DashboardContent>
   );
