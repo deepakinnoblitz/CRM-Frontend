@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
@@ -103,7 +103,7 @@ export function PurchaseListView({ hideHeader }: Props) {
         filters.payment_terms !== 'all';
 
     // Fetch filters options
-    useState(() => {
+    useEffect(() => {
         Promise.all([
             fetch('/api/method/frappe.client.get_list?doctype=Contacts&fields=["name","first_name"]&link_full_match=0&limit_page_length=999&filters=[["Contacts","customer_type","=","Purchase"]]', { credentials: 'include' }),
             fetch('/api/method/frappe.client.get_list?doctype=Payment Type&fields=["name"]&limit_page_length=999', { credentials: 'include' })
@@ -114,7 +114,7 @@ export function PurchaseListView({ hideHeader }: Props) {
             setVendorOptions(vendors.message || []);
             setPaymentTypeOptions(paymentTypes.message || []);
         }).catch(err => console.error('Failed to fetch dropdown options', err));
-    });
+    }, []);
 
     const handleFilterName = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {

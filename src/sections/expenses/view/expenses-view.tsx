@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -83,9 +83,9 @@ export function ExpensesView() {
     });
 
     // Load permissions
-    useState(() => {
+    useEffect(() => {
         getExpensePermissions().then(setPermissions);
-    });
+    }, []);
 
     const handleSort = (property: string) => {
         const isAsc = orderBy === property && order === 'asc';

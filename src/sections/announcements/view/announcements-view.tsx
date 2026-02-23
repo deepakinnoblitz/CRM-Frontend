@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -134,9 +134,9 @@ export function AnnouncementsView() {
     });
 
     // Load permissions
-    useState(() => {
+    useEffect(() => {
         getAnnouncementPermissions().then(setPermissions);
-    });
+    }, []);
 
     const handleSortChange = (value: string) => {
         const parts = value.split('_');
