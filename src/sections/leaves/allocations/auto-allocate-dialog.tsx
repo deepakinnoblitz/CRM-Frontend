@@ -32,7 +32,7 @@ import { Iconify } from 'src/components/iconify';
 interface AutoAllocateDialogProps {
     open: boolean;
     onClose: () => void;
-    onSuccess: (message: string) => void;
+    onSuccess: (data: any) => void;
     onError: (error: string) => void;
 }
 
@@ -76,8 +76,8 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
     const handleAllocate = async () => {
         try {
             setAllocating(true);
-            const message = await autoAllocateMonthlyLeaves(year, month);
-            onSuccess(message);
+            const data = await autoAllocateMonthlyLeaves(year, month) as any;
+            onSuccess(data);
             handleClose();
         } catch (error: any) {
             onError(error.message || 'Failed to allocate leaves');
@@ -111,7 +111,7 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 3 }}>
+            <DialogContent sx={{ p: 3, mt: 2 }}>
                 {step === 'input' ? (
                     <Box sx={{ mt: 2 }}>
                         <Stack direction="row" spacing={2}>

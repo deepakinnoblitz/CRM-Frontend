@@ -130,7 +130,7 @@ export async function getEmployeeProbationInfo(employee: string, date?: string) 
     const res = await frappeRequest(`/api/method/company.company.api.get_employee_probation_info?${query.toString()}`);
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to fetch probation info"));
+        throw new Error(handleFrappeError(error, "Failed to probation info"));
     }
     return (await res.json()).message;
 }

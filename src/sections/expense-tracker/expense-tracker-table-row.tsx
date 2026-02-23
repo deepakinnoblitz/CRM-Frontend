@@ -76,7 +76,7 @@ export function ExpenseTrackerTableRow({
             )}
 
             <TableCell>
-                <Typography variant="body2" noWrap>
+                <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
                     {titlenotes || '-'}
                 </Typography>
             </TableCell>

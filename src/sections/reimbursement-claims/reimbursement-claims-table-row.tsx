@@ -10,6 +10,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
+import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
 import { Label } from 'src/components/label';
@@ -21,6 +22,7 @@ type Props = {
     row: {
         id: string;
         employee_name: string;
+        employee_id?: string;
         claim_type: string;
         date_of_expense: string;
         amount: number;
@@ -113,7 +115,18 @@ export function ReimbursementClaimTableRow({
                     </TableCell>
                 )}
 
-                <TableCell>{row.employee_name}</TableCell>
+                <TableCell>
+                    <Box>
+                        <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
+                            {row.employee_name || '—'}
+                        </Typography>
+                        {row.employee_id && (
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                {row.employee_id}
+                            </Typography>
+                        )}
+                    </Box>
+                </TableCell>
 
                 <TableCell>{row.claim_type}</TableCell>
 

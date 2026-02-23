@@ -115,14 +115,14 @@ export function JobApplicantTableRow({
 
             <TableCell>
                 <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar alt={row.applicant_name} sx={{ bgcolor: 'primary.main', color: 'common.white' }}>
+                    {/* <Avatar alt={row.applicant_name} sx={{ bgcolor: 'primary.main', color: 'common.white' }}>
                         {row.applicant_name.charAt(0).toUpperCase()}
-                    </Avatar>
+                    </Avatar> */}
                     <Box>
                         <Typography
                             variant="subtitle2"
                             noWrap
-                            sx={{ color: 'primary.main', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                            sx={{ cursor: 'pointer', fontWeight: 600 }}
                             onClick={onView}
                         >
                             {row.applicant_name}
