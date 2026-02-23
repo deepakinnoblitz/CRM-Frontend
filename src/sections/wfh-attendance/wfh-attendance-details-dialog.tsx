@@ -9,6 +9,8 @@ import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 
+import { fTime } from 'src/utils/format-time';
+
 import { getWFHAttendance } from 'src/api/wfh-attendance';
 
 import { Label } from 'src/components/label';
@@ -114,8 +116,8 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId }: Props) {
                                 }}
                             >
                                 <DetailCard label="Date" value={wfh.date} icon="solar:calendar-date-bold-duotone" />
-                                <DetailCard label="From Time" value={wfh.from_time} icon="solar:stopwatch-play-bold-duotone" />
-                                <DetailCard label="To Time" value={wfh.to_time} icon="solar:stopwatch-pause-bold-duotone" />
+                                <DetailCard label="From Time" value={wfh.from_time ? fTime(wfh.from_time) : '-'} icon="solar:stopwatch-play-bold-duotone" />
+                                <DetailCard label="To Time" value={wfh.to_time ? fTime(wfh.to_time) : '-'} icon="solar:stopwatch-pause-bold-duotone" />
                                 <DetailCard
                                     label="Total Hours"
                                     value={wfh.total_hours}

@@ -7,6 +7,8 @@ import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import CardContent from '@mui/material/CardContent';
 
+import { fDate } from 'src/utils/format-time';
+
 import { getHRDoc } from 'src/api/hr-management';
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -14,7 +16,6 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 import { useAuth } from 'src/auth/auth-context';
-
 // ----------------------------------------------------------------------
 
 export function MyProfileView() {
@@ -131,9 +132,9 @@ export function MyProfileView() {
                                 >
                                     <DetailItem label="Department" value={employee.department} icon="solar:buildings-bold" />
                                     <DetailItem label="Designation" value={employee.designation} icon="solar:medal-star-bold" />
-                                    <DetailItem label="Joining Date" value={employee.date_of_joining} icon="solar:calendar-bold" />
+                                    <DetailItem label="Joining Date" value={fDate(employee.date_of_joining, 'DD-MM-YYYY')} icon="solar:calendar-bold" />
                                     <DetailItem label="Status" value={employee.status} icon="solar:info-circle-bold" />
-                                    <DetailItem label="Date of Birth" value={employee.dob} icon="solar:calendar-bold" />
+                                    <DetailItem label="Date of Birth" value={fDate(employee.dob, 'DD-MM-YYYY')} icon="solar:calendar-bold" />
                                 </Box>
                             </Box>
 

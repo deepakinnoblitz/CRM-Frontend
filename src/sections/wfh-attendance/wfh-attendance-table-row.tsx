@@ -10,7 +10,7 @@ import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
-import { fTimeDist } from 'src/utils/format-time';
+import { fTime, fTimeDist } from 'src/utils/format-time';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -138,12 +138,12 @@ export function WFHAttendanceTableRow({
 
                 <TableCell>
                     <Typography variant="body2" noWrap>
-                        {row.fromTime || '-'}
+                        {row.fromTime ? fTime(row.fromTime) : '-'}
                     </Typography>
                 </TableCell>
                 <TableCell>
                     <Typography variant="body2" noWrap>
-                        {row.toTime || '-'}
+                        {row.toTime ? fTime(row.toTime) : '-'}
                     </Typography>
                 </TableCell>
                 <TableCell>
