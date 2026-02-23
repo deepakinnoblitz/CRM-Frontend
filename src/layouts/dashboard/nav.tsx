@@ -213,6 +213,12 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
         {item.title}
       </Box>
 
+      {item.info && (
+        <Box component="span" sx={{ ml: 1.5, display: 'inline-flex' }}>
+          {item.info}
+        </Box>
+      )}
+
       {item.children && (
         <Iconify
           width={18}
@@ -224,12 +230,6 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
             ...(open && { transform: 'rotate(0deg)' })
           }}
         />
-      )}
-
-      {item.info && (
-        <Box component="span" sx={{ ml: item.children ? 1.5 : 1 }}>
-          {item.info}
-        </Box>
       )}
     </ListItemButton>
   );

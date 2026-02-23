@@ -64,6 +64,7 @@ export function SalarySlipsView() {
     });
 
     const [isHR, setIsHR] = useState(false);
+    const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null);
 
     const filterValues = useMemo(() => {
         const baseFilters: Record<string, any> = Object.fromEntries(
@@ -72,10 +73,13 @@ export function SalarySlipsView() {
 
         if (!isHR) {
             baseFilters.docstatus = 1;
+            if (currentEmployeeId) {
+                baseFilters.employee = currentEmployeeId;
+            }
         }
 
         return baseFilters;
-    }, [filters, isHR]);
+    }, [filters, isHR, currentEmployeeId]);
 
 
 
@@ -118,15 +122,20 @@ export function SalarySlipsView() {
                 console.error('Failed to fetch filter options:', error);
             }
         };
-        const checkRole = async () => {
+        const checkRoleAndEmployee = async () => {
             const user = await getCurrentUserInfo();
-            if (user && user.roles) {
-                const hrRoles = ['HR Manager', 'HR User', 'System Manager', 'Administrator'];
-                setIsHR(user.roles.some((role: string) => hrRoles.includes(role)));
+            if (user) {
+                if (user.roles) {
+                    const hrRoles = ['HR Manager', 'HR User', 'System Manager', 'Administrator'];
+                    setIsHR(user.roles.some((role: string) => hrRoles.includes(role)));
+                }
+                if (user.employee) {
+                    setCurrentEmployeeId(user.employee);
+                }
             }
         };
         fetchOptions();
-        checkRole();
+        checkRoleAndEmployee();
     }, []);
 
     const handleFilters = useCallback((update: Partial<SalarySlipFiltersProps>) => {

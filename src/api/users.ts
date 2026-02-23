@@ -194,7 +194,10 @@ export async function createUser(data: {
         body: JSON.stringify({ doc: payload })
     });
 
-    if (!res.ok) throw new Error(handleFrappeError(res, "Failed to create user"));
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: "Server returned an invalid response" }));
+        throw new Error(handleFrappeError(error, "Failed to create user"));
+    }
     return await res.json();
 }
 
@@ -239,7 +242,10 @@ export async function updateUser(name: string, data: {
         })
     });
 
-    if (!res.ok) throw new Error(handleFrappeError(res, "Failed to update user"));
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: "Server returned an invalid response" }));
+        throw new Error(handleFrappeError(error, "Failed to update user"));
+    }
     return await res.json();
 }
 
@@ -254,7 +260,10 @@ export async function deleteUser(name: string) {
         })
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete user"));
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: "Server returned an invalid response" }));
+        throw new Error(handleFrappeError(error, "Failed to delete user"));
+    }
     return json.message;
 }
 
@@ -300,7 +309,7 @@ export async function changeUserPassword(userId: string, newPassword: string) {
 
     if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.exception || errorData.message || "Failed to change password");
+        throw new Error(handleFrappeError(errorData, "Failed to change password"));
     }
 
     const result = await res.json();

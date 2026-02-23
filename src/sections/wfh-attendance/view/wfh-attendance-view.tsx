@@ -31,7 +31,7 @@ import { useWFHAttendance } from 'src/hooks/useWFHAttendance';
 
 import { getDoctypeList } from 'src/api/leads';
 import { getCurrentUserInfo } from 'src/api/auth';
- import { markAsRead } from 'src/api/unread-counts';
+import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getHRPermissions } from 'src/api/hr-management';
 import { getWFHAttendance, createWFHAttendance, updateWFHAttendance, applyWorkflowAction } from 'src/api/wfh-attendance';
@@ -59,7 +59,7 @@ export function WFHAttendanceView() {
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('date');
+    const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
 
     const [openCreate, setOpenCreate] = useState(false);
@@ -280,11 +280,11 @@ export function WFHAttendanceView() {
     };
 
     const handleSort = (value: string) => {
-        if (value === 'date_desc') {
-            setOrderBy('date');
+        if (value === 'modified_desc') {
+            setOrderBy('modified');
             setOrder('desc');
-        } else if (value === 'date_asc') {
-            setOrderBy('date');
+        } else if (value === 'modified_asc') {
+            setOrderBy('modified');
             setOrder('asc');
         } else if (value === 'employee_name_asc') {
             setOrderBy('employee_name');
@@ -302,6 +302,8 @@ export function WFHAttendanceView() {
     };
 
     const getCurrentSortValue = () => {
+        if (orderBy === 'modified' && order === 'desc') return 'modified_desc';
+        if (orderBy === 'modified' && order === 'asc') return 'modified_asc';
         if (orderBy === 'date' && order === 'desc') return 'date_desc';
         if (orderBy === 'date' && order === 'asc') return 'date_asc';
         if (orderBy === 'employee_name' && order === 'asc') return 'employee_name_asc';
@@ -490,8 +492,10 @@ export function WFHAttendanceView() {
                     sortBy={getCurrentSortValue()}
                     onSortChange={handleSort}
                     sortOptions={[
-                        { value: 'date_desc', label: 'Newest First' },
-                        { value: 'date_asc', label: 'Oldest First' },
+                        { value: 'modified_desc', label: 'Newest First' },
+                        { value: 'modified_asc', label: 'Oldest First' },
+                        { value: 'date_desc', label: 'Date: Newest to Oldest' },
+                        { value: 'date_asc', label: 'Date: Oldest to Newest' },
                         { value: 'employee_name_asc', label: 'Employee: A to Z' },
                         { value: 'employee_name_desc', label: 'Employee: Z to A' },
                         { value: 'total_hours_desc', label: 'Hours: High to Low' },

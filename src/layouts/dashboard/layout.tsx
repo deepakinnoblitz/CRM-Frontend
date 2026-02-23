@@ -65,6 +65,7 @@ export function DashboardLayout({
 
   // Inject unread counts into navData
   navData.forEach((item: any) => {
+    item.info = undefined;
     // Check main items
     if (
       (item.title === 'Leave Application') &&
@@ -80,7 +81,6 @@ export function DashboardLayout({
             fontSize: '0.75rem',
             px: 0.5,
             borderRadius: 0.75,
-            ml: 1,
             fontWeight: 'bold',
           }}
         >
@@ -99,7 +99,6 @@ export function DashboardLayout({
             fontSize: '0.75rem',
             px: 0.5,
             borderRadius: 0.75,
-            ml: 1,
             fontWeight: 'bold',
           }}
         >
@@ -121,7 +120,6 @@ export function DashboardLayout({
             fontSize: '0.75rem',
             px: 0.5,
             borderRadius: 0.75,
-            ml: 1,
             fontWeight: 'bold',
           }}
         >
@@ -134,6 +132,7 @@ export function DashboardLayout({
     if (item.children) {
       let groupCount = 0;
       item.children.forEach((child: any) => {
+        child.info = undefined;
         if (child.title === 'Leave Application' && unreadCounts['Leave Application'] > 0) {
           child.info = (
             <Label
@@ -205,7 +204,6 @@ export function DashboardLayout({
               fontSize: '0.75rem',
               px: 0.5,
               borderRadius: 0.75,
-              ml: -1,
               fontWeight: 'bold',
             }}
           >

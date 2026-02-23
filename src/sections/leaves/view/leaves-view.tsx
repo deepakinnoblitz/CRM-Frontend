@@ -30,11 +30,11 @@ import { useLeaveApplications } from 'src/hooks/useLeaveApplications';
 
 import { getDoctypeList } from 'src/api/leads';
 import { uploadFile } from 'src/api/data-import';
+import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getHRPermissions, getHRDoc } from 'src/api/hr-management';
 import { applyLeaveWorkflowAction, checkLeaveBalance, createLeaveApplication, deleteLeaveApplication, getEmployeeProbationInfo, updateLeaveStatus } from 'src/api/leaves';
 
-import { markAsRead } from 'src/api/unread-counts';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';

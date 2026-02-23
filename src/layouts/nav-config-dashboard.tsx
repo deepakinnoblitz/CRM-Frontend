@@ -402,7 +402,7 @@ export function getNavData(roles: string[] = []) {
       if (!seenPaths.has(item.path)) {
         const newItem = { ...item };
         if (item.children) {
-          newItem.children = [...item.children];
+          newItem.children = item.children.map((child) => ({ ...child }));
         }
         mergedNav.push(newItem);
         seenPaths.add(item.path);
