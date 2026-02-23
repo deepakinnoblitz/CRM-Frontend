@@ -16,6 +16,7 @@ type Props = {
     row: {
         id: string;
         employee_name: string;
+        employee_id?: string;
         pay_period_start: string;
         pay_period_end: string;
         gross_pay: number;
@@ -91,9 +92,16 @@ export function SalarySlipTableRow({
             )}
 
             <TableCell>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {row.employee_name}
-                </Typography>
+                <Box>
+                    <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
+                        {row.employee_name}
+                    </Typography>
+                    {row.employee_id && (
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            {row.employee_id}
+                        </Typography>
+                    )}
+                </Box>
             </TableCell>
 
             <TableCell>{periodLabel}</TableCell>

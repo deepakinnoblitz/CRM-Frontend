@@ -80,7 +80,7 @@ export function AssetTableRow({
                 </TableCell>
             )}
 
-            <TableCell>{row.asset_name || '-'}</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>{row.asset_name || '-'}</TableCell>
 
             <TableCell>{row.asset_tag || '-'}</TableCell>
 

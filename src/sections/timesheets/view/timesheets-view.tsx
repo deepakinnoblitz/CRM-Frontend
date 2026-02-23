@@ -683,6 +683,7 @@ export function TimesheetsView() {
                                         row={{
                                             id: row.name,
                                             employee_name: row.employee_name,
+                                            employee_id: row.employee,
                                             timesheet_date: row.timesheet_date,
                                             total_hours: row.total_hours,
                                         }}

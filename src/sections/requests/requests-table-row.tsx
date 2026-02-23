@@ -195,7 +195,7 @@ export function RequestTableRow({
 
             <TableCell>
                 <Box>
-                    <Typography variant="subtitle2" noWrap>
+                    <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
                         {row.employee_name || '-'}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>

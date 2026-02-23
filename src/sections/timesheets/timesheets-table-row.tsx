@@ -4,6 +4,7 @@ import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
 
 import { fDate } from 'src/utils/format-time';
 
@@ -15,6 +16,7 @@ export type TimesheetTableRowProps = {
     row: {
         id: string;
         employee_name: string;
+        employee_id?: string;
         timesheet_date: string;
         total_hours: number;
     };
@@ -78,7 +80,18 @@ export function TimesheetTableRow({
                 </TableCell>
             )}
 
-            <TableCell>{row.employee_name || '-'}</TableCell>
+            <TableCell>
+                <Box>
+                    <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
+                        {row.employee_name || '-'}
+                    </Typography>
+                    {row.employee_id && (
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            {row.employee_id}
+                        </Typography>
+                    )}
+                </Box>
+            </TableCell>
 
             <TableCell>
                 {row.timesheet_date ? fDate(row.timesheet_date, 'DD-MM-YYYY') : '-'}

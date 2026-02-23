@@ -745,6 +745,7 @@ export function ReimbursementClaimsView() {
                                         row={{
                                             id: row.name,
                                             employee_name: row.employee_name,
+                                            employee_id: row.employee,
                                             claim_type: row.claim_type,
                                             date_of_expense: row.date_of_expense,
                                             amount: row.amount,

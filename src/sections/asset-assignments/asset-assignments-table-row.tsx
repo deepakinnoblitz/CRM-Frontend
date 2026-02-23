@@ -88,7 +88,7 @@ export function AssetAssignmentTableRow({
                 </Box>
             </TableCell>
 
-            <TableCell onClick={onView}>{row.asset_name}</TableCell>
+            <TableCell onClick={onView} sx={{ fontWeight: 700 }}>{row.asset_name}</TableCell>
 
             <TableCell onClick={onView}>{row.employee_name}</TableCell>
 

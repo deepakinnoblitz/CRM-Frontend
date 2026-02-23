@@ -200,7 +200,7 @@ export function LeavesTableRow({
 
                 <TableCell>
                     <Box>
-                        <Typography variant="subtitle2" noWrap>
+                        <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
                             {row.employeeName}
                         </Typography>
                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -210,7 +210,7 @@ export function LeavesTableRow({
                 </TableCell>
 
                 <TableCell>
-                    <Typography variant="body2" noWrap>
+                    <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
                         {row.leaveType}
                     </Typography>
                 </TableCell>

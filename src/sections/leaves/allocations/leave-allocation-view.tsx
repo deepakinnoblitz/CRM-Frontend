@@ -42,6 +42,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { useAuth } from 'src/auth/auth-context';
 
 import AutoAllocateDialog from './auto-allocate-dialog';
+import AutoAllocateResultDialog from './auto-allocate-result-dialog';
 import { LeaveAllocationTableRow } from './leave-allocation-table-row';
 import { LeadTableHead as LeavesTableHead } from '../../lead/lead-table-head';
 import { LeaveAllocationDetailsDialog } from './leave-allocation-details-dialog';
@@ -108,6 +109,8 @@ export function LeaveAllocationView() {
     const [selectedAllocationId, setSelectedAllocationId] = useState<string | null>(null);
     const [openAutoAllocate, setOpenAutoAllocate] = useState(false);
     const [openDetails, setOpenDetails] = useState(false);
+    const [openResult, setOpenResult] = useState(false);
+    const [resultData, setResultData] = useState<any>(null);
 
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
@@ -524,13 +527,24 @@ export function LeaveAllocationView() {
             <AutoAllocateDialog
                 open={openAutoAllocate}
                 onClose={() => setOpenAutoAllocate(false)}
-                onSuccess={(message) => {
-                    setSnackbar({ open: true, message, severity: 'success' });
+                onSuccess={(res) => {
+                    setOpenAutoAllocate(false);
+                    setResultData(res);
+                    setOpenResult(true);
                     refetch();
                 }}
                 onError={(error) => {
                     setSnackbar({ open: true, message: error, severity: 'error' });
                 }}
+            />
+
+            <AutoAllocateResultDialog
+                open={openResult}
+                onClose={() => {
+                    setOpenResult(false);
+                    setResultData(null);
+                }}
+                data={resultData}
             />
 
             {/* Filter Drawer */}

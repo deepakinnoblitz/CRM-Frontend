@@ -78,7 +78,7 @@ export function AnnouncementTableRow({
                 </TableCell>
             )}
 
-            <TableCell>{row.announcement_name || '-'}</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>{row.announcement_name || '-'}</TableCell>
 
             <TableCell>
                 {row.announcement ? `${row.announcement.substring(0, 100)}${row.announcement.length > 100 ? '...' : ''}` : '-'}
