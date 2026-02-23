@@ -81,6 +81,26 @@ export function fDate(date: DatePickerFormat, template?: string): string {
 // ----------------------------------------------------------------------
 
 /**
+ * @output 12:00 am
+ */
+export function fTime(date: DatePickerFormat, template?: string): string {
+  if (!isValidDate(date)) {
+    // Attempt to parse if it's a raw time string like "HH:mm:ss"
+    if (typeof date === 'string' && date.includes(':')) {
+      const d = dayjs(`2000-01-01 ${date}`);
+      if (d.isValid()) {
+        return d.format(template ?? formatPatterns.time);
+      }
+    }
+    return 'Invalid time';
+  }
+
+  return dayjs(date).format(template ?? formatPatterns.time);
+}
+
+// ----------------------------------------------------------------------
+
+/**
  * @output a few seconds, 2 years
  */
 export function fToNow(date: DatePickerFormat): string {
