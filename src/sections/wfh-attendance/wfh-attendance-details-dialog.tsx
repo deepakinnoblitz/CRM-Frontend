@@ -20,9 +20,10 @@ type Props = {
     open: boolean;
     onClose: () => void;
     wfhId: string | null;
+    socket?: any;
 };
 
-export function WFHAttendanceDetailsDialog({ open, onClose, wfhId }: Props) {
+export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Props) {
     const [wfh, setWfh] = useState<any>(null);
     const [loading, setLoading] = useState(false);
 
@@ -37,6 +38,20 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId }: Props) {
             setWfh(null);
         }
     }, [open, wfhId]);
+
+    // Real-time: refresh dialog when this specific WFH entry changes
+    useEffect(() => {
+        if (!socket || !open || !wfhId) return undefined;
+
+        const handleUpdate = (data: any) => {
+            if (data?.name === wfhId) {
+                getWFHAttendance(wfhId).then(setWfh).catch(console.error);
+            }
+        };
+
+        socket.on('wfh_attendance_updated', handleUpdate);
+        return () => socket.off('wfh_attendance_updated', handleUpdate);
+    }, [socket, open, wfhId]);
 
     const renderStatus = (status: string) => {
         let color: 'default' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'error' = 'default';

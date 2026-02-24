@@ -27,6 +27,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useSocket } from 'src/hooks/use-socket';
 import { useLeaveAllocations } from 'src/hooks/useLeaveAllocations';
 
 import { getDoctypeList } from 'src/api/leads';
@@ -61,6 +62,7 @@ const SORT_OPTIONS = [
 
 export function LeaveAllocationView() {
     const { user } = useAuth();
+    const { socket } = useSocket(user?.email);
 
     const isHR = user?.roles?.some((role: string) =>
         ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
@@ -137,7 +139,6 @@ export function LeaveAllocationView() {
         },
         orderBy,
         order,
-        3000
     );
 
     useEffect(() => {
@@ -514,6 +515,7 @@ export function LeaveAllocationView() {
                 }}
                 allocationId={selectedAllocationId}
                 onRefresh={refetch}
+                socket={socket}
                 onEdit={(alloc) => {
                     setOpenDetails(false);
                     handleEdit(alloc);

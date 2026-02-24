@@ -59,9 +59,20 @@ export function useSocket(userEmail?: string) {
         }
     }, []);
 
+    const subscribeToEvent = useCallback(
+        (event: string, handler: (data: any) => void) => {
+            socketRef.current?.on(event, handler);
+            return () => {
+                socketRef.current?.off(event, handler);
+            };
+        },
+        []
+    );
+
     return {
         socket: socketRef.current,
         isConnected,
         subscribeToRoom,
+        subscribeToEvent,
     };
 }

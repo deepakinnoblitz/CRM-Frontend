@@ -1,3 +1,4 @@
+import { Socket } from 'socket.io-client';
 import { useState, useEffect, useCallback } from 'react';
 
 import { fetchLeaveApplications } from 'src/api/leaves';
@@ -9,7 +10,7 @@ export function useLeaveApplications(
     filters: any = {},
     orderBy: string = 'modified',
     order: 'asc' | 'desc' = 'desc',
-    refreshInterval?: number // Interval in ms
+    socket?: Socket | null
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
@@ -39,16 +40,19 @@ export function useLeaveApplications(
         refetch();
     }, [refetch]);
 
-    // Background refresh
+    // Real-time socket subscription — instant refresh when a Leave Application status changes
     useEffect(() => {
-        if (refreshInterval && refreshInterval > 0) {
-            const interval = setInterval(() => {
-                refetch(true); // Silent refetch
-            }, refreshInterval);
-            return () => clearInterval(interval);
-        }
-        return undefined;
-    }, [refreshInterval, refetch]);
+        if (!socket) return undefined;
+
+        const handleUpdate = () => {
+            refetch(true); // Silent refetch — no loading spinner
+        };
+
+        socket.on('leave_application_updated', handleUpdate);
+        return () => {
+            socket.off('leave_application_updated', handleUpdate);
+        };
+    }, [socket, refetch]);
 
     return { data, total, loading, refetch };
 }

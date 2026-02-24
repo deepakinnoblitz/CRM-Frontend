@@ -27,6 +27,7 @@ import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useSocket } from 'src/hooks/use-socket';
 import { useWFHAttendance } from 'src/hooks/useWFHAttendance';
 
 import { getDoctypeList } from 'src/api/leads';
@@ -54,6 +55,7 @@ import { LeadTableToolbar as AttendanceTableToolbar } from '../../lead/lead-tabl
 
 export function WFHAttendanceView() {
     const { user } = useAuth();
+    const { socket } = useSocket(user?.email);
     const theme = useTheme();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -113,7 +115,8 @@ export function WFHAttendanceView() {
         filterName,
         orderBy,
         order,
-        effectiveFilters
+        effectiveFilters,
+        socket
     );
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -663,6 +666,7 @@ export function WFHAttendanceView() {
                 open={openDetails}
                 onClose={handleCloseDetails}
                 wfhId={detailsId}
+                socket={socket}
             />
 
             <WFHAttendanceTableFiltersDrawer
