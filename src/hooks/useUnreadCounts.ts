@@ -1,8 +1,13 @@
+import { Socket } from 'socket.io-client';
 import { useState, useEffect, useCallback } from 'react';
 
 import { fetchUnreadCounts, UnreadCounts } from 'src/api/unread-counts';
 
-export function useUnreadCounts() {
+type Props = {
+    socket?: Socket | null;
+};
+
+export function useUnreadCounts({ socket }: Props = {}) {
     const [unreadCounts, setUnreadCounts] = useState<UnreadCounts>({
         'Leave Application': 0,
         Request: 0,
@@ -14,13 +19,12 @@ export function useUnreadCounts() {
         setUnreadCounts(data);
     }, []);
 
+    // Initial fetch + 30s polling fallback
     useEffect(() => {
         getUnreadCounts();
 
-        // Polling every 30 seconds
         const interval = setInterval(getUnreadCounts, 30000);
 
-        // Listen for manual refresh events
         const handleRefresh = () => {
             getUnreadCounts();
         };
@@ -32,6 +36,21 @@ export function useUnreadCounts() {
             window.removeEventListener('REFRESH_UNREAD_COUNTS', handleRefresh);
         };
     }, [getUnreadCounts]);
+
+    // Real-time socket subscription — instant updates from server
+    useEffect(() => {
+        if (!socket) return undefined;
+
+        const handleSocketUpdate = (data: UnreadCounts) => {
+            setUnreadCounts((prev) => ({ ...prev, ...data }));
+        };
+
+        socket.on('unread_count_updated', handleSocketUpdate);
+
+        return () => {
+            socket.off('unread_count_updated', handleSocketUpdate);
+        };
+    }, [socket]);
 
     return { unreadCounts, refreshUnreadCounts: getUnreadCounts };
 }

@@ -33,9 +33,10 @@ type Props = {
     onRefresh?: () => void;
     onEdit?: (allocation: any) => void;
     onDelete?: (allocationId: string) => void;
+    socket?: any;
 };
 
-export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRefresh, onEdit, onDelete }: Props) {
+export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRefresh, onEdit, onDelete, socket }: Props) {
     const [allocation, setAllocation] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [actions, setActions] = useState<WorkflowAction[]>([]);
@@ -68,17 +69,25 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
     useEffect(() => {
         if (open && allocationId) {
             fetchData();
-
-            const interval = setInterval(() => {
-                fetchData(true);
-            }, 3000);
-
-            return () => clearInterval(interval);
+        } else {
+            setAllocation(null);
+            setActions([]);
         }
-        setAllocation(null);
-        setActions([]);
-        return undefined;
     }, [open, allocationId, fetchData]);
+
+    // Real-time: refresh when this specific allocation changes
+    useEffect(() => {
+        if (!socket || !open || !allocationId) return undefined;
+
+        const handleUpdate = (data: any) => {
+            if (data?.name === allocationId) {
+                fetchData(true);
+            }
+        };
+
+        socket.on('leave_allocation_updated', handleUpdate);
+        return () => socket.off('leave_allocation_updated', handleUpdate);
+    }, [socket, open, allocationId, fetchData]);
 
     const handleActionClick = (action: WorkflowAction) => {
         setSelectedAction(action);

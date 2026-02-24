@@ -2,6 +2,9 @@ import type { ReactNode } from 'react';
 
 import { Navigate } from 'react-router-dom';
 
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+
 import { hasValidRole } from 'src/layouts/nav-config-dashboard';
 
 import { useAuth } from './auth-context';
@@ -13,8 +16,24 @@ type AuthGuardProps = {
 export function AuthGuard({ children }: AuthGuardProps) {
   const { user, loading } = useAuth();
 
-  if (loading) return null;
+  // Show a full-page spinner while checking session — no more blank white screen
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          height: '100vh',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
+  // Session expired or not logged in → go to sign-in
   if (!user) {
     return <Navigate to="/sign-in" replace />;
   }

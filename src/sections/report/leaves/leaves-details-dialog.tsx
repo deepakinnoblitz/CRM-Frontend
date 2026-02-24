@@ -31,9 +31,10 @@ type Props = {
     onClose: () => void;
     leaveId: string | null;
     onRefresh?: () => void;
+    socket?: any;
 };
 
-export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props) {
+export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket }: Props) {
     const [leave, setLeave] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [actions, setActions] = useState<WorkflowAction[]>([]);
@@ -70,18 +71,25 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh }: Props
     useEffect(() => {
         if (open && leaveId) {
             fetchData();
-
-            // Setup 3s polling
-            const interval = setInterval(() => {
-                fetchData(true);
-            }, 3000);
-
-            return () => clearInterval(interval);
+        } else {
+            setLeave(null);
+            setActions([]);
         }
-        setLeave(null);
-        setActions([]);
-        return undefined;
     }, [open, leaveId, fetchData]);
+
+    // Real-time: refresh when this specific leave application changes
+    useEffect(() => {
+        if (!socket || !open || !leaveId) return undefined;
+
+        const handleUpdate = (data: any) => {
+            if (data?.name === leaveId) {
+                fetchData(true); // silent refresh
+            }
+        };
+
+        socket.on('leave_application_updated', handleUpdate);
+        return () => socket.off('leave_application_updated', handleUpdate);
+    }, [socket, open, leaveId, fetchData]);
 
     const handleActionClick = (action: WorkflowAction) => {
         setSelectedAction(action);

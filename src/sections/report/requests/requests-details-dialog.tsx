@@ -30,9 +30,10 @@ type Props = {
     onClose: () => void;
     request: any;
     onRefresh?: () => void;
+    socket?: any;
 };
 
-export function RequestDetailsDialog({ open, onClose, request, onRefresh }: Props) {
+export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket }: Props) {
     const { user } = useAuth();
     const [loading, setLoading] = useState<string | null>(null);
     const [openClarification, setOpenClarification] = useState(false);
@@ -44,23 +45,25 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh }: Prop
     }, [request]);
 
     useEffect(() => {
-        let interval: NodeJS.Timeout;
-
         if (open && internalRequest?.name) {
-            interval = setInterval(async () => {
-                try {
-                    const latestRequest = await getRequest(internalRequest.name);
-                    setInternalRequest(latestRequest);
-                } catch (error) {
-                    console.error('Failed to poll request details:', error);
-                }
-            }, 5000);
+            // Fetch fresh data when dialog opens
+            getRequest(internalRequest.name).then(setInternalRequest).catch(console.error);
         }
-
-        return () => {
-            if (interval) clearInterval(interval);
-        };
     }, [open, internalRequest?.name]);
+
+    // Real-time: refresh when this specific request changes
+    useEffect(() => {
+        if (!socket || !open || !internalRequest?.name) return undefined;
+
+        const handleUpdate = (data: any) => {
+            if (data?.name === internalRequest.name) {
+                getRequest(internalRequest.name).then(setInternalRequest).catch(console.error);
+            }
+        };
+
+        socket.on('request_updated', handleUpdate);
+        return () => socket.off('request_updated', handleUpdate);
+    }, [socket, open, internalRequest?.name]);
 
     const isEmployee = user?.email === internalRequest?.owner;
 

@@ -11,6 +11,7 @@ import { useTheme, alpha } from '@mui/material/styles';
 
 import { RouterLink } from 'src/routes/components';
 
+import { useSocket } from 'src/hooks/use-socket';
 import { useUnreadCounts } from 'src/hooks/useUnreadCounts';
 
 import { CONFIG } from 'src/config-global';
@@ -61,7 +62,9 @@ export function DashboardLayout({
 
   const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
 
-  const { unreadCounts } = useUnreadCounts();
+  const { socket } = useSocket(user?.email);
+
+  const { unreadCounts } = useUnreadCounts({ socket });
 
   const { navData } = getNavData(user?.roles);
 

@@ -104,7 +104,7 @@ function showSessionExpiredMessage(): Promise<void> {
 }
 
 /**
- * Handle CSRF error by logging out user
+ * Handle CSRF error by logging out user and redirecting to sign-in
  */
 export async function handleCSRFError(): Promise<void> {
     console.error('CSRF Token Error detected - logging out user');
@@ -116,15 +116,25 @@ export async function handleCSRFError(): Promise<void> {
     localStorage.clear();
 
     try {
-        // Call logout API endpoint
+        // Read CSRF token from cookie before it disappears
+        const csrfToken = getCSRFTokenFromCookie() || '';
+        // Call logout API endpoint — include the token so this POST itself doesn't throw CSRF error
         await fetch('/api/method/logout', {
             method: 'POST',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'X-Frappe-CSRF-Token': csrfToken,
+            },
         });
     } catch (error) {
         console.error('Error during logout:', error);
     }
+
+    // Redirect to sign-in page — prevents blank/Frappe error pages
+    window.location.href = '/sign-in';
 }
+
+
 
 /**
  * Check if error response contains CSRF error

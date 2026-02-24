@@ -30,6 +30,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useSocket } from 'src/hooks/use-socket';
 import { useRequests } from 'src/hooks/useRequests';
 
 import { getCurrentUserInfo } from 'src/api/auth';
@@ -58,6 +59,7 @@ import { RequestsTableFiltersDrawer } from '../requests-table-filters-drawer';
 
 export function RequestsView() {
   const { user } = useAuth();
+  const { socket } = useSocket(user?.email);
   const isHR = user?.roles?.some((role: string) =>
     ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
   );
@@ -90,7 +92,8 @@ export function RequestsView() {
     startDate || undefined,
     endDate || undefined,
     filterStatus,
-    effectiveEmployee
+    effectiveEmployee,
+    socket
   );
 
   const [openCreate, setOpenCreate] = useState(false);
@@ -655,6 +658,7 @@ export function RequestsView() {
         onClose={() => setOpenView(false)}
         request={viewRequest}
         onRefresh={refetch}
+        socket={socket}
       />
 
       {/* Snackbar */}

@@ -27,6 +27,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Checkbox, IconButton, FormControlLabel } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useSocket } from 'src/hooks/use-socket';
 import { useLeaveApplications } from 'src/hooks/useLeaveApplications';
 
 import { getDoctypeList } from 'src/api/leads';
@@ -64,6 +65,8 @@ const LEAVE_SORT_OPTIONS = [
 
 export function LeavesView() {
     const { user } = useAuth();
+
+    const { socket } = useSocket(user?.email);
 
     const isHR = user?.roles?.some((role: string) =>
         ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
@@ -146,7 +149,7 @@ export function LeavesView() {
         },
         orderBy,
         order,
-        3000
+        socket  // real-time socket — replaces 3s polling
     );
 
     const notFound = !data.length && !!filterName;
@@ -1007,6 +1010,7 @@ export function LeavesView() {
                 onClose={handleCloseDetails}
                 leaveId={detailsId}
                 onRefresh={refetch}
+                socket={socket}
             />
 
             <LeavesTableFiltersDrawer
