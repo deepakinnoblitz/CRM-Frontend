@@ -310,7 +310,7 @@ export function SalarySlipsView() {
                                 setEditSlip(null);
                                 setOpenCreate(true);
                             }}
-                            sx={{ borderRadius: 1.5, height: 40 }}
+                            sx={{ borderRadius: 1.5, height: 40, bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
                         >
                             New Salary Slip
                         </Button>
