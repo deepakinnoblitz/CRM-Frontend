@@ -189,6 +189,7 @@ export function UploadAttendanceView() {
                     variant="contained"
                     startIcon={<Iconify icon="mingcute:add-line" />}
                     onClick={handleNewRecord}
+                    sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
                 >
                     Upload Attendance
                 </Button>
