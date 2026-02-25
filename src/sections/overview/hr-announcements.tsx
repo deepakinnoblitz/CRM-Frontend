@@ -37,7 +37,7 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
         <Card
             {...other}
             sx={{
-                p: 1.5,
+                p: { xs: 1, sm: 1.5 },
                 display: 'flex',
                 alignItems: 'center',
                 overflow: 'hidden',
@@ -50,9 +50,9 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                 ...other.sx,
             }}
         >
-            <Stack direction="row" alignItems="center" spacing={1.5} sx={{ zIndex: 1, flexShrink: 0, pr: 2, borderRight: `1px solid ${alpha(theme.palette.common.white, 0.2)}`, bgcolor: 'primary.main', height: '100%' }}>
-                <Iconify icon={"solar:volume-loud-bold-duotone" as any} width={24} />
-                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 }}>
+            <Stack direction="row" alignItems="center" spacing={{ xs: 0.75, sm: 1.5 }} sx={{ zIndex: 1, flexShrink: 0, pr: { xs: 1.5, sm: 2 }, borderRight: `1px solid ${alpha(theme.palette.common.white, 0.2)}`, bgcolor: 'primary.main', height: '100%' }}>
+                <Iconify icon={"solar:volume-loud-bold-duotone" as any} width={22} />
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1, display: { xs: 'none', sm: 'block' } }}>
                     Announcements
                 </Typography>
             </Stack>

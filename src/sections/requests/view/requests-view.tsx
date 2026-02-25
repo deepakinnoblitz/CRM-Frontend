@@ -462,7 +462,7 @@ export function RequestsView() {
 
         <Scrollbar>
           <TableContainer sx={{ overflow: 'unset' }}>
-            <Table sx={{ minWidth: 800 }}>
+            <Table sx={{ minWidth: { xs: 300, md: 800 } }}>
               <RequestTableHead
                 order={order}
                 orderBy={orderBy}
@@ -477,7 +477,7 @@ export function RequestsView() {
                 showIndex
                 headLabel={[
                   { id: 'employee_name', label: 'Employee Name' },
-                  { id: 'subject', label: 'Subject' },
+                  { id: 'subject', label: 'Subject', sx: { display: { xs: 'none', md: 'table-cell' } } },
                   { id: 'workflow_state', label: 'Status' },
                   { id: '', label: '' },
                 ]}

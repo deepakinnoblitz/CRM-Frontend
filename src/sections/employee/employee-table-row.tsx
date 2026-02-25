@@ -83,7 +83,7 @@ export function EmployeeTableRow({
 
             <TableCell component="th" scope="row">
                 <Box>
-                    <Typography variant="subtitle2" noWrap sx={{ textTransform: 'capitalize' }}>
+                    <Typography variant="subtitle2" noWrap sx={{ textTransform: 'capitalize', fontWeight: 700 }}>
                         {row.name}
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>

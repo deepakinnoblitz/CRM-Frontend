@@ -71,9 +71,6 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
     useEffect(() => {
         if (open && leaveId) {
             fetchData();
-        } else {
-            setLeave(null);
-            setActions([]);
         }
     }, [open, leaveId, fetchData]);
 
@@ -334,6 +331,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                         boxShadow: (theme) => theme.customShadows?.z24,
                     }
                 }}
+                TransitionProps={{ onExited: () => { setLeave(null); setActions([]); } }}
             >
                 <DialogTitle sx={{ m: 0, p: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -344,7 +342,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent sx={{ p: 4, pt: 0 }}>
+                <DialogContent sx={{ p: { xs: 2.5, sm: 4 }, pt: 0 }}>
                     {loading && !leave ? (
                         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
                             <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
@@ -372,7 +370,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                             overflow: 'hidden',
                                         }}
                                     >
-                                        <Stack direction="row" alignItems="center" spacing={2.5} sx={{ mb: 3 }}>
+                                        <Stack direction="row" alignItems="center" spacing={{ xs: 1.5, sm: 2.5 }} sx={{ mb: 3 }}>
                                             <Box
                                                 sx={{
                                                     width: 54,
@@ -400,20 +398,20 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
 
                                         <Stack
                                             direction="row"
-                                            spacing={4}
+                                            spacing={{ xs: 1, sm: 4 }}
                                             sx={{
-                                                p: 2,
+                                                p: { xs: 1.5, sm: 2 },
                                                 borderRadius: 1.5,
                                                 bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
                                             }}
                                         >
                                             <Stack spacing={0.5}>
-                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800 }}>TYPE</Typography>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{leave?.leave_type || 'N/A'}</Typography>
+                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, fontSize: { xs: 8, sm: 10 }, lineHeight: 1.2 }}>TYPE</Typography>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: { xs: 11, sm: 14 } }}>{leave?.leave_type || 'N/A'}</Typography>
                                             </Stack>
                                             <Stack spacing={0.5}>
-                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800 }}>DURATION</Typography>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, fontSize: { xs: 8, sm: 10 }, lineHeight: 1.2 }}>DURATION</Typography>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main', fontSize: { xs: 11, sm: 14 } }}>
                                                     {leave?.leave_type?.toLowerCase() === 'permission'
                                                         ? `${leave?.permission_hours} mins`
                                                         : `${leave?.total_days} days`
@@ -421,8 +419,17 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                                 </Typography>
                                             </Stack>
                                             <Stack spacing={0.5}>
-                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800 }}>STATUS</Typography>
-                                                <Label color={getStatusColor(leave?.workflow_state)} variant="filled" sx={{ textTransform: 'uppercase', height: 22, px: 1 }}>
+                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, fontSize: { xs: 8, sm: 10 }, lineHeight: 1.2 }}>STATUS</Typography>
+                                                <Label
+                                                    color={getStatusColor(leave?.workflow_state)}
+                                                    variant="filled"
+                                                    sx={{
+                                                        textTransform: 'uppercase',
+                                                        height: { xs: 20, sm: 22 },
+                                                        px: { xs: 0.75, sm: 1 },
+                                                        fontSize: { xs: 8, sm: 10 }
+                                                    }}
+                                                >
                                                     {leave?.workflow_state || 'Pending'}
                                                 </Label>
                                             </Stack>
@@ -430,7 +437,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                     </Box>
 
                                     {/* Date Details */}
-                                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3 }}>
                                         <DetailRow label="Applied On" value={dayjs(leave?.creation).format('DD MMM YYYY HH:mm')} icon="solar:calendar-bold" />
                                         <DetailRow label="Half Day" value={leave?.half_day === 1 ? `Yes (${dayjs(leave?.half_day_date).format('DD MMM YYYY')})` : 'No'} icon="solar:history-bold" />
                                         <DetailRow label="From Date" value={dayjs(leave?.from_date).format('DD MMM YYYY')} icon="solar:calendar-date-bold" />
@@ -561,7 +568,7 @@ function SectionHeader({ title, icon, noMargin = false }: { title: string; icon:
 
 function DetailRow({ label, value, icon }: { label: string; value?: string | null; icon: string }) {
     return (
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ width: 1 }}>
+        <Stack direction="row" spacing={{ xs: 1.5, sm: 2 }} alignItems="center" sx={{ width: 1 }}>
             <Box
                 sx={{
                     p: 1,
@@ -576,10 +583,10 @@ function DetailRow({ label, value, icon }: { label: string; value?: string | nul
                 <Iconify icon={icon as any} width={22} />
             </Box>
             <Box>
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.25 }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.25, fontSize: { xs: 10, sm: 12 } }}>
                     {label}
                 </Typography>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: { xs: 13, sm: 14 } }}>
                     {value || '-'}
                 </Typography>
             </Box>

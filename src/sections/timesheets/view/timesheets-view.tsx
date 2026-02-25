@@ -658,7 +658,7 @@ export function TimesheetsView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: { xs: 300, md: 800 } }}>
                             <TimesheetTableHead
                                 order={order}
                                 orderBy={orderBy}
@@ -670,7 +670,7 @@ export function TimesheetsView() {
                                 headLabel={[
                                     { id: 'employee_name', label: 'Employee' },
                                     { id: 'timesheet_date', label: 'Date' },
-                                    { id: 'total_hours', label: 'Total Hours' },
+                                    { id: 'total_hours', label: 'Total Hours', sx: { display: { xs: 'none', md: 'table-cell' } } },
                                     { id: '', label: '' },
                                 ]}
                             />

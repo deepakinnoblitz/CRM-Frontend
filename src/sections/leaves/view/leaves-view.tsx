@@ -468,7 +468,7 @@ export function LeavesView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: { xs: 300, md: 800 } }}>
                             <LeavesTableHead
                                 order={order}
                                 orderBy={orderBy}
@@ -478,10 +478,10 @@ export function LeavesView() {
                                 hideCheckbox
                                 showIndex
                                 headLabel={[
-                                    { id: 'employee', label: 'Employee', minWidth: 180 },
-                                    { id: 'leave_type', label: 'Leave Type', minWidth: 140 },
-                                    { id: 'from_date', label: 'Duration', minWidth: 120 },
-                                    { id: 'total_days', label: 'Days', align: 'center', minWidth: 100 },
+                                    { id: 'employee', label: 'Employee', minWidth: { xs: 140, md: 180 } },
+                                    { id: 'leave_type', label: 'Leave Type', minWidth: 140, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'from_date', label: 'Duration', minWidth: 120, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'total_days', label: 'Days', align: 'center', minWidth: 100, sx: { display: { xs: 'none', md: 'table-cell' } } },
                                     { id: 'workflow_state', label: 'Status', minWidth: 120 },
                                     { id: 'actions', label: '', align: 'right', minWidth: 100 },
                                 ]}
@@ -901,7 +901,13 @@ export function LeavesView() {
                                         border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
                                     }}
                                 >
-                                    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
+                                    <Stack
+                                        direction={{ xs: 'column', sm: 'row' }}
+                                        alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                        justifyContent="space-between"
+                                        spacing={2}
+                                        sx={{ mb: 2.5 }}
+                                    >
                                         <Typography variant="h6">Attachments</Typography>
 
                                         <Button
@@ -911,6 +917,7 @@ export function LeavesView() {
                                             size="small"
                                             startIcon={<Iconify icon={"solar:upload-bold" as any} />}
                                             disabled={uploading}
+                                            sx={{ minWidth: { xs: 1, sm: 'auto' } }}
                                         >
                                             {uploading ? 'Uploading...' : 'Upload File'}
                                             <input type="file" hidden onChange={handleFileUpload} />

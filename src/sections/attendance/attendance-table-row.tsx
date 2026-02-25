@@ -70,7 +70,7 @@ export function AttendanceTableRow({
             )}
 
             {typeof index === 'number' && (
-                <TableCell align="center">
+                <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Box
                         sx={{
                             width: 28,
@@ -98,7 +98,7 @@ export function AttendanceTableRow({
                 </TableCell>
             )}
 
-            <TableCell>
+            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                 <Box>
                     <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
                         {row.employeeName}
@@ -119,17 +119,17 @@ export function AttendanceTableRow({
                 <Label color={getStatusColor(row.status)}>{row.status}</Label>
             </TableCell>
 
-            <TableCell>
+            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                 <Typography variant="body2" noWrap>
                     {row.inTime || '-'}
                 </Typography>
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                 <Typography variant="body2" noWrap>
                     {row.out_time || '-'}
                 </Typography>
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                 <Typography variant="body2" noWrap>
                     {row.working_hours_display || '-'}
                 </Typography>

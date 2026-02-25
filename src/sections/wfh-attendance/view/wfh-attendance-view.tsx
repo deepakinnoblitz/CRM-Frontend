@@ -508,7 +508,7 @@ export function WFHAttendanceView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: { xs: 300, md: 800 } }}>
                             <AttendanceTableHead
                                 order={order}
                                 orderBy={orderBy}
@@ -519,11 +519,11 @@ export function WFHAttendanceView() {
                                 showIndex
                                 headLabel={[
                                     { id: 'employee_name', label: 'Employee', minWidth: 180 },
-                                    { id: 'date', label: 'Date', minWidth: 120 },
+                                    { id: 'date', label: 'Date', minWidth: 120, sx: { display: { xs: 'none', md: 'table-cell' } } },
                                     { id: 'workflow_state', label: 'Status', minWidth: 100 },
-                                    { id: 'from_time', label: 'From', minWidth: 100 },
-                                    { id: 'to_time', label: 'To', minWidth: 100 },
-                                    { id: 'total_hours', label: 'Hours', minWidth: 80 },
+                                    { id: 'from_time', label: 'From', minWidth: 100, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'to_time', label: 'To', minWidth: 100, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'total_hours', label: 'Hours', minWidth: 80, sx: { display: { xs: 'none', md: 'table-cell' } } },
                                     { id: '', label: '', align: 'right' },
                                 ]}
                             />

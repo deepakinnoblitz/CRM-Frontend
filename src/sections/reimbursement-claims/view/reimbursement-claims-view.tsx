@@ -718,7 +718,7 @@ export function ReimbursementClaimsView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: { xs: 300, md: 800 } }}>
                             <ClaimTableHead
                                 order={order}
                                 orderBy={orderBy}
@@ -729,9 +729,9 @@ export function ReimbursementClaimsView() {
                                 showIndex
                                 headLabel={[
                                     { id: 'employee_name', label: 'Employee' },
-                                    { id: 'claim_type', label: 'Claim Type' },
-                                    { id: 'date_of_expense', label: 'Date' },
-                                    { id: 'amount', label: 'Amount' },
+                                    { id: 'claim_type', label: 'Claim Type', sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'date_of_expense', label: 'Date', sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'amount', label: 'Amount', sx: { display: { xs: 'none', md: 'table-cell' } } },
                                     { id: 'paid', label: 'Status' },
                                     { id: '', label: '' },
                                 ]}

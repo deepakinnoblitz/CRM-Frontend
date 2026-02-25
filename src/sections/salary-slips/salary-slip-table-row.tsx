@@ -63,7 +63,7 @@ export function SalarySlipTableRow({
             )}
 
             {typeof index === 'number' && (
-                <TableCell align="center">
+                <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Box
                         sx={{
                             width: 28,
@@ -106,15 +106,15 @@ export function SalarySlipTableRow({
 
             <TableCell>{periodLabel}</TableCell>
 
-            <TableCell align="right">₹{row.gross_pay?.toLocaleString() || 0}</TableCell>
+            <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>₹{row.gross_pay?.toLocaleString() || 0}</TableCell>
 
-            <TableCell align="right">
+            <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                 <Typography variant="subtitle2" sx={{ color: 'success.main', fontWeight: 700 }}>
                     ₹{row.net_pay?.toLocaleString() || 0}
                 </Typography>
             </TableCell>
 
-            <TableCell>
+            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                 <Label
                     variant="soft"
                     color={
