@@ -36,8 +36,6 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
                 .then(setWfh)
                 .catch((err) => console.error('Failed to fetch WFH details:', err))
                 .finally(() => setLoading(false));
-        } else {
-            setWfh(null);
         }
     }, [open, wfhId]);
 
@@ -71,7 +69,13 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="md"
+            TransitionProps={{ onExited: () => setWfh(null) }}
+        >
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>WFH Entry Details</Typography>
                 <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>

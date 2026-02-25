@@ -63,7 +63,7 @@ const TimelineDayCard = styled(Card, {
         transition: theme.transitions.create(['transform', 'box-shadow', 'border-color', 'background-color']),
         cursor: 'pointer',
         position: 'relative',
-        overflow: 'hidden',
+        overflow: 'visible',
         '&:hover': {
             transform: 'translateY(-6px) scale(1.01)',
             boxShadow: `0 20px 48px ${alpha(statusColor || theme.palette.common.black, 0.12)}`,
@@ -182,7 +182,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                 sx={{ mb: 3 }}
             />
 
-            <Box sx={{ px: 3, pb: 4 }}>
+            <Box sx={{ px: { xs: 1.5, sm: 3 }, pb: 4 }}>
 
                 {/* 3-4 Grid Layout (Desktop) / Vertical Stack (Mobile) */}
                 <Box
@@ -232,7 +232,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                 }}
                             >
                                 {/* Date Header */}
-                                <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 2, ml: 0.75 }}>
+                                <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 2, ml: 0.75, flexWrap: 'wrap' }}>
                                     <Box
                                         sx={{
                                             width: 10,
@@ -245,7 +245,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                             flexShrink: 0
                                         }}
                                     />
-                                    <Typography variant="subtitle2" sx={{ color: isToday ? 'primary.main' : 'text.primary', fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.75, fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                                    <Typography variant="subtitle2" sx={{ color: isToday ? 'primary.main' : 'text.primary', fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.75, fontSize: '0.75rem' }}>
                                         {fDate(record.date, 'ddd, DD MMM')}
                                     </Typography>
                                     {isToday && (
@@ -258,7 +258,8 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                                 color: 'primary.main',
                                                 typography: 'overline',
                                                 fontWeight: 900,
-                                                fontSize: '0.65rem'
+                                                fontSize: '0.65rem',
+                                                flexShrink: 0,
                                             }}
                                         >
                                             Now
@@ -270,7 +271,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                     isToday={isToday}
                                     statusColor={status.dotColor}
                                     sx={{
-                                        p: 3,
+                                        p: { xs: 2, sm: 3 },
                                         height: '100%',
                                         display: 'flex',
                                         flexDirection: 'column',
@@ -280,11 +281,11 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                 >
                                     <Box sx={{ width: '100%' }}>
                                         <Stack
-                                            direction="row"
+                                            direction={{ xs: 'column', sm: 'row' }}
                                             spacing={1}
-                                            alignItems="center"
+                                            alignItems={{ xs: 'flex-start', sm: 'center' }}
                                             justifyContent={isNonWorking && record.working_hours === 0 ? "center" : "space-between"}
-                                            sx={{ mb: 1.5 }}
+                                            sx={{ mb: 1.5, flexWrap: 'wrap', gap: 0.5 }}
                                         >
                                             <Typography
                                                 variant="h6"
@@ -292,7 +293,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                                     fontWeight: 800,
                                                     lineHeight: 1.2,
                                                     textAlign: isNonWorking && record.working_hours === 0 ? 'center' : 'inherit',
-                                                    fontSize: centerLabel.length > 20 ? '0.75rem' : (centerLabel.length > 12 ? '0.875rem' : '1.125rem'),
+                                                    fontSize: centerLabel.length > 20 ? '0.7rem' : (centerLabel.length > 12 ? '0.8125rem' : '1rem'),
                                                     color: record.working_hours >= 9 ? 'success.main' :
                                                         (record.working_hours > 0 ? 'error.main' :
                                                             (centerLabel.includes('HOLIDAY') || centerLabel.includes('SATURDAY') || centerLabel.includes('SUNDAY') ? 'error.main' :
@@ -302,7 +303,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                                 {centerLabel}
                                             </Typography>
                                             {!isNonWorking && status.label.toUpperCase() !== centerLabel && (
-                                                <StatusPill bgcolor={status.bgcolor} color={status.dotColor} sx={{ px: 1, py: 0.35, fontSize: '0.65rem', fontWeight: 800 }}>
+                                                <StatusPill bgcolor={status.bgcolor} color={status.dotColor} sx={{ px: 1, py: 0.35, fontSize: '0.6rem', fontWeight: 800, flexShrink: 0 }}>
                                                     {status.label}
                                                 </StatusPill>
                                             )}
@@ -328,16 +329,16 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                         )}
 
                                         {!(isNonWorking && record.working_hours === 0) && (
-                                            <Stack direction="row" spacing={2} sx={{ color: 'text.secondary' }}>
-                                                <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flex: 1 }}>
-                                                    <Iconify icon={"solar:login-3-bold-duotone" as any} width={16} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
+                                            <Stack direction="row" spacing={1} sx={{ color: 'text.secondary', flexWrap: 'wrap', gap: 0.5 }}>
+                                                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
+                                                    <Iconify icon={"solar:login-3-bold-duotone" as any} width={14} sx={{ color: 'text.disabled', flexShrink: 0 }} />
+                                                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.7rem' }}>
                                                         {formatTime(record.check_in)}
                                                     </Typography>
                                                 </Stack>
-                                                <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flex: 1 }}>
-                                                    <Iconify icon={"solar:logout-3-bold-duotone" as any} width={16} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
+                                                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
+                                                    <Iconify icon={"solar:logout-3-bold-duotone" as any} width={14} sx={{ color: 'text.disabled', flexShrink: 0 }} />
+                                                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.7rem' }}>
                                                         {formatTime(record.check_out)}
                                                     </Typography>
                                                 </Stack>

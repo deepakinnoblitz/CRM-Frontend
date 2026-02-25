@@ -32,8 +32,6 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
                 .then(setEmployee)
                 .catch((err) => console.error('Failed to fetch employee details:', err))
                 .finally(() => setLoading(false));
-        } else {
-            setEmployee(null);
         }
     }, [open, employeeId]);
 
@@ -44,7 +42,13 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
     );
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="md"
+            TransitionProps={{ onExited: () => setEmployee(null) }}
+        >
             <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Employee Profile</Typography>
                 <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500], bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows?.z1 }}>

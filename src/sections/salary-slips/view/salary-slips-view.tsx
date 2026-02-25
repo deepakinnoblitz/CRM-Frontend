@@ -343,7 +343,7 @@ export function SalarySlipsView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: { xs: 300, md: 800 } }}>
                             <SalarySlipTableHead
                                 order={order}
                                 orderBy={orderBy}
@@ -357,9 +357,9 @@ export function SalarySlipsView() {
                                 headLabel={[
                                     { id: 'employee_name', label: 'Employee Name' },
                                     { id: 'pay_period_start', label: 'Pay Period' },
-                                    { id: 'gross_pay', label: 'Gross Pay', align: 'right' },
-                                    { id: 'net_pay', label: 'Net Pay', align: 'right' },
-                                    { id: 'status', label: 'Status' },
+                                    { id: 'gross_pay', label: 'Gross Pay', align: 'right', sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'net_pay', label: 'Net Pay', align: 'right', sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'status', label: 'Status', sx: { display: { xs: 'none', md: 'table-cell' } } },
                                     { id: '', label: '', align: 'right' },
                                 ]}
                             />

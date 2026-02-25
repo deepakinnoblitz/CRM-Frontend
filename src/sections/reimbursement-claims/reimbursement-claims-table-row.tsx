@@ -87,7 +87,7 @@ export function ReimbursementClaimTableRow({
                 )}
 
                 {typeof index === 'number' && (
-                    <TableCell align="center">
+                    <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                         <Box
                             sx={{
                                 width: 28,
@@ -128,11 +128,11 @@ export function ReimbursementClaimTableRow({
                     </Box>
                 </TableCell>
 
-                <TableCell>{row.claim_type}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{row.claim_type}</TableCell>
 
-                <TableCell>{dayjs(row.date_of_expense).format('DD/MM/YYYY')}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{dayjs(row.date_of_expense).format('DD/MM/YYYY')}</TableCell>
 
-                <TableCell>₹{row.amount?.toLocaleString() || 0}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>₹{row.amount?.toLocaleString() || 0}</TableCell>
 
                 <TableCell>
                     <Label

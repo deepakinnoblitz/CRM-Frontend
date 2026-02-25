@@ -37,13 +37,17 @@ export function UserDetailsDialog({ open, onClose, userId, onEdit }: Props) {
                 .then(setUser)
                 .catch((err) => console.error('Failed to fetch user details:', err))
                 .finally(() => setLoading(false));
-        } else {
-            setUser(null);
         }
     }, [open, userId]);
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="md"
+            TransitionProps={{ onExited: () => setUser(null) }}
+        >
             <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>User Profile</Typography>
                 <IconButton

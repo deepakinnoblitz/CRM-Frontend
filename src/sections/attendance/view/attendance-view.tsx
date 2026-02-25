@@ -575,7 +575,7 @@ export function AttendanceView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: { xs: 300, md: 800 } }}>
                             <AttendanceTableHead
                                 order={order}
                                 orderBy={orderBy}
@@ -585,12 +585,12 @@ export function AttendanceView() {
                                 hideCheckbox
                                 showIndex
                                 headLabel={[
-                                    { id: 'employee_name', label: 'Employee', minWidth: 180 },
-                                    { id: 'attendance_date', label: 'Date', minWidth: 120 },
-                                    { id: 'status', label: 'Status', minWidth: 100 },
-                                    { id: 'in_time', label: 'In Time', minWidth: 120 },
-                                    { id: 'out_time', label: 'Out Time', minWidth: 120 },
-                                    { id: 'working_hours_display', label: 'Working Hours', minWidth: 120 },
+                                    { id: 'employee_name', label: 'Employee', minWidth: { xs: 140, md: 180 }, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'attendance_date', label: 'Date', minWidth: { xs: 100, md: 120 } },
+                                    { id: 'status', label: 'Status', minWidth: { xs: 80, md: 100 } },
+                                    { id: 'in_time', label: 'In Time', minWidth: 120, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'out_time', label: 'Out Time', minWidth: 120, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'working_hours_display', label: 'Working Hours', minWidth: 120, sx: { display: { xs: 'none', md: 'table-cell' } } },
                                     { id: '', label: '', align: 'right' },
                                 ]}
                             />
@@ -698,7 +698,7 @@ export function AttendanceView() {
                                 )}
                             />
                             {renderField('attendance_date', 'Attendance Date', 'date', [], {}, true)}
-                            {renderField('status', 'Status', 'select', ['Present', 'Absent', 'Half Day', 'On Leave', 'Holiday', 'Missing'], { hidden : false })}
+                            {renderField('status', 'Status', 'select', ['Present', 'Absent', 'Half Day', 'On Leave', 'Holiday', 'Missing'], { hidden: false })}
 
                             <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
                                 {renderField('in_time', 'In Time', 'time')}

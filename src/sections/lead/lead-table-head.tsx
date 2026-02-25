@@ -48,7 +48,7 @@ export function LeadTableHead({
         )}
 
         {showIndex && (
-          <TableCell align="center" sx={{ fontWeight: 800, color: 'text.secondary', width: 50 }}>
+          <TableCell align="center" sx={{ fontWeight: 800, color: 'text.secondary', width: 50, display: { xs: 'none', md: 'table-cell' } }}>
             S.No
           </TableCell>
         )}
@@ -58,7 +58,7 @@ export function LeadTableHead({
             key={headCell.id}
             align={headCell.align || 'left'}
             sortDirection={orderBy === headCell.id ? order : false}
-            sx={{ width: headCell.width, minWidth: headCell.minWidth }}
+            sx={{ width: headCell.width, minWidth: headCell.minWidth, ...headCell.sx }}
           >
             {onSort ? (
               <TableSortLabel

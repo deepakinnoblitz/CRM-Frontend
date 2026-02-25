@@ -52,7 +52,7 @@ export function TimesheetTableRow({
             )}
 
             {typeof index === 'number' && (
-                <TableCell align="center">
+                <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Box
                         sx={{
                             width: 28,
@@ -86,7 +86,7 @@ export function TimesheetTableRow({
                         {row.employee_name || '-'}
                     </Typography>
                     {row.employee_id && (
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: { xs: 'none', md: 'block' } }}>
                             {row.employee_id}
                         </Typography>
                     )}
@@ -97,7 +97,7 @@ export function TimesheetTableRow({
                 {row.timesheet_date ? fDate(row.timesheet_date, 'DD-MM-YYYY') : '-'}
             </TableCell>
 
-            <TableCell>{row.total_hours ? `${row.total_hours} hrs` : '-'}</TableCell>
+            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{row.total_hours ? `${row.total_hours} hrs` : '-'}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>

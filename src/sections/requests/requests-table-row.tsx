@@ -165,7 +165,7 @@ export function RequestTableRow({
             )}
 
             {typeof index === 'number' && (
-                <TableCell align="center">
+                <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Box
                         sx={{
                             width: 28,
@@ -198,13 +198,13 @@ export function RequestTableRow({
                     <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
                         {row.employee_name || '-'}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', display: { xs: 'none', md: 'block' } }}>
                         {row.employee_id || '-'}
                     </Typography>
                 </Box>
             </TableCell>
 
-            <TableCell>{row.subject || '-'}</TableCell>
+            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{row.subject || '-'}</TableCell>
 
             <TableCell>
                 <Label color={getStatusColor(row.workflow_state || '')}>
@@ -214,7 +214,7 @@ export function RequestTableRow({
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
-                    <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 2, fontSize: 12 }}>
+                    <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 2, fontSize: 12, display: { xs: 'none', md: 'block' } }}>
                         {row.modified ? fTimeDist(row.modified) : '-'}
                     </Box>
                     <IconButton size="small" color="primary" onClick={onView}>

@@ -170,7 +170,7 @@ export function LeavesTableRow({
                 )}
 
                 {typeof index === 'number' && (
-                    <TableCell align="center">
+                    <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                         <Box
                             sx={{
                                 width: 28,
@@ -203,23 +203,23 @@ export function LeavesTableRow({
                         <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
                             {row.employeeName}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: { xs: 'none', md: 'block' } }}>
                             {row.employee}
                         </Typography>
                     </Box>
                 </TableCell>
 
-                <TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
                         {row.leaveType}
                     </Typography>
                 </TableCell>
-                <TableCell sx={{ minWidth: 120 }}>
+                <TableCell sx={{ minWidth: 120, display: { xs: 'none', md: 'table-cell' } }}>
                     <Typography variant="body2" noWrap>
                         {dayjs(row.fromDate).format('DD-MM-YYYY')} to {dayjs(row.toDate).format('DD-MM-YYYY')}
                     </Typography>
                 </TableCell>
-                <TableCell align="center">
+                <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     {!isPermission && (
                         <Typography variant="body2" noWrap>
                             {row.totalDays}

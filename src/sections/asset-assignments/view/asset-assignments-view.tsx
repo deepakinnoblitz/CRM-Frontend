@@ -369,7 +369,7 @@ export function AssetAssignmentsView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: { xs: 300, md: 800 } }}>
                             <AssetAssignmentTableHead
                                 order={order}
                                 orderBy={orderBy}
@@ -381,8 +381,8 @@ export function AssetAssignmentsView() {
                                 headLabel={[
                                     { id: 'asset_name', label: 'Asset' },
                                     { id: 'employee_name', label: 'Employee' },
-                                    { id: 'assigned_on', label: 'Assigned On' },
-                                    { id: 'returned_on', label: 'Returned On' },
+                                    { id: 'assigned_on', label: 'Assigned On', sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'returned_on', label: 'Returned On', sx: { display: { xs: 'none', md: 'table-cell' } } },
                                     { id: '', label: '' },
                                 ]}
                             />

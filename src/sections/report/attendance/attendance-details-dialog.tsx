@@ -34,8 +34,6 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
                 .then(setAttendance)
                 .catch((err) => console.error('Failed to fetch attendance details:', err))
                 .finally(() => setLoading(false));
-        } else {
-            setAttendance(null);
         }
     }, [open, attendanceId]);
 
@@ -43,6 +41,7 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
         switch (status) {
             case 'Present': return 'success';
             case 'Absent': return 'error';
+            case 'Missing': return 'warning';
             case 'On Leave': return 'warning';
             case 'Holiday': return 'info';
             case 'Half Day': return 'warning';
@@ -51,7 +50,13 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="sm"
+            TransitionProps={{ onExited: () => setAttendance(null) }}
+        >
             <DialogTitle sx={{ m: 0, p: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Stack direction="row" alignItems="center" spacing={1.5}>
                     <Typography variant="h5" sx={{ fontWeight: 800 }}>Attendance Details</Typography>
@@ -107,9 +112,10 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
                             </Stack>
 
                             <Stack
-                                direction="row"
+                                direction={{ xs: 'column', sm: 'row' }}
                                 alignItems="center"
                                 justifyContent="space-between"
+                                spacing={2}
                                 sx={{
                                     p: 2,
                                     borderRadius: 1.5,
@@ -130,7 +136,16 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
                                         STATUS
                                     </Typography>
                                     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                                        <Label color={getStatusColor(attendance.status)} variant="filled" sx={{ textTransform: 'uppercase', height: 24, px: 1.5 }}>
+                                        <Label
+                                            color={getStatusColor(attendance.status)}
+                                            variant="filled"
+                                            sx={{
+                                                textTransform: 'uppercase',
+                                                height: 24,
+                                                px: 1.5,
+                                                ...(attendance.status === 'Missing' && { color: 'common.white' }),
+                                            }}
+                                        >
                                             {attendance.status}
                                         </Label>
                                     </Box>
@@ -148,7 +163,13 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
                         </Box>
 
                         <Stack spacing={2}>
-                            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+                            <Box
+                                sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(3, 1fr)' },
+                                    gap: 2
+                                }}
+                            >
                                 <DetailRow label="In Time" value={attendance.in_time} icon="solar:clock-circle-bold" />
                                 <DetailRow label="Out Time" value={attendance.out_time} icon="solar:clock-circle-bold" />
                                 <DetailRow label="Overtime" value={attendance.overtime_display || '00:00'} icon="solar:stopwatch-bold" />

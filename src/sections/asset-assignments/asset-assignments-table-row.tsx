@@ -61,7 +61,7 @@ export function AssetAssignmentTableRow({
                 </TableCell>
             )}
 
-            <TableCell align="center" onClick={onView}>
+            <TableCell align="center" onClick={onView} sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                 <Box
                     sx={{
                         width: 28,
@@ -92,9 +92,9 @@ export function AssetAssignmentTableRow({
 
             <TableCell onClick={onView}>{row.employee_name}</TableCell>
 
-            <TableCell onClick={onView}>{fDate(row.assigned_on)}</TableCell>
+            <TableCell onClick={onView} sx={{ display: { xs: 'none', md: 'table-cell' } }}>{fDate(row.assigned_on)}</TableCell>
 
-            <TableCell onClick={onView}>
+            <TableCell onClick={onView} sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                 {row.returned_on ? fDate(row.returned_on) : '-'}
             </TableCell>
 
