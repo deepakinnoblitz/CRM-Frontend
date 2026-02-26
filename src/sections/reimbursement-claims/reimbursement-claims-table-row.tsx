@@ -75,7 +75,7 @@ export function ReimbursementClaimTableRow({
         action();
     };
 
-    const showActions = isHR && (row.workflow_state === 'Pending' || row.workflow_state === 'Clarification Requested');
+    const showActions = isHR && (row.workflow_state === 'Pending' || row.workflow_state === 'Submitted');
 
     return (
         <>
@@ -155,11 +155,11 @@ export function ReimbursementClaimTableRow({
                             <Iconify icon="solar:eye-bold" />
                         </IconButton>
 
-                        {canDelete && (
+                        {/* {canDelete && (
                             <IconButton onClick={(e) => handleClick(e, onDelete)} color="error">
                                 <Iconify icon="solar:trash-bin-trash-bold" />
                             </IconButton>
-                        )}
+                        )} */}
 
                         {showActions && (
                             <IconButton onClick={handleOpenMenu} color="warning">
