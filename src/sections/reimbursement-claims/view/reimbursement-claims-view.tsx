@@ -34,6 +34,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useSocket } from 'src/hooks/use-socket';
 import { useReimbursementClaims } from 'src/hooks/useReimbursementClaims';
 
 import { fetchEmployees } from 'src/api/employees';
@@ -94,11 +95,16 @@ const Android12Switch = styled(Switch)(({ theme }) => ({
 
 export function ReimbursementClaimsView() {
     const { user } = useAuth();
+    const { socket, subscribeToRoom } = useSocket(user?.email);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('modified');
+
+    useEffect(() => {
+        subscribeToRoom('Reimbursement Claim');
+    }, [subscribeToRoom]);
     const [selected, setSelected] = useState<string[]>([]);
     const [openFilters, setOpenFilters] = useState(false);
     const [filters, setFilters] = useState({
@@ -110,7 +116,7 @@ export function ReimbursementClaimsView() {
     });
 
     const isHR = user?.roles.some((role: string) =>
-        ['HR Manager', 'HR User', 'System Manager', 'Administrator'].includes(role)
+        ['HR Manager', 'HR User', 'HR', 'System Manager', 'Administrator', 'Accounts Manager'].includes(role)
     );
 
     const effectiveEmployee = isHR ? (filters.employee || 'all') : (user?.employee || 'all');
@@ -126,7 +132,8 @@ export function ReimbursementClaimsView() {
         filterName,
         orderBy,
         order,
-        claimsFilters
+        claimsFilters,
+        socket
     );
 
     const [openCreate, setOpenCreate] = useState(false);
@@ -221,7 +228,7 @@ export function ReimbursementClaimsView() {
     const handleOpenCreate = () => {
         setIsEdit(false);
         setCurrentClaim(null);
-        setEmployee('');
+        setEmployee(isHR ? '' : (user?.employee || ''));
         setClaimType('');
         setDateOfExpense('');
         setAmount('');
@@ -758,7 +765,11 @@ export function ReimbursementClaimsView() {
                                         onEdit={() => handleEditRow(row)}
                                         onDelete={() => handleDeleteRow(row.name)}
                                         onApplyAction={(action) => handleApplyAction(row.name, action)}
-                                        canEdit={permissions.write && (row.workflow_state === 'Approved' || row.workflow_state === 'Paid')}
+                                        canEdit={permissions.write && (
+                                            (isHR && row.employee !== user?.employee) ||
+                                            (row.workflow_state === 'Clarification Requested') ||
+                                            (row.workflow_state === 'Submitted' && row.employee === user?.employee)
+                                        )}
                                         canDelete={permissions.delete}
                                         isHR={isHR}
                                     />
@@ -839,7 +850,7 @@ export function ReimbursementClaimsView() {
                             options={employees}
                             getOptionLabel={(option) => `${option.employee_name} (${option.name})`}
                             value={employees.find((emp) => emp.name === employee) || null}
-                            disabled={isApprovedOrPaid}
+                            disabled={isEdit || !isHR}
                             onChange={(event, newValue) => {
                                 setEmployee(newValue?.name || '');
                                 if (formErrors.employee) {
