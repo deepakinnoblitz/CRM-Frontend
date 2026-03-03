@@ -18,7 +18,24 @@ export interface Employee {
 }
 
 // Employee APIs
-export const fetchEmployees = (params: any) => fetchFrappeList("Employee", { ...params, searchField: "employee_name" });
+export const fetchEmployees = (params: any) => {
+    const { search, ...restParams } = params;
+
+    // If there's a search query, create or_filters to search across multiple fields
+    const or_filters = search ? [
+        ["Employee", "employee_name", "like", `%${search}%`],
+        ["Employee", "employee_id", "like", `%${search}%`],
+        ["Employee", "department", "like", `%${search}%`],
+        ["Employee", "designation", "like", `%${search}%`],
+        ["Employee", "status", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("Employee", {
+        ...restParams,
+        search: undefined, // Remove search param since we're using or_filters
+        or_filters
+    });
+};
 
 export async function createEmployee(data: Partial<Employee>) {
     const headers = await getAuthHeaders();

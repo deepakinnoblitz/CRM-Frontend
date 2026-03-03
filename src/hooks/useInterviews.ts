@@ -7,7 +7,13 @@ export function useInterviews(
     pageSize: number = 10,
     search: string = '',
     orderBy: string = 'creation',
-    order: 'asc' | 'desc' = 'desc'
+    order: 'asc' | 'desc' = 'desc',
+    filters?: {
+        status?: string;
+        job_applied?: string;
+        startDate?: string | null;
+        endDate?: string | null;
+    }
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
@@ -17,7 +23,7 @@ export function useInterviews(
     const refetch = useCallback(async () => {
         try {
             setLoading(true);
-            const result = await fetchInterviews(page, pageSize, search, orderBy, order);
+            const result = await fetchInterviews({ page, pageSize, search, orderBy, order, filters });
             setData(result.data);
             setTotal(result.total);
             setError(null);
@@ -27,7 +33,7 @@ export function useInterviews(
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, search, orderBy, order]);
+    }, [page, pageSize, search, orderBy, order, filters]);
 
     useEffect(() => {
         refetch();

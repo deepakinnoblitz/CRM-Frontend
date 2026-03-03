@@ -55,3 +55,15 @@ export async function deleteAttendance(name: string) {
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete attendance record"));
     return true;
 }
+
+export async function getAttendance(name: string) {
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Attendance&name=${name}`);
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, `Failed to fetch Attendance details`));
+    }
+
+    const data = await res.json();
+    return data.message;
+}

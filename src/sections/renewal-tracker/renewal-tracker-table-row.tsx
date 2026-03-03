@@ -94,12 +94,7 @@ export function RenewalTrackerTableRow({
             <TableCell>
                 <Box
                     onClick={onView}
-                    sx={{
-                        color: 'primary.main',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        '&:hover': { textDecoration: 'underline' },
-                    }}
+                    sx={{ fontWeight: 700 }}
                 >
                     {row.item_name}
                 </Box>

@@ -10,27 +10,19 @@ import { visuallyHidden } from './utils';
 // ----------------------------------------------------------------------
 
 type UserTableHeadProps = {
-  orderBy?: string;
   rowCount: number;
   numSelected: number;
-  order?: 'asc' | 'desc';
-  onSort?: (id: string) => void;
-  headLabel: Record<string, any>[];
+  headLabel: any[];
   onSelectAllRows: (checked: boolean) => void;
   hideCheckbox?: boolean;
-  showIndex?: boolean;
 };
 
 export function UserTableHead({
-  order,
-  onSort,
-  orderBy,
   rowCount,
   headLabel,
   numSelected,
   onSelectAllRows,
   hideCheckbox = false,
-  showIndex = false,
 }: UserTableHeadProps) {
   return (
     <TableHead>
@@ -47,36 +39,13 @@ export function UserTableHead({
           </TableCell>
         )}
 
-        {showIndex && (
-          <TableCell align="center" sx={{ fontWeight: 800, color: 'text.secondary', width: 50 }}>
-            S.No
-          </TableCell>
-        )}
-
         {headLabel.map((headCell) => (
           <TableCell
             key={headCell.id}
             align={headCell.align || 'left'}
-            sortDirection={orderBy === headCell.id ? order : false}
             sx={{ width: headCell.width, minWidth: headCell.minWidth }}
           >
-            {onSort ? (
-              <TableSortLabel
-                hideSortIcon
-                active={orderBy === headCell.id}
-                direction={orderBy === headCell.id ? order : 'asc'}
-                onClick={() => onSort(headCell.id)}
-              >
-                {headCell.label}
-                {orderBy === headCell.id ? (
-                  <Box sx={{ ...visuallyHidden }}>
-                    {order === 'desc' ? 'sorted descending' : 'sorted ascending'}
-                  </Box>
-                ) : null}
-              </TableSortLabel>
-            ) : (
-              headCell.label
-            )}
+            {headCell.label}
           </TableCell>
         ))}
       </TableRow>

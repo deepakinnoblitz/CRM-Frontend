@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
@@ -5,6 +7,8 @@ import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+
+import { fTimeDist } from 'src/utils/format-time';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -20,6 +24,8 @@ type Props = {
         status: string;
         inTime?: string;
         out_time?: string;
+        working_hours_display?: string;
+        modified: string;
     };
     selected: boolean;
     onSelectRow: VoidFunction;
@@ -64,7 +70,7 @@ export function AttendanceTableRow({
             )}
 
             {typeof index === 'number' && (
-                <TableCell align="center">
+                <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Box
                         sx={{
                             width: 28,
@@ -92,9 +98,9 @@ export function AttendanceTableRow({
                 </TableCell>
             )}
 
-            <TableCell>
+            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                 <Box>
-                    <Typography variant="subtitle2" noWrap>
+                    <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
                         {row.employeeName}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -105,7 +111,7 @@ export function AttendanceTableRow({
 
             <TableCell>
                 <Typography variant="body2" noWrap>
-                    {row.attendanceDate}
+                    {dayjs(row.attendanceDate).format('DD-MM-YYYY')}
                 </Typography>
             </TableCell>
 
@@ -113,19 +119,37 @@ export function AttendanceTableRow({
                 <Label color={getStatusColor(row.status)}>{row.status}</Label>
             </TableCell>
 
-            <TableCell>
+            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                 <Typography variant="body2" noWrap>
                     {row.inTime || '-'}
                 </Typography>
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                 <Typography variant="body2" noWrap>
                     {row.out_time || '-'}
                 </Typography>
             </TableCell>
+            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                <Typography variant="body2" noWrap>
+                    {row.working_hours_display || '-'}
+                </Typography>
+            </TableCell>
 
             <TableCell align="right">
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1.5 }}>
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            color: 'text.secondary',
+                            fontWeight: 700,
+                            fontSize: 12,
+                            minWidth: 24,
+                            textAlign: 'right',
+                        }}
+                    >
+                        {fTimeDist(row.modified)}
+                    </Typography>
+
                     <IconButton size="small" onClick={onView} sx={{ color: 'info.main' }}>
                         <Iconify icon="solar:eye-bold" />
                     </IconButton>

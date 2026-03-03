@@ -43,12 +43,13 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
-import { UserTableHead as RenewalTableHead } from 'src/sections/user/user-table-head';
-import { UserTableToolbar as RenewalTableToolbar } from 'src/sections/user/user-table-toolbar';
+import { TableNoData } from 'src/sections/lead/table-no-data';
+import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
+import { LeadTableHead as RenewalTableHead } from 'src/sections/lead/lead-table-head';
+import { LeadTableToolbar as RenewalTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 import { RenewalTrackerTableRow } from 'src/sections/renewal-tracker/renewal-tracker-table-row';
 import { RenewalDetailsDialog } from 'src/sections/report/renewal-tracker/renewal-details-dialog';
+import { RenewalTrackerTableFiltersDrawer } from 'src/sections/renewal-tracker/renewal-tracker-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
@@ -58,18 +59,34 @@ const STATUSES = ['Active', 'Expired', 'Pending'];
 
 export function RenewalTrackerView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('renewal_date');
     const [selected, setSelected] = useState<string[]>([]);
+
+    const [filters, setFilters] = useState<{
+        category: string;
+        status: string;
+        startDate: string | null;
+        endDate: string | null;
+    }>({
+        category: 'all',
+        status: 'all',
+        startDate: null,
+        endDate: null
+    });
+
+    const [openFilters, setOpenFilters] = useState(false);
+    const canReset = filters.category !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null;
 
     const { data, total, refetch } = useRenewals(
         page + 1,
         rowsPerPage,
         filterName,
         orderBy,
-        order
+        order,
+        filters
     );
 
     const [openCreate, setOpenCreate] = useState(false);
@@ -110,10 +127,45 @@ export function RenewalTrackerView() {
         getRenewalPermissions().then(setPermissions);
     }, []);
 
-    const handleSort = (property: string) => {
-        const isAsc = orderBy === property && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(property);
+    const handleFilters = (newFilters: Partial<typeof filters>) => {
+        setFilters((prev) => ({ ...prev, ...newFilters }));
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            category: 'all',
+            status: 'all',
+            startDate: null,
+            endDate: null
+        });
+        setPage(0);
+    };
+
+    const handleSort = (id: string) => {
+        const isAsc = orderBy === id && order === 'asc';
+        if (id !== '') {
+            setOrder(isAsc ? 'desc' : 'asc');
+            setOrderBy(id);
+        }
+    };
+
+    const handleSortChange = (value: string) => {
+        // Map dropdown values to orderBy and order
+        if (value === 'date_desc') { setOrderBy('creation'); setOrder('desc'); }
+        else if (value === 'date_asc') { setOrderBy('creation'); setOrder('asc'); }
+        else if (value === 'amount_desc') { setOrderBy('amount'); setOrder('desc'); }
+        else if (value === 'amount_asc') { setOrderBy('amount'); setOrder('asc'); }
+        else if (value === 'name_asc') { setOrderBy('item_name'); setOrder('asc'); }
+        else if (value === 'name_desc') { setOrderBy('item_name'); setOrder('desc'); }
+        setPage(0);
+    };
+
+    const getCurrentSortValue = () => {
+        if (orderBy === 'creation' || orderBy === 'renewal_date') return order === 'desc' ? 'date_desc' : 'date_asc';
+        if (orderBy === 'amount') return order === 'desc' ? 'amount_desc' : 'amount_asc';
+        if (orderBy === 'item_name') return order === 'desc' ? 'name_desc' : 'name_asc';
+        return 'date_desc';
     };
 
     const handleSelectAllRows = (checked: boolean) => {
@@ -326,6 +378,18 @@ export function RenewalTrackerView() {
                     onFilterName={handleFilterByName}
                     searchPlaceholder="Search renewals..."
                     onDelete={selected.length > 0 ? handleBulkDelete : undefined}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
+                    sortBy={getCurrentSortValue()}
+                    onSortChange={handleSortChange}
+                    sortOptions={[
+                        { value: 'date_desc', label: 'Newest First' },
+                        { value: 'date_asc', label: 'Oldest First' },
+                        { value: 'amount_desc', label: 'Amount: High to Low' },
+                        { value: 'amount_asc', label: 'Amount: Low to High' },
+                        { value: 'name_asc', label: 'Name: A to Z' },
+                        { value: 'name_desc', label: 'Name: Z to A' },
+                    ]}
                 />
 
                 <Scrollbar>
@@ -336,7 +400,6 @@ export function RenewalTrackerView() {
                                 orderBy={orderBy}
                                 rowCount={data.length}
                                 numSelected={selected.length}
-                                onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
@@ -409,8 +472,18 @@ export function RenewalTrackerView() {
                 />
             </Card>
 
+            <RenewalTrackerTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+            />
+
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
                 <form onSubmit={handleCreate}>
                     <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         {isEdit ? 'Edit Renewal' : 'New Renewal'}
@@ -531,7 +604,6 @@ export function RenewalTrackerView() {
                     </DialogContent>
 
                     <DialogActions>
-                        <Button onClick={handleCloseCreate}>Cancel</Button>
                         <Button type="submit" variant="contained">
                             {isEdit ? 'Update' : 'Create'}
                         </Button>

@@ -4,7 +4,6 @@ import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import AlertTitle from '@mui/material/AlertTitle';
@@ -14,12 +13,12 @@ import InputAdornment from '@mui/material/InputAdornment';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { CONFIG } from 'src/config-global';
 import { login, getCurrentUserInfo } from 'src/api/auth';
 
 import { Iconify } from 'src/components/iconify';
 
 import { useAuth } from 'src/auth/auth-context';
-
 
 // ----------------------------------------------------------------------
 
@@ -48,8 +47,8 @@ export function SignInView() {
       // Save logged-in user in context
       setUser(userInfo);
 
-      // Redirect to dashboard
-      router.push('/');
+      // Redirect to dashboard (Force reload to ensure auth state/cookies are synced)
+      window.location.href = '/';
     } catch {
       setError('Invalid email or password');
       setSnackbarOpen(true);
@@ -163,7 +162,7 @@ export function SignInView() {
       >
         <Box
           component="img"
-          src="http://erp.innoblitz.in/assets/Innoblitz%20Logo%20Full.png"
+          src={`${CONFIG.assetsDir}/logo/Innoblitz%20Logo%20Full.png`}
           alt="Innoblitz Logo"
           sx={{
             width: 180,

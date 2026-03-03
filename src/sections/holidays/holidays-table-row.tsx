@@ -89,13 +89,13 @@ export function HolidayListTableRow({
                 </TableCell>
             )}
 
-            <TableCell>{row.holiday_list_name || '-'}</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>{row.holiday_list_name || '-'}</TableCell>
 
             <TableCell>{row.year || '-'}</TableCell>
 
             <TableCell>{getMonthName(row.month)}</TableCell>
 
-            <TableCell>{row.working_days || '-'}</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>{row.working_days || '-'}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>

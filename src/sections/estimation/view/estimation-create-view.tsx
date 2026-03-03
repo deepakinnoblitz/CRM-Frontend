@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -11,7 +11,6 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
-import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
@@ -383,7 +382,7 @@ export function EstimationCreateView() {
 
             const estimationData = {
                 client_name: clientName,
-                deal: deal,
+                deal,
                 customer_name: customerName,
                 billing_name: billingName,
                 estimate_date: estimateDate,

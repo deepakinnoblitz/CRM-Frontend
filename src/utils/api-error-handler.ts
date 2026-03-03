@@ -54,6 +54,14 @@ function beautifyFrappeMessage(msg: string): string {
 export function handleFrappeError(json: any, defaultMessage: string = "An error occurred"): string {
     if (!json) return defaultMessage;
 
+    // Handle case where we accidentally get a string (e.g. from a failed JSON.parse earlier)
+    if (typeof json === 'string') {
+        if (json.trim().startsWith('<!DOCTYPE html>') || json.trim().startsWith('<html')) {
+            return "Internal Server Error. Please contact administrator.";
+        }
+        return json || defaultMessage;
+    }
+
     const rawMessages: string[] = [];
 
     // 1. Try to parse _server_messages
@@ -64,7 +72,11 @@ export function handleFrappeError(json: any, defaultMessage: string = "An error 
                 serverMsgs.forEach((m: string | any) => {
                     try {
                         const inner = typeof m === 'string' ? JSON.parse(m) : m;
-                        if (inner.message) rawMessages.push(inner.message);
+                        if (inner.message) {
+                            rawMessages.push(inner.message);
+                        } else if (inner.title) {
+                            rawMessages.push(inner.title);
+                        }
                     } catch {
                         if (typeof m === 'string') rawMessages.push(m);
                     }

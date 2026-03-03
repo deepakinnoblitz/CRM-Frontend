@@ -5,22 +5,27 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { IconButton } from '@mui/material';
+import Popover from '@mui/material/Popover';
 import Snackbar from '@mui/material/Snackbar';
+import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
-import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import TablePagination from '@mui/material/TablePagination';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -36,24 +41,31 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from '../../user/table-no-data';
-import { TableEmptyRows } from '../../user/table-empty-rows';
+import { useAuth } from 'src/auth/auth-context';
+
+import { TableNoData } from '../../lead/table-no-data';
+import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { AttendanceTableRow } from '../attendance-table-row';
-import { UserTableHead as AttendanceTableHead } from '../../user/user-table-head';
-import { UserTableToolbar as AttendanceTableToolbar } from '../../user/user-table-toolbar';
+import { AttendanceImportDialog } from '../attendance-import-dialog';
+import { LeadTableHead as AttendanceTableHead } from '../../lead/lead-table-head';
+import { AttendanceTableFiltersDrawer } from '../attendance-table-filters-drawer';
+import { LeadTableToolbar as AttendanceTableToolbar } from '../../lead/lead-table-toolbar';
 import { AttendanceDetailsDialog } from '../../report/attendance/attendance-details-dialog';
 
 // ----------------------------------------------------------------------
 
 export function AttendanceView() {
+    const { user } = useAuth();
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('attendance_date');
+    const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
 
     const [openCreate, setOpenCreate] = useState(false);
+    const [openImport, setOpenImport] = useState(false);
     const [creating, setCreating] = useState(false);
     const [currentAttendanceId, setCurrentAttendanceId] = useState<string | null>(null);
     const [formData, setFormData] = useState<Record<string, any>>({
@@ -62,6 +74,13 @@ export function AttendanceView() {
     });
 
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
+
+    // Filter State
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [startDate, setStartDate] = useState<string | null>(null);
+    const [endDate, setEndDate] = useState<string | null>(null);
+    const [filterEmployee, setFilterEmployee] = useState<string | null>(null);
+    const [openFilters, setOpenFilters] = useState(false);
 
     // Alert & Dialog State
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
@@ -86,12 +105,22 @@ export function AttendanceView() {
         delete: true,
     });
 
+    const isHR = user?.roles?.some((role: string) =>
+        ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
+    );
+
+    const effectiveEmployee = isHR ? filterEmployee : user?.employee;
+
     const { data, total, loading, refetch } = useAttendance(
         page + 1,
         rowsPerPage,
         filterName,
         orderBy,
-        order
+        order,
+        startDate || undefined,
+        endDate || undefined,
+        filterStatus,
+        effectiveEmployee
     );
 
     const notFound = !data.length && !!filterName;
@@ -115,9 +144,21 @@ export function AttendanceView() {
         setCurrentAttendanceId(null);
     };
 
+    const handleOpenImport = () => {
+        setOpenImport(true);
+    };
+
+    const handleCloseImport = () => {
+        setOpenImport(false);
+    };
+
     const handleInputChange = (fieldname: string, value: any) => {
         setFormData((prev: Record<string, any>) => {
             const next = { ...prev, [fieldname]: value };
+
+            if (fieldname === 'manual') {
+                next.manual = value ? 1 : 0;
+            }
 
             // Calculate working hours
             if (fieldname === 'in_time' || fieldname === 'out_time') {
@@ -127,13 +168,24 @@ export function AttendanceView() {
                     if (end.isAfter(start)) {
                         const diffMs = end.diff(start);
                         const diffHrs = diffMs / (1000 * 60 * 60);
-                        next.working_hours_decimal = diffHrs.toFixed(2);
+
                         const h = Math.floor(diffHrs);
                         const m = Math.round((diffHrs - h) * 60);
-                        next.working_hours_display = `${h}h ${m}m`;
+                        const formattedTime = `${h.toString().padStart(2, '0')}.${m.toString().padStart(2, '0')}`;
+
+                        next.working_hours_display = formattedTime;
+
+                        if (diffHrs > 9) {
+                            const otDiff = diffHrs - 9;
+                            const otH = Math.floor(otDiff);
+                            const otM = Math.round((otDiff - otH) * 60);
+                            next.overtime_display = `${otH.toString().padStart(2, '0')}.${otM.toString().padStart(2, '0')}`;
+                        } else {
+                            next.overtime_display = '00.00';
+                        }
                     } else {
-                        next.working_hours_decimal = 0;
-                        next.working_hours_display = '0h 0m';
+                        next.working_hours_display = '00.00';
+                        next.overtime_display = '00.00';
                     }
                 }
             }
@@ -257,11 +309,32 @@ export function AttendanceView() {
         setDetailsId(null);
     };
 
-    const handleSort = (id: string) => {
-        const isAsc = orderBy === id && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(id);
+    const handleOpenFilters = () => {
+        setOpenFilters(true);
     };
+
+    const handleCloseFilters = () => {
+        setOpenFilters(false);
+    };
+
+    const handleFilters = (update: any) => {
+        if (update.startDate !== undefined) setStartDate(update.startDate);
+        if (update.endDate !== undefined) setEndDate(update.endDate);
+        if (update.status !== undefined) setFilterStatus(update.status);
+        if (update.employee !== undefined) setFilterEmployee(update.employee);
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setStartDate(null);
+        setEndDate(null);
+        setFilterStatus('all');
+        setFilterEmployee(null);
+        setFilterName('');
+        setPage(0);
+    };
+
+
 
     const handleSelectAllRows = (checked: boolean) => {
         if (checked) {
@@ -303,6 +376,17 @@ export function AttendanceView() {
     };
 
     const renderField = (fieldname: string, label: string, type: string = 'text', options: any[] = [], extraProps: any = {}, required: boolean = false) => {
+
+        // ✅ HIDDEN FIELD HANDLING (ADD THIS)
+        if (type === 'hidden' || extraProps?.hidden) {
+            return (
+                <input
+                    type="hidden"
+                    name={fieldname}
+                    value={formData[fieldname] || ''}
+                />
+            );
+        }
         const commonProps = {
             fullWidth: true,
             label,
@@ -338,6 +422,7 @@ export function AttendanceView() {
                     label={label}
                     value={formData[fieldname] ? dayjs(formData[fieldname]) : null}
                     onChange={(newValue) => handleInputChange(fieldname, newValue?.format('YYYY-MM-DD') || '')}
+                    format="DD-MM-YYYY"
                     slotProps={{
                         textField: {
                             fullWidth: true,
@@ -368,7 +453,65 @@ export function AttendanceView() {
             );
         }
 
+        if (type === 'checkbox') {
+            return (
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={!!formData[fieldname]}
+                            onChange={(e) => handleInputChange(fieldname, e.target.checked)}
+                        />
+                    }
+                    label={label}
+                />
+            );
+        }
+
         return <TextField {...commonProps} />;
+    };
+
+    const sortOptions = [
+        { value: 'newest', label: 'Newest First' },
+        { value: 'oldest', label: 'Oldest First' },
+        { value: 'date_asc', label: 'Date Asc' },
+        { value: 'date_desc', label: 'Date Desc' },
+        { value: 'employee_asc', label: 'Employee Asc' },
+        { value: 'employee_desc', label: 'Employee Desc' },
+    ];
+
+    const getSortByValue = () => {
+        if (orderBy === 'modified') {
+            return order === 'desc' ? 'newest' : 'oldest';
+        }
+        if (orderBy === 'attendance_date') {
+            return order === 'asc' ? 'date_asc' : 'date_desc';
+        }
+        if (orderBy === 'employee_name') {
+            return order === 'asc' ? 'employee_asc' : 'employee_desc';
+        }
+        return 'newest';
+    };
+
+    const handleSortChange = (value: string) => {
+        if (value === 'newest') {
+            setOrderBy('modified');
+            setOrder('desc');
+        } else if (value === 'oldest') {
+            setOrderBy('modified');
+            setOrder('asc');
+        } else if (value === 'date_asc') {
+            setOrderBy('attendance_date');
+            setOrder('asc');
+        } else if (value === 'date_desc') {
+            setOrderBy('attendance_date');
+            setOrder('desc');
+        } else if (value === 'employee_asc') {
+            setOrderBy('employee_name');
+            setOrder('asc');
+        } else if (value === 'employee_desc') {
+            setOrderBy('employee_name');
+            setOrder('desc');
+        }
     };
 
     return (
@@ -378,49 +521,77 @@ export function AttendanceView() {
                     Attendance
                 </Typography>
 
-                {permissions.write && (
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon="mingcute:add-line" />}
-                        onClick={handleOpenCreate}
-                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                    >
-                        Mark Attendance
-                    </Button>
-                )}
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                    {permissions.write && (
+                        <>
+                            <Button
+                                variant="outlined"
+                                startIcon={<Iconify icon="solar:import-bold-duotone" />}
+                                onClick={handleOpenImport}
+                            >
+                                Import
+                            </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<Iconify icon="mingcute:add-line" />}
+                                onClick={handleOpenCreate}
+                                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                            >
+                                Mark Attendance
+                            </Button>
+                        </>
+                    )}
+                </Box>
             </Box>
 
             <Card>
                 <AttendanceTableToolbar
                     numSelected={selected.length}
                     filterName={filterName}
-                    onFilterName={(e) => {
+                    onFilterName={(e: React.ChangeEvent<HTMLInputElement>) => {
                         setFilterName(e.target.value);
                         setPage(0);
                     }}
                     onDelete={handleBulkDelete}
                     searchPlaceholder="Search attendance..."
+                    sortOptions={sortOptions}
+                    sortBy={getSortByValue()}
+                    onSortChange={handleSortChange}
+                    onOpenFilter={handleOpenFilters}
+                    canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all' || !!filterEmployee}
+                />
+
+                <AttendanceTableFiltersDrawer
+                    open={openFilters}
+                    onOpen={handleOpenFilters}
+                    onClose={handleCloseFilters}
+                    filters={{ startDate, endDate, status: filterStatus, employee: filterEmployee }}
+                    onFilters={handleFilters}
+                    canReset={!!startDate || !!endDate || filterStatus !== 'all' || !!filterEmployee}
+                    onResetFilters={handleResetFilters}
+                    employeeOptions={employeeOptions}
+                    isHR={isHR}
                 />
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: { xs: 300, md: 800 } }}>
                             <AttendanceTableHead
                                 order={order}
                                 orderBy={orderBy}
                                 rowCount={total}
                                 numSelected={selected.length}
-                                onSort={handleSort}
-                                onSelectAllRows={(checked) => handleSelectAllRows(checked)}
+                                onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
                                 headLabel={[
-                                    { id: 'employee_name', label: 'Employee', minWidth: 180 },
-                                    { id: 'attendance_date', label: 'Date', minWidth: 120 },
-                                    { id: 'status', label: 'Status', minWidth: 100 },
-                                    { id: 'in_time', label: 'In Time', minWidth: 120 },
-                                    { id: 'out_time', label: 'Out Time', minWidth: 120 },
-                                    { id: '', label: 'Actions', align: 'right' },
+                                    { id: 'employee_name', label: 'Employee', minWidth: { xs: 140, md: 180 }, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'attendance_date', label: 'Date', minWidth: { xs: 100, md: 120 } },
+                                    { id: 'status', label: 'Status', minWidth: { xs: 80, md: 100 } },
+                                    { id: 'in_time', label: 'In Time', minWidth: 120, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'out_time', label: 'Out Time', minWidth: 120, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'working_hours_display', label: 'Working Hours', minWidth: 120, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: '', label: '', align: 'right' },
                                 ]}
                             />
 
@@ -438,6 +609,8 @@ export function AttendanceView() {
                                             status: row.status,
                                             inTime: row.in_time,
                                             out_time: row.out_time,
+                                            working_hours_display: row.working_hours_display,
+                                            modified: row.modified,
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
@@ -502,25 +675,42 @@ export function AttendanceView() {
                             gridTemplateColumns="1fr"
                             gap={3}
                         >
-                            {renderField('employee', 'Employee', 'select', employeeOptions, {}, true)}
+                            <Autocomplete
+                                fullWidth
+                                options={employeeOptions}
+                                getOptionLabel={(option) => option.employee_name ? `${option.employee_name} (${option.name})` : (option.name || '')}
+                                value={employeeOptions.find((opt) => opt.name === formData.employee) || null}
+                                onChange={(event, newValue) => {
+                                    handleInputChange('employee', newValue?.name || '');
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Employee"
+                                        required
+                                        InputLabelProps={{ shrink: true }}
+                                        sx={{
+                                            '& .MuiFormLabel-asterisk': {
+                                                color: 'red',
+                                            },
+                                        }}
+                                    />
+                                )}
+                            />
                             {renderField('attendance_date', 'Attendance Date', 'date', [], {}, true)}
-                            {renderField('status', 'Status', 'select', ['Present', 'Absent', 'Half Day', 'On Leave', 'Holiday'], {}, true)}
+                            {renderField('status', 'Status', 'select', ['Present', 'Absent', 'Half Day', 'On Leave', 'Holiday', 'Missing'], { hidden: false })}
 
-                            <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
                                 {renderField('in_time', 'In Time', 'time')}
                                 {renderField('out_time', 'Out Time', 'time')}
                             </Box>
 
-                            {formData.working_hours_display && (
-                                <TextField
-                                    fullWidth
-                                    label="Working Hours"
-                                    value={formData.working_hours_display}
-                                    InputProps={{ readOnly: true }}
-                                    InputLabelProps={{ shrink: true }}
-                                    variant="filled"
-                                />
-                            )}
+                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
+                                {renderField('working_hours_display', 'Working Hours', 'text', [], { InputProps: { readOnly: true } })}
+                                {renderField('overtime_display', 'Overtime Hours', 'text', [], { InputProps: { readOnly: true } })}
+                            </Box>
+
+                            {renderField('manual', 'Manual', 'checkbox')}
                         </Box>
                     </LocalizationProvider>
                 </DialogContent>
@@ -575,6 +765,12 @@ export function AttendanceView() {
                     {serverAlert.message}
                 </Alert>
             </Snackbar>
+
+            <AttendanceImportDialog
+                open={openImport}
+                onClose={handleCloseImport}
+                onRefresh={refetch}
+            />
         </DashboardContent>
     );
 }

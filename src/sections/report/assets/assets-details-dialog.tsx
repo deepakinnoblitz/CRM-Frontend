@@ -46,7 +46,7 @@ export function AssetDetailsDialog({ open, onClose, asset }: Props) {
                 {asset ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                         {/* Header Info */}
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
                             <Box
                                 sx={{
                                     width: 80,

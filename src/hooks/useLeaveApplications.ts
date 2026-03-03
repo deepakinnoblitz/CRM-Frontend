@@ -1,3 +1,4 @@
+import { Socket } from 'socket.io-client';
 import { useState, useEffect, useCallback } from 'react';
 
 import { fetchLeaveApplications } from 'src/api/leaves';
@@ -8,14 +9,15 @@ export function useLeaveApplications(
     search: string,
     filters: any = {},
     orderBy: string = 'modified',
-    order: 'asc' | 'desc' = 'desc'
+    order: 'asc' | 'desc' = 'desc',
+    socket?: Socket | null
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
 
-    const refetch = useCallback(async () => {
-        setLoading(true);
+    const refetch = useCallback(async (isSilent = false) => {
+        if (!isSilent) setLoading(true);
         try {
             const result = await fetchLeaveApplications({
                 page,
@@ -30,13 +32,27 @@ export function useLeaveApplications(
         } catch (error) {
             console.error('Failed to fetch leave applications:', error);
         } finally {
-            setLoading(false);
+            if (!isSilent) setLoading(false);
         }
     }, [page, pageSize, search, JSON.stringify(filters), orderBy, order]);
 
     useEffect(() => {
         refetch();
     }, [refetch]);
+
+    // Real-time socket subscription — instant refresh when a Leave Application status changes
+    useEffect(() => {
+        if (!socket) return undefined;
+
+        const handleUpdate = () => {
+            refetch(true); // Silent refetch — no loading spinner
+        };
+
+        socket.on('leave_application_updated', handleUpdate);
+        return () => {
+            socket.off('leave_application_updated', handleUpdate);
+        };
+    }, [socket, refetch]);
 
     return { data, total, loading, refetch };
 }

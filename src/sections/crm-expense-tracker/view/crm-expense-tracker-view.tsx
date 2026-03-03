@@ -27,14 +27,14 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from '../../user/table-no-data';
-import { TableEmptyRows } from '../../user/table-empty-rows';
+import { TableNoData } from '../../lead/table-no-data';
+import { TableEmptyRows } from '../../lead/table-empty-rows';
 import CRMExpenseTrackerDialog from '../crm-expense-tracker-dialog';
 import CRMExpenseTrackerStatsCards from '../crm-expense-tracker-stats-cards';
 import { CRMExpenseTrackerTableRow } from '../crm-expense-tracker-table-row';
-import { UserTableHead as CRMExpenseTrackerTableHead } from '../../user/user-table-head';
+import { LeadTableHead as CRMExpenseTrackerTableHead } from '../../lead/lead-table-head';
 import CRMExpenseTrackerTableFiltersDrawer from '../crm-expense-tracker-table-filters-drawer';
-import { UserTableToolbar as CRMExpenseTrackerTableToolbar } from '../../user/user-table-toolbar';
+import { LeadTableToolbar as CRMExpenseTrackerTableToolbar } from '../../lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------
 

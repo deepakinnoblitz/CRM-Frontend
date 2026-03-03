@@ -81,6 +81,26 @@ export function fDate(date: DatePickerFormat, template?: string): string {
 // ----------------------------------------------------------------------
 
 /**
+ * @output 12:00 am
+ */
+export function fTime(date: DatePickerFormat, template?: string): string {
+  if (!isValidDate(date)) {
+    // Attempt to parse if it's a raw time string like "HH:mm:ss"
+    if (typeof date === 'string' && date.includes(':')) {
+      const d = dayjs(`2000-01-01 ${date}`);
+      if (d.isValid()) {
+        return d.format(template ?? formatPatterns.time);
+      }
+    }
+    return 'Invalid time';
+  }
+
+  return dayjs(date).format(template ?? formatPatterns.time);
+}
+
+// ----------------------------------------------------------------------
+
+/**
  * @output a few seconds, 2 years
  */
 export function fToNow(date: DatePickerFormat): string {
@@ -89,4 +109,81 @@ export function fToNow(date: DatePickerFormat): string {
   }
 
   return dayjs(date).toNow(true);
+}
+
+// ----------------------------------------------------------------------
+
+/**
+ * @output 3 m, 2 h, 1 w, 1 M, 1 y
+ */
+export function fTimeDist(date: DatePickerFormat): string {
+  if (!isValidDate(date)) {
+    return 'Invalid date';
+  }
+
+  const now = dayjs();
+  const d = dayjs(date);
+
+  const diffInSeconds = now.diff(d, 'second');
+  if (diffInSeconds < 60) return `now`;
+
+  const diffInMinutes = now.diff(d, 'minute');
+  if (diffInMinutes < 60) return `${diffInMinutes} m`;
+
+  const diffInHours = now.diff(d, 'hour');
+  if (diffInHours < 24) return `${diffInHours} h`;
+
+  const diffInDays = now.diff(d, 'day');
+  if (diffInDays < 7) return `${diffInDays} d`;
+
+  const diffInWeeks = now.diff(d, 'week');
+  if (diffInWeeks < 4) return `${diffInWeeks} w`;
+
+  const diffInMonths = now.diff(d, 'month');
+  if (diffInMonths < 12) return `${diffInMonths} M`;
+
+  const diffInYears = now.diff(d, 'year');
+  return `${diffInYears} y`;
+}
+// ----------------------------------------------------------------------
+
+/**
+ * @output Today, Yesterday, 17 Apr 2022
+ */
+export function fDateSeparator(date: DatePickerFormat): string {
+  if (!isValidDate(date)) {
+    return 'Invalid date';
+  }
+
+  const d = dayjs(date);
+  const now = dayjs();
+
+  if (d.isSame(now, 'day')) {
+    return 'Today';
+  }
+  if (d.isSame(now.subtract(1, 'day'), 'day')) {
+    return 'Yesterday';
+  }
+
+  return fDate(date);
+}
+
+// ----------------------------------------------------------------------
+
+/**
+ * @output 12:00 am (if today), 17/04/2022 (otherwise)
+ */
+export function fToChatTime(date: DatePickerFormat): string {
+  if (!isValidDate(date)) {
+    return 'Invalid date';
+  }
+
+  const d = dayjs(date);
+  const now = dayjs();
+
+  if (d.isSame(now, 'day')) {
+    return d.format('h:mm A');
+  }
+
+  return d.format(formatPatterns.split.date);
 }

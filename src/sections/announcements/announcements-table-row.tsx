@@ -5,6 +5,7 @@ import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -14,6 +15,7 @@ export type AnnouncementTableRowProps = {
         id: string;
         announcement_name: string;
         announcement: string;
+        is_active: 0 | 1;
         creation?: string;
     };
     selected: boolean;
@@ -76,7 +78,7 @@ export function AnnouncementTableRow({
                 </TableCell>
             )}
 
-            <TableCell>{row.announcement_name || '-'}</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>{row.announcement_name || '-'}</TableCell>
 
             <TableCell>
                 {row.announcement ? `${row.announcement.substring(0, 100)}${row.announcement.length > 100 ? '...' : ''}` : '-'}
@@ -84,6 +86,11 @@ export function AnnouncementTableRow({
 
             <TableCell>
                 {row.creation ? new Date(row.creation).toLocaleDateString() : '-'}
+            </TableCell>
+
+            <TableCell>
+                {/* Temp removed Label */}
+                {row.is_active === 1 ? 'Active' : 'Hidden'}
             </TableCell>
 
             <TableCell align="right">

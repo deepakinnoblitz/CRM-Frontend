@@ -34,10 +34,10 @@ import {
     startDataImport,
     getImportStatus,
     getImportPreview,
-    getImportWarnings,
     createDataImport,
     updateDataImport,
-    updateImportFile
+    updateImportFile,
+    getImportWarnings
 } from 'src/api/data-import';
 
 import { Iconify } from 'src/components/iconify';
@@ -52,7 +52,7 @@ type Props = {
     onRefresh: VoidFunction;
 };
 
-export function LeadImportDialog({ open, onClose, onRefresh }: Props) {
+export function AttendanceImportDialog({ open, onClose, onRefresh }: Props) {
     const [activeStep, setActiveStep] = useState(0);
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
@@ -70,7 +70,7 @@ export function LeadImportDialog({ open, onClose, onRefresh }: Props) {
     // 1. Initial Load of Fields
     useEffect(() => {
         if (open) {
-            getDocFields('Lead').then(setDocFields).catch(console.error);
+            getDocFields('Attendance').then(setDocFields).catch(console.error);
         }
     }, [open]);
 
@@ -89,7 +89,7 @@ export function LeadImportDialog({ open, onClose, onRefresh }: Props) {
         try {
             const uploaded = await uploadFile(file);
             const di = await createDataImport({
-                reference_doctype: 'Lead',
+                reference_doctype: 'Attendance',
                 import_file: uploaded.file_url,
                 import_type: 'Insert New Records'
             });
@@ -121,12 +121,11 @@ export function LeadImportDialog({ open, onClose, onRefresh }: Props) {
                         fieldname === header ||
                         fieldnameSpaced === header ||
                         // Fuzzy matches
-                        (header === 'remark' && fieldname === 'remarks') ||
-                        (header === 'remarks' && fieldname === 'remark') ||
-                        (header === 'phone' && fieldname === 'phone_number') ||
-                        (header === 'mobile' && fieldname === 'phone_number') ||
-                        (header === 'gst' && fieldname === 'gstin') ||
-                        (header === 'address' && fieldname === 'billing_address')
+                        (header === 'employee' && fieldname === 'employee') ||
+                        (header === 'name' && fieldname === 'employee_name') ||
+                        (header === 'date' && fieldname === 'attendance_date') ||
+                        (header === 'in' && fieldname === 'in_time') ||
+                        (header === 'out' && fieldname === 'out_time')
                     );
                 });
                 initialMapping[index] = field ? field.fieldname : "Don't Import";
@@ -353,7 +352,7 @@ export function LeadImportDialog({ open, onClose, onRefresh }: Props) {
                 size="small"
                 color="primary"
                 startIcon={<Iconify icon={"solar:download-bold-duotone" as any} />}
-                onClick={() => window.open(getTemplateUrl('Lead'), '_blank')}
+                onClick={() => window.open(getTemplateUrl('Attendance'), '_blank')}
                 sx={{ mt: 2 }}
             >
                 Download Sample Template
@@ -375,7 +374,7 @@ export function LeadImportDialog({ open, onClose, onRefresh }: Props) {
                     <TableHead>
                         <TableRow>
                             <TableCell>File Column</TableCell>
-                            <TableCell>Lead Field</TableCell>
+                            <TableCell>Attendance Field</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -663,7 +662,7 @@ export function LeadImportDialog({ open, onClose, onRefresh }: Props) {
     return (
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                Import Leads
+                Import Attendance
                 <IconButton onClick={handleClose} disabled={loading}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>

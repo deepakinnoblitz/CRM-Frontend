@@ -84,11 +84,11 @@ export function RenewalDetailsDialog({ open, onClose, renewal }: Props) {
                 <DialogContent sx={{ p: 0 }}>
                     {renderHeader}
 
-                    <Box sx={{ p: 3 }}>
+                    <Box sx={{ p: 3, marginLeft: 2 }}>
                         <Stack spacing={3}>
                             {/* Basic Information */}
                             <Box>
-                                <SectionHeader title="Renewal Information" icon="solar:info-circle-bold" />
+                                <SectionHeader title="Renewal Information" icon="" />
                                 <Box
                                     sx={{
                                         display: 'grid',
@@ -104,8 +104,8 @@ export function RenewalDetailsDialog({ open, onClose, renewal }: Props) {
                             </Box>
 
                             {/* Timing Details */}
-                            <Box>
-                                <SectionHeader title="Dates & Periods" icon="solar:calendar-bold" />
+                            <Box sx={{ paddingTop: 3 }}>
+                                <SectionHeader title="Dates & Periods" icon="" />
                                 <Box
                                     sx={{
                                         display: 'grid',
@@ -122,7 +122,7 @@ export function RenewalDetailsDialog({ open, onClose, renewal }: Props) {
 
                             {/* Remarks */}
                             {renewal.remarks && (
-                                <Box>
+                                <Box sx={{ paddingTop: 3 }}>
                                     <SectionHeader title="Remarks" icon="solar:notes-bold" />
                                     <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
                                         <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: 'pre-wrap' }}>

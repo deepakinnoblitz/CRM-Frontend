@@ -6,8 +6,14 @@ export function useRenewals(
     page: number,
     page_size: number,
     search: string,
-    order_by?: string,
-    order?: 'asc' | 'desc'
+    orderBy?: string,
+    order?: 'asc' | 'desc',
+    filters?: {
+        category?: string;
+        status?: string;
+        startDate?: string | null;
+        endDate?: string | null;
+    }
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
@@ -21,8 +27,9 @@ export function useRenewals(
                 page,
                 page_size,
                 search,
-                order_by,
+                orderBy,
                 order,
+                filters,
             });
             setData(result.data);
             setTotal(result.total);
@@ -32,7 +39,7 @@ export function useRenewals(
         } finally {
             setLoading(false);
         }
-    }, [page, page_size, search, order_by, order]);
+    }, [page, page_size, search, orderBy, order, filters]);
 
     useEffect(() => {
         refetch();

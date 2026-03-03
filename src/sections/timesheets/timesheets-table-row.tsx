@@ -4,6 +4,9 @@ import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+
+import { fDate } from 'src/utils/format-time';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -13,6 +16,7 @@ export type TimesheetTableRowProps = {
     row: {
         id: string;
         employee_name: string;
+        employee_id?: string;
         timesheet_date: string;
         total_hours: number;
     };
@@ -48,7 +52,7 @@ export function TimesheetTableRow({
             )}
 
             {typeof index === 'number' && (
-                <TableCell align="center">
+                <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Box
                         sx={{
                             width: 28,
@@ -76,13 +80,24 @@ export function TimesheetTableRow({
                 </TableCell>
             )}
 
-            <TableCell>{row.employee_name || '-'}</TableCell>
-
             <TableCell>
-                {row.timesheet_date ? new Date(row.timesheet_date).toLocaleDateString() : '-'}
+                <Box>
+                    <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
+                        {row.employee_name || '-'}
+                    </Typography>
+                    {row.employee_id && (
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: { xs: 'none', md: 'block' } }}>
+                            {row.employee_id}
+                        </Typography>
+                    )}
+                </Box>
             </TableCell>
 
-            <TableCell>{row.total_hours ? `${row.total_hours} hrs` : '-'}</TableCell>
+            <TableCell>
+                {row.timesheet_date ? fDate(row.timesheet_date, 'DD-MM-YYYY') : '-'}
+            </TableCell>
+
+            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{row.total_hours ? `${row.total_hours} hrs` : '-'}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>

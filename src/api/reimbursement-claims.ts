@@ -19,6 +19,14 @@ export interface ReimbursementClaim {
     approver_comments?: string;
     creation?: string;
     modified?: string;
+    workflow_state?: string;
+}
+
+export interface WorkflowAction {
+    state: string;
+    action: string;
+    next_state: string;
+    allowed: string;
 }
 
 async function fetchFrappeList(params: {
@@ -27,21 +35,48 @@ async function fetchFrappeList(params: {
     search?: string;
     orderBy?: string;
     order?: 'asc' | 'desc';
+    filters?: {
+        employee?: string;
+        paid?: number | string | null;
+        claim_type?: string;
+        startDate?: string | null;
+        endDate?: string | null;
+    };
 }) {
     const filters: any[] = [];
 
-    if (params.search) {
-        filters.push([
-            ['Reimbursement Claim', 'employee_name', 'like', `%${params.search}%`]
-        ]);
+    // Add filters
+    if (params.filters) {
+        if (params.filters.employee && params.filters.employee !== 'all') {
+            filters.push(['Reimbursement Claim', 'employee', '=', params.filters.employee]);
+        }
+        if (params.filters.paid && params.filters.paid !== 'all') {
+            filters.push(['Reimbursement Claim', 'workflow_state', '=', params.filters.paid]);
+        }
+        if (params.filters.claim_type && params.filters.claim_type !== 'all') {
+            filters.push(['Reimbursement Claim', 'claim_type', '=', params.filters.claim_type]);
+        }
+        if (params.filters.startDate) {
+            filters.push(['Reimbursement Claim', 'date_of_expense', '>=', params.filters.startDate]);
+        }
+        if (params.filters.endDate) {
+            filters.push(['Reimbursement Claim', 'date_of_expense', '<=', params.filters.endDate]);
+        }
     }
 
-    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "date_of_expense desc";
+    // Use or_filters for search
+    const or_filters: any[] = params.search ? [
+        ['Reimbursement Claim', 'employee_name', 'like', `%${params.search}%`],
+        ['Reimbursement Claim', 'claim_type', 'like', `%${params.search}%`]
+    ] : [];
+
+    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}, creation ${params.order}` : "date_of_expense desc, creation desc";
 
     const query = new URLSearchParams({
         doctype: 'Reimbursement Claim',
         fields: JSON.stringify(["*"]),
         filters: JSON.stringify(filters),
+        or_filters: JSON.stringify(or_filters),
         limit_start: String((params.page - 1) * params.page_size),
         limit_page_length: String(params.page_size),
         order_by: orderByParam
@@ -49,7 +84,7 @@ async function fetchFrappeList(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Reimbursement Claim&filters=${encodeURIComponent(JSON.stringify(filters))}`)
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Reimbursement Claim&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch reimbursement claims");
@@ -64,6 +99,13 @@ async function fetchFrappeList(params: {
 }
 
 export const fetchReimbursementClaims = (params: any) => fetchFrappeList(params);
+
+export async function getClaimTypes() {
+    const res = await frappeRequest(`/api/method/company.company.frontend_api.get_doctype_list?doctype=Claim Type&fields=["*"]`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.message || [];
+}
 
 export async function createReimbursementClaim(data: Partial<ReimbursementClaim>) {
     const headers = await getAuthHeaders();
@@ -138,4 +180,37 @@ export async function getReimbursementClaimPermissions() {
     }
 
     return (await res.json()).message || { read: false, write: false, delete: false };
+}
+
+export async function getReimbursementClaimWorkflowActions(currentState: string): Promise<WorkflowAction[]> {
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_workflow_states?doctype=Reimbursement Claim&current_state=${encodeURIComponent(currentState)}`
+    );
+
+    if (!res.ok) {
+        return [];
+    }
+
+    const data = (await res.json()).message || { actions: [] };
+    return data.actions || [];
+}
+
+export async function applyReimbursementClaimWorkflowAction(name: string, action: string, comment?: string, paymentDetails?: any) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/company.company.frontend_api.apply_workflow_action", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype: "Reimbursement Claim",
+            name,
+            action,
+            comment,
+            payment_details: paymentDetails
+        })
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to apply workflow action"));
+    return json.message;
 }

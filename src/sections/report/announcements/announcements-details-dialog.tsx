@@ -6,6 +6,7 @@ import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -51,7 +52,14 @@ export function AnnouncementDetailsDialog({ open, onClose, announcement }: Props
                                     Published on {announcement.creation ? new Date(announcement.creation).toLocaleDateString() : '-'}
                                 </Typography>
                             </Box>
-                            <Box sx={{ textAlign: 'right' }}>
+                            <Box sx={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                                <Label
+                                    variant="soft"
+                                    color={(announcement.is_active === 1 && 'success') || 'error'}
+                                    sx={{ textTransform: 'capitalize' }}
+                                >
+                                    {announcement.is_active === 1 ? 'Active' : 'Hidden'}
+                                </Label>
                                 <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontWeight: 700 }}>
                                     ID: {announcement.name}
                                 </Typography>

@@ -15,8 +15,10 @@ import { AuthGuard } from 'src/auth/auth-guard';
 // ----------------------------------------------------------------------
 
 export const DashboardPage = lazy(() => import('src/pages/dashboard'));
+
 export const BlogPage = lazy(() => import('src/pages/blog'));
 export const LeadsPage = lazy(() => import('src/pages/leads'));
+export const UsersPage = lazy(() => import('src/pages/users'));
 export const ContactPage = lazy(() => import('src/pages/contact'));
 export const AccountsPage = lazy(() => import('src/pages/accounts'));
 export const DealsPage = lazy(() => import('src/pages/deals'));
@@ -46,21 +48,27 @@ export const EstimationReportPage = lazy(() => import('src/pages/reports/estimat
 export const InvoiceReportPage = lazy(() => import('src/pages/reports/invoice'));
 export const InvoiceCollectionReportPage = lazy(() => import('src/pages/reports/invoice-collection'));
 export const PurchaseCollectionReportPage = lazy(() => import('src/pages/reports/purchase-settlement-report'));
+export const TimesheetReportPage = lazy(() => import('src/pages/reports/timesheet'));
+export const AttendanceReportPage = lazy(() => import('src/pages/reports/attendance'));
 export const EmployeePage = lazy(() => import('src/pages/employee'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
 export const LeavesPage = lazy(() => import('src/pages/leaves'));
+export const LeaveAllocationsPage = lazy(() => import('src/pages/leave-allocations'));
 export const PayrollPage = lazy(() => import('src/pages/payroll'));
 export const RequestsPage = lazy(() => import('src/pages/requests'));
 export const AnnouncementsPage = lazy(() => import('src/pages/announcements'));
 export const AssetsPage = lazy(() => import('src/pages/assets'));
+export const AssetAssignmentsPage = lazy(() => import('src/pages/asset-assignments'));
 export const TimesheetsPage = lazy(() => import('src/pages/timesheets'));
 export const ExpensesListPage = lazy(() => import('src/pages/expenses/list'));
 export const ExpensesNewPage = lazy(() => import('src/pages/expenses/new'));
 export const ExpensesEditPage = lazy(() => import('src/pages/expenses/edit'));
 export const ExpensesDetailsPage = lazy(() => import('src/pages/expenses/details'));
 export const WFHAttendancePage = lazy(() => import('src/pages/wfh-attendance'));
+export const ImportAttendancePage = lazy(() => import('src/pages/import-attendance'));
 export const HolidaysPage = lazy(() => import('src/pages/holidays'));
 export const CRMExpenseTrackerPage = lazy(() => import('src/pages/crm-expense-tracker'));
+export const ExpenseTrackerPage = lazy(() => import('src/pages/expense-tracker'));
 export const ReimbursementClaimsPage = lazy(() => import('src/pages/reimbursement-claims'));
 const RenewalTrackerPage = lazy(() => import('src/pages/renewals-tracker'));
 const SalarySlipsPage = lazy(() => import('src/pages/salary-slips'));
@@ -68,7 +76,10 @@ const JobOpeningsPage = lazy(() => import('src/pages/job-openings'));
 const JobApplicantsPage = lazy(() => import('src/pages/job-applicants'));
 const InterviewPage = lazy(() => import('src/pages/interviews'));
 export const ProfilePage = lazy(() => import('src/pages/profile'));
+export const MyProfilePage = lazy(() => import('src/pages/my-profile'));
+export const ChatPage = lazy(() => import('src/pages/chat'));
 export const AccessDeniedPage = lazy(() => import('src/pages/access-denied'));
+
 export const PurchaseListPage = lazy(() => import('src/pages/purchase/list'));
 export const PurchaseNewPage = lazy(() => import('src/pages/purchase/new'));
 export const PurchaseEditPage = lazy(() => import('src/pages/purchase/edit'));
@@ -81,6 +92,7 @@ export const PurchaseCollectionListPage = lazy(() => import('src/pages/purchase-
 export const PurchaseCollectionCreatePage = lazy(() => import('src/pages/purchase-collection/new'));
 export const PurchaseCollectionEditPage = lazy(() => import('src/pages/purchase-collection/edit'));
 export const PurchaseCollectionDetailsPage = lazy(() => import('src/pages/purchase-collection/details'));
+export const UserPermissionsPage = lazy(() => import('src/pages/user-permissions'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
 
@@ -118,7 +130,12 @@ export const routesSection: RouteObject[] = [
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'leads', element: <LeadsPage /> },
+      { path: 'users', element: <UsersPage /> },
+      { path: 'user-permissions', element: <UserPermissionsPage /> },
       { path: 'profile', element: <ProfilePage /> },
+      { path: 'my-profile', element: <MyProfilePage /> },
+      { path: 'chat', element: <ChatPage /> },
+
       { path: 'contacts', element: <ContactPage /> },
       { path: 'accounts', element: <AccountsPage /> },
       { path: 'deals', element: <DealsPage /> },
@@ -150,13 +167,16 @@ export const routesSection: RouteObject[] = [
       { path: 'employee', element: <EmployeePage /> },
       { path: 'attendance', element: <AttendancePage /> },
       { path: 'leaves', element: <LeavesPage /> },
+      { path: 'leave-allocations', element: <LeaveAllocationsPage /> },
       { path: 'payroll', element: <PayrollPage /> },
       { path: 'requests', element: <RequestsPage /> },
       { path: 'announcements', element: <AnnouncementsPage /> },
       { path: 'assets', element: <AssetsPage /> },
+      { path: 'asset-assignments', element: <AssetAssignmentsPage /> },
       { path: 'timesheets', element: <TimesheetsPage /> },
       { path: 'wfh-attendance', element: <WFHAttendancePage /> },
-      { path: 'timesheet-reports', element: <TimesheetsPage /> }, // Placeholder until module is implemented
+      { path: 'import-attendance', element: <ImportAttendancePage /> },
+      { path: 'timesheet-reports', element: <TimesheetReportPage /> },
       {
         path: 'expenses',
         children: [
@@ -167,6 +187,7 @@ export const routesSection: RouteObject[] = [
         ],
       },
       { path: 'crm-expense-tracker', element: <CRMExpenseTrackerPage /> },
+      { path: 'expense-tracker', element: <ExpenseTrackerPage /> },
       { path: 'holidays', element: <HolidaysPage /> },
       { path: 'reimbursement-claims', element: <ReimbursementClaimsPage /> },
       { path: 'renewals-tracker', element: <RenewalTrackerPage /> },
@@ -218,6 +239,8 @@ export const routesSection: RouteObject[] = [
           { path: 'invoice', element: <InvoiceReportPage /> },
           { path: 'invoice-collection', element: <InvoiceCollectionReportPage /> },
           { path: 'purchase-settlement', element: <PurchaseCollectionReportPage /> },
+          { path: 'timesheet', element: <TimesheetReportPage /> },
+          { path: 'attendance', element: <AttendanceReportPage /> },
         ],
       },
     ],

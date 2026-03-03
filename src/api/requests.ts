@@ -1,6 +1,8 @@
 import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
+import { fetchFrappeList } from './hr-management';
+
 export interface Request {
     name: string;
     employee_id: string;
@@ -14,15 +16,30 @@ export interface Request {
     modified?: string;
 }
 
-// Generic fetch function for Request list
-async function fetchFrappeList(params: {
-    page: number;
-    page_size: number;
-    search?: string;
-    orderBy?: string;
-    order?: 'asc' | 'desc';
-}) {
+export interface WorkflowAction {
+    action: string;
+    next_state: string;
+}
+
+// Request APIs
+export const fetchRequests = (params: any) => {
     const filters: any[] = [];
+
+    if (params.employee && params.employee !== 'all') {
+        filters.push(['Request', 'employee_id', '=', params.employee]);
+    }
+
+    if (params.status && params.status !== 'all') {
+        filters.push(['Request', 'workflow_state', '=', params.status]);
+    }
+
+    if (params.startDate) {
+        filters.push(['Request', 'creation', '>=', params.startDate]);
+    }
+
+    if (params.endDate) {
+        filters.push(['Request', 'creation', '<=', `${params.endDate} 23:59:59`]);
+    }
 
     if (params.search) {
         filters.push([
@@ -31,40 +48,16 @@ async function fetchFrappeList(params: {
         ]);
     }
 
-    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "creation desc";
-
-    const query = new URLSearchParams({
-        doctype: 'Request',
-        fields: JSON.stringify(["*"]),
-        filters: JSON.stringify(filters),
-        limit_start: String((params.page - 1) * params.page_size),
-        limit_page_length: String(params.page_size),
-        order_by: orderByParam
+    return fetchFrappeList("Request", {
+        ...params,
+        filters: filters.length > 0 ? filters : undefined
     });
-
-    // Fetch data and count in parallel
-    const [res, countRes] = await Promise.all([
-        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Request&filters=${encodeURIComponent(JSON.stringify(filters))}`)
-    ]);
-
-    if (!res.ok) throw new Error("Failed to fetch requests");
-
-    const data = await res.json();
-    const countData = await countRes.json();
-
-    return {
-        data: data.message || [],
-        total: countData.message || 0
-    };
-}
-
-export const fetchRequests = (params: any) => fetchFrappeList(params);
+};
 
 export async function createRequest(data: Partial<Request>) {
     const headers = await getAuthHeaders();
 
-    const res = await frappeRequest("/api/method/frappe.client.insert", {
+    const res = await frappeRequest("/api/method/frappe.client.submit", {
         method: "POST",
         headers,
         body: JSON.stringify({ doc: { doctype: "Request", ...data } })
@@ -94,6 +87,27 @@ export async function updateRequest(name: string, data: Partial<Request>) {
     if (!res.ok) {
         const error = await res.json();
         throw new Error(handleFrappeError(error, "Failed to update request"));
+    }
+
+    return (await res.json()).message;
+}
+
+export async function updateRequestStatus(name: string, workflowState: string, updateData?: any) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/company.company.frontend_api.update_request_status", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            name,
+            workflow_state: workflowState,
+            update_data: updateData
+        })
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to update request status"));
     }
 
     return (await res.json()).message;
@@ -134,4 +148,36 @@ export async function getRequestPermissions() {
     }
 
     return (await res.json()).message || { read: false, write: false, delete: false };
+}
+
+export async function getRequestWorkflowActions(currentState: string): Promise<WorkflowAction[]> {
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_workflow_states?doctype=Request&current_state=${encodeURIComponent(currentState)}`
+    );
+
+    if (!res.ok) {
+        return [];
+    }
+
+    const data = (await res.json()).message || { actions: [] };
+    return data.actions || [];
+}
+
+export async function applyRequestWorkflowAction(name: string, action: string, comment?: string) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/company.company.frontend_api.apply_workflow_action", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype: "Request",
+            name,
+            action,
+            comment
+        })
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to apply workflow action"));
+    return json.message;
 }

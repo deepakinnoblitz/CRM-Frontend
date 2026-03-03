@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
@@ -6,40 +8,28 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Autocomplete from '@mui/material/Autocomplete';
+
+import { getRoles, getRoleProfiles } from 'src/api/users';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
 // ----------------------------------------------------------------------
 
-type FiltersProps = {
-    status: string;
-    workflow_state: string;
-    leads_from: string;
-    leads_type: string;
-    service: string;
-    country: string;
-    state: string;
-    city: string;
-};
-
 type Props = {
     open: boolean;
-    onOpen: () => void;
-    onClose: () => void;
-    filters: FiltersProps;
-    onFilters: (update: Partial<FiltersProps>) => void;
-    canReset: boolean;
-    onResetFilters: () => void;
-    options: {
-        status: { value: string; label: string }[];
-        workflow_states: string[];
-        leads_from: string[];
-        services: string[];
-        countries: string[];
-        states: string[];
-        cities: string[];
+    onOpen: VoidFunction;
+    onClose: VoidFunction;
+    filters: {
+        user_type: string;
+        enabled: string;
+        permission: string;
+        roles: string[];
     };
+    onFilters: (update: any) => void;
+    canReset: boolean;
+    onResetFilters: VoidFunction;
 };
 
 export function UserTableFiltersDrawer({
@@ -50,17 +40,32 @@ export function UserTableFiltersDrawer({
     onFilters,
     canReset,
     onResetFilters,
-    options,
 }: Props) {
-    const handleFilterChange = (field: keyof FiltersProps, value: string) => {
-        // Reset dependent filters when parent changes
-        if (field === 'country') {
-            onFilters({ [field]: value, state: 'all', city: 'all' });
-        } else if (field === 'state') {
-            onFilters({ [field]: value, city: 'all' });
-        } else {
-            onFilters({ [field]: value });
+    const [roles, setRoles] = useState<any[]>([]);
+
+    useEffect(() => {
+        // Fetch data when drawer opens
+        if (open) {
+            getRoles()
+                .then(setRoles)
+                .catch((err: any) => console.error('Failed to fetch roles:', err));
         }
+    }, [open]);
+
+    const handleFilterUserType = (event: React.ChangeEvent<HTMLInputElement>) => {
+        onFilters({ user_type: event.target.value });
+    };
+
+    const handleFilterStatus = (event: React.ChangeEvent<HTMLInputElement>) => {
+        onFilters({ enabled: event.target.value });
+    };
+
+    const handleFilterPermission = (event: React.ChangeEvent<HTMLInputElement>) => {
+        onFilters({ permission: event.target.value });
+    };
+
+    const handleFilterRoles = (newValue: string[]) => {
+        onFilters({ roles: newValue });
     };
 
     const renderHead = (
@@ -109,229 +114,6 @@ export function UserTableFiltersDrawer({
         </Box>
     );
 
-    const renderWorkflowState = (
-        <Stack spacing={1.5}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Status
-            </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filters.workflow_state}
-                onChange={(e) => handleFilterChange('workflow_state', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">All States</option>
-                {options.workflow_states.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
-        </Stack>
-    );
-
-    const renderLeadsFrom = (
-        <Stack spacing={1.5}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Lead Source
-            </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filters.leads_from}
-                onChange={(e) => handleFilterChange('leads_from', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">All Sources</option>
-                {options.leads_from.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
-        </Stack>
-    );
-
-    const renderLeadsType = (
-        <Stack spacing={1.5}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Lead Type
-            </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filters.leads_type}
-                onChange={(e) => handleFilterChange('leads_type', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">All Types</option>
-                <option value="Incoming">Incoming</option>
-                <option value="Outgoing">Outgoing</option>
-            </TextField>
-        </Stack>
-    );
-
-    const renderService = (
-        <Stack spacing={1.5}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Service
-            </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filters.service}
-                onChange={(e) => handleFilterChange('service', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">All Services</option>
-                {options.services.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
-        </Stack>
-    );
-
-    const renderCountry = (
-        <Stack spacing={1.5}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Country
-            </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filters.country}
-                onChange={(e) => handleFilterChange('country', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">All Countries</option>
-                {options.countries.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
-        </Stack>
-    );
-
-    const renderState = (
-        <Stack spacing={1.5}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                State
-            </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filters.state}
-                onChange={(e) => handleFilterChange('state', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                disabled={!filters.country || filters.country === 'all'}
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">{!filters.country || filters.country === 'all' ? 'Select Country First' : 'All States'}</option>
-                {options.states.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
-        </Stack>
-    );
-
-    const renderCity = (
-        <Stack spacing={1.5}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                City
-            </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filters.city}
-                onChange={(e) => handleFilterChange('city', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                disabled={!filters.state || filters.state === 'all'}
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">{!filters.state || filters.state === 'all' ? 'Select State First' : 'All Cities'}</option>
-                {options.cities.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
-        </Stack>
-    );
-
     return (
         <Drawer
             anchor="right"
@@ -340,8 +122,8 @@ export function UserTableFiltersDrawer({
             slotProps={{
                 paper: {
                     sx: {
-                        width: 340,
-                        boxShadow: (theme) => theme.customShadows.z24,
+                        width: 320,
+                        boxShadow: (theme: any) => theme.customShadows.z24,
                     },
                 },
             }}
@@ -353,13 +135,119 @@ export function UserTableFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3 }}>
-                    {renderWorkflowState}
-                    {renderLeadsFrom}
-                    {renderLeadsType}
-                    {renderService}
-                    {renderCountry}
-                    {renderState}
-                    {renderCity}
+                    <Stack spacing={1.5}>
+                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                            User Type
+                        </Typography>
+                        <TextField
+                            select
+                            fullWidth
+                            value={filters.user_type}
+                            onChange={handleFilterUserType}
+                            SelectProps={{ native: true }}
+                            size="small"
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 1.5,
+                                    bgcolor: 'background.neutral',
+                                    '&:hover': {
+                                        bgcolor: 'action.hover',
+                                    },
+                                },
+                            }}
+                        >
+                            <option value="all">All Types</option>
+                            <option value="System User">System User</option>
+                            <option value="Website User">Website User</option>
+                        </TextField>
+                    </Stack>
+
+
+
+                    <Stack spacing={1.5}>
+                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                            Status
+                        </Typography>
+                        <TextField
+                            select
+                            fullWidth
+                            value={filters.enabled}
+                            onChange={handleFilterStatus}
+                            SelectProps={{ native: true }}
+                            size="small"
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 1.5,
+                                    bgcolor: 'background.neutral',
+                                    '&:hover': {
+                                        bgcolor: 'action.hover',
+                                    },
+                                },
+                            }}
+                        >
+                            <option value="all">All Status</option>
+                            <option value="1">Enabled</option>
+                            <option value="0">Disabled</option>
+                        </TextField>
+                    </Stack>
+
+                    <Stack spacing={1.5}>
+                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                            Permission
+                        </Typography>
+                        <TextField
+                            select
+                            fullWidth
+                            value={filters.permission}
+                            onChange={handleFilterPermission}
+                            SelectProps={{ native: true }}
+                            size="small"
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 1.5,
+                                    bgcolor: 'background.neutral',
+                                    '&:hover': {
+                                        bgcolor: 'action.hover',
+                                    },
+                                },
+                            }}
+                        >
+                            <option value="all">All Permission</option>
+                            <option value="added">Added</option>
+                            <option value="not_added">Not Added</option>
+                        </TextField>
+                    </Stack>
+
+                    <Stack spacing={1.5}>
+                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                            Roles
+                        </Typography>
+                        <Autocomplete
+                            multiple
+                            limitTags={2}
+                            options={roles.map((role) => role.name)}
+                            value={filters.roles}
+                            onChange={(event, newValue) => handleFilterRoles(newValue)}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder="Select Roles"
+                                    size="small"
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 1.5,
+                                            bgcolor: 'background.neutral',
+                                            '&:hover': {
+                                                bgcolor: 'action.hover',
+                                            },
+                                        },
+                                    }}
+                                />
+                            )}
+                        />
+                    </Stack>
+
+
                 </Stack>
             </Scrollbar>
 

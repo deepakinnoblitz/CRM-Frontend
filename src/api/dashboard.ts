@@ -19,7 +19,6 @@ export interface DashboardStats {
     };
 }
 
-
 export interface Call {
     name: string;
     title: string;
@@ -50,9 +49,7 @@ export interface TodayActivities {
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
     try {
-        const res = await frappeRequest(
-            '/api/method/company.company.frontend_api.get_dashboard_stats'
-        );
+        const res = await frappeRequest('/api/method/company.company.frontend_api.get_dashboard_stats');
 
         if (!res.ok) {
             const error = await res.json();
@@ -106,7 +103,6 @@ export async function fetchTodayActivities(): Promise<TodayActivities> {
         };
     }
 }
-
 export interface HRDashboardData {
     announcements: Array<{ title: string; message: string; posting_date: string }>;
     total_employees: number;
@@ -116,6 +112,62 @@ export interface HRDashboardData {
     todays_leaves: Array<{ employee_name: string; employee: string }>;
     todays_birthdays: Array<{ employee_name: string; employee: string }>;
     holidays: Array<{ date: string; description: string }>;
+}
+
+export interface EmployeeDashboardData {
+    employee_name: string;
+    employee: string;
+    weekly_attendance: Array<{
+        date: string;
+        status: string;
+        check_in: string | null;
+        check_out: string | null;
+        working_hours: number;
+        holiday_info?: string;
+        holiday_is_working_day: number;
+    }>;
+    leave_allocations: Array<{
+        leave_type: string;
+        total_leaves_allocated: number;
+        total_leaves_taken: number;
+    }>;
+    monthly_attendance_breakdown: {
+        present: number;
+        absent: number;
+        half_day: number;
+        on_leave: number;
+        holiday: number;
+        missing: number;
+        total_days: number;
+        calendar_total: number;
+        attendance_percentage: number;
+    };
+    missing_timesheets: Array<{ date: string }>;
+    recent_leaves: Array<{
+        name: string;
+        leave_type: string;
+        from_date: string;
+        to_date: string;
+        workflow_state: string;
+        total_leave_days: number;
+    }>;
+    announcements: Array<{ title: string; message: string; posting_date: string }>;
+    todays_birthdays: Array<{ employee_name: string; employee: string }>;
+    todays_leaves: Array<{ employee_name: string; employee: string }>;
+    holidays: Array<{ date: string; description: string }>;
+    monthly_attendance_list: Array<{
+        date: string;
+        status: string;
+        check_in: string | null;
+        check_out: string | null;
+        working_hours: number;
+        holiday_info: string | null;
+        holiday_is_working_day: number;
+    }>;
+    attendance_range?: string;
+    joining_date?: string | null;
+    start_date?: string;
+    end_date?: string;
 }
 
 export async function fetchRecentAnnouncements(): Promise<any[]> {
@@ -129,13 +181,34 @@ export async function fetchRecentAnnouncements(): Promise<any[]> {
 }
 
 export async function fetchUpcomingRenewals(): Promise<any[]> {
-    const res = await frappeRequest('/api/method/company.company.api.get_upcoming_and_expired_renewals');
+    const res = await frappeRequest(
+        '/api/method/company.company.api.get_upcoming_and_expired_renewals'
+    );
     if (!res.ok) {
         const error = await res.json();
         throw new Error(handleFrappeError(error, 'Failed to fetch upcoming renewals'));
     }
     const data = await res.json();
     return data.message || [];
+}
+export async function fetchMonthCalendarData(
+    month?: number,
+    year?: number
+): Promise<{ calendar_data: any[]; joining_date: string | null }> {
+    let url = '/api/method/company.company.api.get_month_calendar_data';
+    const params = new URLSearchParams();
+    if (month) params.append('month', month.toString());
+    if (year) params.append('year', year.toString());
+    if (params.toString()) url += `?${params.toString()}&_=${Date.now()}`;
+    else url += `?_=${Date.now()}`;
+
+    const res = await frappeRequest(url);
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch calendar data'));
+    }
+    const data = await res.json();
+    return data.message || { calendar_data: [], joining_date: null };
 }
 
 export async function fetchMonthHolidays(month?: number, year?: number): Promise<any[]> {
@@ -148,7 +221,7 @@ export async function fetchMonthHolidays(month?: number, year?: number): Promise
     const res = await frappeRequest(url);
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(handleFrappeError(error, 'Failed to fetch month holidays'));
+        throw new Error(handleFrappeError(error, 'Failed to fetch holidays'));
     }
     const data = await res.json();
     return data.message || [];
@@ -175,7 +248,9 @@ export async function fetchTodayLeaveEmployees(): Promise<any[]> {
 }
 
 export async function fetchAttendanceStats(range: string = 'today'): Promise<any> {
-    const res = await frappeRequest(`/api/method/company.company.api.get_attendance_stats?range=${range}`);
+    const res = await frappeRequest(
+        `/api/method/company.company.api.get_attendance_stats?range=${range}`
+    );
     if (!res.ok) {
         const error = await res.json();
         throw new Error(handleFrappeError(error, 'Failed to fetch attendance stats'));
@@ -185,9 +260,7 @@ export async function fetchAttendanceStats(range: string = 'today'): Promise<any
 }
 
 export async function fetchHRDashboardData(): Promise<HRDashboardData> {
-    const res = await frappeRequest(
-        '/api/method/company.company.frontend_api.get_hr_dashboard_data'
-    );
+    const res = await frappeRequest('/api/method/company.company.frontend_api.get_hr_dashboard_data');
 
     if (!res.ok) {
         const error = await res.json();
@@ -196,6 +269,52 @@ export async function fetchHRDashboardData(): Promise<HRDashboardData> {
 
     const data = await res.json();
     return data.message;
+}
+
+export async function fetchEmployeeDashboardData(
+    range: string = 'This Month'
+): Promise<EmployeeDashboardData> {
+    try {
+        const res = await frappeRequest(
+            `/api/method/company.company.frontend_api.get_employee_dashboard_data?attendance_range=${range}&_=${Date.now()}`
+        );
+
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(handleFrappeError(error, 'Failed to fetch employee dashboard data'));
+        }
+
+        const data = await res.json();
+        return data.message;
+    } catch (error) {
+        console.error('Failed to fetch employee dashboard data:', error);
+        // Return default empty structure to prevent dashboard crash
+        return {
+            employee_name: '',
+            employee: '',
+            weekly_attendance: [],
+            leave_allocations: [],
+            monthly_attendance_breakdown: {
+                present: 0,
+                absent: 0,
+                half_day: 0,
+                on_leave: 0,
+                holiday: 0,
+                missing: 0,
+                total_days: 0,
+                calendar_total: 0,
+                attendance_percentage: 0,
+            },
+            missing_timesheets: [],
+            recent_leaves: [],
+            announcements: [],
+            todays_birthdays: [],
+            todays_leaves: [],
+            holidays: [],
+            monthly_attendance_list: [],
+            attendance_range: range,
+        };
+    }
 }
 
 // Get total employee count
@@ -225,6 +344,33 @@ export async function fetchPendingLeaveCount(): Promise<number> {
     return data.message || 0;
 }
 
+// Get missing attendance chart data (last 7 days)
+export async function fetchMissingAttendanceChartData(): Promise<
+    Array<{ date: string; count: number }>
+> {
+    const res = await frappeRequest(
+        '/api/method/company.company.api.get_missing_attendance_chart_data'
+    );
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch missing attendance chart data'));
+    }
+    const data = await res.json();
+    return data.message || [];
+}
+
+// Get weekly present count chart data (current week Mon-Sun)
+export async function fetchWeeklyPresentChartData(): Promise<
+    Array<{ date: string; day: string; count: number }>
+> {
+    const res = await frappeRequest('/api/method/company.company.api.get_weekly_present_chart_data');
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch weekly present chart data'));
+    }
+    const data = await res.json();
+    return data.message || [];
+}
 
 export interface SalesDashboardData {
     total_sales: number;

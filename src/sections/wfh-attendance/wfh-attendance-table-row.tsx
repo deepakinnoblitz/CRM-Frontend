@@ -10,6 +10,8 @@ import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
+import { fTime, fTimeDist } from 'src/utils/format-time';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
@@ -25,6 +27,7 @@ type Props = {
         fromTime?: string;
         toTime?: string;
         totalHours?: string;
+        modified?: string;
     };
     selected: boolean;
     onSelectRow: VoidFunction;
@@ -84,7 +87,7 @@ export function WFHAttendanceTableRow({
                 )}
 
                 {typeof index === 'number' && (
-                    <TableCell align="center">
+                    <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                         <Box
                             sx={{
                                 width: 28,
@@ -114,16 +117,16 @@ export function WFHAttendanceTableRow({
 
                 <TableCell>
                     <Box>
-                        <Typography variant="subtitle2" noWrap>
+                        <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
                             {row.employeeName}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
                             {row.employee}
                         </Typography>
                     </Box>
                 </TableCell>
 
-                <TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Typography variant="body2" noWrap>
                         {row.date}
                     </Typography>
@@ -133,24 +136,27 @@ export function WFHAttendanceTableRow({
                     <Label color={getStatusColor(row.workflowState)}>{row.workflowState}</Label>
                 </TableCell>
 
-                <TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Typography variant="body2" noWrap>
-                        {row.fromTime || '-'}
+                        {row.fromTime ? fTime(row.fromTime) : '-'}
                     </Typography>
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Typography variant="body2" noWrap>
-                        {row.toTime || '-'}
+                        {row.toTime ? fTime(row.toTime) : '-'}
                     </Typography>
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Typography variant="body2" noWrap>
                         {row.totalHours || '-'}
                     </Typography>
                 </TableCell>
 
                 <TableCell align="right">
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, alignItems: 'center' }}>
+                        <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 1, fontSize: 12, display: { xs: 'none', md: 'block' } }}>
+                            {row.modified ? fTimeDist(row.modified) : '-'}
+                        </Box>
                         <IconButton size="small" onClick={onView} sx={{ color: 'info.main' }}>
                             <Iconify icon="solar:eye-bold" />
                         </IconButton>

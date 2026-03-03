@@ -18,6 +18,7 @@ type Props = {
         id: string;
         job_applicant: string;
         job_applied: string;
+        designation?: string;
         scheduled_on: string;
         from_time: string;
         overall_status: string;
@@ -126,20 +127,20 @@ export function InterviewTableRow({
 
             <TableCell>
                 <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar alt={row.job_applicant} sx={{ bgcolor: 'info.main', color: 'common.white' }}>
+                    {/* <Avatar alt={row.job_applicant} sx={{ bgcolor: 'info.main', color: 'common.white' }}>
                         {row.job_applicant.charAt(0).toUpperCase()}
-                    </Avatar>
+                    </Avatar> */}
                     <Box>
                         <Typography
                             variant="subtitle2"
                             noWrap
-                            sx={{ color: 'primary.main', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                            sx={{ cursor: 'pointer', fontWeight: 700 }}
                             onClick={onView}
                         >
                             {row.job_applicant}
                         </Typography>
                         <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>
-                            {row.job_applied || 'No Job Assigned'}
+                            {row.job_applied || 'No Job Assigned'}{row.designation ? ` - ${row.designation}` : ''}
                         </Typography>
                     </Box>
                 </Stack>

@@ -15,69 +15,57 @@ export interface WFHAttendance {
     workflow_state?: string;
 }
 
-// Generic fetch function for Frappe list
-async function fetchFrappeList(doctype: string, params: {
+import { fetchFrappeList } from './hr-management';
+
+export const fetchWFHAttendance = async (params: {
     page: number;
     page_size: number;
     search?: string;
-    searchField?: string;
-    filters?: any[];
     orderBy?: string;
     order?: 'asc' | 'desc';
-}) {
-    const filters: any[] = params.filters || [];
-
-    if (params.search && params.searchField) {
-        filters.push([doctype, params.searchField, "like", `%${params.search}%`]);
+    filters?: {
+        employee?: string;
+        status?: string;
+        startDate?: string | null;
+        endDate?: string | null;
+    };
+}) => {
+    const filters: any[] = [];
+    if (params.filters) {
+        if (params.filters.employee && params.filters.employee !== 'all') {
+            filters.push(['employee', '=', params.filters.employee]);
+        }
+        if (params.filters.status && params.filters.status !== 'all') {
+            filters.push(['workflow_state', '=', params.filters.status]);
+        }
+        if (params.filters.startDate) {
+            filters.push(['date', '>=', params.filters.startDate]);
+        }
+        if (params.filters.endDate) {
+            filters.push(['date', '<=', params.filters.endDate]);
+        }
     }
 
-    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "creation desc";
+    const or_filters: any[] = [];
+    if (params.search) {
+        const searchVal = `%${params.search}%`;
+        or_filters.push(['employee_name', 'like', searchVal]);
+        or_filters.push(['employee', 'like', searchVal]);
+        or_filters.push(['employee_id', 'like', searchVal]);
+        or_filters.push(['name', 'like', searchVal]);
+        or_filters.push(['workflow_state', 'like', searchVal]);
+        or_filters.push(['task_description', 'like', searchVal]);
+    }
 
-    const query = new URLSearchParams({
-        doctype,
-        fields: JSON.stringify(["*"]),
-        filters: JSON.stringify(filters),
-        limit_start: String((params.page - 1) * params.page_size),
-        limit_page_length: String(params.page_size),
-        order_by: orderByParam
+    return fetchFrappeList("WFH Attendance", {
+        page: params.page,
+        page_size: params.page_size,
+        filters,
+        or_filters,
+        orderBy: params.orderBy,
+        order: params.order
     });
-
-    try {
-        // Fetch data and count in parallel
-        const [res, countRes] = await Promise.all([
-            frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-            frappeRequest(`/api/method/frappe.client.get_count?doctype=${doctype}&filters=${encodeURIComponent(JSON.stringify(filters))}`)
-        ]);
-
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(handleFrappeError(errorData, `Failed to fetch ${doctype} list`));
-        }
-        if (!countRes.ok) {
-            const errorData = await countRes.json();
-            throw new Error(handleFrappeError(errorData, `Failed to fetch ${doctype} count`));
-        }
-
-        const data = await res.json();
-        const countData = await countRes.json();
-
-        return {
-            data: data.message || [],
-            total: countData.message || 0
-        };
-    } catch (error) {
-        // If handleFrappeError was already used in the if (!res.ok) block,
-        // the error thrown will already be a formatted Error object.
-        // Otherwise, it's a network error or other unexpected error.
-        if (error instanceof Error) {
-            throw error;
-        }
-        // For any other unexpected error type
-        throw new Error(handleFrappeError(error, `An unexpected error occurred while fetching ${doctype}`));
-    }
-}
-
-export const fetchWFHAttendance = (params: any) => fetchFrappeList("WFH Attendance", { ...params, searchField: "employee_name" });
+};
 
 export async function createWFHAttendance(data: Partial<WFHAttendance>) {
     const headers = await getAuthHeaders();

@@ -36,32 +36,58 @@ export interface Interview {
     creation?: string;
 }
 
-export async function fetchInterviews(
-    page: number = 1,
-    page_size: number = 10,
-    search: string = '',
-    orderBy: string = 'creation',
-    order: 'asc' | 'desc' = 'desc'
-) {
+export async function fetchInterviews(params: {
+    page: number;
+    pageSize: number;
+    search?: string;
+    orderBy?: string;
+    order?: 'asc' | 'desc';
+    filters?: {
+        status?: string;
+        job_applied?: string;
+        startDate?: string | null;
+        endDate?: string | null;
+    };
+}) {
     const filters: any[] = [];
-    if (search) {
-        filters.push(['Interview', 'job_applicant', 'like', `%${search}%`]);
+
+    if (params.filters) {
+        if (params.filters.status && params.filters.status !== 'all') {
+            filters.push(['Interview', 'overall_status', '=', params.filters.status]);
+        }
+        if (params.filters.job_applied && params.filters.job_applied !== 'all') {
+            filters.push(['Interview', 'job_applied', '=', params.filters.job_applied]);
+        }
+        if (params.filters.startDate) {
+            filters.push(['Interview', 'scheduled_on', '>=', params.filters.startDate]);
+        }
+        if (params.filters.endDate) {
+            filters.push(['Interview', 'scheduled_on', '<=', params.filters.endDate]);
+        }
     }
 
-    const orderByParam = `${orderBy} ${order}`;
+    const or_filters: any[] = params.search ? [
+        ['Interview', 'job_applicant', 'like', `%${params.search}%`],
+        ['Interview', 'job_applied', 'like', `%${params.search}%`],
+        ['Interview', 'email_id', 'like', `%${params.search}%`],
+        ['Interview', 'phone_number', 'like', `%${params.search}%`]
+    ] : [];
+
+    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "creation desc";
 
     const query = new URLSearchParams({
         doctype: 'Interview',
         fields: JSON.stringify(['*']),
         filters: JSON.stringify(filters),
-        limit_start: String((page - 1) * page_size),
-        limit_page_length: String(page_size),
+        or_filters: JSON.stringify(or_filters),
+        limit_start: String((params.page - 1) * params.pageSize),
+        limit_page_length: String(params.pageSize),
         order_by: orderByParam
     });
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Interview&filters=${encodeURIComponent(JSON.stringify(filters))}`)
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Interview&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch interviews");

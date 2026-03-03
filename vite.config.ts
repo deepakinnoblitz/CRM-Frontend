@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
         position: 'tl',
         initialIsOpen: false,
       },
-    }),
+    }), 
   ],
 
   resolve: {
@@ -39,7 +39,7 @@ export default defineConfig(({ mode }) => ({
       host: 'erp.innoblitz.in',
     },
     proxy: {
-      // 🔹 Frappe APIs
+      // 🔹 Frappe APIs 
       '/api': {
         target: 'https://erp.innoblitz.in',
         changeOrigin: true,

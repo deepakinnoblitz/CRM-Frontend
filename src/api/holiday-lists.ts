@@ -19,10 +19,13 @@ async function fetchFrappeList(params: {
     order?: 'asc' | 'desc';
 }) {
     const filters: any[] = [];
+    const or_filters: any[] = [];
 
     if (params.search) {
-        filters.push(
-            ['Holiday List', 'holiday_list_name', 'like', `%${params.search}%`]
+        or_filters.push(
+            ['Holiday List', 'holiday_list_name', 'like', `%${params.search}%`],
+            ['Holiday List', 'year', 'like', `%${params.search}%`],
+            ['Holiday List', 'month_year', 'like', `%${params.search}%`]
         );
     }
 
@@ -32,6 +35,7 @@ async function fetchFrappeList(params: {
         doctype: 'Holiday List',
         fields: JSON.stringify(["*"]),
         filters: JSON.stringify(filters),
+        or_filters: JSON.stringify(or_filters),
         limit_start: String((params.page - 1) * params.page_size),
         limit_page_length: String(params.page_size),
         order_by: orderByParam
@@ -39,7 +43,7 @@ async function fetchFrappeList(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Holiday List&filters=${encodeURIComponent(JSON.stringify(filters))}`)
+        frappeRequest(`/api/method/frappe.client.get_count?doctype=Holiday List&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch holiday lists");

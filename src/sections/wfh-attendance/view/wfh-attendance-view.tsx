@@ -1,10 +1,11 @@
 import dayjs from 'dayjs';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { IconButton } from '@mui/material';
@@ -15,6 +16,8 @@ import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
+import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
@@ -24,33 +27,41 @@ import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useSocket } from 'src/hooks/use-socket';
 import { useWFHAttendance } from 'src/hooks/useWFHAttendance';
 
 import { getDoctypeList } from 'src/api/leads';
 import { getCurrentUserInfo } from 'src/api/auth';
+import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getHRPermissions } from 'src/api/hr-management';
-import { createWFHAttendance, getWFHAttendance, updateWFHAttendance, deleteWFHAttendance, applyWorkflowAction } from 'src/api/wfh-attendance';
+import { getWFHAttendance, createWFHAttendance, updateWFHAttendance, applyWorkflowAction } from 'src/api/wfh-attendance';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 
-import { TableNoData } from '../../user/table-no-data';
-import { TableEmptyRows } from '../../user/table-empty-rows';
+import { useAuth } from 'src/auth/auth-context';
+
+import { TableNoData } from '../../lead/table-no-data';
+import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { WFHAttendanceTableRow } from '../wfh-attendance-table-row';
 import { WFHAttendanceDetailsDialog } from '../wfh-attendance-details-dialog';
-import { UserTableHead as AttendanceTableHead } from '../../user/user-table-head';
-import { UserTableToolbar as AttendanceTableToolbar } from '../../user/user-table-toolbar';
+import { LeadTableHead as AttendanceTableHead } from '../../lead/lead-table-head';
+import { WFHAttendanceTableFiltersDrawer } from '../wfh-attendance-table-filters-drawer';
+import { LeadTableToolbar as AttendanceTableToolbar } from '../../lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------
 
 export function WFHAttendanceView() {
+    const { user } = useAuth();
+    const { socket } = useSocket(user?.email);
+    const theme = useTheme();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('date');
+    const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
 
     const [openCreate, setOpenCreate] = useState(false);
@@ -59,6 +70,16 @@ export function WFHAttendanceView() {
     const [formData, setFormData] = useState<Record<string, any>>({
         date: dayjs().format('YYYY-MM-DD'),
     });
+
+    const [openFilters, setOpenFilters] = useState(false);
+    const [filters, setFilters] = useState<{ employee: string; status: string; startDate: string | null; endDate: string | null }>({
+        employee: 'all',
+        status: 'all',
+        startDate: null,
+        endDate: null
+    });
+
+    const canReset = filters.employee !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null;
 
     const [openDetails, setOpenDetails] = useState(false);
     const [detailsId, setDetailsId] = useState<string | null>(null);
@@ -83,13 +104,21 @@ export function WFHAttendanceView() {
         write: true,
     });
 
+    const effectiveFilters = useMemo(() => ({
+        ...filters,
+        employee: isHR ? filters.employee : (user?.employee || 'all'),
+    }), [filters, isHR, user]);
+
     const { data, total, loading, refetch } = useWFHAttendance(
         page + 1,
         rowsPerPage,
         filterName,
         orderBy,
-        order
+        order,
+        effectiveFilters,
+        socket
     );
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
     const notFound = !data.length && !!filterName;
     const empty = !data.length && !filterName && !loading;
@@ -97,25 +126,54 @@ export function WFHAttendanceView() {
     useEffect(() => {
         getHRPermissions('WFH Attendance').then(setPermissions);
         getDoctypeList('Employee', ['name', 'employee_name']).then(setEmployeeOptions).catch(console.error);
-        getCurrentUserInfo().then((user) => {
-            if (user && user.roles) {
+        getCurrentUserInfo().then((userInfo) => {
+            if (userInfo && userInfo.roles) {
                 // Broaden HR detection to include Admins/System Managers
-                const hrRoles = ['HR Manager', 'HR User', 'System Manager', 'Administrator'];
-                setIsHR(user.roles.some((role: string) => hrRoles.includes(role)));
+                const hrRoles = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
+                setIsHR(userInfo.roles.some((role: string) => hrRoles.includes(role)));
             }
         });
     }, []);
 
-    const handleOpenCreate = () => {
-        setFormData({
-            date: dayjs().format('YYYY-MM-DD'),
+    const handleFilters = (newFilters: Partial<typeof filters>) => {
+        setFilters((prevState) => ({
+            ...prevState,
+            ...newFilters,
+        }));
+    };
+
+    const handleResetFilters = () => {
+        setFilters({
+            employee: 'all',
+            status: 'all',
+            startDate: null,
+            endDate: null,
         });
+    };
+
+    const handleOpenCreate = async () => {
+        // Fetch current user's employee data
+        try {
+            const userInfo = await getCurrentUserInfo();
+            setFormData({
+                date: dayjs().format('YYYY-MM-DD'),
+                employee: userInfo?.employee || '',
+            });
+        } catch (error) {
+            console.error('Failed to fetch current user info:', error);
+            setFormData({
+                date: dayjs().format('YYYY-MM-DD'),
+            });
+        }
+
+        setFormErrors({});
         setOpenCreate(true);
     };
 
     const handleCloseCreate = () => {
         setOpenCreate(false);
         setCurrentId(null);
+        setFormErrors({});
     };
 
     const handleInputChange = (fieldname: string, value: any) => {
@@ -138,6 +196,10 @@ export function WFHAttendanceView() {
             }
             return next;
         });
+
+        if (formErrors[fieldname]) {
+            setFormErrors(prev => ({ ...prev, [fieldname]: '' }));
+        }
     };
 
     const handleCloseSnackbar = () => {
@@ -145,33 +207,28 @@ export function WFHAttendanceView() {
     };
 
     const validateForm = () => {
-        if (!formData.employee) return 'Employee is required';
-        if (!formData.date) return 'Date is required';
-        if (!formData.from_time) return 'From Time is required';
+        const errors: Record<string, string> = {};
 
-        // Check future date
-        const selectedDate = dayjs(formData.date);
-        const today = dayjs().startOf('day');
-        if (selectedDate.isAfter(today)) {
-            // return 'WFH Attendance cannot be marked for future dates';
-        }
+        if (!formData.employee) errors.employee = 'Employee is required';
+        if (!formData.date) errors.date = 'Date is required';
+        if (!formData.from_time) errors.from_time = 'From Time is required';
 
         // Logical time check
         if (formData.from_time && formData.to_time) {
             const start = dayjs(`2000-01-01 ${formData.from_time}`);
             const end = dayjs(`2000-01-01 ${formData.to_time}`);
             if (!end.isAfter(start)) {
-                return 'To Time must be after From Time';
+                errors.to_time = 'To Time must be after From Time';
             }
         }
 
-        return null;
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleCreate = async () => {
-        const error = validateForm();
-        if (error) {
-            setSnackbar({ open: true, message: error, severity: 'error' });
+        if (!validateForm()) {
+            setSnackbar({ open: true, message: 'Please correct the errors in the form', severity: 'error' });
             return;
         }
 
@@ -200,6 +257,11 @@ export function WFHAttendanceView() {
     const handleViewRow = async (id: string) => {
         setDetailsId(id);
         setOpenDetails(true);
+
+        // Mark as read and trigger sidebar refresh
+        markAsRead('WFH Attendance', id).then(() => {
+            window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+        });
     };
 
     const handleEditRow = async (id: string) => {
@@ -207,6 +269,7 @@ export function WFHAttendanceView() {
             const fullDoc = await getWFHAttendance(id);
             setCurrentId(id);
             setFormData({ ...fullDoc });
+            setFormErrors({});
             setOpenCreate(true);
         } catch (error) {
             console.error('Failed to load details:', error);
@@ -219,10 +282,38 @@ export function WFHAttendanceView() {
         setDetailsId(null);
     };
 
-    const handleSort = (id: string) => {
-        const isAsc = orderBy === id && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(id);
+    const handleSort = (value: string) => {
+        if (value === 'modified_desc') {
+            setOrderBy('modified');
+            setOrder('desc');
+        } else if (value === 'modified_asc') {
+            setOrderBy('modified');
+            setOrder('asc');
+        } else if (value === 'employee_name_asc') {
+            setOrderBy('employee_name');
+            setOrder('asc');
+        } else if (value === 'employee_name_desc') {
+            setOrderBy('employee_name');
+            setOrder('desc');
+        } else if (value === 'total_hours_desc') {
+            setOrderBy('total_hours');
+            setOrder('desc');
+        } else if (value === 'total_hours_asc') {
+            setOrderBy('total_hours');
+            setOrder('asc');
+        }
+    };
+
+    const getCurrentSortValue = () => {
+        if (orderBy === 'modified' && order === 'desc') return 'modified_desc';
+        if (orderBy === 'modified' && order === 'asc') return 'modified_asc';
+        if (orderBy === 'date' && order === 'desc') return 'date_desc';
+        if (orderBy === 'date' && order === 'asc') return 'date_asc';
+        if (orderBy === 'employee_name' && order === 'asc') return 'employee_name_asc';
+        if (orderBy === 'employee_name' && order === 'desc') return 'employee_name_desc';
+        if (orderBy === 'total_hours' && order === 'desc') return 'total_hours_desc';
+        if (orderBy === 'total_hours' && order === 'asc') return 'total_hours_asc';
+        return 'date_desc';
     };
 
     const handleSelectAllRows = (checked: boolean) => {
@@ -275,6 +366,8 @@ export function WFHAttendanceView() {
             onChange: (e: any) => handleInputChange(fieldname, e.target.value),
             InputLabelProps: { shrink: true },
             required,
+            error: !!formErrors[fieldname],
+            helperText: formErrors[fieldname],
             ...extraProps,
             sx: {
                 '& .MuiFormLabel-asterisk': {
@@ -283,6 +376,34 @@ export function WFHAttendanceView() {
                 ...extraProps.sx
             }
         };
+
+        if (fieldname === 'employee') {
+            return (
+                <Autocomplete
+                    fullWidth
+                    options={options}
+                    getOptionLabel={(option: any) => (option.employee_name ? `${option.employee_name} (${option.name})` : (option.name || option))}
+                    isOptionEqualToValue={(option: any, value: any) => option.name === (value.name || value)}
+                    value={options.find((opt: any) => opt.name === formData[fieldname]) || null}
+                    onChange={(event: any, newValue: any) => {
+                        handleInputChange(fieldname, newValue?.name || '');
+                    }}
+                    readOnly={!isHR}
+                    disabled={!isHR}
+                    renderInput={(params: any) => (
+                        <TextField
+                            {...params}
+                            label={label}
+                            required={required}
+                            error={!!formErrors[fieldname]}
+                            helperText={formErrors[fieldname]}
+                            InputLabelProps={{ shrink: true }}
+                            sx={commonProps.sx}
+                        />
+                    )}
+                />
+            );
+        }
 
         if (type === 'select' || type === 'link') {
             return (
@@ -307,6 +428,8 @@ export function WFHAttendanceView() {
                         textField: {
                             fullWidth: true,
                             required,
+                            error: !!formErrors[fieldname],
+                            helperText: formErrors[fieldname],
                             InputLabelProps: { shrink: true },
                             sx: commonProps.sx
                         }
@@ -325,6 +448,8 @@ export function WFHAttendanceView() {
                         textField: {
                             fullWidth: true,
                             required,
+                            error: !!formErrors[fieldname],
+                            helperText: formErrors[fieldname],
                             InputLabelProps: { shrink: true },
                             sx: commonProps.sx
                         }
@@ -359,34 +484,47 @@ export function WFHAttendanceView() {
                 <AttendanceTableToolbar
                     numSelected={selected.length}
                     filterName={filterName}
-                    onFilterName={(e) => {
+                    onFilterName={(e: React.ChangeEvent<HTMLInputElement>) => {
                         setFilterName(e.target.value);
                         setPage(0);
                     }}
                     onDelete={handleBulkDelete}
                     searchPlaceholder="Search entries..."
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
+                    sortBy={getCurrentSortValue()}
+                    onSortChange={handleSort}
+                    sortOptions={[
+                        { value: 'modified_desc', label: 'Newest First' },
+                        { value: 'modified_asc', label: 'Oldest First' },
+                        { value: 'date_desc', label: 'Date: Newest to Oldest' },
+                        { value: 'date_asc', label: 'Date: Oldest to Newest' },
+                        { value: 'employee_name_asc', label: 'Employee: A to Z' },
+                        { value: 'employee_name_desc', label: 'Employee: Z to A' },
+                        { value: 'total_hours_desc', label: 'Hours: High to Low' },
+                        { value: 'total_hours_asc', label: 'Hours: Low to High' },
+                    ]}
                 />
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: { xs: 300, md: 800 } }}>
                             <AttendanceTableHead
                                 order={order}
                                 orderBy={orderBy}
                                 rowCount={total}
                                 numSelected={selected.length}
-                                onSort={handleSort}
-                                onSelectAllRows={(checked) => handleSelectAllRows(checked)}
+                                onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
                                 headLabel={[
                                     { id: 'employee_name', label: 'Employee', minWidth: 180 },
-                                    { id: 'date', label: 'Date', minWidth: 120 },
+                                    { id: 'date', label: 'Date', minWidth: 120, sx: { display: { xs: 'none', md: 'table-cell' } } },
                                     { id: 'workflow_state', label: 'Status', minWidth: 100 },
-                                    { id: 'from_time', label: 'From', minWidth: 100 },
-                                    { id: 'to_time', label: 'To', minWidth: 100 },
-                                    { id: 'total_hours', label: 'Hours', minWidth: 80 },
-                                    { id: '', label: 'Actions', align: 'right' },
+                                    { id: 'from_time', label: 'From', minWidth: 100, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'to_time', label: 'To', minWidth: 100, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'total_hours', label: 'Hours', minWidth: 80, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: '', label: '', align: 'right' },
                                 ]}
                             />
 
@@ -405,6 +543,7 @@ export function WFHAttendanceView() {
                                             fromTime: row.from_time,
                                             toTime: row.to_time,
                                             totalHours: row.total_hours,
+                                            modified: row.modified,
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
@@ -456,7 +595,7 @@ export function WFHAttendanceView() {
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {currentId ? 'Edit WFH Entry' : 'New WFH Entry'}
-                    <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
+                    <IconButton onClick={handleCloseCreate} sx={{ color: theme.palette.grey[500] }}>
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
                 </DialogTitle>
@@ -469,6 +608,40 @@ export function WFHAttendanceView() {
                             gridTemplateColumns="1fr"
                             gap={3}
                         >
+                            {formData.from_time && formData.to_time && (
+                                <Box
+                                    sx={{
+                                        p: 1.5,
+                                        borderRadius: 1.5,
+                                        bgcolor: alpha(theme.palette.primary.main, 0.04),
+                                        border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between'
+                                    }}
+                                >
+                                    <Stack direction="row" spacing={1.5} alignItems="center">
+                                        <Box
+                                            sx={{
+                                                p: 0.75,
+                                                borderRadius: 1,
+                                                bgcolor: '#08a3cd',
+                                                color: 'common.white',
+                                                display: 'flex'
+                                            }}
+                                        >
+                                            <Iconify icon={"solar:clock-square-bold-duotone" as any} width={22} />
+                                        </Box>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.secondary' }}>
+                                            Total Calculated Hours
+                                        </Typography>
+                                    </Stack>
+                                    <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                                        {formData.total_hours || '0.00'}
+                                    </Typography>
+                                </Box>
+                            )}
+
                             {renderField('employee', 'Employee', 'select', employeeOptions, {}, true)}
                             {renderField('date', 'Date', 'date', [], {}, true)}
 
@@ -477,15 +650,6 @@ export function WFHAttendanceView() {
                                 {renderField('to_time', 'To Time', 'time', [], {}, false)}
                             </Box>
 
-                            <TextField
-                                fullWidth
-                                label="Total Hours"
-                                value={formData.total_hours || ''}
-                                InputProps={{ readOnly: true }}
-                                InputLabelProps={{ shrink: true }}
-                                variant="filled"
-                            />
-
                             {renderField('task_description', 'Task Description', 'text', [], { multiline: true, rows: 3 })}
                         </Box>
                     </LocalizationProvider>
@@ -493,7 +657,7 @@ export function WFHAttendanceView() {
 
                 <DialogActions>
                     <Button variant="contained" onClick={handleCreate} disabled={creating} sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}>
-                        {creating ? 'Saving...' : (currentId ? 'Update Entry' : 'Save Entry')}
+                        {creating ? 'Saving...' : (currentId ? 'Update Entry' : 'Submit')}
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -502,6 +666,21 @@ export function WFHAttendanceView() {
                 open={openDetails}
                 onClose={handleCloseDetails}
                 wfhId={detailsId}
+                socket={socket}
+            />
+
+            <WFHAttendanceTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                options={{
+                    employees: employeeOptions
+                }}
+                isHR={isHR}
             />
 
             <Snackbar

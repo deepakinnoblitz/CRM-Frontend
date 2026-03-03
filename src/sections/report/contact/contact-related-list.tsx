@@ -29,7 +29,7 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 
-import { UserTableHead as DataTableHead } from '../../user/user-table-head';
+import { LeadTableHead as DataTableHead } from '../../lead/lead-table-head';
 
 // ----------------------------------------------------------------------
 
@@ -381,7 +381,7 @@ function SummaryCard({ title, value, icon, color }: { title: string; value: stri
                     justifyContent: 'center',
                     borderRadius: 1.5,
                     bgcolor: alpha(color, 0.1),
-                    color: color,
+                    color,
                 }}
             >
                 <Iconify icon={icon as any} width={24} />

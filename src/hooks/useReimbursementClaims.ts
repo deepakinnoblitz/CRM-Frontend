@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import { fetchReimbursementClaims } from 'src/api/reimbursement-claims';
 
@@ -7,14 +7,21 @@ export function useReimbursementClaims(
     pageSize: number,
     search: string = '',
     orderBy: string = 'date_of_expense',
-    order: 'asc' | 'desc' = 'desc'
+    order: 'asc' | 'desc' = 'desc',
+    filters?: {
+        paid?: number | string | null;
+        claim_type?: string;
+        startDate?: string | null;
+        endDate?: string | null;
+    },
+    socket?: any
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
 
-    const refetch = async () => {
-        setLoading(true);
+    const refetch = useCallback(async (isSilent = false) => {
+        if (!isSilent) setLoading(true);
         try {
             const result = await fetchReimbursementClaims({
                 page,
@@ -22,6 +29,7 @@ export function useReimbursementClaims(
                 search,
                 orderBy,
                 order,
+                filters,
             });
             setData(result.data);
             setTotal(result.total);
@@ -30,14 +38,27 @@ export function useReimbursementClaims(
             setData([]);
             setTotal(0);
         } finally {
-            setLoading(false);
+            if (!isSilent) setLoading(false);
         }
-    };
+    }, [page, pageSize, search, orderBy, order, filters]);
 
     useEffect(() => {
         refetch();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [page, pageSize, search, orderBy, order]);
+    }, [refetch]);
+
+    // Real-time socket subscription — instant refresh when a Reimbursement Claim changes
+    useEffect(() => {
+        if (!socket) return undefined;
+
+        const handleUpdate = () => {
+            refetch(true); // Silent refetch — no loading spinner
+        };
+
+        socket.on('reimbursement_claim_updated', handleUpdate);
+        return () => {
+            socket.off('reimbursement_claim_updated', handleUpdate);
+        };
+    }, [socket, refetch]);
 
     return { data, total, loading, refetch };
 }

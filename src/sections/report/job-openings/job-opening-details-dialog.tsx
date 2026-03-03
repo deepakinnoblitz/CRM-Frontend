@@ -62,6 +62,7 @@ export function JobOpeningDetailsDialog({ open, onClose, job }: Props) {
                 gap: 2.5,
                 gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
                 mb: 4,
+                ml: 2,
             }}
         >
             <DetailItem icon="solar:calendar-date-bold" label="Posted On" value={formatDate(job.posted_on)} />
@@ -78,7 +79,7 @@ export function JobOpeningDetailsDialog({ open, onClose, job }: Props) {
     );
 
     const renderDescription = (
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ mt: 2, mb: 5, ml: 2 }}>
             <SectionHeader title="Job Description" icon="solar:notes-bold" />
             <Box sx={{ mt: 2, color: 'text.secondary', whiteSpace: 'pre-wrap' }}>
                 <Typography variant="body2">

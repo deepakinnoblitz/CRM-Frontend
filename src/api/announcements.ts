@@ -5,6 +5,7 @@ export interface Announcement {
     name: string;
     announcement_name: string;
     announcement: string;
+    is_active: 0 | 1;
     creation?: string;
     modified?: string;
 }

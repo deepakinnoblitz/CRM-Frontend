@@ -29,33 +29,36 @@ export function HolidayDetailsDialog({ open, onClose, holidayList }: Props) {
             <DialogContent sx={{ p: 4, m: 2, mt: 4 }}>
                 {holidayList ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                        {/* Header Info */}
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5 }}>
+                        {/* Header Section */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                             <Box
                                 sx={{
                                     width: 80,
                                     height: 80,
-                                    borderRadius: 2,
+                                    borderRadius: 3,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    bgcolor: 'error.lighter',
-                                    color: 'error.main',
+                                    bgcolor: '#ffebd8', // Peach background
                                 }}
                             >
-                                <Iconify icon={"solar:calendar-mark-bold" as any} width={40} />
+                                <Iconify icon={"solar:calendar-mark-bold" as any} width={40} sx={{ color: '#ff5630' }} />
                             </Box>
+
                             <Box sx={{ flexGrow: 1 }}>
-                                <Typography variant="h5" sx={{ fontWeight: 800 }}>{holidayList.holiday_list_name}</Typography>
+                                <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                                    {holidayList.holiday_list_name}
+                                </Typography>
                                 <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                    {holidayList.year} - {holidayList.month || 'All Months'}
+                                    {holidayList.year} – {holidayList.month_year || 'All Months'}
                                 </Typography>
                             </Box>
-                            <Box sx={{ textAlign: 'right' }}>
-                                <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main' }}>
+
+                            <Box sx={{ textAlign: 'center' }}>
+                                <Typography variant="h4" sx={{ fontWeight: 800, color: '#1877f2' }}>
                                     {holidayList.working_days || 0}
                                 </Typography>
-                                <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontWeight: 700 }}>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
                                     Working Days
                                 </Typography>
                             </Box>
@@ -65,18 +68,24 @@ export function HolidayDetailsDialog({ open, onClose, holidayList }: Props) {
 
                         {/* Holiday List Information */}
                         <Box>
-                            <SectionHeader title="Holiday List Information" icon="solar:document-bold" />
+                            <SectionHeader title="HOLIDAY LIST INFORMATION" icon="solar:list-bold" isPremium />
                             <Box
                                 sx={{
                                     display: 'grid',
-                                    gap: 3,
-                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+                                    gap: 2,
+                                    mt: 3,
+                                    gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
                                 }}
                             >
-                                <DetailItem label="List Name" value={holidayList.holiday_list_name} icon="solar:list-bold" />
-                                <DetailItem label="Year" value={holidayList.year?.toString()} icon="solar:calendar-bold" />
-                                <DetailItem label="Month" value={holidayList.month || 'All Months'} icon="solar:calendar-minimalistic-bold" />
-                                <DetailItem label="Working Days" value={`${holidayList.working_days || 0} days`} icon="solar:clock-circle-bold" />
+                                <InfoCard label="LIST NAME" value={holidayList.holiday_list_name} icon="solar:list-bold" />
+                                <InfoCard label="YEAR" value={holidayList.year?.toString()} icon="solar:calendar-bold" />
+                                <InfoCard label="MONTH" value={holidayList.month_year || 'All Months'} icon="solar:calendar-minimalistic-bold" />
+                                <InfoCard
+                                    label="WORKING DAYS"
+                                    value={`${holidayList.working_days || 0} days`}
+                                    icon="solar:clock-circle-bold"
+                                    variant="info"
+                                />
                             </Box>
                         </Box>
 
@@ -148,7 +157,6 @@ export function HolidayDetailsDialog({ open, onClose, holidayList }: Props) {
                                     value={holidayList.modified ? new Date(holidayList.modified).toLocaleString() : '-'}
                                     icon="solar:calendar-bold"
                                 />
-                                <DetailItem label="ID" value={holidayList.name} icon="solar:hashtag-bold" />
                             </Box>
                         </Box>
                     </Box>
@@ -163,12 +171,63 @@ export function HolidayDetailsDialog({ open, onClose, holidayList }: Props) {
     );
 }
 
-function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: string, noMargin?: boolean }) {
+function SectionHeader({ title, icon, noMargin = false, isPremium = false }: { title: string; icon: string, noMargin?: boolean, isPremium?: boolean }) {
+    if (isPremium) {
+        return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: noMargin ? 0 : 3 }}>
+                <Box
+                    sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 1.25,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: '#1c75ff',
+                        boxShadow: '0 4px 8px -2px rgba(28, 117, 255, 0.24)',
+                    }}
+                >
+                    <Iconify icon={icon as any} width={18} sx={{ color: 'common.white' }} />
+                </Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1c355e', letterSpacing: 0.5 }}>
+                    {title}
+                </Typography>
+            </Box>
+        );
+    }
+
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
             <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
             <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 {title}
+            </Typography>
+        </Box>
+    );
+}
+
+function InfoCard({ label, value, icon, variant = 'neutral' }: { label: string; value?: string | null; icon: string, variant?: 'neutral' | 'info' }) {
+    const isInfo = variant === 'info';
+    return (
+        <Box
+            sx={{
+                p: 2,
+                borderRadius: 2,
+                bgcolor: isInfo ? '#f0f7ff' : '#f4f6f8',
+                border: isInfo ? '1.5px solid #d0e9ff' : '1px solid transparent',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5,
+            }}
+        >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Iconify icon={icon as any} width={18} sx={{ color: isInfo ? '#1877f2' : '#919eab' }} />
+                <Typography variant="caption" sx={{ color: isInfo ? '#1877f2' : '#919eab', fontWeight: 700, letterSpacing: 0.5 }}>
+                    {label}
+                </Typography>
+            </Box>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: isInfo ? '#1877f2' : '#1c355e', lineHeight: 1 }}>
+                {value || '-'}
             </Typography>
         </Box>
     );

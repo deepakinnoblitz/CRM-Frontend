@@ -1,4 +1,3 @@
-import { MuiTelInput } from 'mui-tel-input';
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
@@ -6,17 +5,11 @@ import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import { IconButton } from '@mui/material';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
-import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 
@@ -25,6 +18,7 @@ import { useContacts } from 'src/hooks/useContacts';
 import { getString } from 'src/utils/string';
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
+import { CONFIG } from 'src/config-global';
 import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 import locationData from 'src/assets/data/location_data.json';
@@ -35,15 +29,15 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from '../../user/table-no-data';
+import { TableNoData } from '../../lead/table-no-data';
 import { ContactTableRow } from '../contact-table-row';
 import { ContactFormDialog } from '../contact-form-dialog';
-import { TableEmptyRows } from '../../user/table-empty-rows';
+import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { ContactImportDialog } from '../contact-import-dialog';
 import { ContactTableFiltersDrawer } from '../contact-table-filters-drawer';
-import { UserTableHead as ContactTableHead } from '../../user/user-table-head';
+import { LeadTableHead as ContactTableHead } from '../../lead/lead-table-head';
 import { ContactDetailsDialog } from '../../report/contact/contact-details-dialog';
-import { UserTableToolbar as ContactTableToolbar } from '../../user/user-table-toolbar';
+import { LeadTableToolbar as ContactTableToolbar } from '../../lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------
 
@@ -451,7 +445,7 @@ export function ContactView() {
                 <ContactTableToolbar
                     numSelected={selected.length}
                     filterName={filterName}
-                    onFilterName={(e) => {
+                    onFilterName={(e: React.ChangeEvent<HTMLInputElement>) => {
                         setFilterName(e.target.value);
                         setPage(0);
                     }}
@@ -504,7 +498,7 @@ export function ContactView() {
                                             companyName: getString(row.company_name) || '',
                                             email: getString(row.email) || '',
                                             phone: getString(row.phone) || '',
-                                            avatarUrl: '/assets/images/avatar/avatar-25.webp',
+                                            avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
                                             sourceLead: row.source_lead ? `${getString(row.source_lead)} - ${leadOptions.find(l => l.name === getString(row.source_lead))?.lead_name || ''}` : '',
                                         }}
                                         selected={selected.includes(row.name)}

@@ -1,6 +1,6 @@
 import { CONFIG } from 'src/config-global';
 
-import { UserView } from 'src/sections/user/view';
+import { LeadView } from 'src/sections/lead/view';
 
 // ----------------------------------------------------------------------
 
@@ -9,7 +9,7 @@ export default function Page() {
     <>
       <title>{`Leads - ${CONFIG.appName}`}</title>
 
-      <UserView />
+      <LeadView />
     </>
   );
 }

@@ -1,6 +1,10 @@
 import { CONFIG } from 'src/config-global';
 
-import { HRDashboardView, SalesDashboardView, CombinedDashboardView, OverviewAnalyticsView as CRMDashboard } from 'src/sections/overview/view';
+import { HRDashboardView } from 'src/sections/overview/view/hr-dashboard-view';
+import { SalesDashboardView } from 'src/sections/overview/view/sales-dashboard-view';
+import { EmployeeDashboardView } from 'src/sections/overview/view/employee-dashboard-view';
+import { CombinedDashboardView } from 'src/sections/overview/view/combined-dashboard-view';
+import { OverviewAnalyticsView as CRMDashboard } from 'src/sections/overview/view/overview-analytics-view';
 
 import { useAuth } from 'src/auth/auth-context';
 
@@ -19,7 +23,7 @@ export default function Page() {
   // HR users see HR dashboard, Sales/CRM see their dashboards, Admin sees CRM dashboard
   const renderDashboard = () => {
     if (isHR) return <HRDashboardView />;
-    if (isEmployee) return <HRDashboardView />;
+    if (isEmployee) return <EmployeeDashboardView />;
     if (isAdmin) return <CRMDashboard />;
     if (isSalesAndCRM) return <CombinedDashboardView />;
     if (isSales) return <SalesDashboardView />;

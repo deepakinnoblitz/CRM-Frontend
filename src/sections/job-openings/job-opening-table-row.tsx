@@ -90,10 +90,8 @@ export function JobOpeningTableRow({
                 <Box
                     onClick={onView}
                     sx={{
-                        color: 'primary.main',
                         fontWeight: 600,
                         cursor: 'pointer',
-                        '&:hover': { textDecoration: 'underline' },
                     }}
                 >
                     {row.job_title}

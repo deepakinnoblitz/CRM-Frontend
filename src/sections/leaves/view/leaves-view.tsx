@@ -16,6 +16,7 @@ import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
@@ -23,16 +24,18 @@ import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { Checkbox, IconButton, FormControlLabel } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { IconButton, Checkbox, FormControlLabel, MenuItem, InputLabel } from '@mui/material';
 
+import { useSocket } from 'src/hooks/use-socket';
 import { useLeaveApplications } from 'src/hooks/useLeaveApplications';
 
 import { getDoctypeList } from 'src/api/leads';
 import { uploadFile } from 'src/api/data-import';
+import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getHRPermissions } from 'src/api/hr-management';
-import { createLeaveApplication, updateLeaveApplication, deleteLeaveApplication, checkLeaveBalance, getEmployeeProbationInfo } from 'src/api/leaves';
+import { getHRPermissions, getHRDoc } from 'src/api/hr-management';
+import { applyLeaveWorkflowAction, checkLeaveBalance, createLeaveApplication, deleteLeaveApplication, getEmployeeProbationInfo, updateLeaveStatus } from 'src/api/leaves';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -42,12 +45,12 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { useAuth } from 'src/auth/auth-context';
 
 import { LeavesTableRow } from '../leaves-table-row';
-import { TableNoData } from '../../user/table-no-data';
-import { TableEmptyRows } from '../../user/table-empty-rows';
+import { TableNoData } from '../../lead/table-no-data';
+import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { LeavesTableFiltersDrawer } from '../leaves-table-filters-drawer';
-import { UserTableHead as LeavesTableHead } from '../../user/user-table-head';
+import { LeadTableHead as LeavesTableHead } from '../../lead/lead-table-head';
 import { LeavesDetailsDialog } from '../../report/leaves/leaves-details-dialog';
-import { UserTableToolbar as LeavesTableToolbar } from '../../user/user-table-toolbar';
+import { LeadTableToolbar as LeavesTableToolbar } from '../../lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------
 
@@ -63,9 +66,14 @@ const LEAVE_SORT_OPTIONS = [
 export function LeavesView() {
     const { user } = useAuth();
 
+    const { socket } = useSocket(user?.email);
+
+    const isHR = user?.roles?.some((role: string) =>
+        ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
+    );
+
     // Check if user is restricted to their own employee ID
-    const isRestrictedEmployee = user?.roles.includes('Employee') &&
-        !user?.roles.some(role => ['HR Manager', 'HR User', 'System Manager', 'Administrator'].includes(role));
+    const isRestrictedEmployee = user?.roles.includes('Employee') && !isHR;
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterName, setFilterName] = useState('');
@@ -76,11 +84,13 @@ export function LeavesView() {
     const [filters, setFilters] = useState<{
         status: string;
         leave_type: string;
+        employee: string | null;
         startDate: string | null;
         endDate: string | null;
     }>({
         status: 'all',
         leave_type: 'all',
+        employee: null,
         startDate: null,
         endDate: null,
     });
@@ -117,6 +127,8 @@ export function LeavesView() {
     const [openDetails, setOpenDetails] = useState(false);
     const [detailsId, setDetailsId] = useState<string | null>(null);
 
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
     // Permissions State
     const [permissions, setPermissions] = useState<{ read: boolean; write: boolean; delete: boolean }>({
         read: true,
@@ -129,14 +141,15 @@ export function LeavesView() {
         rowsPerPage,
         filterName,
         {
-            ...(isRestrictedEmployee && user?.employee ? { employee: user.employee } : {}),
+            ...(isRestrictedEmployee && user?.employee ? { employee: user.employee } : (filters.employee ? { employee: filters.employee } : {})),
             ...(filters.status !== 'all' ? { workflow_state: filters.status } : {}),
             ...(filters.leave_type !== 'all' ? { leave_type: filters.leave_type } : {}),
             ...(filters.startDate ? { start_date: filters.startDate } : {}),
             ...(filters.endDate ? { end_date: filters.endDate } : {}),
         },
         orderBy,
-        order
+        order,
+        socket  // real-time socket — replaces 3s polling
     );
 
     const notFound = !data.length && !!filterName;
@@ -218,6 +231,23 @@ export function LeavesView() {
         setAttachments([]);
         setTotalDays(0);
         setBalanceInfo(null);
+        setFormErrors({});
+    };
+
+    const validateForm = () => {
+        const errors: Record<string, string> = {};
+        if (!employee) errors.employee = 'Employee selection is required';
+        if (!leaveType) errors.leaveType = 'Please select a leave type';
+        if (!fromDate) errors.fromDate = 'Start date is required';
+        if (!toDate) errors.toDate = 'End date is required';
+        if (!reason) errors.reason = 'Please provide a reason for your leave';
+
+        if (leaveType.toLowerCase() === 'permission' && (!permissionHours || Number(permissionHours) < 10)) {
+            errors.permissionHours = 'Permission duration must be at least 10 minutes';
+        }
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleCloseSnackbar = () => {
@@ -255,6 +285,15 @@ export function LeavesView() {
     const handleCreate = async () => {
         try {
             setCreating(true);
+
+            if (!validateForm()) {
+                setSnackbar({
+                    open: true,
+                    message: 'Missing required information. Please check the highlighted fields.',
+                    severity: 'error'
+                });
+                return;
+            }
 
             // Upload files if any
             let attachmentUrl = '';
@@ -306,11 +345,47 @@ export function LeavesView() {
     const handleOpenDetails = (id: string) => {
         setDetailsId(id);
         setOpenDetails(true);
+
+        // Mark as read and trigger sidebar refresh
+        markAsRead('Leave Application', id).then(() => {
+            window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+        });
     };
 
     const handleCloseDetails = () => {
         setOpenDetails(false);
         setDetailsId(null);
+    };
+
+    const handleApplyAction = async (id: string, action: string) => {
+        try {
+            await applyLeaveWorkflowAction(id, action);
+            setSnackbar({ open: true, message: `Leave application ${action}ed successfully`, severity: 'success' });
+            await refetch();
+        } catch (error: any) {
+            setSnackbar({ open: true, message: error.message || `Failed to ${action} leave application`, severity: 'error' });
+        }
+    };
+
+    const handleClarify = async (id: string, message: string) => {
+        try {
+            const leave = await getHRDoc('Leave Application', id);
+            const fields = ['hr_query', 'hr_query_2', 'hr_query_3', 'hr_query_4', 'hr_query_5'];
+            const nextField = fields.find(f => !leave[f]);
+
+            if (!nextField) {
+                throw new Error('Maximum clarification limit reached');
+            }
+
+            const updateData = { [nextField]: message };
+            await updateLeaveStatus(id, 'Clarification Requested', updateData);
+
+            setSnackbar({ open: true, message: 'Clarification requested successfully', severity: 'success' });
+            await refetch();
+        } catch (error: any) {
+            setSnackbar({ open: true, message: error.message || 'Failed to request clarification', severity: 'error' });
+            throw error;
+        }
     };
 
     const handleSortChange = (value: string) => {
@@ -330,6 +405,7 @@ export function LeavesView() {
         setFilters({
             status: 'all',
             leave_type: 'all',
+            employee: null,
             startDate: null,
             endDate: null,
         });
@@ -344,7 +420,7 @@ export function LeavesView() {
         setOpenFilters(false);
     };
 
-    const canReset = filters.status !== 'all' || filters.leave_type !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
+    const canReset = filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== null || filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const onChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);
@@ -392,7 +468,7 @@ export function LeavesView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: { xs: 300, md: 800 } }}>
                             <LeavesTableHead
                                 order={order}
                                 orderBy={orderBy}
@@ -402,13 +478,12 @@ export function LeavesView() {
                                 hideCheckbox
                                 showIndex
                                 headLabel={[
-                                    { id: 'employee', label: 'Employee' },
-                                    { id: 'leave_type', label: 'Lead Type' },
-                                    { id: 'from_date', label: 'Duration' },
-                                    { id: 'total_days', label: 'Days' },
-                                    { id: 'reason', label: 'Reason' },
-                                    { id: 'workflow_state', label: 'Status' },
-                                    { id: '', label: '' },
+                                    { id: 'employee', label: 'Employee', minWidth: { xs: 140, md: 180 } },
+                                    { id: 'leave_type', label: 'Leave Type', minWidth: 140, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'from_date', label: 'Duration', minWidth: 120, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'total_days', label: 'Days', align: 'center', minWidth: 100, sx: { display: { xs: 'none', md: 'table-cell' } } },
+                                    { id: 'workflow_state', label: 'Status', minWidth: 120 },
+                                    { id: 'actions', label: '', align: 'right', minWidth: 100 },
                                 ]}
                             />
 
@@ -430,12 +505,24 @@ export function LeavesView() {
                                             status: row.workflow_state || row.status || 'Pending',
                                             halfDay: row.half_day,
                                             permissionHours: row.permission_hours,
+                                            modified: row.modified,
+                                            hrQueryCount: [1, 2, 3, 4, 5].filter(i => {
+                                                const field = i === 1 ? 'hr_query' : `hr_query_${i}`;
+                                                return row[field] && String(row[field]).trim();
+                                            }).length,
+                                            empReplyCount: [1, 2, 3, 4, 5].filter(i => {
+                                                const field = i === 1 ? 'employee_reply' : `employee_reply_${i}`;
+                                                return row[field] && String(row[field]).trim();
+                                            }).length,
                                         }}
                                         selected={false}
                                         onSelectRow={() => { }}
                                         onView={() => handleOpenDetails(row.name)}
                                         onDelete={() => handleDeleteClick(row.name)}
+                                        onApplyAction={(action) => handleApplyAction(row.name, action)}
+                                        onClarify={(message) => handleClarify(row.name, message)}
                                         canDelete={permissions.delete}
+                                        isHR={isHR}
                                     />
                                 ))}
 
@@ -443,7 +530,7 @@ export function LeavesView() {
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
+                                        <TableCell colSpan={8}>
                                             <EmptyContent
                                                 title="No leave applications"
                                                 description="You haven't submitted any leave requests yet."
@@ -476,7 +563,7 @@ export function LeavesView() {
             </Card>
 
             {/* CREATE/EDIT DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     New Leave Application
                     <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
@@ -490,7 +577,7 @@ export function LeavesView() {
                         <Box
                             sx={{
                                 display: 'grid',
-                                gridTemplateColumns: '1fr 1fr',
+                                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
                                 gap: 2,
                                 mb: 3,
                             }}
@@ -545,7 +632,7 @@ export function LeavesView() {
                                             fontWeight: 500
                                         }}
                                     >
-                                        Balance ({leaveType.toLowerCase() === 'permission' ? 'Minutes' : 'Days'})
+                                        Available {leaveType.toLowerCase() === 'permission' ? 'Minutes' : 'Days'}
                                     </Typography>
                                     <Typography
                                         variant="h3"
@@ -561,45 +648,95 @@ export function LeavesView() {
                         </Box>
                     )}
 
+                    {leaveType && balanceInfo && totalDays > balanceInfo.remaining && (
+                        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+                            Insufficient {leaveType} balance. You have <strong>{balanceInfo.remaining} {leaveType.toLowerCase() === 'permission' ? 'minutes' : 'days'}</strong> available, but you are requesting <strong>{totalDays} {leaveType.toLowerCase() === 'permission' ? 'minutes' : 'days'}</strong>.
+                        </Alert>
+                    )}
+
                     <Box
                         display="grid"
                         margin={2}
                         gridTemplateColumns="1fr"
                         gap={3}
                     >
-                        <TextField
-                            fullWidth
-                            label="Employee"
-                            value={isRestrictedEmployee && user?.employee ? `${user.employee_name} (${user.employee})` : employee}
-                            onChange={(e) => setEmployee(e.target.value)}
-                            InputLabelProps={{ shrink: true }}
-                            required
-                            {...(!isRestrictedEmployee ? {
-                                select: true,
-                                SelectProps: { native: true }
-                            } : {
-                                InputProps: { readOnly: true }
-                            })}
-                        >
-                            {!isRestrictedEmployee && (
-                                <>
-                                    <option value="">Select Employee</option>
-                                    {employeeOptions.map((option) => (
-                                        <option key={option.name} value={option.name}>{option.employee_name} ({option.name})</option>
-                                    ))}
-                                </>
-                            )}
-                        </TextField>
+                        {isRestrictedEmployee ? (
+                            <TextField
+                                fullWidth
+                                label="Employee"
+                                value={`${user?.employee_name} (${user?.employee})`}
+                                InputLabelProps={{ shrink: true }}
+                                InputProps={{ readOnly: true }}
+                                required
+                                sx={{
+                                    '& .MuiFormLabel-asterisk': { color: 'red' },
+                                }}
+                            />
+                        ) : (
+                            <Autocomplete
+                                fullWidth
+                                options={employeeOptions}
+                                getOptionLabel={(option) => {
+                                    if (typeof option === 'string') {
+                                        const emp = employeeOptions.find((e) => e.name === option);
+                                        return emp ? `${emp.employee_name} (${emp.name})` : option;
+                                    }
+                                    return `${option.employee_name} (${option.name})`;
+                                }}
+                                value={employeeOptions.find((e) => e.name === employee) || null}
+                                onChange={(event, newValue) => {
+                                    setEmployee(newValue ? newValue.name : '');
+                                    if (formErrors.employee) setFormErrors(prev => ({ ...prev, employee: '' }));
+                                }}
+                                renderOption={(props, option) => {
+                                    const { key, ...optionProps } = props as any;
+                                    return (
+                                        <li key={key} {...optionProps}>
+                                            <Stack spacing={0.5}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                    {option.employee_name}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                    ID: {option.name}
+                                                </Typography>
+                                            </Stack>
+                                        </li>
+                                    );
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Employee"
+                                        required
+                                        error={!!formErrors.employee}
+                                        helperText={formErrors.employee}
+                                        InputLabelProps={{ shrink: true }}
+                                        placeholder="Search by name or ID..."
+                                        sx={{
+                                            '& .MuiFormLabel-asterisk': { color: 'red' },
+                                        }}
+                                    />
+                                )}
+                            />
+                        )}
 
                         <TextField
                             select
                             fullWidth
                             label="Leave Type"
                             value={leaveType}
-                            onChange={(e) => setLeaveType(e.target.value)}
+                            onChange={(e) => {
+                                setLeaveType(e.target.value);
+                                if (formErrors.leaveType) setFormErrors(prev => ({ ...prev, leaveType: '' }));
+                            }}
                             SelectProps={{ native: true }}
                             InputLabelProps={{ shrink: true }}
                             required
+                            error={!!formErrors.leaveType}
+                            helperText={formErrors.leaveType}
+                            sx={{
+                                '& .MuiFormLabel-asterisk': { color: 'red' },
+                            }}
                         >
                             <option value="">Select Leave Type</option>
                             {leaveTypeOptions.map((option) => (
@@ -613,200 +750,240 @@ export function LeavesView() {
                             ))}
                         </TextField>
 
-                        {/* Half Day checkbox - only for Paid Leave and Unpaid Leave - Show BEFORE date pickers */}
-                        {leaveType && (leaveType.toLowerCase() === 'paid leave' || leaveType.toLowerCase() === 'unpaid leave') && (
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        checked={halfDay}
-                                        onChange={(e) => {
-                                            setHalfDay(e.target.checked);
-                                            if (e.target.checked && fromDate) {
-                                                setToDate(fromDate); // When enabling half day, set to date same as from date
-                                                setHalfDayDate(fromDate);
-                                            }
-                                        }}
-                                    />
-                                }
-                                label="Half Day"
-                            />
-                        )}
-
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            {/* For Permission leave type OR Half Day, show only one date picker */}
-                            {(leaveType.toLowerCase() === 'permission' || halfDay) ? (
-                                <DatePicker
-                                    label={leaveType.toLowerCase() === 'permission' ? "Permission Date" : "Leave Date"}
-                                    value={fromDate ? dayjs(fromDate) : null}
-                                    format="DD-MM-YYYY"
-                                    onChange={(newValue) => {
-                                        const date = newValue?.format('YYYY-MM-DD') || '';
-                                        setFromDate(date);
-                                        setToDate(date); // Set both from and to date as same
-                                        if (halfDay) setHalfDayDate(date);
-                                    }}
-                                    slotProps={{
-                                        textField: {
-                                            fullWidth: true,
-                                            required: true,
-                                            InputLabelProps: { shrink: true },
-                                        },
-                                    }}
-                                />
-                            ) : (
-                                <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
-                                    <DatePicker
-                                        label="From Date"
-                                        value={fromDate ? dayjs(fromDate) : null}
-                                        format="DD-MM-YYYY"
-                                        onChange={(newValue) => {
-                                            const date = newValue?.format('YYYY-MM-DD') || '';
-                                            setFromDate(date);
-                                        }}
-                                        slotProps={{
-                                            textField: {
-                                                fullWidth: true,
-                                                required: true,
-                                                InputLabelProps: { shrink: true },
-                                            },
-                                        }}
-                                    />
-                                    <DatePicker
-                                        label="To Date"
-                                        value={toDate ? dayjs(toDate) : null}
-                                        format="DD-MM-YYYY"
-                                        onChange={(newValue) => {
-                                            const date = newValue?.format('YYYY-MM-DD') || '';
-                                            setToDate(date);
-                                        }}
-                                        slotProps={{
-                                            textField: {
-                                                fullWidth: true,
-                                                required: true,
-                                                InputLabelProps: { shrink: true },
-                                            },
-                                        }}
-                                    />
-                                </Box>
-                            )}
-
-                            {/* Permission Duration Picker - only for Permission leave type */}
-                            {leaveType && leaveType.toLowerCase() === 'permission' && (
-                                <TimePicker
-                                    label="Permission Duration (HH:mm)"
-                                    value={permissionHours ? dayjs().startOf('day').add(Number(permissionHours), 'minutes') : null}
-                                    onChange={(newValue: dayjs.Dayjs | null) => {
-                                        if (newValue) {
-                                            const totalMinutes = newValue.hour() * 60 + newValue.minute();
-                                            setPermissionHours(totalMinutes.toString());
-                                        } else {
-                                            setPermissionHours('');
+                        {/* Show other fields only if Employee and Leave Type are selected */}
+                        {employee && leaveType && (
+                            <>
+                                {/* Half Day checkbox - only for Paid Leave and Unpaid Leave - Show BEFORE date pickers */}
+                                {leaveType && (leaveType.toLowerCase() === 'paid leave' || leaveType.toLowerCase() === 'unpaid leave') && (
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                checked={halfDay}
+                                                onChange={(e) => {
+                                                    setHalfDay(e.target.checked);
+                                                    if (e.target.checked && fromDate) {
+                                                        setToDate(fromDate); // When enabling half day, set to date same as from date
+                                                        setHalfDayDate(fromDate);
+                                                    }
+                                                }}
+                                            />
                                         }
-                                    }}
-                                    ampm={false}
-                                    views={['hours', 'minutes']}
-                                    format="HH:mm"
-                                    slotProps={{
-                                        textField: {
-                                            fullWidth: true,
-                                            required: true,
-                                            helperText: "Select hours and minutes. Minimum 10 minutes required.",
-                                            error: permissionHours !== '' && Number(permissionHours) < 10,
-                                            InputLabelProps: { shrink: true }
-                                        }
-                                    }}
-                                />
-                            )}
-                        </LocalizationProvider>
+                                        label="Half Day"
+                                    />
+                                )}
 
-                        <TextField
-                            fullWidth
-                            label="Reason"
-                            multiline
-                            rows={3}
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
-                            required
-                        />
-
-                        {/* Attachments Section - Moved to last */}
-                        <Box
-                            sx={{
-                                p: 3,
-                                borderRadius: 2,
-                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
-                                border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
-                            }}
-                        >
-                            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
-                                <Typography variant="h6">Attachments</Typography>
-
-                                <Button
-                                    variant="contained"
-                                    component="label"
-                                    color="primary"
-                                    size="small"
-                                    startIcon={<Iconify icon={"solar:upload-bold" as any} />}
-                                    disabled={uploading}
-                                >
-                                    {uploading ? 'Uploading...' : 'Upload File'}
-                                    <input type="file" hidden onChange={handleFileUpload} />
-                                </Button>
-                            </Stack>
-
-                            <Stack spacing={1}>
-                                {attachments.length === 0 ? (
-                                    <Stack alignItems="center" justifyContent="center" sx={{ py: 3, color: 'text.disabled' }}>
-                                        <Iconify icon={"solar:file-bold" as any} width={40} height={40} sx={{ mb: 1, opacity: 0.48 }} />
-                                        <Typography variant="body2">No attachments yet</Typography>
-                                    </Stack>
-                                ) : (
-                                    attachments.map((file: any, index) => (
-                                        <Stack
-                                            key={index}
-                                            direction="row"
-                                            alignItems="center"
-                                            sx={{
-                                                px: 1.5,
-                                                py: 0.75,
-                                                borderRadius: 1.5,
-                                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                    {/* For Permission leave type OR Half Day, show only one date picker */}
+                                    {(leaveType.toLowerCase() === 'permission' || halfDay) ? (
+                                        <DatePicker
+                                            label={leaveType.toLowerCase() === 'permission' ? "Permission Date" : "Leave Date"}
+                                            value={fromDate ? dayjs(fromDate) : null}
+                                            format="DD-MM-YYYY"
+                                            onChange={(newValue) => {
+                                                const date = newValue?.format('YYYY-MM-DD') || '';
+                                                setFromDate(date);
+                                                setToDate(date); // Set both from and to date as same
+                                                if (halfDay) setHalfDayDate(date);
+                                                if (formErrors.fromDate) setFormErrors(prev => ({ ...prev, fromDate: '', toDate: '' }));
                                             }}
-                                        >
-                                            <Iconify icon={"solar:link-bold" as any} width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
-                                            <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
-                                                {typeof file === 'string' ? file : (file.url || file.name)}
-                                            </Typography>
-                                            <Button
-                                                size="small"
-                                                color="inherit"
-                                                onClick={() => handleRemoveAttachment(index)}
-                                                sx={{
-                                                    px: 1.5,
-                                                    py: 0,
-                                                    height: 26,
-                                                    borderRadius: 1.5,
-                                                    minWidth: 'auto',
-                                                    typography: 'caption',
-                                                    bgcolor: 'background.paper',
-                                                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.24)}`,
-                                                    '&:hover': {
-                                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                            slotProps={{
+                                                textField: {
+                                                    fullWidth: true,
+                                                    required: true,
+                                                    InputLabelProps: { shrink: true },
+                                                    error: !!formErrors.fromDate,
+                                                    helperText: formErrors.fromDate,
+                                                    sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
+                                                },
+                                            }}
+                                        />
+                                    ) : (
+                                        <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                                            <DatePicker
+                                                label="From Date"
+                                                value={fromDate ? dayjs(fromDate) : null}
+                                                format="DD-MM-YYYY"
+                                                onChange={(newValue) => {
+                                                    const date = newValue?.format('YYYY-MM-DD') || '';
+                                                    setFromDate(date);
+                                                    if (formErrors.fromDate) setFormErrors(prev => ({ ...prev, fromDate: '' }));
+                                                }}
+                                                slotProps={{
+                                                    textField: {
+                                                        fullWidth: true,
+                                                        required: true,
+                                                        InputLabelProps: { shrink: true },
+                                                        error: !!formErrors.fromDate,
+                                                        helperText: formErrors.fromDate,
+                                                        sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
                                                     },
                                                 }}
-                                            >
-                                                Remove
-                                            </Button>
-                                        </Stack>
-                                    ))
-                                )}
-                            </Stack>
-                        </Box>
+                                            />
+                                            <DatePicker
+                                                label="To Date"
+                                                value={toDate ? dayjs(toDate) : null}
+                                                format="DD-MM-YYYY"
+                                                onChange={(newValue) => {
+                                                    const date = newValue?.format('YYYY-MM-DD') || '';
+                                                    setToDate(date);
+                                                    if (formErrors.toDate) setFormErrors(prev => ({ ...prev, toDate: '' }));
+                                                }}
+                                                slotProps={{
+                                                    textField: {
+                                                        fullWidth: true,
+                                                        required: true,
+                                                        InputLabelProps: { shrink: true },
+                                                        error: !!formErrors.toDate,
+                                                        helperText: formErrors.toDate,
+                                                        sx: { '& .MuiFormLabel-asterisk': { color: 'red' } }
+                                                    },
+                                                }}
+                                            />
+                                        </Box>
+                                    )}
+
+                                    {/* Permission Duration Picker - only for Permission leave type */}
+                                    {leaveType && leaveType.toLowerCase() === 'permission' && (
+                                        <TimePicker
+                                            label="Permission Duration (HH:mm)"
+                                            value={permissionHours ? dayjs().startOf('day').add(Number(permissionHours), 'minutes') : null}
+                                            onChange={(newValue: dayjs.Dayjs | null) => {
+                                                if (newValue) {
+                                                    const totalMinutes = newValue.hour() * 60 + newValue.minute();
+                                                    setPermissionHours(totalMinutes.toString());
+                                                    if (totalMinutes >= 10 && formErrors.permissionHours) {
+                                                        setFormErrors(prev => ({ ...prev, permissionHours: '' }));
+                                                    }
+                                                } else {
+                                                    setPermissionHours('');
+                                                }
+                                            }}
+                                            ampm={false}
+                                            views={['hours', 'minutes']}
+                                            format="HH:mm"
+                                            slotProps={{
+                                                textField: {
+                                                    fullWidth: true,
+                                                    required: true,
+                                                    helperText: formErrors.permissionHours || "Select hours and minutes. Minimum 10 minutes required.",
+                                                    error: !!formErrors.permissionHours,
+                                                    InputLabelProps: { shrink: true }
+                                                }
+                                            }}
+                                        />
+                                    )}
+                                </LocalizationProvider>
+
+                                <TextField
+                                    fullWidth
+                                    label="Reason"
+                                    multiline
+                                    rows={3}
+                                    value={reason}
+                                    onChange={(e) => {
+                                        setReason(e.target.value);
+                                        if (formErrors.reason) setFormErrors(prev => ({ ...prev, reason: '' }));
+                                    }}
+                                    required
+                                    error={!!formErrors.reason}
+                                    helperText={formErrors.reason}
+                                    sx={{
+                                        '& .MuiFormLabel-asterisk': { color: 'red' },
+                                    }}
+                                />
+
+                                {/* Attachments Section - Moved to last */}
+                                <Box
+                                    sx={{
+                                        p: 3,
+                                        borderRadius: 2,
+                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                        border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
+                                    }}
+                                >
+                                    <Stack
+                                        direction={{ xs: 'column', sm: 'row' }}
+                                        alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                        justifyContent="space-between"
+                                        spacing={2}
+                                        sx={{ mb: 2.5 }}
+                                    >
+                                        <Typography variant="h6">Attachments</Typography>
+
+                                        <Button
+                                            variant="contained"
+                                            component="label"
+                                            color="primary"
+                                            size="small"
+                                            startIcon={<Iconify icon={"solar:upload-bold" as any} />}
+                                            disabled={uploading}
+                                            sx={{ minWidth: { xs: 1, sm: 'auto' } }}
+                                        >
+                                            {uploading ? 'Uploading...' : 'Upload File'}
+                                            <input type="file" hidden onChange={handleFileUpload} />
+                                        </Button>
+                                    </Stack>
+
+                                    <Stack spacing={1}>
+                                        {attachments.length === 0 ? (
+                                            <Stack alignItems="center" justifyContent="center" sx={{ py: 3, color: 'text.disabled' }}>
+                                                <Iconify icon={"solar:file-bold" as any} width={40} height={40} sx={{ mb: 1, opacity: 0.48 }} />
+                                                <Typography variant="body2">No attachments yet</Typography>
+                                            </Stack>
+                                        ) : (
+                                            attachments.map((file: any, index) => (
+                                                <Stack
+                                                    key={index}
+                                                    direction="row"
+                                                    alignItems="center"
+                                                    sx={{
+                                                        px: 1.5,
+                                                        py: 0.75,
+                                                        borderRadius: 1.5,
+                                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                                    }}
+                                                >
+                                                    <Iconify icon={"solar:link-bold" as any} width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
+                                                    <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
+                                                        {typeof file === 'string' ? file : (file.url || file.name)}
+                                                    </Typography>
+                                                    <Button
+                                                        size="small"
+                                                        color="inherit"
+                                                        onClick={() => handleRemoveAttachment(index)}
+                                                        sx={{
+                                                            px: 1.5,
+                                                            py: 0,
+                                                            height: 26,
+                                                            borderRadius: 1.5,
+                                                            minWidth: 'auto',
+                                                            typography: 'caption',
+                                                            bgcolor: 'background.paper',
+                                                            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.24)}`,
+                                                            '&:hover': {
+                                                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                                            },
+                                                        }}
+                                                    >
+                                                        Remove
+                                                    </Button>
+                                                </Stack>
+                                            ))
+                                        )}
+                                    </Stack>
+                                </Box>
+                            </>
+                        )}
                     </Box>
                 </DialogContent>
 
                 <DialogActions>
-                    <Button variant="contained" onClick={handleCreate} disabled={creating || uploading} sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}>
+                    <Button
+                        variant="contained"
+                        onClick={handleCreate}
+                        disabled={creating || uploading || (balanceInfo && totalDays > balanceInfo.remaining) || false}
+                        sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
                         {creating ? 'Submitting...' : 'Submit Application'}
                     </Button>
                 </DialogActions>
@@ -840,6 +1017,7 @@ export function LeavesView() {
                 onClose={handleCloseDetails}
                 leaveId={detailsId}
                 onRefresh={refetch}
+                socket={socket}
             />
 
             <LeavesTableFiltersDrawer
@@ -854,6 +1032,8 @@ export function LeavesView() {
                     statuses: ['Pending', 'Approved', 'Rejected', 'Clarification Requested'],
                     leaveTypes: leaveTypeOptions.map((opt) => opt.name),
                 }}
+                employeeOptions={employeeOptions}
+                isHR={isHR}
             />
         </DashboardContent>
     );

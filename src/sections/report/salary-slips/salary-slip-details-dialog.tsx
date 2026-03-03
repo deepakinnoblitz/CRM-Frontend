@@ -1,12 +1,17 @@
+import dayjs from 'dayjs';
+
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
+import { alpha } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 
 import { getSalarySlipDownloadUrl } from 'src/api/salary-slips';
 
@@ -31,45 +36,87 @@ export function SalarySlipDetailsDialog({ open, onClose, slip }: Props) {
 
     const formatDate = (date: string) => {
         if (!date) return '-';
-        return new Date(date).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+        return dayjs(date).format('DD-MM-YYYY');
     };
 
     const renderHeader = (
-        <Box sx={{ p: 3, textAlign: 'center', bgcolor: 'background.neutral', borderRadius: 2, mb: 3 }}>
-            <Typography variant="h5" sx={{ mb: 1, fontWeight: 700, color: 'primary.main' }}>
+        <Box
+            sx={{
+                p: 3,
+                mb: 3,
+                textAlign: 'center',
+                borderRadius: 2,
+                position: 'relative',
+                overflow: 'hidden',
+                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+            }}
+        >
+            <Typography variant="h5" sx={{ mb: 1, fontWeight: 800, color: 'primary.main' }}>
                 SALARY SLIP
             </Typography>
-            <Typography variant="subtitle2" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>
-                For the period: {formatDate(slip.pay_period_start)} to {formatDate(slip.pay_period_end)}
+            <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                Period: {formatDate(slip.pay_period_start)} — {formatDate(slip.pay_period_end)}
             </Typography>
         </Box>
     );
 
+
     const renderEmployeeDetails = (
         <Box sx={{ mb: 4 }}>
-            <SectionHeader title="Employee Details" icon="solar:user-id-bold" />
+            <SectionHeader title="Employee Details" icon="solar:user-id-bold" color="primary.main" />
             <Box
                 sx={{
+                    p: 3,
+                    borderRadius: 2,
                     display: 'grid',
-                    gap: 2,
+                    gap: 3,
+                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                    border: (theme) => `1px solid ${theme.palette.divider}`,
                     gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
                 }}
             >
-                <InfoRow label="Employee ID" value={slip.employee} />
-                <InfoRow label="Employee Name" value={slip.employee_name} />
-                <InfoRow label="Department" value={slip.department || '-'} />
-                <InfoRow label="Designation" value={slip.designation || '-'} />
+                <InfoRow label="Employee" value={slip.employee} />
                 <InfoRow label="Bank Name" value={slip.bank_name || '-'} />
-                <InfoRow label="Account No" value={slip.account_no || '-'} />
+                <InfoRow label="Employee Name" value={slip.employee_name} />
+                <InfoRow label="Email" value={slip.email || '-'} />
+                <InfoRow label="Department" value={slip.department || '-'} />
+                <InfoRow label="Personal Email" value={slip.personal_email || '-'} />
+                <InfoRow label="Designation" value={slip.designation || '-'} />
+                <InfoRow label="Date of Joining" value={formatDate(slip.date_of_joining)} />
+                <Box />
             </Box>
         </Box>
     );
 
+    const renderAttendanceSummary = (
+        <Box sx={{ mb: 4 }}>
+            <SectionHeader title="Attendance Summary" icon="solar:calendar-date-bold" color="warning.main" />
+            <Box
+                sx={{
+                    p: 3,
+                    borderRadius: 2,
+                    display: 'grid',
+                    gap: 3,
+                    bgcolor: (theme) => alpha(theme.palette.warning.main, 0.04),
+                    border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.12)}`,
+                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+                }}
+            >
+                <InfoRow label="No of Leave" value={slip.no_of_leave || 0} />
+                <InfoRow label="Total Working Days" value={slip.total_working_days || 0} />
+                <InfoRow label="LOP Days" value={slip.lop_days || 0} />
+                <InfoRow label="No of Paid Leave" value={slip.no_of_paid_leave || 0} />
+            </Box>
+        </Box>
+    );
+
+
     const renderSalaryBreakdown = (
         <Box sx={{ mb: 4 }}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 4 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
                 {/* Earnings */}
-                <Box>
+                <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: (theme) => alpha(theme.palette.success.main, 0.04), border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.12)}` }}>
                     <SectionHeader title="Earnings" icon="solar:wad-of-money-bold" color="success.main" />
                     <Stack spacing={1.5}>
                         <AmountRow label="Basic Pay" amount={slip.basic_pay} />
@@ -77,13 +124,13 @@ export function SalarySlipDetailsDialog({ open, onClose, slip }: Props) {
                         <AmountRow label="Conveyance" amount={slip.conveyance_allowances} />
                         <AmountRow label="Medical" amount={slip.medical_allowances} />
                         <AmountRow label="Other Allowances" amount={slip.other_allowances} />
-                        <Divider sx={{ my: 1 }} />
-                        <AmountRow label="Gross Earnings" amount={slip.gross_pay} isTotal />
+                        <Divider sx={{ my: 1, borderStyle: 'dashed' }} />
+                        <AmountRow label="Gross Earnings" amount={slip.gross_pay} isTotal color="success.main" />
                     </Stack>
                 </Box>
 
                 {/* Deductions */}
-                <Box>
+                <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: (theme) => alpha(theme.palette.error.main, 0.04), border: (theme) => `1px solid ${alpha(theme.palette.error.main, 0.12)}` }}>
                     <SectionHeader title="Deductions" icon="solar:hand-money-bold" color="error.main" />
                     <Stack spacing={1.5}>
                         <AmountRow label="EPF" amount={slip.pf} />
@@ -91,31 +138,34 @@ export function SalarySlipDetailsDialog({ open, onClose, slip }: Props) {
                         <AmountRow label="Professional Tax" amount={slip.professional_tax} />
                         <AmountRow label="Loan Recovery" amount={slip.loan_recovery} />
                         <AmountRow label="LOP" amount={slip.lop} />
-                        <Divider sx={{ my: 1 }} />
-                        <AmountRow label="Total Deductions" amount={slip.total_deduction} isTotal />
+                        <Divider sx={{ my: 1, borderStyle: 'dashed' }} />
+                        <AmountRow label="Total Deductions" amount={slip.total_deduction} isTotal color="error.main" />
                     </Stack>
                 </Box>
             </Box>
         </Box>
     );
 
+
     const renderNetPay = (
         <Box
             sx={{
                 p: 3,
+                mt: 1,
                 borderRadius: 2,
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                color: 'common.white',
+                background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                boxShadow: (theme) => `0 8px 24px -4px ${alpha(theme.palette.primary.main, 0.4)}`,
             }}
         >
             <Box>
-                <Typography variant="subtitle1" sx={{ opacity: 0.8, fontWeight: 600 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: 1 }}>
                     NET SALARY PAYABLE
                 </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.6 }}>
+                <Typography variant="caption" sx={{ opacity: 0.72, fontWeight: 500 }}>
                     (Gross Earnings - Total Deductions)
                 </Typography>
             </Box>
@@ -125,30 +175,22 @@ export function SalarySlipDetailsDialog({ open, onClose, slip }: Props) {
         </Box>
     );
 
+
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                Salary Slip Details
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                        size="small"
-                        variant="contained"
-                        color="primary"
-                        startIcon={<Iconify icon={"solar:download-bold" as any} />}
-                        onClick={handleDownload}
-                    >
-                        Download PDF
-                    </Button>
-                    <IconButton onClick={onClose}>
-                        <Iconify icon={"mingcute:close-line" as any} />
-                    </IconButton>
-                </Box>
+            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>Salary Slip Details</Typography>
+                <IconButton onClick={onClose} sx={{ color: 'text.secondary' }}>
+                    <Iconify icon={"mingcute:close-line" as any} />
+                </IconButton>
             </DialogTitle>
+
 
             <Scrollbar sx={{ maxHeight: '85vh' }}>
                 <DialogContent sx={{ p: 4 }}>
                     {renderHeader}
                     {renderEmployeeDetails}
+                    {renderAttendanceSummary}
                     <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
                     {renderSalaryBreakdown}
                     {renderNetPay}
@@ -160,6 +202,21 @@ export function SalarySlipDetailsDialog({ open, onClose, slip }: Props) {
                     </Box>
                 </DialogContent>
             </Scrollbar>
+
+            <Divider sx={{ borderStyle: 'dashed' }} />
+
+            <DialogActions sx={{ p: 2.5 }}>
+                <Box sx={{ flexGrow: 1 }} />
+                <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<Iconify icon={"solar:download-bold" as any} />}
+                    onClick={handleDownload}
+                >
+                    Download PDF
+                </Button>
+            </DialogActions>
+
         </Dialog>
     );
 }
@@ -190,15 +247,16 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     );
 }
 
-function AmountRow({ label, amount, isTotal = false }: { label: string; amount: number; isTotal?: boolean }) {
+function AmountRow({ label, amount, isTotal = false, color }: { label: string; amount: number; isTotal?: boolean; color?: string }) {
     return (
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant={isTotal ? 'subtitle2' : 'body2'} sx={{ color: isTotal ? 'text.primary' : 'text.secondary', fontWeight: isTotal ? 700 : 500 }}>
+            <Typography variant={isTotal ? 'subtitle2' : 'body2'} sx={{ color: isTotal ? (color || 'text.primary') : 'text.secondary', fontWeight: isTotal ? 700 : 500 }}>
                 {label}
             </Typography>
-            <Typography variant={isTotal ? 'subtitle1' : 'body2'} sx={{ fontWeight: isTotal ? 700 : 600 }}>
+            <Typography variant={isTotal ? 'subtitle1' : 'body2'} sx={{ fontWeight: isTotal ? 800 : 600, color: isTotal ? color : 'inherit' }}>
                 ₹{amount?.toLocaleString() || 0}
             </Typography>
         </Box>
     );
 }
+
