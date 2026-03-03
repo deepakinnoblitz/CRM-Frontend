@@ -91,19 +91,18 @@ export const hrNavData = [
     ],
   },
   {
-    title: 'Renewals Tracker',
-    path: '/renewals-tracker',
-    icon: <Iconify icon={"solar:restart-bold-duotone" as any} />,
-  },
-  {
     title: 'Salary Slips',
     path: '/salary-slips',
     icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} />,
   },
   {
-    title: 'Company Expenses',
-    path: '/expense-tracker',
+    title: 'Expenses',
+    path: '/expenses',
     icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+    children: [
+      { title: 'Company Expenses', path: '/expense-tracker' },
+      { title: 'Reimbursement Claim List', path: '/reimbursement-claims' },
+    ],
   },
   {
     title: 'Recruitment',
@@ -114,11 +113,6 @@ export const hrNavData = [
       { title: 'Job Applicant List', path: '/job-applicants' },
       { title: 'Interview List', path: '/interviews' },
     ],
-  },
-  {
-    title: 'Reimbursement Claim List',
-    path: '/reimbursement-claims',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
   },
   {
     title: 'Report',
