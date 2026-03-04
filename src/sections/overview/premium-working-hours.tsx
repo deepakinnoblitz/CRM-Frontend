@@ -184,11 +184,11 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
 
             <Box sx={{ px: { xs: 1.5, sm: 3 }, pb: 4 }}>
 
-                {/* 3-4 Grid Layout (Desktop) / Vertical Stack (Mobile) */}
+                {/* 3-Column Grid Layout (Desktop) / Vertical Stack (Mobile) */}
                 <Box
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(12, 1fr)',
+                        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                         rowGap: 5,
                         columnGap: 4,
                         width: '100%',
@@ -199,9 +199,6 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                         const status = getStatusInfo(record);
                         const isToday = record.date === todayStr;
                         const isNonWorking = record.holiday_info && record.holiday_is_working_day === 0;
-
-                        // Grid Logic: 3 items in row 1 (span 4), 4 items in row 2 (span 3)
-                        const gridSpan = index < 3 ? 4 : 3;
 
                         const progress = Math.min((record.working_hours / 9) * 100, 100);
 
@@ -225,7 +222,6 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                             <Box
                                 key={index}
                                 sx={{
-                                    gridColumn: { xs: 'span 12', sm: 'span 6', md: `span ${gridSpan}` },
                                     position: 'relative',
                                     display: 'flex',
                                     flexDirection: 'column'
