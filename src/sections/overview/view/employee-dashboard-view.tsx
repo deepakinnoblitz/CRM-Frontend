@@ -101,7 +101,10 @@ export function EmployeeDashboardView() {
 
                 {/* 3. Leave Status Cards */}
                 <Grid size={{ xs: 12 }}>
-                    <LeaveStatusCards data={data.leave_allocations || []} />
+                    <LeaveStatusCards
+                        data={data.leave_allocations || []}
+                        inProbation={data.in_probation}
+                    />
                 </Grid>
 
                 {/* 4. Calendar Attendance Chart */}
