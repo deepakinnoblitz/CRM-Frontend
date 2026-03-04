@@ -19,9 +19,10 @@ type LeaveAllocation = {
 
 type Props = CardProps & {
     data: LeaveAllocation[];
+    inProbation?: boolean;
 };
 
-export function LeaveStatusCards({ data, sx, ...other }: Props) {
+export function LeaveStatusCards({ data, inProbation, sx, ...other }: Props) {
     const theme = useTheme();
 
     // Find specific leave types
@@ -67,98 +68,156 @@ export function LeaveStatusCards({ data, sx, ...other }: Props) {
                         Paid Leave
                     </Typography>
 
-                    {/* Stats Row */}
-                    <Stack direction="row" spacing={2.5} sx={{ mb: 3 }}>
-                        <Box sx={{ flex: 1 }}>
-                            <Typography
-                                variant="caption"
-                                sx={{ color: '#64748b', fontSize: '0.8125rem', display: 'block', mb: 0.5 }}
-                            >
-                                Allocated
-                            </Typography>
-                            <Typography
-                                component="span"
-                                sx={{
-                                    fontSize: '1.75rem',
-                                    fontWeight: 800,
-                                    color: '#12a3cf',
-                                    mr: 0.5,
-                                }}
-                            >
-                                {sickLeave?.total_leaves_allocated || 0}
-                            </Typography>
-                            <Typography component="span" sx={{ color: '#12a3cf', fontSize: '0.875rem' }}>
-                                Day
-                            </Typography>
-                        </Box>
-
-                        <Box sx={{ flex: 1 }}>
-                            <Typography
-                                variant="caption"
-                                sx={{ color: '#64748b', fontSize: '0.8125rem', display: 'block', mb: 0.5 }}
-                            >
-                                Taken
-                            </Typography>
-                            <Typography
-                                component="span"
-                                sx={{
-                                    fontSize: '1.75rem',
-                                    fontWeight: 800,
-                                    color: '#12a3cf',
-                                    mr: 0.5,
-                                }}
-                            >
-                                {sickLeave?.total_leaves_taken || 0}
-                            </Typography>
-                            <Typography component="span" sx={{ color: '#12a3cf', fontSize: '0.875rem' }}>
-                                Day
-                            </Typography>
-                        </Box>
-                    </Stack>
-
-                    {/* Progress */}
-                    <Box sx={{ mt: 1.25 }}>
-                        <Typography
-                            variant="caption"
-                            sx={{ color: '#6b7280', fontSize: '0.8125rem', display: 'block', mb: 0.75 }}
-                        >
-                            Usage
-                        </Typography>
-                        <LinearProgress
-                            variant="determinate"
-                            value={getUsagePercent(
-                                sickLeave?.total_leaves_allocated || 0,
-                                sickLeave?.total_leaves_taken || 0
-                            )}
+                    {inProbation ? (
+                        <Box
                             sx={{
-                                height: 10,
-                                borderRadius: 1.25,
-                                backgroundColor: '#f1f5f9',
-                                border: `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
-                                '& .MuiLinearProgress-bar': {
-                                    backgroundColor: '#3b82f6',
-                                    borderRadius: 1.25,
-                                },
-                            }}
-                        />
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                display: 'block',
-                                textAlign: 'right',
-                                fontSize: '0.8125rem',
-                                fontWeight: 600,
-                                color: '#475569',
-                                mt: 0.75,
+                                flex: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                textAlign: 'center',
+                                pb: 2,
                             }}
                         >
-                            {getUsagePercent(
-                                sickLeave?.total_leaves_allocated || 0,
-                                sickLeave?.total_leaves_taken || 0
-                            ).toFixed(1)}
-                            %
-                        </Typography>
-                    </Box>
+                            <Typography
+                                sx={{
+                                    color: '#f43f5e',
+                                    fontSize: '0.9375rem',
+                                    fontWeight: 700,
+                                    lineHeight: 1.6,
+                                }}
+                            >
+                                You are currently in your probation period.
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    color: '#f43f5e',
+                                    fontSize: '0.9375rem',
+                                    fontWeight: 700,
+                                    lineHeight: 1.6,
+                                }}
+                            >
+                                Sick Leave will be available once your probation ends.
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <>
+                            {/* Stats Row */}
+                            <Stack direction="row" spacing={2.5} sx={{ mb: 3 }}>
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            color: '#64748b',
+                                            fontSize: '0.8125rem',
+                                            display: 'block',
+                                            mb: 0.5,
+                                        }}
+                                    >
+                                        Allocated
+                                    </Typography>
+                                    <Typography
+                                        component="span"
+                                        sx={{
+                                            fontSize: '1.75rem',
+                                            fontWeight: 800,
+                                            color: '#12a3cf',
+                                            mr: 0.5,
+                                        }}
+                                    >
+                                        {sickLeave?.total_leaves_allocated || 0}
+                                    </Typography>
+                                    <Typography
+                                        component="span"
+                                        sx={{ color: '#12a3cf', fontSize: '0.875rem' }}
+                                    >
+                                        Day
+                                    </Typography>
+                                </Box>
+
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            color: '#64748b',
+                                            fontSize: '0.8125rem',
+                                            display: 'block',
+                                            mb: 0.5,
+                                        }}
+                                    >
+                                        Taken
+                                    </Typography>
+                                    <Typography
+                                        component="span"
+                                        sx={{
+                                            fontSize: '1.75rem',
+                                            fontWeight: 800,
+                                            color: '#12a3cf',
+                                            mr: 0.5,
+                                        }}
+                                    >
+                                        {sickLeave?.total_leaves_taken || 0}
+                                    </Typography>
+                                    <Typography
+                                        component="span"
+                                        sx={{ color: '#12a3cf', fontSize: '0.875rem' }}
+                                    >
+                                        Day
+                                    </Typography>
+                                </Box>
+                            </Stack>
+
+                            {/* Progress */}
+                            <Box sx={{ mt: 1.25 }}>
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        color: '#6b7280',
+                                        fontSize: '0.8125rem',
+                                        display: 'block',
+                                        mb: 0.75,
+                                    }}
+                                >
+                                    Usage
+                                </Typography>
+                                <LinearProgress
+                                    variant="determinate"
+                                    value={getUsagePercent(
+                                        sickLeave?.total_leaves_allocated || 0,
+                                        sickLeave?.total_leaves_taken || 0
+                                    )}
+                                    sx={{
+                                        height: 10,
+                                        borderRadius: 1.25,
+                                        backgroundColor: '#f1f5f9',
+                                        border: `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
+                                        '& .MuiLinearProgress-bar': {
+                                            backgroundColor: '#3b82f6',
+                                            borderRadius: 1.25,
+                                        },
+                                    }}
+                                />
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        display: 'block',
+                                        textAlign: 'right',
+                                        fontSize: '0.8125rem',
+                                        fontWeight: 600,
+                                        color: '#475569',
+                                        mt: 0.75,
+                                    }}
+                                >
+                                    {getUsagePercent(
+                                        sickLeave?.total_leaves_allocated || 0,
+                                        sickLeave?.total_leaves_taken || 0
+                                    ).toFixed(1)}
+                                    %
+                                </Typography>
+                            </Box>
+                        </>
+                    )}
                 </Card>
             </Grid>
 
