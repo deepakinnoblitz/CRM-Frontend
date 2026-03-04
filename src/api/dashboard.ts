@@ -165,6 +165,7 @@ export interface EmployeeDashboardData {
         holiday_is_working_day: number;
     }>;
     attendance_range?: string;
+    in_probation: boolean;
     joining_date?: string | null;
     start_date?: string;
     end_date?: string;
@@ -313,6 +314,7 @@ export async function fetchEmployeeDashboardData(
             holidays: [],
             monthly_attendance_list: [],
             attendance_range: range,
+            in_probation: false,
         };
     }
 }
