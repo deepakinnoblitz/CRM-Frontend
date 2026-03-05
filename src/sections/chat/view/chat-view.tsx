@@ -3,9 +3,10 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import { alpha } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+import { useTheme, alpha } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 import { useWebRTC } from 'src/hooks/use-webrtc';
 import { useSocket } from 'src/hooks/use-socket';
@@ -194,6 +195,9 @@ export default function ChatView() {
     }, [socket, fetchChannels, user?.email]);
 
 
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
     return (
         <Container maxWidth="xl" sx={{ height: '100%', py: 3 }}>
             <Box
@@ -204,19 +208,25 @@ export default function ChatView() {
                     borderRadius: 3,
                     overflow: 'hidden',
                     boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
-                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
+                    border: `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
                 }}
             >
-                <ChatSidebar
-                    user={user}
-                    channels={enrichedChannels}
-                    selectedChannel={enrichedSelectedChannel}
-                    onSelectChannel={setSelectedChannel}
-                    onOpenContacts={() => setOpenContacts(true)}
-                    loading={loading}
-                />
+                {(!isMobile || !enrichedSelectedChannel) && (
+                    <ChatSidebar
+                        user={user}
+                        channels={enrichedChannels}
+                        selectedChannel={enrichedSelectedChannel}
+                        onSelectChannel={setSelectedChannel}
+                        onOpenContacts={() => setOpenContacts(true)}
+                        loading={loading}
+                    />
+                )}
 
-                <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{
+                    flexGrow: 1,
+                    display: isMobile && !enrichedSelectedChannel ? 'none' : 'flex',
+                    flexDirection: 'column'
+                }}>
                     {enrichedSelectedChannel ? (
                         <ChatWindow
                             user={user}
@@ -224,6 +234,7 @@ export default function ChatView() {
                             socket={socket}
                             isConnected={isConnected}
                             onRefresh={fetchChannels}
+                            onBack={() => setSelectedChannel(null)}
                             onStartCall={(type) => {
                                 const contactEmail = enrichedSelectedChannel.type === 'Direct'
                                     ? enrichedSelectedChannel.contact

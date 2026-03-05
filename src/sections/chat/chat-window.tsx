@@ -5,10 +5,11 @@ import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import { alpha } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import { useTheme, alpha } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import { fDateTime, fDateSeparator } from 'src/utils/format-time';
@@ -51,9 +52,10 @@ type Props = {
     isConnected?: boolean;
     onRefresh?: () => void;
     onStartCall?: (type: 'audio' | 'video') => void;
+    onBack?: () => void;
 };
 
-export default function ChatWindow({ user, channel, socket, isConnected, onRefresh, onStartCall }: Props) {
+export default function ChatWindow({ user, channel, socket, isConnected, onRefresh, onStartCall, onBack }: Props) {
     const [messages, setMessages] = useState<any[]>([]);
     const [showInfo, setShowInfo] = useState(false);
     const [confirmDeleteMessage, setConfirmDeleteMessage] = useState<string | null>(null);
@@ -266,39 +268,55 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
             <Stack
                 direction="row"
                 alignItems="center"
-                onClick={() => setShowInfo(true)}
                 sx={{
                     py: 1,
                     px: 2,
                     p: 2,
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: 'action.hover' },
                     borderBottom: (theme) => `solid 1px ${theme.palette.divider}`
                 }}
             >
-                <Avatar
-                    alt={channel.displayName}
-                    src={channel.channel_image || channel.channel_info?.avatar}
+                {onBack && (
+                    <IconButton onClick={onBack} sx={{ mr: 1, display: { md: 'none' } }}>
+                        <Iconify icon={"eva:arrow-ios-back-fill" as any} />
+                    </IconButton>
+                )}
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    onClick={() => setShowInfo(true)}
                     sx={{
-                        width: 40,
-                        height: 40,
-                        mr: 2,
-                        fontWeight: 'fontWeightBold',
-                        color: stringToDarkColor(channel.displayName || ''),
-                        bgcolor: stringToColor(channel.displayName || ''),
+                        cursor: 'pointer',
+                        '&:hover': { bgcolor: 'action.hover' },
+                        flexGrow: 1,
+                        borderRadius: 1,
+                        p: 0.5,
+                        ml: -0.5
                     }}
                 >
-                    {channel.displayName?.charAt(0).toUpperCase()}
-                </Avatar>
-                <Stack sx={{ flexGrow: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 'fontWeightBold' }}>
-                        {channel.displayName}
-                    </Typography>
-                    {lastMessageTime && (
-                        <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '11px' }}>
-                            {lastMessageTime}
+                    <Avatar
+                        alt={channel.displayName}
+                        src={channel.channel_image || channel.channel_info?.avatar}
+                        sx={{
+                            width: 40,
+                            height: 40,
+                            mr: 2,
+                            fontWeight: 'fontWeightBold',
+                            color: stringToDarkColor(channel.displayName || ''),
+                            bgcolor: stringToColor(channel.displayName || ''),
+                        }}
+                    >
+                        {channel.displayName?.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Stack sx={{ flexGrow: 1 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 'fontWeightBold' }}>
+                            {channel.displayName}
                         </Typography>
-                    )}
+                        {lastMessageTime && (
+                            <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '11px' }}>
+                                {lastMessageTime}
+                            </Typography>
+                        )}
+                    </Stack>
                 </Stack>
 
                 {channel.type === 'Direct' && (
