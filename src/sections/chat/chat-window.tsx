@@ -320,27 +320,59 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                 </Stack>
 
                 {channel.type === 'Direct' && (
-                    <Stack direction="row" spacing={0.5} sx={{ mr: 1 }}>
-                        <IconButton
-                            size="small"
+                    <Stack direction="row" spacing={1.5} sx={{ mr: 1 }}>
+                        <Button
+                            variant="contained"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if (onStartCall) onStartCall('audio');
                             }}
-                            sx={{ color: 'text.secondary' }}
+                            startIcon={<Iconify icon={"solar:phone-bold" as any} width={18} />}
+                            sx={{
+                                borderRadius: 5,
+                                px: 2,
+                                py: 0.75,
+                                fontSize: '0.9rem',
+                                fontWeight: 'bold',
+                                textTransform: 'none',
+                                background: 'linear-gradient(135deg, #42d392 0%, #359d73 100%)',
+                                boxShadow: '0 4px 10px 0 rgba(66, 211, 146, 0.3)',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                    background: 'linear-gradient(135deg, #3bb37c 0%, #2e8a64 100%)',
+                                    boxShadow: '0 6px 16px rgba(66, 211, 146, 0.35)',
+                                    transform: 'translateY(-1px)',
+                                },
+                            }}
                         >
-                            <Iconify icon={"solar:phone-calling-bold" as any} width={20} />
-                        </IconButton>
-                        <IconButton
-                            size="small"
+                            Audio
+                        </Button>
+                        <Button
+                            variant="contained"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if (onStartCall) onStartCall('video');
                             }}
-                            sx={{ color: 'text.secondary' }}
+                            startIcon={<Iconify icon={"solar:videocamera-record-bold" as any} width={18} />}
+                            sx={{
+                                borderRadius: 5,
+                                px: 2,
+                                py: 0.75,
+                                fontSize: '0.9rem',
+                                fontWeight: 'bold',
+                                textTransform: 'none',
+                                background: 'linear-gradient(135deg, #3d8aff 0%, #1c5fd1 100%)',
+                                boxShadow: '0 4px 10px 0 rgba(61, 138, 255, 0.3)',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                    background: 'linear-gradient(135deg, #3476db 0%, #1752b5 100%)',
+                                    boxShadow: '0 6px 16px rgba(61, 138, 255, 0.35)',
+                                    transform: 'translateY(-1px)',
+                                },
+                            }}
                         >
-                            <Iconify icon={"solar:videocamera-record-bold-duotone" as any} width={20} />
-                        </IconButton>
+                            Video
+                        </Button>
                     </Stack>
                 )}
             </Stack>
