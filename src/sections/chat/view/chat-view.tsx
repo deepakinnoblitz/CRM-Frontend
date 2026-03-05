@@ -8,7 +8,6 @@ import Typography from '@mui/material/Typography';
 import { useTheme, alpha } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
-import { useWebRTC } from 'src/hooks/use-webrtc';
 import { useSocket } from 'src/hooks/use-socket';
 
 import { chatApi } from 'src/api/chat';
@@ -18,7 +17,7 @@ import { Iconify } from 'src/components/iconify';
 
 import ChatWindow from 'src/sections/chat/chat-window';
 import ChatSidebar from 'src/sections/chat/chat-sidebar';
-import ChatCallDialog from 'src/sections/chat/chat-call-dialog';
+import { useCall } from 'src/sections/chat/call-context';
 import ChatContactDialog from 'src/sections/chat/chat-contact-dialog';
 import ChatPlaceholderIcon from 'src/sections/chat/chat-placeholder-icon';
 
@@ -48,7 +47,7 @@ export default function ChatView() {
         toggleVideo,
         isAudioMuted,
         isVideoDisabled,
-    } = useWebRTC(user?.email, socket);
+    } = useCall();
 
     useEffect(() => {
         if (isConnected && channels.length > 0) {
@@ -282,22 +281,6 @@ export default function ChatView() {
                 onSelectContact={handleStartConversation}
             />
 
-            <ChatCallDialog
-                open={callState !== 'idle'}
-                onClose={() => { }}
-                callState={callState}
-                callType={callType}
-                remoteUser={remoteUser}
-                localStream={localStream}
-                remoteStream={remoteStream}
-                onAccept={acceptCall}
-                onReject={rejectCall}
-                onHangUp={hangUp}
-                onToggleAudio={toggleAudio}
-                onToggleVideo={toggleVideo}
-                isAudioMuted={isAudioMuted}
-                isVideoDisabled={isVideoDisabled}
-            />
         </Container>
     );
 }

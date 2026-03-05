@@ -22,7 +22,9 @@ interface SignalData {
     callType: 'audio' | 'video';
 }
 
-export function useWebRTC(userEmail: string, socket: Socket | null) {
+const RINGTONE_URL = `${import.meta.env.BASE_URL}assets/ringtone/ringtone.wav`;
+
+export function useWebRTC(userEmail: string | undefined, socket: Socket | null) {
     const [callState, setCallState] = useState<CallState>('idle');
     const [remoteUser, setRemoteUser] = useState<string | null>(null);
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -30,6 +32,7 @@ export function useWebRTC(userEmail: string, socket: Socket | null) {
     const [callType, setCallType] = useState<'audio' | 'video'>('audio');
     const [isAudioMuted, setIsAudioMuted] = useState(false);
     const [isVideoDisabled, setIsVideoDisabled] = useState(false);
+    const ringtoneRef = useRef<HTMLAudioElement | null>(null);
 
     const pcRef = useRef<RTCPeerConnection | null>(null);
     const pendingCandidates = useRef<RTCIceCandidate[]>([]);
@@ -51,6 +54,10 @@ export function useWebRTC(userEmail: string, socket: Socket | null) {
         currentRoom.current = null;
         setIsAudioMuted(false);
         setIsVideoDisabled(false);
+        if (ringtoneRef.current) {
+            ringtoneRef.current.pause();
+            ringtoneRef.current.currentTime = 0;
+        }
     }, [localStream]);
 
     const sendSignal = useCallback(async (data: Partial<SignalData>) => {
@@ -203,6 +210,37 @@ export function useWebRTC(userEmail: string, socket: Socket | null) {
         }
         cleanup();
     }, [remoteUser, sendSignal, cleanup]);
+
+    useEffect(() => {
+        if (!ringtoneRef.current) {
+            ringtoneRef.current = new Audio(RINGTONE_URL);
+            ringtoneRef.current.loop = true;
+        }
+
+        if (callState === 'incoming' || callState === 'calling') {
+            ringtoneRef.current.play().catch(e => console.error('Error playing ringtone:', e));
+
+            if (callState === 'incoming' && Notification.permission === 'granted' && document.hidden) {
+                const notification = new Notification('Incoming Call', {
+                    body: `Incoming ${callType} call from ${remoteUser || 'someone'}`,
+                    icon: '/favicon.ico'
+                });
+
+                notification.onclick = () => {
+                    window.focus();
+                };
+            }
+        } else if (callState === 'connected' || callState === 'idle' || callState === 'ended') {
+            ringtoneRef.current.pause();
+            ringtoneRef.current.currentTime = 0;
+        }
+    }, [callState, callType, remoteUser]);
+
+    useEffect(() => {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }, []);
 
     useEffect(() => {
         if (socket) {
