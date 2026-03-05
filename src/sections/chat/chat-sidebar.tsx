@@ -55,7 +55,7 @@ export default function ChatSidebar({ user, channels, selectedChannel, onSelectC
     return (
         <Box
             sx={{
-                width: 320,
+                width: { xs: 1, md: 320 },
                 flexShrink: 0,
                 display: 'flex',
                 flexDirection: 'column',
