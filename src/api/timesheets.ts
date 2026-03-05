@@ -201,3 +201,38 @@ export async function fetchActivityTypes(params: {
         data: data.message || []
     };
 }
+
+export async function createProject(projectName: string) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest('/api/method/frappe.client.insert', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ doc: { doctype: 'Project', project: projectName } }),
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to create project'));
+    }
+
+    return (await res.json()).message;
+}
+
+export async function createActivityType(activityTypeName: string) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest('/api/method/frappe.client.insert', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ doc: { doctype: 'Activity Type', activity_type: activityTypeName } }),
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to create activity type'));
+    }
+
+    return (await res.json()).message;
+}
+
