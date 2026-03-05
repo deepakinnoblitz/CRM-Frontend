@@ -46,6 +46,8 @@ export default function ChatView() {
         hangUp,
         toggleAudio,
         toggleVideo,
+        isAudioMuted,
+        isVideoDisabled,
     } = useWebRTC(user?.email, socket);
 
     useEffect(() => {
@@ -293,6 +295,8 @@ export default function ChatView() {
                 onHangUp={hangUp}
                 onToggleAudio={toggleAudio}
                 onToggleVideo={toggleVideo}
+                isAudioMuted={isAudioMuted}
+                isVideoDisabled={isVideoDisabled}
             />
         </Container>
     );
