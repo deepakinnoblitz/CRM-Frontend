@@ -44,6 +44,24 @@ function beautifyFrappeMessage(msg: string): string {
         }
     }
 
+    // 2. Handle DuplicateEntryError / IntegrityError 1062
+    // e.g. "Activity Type Testing already exists ('Activity Type', 'Testing', IntegrityError(1062, ...))"
+    const duplicateMatch = cleanMsg.match(/IntegrityError\(1062,.*?Duplicate entry '(.+?)' for key/i);
+    if (duplicateMatch) {
+        // Try to extract doctype from the "already exists" part
+        const alreadyExistsMatch = cleanMsg.match(/^(.+?)\s+already exists/i);
+        const label = alreadyExistsMatch ? alreadyExistsMatch[1].trim() : duplicateMatch[1];
+        return `"${label}" already exists. Please use a different name.`;
+    }
+
+    // Also catch the simpler "already exists" summary Frappe puts before the exception details
+    if (cleanMsg.match(/already exists \(.*IntegrityError/i)) {
+        const labelMatch = cleanMsg.match(/^(.+?)\s+already exists/i);
+        if (labelMatch) {
+            return `"${labelMatch[1].trim()}" already exists. Please use a different name.`;
+        }
+    }
+
     return cleanMsg;
 }
 
