@@ -50,9 +50,10 @@ type Props = {
     socket: any;
     isConnected?: boolean;
     onRefresh?: () => void;
+    onStartCall?: (type: 'audio' | 'video') => void;
 };
 
-export default function ChatWindow({ user, channel, socket, isConnected, onRefresh }: Props) {
+export default function ChatWindow({ user, channel, socket, isConnected, onRefresh, onStartCall }: Props) {
     const [messages, setMessages] = useState<any[]>([]);
     const [showInfo, setShowInfo] = useState(false);
     const [confirmDeleteMessage, setConfirmDeleteMessage] = useState<string | null>(null);
@@ -299,6 +300,31 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                         </Typography>
                     )}
                 </Stack>
+
+                {channel.type === 'Direct' && (
+                    <Stack direction="row" spacing={0.5} sx={{ mr: 1 }}>
+                        <IconButton
+                            size="small"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onStartCall) onStartCall('audio');
+                            }}
+                            sx={{ color: 'text.secondary' }}
+                        >
+                            <Iconify icon={"solar:phone-calling-bold" as any} width={20} />
+                        </IconButton>
+                        <IconButton
+                            size="small"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onStartCall) onStartCall('video');
+                            }}
+                            sx={{ color: 'text.secondary' }}
+                        >
+                            <Iconify icon={"solar:videocamera-record-bold-duotone" as any} width={20} />
+                        </IconButton>
+                    </Stack>
+                )}
             </Stack>
 
             {/* Messages */}
@@ -423,7 +449,7 @@ const ChatMessageItem = memo(({ msg, isMe, isSameDate, onDelete }: ChatMessageIt
                                     '&:hover': { color: 'error.main' }
                                 }}
                             >
-                                <Iconify icon="solar:trash-bin-trash-bold" width={16} />
+                                <Iconify icon={"solar:trash-bin-trash-bold" as any} width={16} />
                             </IconButton>
                         )}
 
@@ -478,7 +504,7 @@ const ChatMessageItem = memo(({ msg, isMe, isSameDate, onDelete }: ChatMessageIt
                     </Typography>
                 </Stack>
             </Box>
-        </Box>
+        </Box >
     )
 });
 

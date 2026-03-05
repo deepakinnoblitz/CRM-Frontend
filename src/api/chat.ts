@@ -126,4 +126,15 @@ export const chatApi = {
         }
         throw new Error(data.exception || 'File upload failed');
     },
+
+    sendCallSignal: async (toUser: string, signalData: any) => {
+        const response = await frappeRequest(`${BASE_URL}.send_call_signal`, {
+            method: 'POST',
+            body: JSON.stringify({
+                to_user: toUser,
+                signal_data: JSON.stringify(signalData),
+            }),
+        });
+        return response.json();
+    },
 };
