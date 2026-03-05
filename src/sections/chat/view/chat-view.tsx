@@ -3,10 +3,12 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import { alpha } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+import { useTheme, alpha } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
+import { useWebRTC } from 'src/hooks/use-webrtc';
 import { useSocket } from 'src/hooks/use-socket';
 
 import { chatApi } from 'src/api/chat';
@@ -16,6 +18,7 @@ import { Iconify } from 'src/components/iconify';
 
 import ChatWindow from 'src/sections/chat/chat-window';
 import ChatSidebar from 'src/sections/chat/chat-sidebar';
+import ChatCallDialog from 'src/sections/chat/chat-call-dialog';
 import ChatContactDialog from 'src/sections/chat/chat-contact-dialog';
 import ChatPlaceholderIcon from 'src/sections/chat/chat-placeholder-icon';
 
@@ -30,6 +33,20 @@ export default function ChatView() {
     const [loading, setLoading] = useState(true);
 
     const { socket, isConnected, subscribeToRoom } = useSocket(user?.email);
+
+    const {
+        callState,
+        remoteUser,
+        localStream,
+        remoteStream,
+        callType,
+        startCall,
+        acceptCall,
+        rejectCall,
+        hangUp,
+        toggleAudio,
+        toggleVideo,
+    } = useWebRTC(user?.email, socket);
 
     useEffect(() => {
         if (isConnected && channels.length > 0) {
@@ -178,6 +195,9 @@ export default function ChatView() {
     }, [socket, fetchChannels, user?.email]);
 
 
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
     return (
         <Container maxWidth="xl" sx={{ height: '100%', py: 3 }}>
             <Box
@@ -188,19 +208,25 @@ export default function ChatView() {
                     borderRadius: 3,
                     overflow: 'hidden',
                     boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
-                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
+                    border: `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
                 }}
             >
-                <ChatSidebar
-                    user={user}
-                    channels={enrichedChannels}
-                    selectedChannel={enrichedSelectedChannel}
-                    onSelectChannel={setSelectedChannel}
-                    onOpenContacts={() => setOpenContacts(true)}
-                    loading={loading}
-                />
+                {(!isMobile || !enrichedSelectedChannel) && (
+                    <ChatSidebar
+                        user={user}
+                        channels={enrichedChannels}
+                        selectedChannel={enrichedSelectedChannel}
+                        onSelectChannel={setSelectedChannel}
+                        onOpenContacts={() => setOpenContacts(true)}
+                        loading={loading}
+                    />
+                )}
 
-                <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{
+                    flexGrow: 1,
+                    display: isMobile && !enrichedSelectedChannel ? 'none' : 'flex',
+                    flexDirection: 'column'
+                }}>
                     {enrichedSelectedChannel ? (
                         <ChatWindow
                             user={user}
@@ -208,6 +234,15 @@ export default function ChatView() {
                             socket={socket}
                             isConnected={isConnected}
                             onRefresh={fetchChannels}
+                            onBack={() => setSelectedChannel(null)}
+                            onStartCall={(type) => {
+                                const contactEmail = enrichedSelectedChannel.type === 'Direct'
+                                    ? enrichedSelectedChannel.contact
+                                    : null; // For now only Direct calls
+                                if (contactEmail) {
+                                    startCall(contactEmail, enrichedSelectedChannel.room, type);
+                                }
+                            }}
                         />
                     ) : (
                         <Stack
@@ -243,6 +278,21 @@ export default function ChatView() {
                 onClose={() => setOpenContacts(false)}
                 contacts={contacts}
                 onSelectContact={handleStartConversation}
+            />
+
+            <ChatCallDialog
+                open={callState !== 'idle'}
+                onClose={() => { }}
+                callState={callState}
+                callType={callType}
+                remoteUser={remoteUser}
+                localStream={localStream}
+                remoteStream={remoteStream}
+                onAccept={acceptCall}
+                onReject={rejectCall}
+                onHangUp={hangUp}
+                onToggleAudio={toggleAudio}
+                onToggleVideo={toggleVideo}
             />
         </Container>
     );

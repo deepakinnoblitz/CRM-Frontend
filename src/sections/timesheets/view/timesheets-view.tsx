@@ -4,10 +4,12 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import { alpha } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
@@ -17,13 +19,13 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
-import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useRouter } from 'src/routes/hooks';
@@ -36,6 +38,8 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import {
     getTimesheet,
     fetchProjects,
+    createProject,
+    createActivityType,
     createTimesheet,
     updateTimesheet,
     deleteTimesheet,
@@ -58,6 +62,8 @@ import { TimesheetDetailsDialog } from 'src/sections/report/timesheets/timesheet
 import { useAuth } from 'src/auth/auth-context';
 
 import { TimesheetsTableFiltersDrawer } from '../timesheets-table-filters-drawer';
+
+const filter = createFilterOptions<any>();
 
 // ----------------------------------------------------------------------
 
@@ -154,6 +160,16 @@ export function TimesheetsView() {
     const [confirmEntryDelete, setConfirmEntryDelete] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [deletingEntryIndex, setDeletingEntryIndex] = useState<number | null>(null);
+
+    // Create Project state
+    const [openProjectCreate, setOpenProjectCreate] = useState(false);
+    const [newProjectName, setNewProjectName] = useState('');
+    const [creatingProject, setCreatingProject] = useState(false);
+
+    // Create Activity Type state
+    const [openActivityTypeCreate, setOpenActivityTypeCreate] = useState(false);
+    const [newActivityTypeName, setNewActivityTypeName] = useState('');
+    const [creatingActivityType, setCreatingActivityType] = useState(false);
 
     // Load permissions and employees
     useEffect(() => {
@@ -986,17 +1002,73 @@ export function TimesheetsView() {
                             fullWidth
                             options={projects}
                             loading={loadingProjects}
-                            getOptionLabel={(option) => option.project || option.name || ''}
+                            getOptionLabel={(option) => {
+                                if (typeof option === 'string') return option;
+                                if (option.isNew) return option.inputValue || '';
+                                return option.project || option.name || '';
+                            }}
                             value={
                                 projects.find((p) => p.name === entryProject) ||
                                 (entryProject ? { name: entryProject, project: entryProject } : null)
                             }
-                            isOptionEqualToValue={(option, value) => option.name === value.name}
+                            isOptionEqualToValue={(option, value) =>
+                                option?.name === value?.name
+                            }
+                            filterOptions={(currentOptions, params) => {
+                                const filtered = filter(currentOptions, params);
+                                const hasCreate = filtered.some((o: any) => o.isNew);
+                                if (!hasCreate) {
+                                    filtered.push({
+                                        inputValue: params.inputValue || '',
+                                        name: 'Create Project',
+                                        project: 'Create Project',
+                                        isNew: true,
+                                    });
+                                }
+                                return filtered;
+                            }}
+                            renderOption={(props, option) => (
+                                <Box
+                                    component="li"
+                                    {...props}
+                                    sx={{
+                                        typography: 'body2',
+                                        ...(option.isNew && {
+                                            color: 'primary.main',
+                                            fontWeight: 600,
+                                            bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.08),
+                                            borderTop: (theme: any) => `1px solid ${theme.palette.divider}`,
+                                            mt: 0.5,
+                                            py: 3,
+                                            minHeight: '56px',
+                                            '&:hover': {
+                                                bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.16),
+                                            },
+                                        }),
+                                    }}
+                                >
+                                    {option.isNew ? (
+                                        <Stack direction="row" alignItems="center" spacing={1.5}>
+                                            <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                Create Project
+                                            </Typography>
+                                        </Stack>
+                                    ) : (
+                                        option.project || option.name
+                                    )}
+                                </Box>
+                            )}
                             onInputChange={(event, newInputValue) => {
                                 handleSearchProjects(newInputValue);
                             }}
-                            onChange={(event, newValue) => {
-                                setEntryProject(newValue?.name || '');
+                            onChange={(event, newValue: any) => {
+                                if (newValue?.isNew) {
+                                    setNewProjectName(newValue.inputValue || '');
+                                    setOpenProjectCreate(true);
+                                } else {
+                                    setEntryProject(newValue?.name || '');
+                                }
                             }}
                             renderInput={(params) => (
                                 <TextField {...params} label="Project" required placeholder="Select project" />
@@ -1006,19 +1078,75 @@ export function TimesheetsView() {
                             fullWidth
                             options={activityTypes}
                             loading={loadingActivityTypes}
-                            getOptionLabel={(option) => option.activity_type || option.name || ''}
+                            getOptionLabel={(option) => {
+                                if (typeof option === 'string') return option;
+                                if (option.isNew) return option.inputValue || '';
+                                return option.activity_type || option.name || '';
+                            }}
                             value={
                                 activityTypes.find((at) => at.name === entryActivityType) ||
                                 (entryActivityType
                                     ? { name: entryActivityType, activity_type: entryActivityType }
                                     : null)
                             }
-                            isOptionEqualToValue={(option, value) => option.name === value.name}
+                            isOptionEqualToValue={(option, value) =>
+                                option?.name === value?.name
+                            }
+                            filterOptions={(currentOptions, params) => {
+                                const filtered = filter(currentOptions, params);
+                                const hasCreate = filtered.some((o: any) => o.isNew);
+                                if (!hasCreate) {
+                                    filtered.push({
+                                        inputValue: params.inputValue || '',
+                                        name: 'Create Activity Type',
+                                        activity_type: 'Create Activity Type',
+                                        isNew: true,
+                                    });
+                                }
+                                return filtered;
+                            }}
+                            renderOption={(props, option) => (
+                                <Box
+                                    component="li"
+                                    {...props}
+                                    sx={{
+                                        typography: 'body2',
+                                        ...(option.isNew && {
+                                            color: 'primary.main',
+                                            fontWeight: 600,
+                                            bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.08),
+                                            borderTop: (theme: any) => `1px solid ${theme.palette.divider}`,
+                                            mt: 0.5,
+                                            py: 3,
+                                            minHeight: '56px',
+                                            '&:hover': {
+                                                bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.16),
+                                            },
+                                        }),
+                                    }}
+                                >
+                                    {option.isNew ? (
+                                        <Stack direction="row" alignItems="center" spacing={1.5}>
+                                            <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                Create Activity Type
+                                            </Typography>
+                                        </Stack>
+                                    ) : (
+                                        option.activity_type || option.name
+                                    )}
+                                </Box>
+                            )}
                             onInputChange={(event, newInputValue) => {
                                 handleSearchActivityTypes(newInputValue);
                             }}
-                            onChange={(event, newValue) => {
-                                setEntryActivityType(newValue?.name || '');
+                            onChange={(event, newValue: any) => {
+                                if (newValue?.isNew) {
+                                    setNewActivityTypeName(newValue.inputValue || '');
+                                    setOpenActivityTypeCreate(true);
+                                } else {
+                                    setEntryActivityType(newValue?.name || '');
+                                }
                             }}
                             renderInput={(params) => (
                                 <TextField
@@ -1057,6 +1185,139 @@ export function TimesheetsView() {
                         disabled={!entryProject || !entryActivityType || !entryHours}
                     >
                         {editingEntryIndex !== null ? 'Update' : 'Add'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Create Project Dialog */}
+            <Dialog
+                open={openProjectCreate}
+                onClose={() => {
+                    setOpenProjectCreate(false);
+                    setNewProjectName('');
+                }}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle
+                    sx={{
+                        m: 0,
+                        p: 2,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    Create New Project
+                    <IconButton onClick={() => { setOpenProjectCreate(false); setNewProjectName(''); }}>
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent>
+                    <Box sx={{ pt: 1 }}>
+                        <TextField
+                            fullWidth
+                            label="Project Name"
+                            value={newProjectName}
+                            onChange={(e) => setNewProjectName(e.target.value)}
+                            placeholder="Enter project name"
+                            required
+                            autoFocus
+                            InputLabelProps={{ shrink: true }}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={async () => {
+                            if (!newProjectName.trim()) return;
+                            try {
+                                setCreatingProject(true);
+                                const created = await createProject(newProjectName.trim());
+                                // Refresh projects list and select the new one
+                                const res = await fetchProjects({ page: 1, page_size: 5 });
+                                setProjects(res.data || []);
+                                setEntryProject(created?.name || newProjectName.trim());
+                                setOpenProjectCreate(false);
+                                setNewProjectName('');
+                                setSnackbar({ open: true, message: 'Project created successfully', severity: 'success' });
+                            } catch (err: any) {
+                                setSnackbar({ open: true, message: err.message || 'Failed to create project', severity: 'error' });
+                            } finally {
+                                setCreatingProject(false);
+                            }
+                        }}
+                        variant="contained"
+                        disabled={!newProjectName.trim() || creatingProject}
+                        sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
+                        {creatingProject ? 'Creating...' : 'Create'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Create Activity Type Dialog */}
+            <Dialog
+                open={openActivityTypeCreate}
+                onClose={() => {
+                    setOpenActivityTypeCreate(false);
+                    setNewActivityTypeName('');
+                }}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle
+                    sx={{
+                        m: 0,
+                        p: 2,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    Create New Activity Type
+                    <IconButton onClick={() => { setOpenActivityTypeCreate(false); setNewActivityTypeName(''); }}>
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent>
+                    <Box sx={{ pt: 1 }}>
+                        <TextField
+                            fullWidth
+                            label="Activity Type Name"
+                            value={newActivityTypeName}
+                            onChange={(e) => setNewActivityTypeName(e.target.value)}
+                            placeholder="Enter activity type name"
+                            required
+                            autoFocus
+                            InputLabelProps={{ shrink: true }}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={async () => {
+                            if (!newActivityTypeName.trim()) return;
+                            try {
+                                setCreatingActivityType(true);
+                                const created = await createActivityType(newActivityTypeName.trim());
+                                const res = await fetchActivityTypes({ page: 1, page_size: 5 });
+                                setActivityTypes(res.data || []);
+                                setEntryActivityType(created?.name || newActivityTypeName.trim());
+                                setOpenActivityTypeCreate(false);
+                                setNewActivityTypeName('');
+                                setSnackbar({ open: true, message: 'Activity type created successfully', severity: 'success' });
+                            } catch (err: any) {
+                                setSnackbar({ open: true, message: err.message || 'Failed to create activity type', severity: 'error' });
+                            } finally {
+                                setCreatingActivityType(false);
+                            }
+                        }}
+                        variant="contained"
+                        disabled={!newActivityTypeName.trim() || creatingActivityType}
+                        sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
+                        {creatingActivityType ? 'Creating...' : 'Create'}
                     </Button>
                 </DialogActions>
             </Dialog>
