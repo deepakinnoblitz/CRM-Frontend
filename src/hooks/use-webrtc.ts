@@ -28,6 +28,8 @@ export function useWebRTC(userEmail: string, socket: Socket | null) {
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     const [callType, setCallType] = useState<'audio' | 'video'>('audio');
+    const [isAudioMuted, setIsAudioMuted] = useState(false);
+    const [isVideoDisabled, setIsVideoDisabled] = useState(false);
 
     const pcRef = useRef<RTCPeerConnection | null>(null);
     const pendingCandidates = useRef<RTCIceCandidate[]>([]);
@@ -47,6 +49,8 @@ export function useWebRTC(userEmail: string, socket: Socket | null) {
         setRemoteUser(null);
         pendingCandidates.current = [];
         currentRoom.current = null;
+        setIsAudioMuted(false);
+        setIsVideoDisabled(false);
     }, [localStream]);
 
     const sendSignal = useCallback(async (data: Partial<SignalData>) => {
@@ -79,9 +83,14 @@ export function useWebRTC(userEmail: string, socket: Socket | null) {
         };
 
         pc.onconnectionstatechange = () => {
+            console.log('WebRTC Connection State:', pc.connectionState);
             if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
                 cleanup();
             }
+        };
+
+        pc.oniceconnectionstatechange = () => {
+            console.log('WebRTC ICE Connection State:', pc.iceConnectionState);
         };
 
         pcRef.current = pc;
@@ -162,6 +171,13 @@ export function useWebRTC(userEmail: string, socket: Socket | null) {
             pendingCandidates.current = [];
         } catch (error) {
             console.error('Error accepting call:', error);
+            if (remoteUser && currentRoom.current) {
+                sendSignal({
+                    type: 'reject',
+                    to: remoteUser,
+                    room: currentRoom.current,
+                });
+            }
             cleanup();
         }
     }, [remoteUser, callType, sendSignal, cleanup]);
@@ -194,41 +210,58 @@ export function useWebRTC(userEmail: string, socket: Socket | null) {
                 // Only process signals intended for us
                 if (data.to !== userEmail) return;
 
-                switch (data.type) {
+                // Auto-parse string data if needed
+                let signal = data;
+                if (typeof data === 'string') {
+                    try {
+                        signal = JSON.parse(data);
+                    } catch (e) {
+                        console.error('Failed to parse signal data:', e);
+                        return;
+                    }
+                }
+
+                switch (signal.type) {
                     case 'offer': {
                         if (callState !== 'idle') {
                             // Busy
                             socket.emit('call_signal', {
                                 type: 'reject',
                                 from: userEmail,
-                                to: data.from,
-                                room: data.room,
+                                to: signal.from,
+                                room: signal.room,
                                 reason: 'busy',
                             });
                             return;
                         }
-                        setRemoteUser(data.from);
-                        setCallType(data.callType);
+                        setRemoteUser(signal.from);
+                        setCallType(signal.callType);
                         setCallState('incoming');
-                        currentRoom.current = data.room;
+                        currentRoom.current = signal.room;
 
-                        const pc = createPeerConnection(data.from, data.room, data.callType);
-                        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp!));
+                        const pc = createPeerConnection(signal.from, signal.room, signal.callType);
+                        await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp!));
                         break;
                     }
 
                     case 'answer':
                         if (pcRef.current) {
-                            await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.sdp!));
+                            await pcRef.current.setRemoteDescription(new RTCSessionDescription(signal.sdp!));
                             setCallState('connected');
+
+                            // Process any pending candidates arriving before answer
+                            pendingCandidates.current.forEach(candidate => {
+                                pcRef.current?.addIceCandidate(candidate).catch(e => console.error('Error adding pending candidate', e));
+                            });
+                            pendingCandidates.current = [];
                         }
                         break;
 
                     case 'ice-candidate':
                         if (pcRef.current && pcRef.current.remoteDescription) {
-                            await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate!));
+                            await pcRef.current.addIceCandidate(new RTCIceCandidate(signal.candidate!));
                         } else {
-                            pendingCandidates.current.push(new RTCIceCandidate(data.candidate!));
+                            pendingCandidates.current.push(new RTCIceCandidate(signal.candidate!));
                         }
                         break;
 
@@ -264,16 +297,24 @@ export function useWebRTC(userEmail: string, socket: Socket | null) {
         acceptCall,
         rejectCall,
         hangUp,
+        isAudioMuted,
+        isVideoDisabled,
         toggleAudio: () => {
             if (localStream) {
                 const audioTrack = localStream.getAudioTracks()[0];
-                if (audioTrack) audioTrack.enabled = !audioTrack.enabled;
+                if (audioTrack) {
+                    audioTrack.enabled = !audioTrack.enabled;
+                    setIsAudioMuted(!audioTrack.enabled);
+                }
             }
         },
         toggleVideo: () => {
             if (localStream) {
                 const videoTrack = localStream.getVideoTracks()[0];
-                if (videoTrack) videoTrack.enabled = !videoTrack.enabled;
+                if (videoTrack) {
+                    videoTrack.enabled = !videoTrack.enabled;
+                    setIsVideoDisabled(!videoTrack.enabled);
+                }
             }
         },
     };

@@ -11,6 +11,8 @@ import { alpha, useTheme } from '@mui/material/styles';
 
 import { Iconify } from 'src/components/iconify';
 
+import AudioVisualizer from './audio-visualizer';
+
 // ----------------------------------------------------------------------
 
 type Props = {
@@ -26,6 +28,8 @@ type Props = {
     onHangUp: () => void;
     onToggleAudio: () => void;
     onToggleVideo: () => void;
+    isAudioMuted: boolean;
+    isVideoDisabled: boolean;
 };
 
 export default function ChatCallDialog({
@@ -41,6 +45,8 @@ export default function ChatCallDialog({
     onHangUp,
     onToggleAudio,
     onToggleVideo,
+    isAudioMuted,
+    isVideoDisabled,
 }: Props) {
     const theme = useTheme();
     const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -49,14 +55,16 @@ export default function ChatCallDialog({
     useEffect(() => {
         if (localVideoRef.current && localStream) {
             localVideoRef.current.srcObject = localStream;
+            localVideoRef.current.play().catch(e => console.error('Error playing local video:', e));
         }
-    }, [localStream]);
+    }, [localStream, callState, callType]);
 
     useEffect(() => {
         if (remoteVideoRef.current && remoteStream) {
             remoteVideoRef.current.srcObject = remoteStream;
+            remoteVideoRef.current.play().catch(e => console.error('Error playing remote video:', e));
         }
-    }, [remoteStream]);
+    }, [remoteStream, callState, callType]);
 
     const renderContent = () => {
         if (callState === 'incoming') {
@@ -131,17 +139,21 @@ export default function ChatCallDialog({
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                 ) : (
-                    <Stack alignItems="center" justifyContent="center" sx={{ height: 1 }}>
-                        <Avatar sx={{ width: 120, height: 120, fontSize: 48 }}>
-                            {remoteUser?.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Typography variant="h5" sx={{ mt: 2, color: 'common.white' }}>
-                            {remoteUser}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'grey.500' }}>
-                            On Air
-                        </Typography>
-                    </Stack>
+                    <>
+                        <audio ref={remoteVideoRef as any} autoPlay style={{ display: 'none' }} />
+                        <Stack alignItems="center" justifyContent="center" sx={{ height: 1 }}>
+                            <Avatar sx={{ width: 120, height: 120, fontSize: 48 }}>
+                                {remoteUser?.charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Typography variant="h5" sx={{ mt: 2, color: 'common.white' }}>
+                                {remoteUser}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'grey.500' }}>
+                                On Air
+                            </Typography>
+                            <AudioVisualizer stream={remoteStream} active={callState === 'connected'} />
+                        </Stack>
+                    </>
                 )}
 
                 {/* Local Video Thumbnail */}
@@ -186,24 +198,24 @@ export default function ChatCallDialog({
                     <IconButton
                         onClick={onToggleAudio}
                         sx={{
-                            bgcolor: alpha(theme.palette.common.white, 0.15),
+                            bgcolor: isAudioMuted ? 'error.main' : alpha(theme.palette.common.white, 0.15),
                             color: 'common.white',
-                            '&:hover': { bgcolor: alpha(theme.palette.common.white, 0.25) },
+                            '&:hover': { bgcolor: isAudioMuted ? 'error.dark' : alpha(theme.palette.common.white, 0.25) },
                         }}
                     >
-                        <Iconify icon="solar:microphone-bold" />
+                        <Iconify icon={(isAudioMuted ? "solar:microphone-slash-bold" : "solar:microphone-bold") as any} />
                     </IconButton>
 
                     {callType === 'video' && (
                         <IconButton
                             onClick={onToggleVideo}
                             sx={{
-                                bgcolor: alpha(theme.palette.common.white, 0.15),
+                                bgcolor: isVideoDisabled ? 'error.main' : alpha(theme.palette.common.white, 0.15),
                                 color: 'common.white',
-                                '&:hover': { bgcolor: alpha(theme.palette.common.white, 0.25) },
+                                '&:hover': { bgcolor: isVideoDisabled ? 'error.dark' : alpha(theme.palette.common.white, 0.25) },
                             }}
                         >
-                            <Iconify icon={"solar:videocamera-record-bold-duotone" as any} />
+                            <Iconify icon={(isVideoDisabled ? "solar:videocamera-record-bold" : "solar:videocamera-record-bold-duotone") as any} />
                         </IconButton>
                     )}
 
