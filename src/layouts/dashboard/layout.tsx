@@ -18,6 +18,7 @@ import { CONFIG } from 'src/config-global';
 
 import { Label } from 'src/components/label';
 
+import { CallProvider } from 'src/sections/chat/call-context';
 import ChatNotifications from 'src/sections/chat/chat-notifications';
 
 import { useAuth } from 'src/auth/auth-context';
@@ -305,43 +306,45 @@ export function DashboardLayout({
   const renderMain = () => <MainSection {...slotProps?.main}>{children}</MainSection>;
 
   return (
-    <LayoutSection
-      /** **************************************
-       * @Header
-       *************************************** */
-      headerSection={renderHeader()}
-      /** **************************************
-       * @Sidebar
-       *************************************** */
-      sidebarSection={
-        <NavDesktop data={navData} layoutQuery={layoutQuery} />
-      }
+    <CallProvider>
+      <LayoutSection
+        /** **************************************
+         * @Header
+         *************************************** */
+        headerSection={renderHeader()}
+        /** **************************************
+         * @Sidebar
+         *************************************** */
+        sidebarSection={
+          <NavDesktop data={navData} layoutQuery={layoutQuery} />
+        }
 
-      /** **************************************
-       * @Footer
-       *************************************** */
-      footerSection={renderFooter()}
-      /** **************************************
-       * @Styles
-       *************************************** */
-      cssVars={{ ...dashboardLayoutVars(theme), ...cssVars }}
-      sx={[
-        {
-          bgcolor: 'common.white',
-          [`& .${layoutClasses.sidebarContainer}`]: {
-            [theme.breakpoints.up(layoutQuery)]: {
-              pl: 'var(--layout-nav-vertical-width)',
-              transition: theme.transitions.create(['padding-left'], {
-                easing: 'var(--layout-transition-easing)',
-                duration: 'var(--layout-transition-duration)',
-              }),
+        /** **************************************
+         * @Footer
+         *************************************** */
+        footerSection={renderFooter()}
+        /** **************************************
+         * @Styles
+         *************************************** */
+        cssVars={{ ...dashboardLayoutVars(theme), ...cssVars }}
+        sx={[
+          {
+            bgcolor: 'common.white',
+            [`& .${layoutClasses.sidebarContainer}`]: {
+              [theme.breakpoints.up(layoutQuery)]: {
+                pl: 'var(--layout-nav-vertical-width)',
+                transition: theme.transitions.create(['padding-left'], {
+                  easing: 'var(--layout-transition-easing)',
+                  duration: 'var(--layout-transition-duration)',
+                }),
+              },
             },
           },
-        },
-        ...(Array.isArray(sx) ? sx : [sx]),
-      ]}
-    >
-      {renderMain()}
-    </LayoutSection>
+          ...(Array.isArray(sx) ? sx : [sx]),
+        ]}
+      >
+        {renderMain()}
+      </LayoutSection>
+    </CallProvider>
   );
 }
