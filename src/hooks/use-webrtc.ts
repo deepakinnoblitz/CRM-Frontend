@@ -115,10 +115,19 @@ export function useWebRTC(userEmail: string | undefined, socket: Socket | null) 
                 throw new Error('Media devices are not available in this context (possibly insecure context).');
             }
 
-            const stream = await navigator.mediaDevices.getUserMedia({
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            const constraints: MediaStreamConstraints = {
                 audio: true,
-                video: type === 'video',
-            });
+                video: type === 'video' ? {
+                    width: { ideal: isMobile ? 720 : 1280 },
+                    height: { ideal: isMobile ? 1280 : 720 },
+                    facingMode: 'user',
+                    aspectRatio: isMobile ? 9 / 16 : 16 / 9,
+                } : false,
+            };
+
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
             setLocalStream(stream);
 
             const pc = createPeerConnection(targetUser, room, type);
@@ -148,10 +157,19 @@ export function useWebRTC(userEmail: string | undefined, socket: Socket | null) 
                 throw new Error('Media devices are not available in this context.');
             }
 
-            const stream = await navigator.mediaDevices.getUserMedia({
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            const constraints: MediaStreamConstraints = {
                 audio: true,
-                video: callType === 'video',
-            });
+                video: callType === 'video' ? {
+                    width: { ideal: isMobile ? 720 : 1280 },
+                    height: { ideal: isMobile ? 1280 : 720 },
+                    facingMode: 'user',
+                    aspectRatio: isMobile ? 9 / 16 : 16 / 9,
+                } : false,
+            };
+
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
             setLocalStream(stream);
 
             const pc = pcRef.current;
@@ -210,6 +228,20 @@ export function useWebRTC(userEmail: string | undefined, socket: Socket | null) 
         }
         cleanup();
     }, [remoteUser, sendSignal, cleanup]);
+
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (callState !== 'idle' && callState !== 'ended') {
+                e.preventDefault();
+                e.returnValue = 'You have an active call. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+            return undefined;
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [callState]);
 
     useEffect(() => {
         if (!ringtoneRef.current) {

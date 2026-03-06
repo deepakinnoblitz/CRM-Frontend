@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -8,6 +8,7 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import { alpha, useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -49,6 +50,12 @@ export default function ChatCallDialog({
     isVideoDisabled,
 }: Props) {
     const theme = useTheme();
+
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+    const [isFullScreen, setIsFullScreen] = useState(false);
+    const [isMinimized, setIsMinimized] = useState(false);
+
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -129,7 +136,53 @@ export default function ChatCallDialog({
         }
 
         return (
-            <Box sx={{ position: 'relative', width: 1, height: 480, bgcolor: 'common.black' }}>
+            <Box
+                sx={{
+                    position: 'relative',
+                    width: 1,
+                    height: isFullScreen ? '100vh' : (isMinimized ? 160 : 480),
+                    bgcolor: 'common.black',
+                    transition: theme.transitions.create(['height']),
+                }}
+            >
+                {/* Header Actions */}
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                        position: 'absolute',
+                        top: 12,
+                        left: 12,
+                        zIndex: 10,
+                    }}
+                >
+                    <IconButton
+                        size="small"
+                        onClick={() => setIsMinimized(!isMinimized)}
+                        sx={{
+                            bgcolor: alpha(theme.palette.common.white, 0.15),
+                            color: 'common.white',
+                            '&:hover': { bgcolor: alpha(theme.palette.common.white, 0.25) },
+                        }}
+                    >
+                        <Iconify icon={(isMinimized ? "solar:maximize-bold" : "solar:minimize-bold") as any} />
+                    </IconButton>
+
+                    {!isMinimized && (
+                        <IconButton
+                            size="small"
+                            onClick={() => setIsFullScreen(!isFullScreen)}
+                            sx={{
+                                bgcolor: alpha(theme.palette.common.white, 0.15),
+                                color: 'common.white',
+                                '&:hover': { bgcolor: alpha(theme.palette.common.white, 0.25) },
+                            }}
+                        >
+                            <Iconify icon={(isFullScreen ? "solar:minimize-square-3-bold" : "solar:maximize-square-3-bold") as any} />
+                        </IconButton>
+                    )}
+                </Stack>
+
                 {/* Remote Video */}
                 {callType === 'video' ? (
                     <video
@@ -161,15 +214,16 @@ export default function ChatCallDialog({
                     <Box
                         sx={{
                             position: 'absolute',
-                            top: 20,
-                            right: 20,
-                            width: 120,
-                            height: 160,
-                            borderRadius: 1.5,
+                            top: isMinimized ? 8 : 20,
+                            right: isMinimized ? 8 : 20,
+                            width: isMinimized ? 60 : (isMobile ? 80 : 160),
+                            height: isMinimized ? 45 : (isMobile ? 60 : 120),
+                            borderRadius: 1,
                             overflow: 'hidden',
                             boxShadow: (t) => t.customShadows?.z24,
                             bgcolor: 'grey.800',
                             border: (t) => `solid 2px ${t.palette.common.white}`,
+                            transition: theme.transitions.create(['width', 'height']),
                         }}
                     >
                         <video
@@ -190,23 +244,28 @@ export default function ChatCallDialog({
                     spacing={2}
                     sx={{
                         position: 'absolute',
-                        bottom: 40,
+                        bottom: isMinimized ? 12 : 40,
                         left: 0,
                         right: 0,
+                        zIndex: 10,
+                        transform: isMinimized ? 'scale(0.8)' : 'none',
+                        transition: theme.transitions.create(['bottom', 'transform']),
                     }}
                 >
-                    <IconButton
-                        onClick={onToggleAudio}
-                        sx={{
-                            bgcolor: isAudioMuted ? 'error.main' : alpha(theme.palette.common.white, 0.15),
-                            color: 'common.white',
-                            '&:hover': { bgcolor: isAudioMuted ? 'error.dark' : alpha(theme.palette.common.white, 0.25) },
-                        }}
-                    >
-                        <Iconify icon={(isAudioMuted ? "solar:microphone-slash-bold" : "solar:microphone-bold") as any} />
-                    </IconButton>
+                    {!isMinimized && (
+                        <IconButton
+                            onClick={onToggleAudio}
+                            sx={{
+                                bgcolor: isAudioMuted ? 'error.main' : alpha(theme.palette.common.white, 0.15),
+                                color: 'common.white',
+                                '&:hover': { bgcolor: isAudioMuted ? 'error.dark' : alpha(theme.palette.common.white, 0.25) },
+                            }}
+                        >
+                            <Iconify icon={(isAudioMuted ? "solar:microphone-slash-bold" : "solar:microphone-bold") as any} />
+                        </IconButton>
+                    )}
 
-                    {callType === 'video' && (
+                    {callType === 'video' && !isMinimized && (
                         <IconButton
                             onClick={onToggleVideo}
                             sx={{
@@ -225,11 +284,11 @@ export default function ChatCallDialog({
                             bgcolor: 'error.main',
                             color: 'common.white',
                             '&:hover': { bgcolor: 'error.dark' },
-                            width: 56,
-                            height: 56,
+                            width: isMinimized ? 40 : 56,
+                            height: isMinimized ? 40 : 56,
                         }}
                     >
-                        <Iconify icon={"solar:phone-bold" as any} width={28} />
+                        <Iconify icon={"solar:phone-bold" as any} width={isMinimized ? 20 : 28} />
                     </IconButton>
                 </Stack>
             </Box>
@@ -238,17 +297,35 @@ export default function ChatCallDialog({
 
     return (
         <Dialog
-            fullWidth
-            maxWidth={callState === 'connected' ? 'md' : 'xs'}
+            fullScreen={isFullScreen}
+            fullWidth={!isMinimized}
+            maxWidth={isMinimized ? false : (callState === 'connected' ? 'md' : 'xs')}
             open={open}
             onClose={(event, reason) => {
                 if (reason !== 'backdropClick') onClose();
             }}
+            hideBackdrop={isMinimized}
+            TransitionProps={{
+                onExited: () => {
+                    setIsFullScreen(false);
+                    setIsMinimized(false);
+                }
+            }}
             PaperProps={{
                 sx: {
-                    borderRadius: 2,
+                    borderRadius: isFullScreen ? 0 : 2,
                     overflow: 'hidden',
                     bgcolor: callState === 'connected' ? 'common.black' : 'background.paper',
+                    transition: theme.transitions.create(['all']),
+                    ...(isMinimized && {
+                        position: 'fixed',
+                        bottom: 20,
+                        right: 20,
+                        margin: 0,
+                        width: 240,
+                        height: 160,
+                        zIndex: theme.zIndex.modal + 1,
+                    })
                 },
             }}
         >
