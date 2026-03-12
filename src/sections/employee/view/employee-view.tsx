@@ -414,6 +414,7 @@ export function EmployeeView() {
             { name: 'employee_name', label: 'Employee Name' },
             { name: 'email', label: 'Email' },
             { name: 'date_of_joining', label: 'Joining Date' },
+            { name: 'user', label: 'User Login (Email)' },
             { name: 'status', label: 'Status' }
         ];
 
@@ -972,7 +973,7 @@ export function EmployeeView() {
                                 {renderField('department', 'Department', 'link', fieldOptions['department'] || [])}
                                 {renderField('designation', 'Designation', 'text')}
                                 {renderField('date_of_joining', 'Joining Date', 'date', [], {}, true)}
-                                {renderField('user', 'User Login (Email)', 'autocomplete', fieldOptions['user'] || [])}
+                                {renderField('user', 'User Login (Email)', 'autocomplete', fieldOptions['user'] || [], {}, true)}
                                 {renderField('status', 'Status', 'select', ['Active', 'Inactive'], {}, true)}
                                 {renderField('skip_probation', 'Skip Probation', 'checkbox')}
                             </Box>
