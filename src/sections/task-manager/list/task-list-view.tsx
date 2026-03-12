@@ -173,7 +173,7 @@ export default function TaskListView({
         return true;
     });
 
-    const isNotFound = !dataFiltered.length && !!filterName;
+    const isNotFound = !dataFiltered.length && (!!filterName || canReset);
     const isEmpty = !tasks.length && !loading;
 
     if (loading) {
