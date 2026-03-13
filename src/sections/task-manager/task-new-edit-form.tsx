@@ -178,6 +178,7 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
     const validate = () => {
         const newErrors: Record<string, string> = {};
         if (!taskData.title?.trim()) newErrors.title = 'Title is required';
+        if (!taskData.project) newErrors.project = 'Project is required';
         if (!taskData.assignees || taskData.assignees.length === 0) newErrors.assignees = 'At least one assignee is required';
         if (!taskData.priority) newErrors.priority = 'Priority is required';
         if (!taskData.due_date) {
@@ -324,12 +325,16 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
                                             setOpenProjectCreate(true);
                                         } else {
                                             setTaskData({ ...taskData, project: newValue?.name || '' });
+                                            if (errors.project) setErrors(prev => ({ ...prev, project: '' }));
                                         }
                                     }}
                                     renderInput={(params) => (
                                         <TextField
                                             {...params}
                                             label="Project"
+                                            required
+                                            error={!!errors.project}
+                                            helperText={errors.project}
                                             placeholder="Select Project"
                                             InputLabelProps={{ shrink: true }}
                                             sx={{
