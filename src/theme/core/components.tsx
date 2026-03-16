@@ -62,7 +62,7 @@ const MuiCardHeader: Components<Theme>['MuiCardHeader'] = {
 const MuiOutlinedInput: Components<Theme>['MuiOutlinedInput'] = {
   styleOverrides: {
     notchedOutline: ({ theme }) => ({
-      borderColor: varAlpha(theme.vars.palette.grey['500Channel'], 0.2),
+      borderColor: varAlpha(theme.vars.palette.grey['500Channel'], 0.6),
     }),
   },
 };

@@ -26,6 +26,7 @@ export const EventsPage = lazy(() => import('src/pages/events'));
 export const CallsPage = lazy(() => import('src/pages/calls'));
 export const MeetingsPage = lazy(() => import('src/pages/meetings'));
 export const ToDoPage = lazy(() => import('src/pages/todo'));
+export const TaskManagerPage = lazy(() => import('src/pages/task-manager'));
 export const SignInPage = lazy(() => import('src/pages/sign-in'));
 export const InvoiceListPage = lazy(() => import('src/pages/invoice/list'));
 export const InvoiceCreatePage = lazy(() => import('src/pages/invoice/new'));
@@ -79,6 +80,7 @@ export const ProfilePage = lazy(() => import('src/pages/profile'));
 export const MyProfilePage = lazy(() => import('src/pages/my-profile'));
 export const ChatPage = lazy(() => import('src/pages/chat'));
 export const AccessDeniedPage = lazy(() => import('src/pages/access-denied'));
+export const PersonalityEvaluationPage = lazy(() => import('src/pages/personality-evaluation'));
 
 export const PurchaseListPage = lazy(() => import('src/pages/purchase/list'));
 export const PurchaseNewPage = lazy(() => import('src/pages/purchase/new'));
@@ -143,6 +145,7 @@ export const routesSection: RouteObject[] = [
       { path: 'calls', element: <CallsPage /> },
       { path: 'meetings', element: <MeetingsPage /> },
       { path: 'todo', element: <ToDoPage /> },
+      { path: 'task-manager', element: <TaskManagerPage /> },
       { path: 'products', element: <ProductsPage /> },
       {
         path: 'invoices',
@@ -243,6 +246,7 @@ export const routesSection: RouteObject[] = [
           { path: 'attendance', element: <AttendanceReportPage /> },
         ],
       },
+      { path: 'personality-evaluation', element: <PersonalityEvaluationPage /> },
     ],
   },
   {
