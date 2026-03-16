@@ -175,7 +175,7 @@ export const employeeNavData = [
     icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
   },
   {
-    title: 'Task Manager',
+    title: 'Tasks',
     path: '/task-manager',
     icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
   },
