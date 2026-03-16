@@ -32,3 +32,12 @@ export function getString(val: any): string {
     }
     return val === null || val === undefined ? '' : String(val);
 }
+/**
+ * Returns the initials of a name (e.g., "Deepak Ahirwar" -> "DA").
+ */
+export function getInitials(name: string): string {
+    if (!name) return '';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}

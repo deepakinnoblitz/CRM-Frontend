@@ -191,6 +191,105 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
                             </Box>
                         </Box>
 
+                        
+                        <Divider sx={{ borderStyle: 'dashed' }} />
+
+                        {/* Personality Metrics */}
+                        <Box sx={{
+                            p: 3,
+                            mb: 1,
+                            borderRadius: 2,
+                            bgcolor: (theme) => theme.palette.mode === 'light' ? 'info.lighter' : 'grey.900',
+                            border: (theme) => `1px solid ${theme.palette.info.light}`,
+                            boxShadow: (theme) => theme.customShadows?.z4,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 2.5
+                        }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box sx={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 1.5,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: 'info.main',
+                                    color: 'white'
+                                }}>
+                                    <Iconify icon={"solar:star-fall-bold" as any} width={18} />
+                                </Box>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                                    Personality Evaluation
+                                </Typography>
+                            </Box>
+                            <Box
+                                sx={{
+                                    display: 'grid',
+                                    gap: 4, // Increased gap for the progress bar
+                                    gridTemplateColumns: { xs: '1fr', sm: '1.5fr 1fr' },
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <Box sx={{ width: '85%' }}> {/* Move width here to align everything properly */}
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                        <Typography variant="caption" sx={{ color: 'info.darker', fontWeight: 700, textTransform: 'uppercase' }}>
+                                            Personality Score
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                                            {employee.personality_score ?? 0}/100
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{
+                                        width: '100%', // Now 100% of the 85% parent
+                                        height: 6, // Thinner bar
+                                        bgcolor: (theme) => theme.palette.mode === 'light' ? 'rgba(145, 158, 171, 0.16)' : 'rgba(145, 158, 171, 0.16)', // Neutral background
+                                        borderRadius: 4,
+                                        overflow: 'hidden'
+                                    }}>
+                                        <Box sx={{
+                                            width: `${Math.min(100, Math.max(0, employee.personality_score || 0))}%`,
+                                            height: '100%',
+                                            bgcolor: (theme) => {
+                                                const score = employee.personality_score || 0;
+                                                if (score >= 80) return 'success.main'; // Green
+                                                if (score >= 50) return 'warning.main'; // Orange
+                                                return 'error.main'; // Red
+                                            },
+                                            borderRadius: 4,
+                                            transition: 'width 0.5s ease-in-out'
+                                        }} />
+                                    </Box>
+                                </Box>
+                                <Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 2 }}>
+                                        <Typography variant="caption" sx={{ color: 'info.darker', fontWeight: 700, textTransform: 'uppercase' }}>
+                                            Personality Status
+                                        </Typography>
+                                        <Label 
+                                            variant="filled" 
+                                            sx={{ px: 1, py: 1.5, fontSize: '0.75rem', fontWeight: 800 }}
+                                            color={(() => {
+                                                const score = employee.personality_score || 0;
+                                                if (score >= 80) return 'success';
+                                                if (score >= 50) return 'warning';
+                                                return 'error';
+                                            })()}
+                                        >
+                                            {employee.personality_status || (() => {
+                                                const score = employee.personality_score ?? 100;
+                                                if (score >= 90) return "Excellent";
+                                                if (score >= 75) return "Good";
+                                                if (score >= 60) return "Average";
+                                                return "Needs Improvement";
+                                            })()}
+                                        </Label>
+                                    </Box>
+                                </Box>
+                            </Box>
+                        </Box>
+
+
                         <Divider sx={{ borderStyle: 'dashed' }} />
 
                         {/* Salary & Finance - Enhanced */}
@@ -310,10 +409,10 @@ function SectionHeader({ title, icon, noMargin = false }: { title: string; icon:
     );
 }
 
-function DetailItem({ label, value, icon, color = 'text.primary' }: { label: string; value?: string | null; icon: string; color?: string }) {
+function DetailItem({ label, value, icon, color = 'text.primary', labelColor = 'text.disabled' }: { label: string; value?: string | null; icon: string; color?: string; labelColor?: string }) {
     return (
         <Box>
-            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
+            <Typography variant="caption" sx={{ color: labelColor, fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
                 {label}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

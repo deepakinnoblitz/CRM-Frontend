@@ -105,6 +105,16 @@ export const hrNavData = [
     ],
   },
   {
+    title: 'Task Manager',
+    path: '/task-manager',
+    icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
+  },
+  {
+    title: 'Personality Evaluation',
+    path: '/personality-evaluation',
+    icon: <Iconify icon={"solar:user-speak-bold-duotone" as any} />,
+  },
+  {
     title: 'Recruitment',
     path: '/job-openings',
     icon: <Iconify icon={"solar:buildings-bold-duotone" as any} />,
@@ -163,6 +173,11 @@ export const employeeNavData = [
     title: 'My WFH Attendance',
     path: '/wfh-attendance',
     icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+  },
+  {
+    title: 'Task Manager',
+    path: '/task-manager',
+    icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
   },
   {
     title: 'My Salary Slip',
