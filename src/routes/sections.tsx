@@ -80,6 +80,7 @@ export const ProfilePage = lazy(() => import('src/pages/profile'));
 export const MyProfilePage = lazy(() => import('src/pages/my-profile'));
 export const ChatPage = lazy(() => import('src/pages/chat'));
 export const AccessDeniedPage = lazy(() => import('src/pages/access-denied'));
+export const PersonalityEvaluationPage = lazy(() => import('src/pages/personality-evaluation'));
 
 export const PurchaseListPage = lazy(() => import('src/pages/purchase/list'));
 export const PurchaseNewPage = lazy(() => import('src/pages/purchase/new'));
@@ -245,6 +246,7 @@ export const routesSection: RouteObject[] = [
           { path: 'attendance', element: <AttendanceReportPage /> },
         ],
       },
+      { path: 'personality-evaluation', element: <PersonalityEvaluationPage /> },
     ],
   },
   {

@@ -75,3 +75,9 @@ export async function deleteEmployee(name: string) {
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete employee"));
     return true;
 }
+
+export async function getEmployee(name: string) {
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Employee&name=${encodeURIComponent(name)}`);
+    if (!res.ok) throw new Error("Failed to fetch employee details");
+    return (await res.json()).message;
+}

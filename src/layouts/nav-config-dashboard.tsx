@@ -110,6 +110,11 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
   },
   {
+    title: 'Personality Evaluation',
+    path: '/personality-evaluation',
+    icon: <Iconify icon={"solar:user-speak-bold-duotone" as any} />,
+  },
+  {
     title: 'Recruitment',
     path: '/job-openings',
     icon: <Iconify icon={"solar:buildings-bold-duotone" as any} />,
