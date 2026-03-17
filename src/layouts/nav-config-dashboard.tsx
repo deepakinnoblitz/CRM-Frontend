@@ -458,7 +458,13 @@ export function getNavData(roles: string[] = []) {
   const hasRole = (pattern: string) => roles.includes(pattern);
 
   if (hasRole('HR')) {
-    addItems(hrNavData);
+    let filteredHrNav = hrNavData;
+    if (!hasRole('Task Manager')) {
+      filteredHrNav = hrNavData.filter(
+        (item) => item.title !== 'Task Manager' && item.title !== 'Personality Evaluation'
+      );
+    }
+    addItems(filteredHrNav);
     hasCustomRole = true;
   }
 
