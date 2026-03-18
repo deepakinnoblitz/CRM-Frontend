@@ -69,9 +69,10 @@ type Props = CardProps & {
     title: string;
     data: MissingTimesheet[];
     holidays: Holiday[];
+    leave_dates?: string[];
 };
 
-export function MissingTimesheets({ title, data, holidays, sx, ...other }: Props) {
+export function MissingTimesheets({ title, data, holidays, leave_dates = [], sx, ...other }: Props) {
     const theme = useTheme();
     const router = useRouter();
 
@@ -94,6 +95,7 @@ export function MissingTimesheets({ title, data, holidays, sx, ...other }: Props
     const monthDays = useMemo(() => {
         const days = [];
         const holidayDates = new Set(holidays.map((h) => h.date));
+        const leaveDatesSet = new Set(leave_dates);
 
         for (let i = 1; i <= daysInMonth; i++) {
             const date = new Date(currentYear, currentMonth, i);
@@ -106,15 +108,16 @@ export function MissingTimesheets({ title, data, holidays, sx, ...other }: Props
             // Identifying non-working days: Sundays (0) or explicitly listed holidays
             const isWeekend = date.getDay() === 0;
             const isHoliday = holidayDates.has(dateStr);
+            const isLeave = leaveDatesSet.has(dateStr);
             const isNonWorking = isWeekend || isHoliday;
 
-            days.push({ day: i, date: dateStr, isMissing, isToday, isPast, isNonWorking });
+            days.push({ day: i, date: dateStr, isMissing, isToday, isPast, isNonWorking, isLeave });
         }
         return days;
-    }, [currentYear, currentMonth, daysInMonth, data, holidays]);
+    }, [currentYear, currentMonth, daysInMonth, data, holidays, leave_dates]);
 
     const pastWorkingDays = useMemo(
-        () => monthDays.filter((day) => (day.isPast || day.isToday) && !day.isNonWorking).length,
+        () => monthDays.filter((day) => (day.isPast || day.isToday) && !day.isNonWorking && !day.isLeave).length,
         [monthDays]
     );
 
@@ -124,6 +127,7 @@ export function MissingTimesheets({ title, data, holidays, sx, ...other }: Props
 
     const getHeatmapColor = (day: any) => {
         if (day.isMissing) return theme.palette.error.light;
+        if (day.isLeave) return '#00B8D9';
         if (day.isToday) return alpha(theme.palette.primary.main, 0.4);
         if (!day.isPast) return alpha(theme.palette.grey[500], 0.1);
         if (day.isNonWorking) return alpha(theme.palette.grey[500], 0.2);
@@ -265,6 +269,7 @@ export function MissingTimesheets({ title, data, holidays, sx, ...other }: Props
                     {[
                         { color: theme.palette.success.light, label: 'Logged' },
                         { color: theme.palette.error.light, label: 'Missing' },
+                        { color: '#00B8D9', label: 'On Leave' },
                         { color: alpha(theme.palette.grey[500], 0.1), label: 'Pending' },
                         { color: alpha(theme.palette.grey[500], 0.2), label: 'Non-working' },
                     ].map((legend) => (

@@ -251,6 +251,7 @@ export function EmployeeDashboardView() {
                         title="Missing Timesheets - Current Month"
                         data={data.missing_timesheets || []}
                         holidays={data.holidays || []}
+                        leave_dates={data.leave_dates || []}
                     />
                 </Grid>
             </Grid>
