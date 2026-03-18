@@ -143,6 +143,7 @@ export interface EmployeeDashboardData {
         attendance_percentage: number;
     };
     missing_timesheets: Array<{ date: string }>;
+    leave_dates?: string[];
     recent_leaves: Array<{
         name: string;
         leave_type: string;
@@ -307,6 +308,7 @@ export async function fetchEmployeeDashboardData(
                 attendance_percentage: 0,
             },
             missing_timesheets: [],
+            leave_dates: [],
             recent_leaves: [],
             announcements: [],
             todays_birthdays: [],
