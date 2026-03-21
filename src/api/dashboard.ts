@@ -527,3 +527,20 @@ export async function fetchFinancialTotals(): Promise<FinancialTotals> {
         };
     }
 }
+
+export async function fetchMonthlyEmployee(): Promise<any> {
+    try {
+        const res = await frappeRequest('/api/method/company.company.frontend_api.get_monthly_employee');
+
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(handleFrappeError(error, 'Failed to fetch monthly employee'));
+        }
+
+        const data = await res.json();
+        return data.message;
+    } catch (error) {
+        console.error('Failed to fetch monthly employee:', error);
+        return null;
+    }
+}

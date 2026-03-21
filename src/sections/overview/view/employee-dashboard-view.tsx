@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import Grid from '@mui/material/Grid';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -19,6 +20,9 @@ import { LeaveStatusCards } from '../leave-status-cards';
 import { MissingTimesheets } from '../missing-timesheets';
 import { PremiumWorkingHours } from '../premium-working-hours';
 import { CalendarAttendanceChart } from '../calendar-attendance-chart';
+import { DashboardHero } from '../dashboard-hero';
+import { AttendanceDistribution } from '../attendance-distribution';
+import { PersonalityManagement } from '../personality-management';
 
 // ----------------------------------------------------------------------
 
@@ -75,9 +79,14 @@ export function EmployeeDashboardView() {
 
     return (
         <DashboardContent maxWidth="xl">
-            <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
-                Hi, {data.employee_name || user?.full_name || 'Employee'}, Welcome back 👋
-            </Typography>
+            {/* <DashboardHero
+                employeeName={data.employee_name || user?.full_name || 'Employee'}
+                employeeAvatar={user?.full_name?.split(' ').map((n) => n[0]).join('') || 'EB'}
+                weeklyData={(data.weekly_attendance || []).map((day: any) => ({
+                    day: day.day_of_week || day.day || 'Day',
+                    hours: parseFloat(day.working_hours) || 0,
+                }))}
+            /> */}
 
             <Grid container spacing={3}>
                 {/* 1. Latest Announcements */}
@@ -104,6 +113,32 @@ export function EmployeeDashboardView() {
                     <LeaveStatusCards
                         data={data.leave_allocations || []}
                         inProbation={data.in_probation}
+                    />
+                </Grid>
+
+                {/* 3.5. Attendance Distribution Pie Chart */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <AttendanceDistribution
+                        data={[
+                            { label: 'Present', value: 18 },
+                            { label: 'On Leave', value: 2 },
+                            { label: 'Half Day', value: 1 },
+                            { label: 'Absent', value: 1 },
+                            { label: 'Holiday', value: 3 },
+                        ]}
+                    />
+                </Grid>
+
+                {/* 3.7. Personality Management Radar Chart */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <PersonalityManagement
+                        data={[
+                            { trait: 'Communication', score: 18 },
+                            { trait: 'Teamwork', score: 15 },
+                            { trait: 'Leadership', score: 14 },
+                            { trait: 'Creativity', score: 16 },
+                            { trait: 'Technical Skills', score: 22 },
+                        ]}
                     />
                 </Grid>
 
