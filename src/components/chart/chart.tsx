@@ -8,7 +8,6 @@ import { chartClasses } from './classes';
 import { ChartLoading } from './components';
 
 import type { ChartProps } from './types';
-
 // ----------------------------------------------------------------------
 
 const LazyChart = lazy(() =>
