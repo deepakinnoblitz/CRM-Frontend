@@ -20,6 +20,7 @@ import { Label } from 'src/components/label';
 
 import { CallProvider } from 'src/sections/chat/call-context';
 import ChatNotifications from 'src/sections/chat/chat-notifications';
+import { UserStatusBar } from 'src/sections/overview/user-status-bar';
 
 import { useAuth } from 'src/auth/auth-context';
 
@@ -246,9 +247,8 @@ export function DashboardLayout({
         </>
       ),
       rightArea: (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 0.75 } }}>
-          {/** @slot Searchbar */}
-          {/* <Searchbar /> */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 2 } }}>
+          <UserStatusBar />
 
           <ChatNotifications>
             <Box
