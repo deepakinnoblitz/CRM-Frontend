@@ -350,7 +350,7 @@ export function EstimationListView({ hideTitle }: Props) {
         return renderContent;
     }
 
-    return <DashboardContent>{renderContent}</DashboardContent>;
+    return <DashboardContent maxWidth={false}>{renderContent}</DashboardContent>;
 }
 
 // ----------------------------------------------------------------------

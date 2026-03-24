@@ -15,13 +15,13 @@ type Props = {
   onDelete: () => void;
 };
 
-export function PersonalityTraitTableRow({
+export function EmployeeEvaluationTraitTableRow({
   row,
   index,
   onEdit,
   onDelete,
 }: Props) {
-  const { trait_name, category, reward_score, penalty_score } = row;
+  const { trait_name, category, description } = row;
 
   return (
     <TableRow hover>
@@ -45,8 +45,7 @@ export function PersonalityTraitTableRow({
       </TableCell>
       <TableCell sx={{ fontWeight: 'bold' }}>{trait_name}</TableCell>
       <TableCell>{category || '-'}</TableCell>
-      <TableCell sx={{ color: 'success.main' }}>+{reward_score}</TableCell>
-      <TableCell sx={{ color: 'error.main' }}>-{penalty_score}</TableCell>
+      <TableCell sx={{ color: 'text.secondary', typography: 'body2' }}>{description || '-'}</TableCell>
       <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
         <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
           <Iconify icon="solar:pen-bold" />

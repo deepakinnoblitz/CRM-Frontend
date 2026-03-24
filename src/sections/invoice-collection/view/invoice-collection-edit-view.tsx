@@ -42,7 +42,7 @@ export default function InvoiceCollectionEditView() {
     };
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
                 <Typography variant="h4">
                     Edit Collection: {currentInvoiceCollection?.name}

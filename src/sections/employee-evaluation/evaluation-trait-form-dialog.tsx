@@ -13,7 +13,9 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
-import { PersonalityTrait, createPersonalityTrait, updatePersonalityTrait } from 'src/api/personality';
+import { useEmployeeEvaluationPoints } from 'src/hooks/useEmployeeEvaluation';
+
+import { EmployeeEvaluationTrait, createEmployeeEvaluationTrait, updateEmployeeEvaluationTrait } from 'src/api/employee-evaluation';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -23,19 +25,25 @@ type Props = {
     open: boolean;
     onClose: VoidFunction;
     onSuccess: VoidFunction;
-    selectedTrait?: PersonalityTrait | null;
+    selectedTrait?: EmployeeEvaluationTrait | null;
 };
 
 const CATEGORY_OPTIONS = ['Behavior', 'Collaboration', 'Communication', 'Attendance', 'Leadership'];
 
-export function PersonalityTraitFormDialog({ open, onClose, onSuccess, selectedTrait }: Props) {
+export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, selectedTrait }: Props) {
+    const { data: evaluationPoints } = useEmployeeEvaluationPoints();
     const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({
+
+    const [formData, setFormData] = useState<{
+        trait_name: string;
+        category: string;
+        description: string;
+        evaluation_scores: { evaluation_point: string; score: number }[];
+    }>({
         trait_name: '',
         category: 'Behavior',
         description: '',
-        reward_score: 2,
-        penalty_score: 5,
+        evaluation_scores: [],
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -46,19 +54,20 @@ export function PersonalityTraitFormDialog({ open, onClose, onSuccess, selectedT
                 trait_name: selectedTrait.trait_name || '',
                 category: selectedTrait.category || 'Behavior',
                 description: selectedTrait.description || '',
-                reward_score: selectedTrait.reward_score || 0,
-                penalty_score: selectedTrait.penalty_score || 0,
+                evaluation_scores: selectedTrait.evaluation_scores || [],
             });
         } else {
             setFormData({
                 trait_name: '',
                 category: 'Behavior',
                 description: '',
-                reward_score: 2,
-                penalty_score: 5,
+                evaluation_scores: evaluationPoints.map(p => ({
+                    evaluation_point: p.name,
+                    score: p.default_score
+                })),
             });
         }
-    }, [selectedTrait, open]);
+    }, [selectedTrait, open, evaluationPoints]);
 
     const validate = () => {
         const newErrors: Record<string, string> = {};
@@ -76,14 +85,12 @@ export function PersonalityTraitFormDialog({ open, onClose, onSuccess, selectedT
         try {
             const dataToSave = {
                 ...formData,
-                reward_score: Number(formData.reward_score) || 0,
-                penalty_score: Number(formData.penalty_score) || 0,
             };
 
             if (selectedTrait) {
-                await updatePersonalityTrait(selectedTrait.name, dataToSave);
+                await updateEmployeeEvaluationTrait(selectedTrait.name, dataToSave);
             } else {
-                await createPersonalityTrait(dataToSave);
+                await createEmployeeEvaluationTrait(dataToSave);
             }
             onSuccess();
             onClose();
@@ -97,7 +104,7 @@ export function PersonalityTraitFormDialog({ open, onClose, onSuccess, selectedT
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {selectedTrait ? 'Edit Personality Trait' : 'New Personality Trait'}
+                {selectedTrait ? 'Edit Evaluation Trait' : 'New Evaluation Trait'}
                 <IconButton onClick={onClose}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
@@ -133,24 +140,42 @@ export function PersonalityTraitFormDialog({ open, onClose, onSuccess, selectedT
                         ))}
                     </TextField>
 
-                    <Stack direction="row" spacing={2}>
-                        <TextField
-                            fullWidth
-                            type="number"
-                            label="Reward Score (+)"
-                            value={formData.reward_score}
-                            onChange={(e) => setFormData({ ...formData, reward_score: e.target.value as any })}
-                            helperText="Points added on 'Agree'"
-                        />
-                        <TextField
-                            fullWidth
-                            type="number"
-                            label="Penalty Score (-)"
-                            value={formData.penalty_score}
-                            onChange={(e) => setFormData({ ...formData, penalty_score: e.target.value as any })}
-                            helperText="Points deducted on 'Disagree'"
-                        />
-                    </Stack>
+                    <Typography variant="subtitle1" sx={{ mt: 2 }}>
+                        Score Overrides (Optional)
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        Leave empty to use global default scores.
+                    </Typography>
+
+                    {evaluationPoints.map((point) => {
+                        const scoreRow = formData.evaluation_scores.find(s => s.evaluation_point === point.name);
+                        return (
+                            <Stack key={point.name} direction="row" spacing={2} alignItems="center">
+                                <Typography sx={{ minWidth: 100 }}>{point.point_name}</Typography>
+                                <TextField
+                                    size="small"
+                                    type="number"
+                                    placeholder={`Default: ${point.default_score}`}
+                                    value={scoreRow?.score ?? ''}
+                                    onChange={(e) => {
+                                        const newScore = e.target.value === '' ? undefined : Number(e.target.value);
+                                        let newScores = [...formData.evaluation_scores];
+                                        if (newScore === undefined) {
+                                            newScores = newScores.filter(s => s.evaluation_point !== point.name);
+                                        } else {
+                                            const existingIndex = newScores.findIndex(s => s.evaluation_point === point.name);
+                                            if (existingIndex > -1) {
+                                                newScores[existingIndex].score = newScore;
+                                            } else {
+                                                newScores.push({ evaluation_point: point.name, score: newScore });
+                                            }
+                                        }
+                                        setFormData({ ...formData, evaluation_scores: newScores });
+                                    }}
+                                />
+                            </Stack>
+                        );
+                    })}
 
                     <TextField
                         fullWidth

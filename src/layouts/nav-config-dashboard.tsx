@@ -110,8 +110,8 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
   },
   {
-    title: 'Personality Evaluation',
-    path: '/personality-evaluation',
+    title: 'Employee Evaluation',
+    path: '/employee-evaluation',
     icon: <Iconify icon={"solar:user-speak-bold-duotone" as any} />,
   },
   {
@@ -153,6 +153,11 @@ export const employeeNavData = [
     title: 'My Attendance',
     path: '/attendance',
     icon: <Iconify icon={"solar:clock-circle-bold-duotone" as any} />,
+  },
+  {
+    title: 'My Activity Log',
+    path: '/daily-log',
+    icon: <Iconify icon={"solar:calendar-bold-duotone" as any} />,
   },
   {
     title: 'My Leave Application',
@@ -461,7 +466,7 @@ export function getNavData(roles: string[] = []) {
     let filteredHrNav = hrNavData;
     if (!hasRole('Task Manager')) {
       filteredHrNav = hrNavData.filter(
-        (item) => item.title !== 'Task Manager' && item.title !== 'Personality Evaluation'
+        (item) => item.title !== 'Task Manager' && item.title !== 'Employee Evaluation'
       );
     }
     addItems(filteredHrNav);

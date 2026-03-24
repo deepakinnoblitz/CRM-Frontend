@@ -12,7 +12,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 
 import { Iconify } from 'src/components/iconify';
 
-import { PersonalityTableFiltersDrawer } from './personality-table-filters-drawer';
+import { EmployeeEvaluationTableFiltersDrawer } from './employee-evaluation-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ type Props = {
   traitsOptions: any[];
 };
 
-export function PersonalityTableToolbar({
+export function EmployeeEvaluationTableToolbar({
   filterName,
   onFilterName,
   sortBy,
@@ -150,7 +150,7 @@ export function PersonalityTableToolbar({
         </Menu>
       </Box>
 
-      <PersonalityTableFiltersDrawer
+      <EmployeeEvaluationTableFiltersDrawer
         open={openFilters}
         onClose={() => setOpenFilters(false)}
         filters={filters}

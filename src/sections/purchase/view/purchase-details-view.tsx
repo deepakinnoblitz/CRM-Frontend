@@ -56,7 +56,7 @@ export function PurchaseDetailsView() {
 
     if (!purchase) {
         return (
-            <DashboardContent>
+            <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Purchase not found</Typography>
                 <Button onClick={() => router.push('/purchase')} sx={{ mt: 3 }}>
                     Go back to list
@@ -118,7 +118,7 @@ export function PurchaseDetailsView() {
     };
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} className="no-print">
                 <Typography variant="h4">Purchase: {id}</Typography>
                 <Stack direction="row" spacing={2}>

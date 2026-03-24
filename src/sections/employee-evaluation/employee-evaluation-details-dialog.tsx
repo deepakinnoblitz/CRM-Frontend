@@ -31,7 +31,7 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string;
     '2': { color: '#ef4444', bg: '#fef2f2', border: '#fecaca', icon: 'solar:close-circle-bold' }, // Cancelled
 };
 
-export function PersonalityEventDetailsDialog({ open, onClose, event }: Props) {
+export function EmployeeEvaluationEventDetailsDialog({ open, onClose, event }: Props) {
     const [employeeDetails, setEmployeeDetails] = useState<any>(null);
 
     useEffect(() => {

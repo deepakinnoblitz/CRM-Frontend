@@ -40,7 +40,7 @@ export function MyProfileView() {
     );
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Container maxWidth="lg">
                 <Typography variant="h4" sx={{ mb: 5 }}>
                     My Profile
@@ -177,7 +177,7 @@ export function MyProfileView() {
 
                             <Divider sx={{ borderStyle: 'dashed' }} />
 
-                            {/* Personality Metrics */}
+                            {/* Employee Evaluation Metrics */}
                             <Box sx={{
                                 p: 3,
                                 mb: 1,
@@ -203,7 +203,7 @@ export function MyProfileView() {
                                         <Iconify icon={"solar:star-fall-bold" as any} width={18} />
                                     </Box>
                                     <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                        Personality Evaluation
+                                        Employee Evaluation
                                     </Typography>
                                 </Box>
                                 <Box
@@ -217,10 +217,10 @@ export function MyProfileView() {
                                     <Box sx={{ width: '85%' }}> {/* Move width here to align everything properly */}
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                             <Typography variant="caption" sx={{ color: 'info.darker', fontWeight: 700, textTransform: 'uppercase' }}>
-                                                Personality Score
+                                                Employee Evaluation Score
                                             </Typography>
                                             <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                                                {employee.personality_score ?? 0}/100
+                                                {employee.evaluation_score ?? 0}/100
                                             </Typography>
                                         </Box>
                                         <Box sx={{
@@ -231,10 +231,10 @@ export function MyProfileView() {
                                             overflow: 'hidden'
                                         }}>
                                             <Box sx={{
-                                                width: `${Math.min(100, Math.max(0, employee.personality_score || 0))}%`,
+                                                width: `${Math.min(100, Math.max(0, employee.evaluation_score || 0))}%`,
                                                 height: '100%',
                                                 bgcolor: (theme) => {
-                                                    const score = employee.personality_score || 0;
+                                                    const score = employee.evaluation_score || 0;
                                                     if (score >= 80) return 'success.main'; // Green
                                                     if (score >= 50) return 'warning.main'; // Orange
                                                     return 'error.main'; // Red
@@ -247,20 +247,20 @@ export function MyProfileView() {
                                     <Box>
                                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 2 }}>
                                             <Typography variant="caption" sx={{ color: 'info.darker', fontWeight: 700, textTransform: 'uppercase' }}>
-                                                Personality Status
+                                                Employee Evaluation Status
                                             </Typography>
                                             <Label 
                                                 variant="filled" 
                                                 sx={{ px: 1, py: 1.5, fontSize: '0.75rem', fontWeight: 800 }}
                                                 color={(() => {
-                                                    const score = employee.personality_score || 0;
+                                                    const score = employee.evaluation_score || 0;
                                                     if (score >= 80) return 'success';
                                                     if (score >= 50) return 'warning';
                                                     return 'error';
                                                 })()}
                                             >
-                                                {employee.personality_status || (() => {
-                                                    const score = employee.personality_score ?? 100;
+                                                {employee.evaluation_status || (() => {
+                                                    const score = employee.evaluation_score ?? 100;
                                                     if (score >= 90) return "Excellent";
                                                     if (score >= 75) return "Good";
                                                     if (score >= 60) return "Average";

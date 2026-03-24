@@ -24,7 +24,7 @@ type Props = {
   index: number;
 };
 
-export function PersonalityEventTableRow({
+export function EmployeeEvaluationEventTableRow({
   row,
   selected,
   onSelectRow,
@@ -72,8 +72,10 @@ export function PersonalityEventTableRow({
         <Label
           variant="soft"
           color={
-            (evaluation_type === 'Agree' && 'success') ||
-            (evaluation_type === 'Disagree' && 'error') ||
+            (evaluation_type === 'Excellent' && 'success') ||
+            (evaluation_type === 'Good' && 'info') ||
+            (evaluation_type === 'Average' && 'warning') ||
+            (evaluation_type === 'Bad' && 'error') ||
             'default'
           }
         >

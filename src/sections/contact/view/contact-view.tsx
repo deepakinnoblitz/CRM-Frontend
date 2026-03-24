@@ -413,7 +413,7 @@ export function ContactView() {
     const empty = !loading && !data.length && !filterName && !canReset;
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Contacts

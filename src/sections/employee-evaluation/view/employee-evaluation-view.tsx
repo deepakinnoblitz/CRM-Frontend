@@ -6,18 +6,34 @@ import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import Tooltip from '@mui/material/Tooltip';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import Container from '@mui/material/Container';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 
-import { usePersonalityTraits, usePersonalityEvents, usePersonalityScoreLogs } from 'src/hooks/usePersonality';
+import LoadingButton from '@mui/lab/LoadingButton';
+
+import { useEmployeeEvaluationTraits, useEmployeeEvaluationEvents, useEmployeeEvaluationScoreLogs } from 'src/hooks/useEmployeeEvaluation';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { deletePersonalityTrait, deletePersonalityEvent, submitPersonalityEvent, cancelPersonalityEvent } from 'src/api/personality';
+import { 
+    deleteEmployeeEvaluationTrait, 
+    deleteEmployeeEvaluationEvent, 
+    submitEmployeeEvaluationEvent, 
+    cancelEmployeeEvaluationEvent, 
+    resetAllEmployeeScores 
+} from 'src/api/employee-evaluation';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -25,24 +41,24 @@ import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { TableNoData, TableEmptyRows } from 'src/components/table';
 
-import { PersonalityTableHead } from '../personality-table-head';
-import { PersonalityTableToolbar } from '../personality-table-toolbar';
-import { PersonalityTraitTableRow } from '../personality-trait-table-row';
-import { PersonalityEventTableRow } from '../personality-event-table-row';
-import { PersonalityEventFormDialog } from '../personality-event-form-dialog';
-import { PersonalityTraitFormDialog } from '../personality-trait-form-dialog';
-import { PersonalityScoreLogTableRow } from '../personality-score-log-table-row';
-import { PersonalityEventDetailsDialog } from '../personality-event-details-dialog';
+import { EmployeeEvaluationTableHead } from '../employee-evaluation-table-head';
+import { EmployeeEvaluationTraitTableRow } from '../evaluation-trait-table-row';
+import { EmployeeEvaluationEventTableRow } from '../employee-evaluation-table-row';
+import { EmployeeEvaluationTraitFormDialog } from '../evaluation-trait-form-dialog';
+import { EmployeeEvaluationTableToolbar } from '../employee-evaluation-table-toolbar';
+import { EmployeeEvaluationEventFormDialog } from '../employee-evaluation-form-dialog';
+import { EmployeeEvaluationEventDetailsDialog } from '../employee-evaluation-details-dialog';
+import { EmployeeEvaluationScoreLogTableRow } from '../employee-evaluation-score-log-table-row';
 
 // ----------------------------------------------------------------------
 
 const TABS = [
-  { value: 'events', label: 'Personality Events', icon: <Iconify icon={"solar:clipboard-check-bold-duotone" as any} width={20} /> },
+  { value: 'events', label: 'Employee Evaluations', icon: <Iconify icon={"solar:clipboard-check-bold-duotone" as any} width={20} /> },
   { value: 'traits', label: 'Behavior Assessment', icon: <Iconify icon={"solar:user-speak-bold-duotone" as any} width={20} /> },
   { value: 'logs', label: 'Score Logs', icon: <Iconify icon={"solar:history-bold-duotone" as any} width={20} /> },
 ];
 
-export function PersonalityEvaluationView() {
+export function EmployeeEvaluationView() {
   const [currentTab, setCurrentTab] = useState('events');
 
   const [page, setPage] = useState(0);
@@ -77,9 +93,15 @@ export function PersonalityEvaluationView() {
     category: '',
   });
 
-  const { data: events, total: totalEvents, loading: loadingEvents, refetch: refetchEvents } = usePersonalityEvents(page + 1, rowsPerPage, filterName, sortBy, filters);
-  const { data: logs, total: totalLogs, loading: loadingLogs, refetch: refetchLogs } = usePersonalityScoreLogs(page + 1, rowsPerPage, filterName, sortBy, filters);
-  const { data: traits, total: totalTraits, loading: loadingTraits, refetch: refetchTraits } = usePersonalityTraits(page + 1, rowsPerPage, filterName, sortBy, filters);
+  const [openResetDialog, setOpenResetDialog] = useState(false);
+  const [resetPassword, setResetPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState('');
+
+  const { data: events, total: totalEvents, loading: loadingEvents, refetch: refetchEvents } = useEmployeeEvaluationEvents(page + 1, rowsPerPage, filterName, sortBy, filters);
+  const { data: logs, total: totalLogs, loading: loadingLogs, refetch: refetchLogs } = useEmployeeEvaluationScoreLogs(page + 1, rowsPerPage, filterName, sortBy, filters);
+  const { data: traits, total: totalTraits, loading: loadingTraits, refetch: refetchTraits } = useEmployeeEvaluationTraits(page + 1, rowsPerPage, filterName, sortBy, filters);
 
   const canReset = !!filterName || !!filters.employee || !!filters.trait || (filters.evaluation_type !== 'all') || (filters.docstatus !== null) || !!filters.category;
 
@@ -117,34 +139,45 @@ export function PersonalityEvaluationView() {
       </Tabs>
 
       {currentTab !== 'logs' && (
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}
-          onClick={() => {
-            if (currentTab === 'events') setOpenEventForm(true);
-            if (currentTab === 'traits') {
-              setSelectedTrait(null);
-              setOpenTraitForm(true);
-            }
-          }}
-        >
-          {currentTab === 'events' ? 'New Event' : 'New Trait'}
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<Iconify icon="solar:restart-bold" />}
+            onClick={() => setOpenResetDialog(true)}
+            sx={{ height: 40 }}
+          >
+            Reset Scores
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}
+            onClick={() => {
+              if (currentTab === 'events') setOpenEventForm(true);
+              if (currentTab === 'traits') {
+                setSelectedTrait(null);
+                setOpenTraitForm(true);
+              }
+            }}
+          >
+            {currentTab === 'events' ? 'New Event' : 'New Trait'}
+          </Button>
+        </Stack>
       )}
     </Stack>
   );
 
   return (
-    <DashboardContent>
+    <DashboardContent maxWidth={false}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-        <Typography variant="h4">Personality Evaluation</Typography>
+        <Typography variant="h4">Employee Evaluation</Typography>
       </Stack>
 
       <Card>
         {renderTabs}
 
-        <PersonalityTableToolbar
+        <EmployeeEvaluationTableToolbar
           filterName={filterName}
           onFilterName={(event) => {
             setFilterName(event.target.value);
@@ -184,7 +217,7 @@ export function PersonalityEvaluationView() {
             <Table>
               {currentTab === 'events' && (
                 <>
-                  <PersonalityTableHead
+                  <EmployeeEvaluationTableHead
                     headLabel={[
                       { id: 'sno', label: 'Sno', align: 'center' },
                       { id: 'employee', label: 'Employee' },
@@ -198,7 +231,7 @@ export function PersonalityEvaluationView() {
                   />
                   <TableBody>
                     {events.map((row, index) => (
-                      <PersonalityEventTableRow
+                      <EmployeeEvaluationEventTableRow
                         key={row.name}
                         row={row}
                         index={page * rowsPerPage + index}
@@ -214,8 +247,8 @@ export function PersonalityEvaluationView() {
                         }}
                         onSubmit={async () => {
                           try {
-                            await submitPersonalityEvent({
-                              doctype: 'Personality Event',
+                            await submitEmployeeEvaluationEvent({
+                              doctype: 'Employee Evaluation',
                               ...row,
                             });
                             refetchEvents();
@@ -226,7 +259,7 @@ export function PersonalityEvaluationView() {
                         }}
                         onCancel={async () => {
                           try {
-                            await cancelPersonalityEvent(row.name);
+                            await cancelEmployeeEvaluationEvent(row.name);
                             refetchEvents();
                             refetchLogs();
                           } catch (error) {
@@ -248,8 +281,8 @@ export function PersonalityEvaluationView() {
                       <TableRow>
                         <TableCell colSpan={9}>
                           <EmptyContent
-                            title="No Personality Event Assessment"
-                            description="Wait for HR to add personality evaluations for employees."
+                            title="No Employee Evaluation Assessment"
+                            description="Wait for HR to add employee evaluations for employees."
                             icon="solar:clipboard-check-bold-duotone"
                           />
                         </TableCell>
@@ -270,7 +303,7 @@ export function PersonalityEvaluationView() {
 
               {currentTab === 'logs' && (
                 <>
-                  <PersonalityTableHead
+                  <EmployeeEvaluationTableHead
                     headLabel={[
                       { id: 'sno', label: 'Sno', align: 'center' },
                       { id: 'employee', label: 'Employee' },
@@ -283,7 +316,7 @@ export function PersonalityEvaluationView() {
                   />
                   <TableBody>
                     {logs.map((row, index) => (
-                      <PersonalityScoreLogTableRow
+                      <EmployeeEvaluationScoreLogTableRow
                         key={row.name}
                         row={row}
                         index={page * rowsPerPage + index}
@@ -316,19 +349,18 @@ export function PersonalityEvaluationView() {
 
               {currentTab === 'traits' && (
                 <>
-                  <PersonalityTableHead
+                  <EmployeeEvaluationTableHead
                     headLabel={[
                       { id: 'sno', label: 'Sno', align: 'center' },
                       { id: 'name', label: 'Trait Name' },
                       { id: 'category', label: 'Category' },
-                      { id: 'reward', label: 'Reward' },
-                      { id: 'penalty', label: 'Penalty' },
+                      { id: 'description', label: 'Description' },
                       { id: '' },
                     ]}
                   />
                   <TableBody>
                     {traits.map((row, index) => (
-                      <PersonalityTraitTableRow
+                      <EmployeeEvaluationTraitTableRow
                         key={row.name}
                         row={row}
                         index={page * rowsPerPage + index}
@@ -351,7 +383,7 @@ export function PersonalityEvaluationView() {
                         <TableCell colSpan={6}>
                           <EmptyContent
                             title="No Traits found"
-                            description="Define personality traits to start evaluations."
+                            description="Define evaluation traits to start evaluations."
                             icon="solar:user-speak-bold-duotone"
                           />
                         </TableCell>
@@ -392,7 +424,7 @@ export function PersonalityEvaluationView() {
         />
       </Card>
 
-      <PersonalityEventDetailsDialog
+      <EmployeeEvaluationEventDetailsDialog
         open={openDetails}
         onClose={() => {
           setOpenDetails(false);
@@ -401,7 +433,7 @@ export function PersonalityEvaluationView() {
         event={selectedEvent}
       />
 
-      <PersonalityEventFormDialog
+      <EmployeeEvaluationEventFormDialog
         open={openEventForm}
         onClose={() => {
           setOpenEventForm(false);
@@ -415,7 +447,7 @@ export function PersonalityEvaluationView() {
         selectedEvent={selectedEvent}
       />
 
-      <PersonalityTraitFormDialog
+      <EmployeeEvaluationTraitFormDialog
         open={openTraitForm}
         onClose={() => {
           setOpenTraitForm(false);
@@ -432,7 +464,7 @@ export function PersonalityEvaluationView() {
         content={
           confirmDelete.isSubmitted
             ? "This event is already submitted. You need to cancel it first before you can delete it."
-            : `Are you sure you want to delete this ${confirmDelete.type === 'event' ? 'personality event' : 'personality trait'}?`
+            : `Are you sure you want to delete this ${confirmDelete.type === 'event' ? 'employee evaluation' : 'evaluation trait'}?`
         }
         icon={confirmDelete.isSubmitted ? "solar:info-circle-bold" : "solar:danger-bold"}
         iconColor={confirmDelete.isSubmitted ? "info.main" : "error.main"}
@@ -448,11 +480,11 @@ export function PersonalityEvaluationView() {
               onClick={async () => {
                 try {
                   if (confirmDelete.type === 'event' && confirmDelete.name) {
-                    await deletePersonalityEvent(confirmDelete.name);
+                    await deleteEmployeeEvaluationEvent(confirmDelete.name);
                     refetchEvents();
                     refetchLogs();
                   } else if (confirmDelete.type === 'trait' && confirmDelete.name) {
-                    await deletePersonalityTrait(confirmDelete.name);
+                    await deleteEmployeeEvaluationTrait(confirmDelete.name);
                     refetchTraits();
                   }
                   setConfirmDelete((prev) => ({ ...prev, open: false }));
@@ -466,6 +498,68 @@ export function PersonalityEvaluationView() {
           )
         }
       />
+
+      <Dialog open={openResetDialog} onClose={() => !resetLoading && setOpenResetDialog(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Reset All Employee Scores</DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+            This action will reset all active employee scores to 100. This cannot be undone.
+          </Typography>
+          <TextField
+            fullWidth
+            type={showPassword ? 'text' : 'password'}
+            label="Admin Password"
+            value={resetPassword}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setResetPassword(e.target.value);
+              setResetError('');
+            }}
+            error={!!resetError}
+            helperText={resetError || "Enter Administrator password to confirm reset"}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                    <Iconify icon={showPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" onClick={() => setOpenResetDialog(false)} disabled={resetLoading}>
+            Cancel
+          </Button>
+          <LoadingButton
+            variant="contained"
+            color="error"
+            loading={resetLoading}
+            onClick={async () => {
+              if (!resetPassword) {
+                setResetError('Password is required');
+                return;
+              }
+              setResetLoading(true);
+              setResetError('');
+              try {
+                await resetAllEmployeeScores(resetPassword);
+                setOpenResetDialog(false);
+                setResetPassword('');
+                refetchEvents();
+                refetchLogs();
+                // Optionally show a success toast here
+              } catch (error: any) {
+                setResetError(error.message || 'Failed to reset scores');
+              } finally {
+                setResetLoading(false);
+              }
+            }}
+          >
+            Reset All
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
     </DashboardContent>
   );
 }

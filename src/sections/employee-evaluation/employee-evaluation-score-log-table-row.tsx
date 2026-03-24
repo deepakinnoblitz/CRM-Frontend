@@ -14,7 +14,7 @@ type Props = {
   index: number;
 };
 
-export function PersonalityScoreLogTableRow({
+export function EmployeeEvaluationScoreLogTableRow({
   row,
   index,
 }: Props) {

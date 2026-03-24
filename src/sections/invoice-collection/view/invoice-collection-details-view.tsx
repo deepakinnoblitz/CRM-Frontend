@@ -79,7 +79,7 @@ export function InvoiceCollectionDetailsView() {
 
     if (!collection) {
         return (
-            <DashboardContent>
+            <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Invoice Collection not found</Typography>
                 <Button onClick={() => router.push('/deals?tab=invoices&subtab=collections')} sx={{ mt: 3 }}>
                     Go back to list
@@ -118,7 +118,7 @@ export function InvoiceCollectionDetailsView() {
     };
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
                 <Typography variant="h4">Invoice Collection: {id}</Typography>
                 <Stack direction="row" spacing={2}>

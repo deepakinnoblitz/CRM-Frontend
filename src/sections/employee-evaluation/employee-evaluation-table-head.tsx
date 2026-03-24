@@ -9,7 +9,7 @@ type Props = {
   hideCheckbox?: boolean;
 };
 
-export function PersonalityTableHead({
+export function EmployeeEvaluationTableHead({
   headLabel,
   hideCheckbox = false,
 }: Props) {

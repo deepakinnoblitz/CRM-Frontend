@@ -10,6 +10,8 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Autocomplete from '@mui/material/Autocomplete';
 
+import { useEmployeeEvaluationPoints } from 'src/hooks/useEmployeeEvaluation';
+
 import { getForValueOptions } from 'src/api/user-permissions';
 
 import { Iconify } from 'src/components/iconify';
@@ -28,7 +30,7 @@ type Props = {
     traitsOptions: any[];
 };
 
-export function PersonalityTableFiltersDrawer({
+export function EmployeeEvaluationTableFiltersDrawer({
     open,
     onClose,
     filters,
@@ -38,6 +40,7 @@ export function PersonalityTableFiltersDrawer({
     currentTab,
     traitsOptions,
 }: Props) {
+    const { data: evaluationPoints } = useEmployeeEvaluationPoints();
     const [employees, setEmployees] = useState<any[]>([]);
 
     useEffect(() => {
@@ -234,9 +237,11 @@ export function PersonalityTableFiltersDrawer({
                                     }}
                                 >
                                     <option value="all">All Types</option>
-                                    <option value="Agree">Agree</option>
-                                    <option value="Neutral">Neutral</option>
-                                    <option value="Disagree">Disagree</option>
+                                    {evaluationPoints.map((point) => (
+                                        <option key={point.name} value={point.name}>
+                                            {point.point_name}
+                                        </option>
+                                    ))}
                                 </TextField>
                             </Stack>
 

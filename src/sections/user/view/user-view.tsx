@@ -436,7 +436,7 @@ export const UserView = forwardRef(({ hideHeader = false, hideActionButton = fal
   }
 
   return (
-    <DashboardContent>
+    <DashboardContent maxWidth={false}>
       {renderContent}
     </DashboardContent>
   );

@@ -18,8 +18,10 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useEmployeeEvaluationPoints } from 'src/hooks/useEmployeeEvaluation';
+
 import { getForValueOptions } from 'src/api/user-permissions';
-import { createPersonalityEvent, submitPersonalityEvent, updatePersonalityEvent, PersonalityTrait } from 'src/api/personality';
+import { createEmployeeEvaluationEvent, submitEmployeeEvaluationEvent, updateEmployeeEvaluationEvent, EmployeeEvaluationTrait } from 'src/api/employee-evaluation';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -29,19 +31,20 @@ type Props = {
     open: boolean;
     onClose: VoidFunction;
     onSuccess: VoidFunction;
-    traits: PersonalityTrait[];
+    traits: EmployeeEvaluationTrait[];
     selectedEvent?: any;
 };
 
-const EVALUATION_TYPES = ['Agree', 'Neutral', 'Disagree'];
 
-export function PersonalityEventFormDialog({ open, onClose, onSuccess, traits, selectedEvent }: Props) {
+export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, traits, selectedEvent }: Props) {
     const [employees, setEmployees] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const { data: evaluationPoints } = useEmployeeEvaluationPoints();
+
     const [formData, setFormData] = useState({
         employee: '',
         trait: '',
-        evaluation_type: 'Neutral' as any,
+        evaluation_type: '',
         evaluation_date: dayjs().format('YYYY-MM-DD'),
         remarks: '',
     });
@@ -61,7 +64,7 @@ export function PersonalityEventFormDialog({ open, onClose, onSuccess, traits, s
             setFormData({
                 employee: '',
                 trait: '',
-                evaluation_type: 'Neutral',
+                evaluation_type: '',
                 evaluation_date: dayjs().format('YYYY-MM-DD'),
                 remarks: '',
             });
@@ -93,9 +96,9 @@ export function PersonalityEventFormDialog({ open, onClose, onSuccess, traits, s
         setLoading(true);
         try {
             if (selectedEvent) {
-                await updatePersonalityEvent(selectedEvent.name, formData);
+                await updateEmployeeEvaluationEvent(selectedEvent.name, formData);
             } else {
-                await createPersonalityEvent(formData);
+                await createEmployeeEvaluationEvent(formData);
             }
             onSuccess();
             onClose();
@@ -109,7 +112,7 @@ export function PersonalityEventFormDialog({ open, onClose, onSuccess, traits, s
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {selectedEvent ? 'Edit Personality Event' : 'New Personality Event'}
+                {selectedEvent ? 'Edit Employee Evaluation' : 'New Employee Evaluation'}
                 <IconButton onClick={onClose}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
@@ -189,11 +192,13 @@ export function PersonalityEventFormDialog({ open, onClose, onSuccess, traits, s
                             label="Evaluation Type"
                             required
                             value={formData.evaluation_type}
-                            onChange={(e) => setFormData({ ...formData, evaluation_type: e.target.value as any })}
+                            onChange={(e) => setFormData({ ...formData, evaluation_type: e.target.value })}
+                            error={!!errors.evaluation_type}
+                            helperText={errors.evaluation_type}
                         >
-                            {EVALUATION_TYPES.map((type) => (
-                                <MenuItem key={type} value={type}>
-                                    {type}
+                            {evaluationPoints.map((point) => (
+                                <MenuItem key={point.name} value={point.name}>
+                                    {point.point_name}
                                 </MenuItem>
                             ))}
                         </TextField>

@@ -289,7 +289,7 @@ export function JobOpeningsView() {
     const notFound = !data.length && !!filterName;
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5 }}>
                 <Typography variant="h4">Job Openings</Typography>
                 {permissions.write && (

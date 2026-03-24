@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 
 import { 
-    fetchPersonalityTraits, 
-    fetchPersonalityEvents, 
-    fetchPersonalityScoreLogs 
-} from 'src/api/personality';
+    fetchEmployeeEvaluationTraits, 
+    fetchEmployeeEvaluationEvents, 
+    fetchEmployeeEvaluationScoreLogs,
+    fetchEmployeeEvaluationPoints,
+    EmployeeEvaluationPoint
+} from 'src/api/employee-evaluation';
 
-export function usePersonalityTraits(page: number, pageSize: number, search?: string, sortBy?: string, filters?: any) {
+export function useEmployeeEvaluationTraits(page: number, pageSize: number, search?: string, sortBy?: string, filters?: any) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -14,7 +16,7 @@ export function usePersonalityTraits(page: number, pageSize: number, search?: st
     const refetch = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetchPersonalityTraits({ 
+            const res = await fetchEmployeeEvaluationTraits({ 
                 page, 
                 page_size: pageSize, 
                 search, 
@@ -24,7 +26,7 @@ export function usePersonalityTraits(page: number, pageSize: number, search?: st
             setData(res.data);
             setTotal(res.total);
         } catch (error) {
-            console.error('Failed to fetch personality traits:', error);
+            console.error('Failed to fetch evaluation traits:', error);
         } finally {
             setLoading(false);
         }
@@ -37,7 +39,7 @@ export function usePersonalityTraits(page: number, pageSize: number, search?: st
     return { data, total, loading, refetch };
 }
 
-export function usePersonalityEvents(page: number, pageSize: number, search?: string, sortBy?: string, filters?: any) {
+export function useEmployeeEvaluationEvents(page: number, pageSize: number, search?: string, sortBy?: string, filters?: any) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -45,7 +47,7 @@ export function usePersonalityEvents(page: number, pageSize: number, search?: st
     const refetch = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetchPersonalityEvents({ 
+            const res = await fetchEmployeeEvaluationEvents({ 
                 page, 
                 page_size: pageSize, 
                 search, 
@@ -58,7 +60,7 @@ export function usePersonalityEvents(page: number, pageSize: number, search?: st
             setData(res.data);
             setTotal(res.total);
         } catch (error) {
-            console.error('Failed to fetch personality events:', error);
+            console.error('Failed to fetch employee evaluations:', error);
         } finally {
             setLoading(false);
         }
@@ -71,7 +73,7 @@ export function usePersonalityEvents(page: number, pageSize: number, search?: st
     return { data, total, loading, refetch };
 }
 
-export function usePersonalityScoreLogs(page: number, pageSize: number, search?: string, sortBy?: string, filters?: any) {
+export function useEmployeeEvaluationScoreLogs(page: number, pageSize: number, search?: string, sortBy?: string, filters?: any) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -79,7 +81,7 @@ export function usePersonalityScoreLogs(page: number, pageSize: number, search?:
     const refetch = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetchPersonalityScoreLogs({ 
+            const res = await fetchEmployeeEvaluationScoreLogs({ 
                 page, 
                 page_size: pageSize, 
                 search, 
@@ -89,7 +91,7 @@ export function usePersonalityScoreLogs(page: number, pageSize: number, search?:
             setData(res.data);
             setTotal(res.total);
         } catch (error) {
-            console.error('Failed to fetch personality score logs:', error);
+            console.error('Failed to fetch employee evaluation score logs:', error);
         } finally {
             setLoading(false);
         }
@@ -100,4 +102,27 @@ export function usePersonalityScoreLogs(page: number, pageSize: number, search?:
     }, [refetch]);
 
     return { data, total, loading, refetch };
+}
+
+export function useEmployeeEvaluationPoints() {
+    const [data, setData] = useState<EmployeeEvaluationPoint[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const refetch = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await fetchEmployeeEvaluationPoints();
+            setData(res);
+        } catch (error) {
+            console.error('Failed to fetch evaluation points:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        refetch();
+    }, [refetch]);
+
+    return { data, loading, refetch };
 }

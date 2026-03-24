@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
@@ -9,14 +9,22 @@ import Avatar from '@mui/material/Avatar';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import CircularProgress from '@mui/material/CircularProgress';
+
+import { useRouter } from 'src/routes/hooks';
+
+import { usePresence } from 'src/hooks/use-presence';
 
 import { fTime } from 'src/utils/format-time';
+import { getInitials } from 'src/utils/string';
+import { stringToColor, stringToDarkColor } from 'src/utils/color-utils';
 
 import { logout } from 'src/api/auth';
 
@@ -29,10 +37,41 @@ import { useAuth } from 'src/auth/auth-context';
 export function UserStatusBar() {
     const theme = useTheme();
     const { user } = useAuth();
+    const {
+        status: statusName,
+        statusMessage,
+        changeStatus,
+        setCustomMessage,
+        checkTimesheet,
+        session,
+        loading,
+    } = usePresence();
+    const router = useRouter();
+
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [infoDialogOpen, setInfoDialogOpen] = useState(false);
     const [isLogoutDialog, setIsLogoutDialog] = useState(false);
+    const [statusMsgDialogOpen, setStatusMsgDialogOpen] = useState(false);
+    const [customMessage, setCustomMessageInput] = useState('');
+    const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
+    const [timesheetWarningOpen, setTimesheetWarningOpen] = useState(false);
+    const [isCheckingTimesheet, setIsCheckingTimesheet] = useState(false);
+
+    const hasAutoChecked = useRef(false);
+
     const open = Boolean(anchorEl);
+
+    // Auto-show check-in dialog on load when Offline (one-time only)
+    useEffect(() => {
+        if (!loading && !hasAutoChecked.current) {
+            hasAutoChecked.current = true;
+            if (statusName === 'Offline') {
+                const timer = setTimeout(() => setCheckInDialogOpen(true), 800);
+                return () => clearTimeout(timer);
+            }
+        }
+        return undefined;
+    }, [loading, statusName]);
 
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
@@ -58,9 +97,27 @@ export function UserStatusBar() {
     };
 
     const handleConfirmLogout = async () => {
+        setIsCheckingTimesheet(true);
+        try {
+            const res = await checkTimesheet();
+            setIsCheckingTimesheet(false);
+            if (!res.has_timesheet) {
+                setTimesheetWarningOpen(true);
+                setInfoDialogOpen(false);
+                return;
+            }
+        } catch (error) {
+            console.error('Error checking timesheet:', error);
+            setIsCheckingTimesheet(false);
+        }
+        await performLogout();
+    };
+
+    const performLogout = async () => {
         setInfoDialogOpen(false);
         setIsLogoutDialog(false);
         try {
+            await changeStatus('Offline');
             await logout();
             window.location.href = '/login';
         } catch (error) {
@@ -68,60 +125,108 @@ export function UserStatusBar() {
         }
     };
 
+    const handleStatusClick = async (newStatus: string) => {
+        if (newStatus === 'Offline') {
+            setIsCheckingTimesheet(true);
+            try {
+                const res = await checkTimesheet();
+                setIsCheckingTimesheet(false);
+                if (!res.has_timesheet) {
+                    setTimesheetWarningOpen(true);
+                    handleClose();
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking timesheet:', error);
+                setIsCheckingTimesheet(false);
+            }
+        }
+        await changeStatus(newStatus);
+        handleClose();
+    };
+
+    const handleStayOfflineAnyway = async () => {
+        setTimesheetWarningOpen(false);
+        if (isLogoutDialog) {
+            await performLogout();
+        } else {
+            await changeStatus('Offline');
+            handleClose();
+        }
+    };
+
     const loginTime = user?.last_login ? fTime(user.last_login) : 'N/A';
 
-    const [dummyTimer, setDummyTimer] = useState(0); // seconds elapsed
+    const [activeTimer, setActiveTimer] = useState(0); // seconds elapsed
+
+    // Update timer base when session data changes
+    useEffect(() => {
+        if (session?.total_active_seconds !== undefined) {
+            setActiveTimer(session.total_active_seconds);
+        }
+    }, [session]);
+
+    // Ticker logic: increment if not Offline and not on Break
+    useEffect(() => {
+        let interval: any;
+        if (statusName && statusName !== 'Offline' && statusName !== 'Break' && session) {
+            interval = setInterval(() => {
+                setActiveTimer((prev) => prev + 1);
+            }, 1000);
+        }
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [statusName, session]);
 
     const formatTimer = (totalSeconds: number) => {
-        const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-        const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-        const secs = String(totalSeconds % 60).padStart(2, '0');
+        const floorSeconds = Math.floor(totalSeconds);
+        const hrs = String(Math.floor(floorSeconds / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((floorSeconds % 3600) / 60)).padStart(2, '0');
+        const secs = String(floorSeconds % 60).padStart(2, '0');
         return `${hrs}:${mins}:${secs}`;
     };
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setDummyTimer((prev) => prev + 1);
-        }, 1000);
-        return () => clearInterval(interval);
-    }, []);
 
-    // Dummy user data
-    const userData = {
-        name: user?.name || 'Mani Kandan',
-        email: user?.email || 'manikandangm.innoblitz@gmail.com',
-        avatar: (user as any)?.avatar || 'MK',
-    };
+    // User data
+    const userName = user?.full_name || 'Guest User';
+    const userEmail = user?.email || '';
+    const userAvatar = user?.user_image;
+    const initials = getInitials(userName);
+    const avatarColor = stringToColor(userName);
+    const avatarTextColor = stringToDarkColor(userName);
 
     const statusOptions = [
-        { label: 'Available', color: 'success.main', icon: 'solar:check-read-bold' },
-        { label: 'Busy', color: 'error.main', icon: 'fluent:presence-dnd-16-filled' },
-        { label: 'Do not disturb', color: 'error.dark', icon: 'eva:slash-circle-fill' },
-        { label: 'Be right back', color: 'warning.main', icon: 'eva:clock-outline' },
-        { label: 'Appear away', color: 'warning.dark', icon: 'eva:clock-fill' },
-        { label: 'Appear offline', color: 'grey.500', icon: 'eva:close-circle-fill' },
+        { label: 'Available', value: 'Available', color: '#22c55e', icon: 'ph:check-circle-fill', buttonIcon: 'ph:check-circle-fill' },
+        { label: 'Busy', value: 'Busy', color: '#ef4444', icon: 'ph:minus-circle-fill', buttonIcon: 'ph:minus-circle-fill' },
+        { label: 'Do not disturb', value: 'Do Not Disturb', color: '#b91c1c', icon: 'ph:prohibit-fill', buttonIcon: 'ph:prohibit-fill' },
+        { label: 'Break', value: 'Break', color: '#f59e0b', icon: 'ph:coffee-fill', buttonIcon: 'ph:coffee-fill' },
+        { label: 'Away', value: 'Away', color: '#d97706', icon: 'ph:moon-fill', buttonIcon: 'ph:moon-fill' },
+        { label: 'Offline', value: 'Offline', color: '#9ca3af', icon: 'ph:power-fill', buttonIcon: 'ph:power-fill' },
     ];
 
-    const [status, setStatus] = useState(statusOptions[0]);
+    const currentStatus = statusOptions.find(opt => opt.value === statusName) || statusOptions[5];
 
     return (
         <>
             <Box
                 sx={{
-                    p: 1,
+                    px: 1.5,
+                    py: 0.75,
                     borderRadius: 2,
-                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                    bgcolor: alpha(theme.palette.primary.main, 0.04),
                     border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                    boxShadow: `inset 0 0 0 1px ${alpha(theme.palette.common.white, 0.4)}, 0 4px 12px 0 ${alpha(theme.palette.primary.main, 0.08)}`,
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: 1,
+                    gap: 1.25,
                 }}
             >
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                    Login active time
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '11px' }}>
+                    Today Active Time: 
                 </Typography>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                    {formatTimer(dummyTimer)}
+                <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '18px' }}>
+                    {formatTimer(activeTimer)}
                 </Typography>
             </Box>
             <Button
@@ -148,13 +253,17 @@ export function UserStatusBar() {
                             px: 1.25,
                             py: 0.5,
                             borderRadius: 10,
-                            bgcolor: status.color,
+                            bgcolor: currentStatus.color,
                             color: 'common.white',
                         }}
                     >
-                        <Iconify icon={status.icon as any} width={16} />
+                        {isCheckingTimesheet ? (
+                            <CircularProgress size={16} color="inherit" />
+                        ) : (
+                            <Iconify icon={currentStatus.buttonIcon as any} width={16} />
+                        )}
                         <Typography variant="caption" sx={{ fontWeight: 'bold', lineHeight: 1 }}>
-                            {status.label}
+                            {currentStatus.label}
                         </Typography>
                     </Stack>
 
@@ -162,7 +271,7 @@ export function UserStatusBar() {
                 </Stack>
             </Button>
 
-            <IconButton
+            {/* <IconButton
                 onClick={handleInfoClick}
                 sx={{
                     ml: 1,
@@ -208,7 +317,7 @@ export function UserStatusBar() {
                         filter: 'drop-shadow(0 0 4px rgba(25, 118, 210, 0.3))',
                     }}
                 />
-            </IconButton>
+            </IconButton> */}
 
             <Menu
                 anchorEl={anchorEl}
@@ -234,23 +343,8 @@ export function UserStatusBar() {
                     }}
                 >
                     <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                        Personal
+                        Daily Login
                     </Typography>
-                    <Button
-                        size="small"
-                        onClick={handleLogout}
-                        sx={{
-                            textTransform: 'none',
-                            color: 'primary.main',
-                            fontSize: '0.85rem',
-                            padding: 0,
-                            '&:hover': {
-                                backgroundColor: 'transparent',
-                            },
-                        }}
-                    >
-                        Sign out
-                    </Button>
                 </Box>
 
                 <Divider />
@@ -259,23 +353,25 @@ export function UserStatusBar() {
                 <Box sx={{ px: 1.5, py: 1.5 }}>
                     <Stack direction="row" spacing={2} alignItems="flex-start">
                         <Avatar
+                            src={userAvatar}
                             sx={{
                                 width: 48,
                                 height: 48,
-                                bgcolor: alpha(theme.palette.primary.main, 0.3),
-                                color: 'primary.main',
+                                bgcolor: userAvatar ? 'common.white' : avatarColor,
+                                color: avatarTextColor,
                                 fontWeight: 'bold',
+                                border: `2px solid ${userAvatar ? theme.palette.divider : 'transparent'}`,
                             }}
                         >
-                            {userData.avatar}
+                            {initials}
                         </Avatar>
 
                         <Stack spacing={0.5} flex={1}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                {userData.name}
+                                {userName}
                             </Typography>
                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                {userData.email}
+                                {userEmail}
                             </Typography>
                         </Stack>
                     </Stack>
@@ -291,11 +387,8 @@ export function UserStatusBar() {
                 </Box>
                 {statusOptions.map((item) => (
                     <MenuItem
-                        key={item.label}
-                        onClick={() => {
-                            setStatus(item);
-                            handleClose();
-                        }}
+                        key={item.value}
+                        onClick={() => handleStatusClick(item.value)}
                         sx={{
                             mx: 1,
                             mt: 0.5,
@@ -327,7 +420,7 @@ export function UserStatusBar() {
                                 {item.label}
                             </Typography>
                         </Stack>
-                        {status.label === item.label && (
+                        {statusName === item.value && (
                             <Typography variant="caption" sx={{ color: 'primary.main' }}>
                                 Selected
                             </Typography>
@@ -337,8 +430,12 @@ export function UserStatusBar() {
 
                 <Divider />
 
-                {/* Set Status Message */}
+                {/* My Timesheet */}
                 <MenuItem
+                    onClick={() => {
+                        handleClose();
+                        router.push('/timesheets');
+                    }}
                     sx={{
                         mx: 1,
                         mb: 1,
@@ -351,9 +448,9 @@ export function UserStatusBar() {
                     }}
                 >
                     <Stack direction="row" alignItems="center" spacing={1}>
-                        <Iconify icon={"eva:edit-2-outline" as any} width={20} sx={{ color: 'text.secondary' }} />
+                        <Iconify icon="solar:calendar-bold" width={20} sx={{ color: 'text.secondary' }} />
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            Set status message
+                            My Timesheet
                         </Typography>
                     </Stack>
                     <Iconify icon="eva:chevron-right-fill" width={20} sx={{ color: 'text.secondary' }} />
@@ -363,6 +460,265 @@ export function UserStatusBar() {
 
             </Menu>
 
+            {/* ── Check-In Dialog ── */}
+            <Dialog
+                open={checkInDialogOpen}
+                onClose={(event, reason) => {
+                    if (reason !== 'backdropClick') {
+                        setCheckInDialogOpen(false);
+                    }
+                }}
+                maxWidth="xs"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        overflow: 'hidden',
+                    }
+                }}
+            >
+                {/* Polished Gradient Header */}
+                <Box
+                    sx={{
+
+                        pt: 4,
+                        pb: 3,
+                        px: 3,
+                        textAlign: 'center',
+                        overflow: 'hidden',
+                    }}
+                >
+                    <Avatar
+                        src={userAvatar}
+                        sx={{
+                            width: 72,
+                            height: 72,
+                            mx: 'auto',
+                            mb: 2,
+                            bgcolor: userAvatar ? 'common.white' : avatarColor,
+                            color: avatarTextColor,
+                            fontWeight: 'bold',
+                            fontSize: '1.8rem',
+                            border: '2px solid #fff',
+                            boxShadow: '0 0 0 2.5px rgba(47, 128, 237, 0.6)',
+                            position: 'relative',
+                            zIndex: 1,
+                        }}
+                    >
+                        {initials}
+                    </Avatar>
+                    <Typography
+                        variant="h6"
+                        sx={{
+                            color: theme.palette.primary.main,
+                            fontWeight: 800,
+                            lineHeight: 1.2,
+                            position: 'relative',
+                            zIndex: 1,
+                        }}
+                    >
+                        Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 17 ? 'Afternoon' : 'Evening'}, {userName.split(' ')[0]}!
+                    </Typography>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: theme.palette.text.secondary,
+                            mt: 0.5,
+                            fontWeight: 500,
+                            position: 'relative',
+                            zIndex: 1
+                        }}
+                    >
+                        How are you available today?
+                    </Typography>
+                </Box>
+
+                <DialogContent sx={{ px: 2.5, pt: 2, pb: 1 }}>
+                    <Stack spacing={1}>
+                        {statusOptions
+                            .filter(opt => opt.value !== 'Offline')
+                            .map((item) => (
+                                <Box
+                                    key={item.value}
+                                    onClick={async () => {
+                                        await changeStatus(item.value);
+                                        setCheckInDialogOpen(false);
+                                    }}
+                                    sx={{
+                                        px: 2,
+                                        py: 1.25,
+                                        borderRadius: 2,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1.5,
+                                        cursor: 'pointer',
+                                        border: `1px solid ${alpha(item.color, 0.2)}`,
+                                        bgcolor: alpha(item.color, 0.05),
+                                        transition: 'all 0.15s ease',
+                                        '&:hover': {
+                                            bgcolor: alpha(item.color, 0.12),
+                                            borderColor: alpha(item.color, 0.4),
+                                            transform: 'translateX(4px)',
+                                        },
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            width: 32,
+                                            height: 32,
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            bgcolor: alpha(item.color, 0.1),
+                                            color: item.color,
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <Iconify icon={item.icon as any} width={20} />
+                                    </Box>
+                                    <Stack>
+                                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                            {item.label}
+                                        </Typography>
+                                    </Stack>
+                                </Box>
+                            ))
+                        }
+                    </Stack>
+                </DialogContent>
+
+                <DialogActions sx={{ px: 2.5, pb: 2, pt: 1 }}>
+                    <Button
+                        fullWidth
+                        onClick={() => setCheckInDialogOpen(false)}
+                        sx={{ color: 'text.secondary', textTransform: 'none' }}
+                    >
+                        Stay Offline for now
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Status Message Dialog */}
+            <Dialog
+                open={statusMsgDialogOpen}
+                onClose={() => setStatusMsgDialogOpen(false)}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle sx={{ fontWeight: 700 }}>Set a Status Message</DialogTitle>
+                <DialogContent>
+                    <Stack spacing={2} sx={{ pt: 1 }}>
+                        {statusName !== 'Available' && statusName !== 'Offline' && (
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                Default for <b>{statusName}</b>: &quot;{{
+                                    Busy: 'In a meeting',
+                                    'Do Not Disturb': 'Do not disturb',
+                                    Break: 'On a break',
+                                    Away: 'Stepped away',
+                                }[statusName] || ''}&quot;
+                            </Typography>
+                        )}
+                        <TextField
+                            autoFocus
+                            fullWidth
+                            size="small"
+                            label="Your custom message"
+                            placeholder="What's on your mind?"
+                            value={customMessage}
+                            onChange={(e) => setCustomMessageInput(e.target.value)}
+                            inputProps={{ maxLength: 100 }}
+                            helperText={`${customMessage.length}/100`}
+                        />
+                    </Stack>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setStatusMsgDialogOpen(false)}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        onClick={async () => {
+                            await setCustomMessage(customMessage);
+                            setStatusMsgDialogOpen(false);
+                        }}
+                    >
+                        Save
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Timesheet Warning Dialog */}
+            <Dialog
+                open={timesheetWarningOpen}
+                onClose={() => setTimesheetWarningOpen(false)}
+                PaperProps={{
+                    sx: { borderRadius: 2.5, width: '100%', maxWidth: 420 }
+                }}
+            >
+                <DialogTitle sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 5, pb: 1 }}>
+                    <Box
+                        sx={{
+                            width: 64,
+                            height: 64,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: alpha(theme.palette.error.main, 0.08),
+                            mb: 2.5,
+                        }}
+                    >
+                        <Iconify icon={"ph:warning-circle-fill" as any} sx={{ color: 'error.main', width: 40, height: 40 }} />
+                    </Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                        Missing Timesheet!
+                    </Typography>
+                </DialogTitle>
+
+                <DialogContent sx={{ py: 1.5, textAlign: 'center' }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', px: 3 }}>
+                        You haven&apos;t filed a timesheet for today. Please complete it before going offline to track your progress accurately.
+                    </Typography>
+                </DialogContent>
+
+                <DialogActions sx={{ px: 3, pb: 5, pt: 3, justifyContent: 'center', gap: 2 }}>
+                    <Button
+                        variant="outlined"
+                        onClick={handleStayOfflineAnyway}
+                        sx={{
+                            borderRadius: 1.25,
+                            minWidth: 120,
+                            borderColor: alpha(theme.palette.grey[500], 0.24),
+                            color: 'text.secondary',
+                            fontWeight: 600,
+                            '&:hover': {
+                                borderColor: theme.palette.text.primary,
+                                bgcolor: alpha(theme.palette.grey[500], 0.08),
+                                color: 'text.primary',
+                            }
+                        }}
+                    >
+                        Stay Offline
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                            setTimesheetWarningOpen(false);
+                            router.push('/timesheets');
+                        }}
+                        sx={{
+                            borderRadius: 1.25,
+                            minWidth: 150,
+                            fontWeight: 700,
+                            boxShadow: `0 8px 16px 0 ${alpha(theme.palette.primary.main, 0.24)}`
+                        }}
+                    >
+                        Make a Timesheet
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Logout / Info Dialog */}
             <Dialog
                 open={infoDialogOpen}
                 onClose={handleInfoDialogClose}

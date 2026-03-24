@@ -69,7 +69,7 @@ export function PurchaseCollectionDetailsView() {
 
     if (!collection) {
         return (
-            <DashboardContent>
+            <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Purchase Settlement not found</Typography>
                 <Button onClick={() => router.push('/purchase?tab=collections')} sx={{ mt: 3 }}>
                     Go back to list
@@ -107,7 +107,7 @@ export function PurchaseCollectionDetailsView() {
     };
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
                 <Typography variant="h4">Purchase Settlement: {id}</Typography>
                 <Stack direction="row" spacing={2}>

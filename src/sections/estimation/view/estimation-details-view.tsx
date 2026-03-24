@@ -60,7 +60,7 @@ export function EstimationDetailsView() {
 
     if (!estimation) {
         return (
-            <DashboardContent>
+            <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Estimation not found</Typography>
                 <Button onClick={() => router.push('/estimations')} sx={{ mt: 3 }}>
                     Go back to list
@@ -143,7 +143,7 @@ export function EstimationDetailsView() {
     };
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} className="no-print">
                 <Typography variant="h4">Estimation: {id}</Typography>
                 <Stack direction="row" spacing={2}>
