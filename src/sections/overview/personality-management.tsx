@@ -3,20 +3,20 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { alpha, useTheme } from '@mui/material/styles';
-import PersonalityGauge from 'src/sections/personality/components/personality-gauge';
+import PersonalityGauge from '../personality/components/personality-gauge';
 
-// ----------------------------------------------------------------------
-
+// ---------------- TYPES ----------------
 interface PersonalityTraitData {
   trait: string;
   score: number;
 }
 
-interface PersonalityManagementProps {
+interface Props {
   data?: PersonalityTraitData[];
 }
 
-export function PersonalityManagement({
+// ---------------- COMPONENT ----------------
+export default function PersonalityManagement({
   data = [
     { trait: 'Communication', score: 18 },
     { trait: 'Teamwork', score: 15 },
@@ -24,10 +24,9 @@ export function PersonalityManagement({
     { trait: 'Creativity', score: 16 },
     { trait: 'Technical Skills', score: 22 },
   ],
-}: PersonalityManagementProps) {
+}: Props) {
   const theme = useTheme();
 
-  // Total calculation
   const total = data.reduce((sum, item) => sum + item.score, 0);
 
   return (
@@ -38,84 +37,57 @@ export function PersonalityManagement({
       }}
     >
       <Stack spacing={3}>
-        {/* Header */}
+        {/* HEADER */}
         <Box>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+          <Typography variant="h6" fontWeight={700}>
             Personality Management
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="body2" color="text.secondary">
             Skill distribution and personality traits breakdown
           </Typography>
         </Box>
 
-        {/* FLEX SECTION */}
+        {/* FLEX */}
         <Box
           sx={{
             display: 'flex',
             flexDirection: { xs: 'column', md: 'row' },
-            alignItems: 'center',
-            justifyContent: 'space-between',
             gap: 4,
           }}
         >
-          {/* Gauge Section */}
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              flex: 1,
-            }}
-          >
-            <PersonalityGauge value={total} width={260} height={260} />
+          {/* GAUGE */}
+          <Box flex={1} textAlign="center">
+            <PersonalityGauge value={total} />
 
-            <Typography
-              variant="h5"
-              sx={{
-                mt: 2,
-                fontWeight: 800,
-                color: 'primary.main',
-                textAlign: 'center',
-              }}
-            >
+            <Typography mt={2} variant="h5" fontWeight={800} color="primary.main">
               {total} Total Points
             </Typography>
 
-            <Typography
-              variant="body2"
-              sx={{
-                textAlign: 'center',
-                color: 'text.secondary',
-              }}
-            >
+            <Typography variant="body2" color="text.secondary">
               Skill distribution and personality traits breakdown
             </Typography>
           </Box>
 
-          {/* List Section */}
-          <Box sx={{ flex: 1, width: '100%' }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+          {/* LIST */}
+          <Box flex={1}>
+            <Typography variant="h6" mb={2} fontWeight={700}>
               List of The Management
             </Typography>
 
             <Stack spacing={1.5}>
-              {data.map((item, index) => (
+              {data.map((item, i) => (
                 <Box
-                  key={index}
+                  key={i}
                   sx={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center',
                     p: 1.5,
                     borderRadius: 2,
                     bgcolor: alpha(theme.palette.primary.main, 0.05),
                   }}
                 >
-                  <Typography variant="body2">{item.trait}</Typography>
-
-                  <Typography variant="body2" fontWeight={600}>
-                    {item.score}
-                  </Typography>
+                  <Typography>{item.trait}</Typography>
+                  <Typography fontWeight={600}>{item.score}</Typography>
                 </Box>
               ))}
             </Stack>

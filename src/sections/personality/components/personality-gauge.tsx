@@ -4,22 +4,46 @@ import {
   GaugeReferenceArc,
   useGaugeState,
 } from '@mui/x-charts/Gauge';
-import { alpha } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
+import { useEffect, useState } from 'react';
 
-interface PersonalityGaugeProps {
-  value: number;
-  width?: number;
-  height?: number;
+// ---------------- SMOOTH ANIMATION HOOK ----------------
+function useGaugeAnimation(target: number, duration = 1500) {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    let startTime: number | null = null;
+
+    const animate = (time: number) => {
+      if (!startTime) startTime = time;
+
+      const progress = Math.min((time - startTime) / duration, 1);
+
+      // 🔥 smooth easing (VERY IMPORTANT)
+      const ease =
+        progress < 0.5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+      // ❌ NO Math.floor (this was your problem)
+      setValue(ease * target);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [target, duration]);
+
+  return value;
 }
 
+// ---------------- POINTER ----------------
 function GaugePointer({ isPositive }: { isPositive: boolean }) {
   const { valueAngle, outerRadius, cx, cy } = useGaugeState();
-  const arcLength = useGaugeState().arcLength || 1;
 
-  if (valueAngle === null) {
-    return null;
-  }
+  if (valueAngle === null) return null;
 
   const target = {
     x: cx + outerRadius * Math.sin(valueAngle),
@@ -28,21 +52,22 @@ function GaugePointer({ isPositive }: { isPositive: boolean }) {
 
   return (
     <g>
-      {/* Animated pointer glow */}
-      <circle cx={cx} cy={cy} r={12} fill="none" stroke={isPositive ? '#22c55e' : '#ef4444'} strokeWidth={8} opacity={0.3} strokeOpacity={arcLength} />
-      <circle cx={cx} cy={cy} r={8} fill="none" stroke={isPositive ? '#22c55e' : '#ef4444'} strokeWidth={6} opacity={0.6} strokeOpacity={arcLength} />
-      <circle cx={cx} cy={cy} r={6} fill={isPositive ? '#22c55e' : '#ef4444'} strokeOpacity={arcLength} />
+      {/* Glow */}
+      <circle cx={cx} cy={cy} r={10} fill="none" stroke={isPositive ? '#22c55e' : '#ef4444'} strokeWidth={6} opacity={0.3} />
+      <circle cx={cx} cy={cy} r={6} fill={isPositive ? '#22c55e' : '#ef4444'} />
+
+      {/* Needle */}
       <path
         d={`M ${cx} ${cy} L ${target.x} ${target.y}`}
         stroke={isPositive ? '#22c55e' : '#ef4444'}
-        strokeWidth={4}
+        strokeWidth={3}
         strokeLinecap="round"
-        strokeOpacity={arcLength}
       />
     </g>
   );
 }
 
+// ---------------- WRAPPER ----------------
 const GaugeWrapper = styled('div')(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
@@ -51,9 +76,23 @@ const GaugeWrapper = styled('div')(({ theme }) => ({
   padding: theme.spacing(3),
 }));
 
-export default function PersonalityGauge({ value, width = 250, height = 250 }: PersonalityGaugeProps) {
+// ---------------- MAIN ----------------
+interface Props {
+  value: number;
+  width?: number;
+  height?: number;
+}
+
+export default function PersonalityGauge({
+  value,
+  width = 260,
+  height = 260,
+}: Props) {
   const isPositive = value >= 0;
   const absValue = Math.abs(value);
+
+  // 🔥 smooth animated value
+  const animatedValue = useGaugeAnimation(absValue, 1500);
 
   return (
     <GaugeWrapper>
@@ -62,36 +101,34 @@ export default function PersonalityGauge({ value, width = 250, height = 250 }: P
         height={height}
         startAngle={-110}
         endAngle={110}
-        value={absValue}
-        animation={{
-          duration: 1500,
-          easing: 'easeInOut',
-        }}
+        value={animatedValue} // 🔥 THIS DRIVES ANIMATION
       >
         <GaugeReferenceArc />
         <GaugeValueArc
+          sx={{
+            transition: 'none', // ❌ remove fake transition
+          }}
           fill={isPositive ? 'success.main' : 'error.main'}
         />
         <GaugePointer isPositive={isPositive} />
       </GaugeContainer>
-      <div style={{ animation: 'pulse 2s infinite', opacity: 1 }}>
-        <div style={{ 
-          fontSize: '2rem', 
-          fontWeight: 'bold', 
-          color: isPositive ? '#22c55e' : '#ef4444',
-          textShadow: '0 0 10px currentColor'
-        }}>
-          {value > 0 ? `+${value}` : value}
+
+      {/* VALUE DISPLAY */}
+      <div>
+        <div
+          style={{
+            fontSize: '2rem',
+            fontWeight: 'bold',
+            color: isPositive ? '#22c55e' : '#ef4444',
+          }}
+        >
+          {value > 0 ? `+${Math.round(animatedValue)}` : Math.round(animatedValue)}
         </div>
-        <div style={{ fontSize: '0.875rem', color: '#64748b' }}>Score Change</div>
+
+        <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+          Score Change
+        </div>
       </div>
-      <style jsx>{`
-        @keyframes pulse {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-          100% { transform: scale(1); }
-        }
-      `}</style>
     </GaugeWrapper>
   );
 }

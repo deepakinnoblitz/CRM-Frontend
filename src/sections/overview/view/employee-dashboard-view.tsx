@@ -22,8 +22,7 @@ import { PremiumWorkingHours } from '../premium-working-hours';
 import { CalendarAttendanceChart } from '../calendar-attendance-chart';
 import { DashboardHero } from '../dashboard-hero';
 import { AttendanceDistribution } from '../attendance-distribution';
-import { PersonalityManagement } from '../personality-management';
-
+import PersonalityManagement from '../personality-management';
 // ----------------------------------------------------------------------
 
 export function EmployeeDashboardView() {
