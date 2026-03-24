@@ -116,8 +116,11 @@ export function EmployeeDashboardView() {
                     />
                 </Grid>
 
-                {/* 3.5. Attendance Distribution Pie Chart */}
-                <Grid size={{ xs: 12, md: 6 }}>
+
+                <Grid size={{ xs: 12, md: 12 }}>
+                    <PersonalityManagement />
+                </Grid>
+           {/* <Grid size={{ xs: 12, md: 6 }}>
                     <AttendanceDistribution
                         data={[
                             { label: 'Present', value: 18 },
@@ -127,20 +130,7 @@ export function EmployeeDashboardView() {
                             { label: 'Holiday', value: 3 },
                         ]}
                     />
-                </Grid>
-
-                {/* 3.7. Personality Management Radar Chart */}
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <PersonalityManagement
-                        data={[
-                            { trait: 'Communication', score: 18 },
-                            { trait: 'Teamwork', score: 15 },
-                            { trait: 'Leadership', score: 14 },
-                            { trait: 'Creativity', score: 16 },
-                            { trait: 'Technical Skills', score: 22 },
-                        ]}
-                    />
-                </Grid>
+                </Grid> */}
 
                 {/* 4. Calendar Attendance Chart */}
                 <Grid size={{ xs: 12, md: 6 }}>
