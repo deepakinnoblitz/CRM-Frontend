@@ -81,6 +81,7 @@ export const MyProfilePage = lazy(() => import('src/pages/my-profile'));
 export const ChatPage = lazy(() => import('src/pages/chat'));
 export const AccessDeniedPage = lazy(() => import('src/pages/access-denied'));
 export const EmployeeEvaluationPage = lazy(() => import('src/pages/employee-evaluation'));
+export const BadgesPage = lazy(() => import('src/pages/badges'));
 
 export const PurchaseListPage = lazy(() => import('src/pages/purchase/list'));
 export const PurchaseNewPage = lazy(() => import('src/pages/purchase/new'));
@@ -249,6 +250,7 @@ export const routesSection: RouteObject[] = [
         ],
       },
       { path: 'employee-evaluation', element: <EmployeeEvaluationPage /> },
+      { path: 'badges', element: <BadgesPage /> },
     ],
   },
   {

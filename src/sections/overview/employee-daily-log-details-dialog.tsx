@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
+import Tooltip from '@mui/material/Tooltip';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -31,6 +32,19 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
         return d.hour() * 3600 + d.minute() * 60 + d.second();
     };
 
+    const formatShortDuration = (seconds: number) => {
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.round((seconds % 3600) / 60);
+        if (hrs > 0) return `${hrs}h ${mins > 0 ? `${mins}m` : ''}`;
+        return `${mins}m`;
+    };
+
+    const formattedTimeFromSec = (sec: number) => {
+        const hrs = Math.floor(sec / 3600);
+        const mins = Math.floor((sec % 3600) / 60);
+        return dayjs().hour(hrs).minute(mins).format('h:mm a');
+    };
+
     const startSec = parseTime(session.login_time);
 
     let endSec = session.logout_time ? parseTime(session.logout_time) : 0;
@@ -43,29 +57,109 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
 
     const totalDuration = Math.max(endSec - startSec, 1);
 
-    const activeSegments = (session.intervals || []).map((int: any) => {
-        const from = parseTime(int.from_time);
-        const to = int.to_time ? parseTime(int.to_time) : endSec;
-        return {
-            left: ((from - startSec) / totalDuration) * 100,
-            width: ((to - from) / totalDuration) * 100,
-            color: theme.palette.primary.main,
-            type: 'Active'
-        };
+    // Split and merge logic
+    const timePointsSet = new Set<number>();
+    timePointsSet.add(startSec);
+    timePointsSet.add(endSec);
+    (session.intervals || []).forEach((int: any) => {
+        timePointsSet.add(parseTime(int.from_time));
+        if (int.to_time) timePointsSet.add(parseTime(int.to_time));
+    });
+    (session.breaks || []).forEach((brk: any) => {
+        timePointsSet.add(parseTime(brk.break_start));
+        if (brk.break_end) timePointsSet.add(parseTime(brk.break_end));
     });
 
-    const breakSegments = (session.breaks || []).map((brk: any) => {
-        const from = parseTime(brk.break_start);
-        const to = brk.break_end ? parseTime(brk.break_end) : endSec;
+    const sortedTimePoints = Array.from(timePointsSet)
+        .filter(t => t >= startSec && t <= endSec)
+        .sort((a, b) => a - b);
+
+    const rawSegments: any[] = [];
+    for (let i = 0; i < sortedTimePoints.length - 1; i++) {
+        const from = sortedTimePoints[i];
+        const to = sortedTimePoints[i + 1];
+        if (from === to) continue;
+
+        const mid = (from + to) / 2;
+
+        const isInBreak = (session.breaks || []).find((brk: any) => {
+            const bStart = parseTime(brk.break_start);
+            const bEnd = brk.break_end ? parseTime(brk.break_end) : endSec;
+            return mid >= bStart && mid <= bEnd;
+        });
+
+        if (isInBreak) {
+            rawSegments.push({ from, to, type: 'Break' });
+            continue;
+        }
+
+        const isInActive = (session.intervals || []).find((int: any) => {
+            const iStart = parseTime(int.from_time);
+            const iEnd = int.to_time ? parseTime(int.to_time) : endSec;
+            return mid >= iStart && mid <= iEnd;
+        });
+
+        if (isInActive) {
+            rawSegments.push({ from, to, type: 'Active' });
+        } else {
+            rawSegments.push({ from, to, type: 'Offline' });
+        }
+    }
+
+    const mergedSegments: any[] = [];
+    if (rawSegments.length > 0) {
+        let current = { ...rawSegments[0] };
+        for (let i = 1; i < rawSegments.length; i++) {
+            // Only merge if they are NOT active or if we want to preserve short blips?
+            // Actually, merging same types is good, but we should check duration AFTER merge.
+            // But wait, if we have [Active 10m] [Active 4s] [Active 5m], they should probably be one Green block.
+            // If the user sees them as separate in the list, but they are consecutive, merging them makes sense.
+            // HOWEVER, the user example shows 11:37-11:37 as a separate item.
+            // If I merge them, it becomes one block.
+            // Let's NOT merge Active segments if we want to see the "4s" blip as grey.
+            // But if they are perfectly consecutive, it's just one continuous activity.
+            // The 4s blip might be a "gap" in reality if it was 11:37:00-11:37:04 and the next started at 11:37:04.
+            
+            if (rawSegments[i].type === current.type) {
+                current.to = rawSegments[i].to;
+            } else {
+                mergedSegments.push(current);
+                current = { ...rawSegments[i] };
+            }
+        }
+        mergedSegments.push(current);
+    }
+
+    const segments = mergedSegments.map((seg) => {
+        const duration = seg.to - seg.from;
+        const width = (duration / totalDuration) * 100;
+        const left = ((seg.from - startSec) / totalDuration) * 100;
+        
+        const isBreak = seg.type === 'Break';
+        const isOffline = seg.type === 'Offline';
+        const isShortActive = seg.type === 'Active' && duration < 60; // Less than 1 minute
+
+        let color = alpha(theme.palette.success.main, 0.8);
+        let textColor = '#FFFFFF';
+
+        if (isBreak) {
+            color = alpha('#ffab00', 0.8);
+            textColor = '#664d00'; // Darker version of #ffab00 for readability
+        } else if (isOffline || isShortActive) {
+            color = alpha(theme.palette.grey[500], 0.16);
+            textColor = theme.palette.text.disabled;
+        }
+
         return {
-            left: ((from - startSec) / totalDuration) * 100,
-            width: ((to - from) / totalDuration) * 100,
-            color: theme.palette.warning.main,
-            type: 'Break'
+            left,
+            width,
+            color,
+            textColor,
+            label: formatShortDuration(duration),
+            tooltip: `${seg.type}: ${formattedTimeFromSec(seg.from)} - ${formattedTimeFromSec(seg.to)} (${fDecimalHours(duration / 3600)})`,
+            showLabel: width > 8 && !isOffline && !isShortActive
         };
     });
-
-    const segments = [...activeSegments, ...breakSegments];
 
     return (
         <Box sx={{ width: '100%', mb: 5 }}>
@@ -88,26 +182,51 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
                     Timeline Overview
                 </Typography>
             </Stack>
-            <Box sx={{ width: '100%', height: 24, bgcolor: alpha(theme.palette.grey[500], 0.16), borderRadius: 1.5, position: 'relative', overflow: 'hidden' }}>
+            <Box sx={{ width: '100%', height: 32, bgcolor: alpha(theme.palette.grey[500], 0.12), borderRadius: 1.5, position: 'relative', overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
                 {segments.map((seg, i) => (
-                    <Box
-                        key={i}
-                        sx={{
-                            position: 'absolute',
-                            left: `${Math.max(0, Math.min(100, seg.left))}%`,
-                            width: `${Math.max(0, Math.min(100 - seg.left, seg.width))}%`,
-                            height: '100%',
-                            bgcolor: seg.color,
-                        }}
-                    />
+                    <Tooltip key={i} title={seg.tooltip} arrow>
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                left: `${Math.max(0, Math.min(100, seg.left))}%`,
+                                width: `${Math.max(0, Math.min(100 - seg.left, seg.width))}%`,
+                                height: '100%',
+                                bgcolor: seg.color,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRight: `1px solid ${alpha(theme.palette.common.black, 0.05)}`,
+                                transition: theme.transitions.create('background-color'),
+                                '&:hover': {
+                                    bgcolor: alpha(seg.color, 0.9),
+                                }
+                            }}
+                        >
+                            {seg.showLabel && (
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        color: seg.textColor,
+                                        fontWeight: 800,
+                                        fontSize: 10,
+                                        whiteSpace: 'nowrap',
+                                        pointerEvents: 'none',
+                                        textShadow: '0 0 4px rgba(255,255,255,0.5)'
+                                    }}
+                                >
+                                    {seg.label}
+                                </Typography>
+                            )}
+                        </Box>
+                    </Tooltip>
                 ))}
             </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1.5, px: 0.5 }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
                     {fTime(session.login_time)}
                 </Typography>
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                    {session.logout_time ? fTime(session.logout_time) : 'Active'}
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
+                    {session.logout_time ? fTime(session.logout_time) : 'Active Now'}
                 </Typography>
             </Box>
         </Box>

@@ -8,6 +8,7 @@ export interface TaskAssignee {
     employee: string;
     employee_name: string;
     user?: string;
+    profile_pic?: string;
 }
 
 export interface TaskHistory {
@@ -73,7 +74,8 @@ export async function fetchTaskManagerList(filters: any[] = []): Promise<TaskMan
                     name: a.name,
                     employee: a.employee,
                     employee_name: a.employee_name,
-                    user: a.user
+                    user: a.user,
+                    profile_pic: a.profile_pic
                 });
             });
 

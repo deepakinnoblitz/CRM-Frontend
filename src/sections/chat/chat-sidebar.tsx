@@ -169,13 +169,13 @@ export default function ChatSidebar({ user, channels, presences, selectedChannel
                                         <ChatStatusBadge status={channel.type === 'Direct' ? presences?.[channel.contact]?.status : undefined}>
                                             <Avatar
                                                 alt={channel.displayName}
-                                                src={channel.channel_info?.avatar}
+                                                src={channel.avatar_url}
                                                 sx={{
                                                     width: 40,
                                                     height: 40,
                                                     fontWeight: 'fontWeightBold',
-                                                    color: channel.channel_info?.avatar ? 'text.secondary' : stringToDarkColor(channel.displayName || ''),
-                                                    bgcolor: channel.channel_info?.avatar ? 'transparent' : stringToColor(channel.displayName || ''),
+                                                    color: channel.avatar_url ? 'text.secondary' : stringToDarkColor(channel.displayName || ''),
+                                                    bgcolor: channel.avatar_url ? 'transparent' : stringToColor(channel.displayName || ''),
                                                 }}
                                             >
                                                 {channel.displayName?.charAt(0).toUpperCase()}

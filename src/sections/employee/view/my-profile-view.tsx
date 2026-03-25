@@ -18,6 +18,7 @@ import { Iconify } from 'src/components/iconify';
 
 import { useAuth } from 'src/auth/auth-context';
 
+import { ProfileBadges } from '../profile-badges';
 import { PersonalityManagement } from '../../overview/personality-management';
 
 // ----------------------------------------------------------------------
@@ -186,6 +187,14 @@ export function MyProfileView() {
                             <Grid size={{ xs: 12 }}>
                                 <PersonalityManagement />
                             </Grid>
+
+                            <Divider sx={{ borderStyle: 'dashed' }} />
+
+                            {/* Badges & Achievements */}
+                            <Box>
+                                <SectionHeader title="Badges & Achievements" icon="solar:medal-ribbon-bold" />
+                                <ProfileBadges employeeId={employee.name} />
+                            </Box>
 
                             <Divider sx={{ borderStyle: 'dashed' }} />
 

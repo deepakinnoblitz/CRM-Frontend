@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { 
-    fetchEmployeeEvaluationTraits, 
-    fetchEmployeeEvaluationEvents, 
+import {
+    fetchEmployeeEvaluationTraits,
+    fetchEmployeeEvaluationEvents,
     fetchEmployeeEvaluationScoreLogs,
     fetchEmployeeEvaluationPoints,
-    EmployeeEvaluationPoint
+    fetchEmployeeEvaluationTraitCategories,
+    EmployeeEvaluationPoint,
+    EvaluationTraitCategory
 } from 'src/api/employee-evaluation';
 
 export function useEmployeeEvaluationTraits(page: number, pageSize: number, search?: string, sortBy?: string, filters?: any) {
@@ -16,10 +18,10 @@ export function useEmployeeEvaluationTraits(page: number, pageSize: number, sear
     const refetch = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetchEmployeeEvaluationTraits({ 
-                page, 
-                page_size: pageSize, 
-                search, 
+            const res = await fetchEmployeeEvaluationTraits({
+                page,
+                page_size: pageSize,
+                search,
                 sort_by: sortBy,
                 category: filters?.category
             });
@@ -47,10 +49,10 @@ export function useEmployeeEvaluationEvents(page: number, pageSize: number, sear
     const refetch = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetchEmployeeEvaluationEvents({ 
-                page, 
-                page_size: pageSize, 
-                search, 
+            const res = await fetchEmployeeEvaluationEvents({
+                page,
+                page_size: pageSize,
+                search,
                 sort_by: sortBy,
                 employee: filters?.employee,
                 trait: filters?.trait,
@@ -83,10 +85,10 @@ export function useEmployeeEvaluationScoreLogs(page: number, pageSize: number, s
     const refetch = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetchEmployeeEvaluationScoreLogs({ 
-                page, 
-                page_size: pageSize, 
-                search, 
+            const res = await fetchEmployeeEvaluationScoreLogs({
+                page,
+                page_size: pageSize,
+                search,
                 sort_by: sortBy,
                 employee: filters?.employee,
                 startDate: filters?.startDate,
@@ -119,6 +121,29 @@ export function useEmployeeEvaluationPoints() {
             setData(res);
         } catch (error) {
             console.error('Failed to fetch evaluation points:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        refetch();
+    }, [refetch]);
+
+    return { data, loading, refetch };
+}
+
+export function useEmployeeEvaluationTraitCategories() {
+    const [data, setData] = useState<EvaluationTraitCategory[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const refetch = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await fetchEmployeeEvaluationTraitCategories();
+            setData(res);
+        } catch (error) {
+            console.error('Failed to fetch evaluation trait categories:', error);
         } finally {
             setLoading(false);
         }

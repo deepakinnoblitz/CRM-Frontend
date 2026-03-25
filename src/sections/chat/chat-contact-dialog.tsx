@@ -96,13 +96,13 @@ export default function ChatContactDialog({ open, onClose, contacts, presences, 
                                         <ChatStatusBadge status={presences?.[contact.user_id]?.status}>
                                             <Avatar
                                                 alt={contact.full_name}
-                                                src={contact.user_image}
+                                                src={contact.avatar}
                                                 sx={{
                                                     width: 44,
                                                     height: 44,
                                                     fontWeight: 'fontWeightBold',
-                                                    color: contact.user_image ? 'text.secondary' : stringToDarkColor(contact.full_name || ''),
-                                                    bgcolor: contact.user_image ? 'transparent' : stringToColor(contact.full_name || ''),
+                                                    color: contact.avatar ? 'text.secondary' : stringToDarkColor(contact.full_name || ''),
+                                                    bgcolor: contact.avatar ? 'transparent' : stringToColor(contact.full_name || ''),
                                                 }}
                                             >
                                                 {contact.full_name?.charAt(0).toUpperCase()}

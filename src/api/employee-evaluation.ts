@@ -144,6 +144,78 @@ export async function deleteEmployeeEvaluationTrait(name: string) {
     return (await res.json()).message;
 }
 
+export interface EvaluationTraitCategory {
+    name: string;
+    category_name: string;
+}
+
+export async function fetchEmployeeEvaluationTraitCategories() {
+    const query = new URLSearchParams({
+        doctype: "Evaluation Trait Category",
+        fields: JSON.stringify(["name", "category_name"]),
+        limit_page_length: "None"
+    });
+
+    const res = await frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`);
+    if (!res.ok) throw new Error("Failed to fetch evaluation trait categories");
+
+    return (await res.json()).message || [];
+}
+
+export async function createEmployeeEvaluationTraitCategory(data: Partial<EvaluationTraitCategory>) {
+    const res = await frappeRequest('/api/method/frappe.client.insert', {
+        method: 'POST',
+        headers: await getAuthHeaders(),
+        body: JSON.stringify({
+            doc: {
+                doctype: 'Evaluation Trait Category',
+                ...data
+            }
+        })
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to create evaluation trait category"));
+    }
+    return (await res.json()).message;
+}
+
+export async function updateEmployeeEvaluationTraitCategory(name: string, data: Partial<EvaluationTraitCategory>) {
+    const res = await frappeRequest('/api/method/frappe.client.set_value', {
+        method: 'POST',
+        headers: await getAuthHeaders(),
+        body: JSON.stringify({
+            doctype: 'Evaluation Trait Category',
+            name: name,
+            fieldname: data
+        })
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to update evaluation trait category"));
+    }
+    return (await res.json()).message;
+}
+
+export async function deleteEmployeeEvaluationTraitCategory(name: string) {
+    const res = await frappeRequest('/api/method/frappe.client.delete', {
+        method: 'POST',
+        headers: await getAuthHeaders(),
+        body: JSON.stringify({
+            doctype: 'Evaluation Trait Category',
+            name: name
+        })
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to delete evaluation trait category"));
+    }
+    return (await res.json()).message;
+}
+
 // APIs for Evaluation Point
 export interface EmployeeEvaluationPoint {
     name: string;

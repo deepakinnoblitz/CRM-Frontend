@@ -9,6 +9,7 @@ export async function fetchFrappeList(doctype: string, params: {
     searchField?: string;
     filters?: any[];
     or_filters?: any[];
+    fields?: string[];
     orderBy?: string;
     order?: 'asc' | 'desc';
 }) {
@@ -37,7 +38,7 @@ export async function fetchFrappeList(doctype: string, params: {
 
     const query = new URLSearchParams({
         doctype,
-        fields: JSON.stringify(["*"]),
+        fields: JSON.stringify(params.fields || ["*"]),
         filters: JSON.stringify(filters),
         or_filters: params.or_filters ? JSON.stringify(params.or_filters) : "[]",
         limit_start: String((params.page - 1) * params.page_size),

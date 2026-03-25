@@ -446,7 +446,10 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                                             boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                                         }}
                                     >
-                                        <Avatar sx={{ width: 38, height: 38, fontSize: 13, fontWeight: 800, bgcolor: avatarColor(assignee.employee_name), flexShrink: 0 }}>
+                                        <Avatar
+                                            src={assignee.profile_pic}
+                                            sx={{ width: 38, height: 38, fontSize: 13, fontWeight: 800, bgcolor: avatarColor(assignee.employee_name), flexShrink: 0 }}
+                                        >
                                             {initials(assignee.employee_name)}
                                         </Avatar>
 

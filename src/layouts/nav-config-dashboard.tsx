@@ -110,9 +110,13 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
   },
   {
-    title: 'Employee Evaluation',
+    title: 'Employee Performance',
     path: '/employee-evaluation',
     icon: <Iconify icon={"solar:user-speak-bold-duotone" as any} />,
+    children: [
+      { title: 'Employee Evaluation', path: '/employee-evaluation' },
+      { title: 'Badges', path: '/badges' },
+    ],
   },
   {
     title: 'Recruitment',
