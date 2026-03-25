@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -9,30 +9,30 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Tooltip from '@mui/material/Tooltip';
 import TableRow from '@mui/material/TableRow';
+import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import Container from '@mui/material/Container';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import InputAdornment from '@mui/material/InputAdornment';
-import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
-
-import LoadingButton from '@mui/lab/LoadingButton';
 
 import { useEmployeeEvaluationTraits, useEmployeeEvaluationEvents, useEmployeeEvaluationScoreLogs } from 'src/hooks/useEmployeeEvaluation';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { 
-    deleteEmployeeEvaluationTrait, 
-    deleteEmployeeEvaluationEvent, 
-    submitEmployeeEvaluationEvent, 
-    cancelEmployeeEvaluationEvent, 
-    resetAllEmployeeScores 
+import {
+  deleteEmployeeEvaluationTrait,
+  deleteEmployeeEvaluationEvent,
+  submitEmployeeEvaluationEvent,
+  cancelEmployeeEvaluationEvent,
+  resetAllEmployeeScores
 } from 'src/api/employee-evaluation';
 
 import { Iconify } from 'src/components/iconify';
@@ -40,6 +40,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { TableNoData, TableEmptyRows } from 'src/components/table';
+
+import { useAuth } from 'src/auth/auth-context';
 
 import { EmployeeEvaluationTableHead } from '../employee-evaluation-table-head';
 import { EmployeeEvaluationTraitTableRow } from '../evaluation-trait-table-row';
@@ -59,7 +61,19 @@ const TABS = [
 ];
 
 export function EmployeeEvaluationView() {
-  const [currentTab, setCurrentTab] = useState('events');
+  const { user } = useAuth();
+
+  const isAdminOrManager = user?.roles.some(role => 
+    ['Administrator', 'HR Manager', 'System Manager', 'Task Manager'].includes(role)
+  );
+
+  const isEmployee = user?.roles.includes('Employee');
+
+  const hideTabs = isEmployee && !isAdminOrManager;
+
+  const filteredTabs = hideTabs ? TABS.filter(tab => tab.value === 'logs') : TABS;
+
+  const [currentTab, setCurrentTab] = useState(hideTabs ? 'logs' : 'events');
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -91,19 +105,29 @@ export function EmployeeEvaluationView() {
     evaluation_type: 'all',
     docstatus: null,
     category: '',
+    startDate: null,
+    endDate: null,
   });
+
+  useEffect(() => {
+    if (hideTabs && user?.employee) {
+      setFilters((prev: any) => ({ ...prev, employee: user.employee }));
+    }
+  }, [hideTabs, user?.employee]);
 
   const [openResetDialog, setOpenResetDialog] = useState(false);
   const [resetPassword, setResetPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState('');
+  const [resetResults, setResetResults] = useState<any[]>([]);
+  const [openSummaryDialog, setOpenSummaryDialog] = useState(false);
 
   const { data: events, total: totalEvents, loading: loadingEvents, refetch: refetchEvents } = useEmployeeEvaluationEvents(page + 1, rowsPerPage, filterName, sortBy, filters);
   const { data: logs, total: totalLogs, loading: loadingLogs, refetch: refetchLogs } = useEmployeeEvaluationScoreLogs(page + 1, rowsPerPage, filterName, sortBy, filters);
   const { data: traits, total: totalTraits, loading: loadingTraits, refetch: refetchTraits } = useEmployeeEvaluationTraits(page + 1, rowsPerPage, filterName, sortBy, filters);
 
-  const canReset = !!filterName || !!filters.employee || !!filters.trait || (filters.evaluation_type !== 'all') || (filters.docstatus !== null) || !!filters.category;
+  const canReset = !!filterName || (filters.employee && !hideTabs) || !!filters.trait || (filters.evaluation_type !== 'all') || (filters.docstatus !== null) || !!filters.category || !!filters.startDate || !!filters.endDate;
 
   const notFoundEvents = !events.length && !!filterName && !loadingEvents;
   const emptyEvents = !events.length && !filterName && !loadingEvents;
@@ -133,12 +157,12 @@ export function EmployeeEvaluationView() {
           },
         }}
       >
-        {TABS.map((tab) => (
+        {filteredTabs.map((tab) => (
           <Tab key={tab.value} label={tab.label} icon={tab.icon} value={tab.value} iconPosition="start" />
         ))}
       </Tabs>
 
-      {currentTab !== 'logs' && (
+      {!hideTabs && currentTab !== 'logs' && (
         <Stack direction="row" spacing={1}>
           <Button
             variant="outlined"
@@ -201,15 +225,18 @@ export function EmployeeEvaluationView() {
           onResetFilters={() => {
             setFilterName('');
             setFilters({
-              employee: null,
+              employee: hideTabs ? user?.employee : null,
               trait: null,
               evaluation_type: 'all',
               docstatus: null,
               category: '',
+              startDate: null,
+              endDate: null,
             });
           }}
           currentTab={currentTab}
           traitsOptions={traits}
+          hideEmployeeFilter={hideTabs}
         />
 
         <Scrollbar>
@@ -543,12 +570,13 @@ export function EmployeeEvaluationView() {
               setResetLoading(true);
               setResetError('');
               try {
-                await resetAllEmployeeScores(resetPassword);
+                const results = await resetAllEmployeeScores(resetPassword);
                 setOpenResetDialog(false);
                 setResetPassword('');
+                setResetResults(results);
+                setOpenSummaryDialog(true);
                 refetchEvents();
                 refetchLogs();
-                // Optionally show a success toast here
               } catch (error: any) {
                 setResetError(error.message || 'Failed to reset scores');
               } finally {
@@ -559,6 +587,57 @@ export function EmployeeEvaluationView() {
             Reset All
           </LoadingButton>
         </DialogActions>
+      </Dialog>
+
+      <Dialog open={openSummaryDialog} onClose={() => setOpenSummaryDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          Reset Summary
+          <IconButton onClick={() => setOpenSummaryDialog(false)} size="small">
+            <Iconify icon="mingcute:close-line" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, pb: 4 }}>
+          <Typography variant="body2" sx={{ px: 3, pt: 1, pb: 3, color: 'text.secondary' }}>
+            Successfully reset scores for <b>{resetResults.length}</b> employees to 100.
+          </Typography>
+          <Scrollbar sx={{ maxHeight: 400 }}>
+            <Table size="medium">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ pl: 3, py: 2 }}>Employee</TableCell>
+                  <TableCell align="center" sx={{ py: 2 }}>Old Score</TableCell>
+                  <TableCell align="center" sx={{ py: 2 }}>New Score</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {resetResults.map((result, index) => (
+                  <TableRow key={index}>
+                    <TableCell sx={{ pl: 3, py: 2 }}>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Typography variant="subtitle2" noWrap>
+                          {result.employee_name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+                          {result.employee}
+                        </Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell align="center" sx={{ py: 2 }}>
+                      <Typography variant="body2" sx={{ color: 'error.main', fontWeight: 'bold' }}>
+                        {result.previous_score}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="center" sx={{ py: 2 }}>
+                      <Typography variant="body2" sx={{ color: 'success.main', fontWeight: 'bold' }}>
+                        {result.new_score}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Scrollbar>
+        </DialogContent>
       </Dialog>
     </DashboardContent>
   );

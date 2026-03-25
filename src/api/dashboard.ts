@@ -19,6 +19,14 @@ export interface DashboardStats {
     };
 }
 
+export interface PersonalityDashboardData {
+    totalScore: number;
+    status: string;
+    lastUpdated?: string | null;
+    traits: Array<{ trait: string; score: number }>;
+}
+
+
 export interface Call {
     name: string;
     title: string;
@@ -544,3 +552,21 @@ export async function fetchMonthlyEmployee(): Promise<any> {
         return null;
     }
 }
+
+export async function fetchPersonalityDashboardData(): Promise<PersonalityDashboardData | null> {
+    try {
+        const res = await frappeRequest('/api/method/company.company.frontend_api.get_personality_dashboard_data');
+
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(handleFrappeError(error, 'Failed to fetch personality dashboard data'));
+        }
+
+        const data = await res.json();
+        return data.message;
+    } catch (error) {
+        console.error('Failed to fetch personality dashboard data:', error);
+        return null;
+    }
+}
+

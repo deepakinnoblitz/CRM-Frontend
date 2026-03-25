@@ -174,6 +174,8 @@ export async function fetchEmployeeEvaluationEvents(params: {
     trait?: string;
     evaluation_type?: string;
     docstatus?: number;
+    startDate?: string;
+    endDate?: string;
 }) {
     const filters: any[] = [];
     if (params.employee) filters.push(["Employee Evaluation", "employee", "=", params.employee]);
@@ -183,6 +185,12 @@ export async function fetchEmployeeEvaluationEvents(params: {
     }
     if (params.docstatus !== undefined && params.docstatus !== null) {
         filters.push(["Employee Evaluation", "docstatus", "=", params.docstatus]);
+    }
+    if (params.startDate) {
+        filters.push(["Employee Evaluation", "evaluation_date", ">=", params.startDate]);
+    }
+    if (params.endDate) {
+        filters.push(["Employee Evaluation", "evaluation_date", "<=", params.endDate]);
     }
 
     const or_filters: any[] = [];
@@ -231,10 +239,18 @@ export async function fetchEmployeeEvaluationScoreLogs(params: {
     search?: string;
     sort_by?: string;
     employee?: string;
+    startDate?: string;
+    endDate?: string;
 }) {
     const filters: any[] = [];
     if (params.employee) {
         filters.push(["Employee Evaluation Score Log", "employee", "=", params.employee]);
+    }
+    if (params.startDate) {
+        filters.push(["Employee Evaluation Score Log", "date", ">=", params.startDate]);
+    }
+    if (params.endDate) {
+        filters.push(["Employee Evaluation Score Log", "date", "<=", `${params.endDate} 23:59:59`]);
     }
     const or_filters: any[] = [];
 

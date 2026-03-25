@@ -30,6 +30,7 @@ type Props = {
   onResetFilters: VoidFunction;
   currentTab: string;
   traitsOptions: any[];
+  hideEmployeeFilter?: boolean;
 };
 
 export function EmployeeEvaluationTableToolbar({
@@ -45,6 +46,7 @@ export function EmployeeEvaluationTableToolbar({
   onResetFilters,
   currentTab,
   traitsOptions,
+  hideEmployeeFilter,
 }: Props) {
   const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
   const [openFilters, setOpenFilters] = useState(false);
@@ -89,7 +91,11 @@ export function EmployeeEvaluationTableToolbar({
         <Button
           disableRipple
           color="inherit"
-          startIcon={<Iconify icon="ic:round-filter-list" />}
+          startIcon={
+            <Badge color="error" variant="dot" invisible={!canReset}>
+              <Iconify icon="ic:round-filter-list" />
+            </Badge>
+          }
           onClick={() => setOpenFilters(true)}
           sx={{
             minWidth: 100,
@@ -159,6 +165,7 @@ export function EmployeeEvaluationTableToolbar({
         onResetFilters={onResetFilters}
         currentTab={currentTab}
         traitsOptions={traitsOptions}
+        hideEmployeeFilter={hideEmployeeFilter}
       />
     </Toolbar>
   );

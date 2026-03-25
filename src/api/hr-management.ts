@@ -127,3 +127,22 @@ export async function createDepartment(data: CreateDepartmentParams) {
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create department"));
     return json.message;
 }
+
+// Create Designation API
+export async function createDesignation(data: { designation_name: string; department: string; description?: string }) {
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        body: JSON.stringify({
+            doc: {
+                doctype: "Designation",
+                designation_name: data.designation_name,
+                department: data.department,
+                description: data.description
+            }
+        })
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create designation"));
+    return json.message;
+}

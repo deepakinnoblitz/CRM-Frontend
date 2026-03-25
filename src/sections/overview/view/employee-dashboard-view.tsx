@@ -19,6 +19,7 @@ import { HRDashboardTable } from '../hr-dashboard-table';
 import { LeaveStatusCards } from '../leave-status-cards';
 import { MissingTimesheets } from '../missing-timesheets';
 import { PremiumWorkingHours } from '../premium-working-hours';
+import { PersonalityManagement } from '../personality-management';
 import { CalendarAttendanceChart } from '../calendar-attendance-chart';
 
 // ----------------------------------------------------------------------
@@ -106,6 +107,11 @@ export function EmployeeDashboardView() {
                         data={data.leave_allocations || []}
                         inProbation={data.in_probation}
                     />
+                </Grid>
+
+                {/* Personality Management */}
+                <Grid size={{ xs: 12 }}>
+                    <PersonalityManagement />
                 </Grid>
 
                 {/* 4. Calendar Attendance Chart */}

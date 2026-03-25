@@ -55,7 +55,9 @@ export function useEmployeeEvaluationEvents(page: number, pageSize: number, sear
                 employee: filters?.employee,
                 trait: filters?.trait,
                 evaluation_type: filters?.evaluation_type,
-                docstatus: filters?.docstatus
+                docstatus: filters?.docstatus,
+                startDate: filters?.startDate,
+                endDate: filters?.endDate
             });
             setData(res.data);
             setTotal(res.total);
@@ -64,7 +66,7 @@ export function useEmployeeEvaluationEvents(page: number, pageSize: number, sear
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, search, sortBy, filters?.employee, filters?.trait, filters?.evaluation_type, filters?.docstatus]);
+    }, [page, pageSize, search, sortBy, filters?.employee, filters?.trait, filters?.evaluation_type, filters?.docstatus, filters?.startDate, filters?.endDate]);
 
     useEffect(() => {
         refetch();
@@ -86,7 +88,9 @@ export function useEmployeeEvaluationScoreLogs(page: number, pageSize: number, s
                 page_size: pageSize, 
                 search, 
                 sort_by: sortBy,
-                employee: filters?.employee
+                employee: filters?.employee,
+                startDate: filters?.startDate,
+                endDate: filters?.endDate
             });
             setData(res.data);
             setTotal(res.total);
@@ -95,7 +99,7 @@ export function useEmployeeEvaluationScoreLogs(page: number, pageSize: number, s
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, search, sortBy, filters?.employee]);
+    }, [page, pageSize, search, sortBy, filters?.employee, filters?.startDate, filters?.endDate]);
 
     useEffect(() => {
         refetch();

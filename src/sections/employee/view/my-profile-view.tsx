@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import Divider from '@mui/material/Divider';
 import Container from '@mui/material/Container';
@@ -16,6 +17,9 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 import { useAuth } from 'src/auth/auth-context';
+
+import { PersonalityManagement } from '../../overview/personality-management';
+
 // ----------------------------------------------------------------------
 
 export function MyProfileView() {
@@ -178,101 +182,11 @@ export function MyProfileView() {
                             <Divider sx={{ borderStyle: 'dashed' }} />
 
                             {/* Employee Evaluation Metrics */}
-                            <Box sx={{
-                                p: 3,
-                                mb: 1,
-                                borderRadius: 2,
-                                bgcolor: (theme) => theme.palette.mode === 'light' ? 'info.lighter' : 'grey.900',
-                                border: (theme) => `1px solid ${theme.palette.info.light}`,
-                                boxShadow: (theme) => theme.customShadows?.z4,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 2.5
-                            }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Box sx={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: 1.5,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        bgcolor: 'info.main',
-                                        color: 'white'
-                                    }}>
-                                        <Iconify icon={"solar:star-fall-bold" as any} width={18} />
-                                    </Box>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                        Employee Evaluation
-                                    </Typography>
-                                </Box>
-                                <Box
-                                    sx={{
-                                        display: 'grid',
-                                        gap: 4, // Increased gap for the progress bar
-                                        gridTemplateColumns: { xs: '1fr', sm: '1.5fr 1fr' },
-                                        alignItems: 'center',
-                                    }}
-                                >
-                                    <Box sx={{ width: '85%' }}> {/* Move width here to align everything properly */}
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                            <Typography variant="caption" sx={{ color: 'info.darker', fontWeight: 700, textTransform: 'uppercase' }}>
-                                                Employee Evaluation Score
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                                                {employee.evaluation_score ?? 0}/100
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{
-                                            width: '100%', // Now 100% of the 85% parent
-                                            height: 6, // Thinner bar
-                                            bgcolor: (theme) => theme.palette.mode === 'light' ? 'rgba(145, 158, 171, 0.16)' : 'rgba(145, 158, 171, 0.16)', // Neutral background
-                                            borderRadius: 4,
-                                            overflow: 'hidden'
-                                        }}>
-                                            <Box sx={{
-                                                width: `${Math.min(100, Math.max(0, employee.evaluation_score || 0))}%`,
-                                                height: '100%',
-                                                bgcolor: (theme) => {
-                                                    const score = employee.evaluation_score || 0;
-                                                    if (score >= 80) return 'success.main'; // Green
-                                                    if (score >= 50) return 'warning.main'; // Orange
-                                                    return 'error.main'; // Red
-                                                },
-                                                borderRadius: 4,
-                                                transition: 'width 0.5s ease-in-out'
-                                            }} />
-                                        </Box>
-                                    </Box>
-                                    <Box>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 2 }}>
-                                            <Typography variant="caption" sx={{ color: 'info.darker', fontWeight: 700, textTransform: 'uppercase' }}>
-                                                Employee Evaluation Status
-                                            </Typography>
-                                            <Label 
-                                                variant="filled" 
-                                                sx={{ px: 1, py: 1.5, fontSize: '0.75rem', fontWeight: 800 }}
-                                                color={(() => {
-                                                    const score = employee.evaluation_score || 0;
-                                                    if (score >= 80) return 'success';
-                                                    if (score >= 50) return 'warning';
-                                                    return 'error';
-                                                })()}
-                                            >
-                                                {employee.evaluation_status || (() => {
-                                                    const score = employee.evaluation_score ?? 100;
-                                                    if (score >= 90) return "Excellent";
-                                                    if (score >= 75) return "Good";
-                                                    if (score >= 60) return "Average";
-                                                    return "Needs Improvement";
-                                                })()}
-                                            </Label>
-                                        </Box>
-                                    </Box>
-                                </Box>
-                            </Box>
-                            
-                            
+
+                            <Grid size={{ xs: 12 }}>
+                                <PersonalityManagement />
+                            </Grid>
+
                             <Divider sx={{ borderStyle: 'dashed' }} />
 
                             {/* Salary & Finance */}

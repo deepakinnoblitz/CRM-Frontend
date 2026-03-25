@@ -79,14 +79,25 @@ export function JobOpeningDetailsDialog({ open, onClose, job }: Props) {
     );
 
     const renderDescription = (
-        <Box sx={{ mt: 2, mb: 5, ml: 2 }}>
-            <SectionHeader title="Job Description" icon="solar:notes-bold" />
-            <Box sx={{ mt: 2, color: 'text.secondary', whiteSpace: 'pre-wrap' }}>
-                <Typography variant="body2">
-                    {job.description || job.small_description || 'No description provided.'}
-                </Typography>
+        <Stack spacing={3} sx={{ mt: 2, mb: 5, ml: 2 }}>
+            <Box>
+                <SectionHeader title="Small Description" icon="solar:notes-bold" />
+                <Box sx={{ mt: 2, color: 'text.secondary', whiteSpace: 'pre-wrap' }}>
+                    <Typography variant="body2">
+                        {job.small_description || 'No small description provided.'}
+                    </Typography>
+                </Box>
             </Box>
-        </Box>
+
+            <Box>
+                <SectionHeader title="Job Description" icon="solar:notes-bold" />
+                <Box sx={{ mt: 2, color: 'text.secondary', whiteSpace: 'pre-wrap' }}>
+                    <Typography variant="body2">
+                        {job.description || 'No description provided.'}
+                    </Typography>
+                </Box>
+            </Box>
+        </Stack>
     );
 
     return (

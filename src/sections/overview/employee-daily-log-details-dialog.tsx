@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
@@ -15,6 +17,102 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
 // ----------------------------------------------------------------------
+
+const SessionTimelineBar = ({ session }: { session: any }) => {
+    const theme = useTheme();
+    if (!session || !session.login_time) return null;
+
+    const parseTime = (dateStr: string) => {
+        if (!dateStr) return 0;
+        let d = dayjs(dateStr);
+        if (!d.isValid() && typeof dateStr === 'string' && dateStr.includes(':')) {
+            d = dayjs(`2000-01-01 ${dateStr}`);
+        }
+        return d.hour() * 3600 + d.minute() * 60 + d.second();
+    };
+
+    const startSec = parseTime(session.login_time);
+
+    let endSec = session.logout_time ? parseTime(session.logout_time) : 0;
+    if (!endSec && session.intervals && session.intervals.length > 0) {
+        const lastInterval = session.intervals[session.intervals.length - 1];
+        if (lastInterval.to_time) endSec = parseTime(lastInterval.to_time);
+    }
+    if (!endSec) endSec = parseTime(new Date().toISOString());
+    if (endSec <= startSec) endSec = startSec + 3600;
+
+    const totalDuration = Math.max(endSec - startSec, 1);
+
+    const activeSegments = (session.intervals || []).map((int: any) => {
+        const from = parseTime(int.from_time);
+        const to = int.to_time ? parseTime(int.to_time) : endSec;
+        return {
+            left: ((from - startSec) / totalDuration) * 100,
+            width: ((to - from) / totalDuration) * 100,
+            color: theme.palette.primary.main,
+            type: 'Active'
+        };
+    });
+
+    const breakSegments = (session.breaks || []).map((brk: any) => {
+        const from = parseTime(brk.break_start);
+        const to = brk.break_end ? parseTime(brk.break_end) : endSec;
+        return {
+            left: ((from - startSec) / totalDuration) * 100,
+            width: ((to - from) / totalDuration) * 100,
+            color: theme.palette.warning.main,
+            type: 'Break'
+        };
+    });
+
+    const segments = [...activeSegments, ...breakSegments];
+
+    return (
+        <Box sx={{ width: '100%', mb: 5 }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                <Box
+                    sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: alpha(theme.palette.success.main, 0.12),
+                        color: 'success.main',
+                    }}
+                >
+                    <Iconify icon="solar:chart-square-bold" width={20} />
+                </Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                    Timeline Overview
+                </Typography>
+            </Stack>
+            <Box sx={{ width: '100%', height: 24, bgcolor: alpha(theme.palette.grey[500], 0.16), borderRadius: 1.5, position: 'relative', overflow: 'hidden' }}>
+                {segments.map((seg, i) => (
+                    <Box
+                        key={i}
+                        sx={{
+                            position: 'absolute',
+                            left: `${Math.max(0, Math.min(100, seg.left))}%`,
+                            width: `${Math.max(0, Math.min(100 - seg.left, seg.width))}%`,
+                            height: '100%',
+                            bgcolor: seg.color,
+                        }}
+                    />
+                ))}
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                    {fTime(session.login_time)}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                    {session.logout_time ? fTime(session.logout_time) : 'Active'}
+                </Typography>
+            </Box>
+        </Box>
+    );
+};
 
 type Props = {
     open: boolean;
@@ -108,6 +206,8 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                     </Box>
 
                     <Divider sx={{ borderStyle: 'dashed', mb: 5 }} />
+
+                    <SessionTimelineBar session={session} />
 
                     <Stack spacing={5} direction={{ xs: 'column', md: 'row' }}>
                         
