@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import Box from '@mui/material/Box';
+import Badge from '@mui/material/Badge';
 import Popover from '@mui/material/Popover';
 import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
@@ -10,8 +11,11 @@ import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
+import { useUnreadCountsContext } from 'src/hooks/unread-counts-context';
+
 import { fTimeDist } from 'src/utils/format-time';
 
+import { markAsRead } from 'src/api/unread-counts';
 import { getRequestWorkflowActions, type WorkflowAction } from 'src/api/requests';
 
 import { Label } from 'src/components/label';
@@ -65,6 +69,10 @@ export function RequestTableRow({
     onClarify,
     isHR,
 }: RequestTableRowProps) {
+    const { unreadCounts } = useUnreadCountsContext();
+
+    const isUnread = unreadCounts.unread_ids.Request?.includes(row.id);
+
     const [openMenu, setOpenMenu] = useState<HTMLElement | null>(null);
     const [actions, setActions] = useState<WorkflowAction[]>([]);
     const [loadingActions, setLoadingActions] = useState(false);
@@ -104,6 +112,12 @@ export function RequestTableRow({
 
     const handleAction = (action: string) => {
         const lowerAction = action.toLowerCase();
+
+        // Mark as read when action is taken
+        markAsRead('Request', row.id).then(() => {
+            window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+        });
+
         if (lowerAction.includes('clarification') || lowerAction.includes('query') || lowerAction.includes('reply')) {
             setOpenClarification(true);
         } else {
@@ -218,7 +232,20 @@ export function RequestTableRow({
                         {row.modified ? fTimeDist(row.modified) : '-'}
                     </Box>
                     <IconButton size="small" color="primary" onClick={onView}>
-                        <Iconify icon="solar:eye-bold" />
+                        <Badge
+                            color="error"
+                            variant="dot"
+                            invisible={!isUnread}
+                            sx={{
+                                '& .MuiBadge-badge': {
+                                    width: 6,
+                                    height: 6,
+                                    minWidth: 6,
+                                },
+                            }}
+                        >
+                            <Iconify icon="solar:eye-bold" />
+                        </Badge>
                     </IconButton>
 
                     {showActions && (

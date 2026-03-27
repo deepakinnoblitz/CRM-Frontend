@@ -7,10 +7,30 @@ import { Outlet, Navigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
 
+import { useSocket } from 'src/hooks/use-socket';
+import { UnreadCountsProvider } from 'src/hooks/unread-counts-context';
+
 import { AuthLayout } from 'src/layouts/auth';
 import { DashboardLayout } from 'src/layouts/dashboard';
 
 import { AuthGuard } from 'src/auth/auth-guard';
+import { useAuth } from 'src/auth/auth-context';
+
+
+// ----------------------------------------------------------------------
+
+function DashboardLayoutWrapper({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const { socket } = useSocket(user?.email);
+
+  return (
+    <UnreadCountsProvider socket={socket}>
+      <DashboardLayout>
+        {children}
+      </DashboardLayout>
+    </UnreadCountsProvider>
+  );
+}
 
 // ----------------------------------------------------------------------
 
@@ -125,11 +145,11 @@ export const routesSection: RouteObject[] = [
   {
     element: (
       <AuthGuard>
-        <DashboardLayout>
+        <DashboardLayoutWrapper>
           <Suspense fallback={renderFallback()}>
             <Outlet />
           </Suspense>
-        </DashboardLayout>
+        </DashboardLayoutWrapper>
       </AuthGuard>
     ),
     children: [

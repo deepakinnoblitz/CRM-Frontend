@@ -2,9 +2,18 @@ import { frappeRequest } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 export interface UnreadCounts {
-    'Leave Application': number;
-    Request: number;
-    'WFH Attendance': number;
+    counts: {
+        'Leave Application': number;
+        Request: number;
+        'WFH Attendance': number;
+        [key: string]: number;
+    };
+    unread_ids: {
+        'Leave Application': string[];
+        Request: string[];
+        'WFH Attendance': string[];
+        [key: string]: string[];
+    };
 }
 
 export async function fetchUnreadCounts(): Promise<UnreadCounts> {
@@ -17,13 +26,25 @@ export async function fetchUnreadCounts(): Promise<UnreadCounts> {
         }
 
         const data = await res.json();
-        return data.message;
+        const message = data.message || {};
+        
+        return {
+            counts: message.counts || {},
+            unread_ids: message.unread_ids || {},
+        };
     } catch (error) {
         console.error('Failed to fetch unread counts:', error);
         return {
-            'Leave Application': 0,
-            Request: 0,
-            'WFH Attendance': 0,
+            counts: {
+                'Leave Application': 0,
+                Request: 0,
+                'WFH Attendance': 0,
+            },
+            unread_ids: {
+                'Leave Application': [],
+                Request: [],
+                'WFH Attendance': [],
+            },
         };
     }
 }
