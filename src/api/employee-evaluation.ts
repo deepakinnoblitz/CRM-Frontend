@@ -283,7 +283,7 @@ export async function fetchEmployeeEvaluationEvents(params: {
 
     const query = new URLSearchParams({
         doctype: "Employee Evaluation",
-        fields: JSON.stringify(["name", "employee", "employee_name", "trait", "evaluation_type", "evaluation_date", "score_change", "hr_user", "docstatus", "modified_by", "modified"]),
+        fields: JSON.stringify(["name", "employee", "employee_name", "trait", "evaluation_type", "evaluation_date", "score_change", "hr_user", "remarks", "docstatus", "modified_by", "modified"]),
         filters: JSON.stringify(filters),
         or_filters: JSON.stringify(or_filters),
         limit_start: String((params.page - 1) * params.page_size),

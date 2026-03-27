@@ -25,6 +25,7 @@ import { HRCalendar } from '../hr-calendar';
 import { HRAnnouncements } from '../hr-announcements';
 import { HRSummaryWidget } from '../hr-summary-widget';
 import { HRDashboardTable } from '../hr-dashboard-table';
+import { DashboardEomCard } from '../dashboard-eom-card';
 import { WeeklyPresentChart } from '../weekly-present-chart';
 import { MissingAttendanceChart } from '../missing-attendance-chart';
 
@@ -109,7 +110,9 @@ export function HRDashboardView() {
                 Hi, {user?.full_name || 'HR User'}, Welcome back 👋
             </Typography>
 
-            <Grid container spacing={3}>
+            <DashboardEomCard />
+
+            <Grid container spacing={3} sx={{ mt: 3 }}>
                 {/* Announcements */}
                 <Grid size={{ xs: 12 }}>
                     <HRAnnouncements

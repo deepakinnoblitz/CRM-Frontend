@@ -12,7 +12,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 
 import { Iconify } from 'src/components/iconify';
 
-import { BadgeTableFiltersDrawer } from './badge-table-filters-drawer';
+import { EmployeeMonthlyAwardTableFiltersDrawer } from './employee-monthly-award-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
@@ -22,33 +22,25 @@ type Props = {
   sortBy: string;
   onSortChange: (value: string) => void;
   sortOptions: { value: string; label: string }[];
-  placeholder?: string;
+  searchPlaceholder?: string;
   // Filters
   filters: any;
   onFilters: (update: any) => void;
   canReset: boolean;
   onResetFilters: VoidFunction;
-  currentTab: string;
-  badgeOptions?: any[];
-  employeeOptions?: any[];
-  userOptions?: any[];
 };
 
-export function BadgeTableToolbar({
+export function EmployeeMonthlyAwardTableToolbar({
   filterName,
   onFilterName,
   sortBy,
   onSortChange,
   sortOptions,
-  placeholder = 'Search...',
+  searchPlaceholder = 'Search...',
   filters,
   onFilters,
   canReset,
   onResetFilters,
-  currentTab,
-  badgeOptions,
-  employeeOptions,
-  userOptions,
 }: Props) {
   const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
   const [openFilters, setOpenFilters] = useState(false);
@@ -80,24 +72,13 @@ export function BadgeTableToolbar({
       <OutlinedInput
         value={filterName}
         onChange={onFilterName}
-        placeholder={placeholder}
+        placeholder={searchPlaceholder}
         startAdornment={
           <InputAdornment position="start">
             <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
           </InputAdornment>
         }
-        sx={{ 
-          maxWidth: 480, 
-          flexGrow: 1,
-          '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: (theme) => alpha(theme.palette.grey[500], 0.32),
-          },
-          '&.Mui-focused': {
-            '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: 'text.primary',
-            },
-          },
-        }}
+        sx={{ maxWidth: 480, flexGrow: 1 }}
       />
 
       <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
@@ -119,9 +100,6 @@ export function BadgeTableToolbar({
             borderColor: 'divider',
             borderRadius: 1,
             fontWeight: 500,
-            '&:hover': {
-              bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-            },
           }}
         >
           Filters
@@ -141,9 +119,6 @@ export function BadgeTableToolbar({
             borderColor: 'divider',
             borderRadius: 1,
             fontWeight: 500,
-            '&:hover': {
-              bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-            },
           }}
         >
           {currentSortLabel}
@@ -175,17 +150,13 @@ export function BadgeTableToolbar({
         </Menu>
       </Box>
 
-      <BadgeTableFiltersDrawer
+      <EmployeeMonthlyAwardTableFiltersDrawer
         open={openFilters}
         onClose={() => setOpenFilters(false)}
         filters={filters}
         onFilters={onFilters}
         canReset={canReset}
         onResetFilters={onResetFilters}
-        currentTab={currentTab}
-        badgeOptions={badgeOptions}
-        employeeOptions={employeeOptions}
-        userOptions={userOptions}
       />
     </Toolbar>
   );

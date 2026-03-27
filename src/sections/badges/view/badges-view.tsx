@@ -56,6 +56,7 @@ export function BadgesView() {
     badge: null,
     startDate: null,
     endDate: null,
+    awarded_by: null,
   });
 
   const [badges, setBadges] = useState<any[]>([]);
@@ -68,6 +69,7 @@ export function BadgesView() {
 
   const [allBadges, setAllBadges] = useState<any[]>([]);
   const [allEmployees, setAllEmployees] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
 
   const [openBadgeForm, setOpenBadgeForm] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<any>(null);
@@ -102,12 +104,14 @@ export function BadgesView() {
   useEffect(() => {
     const loadOptions = async () => {
       try {
-        const [badgeRes, empRes] = await Promise.all([
+        const [badgeRes, empRes, userRes] = await Promise.all([
           fetchAllBadges(),
-          fetchEmployees({ page_size: 1000, page: 1, fields: ['name', 'employee_name'] })
+          fetchEmployees({ page_size: 1000, page: 1, fields: ['name', 'employee_name'] }),
+          fetchFrappeList('User', { page_size: 1000, page: 1, fields: ['name', 'full_name'] })
         ]);
         setAllBadges(badgeRes);
         setAllEmployees(empRes.data);
+        setAllUsers(userRes.data);
       } catch (error) {
         console.error(error);
       }
@@ -149,6 +153,7 @@ export function BadgesView() {
       if (filters.badge) activeFilters.push(['badge', '=', filters.badge]);
       if (filters.startDate) activeFilters.push(['awarded_on', '>=', filters.startDate]);
       if (filters.endDate) activeFilters.push(['awarded_on', '<=', filters.endDate]);
+      if (filters.awarded_by) activeFilters.push(['awarded_by', '=', filters.awarded_by]);
 
       const response = await fetchFrappeList('Employee Badge Assignment', {
         page: page + 1,
@@ -223,7 +228,7 @@ export function BadgesView() {
     }
   };
 
-  const canReset = !!filterName || filters.badge_type !== 'all' || !!filters.employee || !!filters.badge || !!filters.startDate || !!filters.endDate;
+  const canReset = !!filterName || filters.badge_type !== 'all' || !!filters.employee || !!filters.badge || !!filters.startDate || !!filters.endDate || !!filters.awarded_by;
 
   const handleResetFilters = useCallback(() => {
     setFilterName('');
@@ -233,6 +238,7 @@ export function BadgesView() {
       badge: null,
       startDate: null,
       endDate: null,
+      awarded_by: null,
     });
   }, []);
 
@@ -308,6 +314,7 @@ export function BadgesView() {
           currentTab={currentTab}
           badgeOptions={allBadges}
           employeeOptions={allEmployees}
+          userOptions={allUsers}
         />
 
         <Scrollbar>

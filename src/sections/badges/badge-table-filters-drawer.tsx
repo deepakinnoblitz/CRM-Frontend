@@ -29,6 +29,7 @@ type Props = {
   currentTab: string;
   badgeOptions?: any[];
   employeeOptions?: any[];
+  userOptions?: any[];
 };
 
 export function BadgeTableFiltersDrawer({
@@ -41,6 +42,7 @@ export function BadgeTableFiltersDrawer({
   currentTab,
   badgeOptions = [],
   employeeOptions = [],
+  userOptions = [],
 }: Props) {
   const renderHead = (
     <Box
@@ -219,6 +221,53 @@ export function BadgeTableFiltersDrawer({
                       <TextField 
                         {...params} 
                         placeholder="Select Badge" 
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 1.5,
+                            bgcolor: 'background.neutral',
+                            '&:hover': {
+                              bgcolor: 'action.hover',
+                            },
+                          },
+                        }}
+                      />
+                    )}
+                  />
+                </Stack>
+
+                <Stack spacing={1.5}>
+                  <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                    Awarded By
+                  </Typography>
+                  <Autocomplete
+                    fullWidth
+                    options={userOptions || []}
+                    getOptionLabel={(option) => {
+                      if (typeof option === 'string') return option;
+                      return option.full_name ? `${option.full_name} (${option.name})` : option.name || '';
+                    }}
+                    value={userOptions?.find((user) => user.name === filters.awarded_by) || null}
+                    onChange={(event, newValue) => onFilters({ awarded_by: newValue?.name || null })}
+                    renderOption={(props, option) => {
+                      const { key, ...optionProps } = props as any;
+                      return (
+                        <li key={key} {...optionProps}>
+                          <Stack spacing={0.5}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                              {option.full_name || option.name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              Email: {option.name}
+                            </Typography>
+                          </Stack>
+                        </li>
+                      );
+                    }}
+                    renderInput={(params) => (
+                      <TextField 
+                        {...params} 
+                        placeholder="Select User" 
                         size="small"
                         sx={{
                           '& .MuiOutlinedInput-root': {

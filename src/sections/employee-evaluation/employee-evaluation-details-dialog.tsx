@@ -118,8 +118,9 @@ export function EmployeeEvaluationEventDetailsDialog({ open, onClose, event }: P
                                 <Label
                                     variant="soft"
                                     color={
-                                        (evaluation_type === 'Agree' && 'success') ||
-                                        (evaluation_type === 'Disagree' && 'error') ||
+                                        (['Excellent', 'Good', 'Positive', 'Agree'].includes(evaluation_type) && 'success') ||
+                                        (['Average', 'Neutral'].includes(evaluation_type) && 'warning') ||
+                                        (['Bad', 'Very Bad', 'Negative', 'Disagree'].includes(evaluation_type) && 'error') ||
                                         'default'
                                     }
                                     sx={{ height: 28, textTransform: 'capitalize', fontWeight: 700 }}
@@ -132,7 +133,7 @@ export function EmployeeEvaluationEventDetailsDialog({ open, onClose, event }: P
                                 <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
                                     Score Change
                                 </Typography>
-                                <Typography variant="h6" sx={{ color: score_change > 0 ? 'success.main' : 'error.main', fontWeight: 800 }}>
+                                <Typography variant="h6" sx={{ color: score_change > 0 ? 'success.main' : score_change < 0 ? 'error.main' : 'text.primary', fontWeight: 800 }}>
                                     {score_change > 0 ? `+${score_change}` : score_change}
                                 </Typography>
                             </Box>
@@ -144,7 +145,7 @@ export function EmployeeEvaluationEventDetailsDialog({ open, onClose, event }: P
                                 Remarks
                             </Typography>
                             <Box sx={{ p: 2, bgcolor: '#f4f6f8', borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }}>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
+                                <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.6, fontWeight: 600 }}>
                                     {remarks || 'No remarks provided.'}
                                 </Typography>
                             </Box>

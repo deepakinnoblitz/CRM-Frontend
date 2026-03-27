@@ -45,6 +45,7 @@ export function UserStatusBar() {
         checkTimesheet,
         session,
         loading,
+        refresh,
     } = usePresence();
     const router = useRouter();
 
@@ -169,15 +170,30 @@ export function UserStatusBar() {
     // Ticker logic: increment if not Offline and not on Break
     useEffect(() => {
         let interval: any;
+        let lastTick = Date.now();
         if (statusName && statusName !== 'Offline' && statusName !== 'Break' && session) {
             interval = setInterval(() => {
-                setActiveTimer((prev) => prev + 1);
+                const now = Date.now();
+                const delta = Math.floor((now - lastTick) / 1000);
+                if (delta > 0) {
+                    setActiveTimer((prev) => prev + delta);
+                    lastTick += delta * 1000;
+                }
             }, 1000);
         }
         return () => {
             if (interval) clearInterval(interval);
         };
     }, [statusName, session]);
+
+    // Focus event: refresh active time from API
+    useEffect(() => {
+        const handleFocus = () => {
+            if (refresh) refresh();
+        };
+        window.addEventListener('focus', handleFocus);
+        return () => window.removeEventListener('focus', handleFocus);
+    }, [refresh]);
 
     const formatTimer = (totalSeconds: number) => {
         const floorSeconds = Math.floor(totalSeconds);
@@ -223,7 +239,7 @@ export function UserStatusBar() {
                 }}
             >
                 <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '11px' }}>
-                    Today Active Time: 
+                    Today Active Time:
                 </Typography>
                 <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '18px' }}>
                     {formatTimer(activeTimer)}

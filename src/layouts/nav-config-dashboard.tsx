@@ -116,6 +116,7 @@ export const hrNavData = [
     children: [
       { title: 'Employee Evaluation', path: '/employee-evaluation' },
       { title: 'Badges', path: '/badges' },
+      { title: 'Employee Monthly Award', path: '/employee-monthly-award' },
     ],
   },
   {
