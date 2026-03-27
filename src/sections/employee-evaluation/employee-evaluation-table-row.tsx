@@ -42,16 +42,24 @@ export function EmployeeEvaluationEventTableRow({
       <TableCell align="center">
         <Box
           sx={{
-            width: 32,
-            height: 32,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '50%',
-            bgcolor: (theme) => alpha('#00A5D1', 0.1),
-            color: '#00A5D1',
-            fontWeight: 600,
-            mx: 'auto',
+              width: 28,
+              height: 28,
+              display: 'flex',
+              borderRadius: '50%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+              color: 'primary.main',
+              typography: 'subtitle2',
+              fontWeight: 800,
+              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+              mx: 'auto',
+              transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+              '&:hover': {
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  transform: 'scale(1.1)',
+              },
           }}
         >
           {index + 1}

@@ -15,10 +15,11 @@ import { Iconify } from 'src/components/iconify';
 type Props = {
     row: any;
     index: number;
+    isHR?: boolean;
     onView: VoidFunction;
 };
 
-export function EmployeeDailyLogTableRow({ row, index, onView }: Props) {
+export function EmployeeDailyLogTableRow({ row, index, isHR, onView }: Props) {
     const theme = useTheme();
 
     const {
@@ -27,6 +28,8 @@ export function EmployeeDailyLogTableRow({ row, index, onView }: Props) {
         login_date,
         logout_time,
         total_work_hours,
+        employee,
+        employee_name,
         breaks = []
     } = row;
 
@@ -39,21 +42,40 @@ export function EmployeeDailyLogTableRow({ row, index, onView }: Props) {
             <TableCell>
                 <Box
                     sx={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: '50%',
+                        width: 28,
+                        height: 28,
                         display: 'flex',
+                        borderRadius: '50%',
                         alignItems: 'center',
                         justifyContent: 'center',
                         bgcolor: alpha(theme.palette.primary.main, 0.08),
                         color: 'primary.main',
-                        fontSize: '0.75rem',
-                        fontWeight: 900
+                        typography: 'subtitle2',
+                        fontWeight: 800,
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                        mx: 'auto',
+                        transition: theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+                        '&:hover': {
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
+                            transform: 'scale(1.1)',
+                        },
                     }}
                 >
                     {index + 1}
                 </Box>
             </TableCell>
+
+            {isHR && (
+                <TableCell>
+                    <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
+                        {employee_name || 'N/A'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                        {employee || 'N/A'}
+                    </Typography>
+                </TableCell>
+            )}
 
             <TableCell>
                 <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>

@@ -1,7 +1,9 @@
 import dayjs from 'dayjs';
+import { useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
@@ -100,7 +102,7 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
         });
 
         if (isInActive) {
-            rawSegments.push({ from, to, type: 'Active' });
+            rawSegments.push({ from, to, type: 'Active', status: isInActive.status });
         } else {
             rawSegments.push({ from, to, type: 'Offline' });
         }
@@ -110,17 +112,7 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
     if (rawSegments.length > 0) {
         let current = { ...rawSegments[0] };
         for (let i = 1; i < rawSegments.length; i++) {
-            // Only merge if they are NOT active or if we want to preserve short blips?
-            // Actually, merging same types is good, but we should check duration AFTER merge.
-            // But wait, if we have [Active 10m] [Active 4s] [Active 5m], they should probably be one Green block.
-            // If the user sees them as separate in the list, but they are consecutive, merging them makes sense.
-            // HOWEVER, the user example shows 11:37-11:37 as a separate item.
-            // If I merge them, it becomes one block.
-            // Let's NOT merge Active segments if we want to see the "4s" blip as grey.
-            // But if they are perfectly consecutive, it's just one continuous activity.
-            // The 4s blip might be a "gap" in reality if it was 11:37:00-11:37:04 and the next started at 11:37:04.
-            
-            if (rawSegments[i].type === current.type) {
+            if (rawSegments[i].type === current.type && rawSegments[i].status === current.status) {
                 current.to = rawSegments[i].to;
             } else {
                 mergedSegments.push(current);
@@ -130,25 +122,36 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
         mergedSegments.push(current);
     }
 
+    const getStatusColor = (status?: string, type?: string) => {
+        if (type === 'Break') return alpha('#f59e0b', 0.8);
+        if (type === 'Offline') return alpha(theme.palette.grey[500], 0.16);
+
+        const s = status || 'Available';
+        if (s === 'Available') return alpha(theme.palette.success.main, 0.8);
+        if (s === 'Busy' || s === 'Do Not Disturb') return alpha(theme.palette.error.main, 0.8);
+        if (s === 'Away') return alpha('#d97706', 0.8);
+        return alpha(theme.palette.success.main, 0.8);
+    };
+
     const segments = mergedSegments.map((seg) => {
         const duration = seg.to - seg.from;
         const width = (duration / totalDuration) * 100;
         const left = ((seg.from - startSec) / totalDuration) * 100;
-        
+
         const isBreak = seg.type === 'Break';
         const isOffline = seg.type === 'Offline';
         const isShortActive = seg.type === 'Active' && duration < 60; // Less than 1 minute
 
-        let color = alpha(theme.palette.success.main, 0.8);
+        const color = getStatusColor(seg.status, seg.type);
         let textColor = '#FFFFFF';
 
         if (isBreak) {
-            color = alpha('#ffab00', 0.8);
-            textColor = '#664d00'; // Darker version of #ffab00 for readability
+            textColor = '#FFFFFF';
         } else if (isOffline || isShortActive) {
-            color = alpha(theme.palette.grey[500], 0.16);
             textColor = theme.palette.text.disabled;
         }
+
+        const labelContent = seg.status || seg.type;
 
         return {
             left,
@@ -156,7 +159,7 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
             color,
             textColor,
             label: formatShortDuration(duration),
-            tooltip: `${seg.type}: ${formattedTimeFromSec(seg.from)} - ${formattedTimeFromSec(seg.to)} (${fDecimalHours(duration / 3600)})`,
+            tooltip: `${labelContent}: ${formattedTimeFromSec(seg.from)} - ${formattedTimeFromSec(seg.to)} (${fDecimalHours(duration / 3600)})`,
             showLabel: width > 8 && !isOffline && !isShortActive
         };
     });
@@ -229,6 +232,24 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
                     {session.logout_time ? fTime(session.logout_time) : 'Active Now'}
                 </Typography>
             </Box>
+
+            {/* Legend */}
+            <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 2.5, px: 0.5 }}>
+                {[
+                    { label: 'Available', color: theme.palette.success.main },
+                    { label: 'Busy / DND', color: theme.palette.error.main },
+                    { label: 'Away', color: '#d97706' },
+                    { label: 'Break', color: '#f59e0b' },
+                    { label: 'Offline', color: theme.palette.grey[400] },
+                ].map((item) => (
+                    <Stack key={item.label} direction="row" alignItems="center" spacing={0.75}>
+                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: item.color }} />
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                            {item.label}
+                        </Typography>
+                    </Stack>
+                ))}
+            </Stack>
         </Box>
     );
 };
@@ -241,6 +262,7 @@ type Props = {
 
 export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props) {
     const theme = useTheme();
+    const [limit, setLimit] = useState(5);
 
     if (!session) return null;
 
@@ -270,9 +292,9 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent dividers sx={{ p: 4 }}>
-                <Scrollbar sx={{ maxHeight: 600 }}>
-                    
+            <DialogContent dividers sx={{ p: 0 }}>
+                <Scrollbar sx={{ p: 4, maxHeight: '72vh' }}>
+
                     {/* Summary Section */}
                     <Box sx={{ mb: 5 }}>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
@@ -329,7 +351,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                     <SessionTimelineBar session={session} />
 
                     <Stack spacing={5} direction={{ xs: 'column', md: 'row' }}>
-                        
+
                         {/* Activity Timeline */}
                         <Box sx={{ flex: 1 }}>
                             <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
@@ -353,41 +375,91 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                             </Stack>
 
                             <Stack spacing={3}>
-                                {intervals.map((interval: any, index: number) => (
-                                    <Stack key={index} direction="row" spacing={2.5}>
-                                        <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                            <Box
-                                                sx={{
-                                                    width: 14,
-                                                    height: 14,
-                                                    borderRadius: '50%',
-                                                    border: `3px solid ${theme.palette.primary.main}`,
-                                                    bgcolor: 'background.paper',
-                                                    zIndex: 1
-                                                }}
-                                            />
-                                            {index !== intervals.length - 1 && (
+                                {intervals.slice(0, limit).map((interval: any, index: number) => {
+                                    const intervalStatus = interval.status || 'Available';
+                                    const isAvailable = intervalStatus === 'Available';
+                                    const isBusy = intervalStatus === 'Busy' || intervalStatus === 'Do Not Disturb';
+                                    const isAway = intervalStatus === 'Away';
+
+                                    let statusColor = theme.palette.success.main;
+                                    if (isBusy) statusColor = theme.palette.error.main;
+                                    if (isAway) statusColor = theme.palette.warning.main;
+
+                                    return (
+                                        <Stack key={index} direction="row" spacing={2.5}>
+                                            <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                                 <Box
                                                     sx={{
-                                                        width: 2,
-                                                        flexGrow: 1,
-                                                        bgcolor: alpha(theme.palette.primary.main, 0.2),
-                                                        my: 0.5,
-                                                        minHeight: 24
+                                                        width: 14,
+                                                        height: 14,
+                                                        borderRadius: '50%',
+                                                        border: `3px solid ${statusColor}`,
+                                                        bgcolor: 'background.paper',
+                                                        zIndex: 1
                                                     }}
                                                 />
-                                            )}
-                                        </Box>
-                                        <Box>
-                                            <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>
-                                                {fTime(interval.from_time)} — {interval.to_time ? fTime(interval.to_time) : 'Active'}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase' }}>
-                                                Duration: {interval.duration_seconds ? formatDuration(interval.duration_seconds) : 'Tracking...'}
-                                            </Typography>
-                                        </Box>
-                                    </Stack>
-                                ))}
+                                                {index < Math.min(limit, intervals.length) - 1 && (
+                                                    <Box
+                                                        sx={{
+                                                            width: 2,
+                                                            flexGrow: 1,
+                                                            bgcolor: alpha(statusColor, 0.2),
+                                                            my: 0.5,
+                                                            minHeight: 24
+                                                        }}
+                                                    />
+                                                )}
+                                            </Box>
+                                            <Box>
+                                                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+                                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                                        {fTime(interval.from_time)} — {interval.to_time ? fTime(interval.to_time) : 'Active'}
+                                                    </Typography>
+                                                    <Box
+                                                        sx={{
+                                                            px: 0.75,
+                                                            py: 0.15,
+                                                            borderRadius: 0.5,
+                                                            fontSize: 10,
+                                                            fontWeight: 900,
+                                                            textTransform: 'uppercase',
+                                                            bgcolor: alpha(statusColor, 0.1),
+                                                            color: statusColor,
+                                                            border: `1px solid ${alpha(statusColor, 0.2)}`
+                                                        }}
+                                                    >
+                                                        {intervalStatus}
+                                                    </Box>
+                                                </Stack>
+                                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase' }}>
+                                                    Duration: {interval.duration_seconds ? formatDuration(interval.duration_seconds) : 'Tracking...'}
+                                                </Typography>
+                                            </Box>
+                                        </Stack>
+                                    );
+                                })}
+
+                                {intervals.length > limit && (
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 1 }}>
+                                        <Button
+                                            size="small"
+                                            color="primary"
+                                            onClick={() => setLimit(limit + 5)}
+                                            startIcon={<Iconify icon="eva:arrow-ios-downward-fill" width={18} />}
+                                            sx={{
+                                                fontWeight: 800,
+                                                borderRadius: 1.5,
+                                                px: 2,
+                                                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                                                '&:hover': {
+                                                    bgcolor: alpha(theme.palette.primary.main, 0.16),
+                                                }
+                                            }}
+                                        >
+                                            Load More ({intervals.length - limit} remaining)
+                                        </Button>
+                                    </Box>
+                                )}
                             </Stack>
                         </Box>
 

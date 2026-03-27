@@ -39,6 +39,7 @@ export const hrNavData = [
     children: [
       { title: 'Attendance List', path: '/attendance' },
       { title: 'WFH Attendance', path: '/wfh-attendance' },
+      { title: 'Daily Log', path: '/daily-log' },
       { title: 'Import Attendance', path: '/import-attendance' },
     ],
   },

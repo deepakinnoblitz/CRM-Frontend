@@ -49,6 +49,7 @@ const SORT_OPTIONS = [
 
 export function EmployeeDailyLogView() {
     const { user } = useAuth();
+    const isHR = user?.roles?.includes('HR') || user?.roles?.includes('Administrator');
     const { socket } = useSocket(user?.email);
 
     const [page, setPage] = useState(0);
@@ -156,6 +157,7 @@ export function EmployeeDailyLogView() {
                                 onSelectAllRows={() => {}}
                                 headLabel={[
                                     { id: 'login_date', label: 'Date', minWidth: 150 },
+                                    ...(isHR ? [{ id: 'employee', label: 'Employee', minWidth: 200 }] : []),
                                     { id: 'status', label: 'Status', minWidth: 120 },
                                     { id: 'login_time', label: 'Login', minWidth: 120 },
                                     { id: 'logout_time', label: 'Logout', minWidth: 120 },
@@ -174,6 +176,7 @@ export function EmployeeDailyLogView() {
                                             key={row.name}
                                             index={page * rowsPerPage + index}
                                             row={row}
+                                            isHR={isHR}
                                             onView={() => handleOpenDetails(row)}
                                         />
                                     ))
