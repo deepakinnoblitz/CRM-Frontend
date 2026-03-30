@@ -29,6 +29,7 @@ import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { EmployeeDailyLogTableRow } from '../employee-daily-log-table-row';
 import { EmployeeDailyLogTableToolbar } from './employee-daily-log-table-toolbar';
 import { EmployeeDailyLogDetailsDialog } from '../employee-daily-log-details-dialog';
+import { EmployeePresenceSettingsDialog } from '../employee-presence-settings-dialog';
 import { EmployeeDailyLogTableFiltersDrawer } from './employee-daily-log-table-filters-drawer';
 
 // ----------------------------------------------------------------------
@@ -88,6 +89,7 @@ export function EmployeeDailyLogView() {
     const [openDetails, setOpenDetails] = useState(false);
     const [selectedSession, setSelectedSession] = useState<any>(null);
 
+    const [openSettings, setOpenSettings] = useState(false);
     const [openFilters, setOpenFilters] = useState(false);
 
     const handleOpenDetails = (session: any) => {
@@ -139,6 +141,8 @@ export function EmployeeDailyLogView() {
                     sortBy={sortBy}
                     onSortChange={handleSortChange}
                     onOpenFilter={() => setOpenFilters(true)}
+                    isHR={isHR}
+                    onOpenSettings={() => setOpenSettings(true)}
                     canReset={canReset}
                     sortOptions={SORT_OPTIONS}
                     searchPlaceholder="Search by date..."
@@ -217,6 +221,11 @@ export function EmployeeDailyLogView() {
                 open={openDetails}
                 onClose={handleCloseDetails}
                 session={selectedSession}
+            />
+
+            <EmployeePresenceSettingsDialog
+                open={openSettings}
+                onClose={() => setOpenSettings(false)}
             />
 
             <EmployeeDailyLogTableFiltersDrawer

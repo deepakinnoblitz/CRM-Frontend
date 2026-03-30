@@ -5,6 +5,7 @@ import Menu from '@mui/material/Menu';
 import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
+import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import OutlinedInput from '@mui/material/OutlinedInput';
@@ -23,6 +24,8 @@ type EmployeeDailyLogTableToolbarProps = {
   canReset?: boolean;
   searchPlaceholder?: string;
   sortOptions?: { value: string; label: string }[];
+  isHR?: boolean;
+  onOpenSettings?: () => void;
 };
 
 export function EmployeeDailyLogTableToolbar({
@@ -34,6 +37,8 @@ export function EmployeeDailyLogTableToolbar({
   canReset,
   searchPlaceholder = 'Search...',
   sortOptions = [],
+  isHR = false,
+  onOpenSettings,
 }: EmployeeDailyLogTableToolbarProps) {
   const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -184,6 +189,37 @@ export function EmployeeDailyLogTableToolbar({
               ))}
             </Menu>
           </>
+        )}
+
+        {isHR && onOpenSettings && (
+          <Button
+            disableRipple
+            color="inherit"
+            onClick={onOpenSettings}
+            sx={{
+              height: 40,
+              px: 2,
+              bgcolor: 'background.neutral',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 1.25,
+              fontWeight: 500,
+              transition: (theme) =>
+                theme.transitions.create(['background-color', 'border-color'], {
+                  duration: theme.transitions.duration.shorter,
+                }),
+              '&:hover': {
+                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                borderColor: 'primary.main',
+                '& .iconify': {
+                  color: 'primary.main',
+                  transform: 'rotate(45deg)',
+                },
+              },
+            }}
+          >
+            Settings
+          </Button>
         )}
       </Box>
     </Toolbar>

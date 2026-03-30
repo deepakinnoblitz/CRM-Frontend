@@ -1,8 +1,9 @@
 import { Socket } from 'socket.io-client';
 import React, { useMemo, useContext, createContext } from 'react';
 
-import { useUnreadCounts } from './useUnreadCounts';
 import { UnreadCounts } from 'src/api/unread-counts';
+
+import { useUnreadCounts } from './useUnreadCounts';
 
 // ----------------------------------------------------------------------
 

@@ -8,6 +8,7 @@ import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
+import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -46,6 +47,9 @@ export function UserStatusBar() {
         session,
         loading,
         refresh,
+        isAutoStatusEnabled,
+        isSystemMonitoring,
+        remainingSeconds,
     } = usePresence();
     const router = useRouter();
 
@@ -57,6 +61,8 @@ export function UserStatusBar() {
     const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
     const [timesheetWarningOpen, setTimesheetWarningOpen] = useState(false);
     const [isCheckingTimesheet, setIsCheckingTimesheet] = useState(false);
+    const [idlePermissionDialogOpen, setIdlePermissionDialogOpen] = useState(false);
+    const [idleSupportError, setIdleSupportError] = useState<string | null>(null);
 
     const hasAutoChecked = useRef(false);
 
@@ -127,6 +133,33 @@ export function UserStatusBar() {
     };
 
     const handleStatusClick = async (newStatus: string) => {
+        if (newStatus === 'Available' && isAutoStatusEnabled) {
+            if (!('IdleDetector' in window)) {
+                setIdleSupportError('Your browser does not support automatic idle detection. Please use a modern browser like Chrome or Edge to enable the "Available" status.');
+                setIdlePermissionDialogOpen(true);
+                handleClose();
+                return;
+            }
+
+            try {
+                const permission = await (window as any).IdleDetector.requestPermission();
+                if (permission !== 'granted') {
+                    // Heuristic: If it returns denied immediately without a prompt (common in Incognito)
+                    // or if the user actually denied it.
+                    setIdleSupportError('Permission for idle detection was denied or is restricted by your browser (e.g. Incognito mode). This is required for the "Available" status.');
+                    setIdlePermissionDialogOpen(true);
+                    handleClose();
+                    return;
+                }
+            } catch (error) {
+                console.error('IdleDetector Permission Error:', error);
+                setIdleSupportError('An error occurred while requesting idle detection permission.');
+                setIdlePermissionDialogOpen(true);
+                handleClose();
+                return;
+            }
+        }
+
         if (newStatus === 'Offline') {
             setIsCheckingTimesheet(true);
             try {
@@ -557,6 +590,20 @@ export function UserStatusBar() {
                                 <Box
                                     key={item.value}
                                     onClick={async () => {
+                                        if (item.value === 'Available' && isAutoStatusEnabled) {
+                                            if (!('IdleDetector' in window)) {
+                                                setIdleSupportError('Your browser does not support automatic idle detection. Please use a modern browser like Chrome or Edge.');
+                                                setIdlePermissionDialogOpen(true);
+                                                return;
+                                            }
+
+                                            const permission = await (window as any).IdleDetector.requestPermission();
+                                            if (permission !== 'granted') {
+                                                setIdleSupportError('Permission for idle detection was denied or is restricted by your browser (e.g. Incognito mode).');
+                                                setIdlePermissionDialogOpen(true);
+                                                return;
+                                            }
+                                        }
                                         await changeStatus(item.value);
                                         setCheckInDialogOpen(false);
                                     }}
@@ -774,6 +821,91 @@ export function UserStatusBar() {
                             sx={{ minWidth: 100 }}
                         >
                             OK
+                        </Button>
+                    )}
+                </DialogActions>
+            </Dialog>
+
+            {/* Idle Detector Permission Dialog */}
+            <Dialog
+                open={idlePermissionDialogOpen}
+                onClose={() => setIdlePermissionDialogOpen(false)}
+                PaperProps={{
+                    sx: { borderRadius: 2, width: '100%', maxWidth: 400 }
+                }}
+            >
+                <DialogTitle sx={{ pt: 4, textAlign: 'center' }}>
+                    <Box
+                        sx={{
+                            width: 64,
+                            height: 64,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: alpha(theme.palette.warning.main, 0.08),
+                            mx: 'auto',
+                            mb: 2,
+                        }}
+                    >
+                        <Iconify icon={"ph:shield-warning-fill" as any} sx={{ color: 'warning.main', width: 40, height: 40 }} />
+                    </Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        {idleSupportError?.includes('support') || idleSupportError?.includes('Incognito') ? 'Detection Unvailable' : 'Permission Required'}
+                    </Typography>
+                </DialogTitle>
+
+                <DialogContent sx={{ py: 1, textAlign: 'center' }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', px: 2, mb: 2 }}>
+                        {idleSupportError}
+                    </Typography>
+
+                    {!idleSupportError?.includes('support') && (
+                        <Box sx={{ bgcolor: 'background.neutral', p: 2, borderRadius: 1.5, textAlign: 'left' }}>
+                            <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.5, color: 'text.primary' }}>
+                                How to unblock:
+                            </Typography>
+                            <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
+                                1. Click the <b>Lock 🔒</b> or <b>Settings ⚙️</b> icon in your browser address bar.
+                            </Typography>
+                            <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
+                                2. Find <b>Idle Detection</b> and set it to <b>Allow</b> or <b>Ask</b>.
+                            </Typography>
+                            <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mt: 0.5 }}>
+                                3. Toggle this switch again to retry.
+                            </Typography>
+                        </Box>
+                    )}
+                </DialogContent>
+
+                <DialogActions sx={{ px: 3, pb: 4, pt: 2, justifyContent: 'center' }}>
+                    <Button
+                        variant="outlined"
+                        onClick={() => setIdlePermissionDialogOpen(false)}
+                        sx={{ borderRadius: 1.25, minWidth: 100 }}
+                    >
+                        Cancel
+                    </Button>
+                    {!idleSupportError?.includes('support') && (
+                        <Button
+                            variant="contained"
+                            onClick={async () => {
+                                setIdlePermissionDialogOpen(false);
+                                // Small delay to allow dialog to close before re-triggering
+                                setTimeout(() => handleStatusClick('Available'), 100);
+                            }}
+                            sx={{ borderRadius: 1.25, minWidth: 120, fontWeight: 700 }}
+                        >
+                            Try Again
+                        </Button>
+                    )}
+                    {idleSupportError?.includes('support') && (
+                        <Button
+                            variant="contained"
+                            onClick={() => setIdlePermissionDialogOpen(false)}
+                            sx={{ borderRadius: 1.25, minWidth: 120, fontWeight: 700 }}
+                        >
+                            Understood
                         </Button>
                     )}
                 </DialogActions>

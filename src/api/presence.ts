@@ -1,9 +1,9 @@
 import { frappeRequest } from 'src/utils/csrf';
 
-export async function updatePresence(status: string, employee?: string, statusMessage?: string) {
+export async function updatePresence(status: string, employee?: string, statusMessage?: string, source: string = 'Manual') {
   const res = await frappeRequest('/api/method/company.company.presence_api.update_presence', {
     method: 'POST',
-    body: JSON.stringify({ status, employee, status_message: statusMessage }),
+    body: JSON.stringify({ status, employee, status_message: statusMessage, source }),
   });
   if (!res.ok) throw new Error('Failed to update presence');
   const data = await res.json();
@@ -47,4 +47,32 @@ export async function getAllPresences() {
   if (!res.ok) return {};
   const data = await res.json();
   return data.message || {};
+}
+
+export async function getPresenceSettings() {
+  const res = await frappeRequest('/api/method/company.company.doctype.employee_presence_settings.employee_presence_settings.get_presence_settings', {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) return { enable_auto_status: 1 };
+  const data = await res.json();
+  return data.message;
+}
+
+export async function updatePresenceSettings(settings: {
+  enable_auto_status: boolean,
+  idle_threshold: number,
+  event_mousemove: boolean,
+  event_keydown: boolean,
+  event_scroll: boolean,
+  event_click: boolean,
+  event_touchstart: boolean
+}) {
+  const res = await frappeRequest('/api/method/company.company.doctype.employee_presence_settings.employee_presence_settings.set_presence_settings', {
+    method: 'POST',
+    body: JSON.stringify(settings),
+  });
+  if (!res.ok) throw new Error('Failed to update presence settings');
+  const data = await res.json();
+  return data.message;
 }

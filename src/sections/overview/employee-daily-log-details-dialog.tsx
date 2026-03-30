@@ -513,8 +513,14 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                                 <Typography variant="body2" sx={{ fontWeight: 700 }}>
                                                     {fTime(brk.break_start)} — {brk.break_end ? fTime(brk.break_end) : 'On Break'}
                                                 </Typography>
+                                                {brk.reason && (
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25, fontWeight: 600 }}>
+                                                        {brk.reason}
+                                                    </Typography>
+                                                )}
                                                 <Typography variant="caption" sx={{ color: 'warning.main', fontWeight: 900 }}>
                                                     {brk.break_duration ? fDecimalHours(brk.break_duration / 60) : 'Active'}
+                                                    {brk.source && ` • ${brk.source}`}
                                                 </Typography>
                                             </Box>
                                         </Stack>
