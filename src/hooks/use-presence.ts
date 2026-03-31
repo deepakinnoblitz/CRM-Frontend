@@ -97,6 +97,11 @@ export function usePresence() {
         setStatus(newStatus);
         setStatusMessage(res.status_message || message || '');
         fetchStatus();
+        
+        // Trigger chat unread count refresh if status changed to Available
+        if (newStatus === 'Available') {
+          window.dispatchEvent(new Event('REFRESH_CHAT_UNREAD_COUNT'));
+        }
       }
       localStorage.setItem('user_presence_status', newStatus);
     } catch (error) {
