@@ -236,11 +236,11 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
             {/* Legend */}
             <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 2.5, px: 0.5 }}>
                 {[
-                    { label: 'Available', color: theme.palette.success.main },
+                    { label: 'Available - Logged In', color: theme.palette.success.main },
                     { label: 'Busy / DND', color: theme.palette.error.main },
                     { label: 'Away', color: '#d97706' },
                     { label: 'Break', color: '#f59e0b' },
-                    { label: 'Offline', color: theme.palette.grey[400] },
+                    { label: 'Offline - Logout', color: theme.palette.grey[400] },
                 ].map((item) => (
                     <Stack key={item.label} direction="row" alignItems="center" spacing={0.75}>
                         <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: item.color }} />
@@ -329,7 +329,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                             )}
                             {renderDetailItem(
                                 "Status",
-                                status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown'
+                                status ? (status === 'Available' ? 'Available - Logged In' : status === 'Offline' ? 'Offline - Logout' : status.charAt(0).toUpperCase() + status.slice(1)) : 'Unknown'
                             )}
                             {renderDetailItem(
                                 "Login Time",
@@ -428,7 +428,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                                             border: `1px solid ${alpha(statusColor, 0.2)}`
                                                         }}
                                                     >
-                                                        {intervalStatus}
+                                                        {intervalStatus === 'Available' ? 'Available - Logged In' : intervalStatus === 'Offline' ? 'Offline - Logout' : intervalStatus}
                                                     </Box>
                                                 </Stack>
                                                 <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase' }}>

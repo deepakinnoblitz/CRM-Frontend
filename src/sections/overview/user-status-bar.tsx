@@ -59,6 +59,8 @@ export function UserStatusBar() {
     const [statusMsgDialogOpen, setStatusMsgDialogOpen] = useState(false);
     const [customMessage, setCustomMessageInput] = useState('');
     const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
+    const [greetingDialogOpen, setGreetingDialogOpen] = useState(false);
+    const [randomGreeting, setRandomGreeting] = useState('');
     const [timesheetWarningOpen, setTimesheetWarningOpen] = useState(false);
     const [isCheckingTimesheet, setIsCheckingTimesheet] = useState(false);
     const [idlePermissionDialogOpen, setIdlePermissionDialogOpen] = useState(false);
@@ -120,6 +122,42 @@ export function UserStatusBar() {
         await performLogout();
     };
 
+    const GREETING_VARIANTS = {
+        morning: [
+            "Rise and shine! Ready for a productive morning?",
+            "Good morning! Let's make today count.",
+            "Success starts now! Hope you have a great day.",
+            "Good luck with your tasks today! You've got this.",
+            "A fresh start for a fresh day. Good morning!"
+        ],
+        afternoon: [
+            "Keep up the momentum! You're doing great.",
+            "Good afternoon! Halfway through – you've got this!",
+            "Stay focused and power through the afternoon!",
+            "Hope your day is going well! Let's keep moving.",
+            "Refresh and refocus. Good afternoon!"
+        ],
+        evening: [
+            "Finishing the day strong! Almost there.",
+            "Good evening! Great job on your work today.",
+            "Ending on a high note! Let's wrap things up.",
+            "Success is the sum of small efforts. Great evening!",
+            "Time to wind down soon, but first — let's finish strong!"
+        ]
+    };
+
+    const triggerGreetingDialog = useCallback(() => {
+        const hour = new Date().getHours();
+        let type: 'morning' | 'afternoon' | 'evening' = 'morning';
+        if (hour >= 12 && hour < 17) type = 'afternoon';
+        else if (hour >= 17 || hour < 5) type = 'evening';
+
+        const variants = GREETING_VARIANTS[type];
+        const randomIndex = Math.floor(Math.random() * variants.length);
+        setRandomGreeting(variants[randomIndex]);
+        setGreetingDialogOpen(true);
+    }, []);
+
     const performLogout = async () => {
         setInfoDialogOpen(false);
         setIsLogoutDialog(false);
@@ -176,6 +214,9 @@ export function UserStatusBar() {
             }
         }
         await changeStatus(newStatus);
+        if (newStatus === 'Available') {
+            triggerGreetingDialog();
+        }
         handleClose();
     };
 
@@ -246,13 +287,18 @@ export function UserStatusBar() {
     const avatarTextColor = stringToDarkColor(userName);
 
     const statusOptions = [
-        { label: 'Available', value: 'Available', color: '#22c55e', icon: 'ph:check-circle-fill', buttonIcon: 'ph:check-circle-fill' },
+        { label: 'Available - Logged In', value: 'Available', color: '#22c55e', icon: 'ph:check-circle-fill', buttonIcon: 'ph:check-circle-fill' },
         { label: 'Busy', value: 'Busy', color: '#ef4444', icon: 'ph:minus-circle-fill', buttonIcon: 'ph:minus-circle-fill' },
         { label: 'Do not disturb', value: 'Do Not Disturb', color: '#b91c1c', icon: 'ph:prohibit-fill', buttonIcon: 'ph:prohibit-fill' },
         { label: 'Break', value: 'Break', color: '#f59e0b', icon: 'ph:coffee-fill', buttonIcon: 'ph:coffee-fill' },
         { label: 'Away', value: 'Away', color: '#d97706', icon: 'ph:moon-fill', buttonIcon: 'ph:moon-fill' },
-        { label: 'Offline', value: 'Offline', color: '#9ca3af', icon: 'ph:power-fill', buttonIcon: 'ph:power-fill' },
+        { label: 'Offline - Logout', value: 'Offline', color: '#9ca3af', icon: 'ph:power-fill', buttonIcon: 'ph:power-fill' },
     ];
+
+    const STATUS_DISPLAY_MAP: Record<string, string> = {
+        Available: 'Available - Logged In',
+        Offline: 'Offline - Logout',
+    };
 
     const currentStatus = statusOptions.find(opt => opt.value === statusName) || statusOptions[5];
 
@@ -312,7 +358,7 @@ export function UserStatusBar() {
                             <Iconify icon={currentStatus.buttonIcon as any} width={16} />
                         )}
                         <Typography variant="caption" sx={{ fontWeight: 'bold', lineHeight: 1 }}>
-                            {currentStatus.label}
+                            {STATUS_DISPLAY_MAP[statusName] || currentStatus.label}
                         </Typography>
                     </Stack>
 
@@ -606,6 +652,9 @@ export function UserStatusBar() {
                                         }
                                         await changeStatus(item.value);
                                         setCheckInDialogOpen(false);
+                                        if (item.value === 'Available') {
+                                            triggerGreetingDialog();
+                                        }
                                     }}
                                     sx={{
                                         px: 2,
@@ -657,7 +706,7 @@ export function UserStatusBar() {
                         onClick={() => setCheckInDialogOpen(false)}
                         sx={{ color: 'text.secondary', textTransform: 'none' }}
                     >
-                        Stay Offline for now
+                        Stay Offline - Logout for now
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -674,7 +723,7 @@ export function UserStatusBar() {
                     <Stack spacing={2} sx={{ pt: 1 }}>
                         {statusName !== 'Available' && statusName !== 'Offline' && (
                             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                Default for <b>{statusName}</b>: &quot;{{
+                                Default for <b>{STATUS_DISPLAY_MAP[statusName] || statusName}</b>: &quot;{{
                                     Busy: 'In a meeting',
                                     'Do Not Disturb': 'Do not disturb',
                                     Break: 'On a break',
@@ -909,6 +958,169 @@ export function UserStatusBar() {
                         </Button>
                     )}
                 </DialogActions>
+            </Dialog>
+
+            {/* Randomized Greeting Dialog (Refined Split Layout) */}
+            <Dialog
+                open={greetingDialogOpen}
+                onClose={() => setGreetingDialogOpen(false)}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: 'transparent',
+                        boxShadow: 'none',
+                        maxWidth: '1000px',
+                        overflow: 'visible',
+                        fontFamily: '"DM Sans Variable",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"',
+                    }
+                }}
+            >
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: { xs: 'column', md: 'row' },
+                        alignItems: 'center',
+                        bgcolor: 'background.paper',
+                        borderRadius: 4,
+                        overflow: 'hidden',
+                        position: 'relative',
+                        boxShadow: theme.customShadows.z24,
+                    }}
+                >
+                    {/* Left Column: Illustration (Made slightly bigger) */}
+                    <Box
+                        sx={{
+                            flex: 1.4,
+                            height: { xs: 300, md: 500 },
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            p: { xs: 2, md: 4 },
+                        }}
+                    >
+                        <Box
+                            component="img"
+                            src="/assets/illustrations/collaboration.png"
+                            sx={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'contain',
+                            }}
+                        />
+                    </Box>
+
+                    {/* Right Column: Content */}
+                    <Box
+                        sx={{
+                            flex: 1,
+                            p: { xs: 4, md: 1 },
+                            textAlign: 'left',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <Typography
+
+                            sx={{
+                                fontWeight: 800,
+                                mb: 1.5,
+                                color: 'text.primary',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                fontFamily: 'inherit',
+                                fontSize: '22px', // Balanced size based on user request
+                                letterSpacing: -0.5,
+                            }}
+                        >
+                            {(() => {
+                                const hour = new Date().getHours();
+                                if (hour >= 5 && hour < 12) return 'Good Morning';
+                                if (hour >= 12 && hour < 17) return 'Good Afternoon';
+                                return 'Good Evening';
+                            })()}, {userName.split(' ')[0]} <span style={{ marginLeft: '4px' }}>👋</span>
+                        </Typography>
+
+                        <Typography
+                            variant="body1"
+                            sx={{
+                                color: 'text.secondary',
+                                fontWeight: 500,
+                                mb: 3.5,
+                                lineHeight: 1.6,
+                                fontSize: 18,
+                                fontFamily: 'inherit',
+                            }}
+                        >
+                            {randomGreeting}
+                        </Typography>
+
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4, flexWrap: 'wrap' }}>
+                            <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 500, fontFamily: 'inherit' }}>
+                                You are now marked as
+                            </Typography>
+                            <Box
+                                sx={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    bgcolor: '#54B47B', // Matched Green from Reference
+                                    color: 'white',
+                                    px: 2,
+                                    py: 0.75,
+                                    borderRadius: '30px',
+                                    fontWeight: 600,
+                                    fontSize: 16,
+                                }}
+                            >
+                                <Iconify icon="solar:check-circle-bold" width={20} />
+                                Available.
+                            </Box>
+                        </Box>
+
+                        <Typography
+                            variant="h5"
+                            sx={{
+                                color: 'text.secondary',
+                                fontWeight: 600,
+                                mb: 3,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                fontFamily: 'inherit',
+                            }}
+                        >
+                            Have a productive day ahead <span style={{ fontSize: '28px' }}>🚀</span>
+                        </Typography>
+
+                        <Button
+                            variant="contained"
+                            size="large"
+                            onClick={() => setGreetingDialogOpen(false)}
+                            sx={{
+                                borderRadius: 1.5,
+                                py: 1,
+                                px: 2,
+                                fontWeight: 700,
+                                fontSize: 14,
+                                alignSelf: 'flex-start',
+                                textTransform: 'none',
+                                fontFamily: 'inherit',
+                                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                                boxShadow: `0 12px 24px -6px ${alpha(theme.palette.primary.main, 0.4)}`,
+                                transition: theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+                                '&:hover': {
+                                    transform: 'translateY(-2px)',
+                                    boxShadow: `0 16px 32px -8px ${alpha(theme.palette.primary.main, 0.5)}`,
+                                }
+                            }}
+                        >
+                            Let&apos;s Get Started!
+                        </Button>
+                    </Box>
+                </Box>
             </Dialog>
         </>
     );
