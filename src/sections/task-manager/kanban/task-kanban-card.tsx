@@ -182,6 +182,7 @@ export default function TaskKanbanCard({
                                     <Avatar
                                         key={a.employee}
                                         alt={a.employee_name}
+                                        src={a.profile_pic}
                                         sx={{
                                             bgcolor: stringToColor(a.employee_name || a.user || a.employee),
                                             color: stringToDarkColor(a.employee_name || a.user || a.employee),

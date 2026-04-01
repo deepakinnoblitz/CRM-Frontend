@@ -8,6 +8,7 @@ import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
@@ -23,10 +24,12 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useJobOpenings } from 'src/hooks/useJobOpenings';
 
+import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
     getJobOpening,
@@ -45,11 +48,14 @@ import { TableNoData } from 'src/sections/lead/table-no-data';
 import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
 import { JobOpeningTableRow } from 'src/sections/job-openings/job-opening-table-row';
 import { LeadTableHead as JobOpeningTableHead } from 'src/sections/lead/lead-table-head';
+import { DesignationCreateDialog } from 'src/sections/job-openings/designation-create-dialog';
 import { LeadTableToolbar as JobOpeningTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 import { JobOpeningDetailsDialog } from 'src/sections/report/job-openings/job-opening-details-dialog';
 import { JobOpeningsTableFiltersDrawer } from 'src/sections/job-openings/job-openings-table-filters-drawer';
 
 // ----------------------------------------------------------------------
+
+const filter = createFilterOptions<any>();
 
 export function JobOpeningsView() {
     const [page, setPage] = useState(0);
@@ -86,6 +92,9 @@ export function JobOpeningsView() {
     const [viewJob, setViewJob] = useState<any>(null);
     const [editJob, setEditJob] = useState<any>(null);
 
+    const [designations, setDesignations] = useState<any[]>([]);
+    const [openDesignationCreate, setOpenDesignationCreate] = useState(false);
+
     // Form state
     const [formData, setFormData] = useState<any>({
         job_title: '',
@@ -96,6 +105,7 @@ export function JobOpeningsView() {
         status: 'Open',
         closes_on: '',
         description: '',
+        small_description: '',
         skills_required: '',
     });
 
@@ -119,8 +129,13 @@ export function JobOpeningsView() {
             const locs = await getJobLocations();
             setLocations(locs);
         };
+        const fetchDesignations = async () => {
+            const dests = await getDoctypeList('Designation', ['name']);
+            setDesignations(dests);
+        };
         fetchPermissions();
         fetchLocations();
+        fetchDesignations();
     }, []);
 
     const handleSelectAllRows = (checked: boolean) => {
@@ -148,6 +163,7 @@ export function JobOpeningsView() {
             status: 'Open',
             closes_on: '',
             description: '',
+            small_description: '',
             skills_required: '',
         });
         setOpenCreate(true);
@@ -171,6 +187,7 @@ export function JobOpeningsView() {
                 status: fullData.status,
                 closes_on: fullData.closes_on,
                 description: fullData.description,
+                small_description: fullData.small_description,
                 skills_required: fullData.skills_required,
             });
             setOpenCreate(true);
@@ -289,7 +306,7 @@ export function JobOpeningsView() {
     const notFound = !data.length && !!filterName;
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5 }}>
                 <Typography variant="h4">Job Openings</Typography>
                 {permissions.write && (
@@ -444,12 +461,79 @@ export function JobOpeningsView() {
                                 value={formData.job_title}
                                 onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
                             />
-                            <TextField
+                            <Autocomplete
                                 fullWidth
-                                label="Designation"
-                                value={formData.designation}
-                                onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                                placeholder="Manager, Developer, etc."
+                                options={designations}
+                                value={formData.designation || ''}
+                                onChange={(event, newValue: any) => {
+                                    if (newValue?.isNew || newValue === 'Create Designation' || newValue?.name === 'Create Designation') {
+                                        setOpenDesignationCreate(true);
+                                    } else {
+                                        const value = typeof newValue === 'object' && newValue?.name ? newValue.name : newValue;
+                                        setFormData({ ...formData, designation: value || '' });
+                                    }
+                                }}
+                                filterOptions={(options, params) => {
+                                    const filtered = filter(options, params);
+                                    const { inputValue } = params;
+                                    const hasCreateOption = filtered.some((option: any) =>
+                                        (typeof option === 'string' ? option : option.name) === 'Create Designation' || option.isNew
+                                    );
+                                    if (!hasCreateOption && inputValue) {
+                                        filtered.push({
+                                            inputValue,
+                                            name: 'Create Designation',
+                                            isNew: true,
+                                        });
+                                    }
+                                    return filtered;
+                                }}
+                                renderOption={(props, option) => (
+                                    <Box component="li" {...props} sx={{
+                                        typography: 'body2',
+                                        ...(option.isNew && {
+                                            color: 'primary.main',
+                                            fontWeight: 600,
+                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                            mt: 0.5,
+                                            py: 3, minHeight: '56px',
+                                            '&:hover': {
+                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                            }
+                                        })
+                                    }}>
+                                        {option.isNew ? (
+                                            <Stack direction="row" alignItems="center" spacing={1.5}>
+                                                <Iconify icon="solar:add-circle-bold" width={24} />
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Create Designation</Typography>
+                                            </Stack>
+                                        ) : (
+                                            typeof option === 'string' ? option : option.name
+                                        )}
+                                    </Box>
+                                )}
+                                getOptionLabel={(option) => {
+                                    if (typeof option === 'string') return option;
+                                    if (option?.name) return option.name;
+                                    return '';
+                                }}
+                                isOptionEqualToValue={(option, value) => {
+                                    const optionValue = typeof option === 'string' ? option : option?.name;
+                                    return optionValue === value;
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Designation"
+                                        placeholder="Manager, Developer, etc."
+                                        InputLabelProps={{ shrink: true }}
+                                    />
+                                )}
+                                freeSolo
+                                selectOnFocus
+                                clearOnBlur
+                                handleHomeEndKeys
                             />
                             <Stack direction="row" spacing={2}>
                                 <TextField
@@ -511,6 +595,14 @@ export function JobOpeningsView() {
                             <TextField
                                 fullWidth
                                 multiline
+                                rows={2}
+                                label="Small Description"
+                                value={formData.small_description}
+                                onChange={(e) => setFormData({ ...formData, small_description: e.target.value })}
+                            />
+                            <TextField
+                                fullWidth
+                                multiline
                                 rows={4}
                                 label="Description"
                                 value={formData.description}
@@ -554,6 +646,15 @@ export function JobOpeningsView() {
                 canReset={canReset}
                 onResetFilters={handleResetFilters}
                 locations={locations}
+            />
+
+            <DesignationCreateDialog
+                open={openDesignationCreate}
+                onClose={() => setOpenDesignationCreate(false)}
+                onCreate={(name) => {
+                    setDesignations((prev) => [...prev, { name }]);
+                    setFormData((prev: any) => ({ ...prev, designation: name }));
+                }}
             />
         </DashboardContent>
     );

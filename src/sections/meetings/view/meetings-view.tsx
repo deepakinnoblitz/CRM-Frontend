@@ -119,7 +119,7 @@ export function MeetingsView() {
     }));
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Card
                 sx={{
                     display: 'flex',

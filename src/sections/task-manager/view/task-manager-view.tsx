@@ -195,7 +195,18 @@ export default function TaskManagerView() {
         kanbanFilters.assignee !== 'all' ||
         kanbanFilters.department !== 'all';
 
-    const kanbanTasks = sortTasks(tasks.filter((task) => {
+    // Users with Task Manager role get full access (all tasks, like HR).
+    // Regular employees only see tasks assigned to them.
+    const isTaskManager = user?.roles?.includes('Task Manager') || user?.roles?.includes('HR') || user?.roles?.includes('Administrator');
+
+    // Base set of tasks based on role
+    const baseTasks = isTaskManager
+        ? tasks
+        : (user?.employee
+            ? tasks.filter((task) => task.assignees?.some((a) => a.employee === user.employee))
+            : tasks);
+
+    const kanbanTasks = sortTasks(baseTasks.filter((task) => {
         if (filterName && !task.title.toLowerCase().includes(filterName.toLowerCase())) return false;
         if (kanbanFilters.status !== 'all' && task.status !== kanbanFilters.status) return false;
         if (kanbanFilters.project !== 'all' && task.project !== kanbanFilters.project) return false;
@@ -209,10 +220,10 @@ export default function TaskManagerView() {
         return true;
     }));
 
-    const listTasks = sortTasks(tasks);
+    const listTasks = sortTasks(baseTasks);
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Container maxWidth="xl" sx={{ height: 1, display: 'flex', flexDirection: 'column', px: { xs: 2, md: 1 } }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                     <Box>
@@ -257,7 +268,7 @@ export default function TaskManagerView() {
                             </ToggleButton>
                         </ToggleButtonGroup>
 
-                        {permissions.create && (
+                        {(isTaskManager || permissions.create) && (
                             <Button
                                 variant="contained"
                                 startIcon={<Iconify icon="mingcute:add-line" />}

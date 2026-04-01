@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import Box from '@mui/material/Box';
+import Badge from '@mui/material/Badge';
 import Popover from '@mui/material/Popover';
 import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
@@ -10,7 +11,11 @@ import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
+import { useUnreadCountsContext } from 'src/hooks/unread-counts-context';
+
 import { fTime, fTimeDist } from 'src/utils/format-time';
+
+import { markAsRead } from 'src/api/unread-counts';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -52,6 +57,10 @@ export function WFHAttendanceTableRow({
     hideCheckbox = false,
     index,
 }: Props) {
+    const { unreadCounts } = useUnreadCountsContext();
+
+    const isUnread = unreadCounts.unread_ids['WFH Attendance']?.includes(row.id);
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'Approved': return 'success';
@@ -73,6 +82,11 @@ export function WFHAttendanceTableRow({
     };
 
     const handleAction = (action: string) => {
+        // Mark as read when action is taken
+        markAsRead('WFH Attendance', row.id).then(() => {
+            window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+        });
+
         onApplyAction(action);
         handleCloseMenu();
     };
@@ -158,7 +172,20 @@ export function WFHAttendanceTableRow({
                             {row.modified ? fTimeDist(row.modified) : '-'}
                         </Box>
                         <IconButton size="small" onClick={onView} sx={{ color: 'info.main' }}>
-                            <Iconify icon="solar:eye-bold" />
+                            <Badge
+                                color="error"
+                                variant="dot"
+                                invisible={!isUnread}
+                                sx={{
+                                    '& .MuiBadge-badge': {
+                                        width: 6,
+                                        height: 6,
+                                        minWidth: 6,
+                                    },
+                                }}
+                            >
+                                <Iconify icon="solar:eye-bold" />
+                            </Badge>
                         </IconButton>
                         {canEdit &&
                             (isHR

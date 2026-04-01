@@ -208,7 +208,7 @@ export function PurchaseForm({ id }: Props) {
     };
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
                 <Typography variant="h4">{id ? 'Edit Purchase' : 'New Purchase'}</Typography>
                 <Button variant="outlined" color="inherit" onClick={() => router.push('/purchase')}>

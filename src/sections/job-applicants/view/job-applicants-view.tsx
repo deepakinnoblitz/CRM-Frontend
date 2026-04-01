@@ -36,6 +36,7 @@ import {
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from 'src/sections/lead/table-no-data';
 import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
@@ -79,6 +80,10 @@ export function JobApplicantsView() {
     const [openView, setOpenView] = useState(false);
     const [viewApplicant, setViewApplicant] = useState<any>(null);
     const [editApplicant, setEditApplicant] = useState<any>(null);
+
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState<any>({
@@ -198,17 +203,30 @@ export function JobApplicantsView() {
         }
     }, []);
 
-    const handleDeleteRow = useCallback(async (name: string) => {
+    const handleDeleteRow = useCallback((name: string) => {
+        setDeleteTarget(name);
+        setConfirmDelete(true);
+    }, []);
+
+    const onConfirmDelete = async () => {
+        if (!deleteTarget) return;
         try {
-            await deleteJobApplicant(name);
+            await deleteJobApplicant(deleteTarget);
             setSnackbar({ open: true, message: 'Deleted successfully', severity: 'success' });
             refetch();
         } catch (error: any) {
             setSnackbar({ open: true, message: error.message || 'Delete failed', severity: 'error' });
+        } finally {
+            setConfirmDelete(false);
+            setDeleteTarget(null);
         }
-    }, [refetch]);
+    };
 
-    const handleBulkDelete = async () => {
+    const handleBulkDelete = () => {
+        setConfirmBulkDelete(true);
+    };
+
+    const onConfirmBulkDelete = async () => {
         try {
             await Promise.all(selected.map((name) => deleteJobApplicant(name)));
             setSnackbar({ open: true, message: 'Deleted successfully', severity: 'success' });
@@ -216,6 +234,8 @@ export function JobApplicantsView() {
             refetch();
         } catch (error: any) {
             setSnackbar({ open: true, message: error.message || 'Bulk delete failed', severity: 'error' });
+        } finally {
+            setConfirmBulkDelete(false);
         }
     };
 
@@ -288,7 +308,7 @@ export function JobApplicantsView() {
     const empty = !data.length && !filterName;
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5 }}>
                 <Typography variant="h4">Job Applicants</Typography>
                 {permissions.write && (
@@ -331,7 +351,6 @@ export function JobApplicantsView() {
                                 rowCount={data.length}
                                 numSelected={selected.length}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
-                                hideCheckbox
                                 showIndex
                                 headLabel={[
                                     { id: 'applicant_name', label: 'Name' },
@@ -346,7 +365,6 @@ export function JobApplicantsView() {
                                     <JobApplicantTableRow
                                         key={row.name}
                                         index={page * rowsPerPage + index}
-                                        hideCheckbox
                                         row={{
                                             id: row.name,
                                             applicant_name: row.applicant_name,
@@ -550,6 +568,32 @@ export function JobApplicantsView() {
                 open={openView}
                 onClose={() => setOpenView(false)}
                 applicant={viewApplicant}
+            />
+
+            {/* Confirm Delete Dialog */}
+            <ConfirmDialog
+                open={confirmDelete}
+                onClose={() => setConfirmDelete(false)}
+                title="Delete Applicant"
+                content="Are you sure you want to delete this applicant?"
+                action={
+                    <Button variant="contained" color="error" onClick={onConfirmDelete}>
+                        Delete
+                    </Button>
+                }
+            />
+
+            {/* Confirm Bulk Delete Dialog */}
+            <ConfirmDialog
+                open={confirmBulkDelete}
+                onClose={() => setConfirmBulkDelete(false)}
+                title="Delete Applicants"
+                content={`Are you sure you want to delete ${selected.length} selected applicants?`}
+                action={
+                    <Button variant="contained" color="error" onClick={onConfirmBulkDelete}>
+                        Delete
+                    </Button>
+                }
             />
 
             <Snackbar

@@ -222,7 +222,7 @@ export function LeadReportView() {
     const outgoingLeads = reportData.filter((l: any) => l.leads_type === 'Outgoing').length;
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
                     <Typography variant="h4">Lead Report</Typography>

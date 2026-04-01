@@ -39,6 +39,7 @@ export const hrNavData = [
     children: [
       { title: 'Attendance List', path: '/attendance' },
       { title: 'WFH Attendance', path: '/wfh-attendance' },
+      { title: 'Daily Log', path: '/daily-log' },
       { title: 'Import Attendance', path: '/import-attendance' },
     ],
   },
@@ -110,9 +111,14 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
   },
   {
-    title: 'Personality Evaluation',
-    path: '/personality-evaluation',
+    title: 'Employee Performance',
+    path: '/employee-evaluation',
     icon: <Iconify icon={"solar:user-speak-bold-duotone" as any} />,
+    children: [
+      { title: 'Employee Evaluation', path: '/employee-evaluation' },
+      { title: 'Badges', path: '/badges' },
+      { title: 'Employee Monthly Award', path: '/employee-monthly-award' },
+    ],
   },
   {
     title: 'Recruitment',
@@ -155,6 +161,11 @@ export const employeeNavData = [
     icon: <Iconify icon={"solar:clock-circle-bold-duotone" as any} />,
   },
   {
+    title: 'My Activity Log',
+    path: '/daily-log',
+    icon: <Iconify icon={"solar:calendar-bold-duotone" as any} />,
+  },
+  {
     title: 'My Leave Application',
     path: '/leaves',
     icon: <Iconify icon={"solar:notes-bold-duotone" as any} />,
@@ -175,7 +186,7 @@ export const employeeNavData = [
     icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
   },
   {
-    title: 'Tasks',
+    title: 'My Tasks',
     path: '/task-manager',
     icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
   },
@@ -461,7 +472,7 @@ export function getNavData(roles: string[] = []) {
     let filteredHrNav = hrNavData;
     if (!hasRole('Task Manager')) {
       filteredHrNav = hrNavData.filter(
-        (item) => item.title !== 'Task Manager' && item.title !== 'Personality Evaluation'
+        (item) => item.title !== 'Task Manager' && item.title !== 'Employee Evaluation'
       );
     }
     addItems(filteredHrNav);
@@ -469,7 +480,13 @@ export function getNavData(roles: string[] = []) {
   }
 
   if (hasRole('Employee')) {
-    addItems(employeeNavData);
+    // If the employee also has Task Manager role, rename "My Tasks" → "Task Manager"
+    const processedEmployeeNav = hasRole('Task Manager')
+      ? employeeNavData.map((item) =>
+          item.title === 'My Tasks' ? { ...item, title: 'Task Manager' } : item
+        )
+      : employeeNavData;
+    addItems(processedEmployeeNav);
     hasCustomRole = true;
   }
 

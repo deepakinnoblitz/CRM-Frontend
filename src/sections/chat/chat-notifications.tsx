@@ -63,10 +63,13 @@ export default function ChatNotifications({ children }: Props) {
             socket.on('update_room', handleUpdateSync);
             socket.on('mark_read_update', handleUpdateSync);
 
+            window.addEventListener('REFRESH_CHAT_UNREAD_COUNT', handleUpdateSync);
+
             return () => {
                 socket.off('msg', handleNewMessage);
                 socket.off('update_room', handleUpdateSync);
                 socket.off('mark_read_update', handleUpdateSync);
+                window.removeEventListener('REFRESH_CHAT_UNREAD_COUNT', handleUpdateSync);
             };
         }
         return undefined;

@@ -17,6 +17,8 @@ type UserType = {
   allowed_modules: string[];
   employee?: string;
   employee_name?: string;
+  last_login?: string;
+  user_status?: string;
 };
 
 type AuthContextType = {

@@ -7,10 +7,30 @@ import { Outlet, Navigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
 
+import { useSocket } from 'src/hooks/use-socket';
+import { UnreadCountsProvider } from 'src/hooks/unread-counts-context';
+
 import { AuthLayout } from 'src/layouts/auth';
 import { DashboardLayout } from 'src/layouts/dashboard';
 
 import { AuthGuard } from 'src/auth/auth-guard';
+import { useAuth } from 'src/auth/auth-context';
+
+
+// ----------------------------------------------------------------------
+
+function DashboardLayoutWrapper({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const { socket } = useSocket(user?.email);
+
+  return (
+    <UnreadCountsProvider socket={socket}>
+      <DashboardLayout>
+        {children}
+      </DashboardLayout>
+    </UnreadCountsProvider>
+  );
+}
 
 // ----------------------------------------------------------------------
 
@@ -80,7 +100,9 @@ export const ProfilePage = lazy(() => import('src/pages/profile'));
 export const MyProfilePage = lazy(() => import('src/pages/my-profile'));
 export const ChatPage = lazy(() => import('src/pages/chat'));
 export const AccessDeniedPage = lazy(() => import('src/pages/access-denied'));
-export const PersonalityEvaluationPage = lazy(() => import('src/pages/personality-evaluation'));
+export const EmployeeEvaluationPage = lazy(() => import('src/pages/employee-evaluation'));
+export const BadgesPage = lazy(() => import('src/pages/badges'));
+export const EmployeeMonthlyAwardPage = lazy(() => import('src/pages/employee-monthly-award'));
 
 export const PurchaseListPage = lazy(() => import('src/pages/purchase/list'));
 export const PurchaseNewPage = lazy(() => import('src/pages/purchase/new'));
@@ -96,6 +118,7 @@ export const PurchaseCollectionEditPage = lazy(() => import('src/pages/purchase-
 export const PurchaseCollectionDetailsPage = lazy(() => import('src/pages/purchase-collection/details'));
 export const UserPermissionsPage = lazy(() => import('src/pages/user-permissions'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
+export const DailyLogPage = lazy(() => import('src/pages/daily-log'));
 
 
 const renderFallback = () => (
@@ -122,11 +145,11 @@ export const routesSection: RouteObject[] = [
   {
     element: (
       <AuthGuard>
-        <DashboardLayout>
+        <DashboardLayoutWrapper>
           <Suspense fallback={renderFallback()}>
             <Outlet />
           </Suspense>
-        </DashboardLayout>
+        </DashboardLayoutWrapper>
       </AuthGuard>
     ),
     children: [
@@ -178,6 +201,7 @@ export const routesSection: RouteObject[] = [
       { path: 'asset-assignments', element: <AssetAssignmentsPage /> },
       { path: 'timesheets', element: <TimesheetsPage /> },
       { path: 'wfh-attendance', element: <WFHAttendancePage /> },
+      { path: 'daily-log', element: <DailyLogPage /> },
       { path: 'import-attendance', element: <ImportAttendancePage /> },
       { path: 'timesheet-reports', element: <TimesheetReportPage /> },
       {
@@ -246,7 +270,9 @@ export const routesSection: RouteObject[] = [
           { path: 'attendance', element: <AttendanceReportPage /> },
         ],
       },
-      { path: 'personality-evaluation', element: <PersonalityEvaluationPage /> },
+      { path: 'employee-evaluation', element: <EmployeeEvaluationPage /> },
+      { path: 'badges', element: <BadgesPage /> },
+      { path: 'employee-monthly-award', element: <EmployeeMonthlyAwardPage /> },
     ],
   },
   {

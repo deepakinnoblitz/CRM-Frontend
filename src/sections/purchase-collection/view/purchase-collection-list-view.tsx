@@ -419,5 +419,5 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
         return content;
     }
 
-    return <DashboardContent>{content}</DashboardContent>;
+    return <DashboardContent maxWidth={false}>{content}</DashboardContent>;
 }

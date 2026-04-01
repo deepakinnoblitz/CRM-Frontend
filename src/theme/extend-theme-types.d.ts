@@ -54,13 +54,26 @@ declare module '@mui/material/styles' {
    */
   interface Theme {
     customShadows: CustomShadows;
+    shape: {
+      borderRadius: number;
+    };
   }
   interface ThemeOptions {
     customShadows?: CustomShadows;
+    shape?: {
+      borderRadius?: number;
+    };
   }
   interface ThemeVars {
     customShadows: CustomShadows;
     typography: Theme['typography'];
     transitions: Theme['transitions'];
+    shape: Theme['shape'];
+  }
+}
+
+declare module '@mui/system' {
+  interface Shape {
+    borderRadius: number;
   }
 }

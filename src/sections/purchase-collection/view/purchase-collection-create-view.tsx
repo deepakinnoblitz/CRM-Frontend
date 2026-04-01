@@ -28,7 +28,7 @@ export function PurchaseCollectionCreateView() {
     };
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
                 <Typography variant="h4">Create New Purchase Settlement</Typography>
                 <Stack direction="row" spacing={2}>

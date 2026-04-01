@@ -1,13 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
+import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
+import Tooltip from '@mui/material/Tooltip';
+import Snackbar from '@mui/material/Snackbar';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
 import CardContent from '@mui/material/CardContent';
 
 import { fDate } from 'src/utils/format-time';
+import { frappeRequest } from 'src/utils/csrf';
 
 import { getHRDoc } from 'src/api/hr-management';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -16,14 +22,26 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 import { useAuth } from 'src/auth/auth-context';
+
+import { ProfileBadges } from '../profile-badges';
+import { PersonalityManagement } from '../../overview/personality-management';
+
 // ----------------------------------------------------------------------
 
 export function MyProfileView() {
-    const { user } = useAuth();
+    const { user, setUser } = useAuth();
     const [employee, setEmployee] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
 
-    useEffect(() => {
+    const handleCloseSnackbar = () => setSnackbar((prev) => ({ ...prev, open: false }));
+
+    const fetchEmployee = useCallback(() => {
         if (user?.employee) {
             setLoading(true);
             getHRDoc('Employee', user.employee)
@@ -33,6 +51,57 @@ export function MyProfileView() {
         }
     }, [user?.employee]);
 
+    useEffect(() => {
+        fetchEmployee();
+    }, [fetchEmployee]);
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !user?.employee) return;
+
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('file', file, file.name);
+        formData.append('is_private', '0');
+        formData.append('doctype', 'Employee');
+        formData.append('docname', user.employee);
+        formData.append('fieldname', 'profile_picture');
+
+        try {
+            const res = await frappeRequest('/api/method/upload_file', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!res.ok) throw new Error('Upload failed');
+
+            const result = await res.json();
+            const fileUrl = result.message?.file_url || result.file_url;
+
+            if (fileUrl) {
+                // Update employee record
+                await frappeRequest(`/api/resource/Employee/${encodeURIComponent(user.employee)}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ profile_picture: fileUrl }),
+                });
+
+                // Update global user state for header avatar
+                setUser({
+                    ...user,
+                    user_image: fileUrl,
+                });
+
+                setSnackbar({ open: true, message: 'Profile picture updated successfully', severity: 'success' });
+                fetchEmployee();
+            }
+        } catch (error) {
+            console.error('Failed to upload profile picture:', error);
+            setSnackbar({ open: true, message: 'Failed to update profile picture', severity: 'error' });
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const renderStatus = (status: string) => (
         <Label variant="soft" color={status === 'Active' ? 'success' : 'error'}>
             {status}
@@ -40,7 +109,7 @@ export function MyProfileView() {
     );
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Container maxWidth="lg">
                 <Typography variant="h4" sx={{ mb: 5 }}>
                     My Profile
@@ -63,28 +132,81 @@ export function MyProfileView() {
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                                 <Box
                                     sx={{
-                                        width: 100,
-                                        height: 100,
-                                        borderRadius: '50%',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        background: (theme) => employee.profile_picture
-                                            ? 'transparent'
-                                            : `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
-                                        color: 'white',
-                                        overflow: 'hidden',
-                                        border: (theme) => `3px solid ${theme.palette.background.paper}`,
-                                        boxShadow: (theme) => `0 8px 24px ${theme.palette.mode === 'light' ? 'rgba(0,0,0,0.12)' : 'rgba(0,0,0,0.4)'}`,
-                                        flexShrink: 0,
                                         position: 'relative',
+                                        '&:hover .edit-icon': {
+                                            opacity: 1,
+                                            transform: 'scale(1)',
+                                        },
                                     }}
                                 >
-                                    {employee.profile_picture ? (
-                                        <Box component="img" src={employee.profile_picture} sx={{ width: 1, height: 1, objectFit: 'cover' }} />
-                                    ) : (
-                                        <Iconify icon={"solar:user-bold" as any} width={50} />
-                                    )}
+                                    <Box
+                                        sx={{
+                                            width: 120,
+                                            height: 120,
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            background: (theme) => employee.profile_picture
+                                                ? 'transparent'
+                                                : `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
+                                            color: 'white',
+                                            overflow: 'hidden',
+                                            border: (theme) => `4px solid ${theme.palette.background.paper}`,
+                                            boxShadow: (theme) => `0 8px 32px ${theme.palette.mode === 'light' ? 'rgba(0,0,0,0.12)' : 'rgba(0,0,0,0.4)'}`,
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        {employee.profile_picture ? (
+                                            <Box component="img" src={employee.profile_picture} sx={{ width: 1, height: 1, objectFit: 'cover' }} />
+                                        ) : (
+                                            <Iconify icon={"solar:user-bold" as any} width={60} />
+                                        )}
+
+                                        {uploading && (
+                                            <Box
+                                                sx={{
+                                                    position: 'absolute',
+                                                    inset: 0,
+                                                    bgcolor: 'rgba(0,0,0,0.4)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    zIndex: 1,
+                                                }}
+                                            >
+                                                <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={30} sx={{ color: 'white' }} />
+                                            </Box>
+                                        )}
+                                    </Box>
+
+                                    <Tooltip title={uploading ? "Uploading..." : "Change Profile Picture"} placement="top">
+                                        <IconButton
+                                            className="edit-icon"
+                                            component="label"
+                                            disabled={uploading}
+                                            sx={{
+                                                position: 'absolute',
+                                                bottom: 2,
+                                                right: 2,
+                                                bgcolor: 'primary.main',
+                                                color: 'primary.contrastText',
+                                                padding: 0.8,
+                                                opacity: 0.9,
+                                                transform: 'scale(0.9)',
+                                                transition: (theme) => theme.transitions.create(['opacity', 'transform']),
+                                                boxShadow: (theme) => theme.customShadows?.z8,
+                                                '&:hover': {
+                                                    bgcolor: 'primary.dark',
+                                                    opacity: 1,
+                                                    transform: 'scale(1)',
+                                                },
+                                            }}
+                                        >
+                                            <Iconify icon={"solar:camera-bold" as any} width={18} />
+                                            <input type="file" hidden accept="image/*" onChange={handleFileUpload} />
+                                        </IconButton>
+                                    </Tooltip>
                                 </Box>
                                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                                     <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>{employee.employee_name}</Typography>
@@ -177,102 +299,20 @@ export function MyProfileView() {
 
                             <Divider sx={{ borderStyle: 'dashed' }} />
 
-                            {/* Personality Metrics */}
-                            <Box sx={{
-                                p: 3,
-                                mb: 1,
-                                borderRadius: 2,
-                                bgcolor: (theme) => theme.palette.mode === 'light' ? 'info.lighter' : 'grey.900',
-                                border: (theme) => `1px solid ${theme.palette.info.light}`,
-                                boxShadow: (theme) => theme.customShadows?.z4,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 2.5
-                            }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Box sx={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: 1.5,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        bgcolor: 'info.main',
-                                        color: 'white'
-                                    }}>
-                                        <Iconify icon={"solar:star-fall-bold" as any} width={18} />
-                                    </Box>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                        Personality Evaluation
-                                    </Typography>
-                                </Box>
-                                <Box
-                                    sx={{
-                                        display: 'grid',
-                                        gap: 4, // Increased gap for the progress bar
-                                        gridTemplateColumns: { xs: '1fr', sm: '1.5fr 1fr' },
-                                        alignItems: 'center',
-                                    }}
-                                >
-                                    <Box sx={{ width: '85%' }}> {/* Move width here to align everything properly */}
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                            <Typography variant="caption" sx={{ color: 'info.darker', fontWeight: 700, textTransform: 'uppercase' }}>
-                                                Personality Score
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                                                {employee.personality_score ?? 0}/100
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{
-                                            width: '100%', // Now 100% of the 85% parent
-                                            height: 6, // Thinner bar
-                                            bgcolor: (theme) => theme.palette.mode === 'light' ? 'rgba(145, 158, 171, 0.16)' : 'rgba(145, 158, 171, 0.16)', // Neutral background
-                                            borderRadius: 4,
-                                            overflow: 'hidden'
-                                        }}>
-                                            <Box sx={{
-                                                width: `${Math.min(100, Math.max(0, employee.personality_score || 0))}%`,
-                                                height: '100%',
-                                                bgcolor: (theme) => {
-                                                    const score = employee.personality_score || 0;
-                                                    if (score >= 80) return 'success.main'; // Green
-                                                    if (score >= 50) return 'warning.main'; // Orange
-                                                    return 'error.main'; // Red
-                                                },
-                                                borderRadius: 4,
-                                                transition: 'width 0.5s ease-in-out'
-                                            }} />
-                                        </Box>
-                                    </Box>
-                                    <Box>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 2 }}>
-                                            <Typography variant="caption" sx={{ color: 'info.darker', fontWeight: 700, textTransform: 'uppercase' }}>
-                                                Personality Status
-                                            </Typography>
-                                            <Label 
-                                                variant="filled" 
-                                                sx={{ px: 1, py: 1.5, fontSize: '0.75rem', fontWeight: 800 }}
-                                                color={(() => {
-                                                    const score = employee.personality_score || 0;
-                                                    if (score >= 80) return 'success';
-                                                    if (score >= 50) return 'warning';
-                                                    return 'error';
-                                                })()}
-                                            >
-                                                {employee.personality_status || (() => {
-                                                    const score = employee.personality_score ?? 100;
-                                                    if (score >= 90) return "Excellent";
-                                                    if (score >= 75) return "Good";
-                                                    if (score >= 60) return "Average";
-                                                    return "Needs Improvement";
-                                                })()}
-                                            </Label>
-                                        </Box>
-                                    </Box>
-                                </Box>
+                            {/* Employee Evaluation Metrics */}
+
+                            <Grid size={{ xs: 12 }}>
+                                <PersonalityManagement />
+                            </Grid>
+
+                            <Divider sx={{ borderStyle: 'dashed' }} />
+
+                            {/* Badges & Achievements */}
+                            <Box>
+                                <SectionHeader title="Badges & Achievements" icon="solar:medal-ribbon-bold" />
+                                <ProfileBadges employeeId={employee.name} />
                             </Box>
-                            
-                            
+
                             <Divider sx={{ borderStyle: 'dashed' }} />
 
                             {/* Salary & Finance */}
@@ -376,6 +416,17 @@ export function MyProfileView() {
                     )}
                 </Card>
             </Container>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%', borderRadius: 1.5, fontWeight: 600 }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </DashboardContent>
     );
 }

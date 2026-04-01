@@ -295,7 +295,7 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                 >
                     <Avatar
                         alt={channel.displayName}
-                        src={channel.channel_image || channel.channel_info?.avatar}
+                        src={channel.avatar_url || channel.channel_image || channel.channel_info?.avatar}
                         sx={{
                             width: 40,
                             height: 40,

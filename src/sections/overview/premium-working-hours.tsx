@@ -179,6 +179,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
             <CardHeader
                 title={title}
                 subheader={data.length > 0 ? `${fDate(data[0].date)} - ${fDate(data[data.length - 1].date)}` : ''}
+                titleTypographyProps={{ variant: 'h6', sx: { fontWeight: 800, color: '#1C252E' } }}
                 sx={{ mb: 3 }}
             />
 
