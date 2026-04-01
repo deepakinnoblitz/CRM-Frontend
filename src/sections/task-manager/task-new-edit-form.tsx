@@ -28,7 +28,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { frappeRequest } from 'src/utils/csrf';
 
-import { getForValueOptions, getUsers } from 'src/api/user-permissions';
+import { getUsers } from 'src/api/user-permissions';
 import {
     TaskManager,
     createTaskManager,
@@ -36,6 +36,7 @@ import {
     getEmployeesFromDepartment,
     fetchProjects,
     fetchDepartments,
+    fetchAllActiveEmployees,
     createProject,
     createDepartment
 } from 'src/api/task-manager';
@@ -102,7 +103,7 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
             Promise.all([
                 fetchProjects(),
                 fetchDepartments(),
-                getForValueOptions('Employee'),
+                fetchAllActiveEmployees(),  // ignore_permissions=True — returns ALL active employees
                 getUsers()
             ]).then(([proj, dept, emp, usr]) => {
                 setProjects(proj || []);

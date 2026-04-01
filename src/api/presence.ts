@@ -1,9 +1,9 @@
 import { frappeRequest } from 'src/utils/csrf';
 
-export async function updatePresence(status: string, employee?: string, statusMessage?: string, source: string = 'Manual') {
+export async function updatePresence(status: string, employee?: string, statusMessage?: string, source: string = 'Manual', startTime?: string) {
   const res = await frappeRequest('/api/method/company.company.presence_api.update_presence', {
     method: 'POST',
-    body: JSON.stringify({ status, employee, status_message: statusMessage, source }),
+    body: JSON.stringify({ status, employee, status_message: statusMessage, source, start_time: startTime }),
   });
   if (!res.ok) throw new Error('Failed to update presence');
   const data = await res.json();
@@ -61,7 +61,10 @@ export async function getPresenceSettings() {
 
 export async function updatePresenceSettings(settings: {
   enable_auto_status: boolean,
-  idle_threshold: number,
+  idle_threshold?: number,
+  away_threshold?: number,
+  break_threshold?: number,
+  enable_auto_resume_break?: boolean,
   event_mousemove: boolean,
   event_keydown: boolean,
   event_scroll: boolean,

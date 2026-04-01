@@ -310,6 +310,17 @@ export async function fetchEmployees(): Promise<{ name: string; employee_name: s
     return data.message || [];
 }
 
+/**
+ * Fetch all active employees ignoring Frappe User Permissions.
+ * Used for the Task Manager Assignees dropdown so users with restricted
+ * Employee permissions (e.g. Team Leads) can still assign tasks to anyone.
+ */
+export async function fetchAllActiveEmployees(): Promise<{ name: string; employee_name: string }[]> {
+    const res = await frappeRequest(`/api/method/company.company.doctype.task_manager.task_manager.get_all_active_employees`);
+    const data = await handleResponse(res);
+    return data.message || [];
+}
+
 export async function getTaskManagerPermissions(): Promise<{ read: boolean; write: boolean; create: boolean; delete: boolean }> {
     const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Task Manager");
 

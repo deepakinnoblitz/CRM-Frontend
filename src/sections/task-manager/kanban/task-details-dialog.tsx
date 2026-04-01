@@ -294,19 +294,19 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                                                             {historyItem.event}
                                                         </Typography>
                                                         <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', mt: 0.5 }}>
-                                                        {historyItem.done_on ? fDate(historyItem.done_on) : ''} by {' '}
-                                                        <Typography
-                                                            component="span"
-                                                            variant="body2"
-                                                            sx={{
-                                                                fontWeight: 800,
-                                                                color: 'text.primary',
-                                                                fontSize: '0.8rem'
-                                                            }}
-                                                        >
-                                                            {historyItem.done_by}
+                                                            {historyItem.done_on ? fDate(historyItem.done_on) : ''} by {' '}
+                                                            <Typography
+                                                                component="span"
+                                                                variant="body2"
+                                                                sx={{
+                                                                    fontWeight: 800,
+                                                                    color: 'text.primary',
+                                                                    fontSize: '0.8rem'
+                                                                }}
+                                                            >
+                                                                {historyItem.done_by}
+                                                            </Typography>
                                                         </Typography>
-                                                    </Typography>
                                                         {historyItem.hours_spent && (
                                                             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}>
                                                                 Hours: {historyItem.hours_spent}
@@ -379,20 +379,23 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                                     </Button>
                                 )}
 
-                                 {/* Reopen */}
-                                {task.status === 'Completed' && (permissions.write || permissions.create) && (
-                                    <Button
-                                        variant="contained"
-                                        color="error"
-                                        size="medium"
-                                        disabled={loading}
-                                        startIcon={<Iconify icon="solar:restart-bold" />}
-                                        onClick={() => setReopenTaskOpen(true)}
-                                        sx={{ fontWeight: 800, px: 2, borderRadius: 1.25 }}
-                                    >
-                                        Reopen Task
-                                    </Button>
-                                )}
+                                {/* Reopen — visible to Task Manager role only */}
+                                {(() => {
+                                    const isTaskManager = user?.roles?.includes('Task Manager') || user?.roles?.includes('HR') || user?.roles?.includes('Administrator');
+                                    return task.status === 'Completed' && isTaskManager && (
+                                        <Button
+                                            variant="contained"
+                                            color="error"
+                                            size="medium"
+                                            disabled={loading}
+                                            startIcon={<Iconify icon="solar:restart-bold" />}
+                                            onClick={() => setReopenTaskOpen(true)}
+                                            sx={{ fontWeight: 800, px: 2, borderRadius: 1.25 }}
+                                        >
+                                            Reopen Task
+                                        </Button>
+                                    );
+                                })()}
                             </Stack>
                         </Box>
                     </Box>
@@ -473,17 +476,20 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
 
                         {/* Edit Task button */}
                         <Box sx={{ px: 2, pb: 2.5, display: 'flex', gap: 1 }}>
-                            {permissions.write && (
-                                <Button
-                                    fullWidth
-                                    variant="contained"
-                                    startIcon={<Iconify icon="solar:pen-bold" />}
-                                    onClick={onEdit}
-                                    sx={{ borderRadius: 1.5, fontWeight: 800, bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                                >
-                                    Edit
-                                </Button>
-                            )}
+                            {(() => {
+                                const isTaskManager = user?.roles?.includes('Task Manager') || user?.roles?.includes('HR') || user?.roles?.includes('Administrator');
+                                return isTaskManager && permissions.write && (
+                                    <Button
+                                        fullWidth
+                                        variant="contained"
+                                        startIcon={<Iconify icon="solar:pen-bold" />}
+                                        onClick={onEdit}
+                                        sx={{ borderRadius: 1.5, fontWeight: 800, bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                                    >
+                                        Edit
+                                    </Button>
+                                );
+                            })()}
                             {permissions.delete && (
                                 <Button
                                     variant="outlined"

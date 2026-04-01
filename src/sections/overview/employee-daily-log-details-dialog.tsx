@@ -84,14 +84,14 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
 
         const mid = (from + to) / 2;
 
-        const isInBreak = (session.breaks || []).find((brk: any) => {
+        const midBreak = (session.breaks || []).find((brk: any) => {
             const bStart = parseTime(brk.break_start);
             const bEnd = brk.break_end ? parseTime(brk.break_end) : endSec;
             return mid >= bStart && mid <= bEnd;
         });
 
-        if (isInBreak) {
-            rawSegments.push({ from, to, type: 'Break' });
+        if (midBreak) {
+            rawSegments.push({ from, to, type: 'Break', status: midBreak.source === 'Away' ? 'Away' : 'Break' });
             continue;
         }
 
@@ -281,6 +281,23 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
 
     const formatDuration = (seconds: number) => fDecimalHours(seconds / 3600);
 
+    const formatDetailedDuration = (minutes: number) => {
+        if (!minutes && minutes !== 0) return 'Active';
+        const totalSeconds = Math.round(minutes * 60);
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
+        return `${mins} mins ${secs} Sec`;
+    };
+
+    const formatSecondsToDetailed = (seconds: number) => {
+        if (!seconds && seconds !== 0) return 'Tracking...';
+        const s = Math.round(seconds);
+        const mins = Math.floor(s / 60);
+        const secs = s % 60;
+        if (mins > 0) return `${mins} MINS ${secs} SECS`;
+        return `${secs} SECS`;
+    };
+
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -380,10 +397,12 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                     const isAvailable = intervalStatus === 'Available';
                                     const isBusy = intervalStatus === 'Busy' || intervalStatus === 'Do Not Disturb';
                                     const isAway = intervalStatus === 'Away';
+                                    const isOffline = intervalStatus === 'Offline';
 
                                     let statusColor = theme.palette.success.main;
                                     if (isBusy) statusColor = theme.palette.error.main;
                                     if (isAway) statusColor = theme.palette.warning.main;
+                                    if (isOffline) statusColor = theme.palette.text.disabled;
 
                                     return (
                                         <Stack key={index} direction="row" spacing={2.5}>
@@ -415,24 +434,28 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
                                                         {fTime(interval.from_time)} — {interval.to_time ? fTime(interval.to_time) : 'Active'}
                                                     </Typography>
-                                                    <Box
-                                                        sx={{
-                                                            px: 0.75,
-                                                            py: 0.15,
-                                                            borderRadius: 0.5,
-                                                            fontSize: 10,
-                                                            fontWeight: 900,
-                                                            textTransform: 'uppercase',
-                                                            bgcolor: alpha(statusColor, 0.1),
-                                                            color: statusColor,
-                                                            border: `1px solid ${alpha(statusColor, 0.2)}`
-                                                        }}
-                                                    >
-                                                        {intervalStatus === 'Available' ? 'Available - Logged In' : intervalStatus === 'Offline' ? 'Offline - Logout' : intervalStatus}
-                                                    </Box>
+                                                    
+                                                    {/* Don't display Offline - Logout badge for Tracking (Active) sessions */}
+                                                    {(!interval.to_time && intervalStatus === 'Offline') ? null : (
+                                                        <Box
+                                                            sx={{
+                                                                px: 0.75,
+                                                                py: 0.15,
+                                                                borderRadius: 0.5,
+                                                                fontSize: 10,
+                                                                fontWeight: 900,
+                                                                textTransform: 'uppercase',
+                                                                bgcolor: alpha(statusColor, 0.1),
+                                                                color: statusColor,
+                                                                border: `1px solid ${alpha(statusColor, 0.2)}`
+                                                            }}
+                                                        >
+                                                            {intervalStatus === 'Available' ? 'Available - Logged In' : intervalStatus === 'Offline' ? 'Offline - Logout' : intervalStatus}
+                                                        </Box>
+                                                    )}
                                                 </Stack>
                                                 <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase' }}>
-                                                    Duration: {interval.duration_seconds ? formatDuration(interval.duration_seconds) : 'Tracking...'}
+                                                    Duration: {formatSecondsToDetailed(interval.duration_seconds)}
                                                 </Typography>
                                             </Box>
                                         </Stack>
@@ -495,36 +518,44 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                 </Box>
                             ) : (
                                 <Stack spacing={2.5}>
-                                    {breaks.map((brk: any, index: number) => (
-                                        <Stack
-                                            key={index}
-                                            direction="row"
-                                            alignItems="center"
-                                            spacing={2}
-                                            sx={{
-                                                p: 2,
-                                                borderRadius: 1.5,
-                                                bgcolor: alpha(theme.palette.warning.main, 0.04),
-                                                border: `1px solid ${alpha(theme.palette.warning.main, 0.1)}`
-                                            }}
-                                        >
-                                            <Iconify icon={"ph:coffee-fill" as any} sx={{ color: 'warning.main' }} />
-                                            <Box>
-                                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                                    {fTime(brk.break_start)} — {brk.break_end ? fTime(brk.break_end) : 'On Break'}
-                                                </Typography>
-                                                {brk.reason && (
-                                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25, fontWeight: 600 }}>
-                                                        {brk.reason}
+                                    {breaks.map((brk: any, index: number) => {
+                                        const isAway = brk.source === 'Away';
+                                        const color = isAway ? theme.palette.warning.main : theme.palette.warning.main; // Both use amber/orange but different icons
+                                        const bgColor = isAway ? alpha('#d97706', 0.04) : alpha(theme.palette.warning.main, 0.04);
+                                        const borderColor = isAway ? alpha('#d97706', 0.1) : alpha(theme.palette.warning.main, 0.1);
+
+                                        return (
+                                            <Stack
+                                                key={index}
+                                                direction="row"
+                                                alignItems="center"
+                                                spacing={2}
+                                                sx={{
+                                                    p: 2,
+                                                    borderRadius: 1.5,
+                                                    bgcolor: bgColor,
+                                                    border: `1px solid ${borderColor}`
+                                                }}
+                                            >
+                                                <Iconify 
+                                                    icon={(isAway ? "ph:moon-fill" : "ph:coffee-fill") as any} 
+                                                    sx={{ color: isAway ? '#d97706' : 'warning.main' }} 
+                                                />
+                                                <Box>
+                                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                                        {fTime(brk.break_start)} — {brk.break_end ? fTime(brk.break_end) : 'Current'}
                                                     </Typography>
-                                                )}
-                                                <Typography variant="caption" sx={{ color: 'warning.main', fontWeight: 900 }}>
-                                                    {brk.break_duration ? fDecimalHours(brk.break_duration / 60) : 'Active'}
-                                                    {brk.source && ` • ${brk.source}`}
-                                                </Typography>
-                                            </Box>
-                                        </Stack>
-                                    ))}
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25, fontWeight: 600 }}>
+                                                        {isAway ? 'Stepped Away (Inactivity)' : (brk.reason || 'Manual Break')}
+                                                    </Typography>
+                                                    <Typography variant="caption" sx={{ color: isAway ? '#d97706' : 'warning.main', fontWeight: 900 }}>
+                                                        {formatDetailedDuration(brk.break_duration)}
+                                                        {` • Source: ${brk.source || 'Manual'}`}
+                                                    </Typography>
+                                                </Box>
+                                            </Stack>
+                                        );
+                                    })}
                                 </Stack>
                             )}
                         </Box>

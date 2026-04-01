@@ -195,6 +195,7 @@ export function EmployeeDailyLogTableToolbar({
           <Button
             disableRipple
             color="inherit"
+            startIcon={<Iconify icon={"solar:settings-bold-duotone" as any} sx={{ color: 'dark.main' }} />}
             onClick={onOpenSettings}
             sx={{
               height: 40,

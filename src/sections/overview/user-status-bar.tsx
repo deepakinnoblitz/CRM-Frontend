@@ -366,6 +366,32 @@ export function UserStatusBar() {
                 </Stack>
             </Button>
 
+            {statusName === 'Break' && (
+                <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => handleStatusClick('Available')}
+                    startIcon={<Iconify icon={"ph:play-fill" as any} />}
+                    sx={{
+                        ml: 1,
+                        borderRadius: 10,
+                        px: 2,
+                        bgcolor: theme.palette.success.main,
+                        '&:hover': {
+                            bgcolor: theme.palette.success.dark,
+                        },
+                        animation: 'pulse 2s infinite',
+                        '@keyframes pulse': {
+                            '0%': { boxShadow: `0 0 0 0 ${alpha(theme.palette.success.main, 0.4)}` },
+                            '70%': { boxShadow: `0 0 0 10px ${alpha(theme.palette.success.main, 0)}` },
+                            '100%': { boxShadow: `0 0 0 0 ${alpha(theme.palette.success.main, 0)}` },
+                        },
+                    }}
+                >
+                    Return to Work
+                </Button>
+            )}
+
             {/* <IconButton
                 onClick={handleInfoClick}
                 sx={{
