@@ -231,7 +231,7 @@ export function LeaveAllocationView() {
     };
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: { xs: 3, md: 5 } }}>
                 <Stack spacing={1}>
                     <Typography variant="h4" sx={{ fontWeight: 800 }}>

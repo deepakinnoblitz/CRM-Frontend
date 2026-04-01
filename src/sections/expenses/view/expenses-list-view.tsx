@@ -146,7 +146,7 @@ export function ExpenseListView() {
     const empty = !loading && data.length === 0 && !filterName && !canReset;
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
                 <Typography variant="h4">Expenses</Typography>
                 <Button

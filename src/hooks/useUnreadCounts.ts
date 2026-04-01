@@ -9,9 +9,16 @@ type Props = {
 
 export function useUnreadCounts({ socket }: Props = {}) {
     const [unreadCounts, setUnreadCounts] = useState<UnreadCounts>({
-        'Leave Application': 0,
-        Request: 0,
-        'WFH Attendance': 0,
+        counts: {
+            'Leave Application': 0,
+            Request: 0,
+            'WFH Attendance': 0,
+        },
+        unread_ids: {
+            'Leave Application': [],
+            Request: [],
+            'WFH Attendance': [],
+        },
     });
 
     const getUnreadCounts = useCallback(async () => {
@@ -42,7 +49,7 @@ export function useUnreadCounts({ socket }: Props = {}) {
         if (!socket) return undefined;
 
         const handleSocketUpdate = (data: UnreadCounts) => {
-            setUnreadCounts((prev) => ({ ...prev, ...data }));
+            setUnreadCounts(data);
         };
 
         socket.on('unread_count_updated', handleSocketUpdate);

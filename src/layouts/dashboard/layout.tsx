@@ -12,7 +12,7 @@ import { useTheme, alpha } from '@mui/material/styles';
 import { RouterLink } from 'src/routes/components';
 
 import { useSocket } from 'src/hooks/use-socket';
-import { useUnreadCounts } from 'src/hooks/useUnreadCounts';
+import { useUnreadCountsContext } from 'src/hooks/unread-counts-context';
 
 import { CONFIG } from 'src/config-global';
 
@@ -20,6 +20,7 @@ import { Label } from 'src/components/label';
 
 import { CallProvider } from 'src/sections/chat/call-context';
 import ChatNotifications from 'src/sections/chat/chat-notifications';
+import { UserStatusBar } from 'src/sections/overview/user-status-bar';
 
 import { useAuth } from 'src/auth/auth-context';
 
@@ -65,7 +66,7 @@ export function DashboardLayout({
 
   const { socket } = useSocket(user?.email);
 
-  const { unreadCounts } = useUnreadCounts({ socket });
+  const { unreadCounts } = useUnreadCountsContext();
 
   const { navData } = getNavData(user?.roles);
 
@@ -75,7 +76,7 @@ export function DashboardLayout({
     // Check main items
     if (
       (item.title === 'Leave Application') &&
-      unreadCounts['Leave Application'] > 0
+      unreadCounts.counts['Leave Application'] > 0
     ) {
       item.info = (
         <Label
@@ -90,11 +91,11 @@ export function DashboardLayout({
             fontWeight: 'bold',
           }}
         >
-          {unreadCounts['Leave Application']}
+          {unreadCounts.counts['Leave Application']}
         </Label>
       );
     }
-    if ((item.title === 'Request List') && unreadCounts.Request > 0) {
+    if ((item.title === 'Request List') && unreadCounts.counts.Request > 0) {
       item.info = (
         <Label
           color="error"
@@ -108,13 +109,13 @@ export function DashboardLayout({
             fontWeight: 'bold',
           }}
         >
-          {unreadCounts.Request}
+          {unreadCounts.counts.Request}
         </Label>
       );
     }
     if (
       (item.title === 'WFH Attendance') &&
-      unreadCounts['WFH Attendance'] > 0
+      unreadCounts.counts['WFH Attendance'] > 0
     ) {
       item.info = (
         <Label
@@ -129,7 +130,7 @@ export function DashboardLayout({
             fontWeight: 'bold',
           }}
         >
-          {unreadCounts['WFH Attendance']}
+          {unreadCounts.counts['WFH Attendance']}
         </Label>
       );
     }
@@ -139,7 +140,7 @@ export function DashboardLayout({
       let groupCount = 0;
       item.children.forEach((child: any) => {
         child.info = undefined;
-        if (child.title === 'Leave Application' && unreadCounts['Leave Application'] > 0) {
+        if (child.title === 'Leave Application' && unreadCounts.counts['Leave Application'] > 0) {
           child.info = (
             <Label
               color="error"
@@ -153,12 +154,12 @@ export function DashboardLayout({
                 fontWeight: 'bold',
               }}
             >
-              {unreadCounts['Leave Application']}
+              {unreadCounts.counts['Leave Application']}
             </Label>
           );
-          groupCount += unreadCounts['Leave Application'];
+          groupCount += unreadCounts.counts['Leave Application'];
         }
-        if (child.title === 'WFH Attendance' && unreadCounts['WFH Attendance'] > 0) {
+        if (child.title === 'WFH Attendance' && unreadCounts.counts['WFH Attendance'] > 0) {
           child.info = (
             <Label
               color="error"
@@ -172,12 +173,12 @@ export function DashboardLayout({
                 fontWeight: 'bold',
               }}
             >
-              {unreadCounts['WFH Attendance']}
+              {unreadCounts.counts['WFH Attendance']}
             </Label>
           );
-          groupCount += unreadCounts['WFH Attendance'];
+          groupCount += unreadCounts.counts['WFH Attendance'];
         }
-        if (child.title === 'Request List' && unreadCounts.Request > 0) {
+        if (child.title === 'Request List' && unreadCounts.counts.Request > 0) {
           child.info = (
             <Label
               color="error"
@@ -191,10 +192,10 @@ export function DashboardLayout({
                 fontWeight: 'bold',
               }}
             >
-              {unreadCounts.Request}
+              {unreadCounts.counts.Request}
             </Label>
           );
-          groupCount += unreadCounts.Request;
+          groupCount += unreadCounts.counts.Request;
         }
       });
 
@@ -246,9 +247,8 @@ export function DashboardLayout({
         </>
       ),
       rightArea: (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 0.75 } }}>
-          {/** @slot Searchbar */}
-          {/* <Searchbar /> */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 2 } }}>
+          <UserStatusBar />
 
           <ChatNotifications>
             <Box

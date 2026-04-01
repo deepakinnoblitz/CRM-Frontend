@@ -211,7 +211,7 @@ export default function ChatInfo({ channel, messages, onClose, onCloseChannel, o
             <Stack sx={{ p: 4, alignItems: 'center' }} spacing={2}>
                 <Avatar
                     alt={channel.displayName}
-                    src={channel.channel_info?.avatar}
+                    src={channel.avatar_url || channel.channel_info?.avatar}
                     sx={{
                         width: 120,
                         height: 120,

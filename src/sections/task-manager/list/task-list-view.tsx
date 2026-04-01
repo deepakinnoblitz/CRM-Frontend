@@ -317,6 +317,7 @@ export default function TaskListView({
                                                     <>
                                                         <Avatar
                                                             alt={task.assignees[0].employee_name}
+                                                            src={task.assignees[0].profile_pic}
                                                             sx={{
                                                                 width: 28,
                                                                 height: 28,
@@ -351,6 +352,7 @@ export default function TaskListView({
                                                             <Avatar
                                                                 key={a.employee}
                                                                 alt={a.employee_name}
+                                                                src={a.profile_pic}
                                                                 sx={{
                                                                     bgcolor: stringToColor(a.employee_name || a.user || a.employee),
                                                                     color: stringToDarkColor(a.employee_name || a.user || a.employee),

@@ -347,7 +347,7 @@ export const UserPermissionView = forwardRef(({ hideHeader = false, hideActionBu
     }
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             {renderContent}
         </DashboardContent>
     );

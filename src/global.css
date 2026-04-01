@@ -2,6 +2,7 @@
 * Fonts: app
 *************************************** */
 @import '@fontsource-variable/dm-sans';
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap');
 
 @import '@fontsource/barlow/400.css';
 @import '@fontsource/barlow/500.css';
@@ -51,6 +52,7 @@ ul {
 }
 
 @media print {
+
   .no-print,
   .MuiAppBar-root,
   .MuiDrawer-root,
@@ -58,7 +60,7 @@ ul {
   .no-print-important {
     display: none !important;
   }
-  
+
   .MuiContainer-root,
   .DashboardContent-root {
     padding: 0 !important;

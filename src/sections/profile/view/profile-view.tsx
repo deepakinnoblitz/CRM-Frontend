@@ -229,7 +229,7 @@ export function ProfileView() {
     }
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Container maxWidth="lg">
                 <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
                     <Typography variant="h4">

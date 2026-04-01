@@ -272,6 +272,13 @@ export function CalendarAttendanceChart({ title, subheader, calendarData, joinin
 
             ctx.clearRect(0, 0, w, h);
 
+            // Draw background empty track
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = alpha(theme.palette.grey[500], 0.16);
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+
             let currentAngle = startAngle;
             labelItems.forEach((item) => {
                 const angle = (item.value / total) * Math.PI * 2 * progress;

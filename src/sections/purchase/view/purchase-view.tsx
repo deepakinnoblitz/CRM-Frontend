@@ -110,7 +110,7 @@ export function PurchaseView() {
     const notFound = !dataFiltered.length && !!filterName;
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
                 <Typography variant="h4">Purchases</Typography>
                 <Button

@@ -182,7 +182,7 @@ export default function ExpenseTrackerView() {
     const empty = !loading && !data.length && !filterName && !canReset;
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Company Expenses

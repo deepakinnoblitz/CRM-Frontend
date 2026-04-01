@@ -409,7 +409,7 @@ export function PurchaseEditView() {
 
     if (dataLoading) {
         return (
-            <DashboardContent>
+            <DashboardContent maxWidth={false}>
                 <Stack alignItems="center" justifyContent="center" sx={{ height: '50vh' }}>
                     <CircularProgress />
                 </Stack>

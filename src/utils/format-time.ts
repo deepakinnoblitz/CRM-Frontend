@@ -187,3 +187,24 @@ export function fToChatTime(date: DatePickerFormat): string {
 
   return d.format(formatPatterns.split.date);
 }
+
+// ----------------------------------------------------------------------
+
+/**
+ * @output 1 hr 20 mins 30 secs
+ */
+export function fDecimalHours(decimalHours: number): string {
+  if (!decimalHours) return '0 secs';
+
+  const totalSeconds = Math.round(decimalHours * 3600);
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+
+  const parts = [];
+  if (hrs > 0) parts.push(`${hrs} hr${hrs > 1 ? 's' : ''}`);
+  if (mins > 0) parts.push(`${mins} min${mins > 1 ? 's' : ''}`);
+  if (secs > 0 || parts.length === 0) parts.push(`${secs} sec${secs !== 1 ? 's' : ''}`);
+
+  return parts.join(' ');
+}

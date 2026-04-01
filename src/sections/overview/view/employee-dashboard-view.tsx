@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import Grid from '@mui/material/Grid';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -16,8 +17,10 @@ import { HRAnnouncements } from '../hr-announcements';
 import { EmployeeCalendar } from '../employee-calendar';
 import { HRDashboardTable } from '../hr-dashboard-table';
 import { LeaveStatusCards } from '../leave-status-cards';
+import { DashboardEomCard } from '../dashboard-eom-card';
 import { MissingTimesheets } from '../missing-timesheets';
 import { PremiumWorkingHours } from '../premium-working-hours';
+import { PersonalityManagement } from '../personality-management';
 import { CalendarAttendanceChart } from '../calendar-attendance-chart';
 
 // ----------------------------------------------------------------------
@@ -79,7 +82,9 @@ export function EmployeeDashboardView() {
                 Hi, {data.employee_name || user?.full_name || 'Employee'}, Welcome back 👋
             </Typography>
 
-            <Grid container spacing={3}>
+            <DashboardEomCard />
+
+            <Grid container spacing={3} sx={{ mt: 3 }}>
                 {/* 1. Latest Announcements */}
                 <Grid size={{ xs: 12 }}>
                     <HRAnnouncements
@@ -105,6 +110,11 @@ export function EmployeeDashboardView() {
                         data={data.leave_allocations || []}
                         inProbation={data.in_probation}
                     />
+                </Grid>
+
+                {/* Personality Management */}
+                <Grid size={{ xs: 12 }}>
+                    <PersonalityManagement />
                 </Grid>
 
                 {/* 4. Calendar Attendance Chart */}

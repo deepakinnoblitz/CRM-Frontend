@@ -286,7 +286,7 @@ export function SalarySlipsView() {
     const empty = !data.length && !filterName;
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
                 <Typography variant="h4">Salary Slips</Typography>
 

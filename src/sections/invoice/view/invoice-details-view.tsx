@@ -71,7 +71,7 @@ export function InvoiceDetailsView() {
 
     if (!invoice) {
         return (
-            <DashboardContent>
+            <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Invoice not found</Typography>
                 <Button onClick={() => router.push('/deals?tab=invoices')} sx={{ mt: 3 }}>
                     Go back to list
@@ -139,7 +139,7 @@ export function InvoiceDetailsView() {
     };
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} className="no-print">
                 <Typography variant="h4">Invoice: {id}</Typography>
                 <Stack direction="row" spacing={2}>

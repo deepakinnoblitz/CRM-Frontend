@@ -18,16 +18,20 @@ import InputAdornment from '@mui/material/InputAdornment';
 import { stringToColor, stringToDarkColor } from 'src/utils/color-utils';
 
 import { Iconify } from 'src/components/iconify';
+
+import ChatStatusBadge from './chat-status-badge';
+
 // ----------------------------------------------------------------------
 
 type Props = {
     open: boolean;
     onClose: () => void;
     contacts: any[];
+    presences: Record<string, any>;
     onSelectContact: (contact: any) => void;
 };
 
-export default function ChatContactDialog({ open, onClose, contacts, onSelectContact }: Props) {
+export default function ChatContactDialog({ open, onClose, contacts, presences, onSelectContact }: Props) {
     const [searchQuery, setSearchQuery] = useState('');
 
     const filteredContacts = contacts.filter((contact) =>
@@ -88,20 +92,23 @@ export default function ChatContactDialog({ open, onClose, contacts, onSelectCon
                                         }
                                     }}
                                 >
-                                    <Avatar
-                                        alt={contact.full_name}
-                                        src={contact.user_image}
-                                        sx={{
-                                            width: 44,
-                                            height: 44,
-                                            mr: 2,
-                                            fontWeight: 'fontWeightBold',
-                                            color: contact.user_image ? 'text.secondary' : stringToDarkColor(contact.full_name || ''),
-                                            bgcolor: contact.user_image ? 'transparent' : stringToColor(contact.full_name || ''),
-                                        }}
-                                    >
-                                        {contact.full_name?.charAt(0).toUpperCase()}
-                                    </Avatar>
+                                    <Box sx={{ mr: 2, position: 'relative' }}>
+                                        <ChatStatusBadge status={presences?.[contact.user_id]?.status}>
+                                            <Avatar
+                                                alt={contact.full_name}
+                                                src={contact.avatar}
+                                                sx={{
+                                                    width: 44,
+                                                    height: 44,
+                                                    fontWeight: 'fontWeightBold',
+                                                    color: contact.avatar ? 'text.secondary' : stringToDarkColor(contact.full_name || ''),
+                                                    bgcolor: contact.avatar ? 'transparent' : stringToColor(contact.full_name || ''),
+                                                }}
+                                            >
+                                                {contact.full_name?.charAt(0).toUpperCase()}
+                                            </Avatar>
+                                        </ChatStatusBadge>
+                                    </Box>
 
                                     <ListItemText
                                         primary={contact.full_name}

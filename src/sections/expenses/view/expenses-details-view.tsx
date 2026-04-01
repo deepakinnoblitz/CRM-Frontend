@@ -70,7 +70,7 @@ export function ExpenseDetailsView({ id }: Props) {
 
     if (loading) {
         return (
-            <DashboardContent>
+            <DashboardContent maxWidth={false}>
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 20 }}>
                     <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
                 </Box>
@@ -80,7 +80,7 @@ export function ExpenseDetailsView({ id }: Props) {
 
     if (!expense) {
         return (
-            <DashboardContent>
+            <DashboardContent maxWidth={false}>
                 <Box sx={{ py: 20, textAlign: 'center' }}>
                     <Iconify icon={"solar:ghost-bold" as any} width={64} sx={{ color: 'text.disabled', mb: 2 }} />
                     <Typography variant="h6" sx={{ color: 'text.secondary' }}>Expense Not Found</Typography>
@@ -93,7 +93,7 @@ export function ExpenseDetailsView({ id }: Props) {
     }
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
                 <Typography variant="h4">Expense: {expense.expense_no || id}</Typography>
                 <Stack direction="row" spacing={2}>

@@ -119,7 +119,7 @@ export function CallsView() {
     }));
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Card
                 sx={{
                     display: 'flex',

@@ -20,18 +20,21 @@ import { stringToColor, stringToDarkColor } from 'src/utils/color-utils';
 
 import { Iconify } from 'src/components/iconify';
 
+import ChatStatusBadge from './chat-status-badge';
+
 // ----------------------------------------------------------------------
 
 type Props = {
     user: any;
     channels: any[];
+    presences: Record<string, any>;
     selectedChannel: any;
     onSelectChannel: (channel: any) => void;
     onOpenContacts: () => void;
     loading: boolean;
 };
 
-export default function ChatSidebar({ user, channels, selectedChannel, onSelectChannel, onOpenContacts, loading }: Props) {
+export default function ChatSidebar({ user, channels, presences, selectedChannel, onSelectChannel, onOpenContacts, loading }: Props) {
     const [searchQuery, setSearchQuery] = useState('');
 
     const filteredChannels = (Array.isArray(channels) ? channels : []).filter((channel) =>
@@ -156,26 +159,28 @@ export default function ChatSidebar({ user, channels, selectedChannel, onSelectC
                                         badgeContent={channel.user_unread_messages}
                                         invisible={channel.user_unread_messages === 0}
                                         sx={{
-                                            '& .MuiBadge-badge': {
+                                            '& > .MuiBadge-badge': {
                                                 right: 2,
                                                 top: 2,
                                                 border: (theme) => `solid 2px ${theme.palette.background.paper}`,
                                             }
                                         }}
                                     >
-                                        <Avatar
-                                            alt={channel.displayName}
-                                            src={channel.channel_info?.avatar}
-                                            sx={{
-                                                width: 40,
-                                                height: 40,
-                                                fontWeight: 'fontWeightBold',
-                                                color: channel.channel_info?.avatar ? 'text.secondary' : stringToDarkColor(channel.displayName || ''),
-                                                bgcolor: channel.channel_info?.avatar ? 'transparent' : stringToColor(channel.displayName || ''),
-                                            }}
-                                        >
-                                            {channel.displayName?.charAt(0).toUpperCase()}
-                                        </Avatar>
+                                        <ChatStatusBadge status={channel.type === 'Direct' ? presences?.[channel.contact]?.status : undefined}>
+                                            <Avatar
+                                                alt={channel.displayName}
+                                                src={channel.avatar_url}
+                                                sx={{
+                                                    width: 40,
+                                                    height: 40,
+                                                    fontWeight: 'fontWeightBold',
+                                                    color: channel.avatar_url ? 'text.secondary' : stringToDarkColor(channel.displayName || ''),
+                                                    bgcolor: channel.avatar_url ? 'transparent' : stringToColor(channel.displayName || ''),
+                                                }}
+                                            >
+                                                {channel.displayName?.charAt(0).toUpperCase()}
+                                            </Avatar>
+                                        </ChatStatusBadge>
                                     </Badge>
                                 </Box>
 

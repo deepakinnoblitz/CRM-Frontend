@@ -406,5 +406,5 @@ export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?:
         return content;
     }
 
-    return <DashboardContent>{content}</DashboardContent>;
+    return <DashboardContent maxWidth={false}>{content}</DashboardContent>;
 }

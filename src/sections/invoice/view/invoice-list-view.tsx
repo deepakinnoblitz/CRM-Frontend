@@ -344,7 +344,7 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
         return content;
     }
 
-    return <DashboardContent>{content}</DashboardContent>;
+    return <DashboardContent maxWidth={false}>{content}</DashboardContent>;
 }
 
 // ----------------------------------------------------------------------

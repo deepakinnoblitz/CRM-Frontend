@@ -403,7 +403,7 @@ export function InterviewsView() {
     const empty = !data.length && !filterName && !canReset;
 
     return (
-        <DashboardContent>
+        <DashboardContent maxWidth={false}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5 }}>
                 <Typography variant="h4">Interviews</Typography>
                 {permissions.write && (

@@ -12,6 +12,7 @@ import { useSocket } from 'src/hooks/use-socket';
 
 import { chatApi } from 'src/api/chat';
 import { getCurrentUserInfo } from 'src/api/auth';
+import { getAllPresences } from 'src/api/presence';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -27,6 +28,7 @@ export default function ChatView() {
     const [user, setUser] = useState<any>(null);
     const [channels, setChannels] = useState<any[]>([]);
     const [contacts, setContacts] = useState<any[]>([]);
+    const [presences, setPresences] = useState<Record<string, any>>({});
     const [selectedChannel, setSelectedChannel] = useState<any>(null);
     const [openContacts, setOpenContacts] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -94,10 +96,39 @@ export default function ChatView() {
         }
     }, [user]);
 
+    const fetchPresences = useCallback(async () => {
+        try {
+            const data = await getAllPresences();
+            setPresences(data);
+        } catch (error) {
+            console.error('Failed to fetch presences', error);
+        }
+    }, []);
+
     useEffect(() => {
         fetchChannels();
         fetchContacts();
-    }, [fetchChannels, fetchContacts]);
+        fetchPresences();
+    }, [fetchChannels, fetchContacts, fetchPresences]);
+
+    useEffect(() => {
+        if (socket) {
+            const handlePresenceUpdate = (data: any) => {
+                console.log('Presence update received:', data);
+                setPresences((prev) => ({
+                    ...prev,
+                    [data.user_id]: data
+                }));
+            };
+
+            socket.on('presence_update', handlePresenceUpdate);
+
+            return () => {
+                socket.off('presence_update', handlePresenceUpdate);
+            };
+        }
+        return undefined;
+    }, [socket]);
 
     const enrichedChannels = channels.map(channel => {
         let displayName = channel.channel_name || channel.room;
@@ -216,6 +247,7 @@ export default function ChatView() {
                     <ChatSidebar
                         user={user}
                         channels={enrichedChannels}
+                        presences={presences}
                         selectedChannel={enrichedSelectedChannel}
                         onSelectChannel={setSelectedChannel}
                         onOpenContacts={() => setOpenContacts(true)}
@@ -278,6 +310,7 @@ export default function ChatView() {
                 open={openContacts}
                 onClose={() => setOpenContacts(false)}
                 contacts={contacts}
+                presences={presences}
                 onSelectContact={handleStartConversation}
             />
 
