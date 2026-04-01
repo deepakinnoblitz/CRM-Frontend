@@ -170,7 +170,7 @@ export function DashboardEomCard() {
             >
                 <Box
                     component="img"
-                    src="/assets/eom-ribbon.png"
+                    src={`${import.meta.env.BASE_URL}assets/eom-ribbon.png`}
                     alt="Employee of the Month"
                     sx={{
                         width: 240,

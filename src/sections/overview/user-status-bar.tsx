@@ -1027,7 +1027,7 @@ export function UserStatusBar() {
                     >
                         <Box
                             component="img"
-                            src="/assets/illustrations/collaboration.png"
+                            src={`${import.meta.env.BASE_URL}assets/illustrations/collaboration.png`}
                             sx={{
                                 width: '100%',
                                 height: '100%',
