@@ -1119,7 +1119,7 @@ export function LeadView() {
 
           <Scrollbar>
             <TableContainer sx={{ overflow: 'unset' }}>
-              <Table sx={{ minWidth: 800 }}>
+              <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
                 <LeadTableHead
                   rowCount={total}
                   numSelected={table.selected.length}

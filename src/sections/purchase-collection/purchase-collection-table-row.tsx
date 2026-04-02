@@ -40,7 +40,16 @@ export default function PurchaseCollectionTableRow({
     const { name, purchase, vendor_name, collection_date, amount_collected, amount_pending, mode_of_payment } = row;
 
     return (
-        <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
+        <TableRow
+            hover
+            tabIndex={-1}
+            role="checkbox"
+            selected={selected}
+            sx={{
+                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                '&:last-child td, &:last-child th': { borderBottom: 0 },
+            }}
+        >
             {!hideCheckbox && (
                 <TableCell padding="checkbox">
                     <Checkbox disableRipple checked={selected} onChange={onSelectRow} />

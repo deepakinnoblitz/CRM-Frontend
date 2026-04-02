@@ -257,7 +257,7 @@ export function InterviewDetailsDialog({ open, onClose, interview }: Props) {
                             sx={{
                                 px: 2, py: 1,
                                 bgcolor: 'background.neutral',
-                                borderBottom: (theme) => `1px dashed ${theme.vars.palette.divider}`,
+                                borderBottom: (t) => `1px dashed ${t.vars.palette.divider}`,
                             }}
                         >
                             <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
@@ -305,7 +305,7 @@ export function InterviewDetailsDialog({ open, onClose, interview }: Props) {
                         onChange={(_, val) => setTab(val)}
                         sx={{
                             mb: 3,
-                            borderBottom: (theme) => `1px solid ${theme.vars.palette.divider}`,
+                            borderBottom: (t) => `1px solid ${t.vars.palette.divider}`,
                         }}
                     >
                         <Tab label="Applicant Details" />

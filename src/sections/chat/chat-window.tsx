@@ -272,7 +272,7 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                     py: 1,
                     px: 2,
                     p: 2,
-                    borderBottom: (theme) => `solid 1px ${theme.palette.divider}`
+                    borderBottom: (t) => `solid 1px ${t.palette.divider}`
                 }}
             >
                 {onBack && (

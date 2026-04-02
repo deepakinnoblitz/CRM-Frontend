@@ -69,7 +69,7 @@ export function UserManagementView({ hideHeader = false }: { hideHeader?: boolea
             sx={{
                 width: 1,
                 mb: hideHeader ? 1 : { xs: 3, md: 5 },
-                borderBottom: (theme) => `1px border-style: solid; border-width: 0 0 1px 0; border-color: ${theme.palette.divider}`,
+                borderBottom: (t) => `1px border-style: solid; border-width: 0 0 1px 0; border-color: ${t.palette.divider}`,
             }}
         >
             <Tabs

@@ -302,7 +302,7 @@ export const UserView = forwardRef(({ hideHeader = false, hideActionButton = fal
 
         <Scrollbar>
           <TableContainer sx={{ overflow: 'unset' }}>
-            <Table sx={{ minWidth: 800 }}>
+            <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
               <UserTableHead
                 rowCount={total}
                 numSelected={0}

@@ -26,7 +26,14 @@ export function UserPermissionTableRow({
     index,
 }: Props) {
     return (
-        <TableRow hover selected={selected}>
+        <TableRow
+            hover
+            selected={selected}
+            sx={{
+                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                '&:last-child td, &:last-child th': { borderBottom: 0 },
+            }}
+        >
             <TableCell align="center">
                 <Box
                     sx={{

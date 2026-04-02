@@ -50,7 +50,14 @@ export function JobOpeningTableRow({
     };
 
     return (
-        <TableRow hover selected={selected}>
+        <TableRow
+            hover
+            selected={selected}
+            sx={{
+                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                '&:last-child td, &:last-child th': { borderBottom: 0 },
+            }}
+        >
             {!hideCheckbox && (
                 <TableCell padding="checkbox">
                     <Checkbox checked={selected} onClick={onSelectRow} />

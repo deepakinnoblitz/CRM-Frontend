@@ -55,7 +55,16 @@ export function SalarySlipTableRow({
     const periodLabel = `${formatDate(row.pay_period_start)} - ${formatDate(row.pay_period_end)}`;
 
     return (
-        <TableRow hover selected={selected}>
+        <TableRow
+            hover
+            tabIndex={-1}
+            role="checkbox"
+            selected={selected}
+            sx={{
+                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                '&:last-child td, &:last-child th': { borderBottom: 0 },
+            }}
+        >
             {!hideCheckbox && (
                 <TableCell padding="checkbox">
                     <Checkbox checked={selected} onChange={onSelectRow} />

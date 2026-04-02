@@ -38,7 +38,14 @@ export function EmployeeEvaluationEventTableRow({
   const { name, employee, employee_name, trait, evaluation_type, score_change, evaluation_date, hr_user, docstatus } = row;
 
   return (
-    <TableRow hover selected={selected}>
+    <TableRow
+      hover
+      selected={selected}
+      sx={{
+        '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+        '&:last-child td, &:last-child th': { borderBottom: 0 },
+      }}
+    >
       <TableCell align="center">
         <Box
           sx={{

@@ -412,7 +412,11 @@ export function TimesheetsReportView() {
                 <Card>
                     <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
                         <Scrollbar>
-                            <Table size="medium" stickyHeader>
+                            <Table
+                                size="medium"
+                                stickyHeader
+                                sx={{ borderCollapse: 'collapse' }}
+                            >
                                 <TableHead>
                                     <TableRow sx={{ bgcolor: '#f4f6f8' }}>
                                         <TableCell padding="checkbox">
@@ -439,7 +443,17 @@ export function TimesheetsReportView() {
                                             const rowId = `${row.employee}-${index}`;
                                             const isSelected = selected.indexOf(rowId) !== -1;
                                             return (
-                                                <TableRow key={index} hover role="checkbox" aria-checked={isSelected} selected={isSelected}>
+                                                <TableRow
+                                                    key={index}
+                                                    hover
+                                                    role="checkbox"
+                                                    aria-checked={isSelected}
+                                                    selected={isSelected}
+                                                    sx={{
+                                                        '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                        '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                    }}
+                                                >
                                                     <TableCell padding="checkbox">
                                                         <Checkbox checked={isSelected} onClick={(event) => handleClick(event, rowId)} />
                                                     </TableCell>
