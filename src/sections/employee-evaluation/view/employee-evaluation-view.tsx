@@ -197,7 +197,7 @@ export function EmployeeEvaluationView() {
   }, []);
 
   const renderTabs = (
-    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
       <Tabs
         value={currentTab}
         onChange={handleChangeTab}
@@ -294,7 +294,7 @@ export function EmployeeEvaluationView() {
 
         <Scrollbar>
           <TableContainer sx={{ minWidth: 800, position: 'relative' }}>
-            <Table>
+            <Table sx={{ borderCollapse: 'collapse' }}>
               {currentTab === 'events' && (
                 <>
                   <EmployeeEvaluationTableHead
@@ -361,7 +361,7 @@ export function EmployeeEvaluationView() {
 
                     {emptyEvents && (
                       <TableRow>
-                        <TableCell colSpan={9}>
+                        <TableCell colSpan={8}>
                           <EmptyContent
                             title="No Employee Evaluation Assessment"
                             description="Wait for HR to add employee evaluations for employees."
@@ -470,7 +470,7 @@ export function EmployeeEvaluationView() {
 
                     {emptyTraits && (
                       <TableRow>
-                        <TableCell colSpan={6}>
+                        <TableCell colSpan={5}>
                           <EmptyContent
                             title="No Criteria found"
                             description="Define performance criteria to start evaluations."
@@ -487,7 +487,7 @@ export function EmployeeEvaluationView() {
                       />
                     )}
 
-                    {notFoundTraits && <TableNoData searchQuery={filterName} colSpan={6} />}
+                    {notFoundTraits && <TableNoData searchQuery={filterName} colSpan={5} />}
                   </TableBody>
                 </>
               )}
@@ -755,7 +755,7 @@ export function EmployeeEvaluationView() {
             Successfully reset scores for <b>{resetResults.length}</b> employees to 100.
           </Typography>
           <Scrollbar sx={{ maxHeight: 400 }}>
-            <Table size="medium">
+            <Table size="medium" sx={{ borderCollapse: 'collapse' }}>
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ pl: 3, py: 2 }}>Employee</TableCell>

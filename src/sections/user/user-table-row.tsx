@@ -36,7 +36,16 @@ export function UserTableRow({
   index,
 }: UserTableRowProps) {
   return (
-    <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
+    <TableRow
+      hover
+      tabIndex={-1}
+      role="checkbox"
+      selected={selected}
+      sx={{
+        '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+        '&:last-child td, &:last-child th': { borderBottom: 0 },
+      }}
+    >
       <TableCell align="center">
         <Box
           sx={{

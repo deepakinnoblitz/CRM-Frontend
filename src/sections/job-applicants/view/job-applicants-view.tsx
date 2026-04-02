@@ -344,7 +344,7 @@ export function JobApplicantsView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
                             <JobApplicantTableHead
                                 order={order}
                                 orderBy={orderBy}

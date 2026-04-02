@@ -21,7 +21,13 @@ type Props = {
 
 export function BadgeAssignmentTableRow({ row, index, onView, onDelete }: Props) {
   return (
-    <TableRow hover>
+    <TableRow
+      hover
+      sx={{
+        '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+        '&:last-child td, &:last-child th': { borderBottom: 0 },
+      }}
+    >
       <TableCell align="center">
         <Box
           sx={{

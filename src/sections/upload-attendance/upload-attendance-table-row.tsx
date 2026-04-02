@@ -41,7 +41,13 @@ export function UploadAttendanceTableRow({
     const hasFile = Boolean(row.attendance_file);
 
     return (
-        <TableRow hover>
+        <TableRow
+            hover
+            sx={{
+                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                '&:last-child td, &:last-child th': { borderBottom: 0 },
+            }}
+        >
             <TableCell align="center">
                 <Box
                     sx={{

@@ -217,7 +217,7 @@ export default function TaskListView({
                                         sx={{
                                             cursor: 'pointer',
                                             '&:last-child td': { borderBottom: 0 },
-                                            '& td': { borderBottom: (theme) => `1px solid ${theme.palette.divider}` },
+                                            '& td': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
                                         }}
                                     >
                                         {/* Row Number */}

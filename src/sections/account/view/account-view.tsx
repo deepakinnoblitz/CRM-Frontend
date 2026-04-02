@@ -497,7 +497,7 @@ export function AccountView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
                             <AccountTableHead
                                 rowCount={total}
                                 numSelected={selected.length}

@@ -42,7 +42,16 @@ export function CRMExpenseTrackerTableRow({
     const { type, titlenotes, amount, creation, name } = row;
 
     return (
-        <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
+        <TableRow
+            hover
+            tabIndex={-1}
+            role="checkbox"
+            selected={selected}
+            sx={{
+                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                '&:last-child td, &:last-child th': { borderBottom: 0 },
+            }}
+        >
             {!hideCheckbox && (
                 <TableCell padding="checkbox">
                     <Checkbox disableRipple checked={selected} onChange={onSelectRow} />

@@ -838,7 +838,7 @@ export function DealView() {
 
                                 <Scrollbar>
                                     <TableContainer sx={{ overflow: 'unset' }}>
-                                        <Table sx={{ minWidth: 800 }}>
+                                        <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
                                             <DealTableHead
                                                 rowCount={total}
                                                 numSelected={selected.length}

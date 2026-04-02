@@ -860,7 +860,7 @@ export function EmployeeView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
                             <EmployeeTableHead
                                 order={order}
                                 orderBy={orderBy}

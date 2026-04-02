@@ -21,7 +21,13 @@ export function EmployeeEvaluationScoreLogTableRow({
   const { employee, employee_name, previous_score, change, new_score, reason, date } = row;
 
   return (
-    <TableRow hover>
+    <TableRow
+      hover
+      sx={{
+        '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+        '&:last-child td, &:last-child th': { borderBottom: 0 },
+      }}
+    >
       <TableCell align="center">
         <Box
           sx={{

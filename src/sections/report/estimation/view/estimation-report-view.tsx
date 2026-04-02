@@ -297,7 +297,7 @@ export function EstimationReportView() {
                 >
                     <Scrollbar>
                         <TableContainer sx={{ minWidth: 900, maxHeight: 440, overflowY: 'auto' }}>
-                            <Table size="medium" stickyHeader>
+                            <Table size="medium" stickyHeader sx={{ borderCollapse: 'collapse' }}>
                                 <TableHead>
                                     <TableRow sx={{ bgcolor: '#f4f6f8' }}>
                                         <TableCell padding="checkbox">
@@ -325,7 +325,17 @@ export function EstimationReportView() {
                                         .map((row, index) => {
                                             const isSelected = selected.indexOf(row.name) !== -1;
                                             return (
-                                                <TableRow key={index} hover role="checkbox" aria-checked={isSelected} selected={isSelected}>
+                                                <TableRow
+                                                 key={index}
+                                                 hover
+                                                 role="checkbox"
+                                                 aria-checked={isSelected}
+                                                 selected={isSelected}
+                                                 sx={{
+                                                     '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                     '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                 }}
+                                             >
                                                     <TableCell padding="checkbox">
                                                         <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                     </TableCell>

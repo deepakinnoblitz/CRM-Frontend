@@ -439,7 +439,7 @@ export function InterviewsView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
                             <InterviewTableHead
                                 order={order}
                                 orderBy={orderBy}
@@ -564,7 +564,7 @@ export function InterviewsView() {
                     sx={{
                         px: 3,
                         bgcolor: 'background.paper',
-                        borderBottom: (theme) => `solid 1px ${theme.vars.palette.divider}`,
+                        borderBottom: (t) => `solid 1px ${t.vars.palette.divider}`,
                     }}
                 >
                     <Tab label="Applicant Details" />
@@ -985,7 +985,7 @@ export function InterviewsView() {
                                             px: 2,
                                             py: 1,
                                             bgcolor: 'background.neutral',
-                                            borderBottom: (theme) => `1px dashed ${theme.vars.palette.divider}`,
+                                            borderBottom: (t) => `1px dashed ${t.vars.palette.divider}`,
                                         }}
                                     >
                                         <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
