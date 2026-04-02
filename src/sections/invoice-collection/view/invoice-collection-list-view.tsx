@@ -51,7 +51,7 @@ export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?:
     const router = useRouter();
 
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [orderBy, setOrderBy] = useState('modified');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [selected, setSelected] = useState<string[]>([]);
@@ -321,10 +321,10 @@ export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?:
                                     />
                                 ))}
 
-                                <TableEmptyRows
-                                    height={77}
-                                    emptyRows={emptyRows(page, rowsPerPage, total)}
-                                />
+                                    <TableEmptyRows
+                                        height={77}
+                                        emptyRows={tableData.length < 5 ? 5 - tableData.length : 0}
+                                    />
 
                                 {notFound && (
                                     <TableNoData searchQuery={search} />
@@ -352,7 +352,7 @@ export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?:
                     count={total}
                     rowsPerPage={rowsPerPage}
                     onPageChange={handleChangePage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
             </Card>

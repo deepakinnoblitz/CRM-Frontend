@@ -69,7 +69,7 @@ export function LeaveAllocationView() {
     );
 
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('creation');
@@ -362,7 +362,7 @@ export function LeaveAllocationView() {
                     rowsPerPage={rowsPerPage}
                     onPageChange={(e, p) => setPage(p)}
                     onRowsPerPageChange={(e) => setRowsPerPage(parseInt(e.target.value, 10))}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                 />
             </Card>
 

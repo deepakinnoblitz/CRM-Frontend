@@ -79,7 +79,7 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
 
     const validate = () => {
         const newErrors: Record<string, string> = {};
-        if (!formData.trait_name) newErrors.trait_name = 'Trait Name is required';
+        if (!formData.trait_name) newErrors.trait_name = 'Criteria Name is required';
         if (!formData.category) newErrors.category = 'Category is required';
 
         setErrors(newErrors);
@@ -113,7 +113,7 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
         <>
             <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
                 <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {selectedTrait ? 'Edit Evaluation Trait' : 'New Evaluation Trait'}
+                    {selectedTrait ? 'Edit Performance Criteria' : 'New Performance Criteria'}
                     <IconButton onClick={onClose}>
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
@@ -123,7 +123,7 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
                     <Stack spacing={3} sx={{ pt: 1 }}>
                         <TextField
                             fullWidth
-                            label="Trait Name"
+                            label="Criteria Name"
                             required
                             value={formData.trait_name}
                             onChange={(e) => {

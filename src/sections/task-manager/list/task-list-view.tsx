@@ -420,7 +420,7 @@ export default function TaskListView({
                                 {!isEmpty && (
                                     <TableEmptyRows
                                         height={68}
-                                        emptyRows={Math.max(0, rowsPerPage - dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).length)}
+                                        emptyRows={dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).length < 5 ? 5 - dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).length : 0}
                                     />
                                 )}
                             </TableBody>
@@ -435,7 +435,7 @@ export default function TaskListView({
                     rowsPerPage={rowsPerPage}
                     onPageChange={onPageChange}
                     onRowsPerPageChange={onRowsPerPageChange}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                 />
             </Card>
 

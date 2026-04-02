@@ -46,7 +46,7 @@ export function AccountView() {
     const [accounts, setAccounts] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [filters, setFilters] = useState({
         country: 'all',
@@ -522,7 +522,7 @@ export function AccountView() {
                             />
                             <TableBody>
                                 {loading && (
-                                    <TableEmptyRows height={68} emptyRows={rowsPerPage} />
+                                    <TableEmptyRows height={68} emptyRows={5} />
                                 )}
 
                                 {!loading && accounts.map((row, index) => (
@@ -567,7 +567,7 @@ export function AccountView() {
                                 {!empty && (
                                     <TableEmptyRows
                                         height={68}
-                                        emptyRows={Math.max(0, rowsPerPage - accounts.length)}
+                                        emptyRows={accounts.length < 5 ? 5 - accounts.length : 0}
                                     />
                                 )}
                             </TableBody>
@@ -581,7 +581,7 @@ export function AccountView() {
                     count={total}
                     rowsPerPage={rowsPerPage}
                     onPageChange={onChangePage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={onChangeRowsPerPage}
                 />
             </Card>

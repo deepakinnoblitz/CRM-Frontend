@@ -176,10 +176,10 @@ export function PurchaseView() {
                                         />
                                     ))}
 
-                                <TableEmptyRows
-                                    height={77}
-                                    emptyRows={emptyRows(page, rowsPerPage, purchases.length)}
-                                />
+                                    <TableEmptyRows
+                                        height={68}
+                                        emptyRows={purchases.length < 5 ? 5 - purchases.length : 0}
+                                    />
 
                                 {notFound && <TableNoData query={filterName} />}
                             </TableBody>
@@ -194,7 +194,7 @@ export function PurchaseView() {
                     onPageChange={handleChangePage}
                     rowsPerPage={rowsPerPage}
                     onRowsPerPageChange={handleChangeRowsPerPage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                 />
             </Card>
         </DashboardContent>

@@ -51,7 +51,7 @@ const SORT_OPTIONS = [
 export function SalarySlipsView() {
 
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('pay_period_start');
@@ -407,7 +407,7 @@ export function SalarySlipsView() {
                                 {!empty && (
                                     <TableEmptyRows
                                         height={68}
-                                        emptyRows={Math.max(0, rowsPerPage - data.length)}
+                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
                                     />
                                 )}
                             </TableBody>
@@ -421,7 +421,7 @@ export function SalarySlipsView() {
                     count={total}
                     rowsPerPage={rowsPerPage}
                     onPageChange={handleChangePage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
             </Card>

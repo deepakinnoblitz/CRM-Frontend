@@ -137,12 +137,22 @@ export async function getUsers() {
     return (await res.json()).message;
 }
 
-export async function getForValueOptions(doctype: string) {
+export async function getForValueOptions(doctype: string, filters?: any[]) {
     const fields = ["name"];
     if (doctype === 'Employee') {
         fields.push("employee_name");
     }
-    const res = await frappeRequest(`/api/method/frappe.client.get_list?doctype=${doctype}&fields=${JSON.stringify(fields)}&limit_page_length=999&order_by=name asc`);
+    if (doctype === 'Evaluation Trait') {
+        fields.push("trait_name");
+    }
+    
+    let url = `/api/method/frappe.client.get_list?doctype=${doctype}&fields=${JSON.stringify(fields)}&limit_page_length=999&order_by=name asc`;
+    
+    if (filters) {
+        url += `&filters=${encodeURIComponent(JSON.stringify(filters))}`;
+    }
+
+    const res = await frappeRequest(url);
     if (!res.ok) throw new Error(`Failed to fetch ${doctype} records`);
     return (await res.json()).message;
 }

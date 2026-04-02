@@ -50,7 +50,7 @@ const TABLE_HEAD = [
 
 export function UploadAttendanceView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [sortBy, setSortBy] = useState('upload_date_desc');
     const [filters, setFilters] = useState<any>({
@@ -176,7 +176,7 @@ export function UploadAttendanceView() {
         }
     }, [currentRecord, refetch]);
 
-    const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - total) : 0;
+    const emptyRows = data.length < 5 ? 5 - data.length : 0;
     const notFound = !loading && data.length === 0;
 
     return (
@@ -259,7 +259,7 @@ export function UploadAttendanceView() {
                     count={total}
                     rowsPerPage={rowsPerPage}
                     onPageChange={handleChangePage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
             </Card>

@@ -1144,7 +1144,7 @@ export function LeadView() {
 
                 <TableBody>
                   {loading && (
-                    <TableEmptyRows height={68} emptyRows={table.rowsPerPage} />
+                    <TableEmptyRows height={68} emptyRows={5} />
                   )}
 
                   {!loading &&
@@ -1190,7 +1190,7 @@ export function LeadView() {
                   )}
 
                   {!empty && !loading && (
-                    <TableEmptyRows height={68} emptyRows={table.rowsPerPage - data.length} />
+                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
                   )}
                 </TableBody>
               </Table>
@@ -1203,7 +1203,7 @@ export function LeadView() {
             count={total}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}
-            rowsPerPageOptions={[5, 10, 25]}
+            rowsPerPageOptions={[10, 25, 50]}
             onRowsPerPageChange={table.onChangeRowsPerPage}
           />
         </Card>
@@ -1401,7 +1401,7 @@ export function LeadView() {
 export function useTable() {
   const [page, setPage] = useState(0);
   const [orderBy, setOrderBy] = useState('name');
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selected, setSelected] = useState<string[]>([]);
   const [order, setOrder] = useState<'asc' | 'desc'>('asc');
 
