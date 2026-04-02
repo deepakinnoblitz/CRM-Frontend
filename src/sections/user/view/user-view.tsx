@@ -42,7 +42,7 @@ import { UserTableFiltersDrawer } from '../user-table-filters-drawer';
 
 export const UserView = forwardRef(({ hideHeader = false, hideActionButton = false }: { hideHeader?: boolean; hideActionButton?: boolean }, ref) => {
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
   const [sortBy, setSortBy] = useState('creation_desc');
   const [filters, setFilters] = useState({
@@ -346,7 +346,7 @@ export const UserView = forwardRef(({ hideHeader = false, hideActionButton = fal
           count={total}
           rowsPerPage={rowsPerPage}
           onPageChange={(e, newPage) => setPage(newPage)}
-          rowsPerPageOptions={[5, 10, 25]}
+          rowsPerPageOptions={[10, 25, 50]}
           onRowsPerPageChange={(e) => {
             setRowsPerPage(parseInt(e.target.value, 10));
             setPage(0);

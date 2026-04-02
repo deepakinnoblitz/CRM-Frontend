@@ -233,11 +233,15 @@ export function UserStatusBar() {
     const loginTime = user?.last_login ? fTime(user.last_login) : 'N/A';
 
     const [activeTimer, setActiveTimer] = useState(0); // seconds elapsed
+    const [breakTimer, setBreakTimer] = useState(0); // seconds elapsed
 
     // Update timer base when session data changes
     useEffect(() => {
         if (session?.total_active_seconds !== undefined) {
             setActiveTimer(session.total_active_seconds);
+        }
+        if (session?.total_break_seconds !== undefined) {
+            setBreakTimer(session.total_break_seconds);
         }
     }, [session]);
 
@@ -245,19 +249,23 @@ export function UserStatusBar() {
     useEffect(() => {
         let interval: any;
         let lastTick = Date.now();
-        if (statusName && statusName !== 'Offline' && statusName !== 'Break' && session) {
+        
+        if (statusName && statusName !== 'Offline' && session) {
             interval = setInterval(() => {
                 const now = Date.now();
                 const delta = Math.floor((now - lastTick) / 1000);
-                if (delta > 0) {
-                    setActiveTimer((prev) => prev + delta);
-                    lastTick += delta * 1000;
+                
+                if (delta >= 1) {
+                    if (statusName === 'Break') {
+                        setBreakTimer((prev) => prev + delta);
+                    } else if (statusName !== 'Away') {
+                        setActiveTimer((prev) => prev + delta);
+                    }
+                    lastTick = now;
                 }
             }, 1000);
         }
-        return () => {
-            if (interval) clearInterval(interval);
-        };
+        return () => clearInterval(interval);
     }, [statusName, session]);
 
     // Focus event: refresh active time from API
@@ -317,12 +325,25 @@ export function UserStatusBar() {
                     gap: 1.25,
                 }}
             >
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '11px' }}>
-                    Today Active Time:
-                </Typography>
-                <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '18px' }}>
-                    {formatTimer(activeTimer)}
-                </Typography>
+                {statusName === 'Break' ? (
+                    <>
+                        <Typography variant="body2" sx={{ mr: 1, color: 'text.secondary' }}>
+                            Today Break Time:
+                        </Typography>
+                        <Typography variant="h6" sx={{ color: 'warning.main', fontWeight: 600 }}>
+                            {formatTimer(breakTimer)}
+                        </Typography>
+                    </>
+                ) : (
+                    <>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, fontSize:'14px' }}>
+                            Today Active Time:
+                        </Typography>
+                        <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 600 }}>
+                            {formatTimer(activeTimer)}
+                        </Typography>
+                    </>
+                )}
             </Box>
             <Button
                 onClick={handleClick}
@@ -380,11 +401,20 @@ export function UserStatusBar() {
                         '&:hover': {
                             bgcolor: theme.palette.success.dark,
                         },
-                        animation: 'pulse 2s infinite',
-                        '@keyframes pulse': {
-                            '0%': { boxShadow: `0 0 0 0 ${alpha(theme.palette.success.main, 0.4)}` },
-                            '70%': { boxShadow: `0 0 0 10px ${alpha(theme.palette.success.main, 0)}` },
-                            '100%': { boxShadow: `0 0 0 0 ${alpha(theme.palette.success.main, 0)}` },
+                        animation: 'pulseGlow 2s infinite ease-in-out',
+                        '@keyframes pulseGlow': {
+                            '0%': { 
+                                transform: 'scale(1)',
+                                boxShadow: `0 0 0 0 ${alpha(theme.palette.success.main, 0.4)}` 
+                            },
+                            '50%': { 
+                                transform: 'scale(1.04)',
+                                boxShadow: `0 0 20px 4px ${alpha(theme.palette.success.main, 0.2)}` 
+                            },
+                            '100%': { 
+                                transform: 'scale(1)',
+                                boxShadow: `0 0 0 0 ${alpha(theme.palette.success.main, 0)}` 
+                            },
                         },
                     }}
                 >
@@ -578,10 +608,9 @@ export function UserStatusBar() {
                 </MenuItem>
 
                 <Divider />
-
             </Menu>
 
-            {/* ── Check-In Dialog ── */}
+            {/* ── Check-In Dialog (Redesigned) ── */}
             <Dialog
                 open={checkInDialogOpen}
                 onClose={(event, reason) => {
@@ -589,148 +618,119 @@ export function UserStatusBar() {
                         setCheckInDialogOpen(false);
                     }
                 }}
-                maxWidth="xs"
-                fullWidth
                 PaperProps={{
                     sx: {
-                        borderRadius: 3,
+                        borderRadius: 3.5,
+                        width: '100%',
+                        maxWidth: 420,
                         overflow: 'hidden',
+                        bgcolor: 'background.paper',
+                        boxShadow: `0 24px 72px -12px ${alpha(theme.palette.common.black, 0.24)}`,
                     }
                 }}
             >
-                {/* Polished Gradient Header */}
+                {/* Decorative Background Element */}
                 <Box
                     sx={{
-
-                        pt: 4,
-                        pb: 3,
-                        px: 3,
-                        textAlign: 'center',
-                        overflow: 'hidden',
+                        position: 'absolute',
+                        top: -100,
+                        right: -100,
+                        width: 200,
+                        height: 200,
+                        borderRadius: '50%',
+                        bgcolor: alpha(theme.palette.success.main, 0.08),
+                        zIndex: 0,
                     }}
-                >
-                    <Avatar
-                        src={userAvatar}
-                        sx={{
-                            width: 72,
-                            height: 72,
-                            mx: 'auto',
-                            mb: 2,
-                            bgcolor: userAvatar ? 'common.white' : avatarColor,
-                            color: avatarTextColor,
-                            fontWeight: 'bold',
-                            fontSize: '1.8rem',
-                            border: '2px solid #fff',
-                            boxShadow: '0 0 0 2.5px rgba(47, 128, 237, 0.6)',
-                            position: 'relative',
-                            zIndex: 1,
-                        }}
-                    >
-                        {initials}
-                    </Avatar>
-                    <Typography
-                        variant="h6"
-                        sx={{
-                            color: theme.palette.primary.main,
-                            fontWeight: 800,
-                            lineHeight: 1.2,
-                            position: 'relative',
-                            zIndex: 1,
-                        }}
-                    >
+                />
+
+                <DialogContent sx={{ px: 4, pt: 6, pb: 4, textAlign: 'center', position: 'relative', zIndex: 1 }}>
+                    {/* Centered Avatar with Ring */}
+                    <Box sx={{ position: 'relative', display: 'inline-flex', mb: 3 }}>
+                        <Avatar
+                            src={userAvatar}
+                            alt={userName}
+                            sx={{
+                                width: 100,
+                                height: 100,
+                                border: `4px solid ${theme.palette.background.paper}`,
+                                boxShadow: `0 0 0 2px ${alpha(theme.palette.success.main, 0.4)}, 0 12px 24px -4px ${alpha(theme.palette.common.black, 0.16)}`,
+                            }}
+                        >
+                            {initials}
+                        </Avatar>
+                    </Box>
+
+                    <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', mb: 1, letterSpacing: -0.5 }}>
                         Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 17 ? 'Afternoon' : 'Evening'}, {userName.split(' ')[0]}!
                     </Typography>
-                    <Typography
-                        variant="body2"
+
+                    <Typography variant="body2" sx={{ color: 'text.secondary', mb: 5, fontWeight: 500 }}>
+                        Ready to start your productive session today?
+                    </Typography>
+
+                    {/* Primary Check-In Button */}
+                    <Button
+                        variant="contained"
+                        size="large"
+                        fullWidth
+                        onClick={async () => {
+                            if (isAutoStatusEnabled) {
+                                if (!('IdleDetector' in window)) {
+                                    setIdleSupportError('Your browser does not support automatic idle detection. Please use a modern browser like Chrome or Edge.');
+                                    setIdlePermissionDialogOpen(true);
+                                    return;
+                                }
+
+                                const permission = await (window as any).IdleDetector.requestPermission();
+                                if (permission !== 'granted') {
+                                    setIdleSupportError('Permission for idle detection was denied or is restricted by your browser.');
+                                    setIdlePermissionDialogOpen(true);
+                                    return;
+                                }
+                            }
+                            await changeStatus('Available');
+                            setCheckInDialogOpen(false);
+                            triggerGreetingDialog();
+                        }}
                         sx={{
-                            color: theme.palette.text.secondary,
-                            mt: 0.5,
-                            fontWeight: 500,
-                            position: 'relative',
-                            zIndex: 1
+                            py: 2,
+                            borderRadius: 2,
+                            fontSize: 16,
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            background: `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
+                            boxShadow: `0 8px 24px -4px ${alpha(theme.palette.success.main, 0.4)}`,
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                                transform: 'translateY(-2px)',
+                                boxShadow: `0 12px 32px -4px ${alpha(theme.palette.success.main, 0.5)}`,
+                                background: `linear-gradient(135deg, ${theme.palette.success.light} 0%, ${theme.palette.success.main} 100%)`,
+                            },
+                            '&:active': {
+                                transform: 'translateY(0)',
+                            }
                         }}
                     >
-                        How are you available today?
-                    </Typography>
-                </Box>
-
-                <DialogContent sx={{ px: 2.5, pt: 2, pb: 1 }}>
-                    <Stack spacing={1}>
-                        {statusOptions
-                            .filter(opt => opt.value !== 'Offline')
-                            .map((item) => (
-                                <Box
-                                    key={item.value}
-                                    onClick={async () => {
-                                        if (item.value === 'Available' && isAutoStatusEnabled) {
-                                            if (!('IdleDetector' in window)) {
-                                                setIdleSupportError('Your browser does not support automatic idle detection. Please use a modern browser like Chrome or Edge.');
-                                                setIdlePermissionDialogOpen(true);
-                                                return;
-                                            }
-
-                                            const permission = await (window as any).IdleDetector.requestPermission();
-                                            if (permission !== 'granted') {
-                                                setIdleSupportError('Permission for idle detection was denied or is restricted by your browser (e.g. Incognito mode).');
-                                                setIdlePermissionDialogOpen(true);
-                                                return;
-                                            }
-                                        }
-                                        await changeStatus(item.value);
-                                        setCheckInDialogOpen(false);
-                                        if (item.value === 'Available') {
-                                            triggerGreetingDialog();
-                                        }
-                                    }}
-                                    sx={{
-                                        px: 2,
-                                        py: 1.25,
-                                        borderRadius: 2,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1.5,
-                                        cursor: 'pointer',
-                                        border: `1px solid ${alpha(item.color, 0.2)}`,
-                                        bgcolor: alpha(item.color, 0.05),
-                                        transition: 'all 0.15s ease',
-                                        '&:hover': {
-                                            bgcolor: alpha(item.color, 0.12),
-                                            borderColor: alpha(item.color, 0.4),
-                                            transform: 'translateX(4px)',
-                                        },
-                                    }}
-                                >
-                                    <Box
-                                        sx={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: '50%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            bgcolor: alpha(item.color, 0.1),
-                                            color: item.color,
-                                            flexShrink: 0,
-                                        }}
-                                    >
-                                        <Iconify icon={item.icon as any} width={20} />
-                                    </Box>
-                                    <Stack>
-                                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                                            {item.label}
-                                        </Typography>
-                                    </Stack>
-                                </Box>
-                            ))
-                        }
-                    </Stack>
+                        <Stack direction="row" alignItems="center" spacing={1.5} justifyContent="center">
+                            <Iconify icon={"eva:play-fill" as any} width={24} />
+                            <span>Available - Logged In</span>
+                        </Stack>
+                    </Button>
                 </DialogContent>
 
-                <DialogActions sx={{ px: 2.5, pb: 2, pt: 1 }}>
+                <DialogActions sx={{ pb: 4, px: 4, justifyContent: 'center' }}>
                     <Button
-                        fullWidth
+                        size="small"
                         onClick={() => setCheckInDialogOpen(false)}
-                        sx={{ color: 'text.secondary', textTransform: 'none' }}
+                        sx={{
+                            color: 'text.disabled',
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            '&:hover': {
+                                color: 'text.secondary',
+                                bgcolor: alpha(theme.palette.grey[500], 0.08)
+                            }
+                        }}
                     >
                         Stay Offline - Logout for now
                     </Button>

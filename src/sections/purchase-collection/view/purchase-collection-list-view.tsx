@@ -56,7 +56,7 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
     const router = useRouter();
 
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [orderBy, setOrderBy] = useState('modified');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [selected, setSelected] = useState<string[]>([]);
@@ -351,7 +351,7 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
 
                                 <TableEmptyRows
                                     height={77}
-                                    emptyRows={emptyRows(page, rowsPerPage, totalRecords)}
+                                    emptyRows={tableData.length < 5 ? 5 - tableData.length : 0}
                                 />
 
                                 {notFound && (
@@ -380,7 +380,7 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
                     count={totalRecords}
                     rowsPerPage={rowsPerPage}
                     onPageChange={handleChangePage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
             </Card>

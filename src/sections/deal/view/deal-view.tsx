@@ -69,7 +69,7 @@ export function DealView() {
     );
 
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [filterStage, setFilterStage] = useState('all');
     const [filters, setFilters] = useState({
@@ -863,7 +863,7 @@ export function DealView() {
 
                                             <TableBody>
                                                 {loading && (
-                                                    <TableEmptyRows height={68} emptyRows={rowsPerPage} />
+                                                    <TableEmptyRows height={68} emptyRows={5} />
                                                 )}
 
                                                 {!loading &&
@@ -910,7 +910,7 @@ export function DealView() {
                                                 {!empty && !loading && data.length < rowsPerPage && (
                                                     <TableEmptyRows
                                                         height={68}
-                                                        emptyRows={rowsPerPage - data.length}
+                                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
                                                     />
                                                 )}
                                             </TableBody>
@@ -924,7 +924,7 @@ export function DealView() {
                                     count={total}
                                     rowsPerPage={rowsPerPage}
                                     onPageChange={onChangePage}
-                                    rowsPerPageOptions={[5, 10, 25]}
+                                    rowsPerPageOptions={[10, 25, 50]}
                                     onRowsPerPageChange={onChangeRowsPerPage}
                                 />
                             </Card>

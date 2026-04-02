@@ -65,7 +65,7 @@ import { InterviewTableFiltersDrawer } from '../interview-table-filters-drawer';
 
 export function InterviewsView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [sortBy, setSortBy] = useState('creation_desc');
     const [selected, setSelected] = useState<string[]>([]);
@@ -509,7 +509,7 @@ export function InterviewsView() {
                                 {!empty && (
                                     <TableEmptyRows
                                         height={68}
-                                        emptyRows={Math.max(0, rowsPerPage - data.length)}
+                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
                                     />
                                 )}
                             </TableBody>
@@ -523,7 +523,7 @@ export function InterviewsView() {
                     count={total}
                     rowsPerPage={rowsPerPage}
                     onPageChange={handleChangePage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
             </Card>

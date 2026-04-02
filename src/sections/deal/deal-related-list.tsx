@@ -44,7 +44,7 @@ export function DealRelatedList({ dealId, type }: Props) {
     const [loading, setLoading] = useState(true);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
     const [summary, setSummary] = useState({
         total: 0,
@@ -290,7 +290,7 @@ export function DealRelatedList({ dealId, type }: Props) {
                     page={page}
                     rowsPerPage={rowsPerPage}
                     onPageChange={handleChangePage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={handleChangeRowsPerPage}
                     sx={{ borderTop: `1px solid ${alpha(theme.palette.grey[500], 0.12)}` }}
                 />

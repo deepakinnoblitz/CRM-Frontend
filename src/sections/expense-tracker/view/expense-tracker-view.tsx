@@ -40,7 +40,7 @@ import { LeadTableToolbar as ExpenseTrackerTableToolbar } from '../../lead/lead-
 
 export default function ExpenseTrackerView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [sortBy, setSortBy] = useState('creation_desc');
     const [selected, setSelected] = useState<string[]>([]);
@@ -270,7 +270,7 @@ export default function ExpenseTrackerView() {
                                 {!loading && data.length < rowsPerPage && !empty && (
                                     <TableEmptyRows
                                         height={68}
-                                        emptyRows={rowsPerPage - data.length}
+                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
                                     />
                                 )}
                             </TableBody>
@@ -284,7 +284,7 @@ export default function ExpenseTrackerView() {
                     page={page}
                     rowsPerPage={rowsPerPage}
                     onPageChange={(e, newPage) => setPage(newPage)}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={(e) => {
                         setRowsPerPage(parseInt(e.target.value, 10));
                         setPage(0);

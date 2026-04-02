@@ -138,7 +138,7 @@ export default function PersonalityGauge({ value, width = 300, height = 300 }: P
     useEffect(() => {
         if (!inView) {
             setDisplayValue(0);
-            return () => {};
+            return () => { };
         }
 
         let startTimestamp: number | null = null;

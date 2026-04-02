@@ -3,12 +3,18 @@ import { useState, useCallback, useEffect } from 'react';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Card from '@mui/material/Card';
+import List from '@mui/material/List';
+import Alert from '@mui/material/Alert';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
+import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
+import Snackbar from '@mui/material/Snackbar';
+import ListItem from '@mui/material/ListItem';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -18,21 +24,26 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
+import ListItemText from '@mui/material/ListItemText';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import InputAdornment from '@mui/material/InputAdornment';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
 
 import { useEmployeeEvaluationTraits, useEmployeeEvaluationEvents, useEmployeeEvaluationScoreLogs } from 'src/hooks/useEmployeeEvaluation';
 
 import { DashboardContent } from 'src/layouts/dashboard';
+import { getForValueOptions } from 'src/api/user-permissions';
 import {
   deleteEmployeeEvaluationTrait,
   deleteEmployeeEvaluationEvent,
+  fetchEmployeeEvaluationTrait,
   submitEmployeeEvaluationEvent,
   cancelEmployeeEvaluationEvent,
-  resetAllEmployeeScores
+  resetEmployeeScores
 } from 'src/api/employee-evaluation';
 
 import { Iconify } from 'src/components/iconify';
@@ -56,7 +67,7 @@ import { EmployeeEvaluationScoreLogTableRow } from '../employee-evaluation-score
 
 const TABS = [
   { value: 'events', label: 'Employee Evaluations', icon: <Iconify icon={"solar:clipboard-check-bold-duotone" as any} width={20} /> },
-  { value: 'traits', label: 'Behavior Assessment', icon: <Iconify icon={"solar:user-speak-bold-duotone" as any} width={20} /> },
+  { value: 'traits', label: 'Performance Criteria', icon: <Iconify icon={"solar:user-speak-bold-duotone" as any} width={20} /> },
   { value: 'logs', label: 'Score Logs', icon: <Iconify icon={"solar:history-bold-duotone" as any} width={20} /> },
 ];
 
@@ -76,7 +87,7 @@ export function EmployeeEvaluationView() {
   const [currentTab, setCurrentTab] = useState(hideTabs ? 'logs' : 'events');
 
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
   const [sortBy, setSortBy] = useState('modified_desc');
 
@@ -122,6 +133,48 @@ export function EmployeeEvaluationView() {
   const [resetError, setResetError] = useState('');
   const [resetResults, setResetResults] = useState<any[]>([]);
   const [openSummaryDialog, setOpenSummaryDialog] = useState(false);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
+  const [selectedResetEmployees, setSelectedResetEmployees] = useState<string[]>([]);
+  const [resetSearch, setResetSearch] = useState('');
+
+  useEffect(() => {
+    if (openResetDialog) {
+      getForValueOptions('Employee', [['Employee', 'status', '=', 'Active']])
+        .then(setEmployeeOptions)
+        .catch(console.error);
+    }
+  }, [openResetDialog]);
+
+  useEffect(() => {
+     if (openResetDialog && employeeOptions.length > 0 && filters.employee && selectedResetEmployees.length === 0) {
+        setSelectedResetEmployees([filters.employee]);
+     }
+  }, [openResetDialog, employeeOptions, filters.employee, selectedResetEmployees]);
+
+  const handleToggleResetEmployee = (name: string) => {
+    setSelectedResetEmployees(prev => 
+      prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
+    );
+  };
+
+  const handleSelectAllReset = () => {
+    setSelectedResetEmployees(employeeOptions.map(emp => emp.name));
+  };
+
+  const handleUnselectAllReset = () => {
+    setSelectedResetEmployees([]);
+  };
+
+  const filteredResetEmployees = employeeOptions.filter(emp => 
+    emp.employee_name?.toLowerCase().includes(resetSearch.toLowerCase()) || 
+    emp.name.toLowerCase().includes(resetSearch.toLowerCase())
+  );
 
   const { data: events, total: totalEvents, loading: loadingEvents, refetch: refetchEvents } = useEmployeeEvaluationEvents(page + 1, rowsPerPage, filterName, sortBy, filters);
   const { data: logs, total: totalLogs, loading: loadingLogs, refetch: refetchLogs } = useEmployeeEvaluationScoreLogs(page + 1, rowsPerPage, filterName, sortBy, filters);
@@ -185,7 +238,7 @@ export function EmployeeEvaluationView() {
               }
             }}
           >
-            {currentTab === 'events' ? 'New Event' : 'New Trait'}
+            {currentTab === 'events' ? 'New Event' : 'New Criteria'}
           </Button>
         </Stack>
       )}
@@ -248,7 +301,7 @@ export function EmployeeEvaluationView() {
                     headLabel={[
                       { id: 'sno', label: 'Sno', align: 'center' },
                       { id: 'employee', label: 'Employee' },
-                      { id: 'trait', label: 'Trait' },
+                      { id: 'trait', label: 'Criteria' },
                       { id: 'type', label: 'Type' },
                       { id: 'change', label: 'Change' },
                       { id: 'date', label: 'Date' },
@@ -278,19 +331,21 @@ export function EmployeeEvaluationView() {
                               doctype: 'Employee Evaluation',
                               ...row,
                             });
+                            setSnackbar({ open: true, message: 'Submitted successfully', severity: 'success' });
                             refetchEvents();
                             refetchLogs();
-                          } catch (error) {
-                            console.error(error);
+                          } catch (error: any) {
+                            setSnackbar({ open: true, message: error.message || 'Submission failed', severity: 'error' });
                           }
                         }}
                         onCancel={async () => {
                           try {
                             await cancelEmployeeEvaluationEvent(row.name);
+                            setSnackbar({ open: true, message: 'Cancelled successfully', severity: 'success' });
                             refetchEvents();
                             refetchLogs();
-                          } catch (error) {
-                            console.error(error);
+                          } catch (error: any) {
+                            setSnackbar({ open: true, message: error.message || 'Cancellation failed', severity: 'error' });
                           }
                         }}
                         onDelete={() => {
@@ -319,7 +374,7 @@ export function EmployeeEvaluationView() {
                     {!emptyEvents && !notFoundEvents && (
                       <TableEmptyRows
                         height={77}
-                        emptyRows={rowsPerPage - events.length}
+                        emptyRows={events.length < 5 ? 5 - events.length : 0}
                       />
                     )}
 
@@ -365,7 +420,7 @@ export function EmployeeEvaluationView() {
                     {!emptyLogs && !notFoundLogs && (
                       <TableEmptyRows
                         height={77}
-                        emptyRows={rowsPerPage - logs.length}
+                        emptyRows={logs.length < 5 ? 5 - logs.length : 0}
                       />
                     )}
 
@@ -379,7 +434,7 @@ export function EmployeeEvaluationView() {
                   <EmployeeEvaluationTableHead
                     headLabel={[
                       { id: 'sno', label: 'Sno', align: 'center' },
-                      { id: 'name', label: 'Trait Name' },
+                      { id: 'name', label: 'Criteria Name' },
                       { id: 'category', label: 'Category' },
                       { id: 'description', label: 'Description' },
                       { id: '' },
@@ -391,9 +446,17 @@ export function EmployeeEvaluationView() {
                         key={row.name}
                         row={row}
                         index={page * rowsPerPage + index}
-                        onEdit={() => {
-                          setSelectedTrait(row);
-                          setOpenTraitForm(true);
+                        onEdit={async () => {
+                          try {
+                            const fullTrait = await fetchEmployeeEvaluationTrait(row.name);
+                            setSelectedTrait(fullTrait);
+                            setOpenTraitForm(true);
+                          } catch (error) {
+                            console.error('Failed to fetch trait details:', error);
+                            // Fallback to row data if fetch fails
+                            setSelectedTrait(row);
+                            setOpenTraitForm(true);
+                          }
                         }}
                         onDelete={() => {
                           setConfirmDelete({
@@ -409,8 +472,8 @@ export function EmployeeEvaluationView() {
                       <TableRow>
                         <TableCell colSpan={6}>
                           <EmptyContent
-                            title="No Traits found"
-                            description="Define evaluation traits to start evaluations."
+                            title="No Criteria found"
+                            description="Define performance criteria to start evaluations."
                             icon="solar:user-speak-bold-duotone"
                           />
                         </TableCell>
@@ -420,7 +483,7 @@ export function EmployeeEvaluationView() {
                     {!emptyTraits && !notFoundTraits && (
                       <TableEmptyRows
                         height={77}
-                        emptyRows={rowsPerPage - traits.length}
+                        emptyRows={traits.length < 5 ? 5 - traits.length : 0}
                       />
                     )}
 
@@ -443,7 +506,7 @@ export function EmployeeEvaluationView() {
           }
           rowsPerPage={rowsPerPage}
           onPageChange={(e, newPage) => setPage(newPage)}
-          rowsPerPageOptions={[5, 10, 25]}
+          rowsPerPageOptions={[10, 25, 50]}
           onRowsPerPageChange={(e) => {
             setRowsPerPage(parseInt(e.target.value, 10));
             setPage(0);
@@ -470,7 +533,6 @@ export function EmployeeEvaluationView() {
           refetchEvents();
           refetchLogs();
         }}
-        traits={traits}
         selectedEvent={selectedEvent}
       />
 
@@ -491,7 +553,7 @@ export function EmployeeEvaluationView() {
         content={
           confirmDelete.isSubmitted
             ? "This event is already submitted. You need to cancel it first before you can delete it."
-            : `Are you sure you want to delete this ${confirmDelete.type === 'event' ? 'employee evaluation' : 'evaluation trait'}?`
+            : `Are you sure you want to delete this ${confirmDelete.type === 'event' ? 'employee evaluation' : 'performance criteria'}?`
         }
         icon={confirmDelete.isSubmitted ? "solar:info-circle-bold" : "solar:danger-bold"}
         iconColor={confirmDelete.isSubmitted ? "info.main" : "error.main"}
@@ -506,52 +568,144 @@ export function EmployeeEvaluationView() {
               color="error"
               onClick={async () => {
                 try {
-                  if (confirmDelete.type === 'event' && confirmDelete.name) {
-                    await deleteEmployeeEvaluationEvent(confirmDelete.name);
-                    refetchEvents();
-                    refetchLogs();
-                  } else if (confirmDelete.type === 'trait' && confirmDelete.name) {
-                    await deleteEmployeeEvaluationTrait(confirmDelete.name);
-                    refetchTraits();
+                    if (confirmDelete.type === 'event' && confirmDelete.name) {
+                      await deleteEmployeeEvaluationEvent(confirmDelete.name);
+                      setSnackbar({ open: true, message: 'Deleted successfully', severity: 'success' });
+                      refetchEvents();
+                      refetchLogs();
+                    } else if (confirmDelete.type === 'trait' && confirmDelete.name) {
+                      await deleteEmployeeEvaluationTrait(confirmDelete.name);
+                      setSnackbar({ open: true, message: 'Deleted successfully', severity: 'success' });
+                      refetchTraits();
+                    }
+                    setConfirmDelete((prev) => ({ ...prev, open: false }));
+                  } catch (error: any) {
+                    setSnackbar({ open: true, message: error.message || 'Delete failed', severity: 'error' });
                   }
-                  setConfirmDelete((prev) => ({ ...prev, open: false }));
-                } catch (error) {
-                  console.error(error);
-                }
-              }}
-            >
-              Delete
-            </Button>
-          )
-        }
-      />
+                }}
+              >
+                Delete
+              </Button>
+            )
+          }
+        />
 
-      <Dialog open={openResetDialog} onClose={() => !resetLoading && setOpenResetDialog(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Reset All Employee Scores</DialogTitle>
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={() => setSnackbar((prev: any) => ({ ...prev, open: false }))}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <Alert
+            onClose={() => setSnackbar((prev: any) => ({ ...prev, open: false }))}
+            severity={snackbar.severity}
+            sx={{ width: '100%', boxShadow: (theme) => theme.customShadows.z8 }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+
+      <Dialog open={openResetDialog} onClose={() => !resetLoading && setOpenResetDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Reset Employee Evaluation Scores</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
-          <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
-            This action will reset all active employee scores to 100. This cannot be undone.
+          <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+            Toggle the employees whose scores you want to reset to 100.
           </Typography>
+
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+            <Stack direction="row" spacing={1}>
+              <Button size="small" variant="outlined" onClick={handleSelectAllReset}>Select All</Button>
+              <Button size="small" variant="outlined" color="error" onClick={handleUnselectAllReset}>Unselect All (Off)</Button>
+            </Stack>
+            
+            <Stack direction="row" spacing={2}>
+              <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 'bold' }}>
+                Selected: {selectedResetEmployees.length}
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                Unselected: {employeeOptions.length - selectedResetEmployees.length}
+              </Typography>
+            </Stack>
+          </Stack>
+
           <TextField
             fullWidth
-            type={showPassword ? 'text' : 'password'}
-            label="Admin Password"
-            value={resetPassword}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setResetPassword(e.target.value);
-              setResetError('');
+            size="small"
+            placeholder="Search employees..."
+            value={resetSearch}
+            onChange={(e) => setResetSearch(e.target.value)}
+            sx={{ 
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                }
             }}
-            error={!!resetError}
-            helperText={resetError || "Enter Administrator password to confirm reset"}
             InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                    <Iconify icon={showPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
-                  </IconButton>
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Iconify icon={"solar:magnifer-linear" as any} sx={{ color: 'text.disabled' }} />
                 </InputAdornment>
               ),
             }}
+          />
+
+          <Card 
+            sx={{ 
+                border: (theme) => `1px solid ${theme.palette.divider}`, 
+                mb: 3,
+                height: 320,
+                display: 'flex',
+                flexDirection: 'column',
+                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.02),
+            }}
+          >
+            <Scrollbar>
+              <List disablePadding>
+                {filteredResetEmployees.map((emp) => (
+                  <ListItem key={emp.name} divider>
+                    <ListItemText 
+                      primary={emp.employee_name} 
+                      secondary={emp.name} 
+                      primaryTypographyProps={{ variant: 'subtitle2' }}
+                    />
+                    <ListItemSecondaryAction sx={{ right: 16 }}>
+                      <Switch
+                        edge="end"
+                        checked={selectedResetEmployees.includes(emp.name)}
+                        onChange={() => handleToggleResetEmployee(emp.name)}
+                      />
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                ))}
+                {filteredResetEmployees.length === 0 && (
+                  <ListItem>
+                    <ListItemText primary="No employees found" sx={{ textAlign: 'center', color: 'text.disabled' }} />
+                  </ListItem>
+                )}
+              </List>
+            </Scrollbar>
+          </Card>
+
+          <TextField
+              fullWidth
+              type={showPassword ? 'text' : 'password'}
+              label="Admin Password"
+              value={resetPassword}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setResetPassword(e.target.value);
+              setResetError('');
+              }}
+              error={!!resetError}
+              helperText={resetError || "Enter Administrator password to confirm reset"}
+              InputProps={{
+              endAdornment: (
+                  <InputAdornment position="end">
+                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                      <Iconify icon={showPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                  </IconButton>
+                  </InputAdornment>
+              ),
+              }}
           />
         </DialogContent>
         <DialogActions>
@@ -570,12 +724,12 @@ export function EmployeeEvaluationView() {
               setResetLoading(true);
               setResetError('');
               try {
-                const results = await resetAllEmployeeScores(resetPassword);
+                const results = await resetEmployeeScores(resetPassword, selectedResetEmployees.length > 0 ? selectedResetEmployees : undefined);
                 setOpenResetDialog(false);
-                setResetPassword('');
                 setResetResults(results);
                 setOpenSummaryDialog(true);
-                refetchEvents();
+                setResetPassword('');
+                setSelectedResetEmployees([]);
                 refetchLogs();
               } catch (error: any) {
                 setResetError(error.message || 'Failed to reset scores');

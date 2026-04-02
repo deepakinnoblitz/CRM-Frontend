@@ -65,7 +65,7 @@ export default function TaskManagerView() {
     const [openForm, setOpenForm] = useState(false);
     const [view, setView] = useState<'kanban' | 'list'>('list');
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [permissions, setPermissions] = useState({ read: false, write: false, create: false, delete: false });
 
     // ── Shared search + sort state ──

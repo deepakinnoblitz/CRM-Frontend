@@ -79,7 +79,7 @@ export function EvaluationTraitCategoryFormDialog({ open, onClose, onSuccess, se
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {selectedCategory ? 'Edit Trait Category' : 'New Trait Category'}
+                {selectedCategory ? 'Edit Criteria Category' : 'New Criteria Category'}
                 <IconButton onClick={onClose}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>

@@ -253,7 +253,7 @@ export function EmployeeEvaluationTableFiltersDrawer({
                             <>
                                 <Stack spacing={1.5}>
                                     <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                        Trait
+                                        Criteria
                                     </Typography>
                                     <Autocomplete
                                         options={traitsOptions}
@@ -263,7 +263,7 @@ export function EmployeeEvaluationTableFiltersDrawer({
                                         renderInput={(params) => (
                                             <TextField
                                                 {...params}
-                                                placeholder="Select Trait"
+                                                placeholder="Select Criteria"
                                                 size="small"
                                                 sx={{
                                                     '& .MuiOutlinedInput-root': {

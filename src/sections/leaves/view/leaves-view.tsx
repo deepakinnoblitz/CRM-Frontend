@@ -75,7 +75,7 @@ export function LeavesView() {
     // Check if user is restricted to their own employee ID
     const isRestrictedEmployee = user?.roles.includes('Employee') && !isHR;
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
 
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
@@ -543,7 +543,7 @@ export function LeavesView() {
                                 {!empty && (
                                     <TableEmptyRows
                                         height={68}
-                                        emptyRows={Math.max(0, rowsPerPage - data.length)}
+                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
                                     />
                                 )}
                             </TableBody>
@@ -557,7 +557,7 @@ export function LeavesView() {
                     page={page}
                     rowsPerPage={rowsPerPage}
                     onPageChange={onChangePage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={onChangeRowsPerPage}
                 />
             </Card>

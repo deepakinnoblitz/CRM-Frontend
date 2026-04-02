@@ -11,6 +11,10 @@ function beautifyFrappeMessage(msg: string): string {
     // Remove "Error: " prefix if it exists
     cleanMsg = cleanMsg.replace(/^Error:\s*/i, '');
 
+    // Replace old terminology with new ones for consistency
+    cleanMsg = cleanMsg.replace(/Evaluation Trait Category/g, 'Performance Criteria Category');
+    cleanMsg = cleanMsg.replace(/Evaluation Trait/g, 'Performance Criteria');
+
     // Handle ValidationError with collection amount
     if (cleanMsg.includes('Collection exceeds Invoice Amount')) {
         const grandTotal = cleanMsg.match(/Grand Total:\s*([\d.]+)/)?.[1];

@@ -263,7 +263,7 @@ export function EstimationListView({ hideTitle }: Props) {
 
                                 <TableEmptyRows
                                     height={77}
-                                    emptyRows={emptyRows(table.page, table.rowsPerPage, total)}
+                                    emptyRows={data.length < 5 ? 5 - data.length : 0}
                                 />
 
                                 {notFound && <TableNoData searchQuery={filterName} />}
@@ -290,7 +290,7 @@ export function EstimationListView({ hideTitle }: Props) {
                     count={total}
                     rowsPerPage={table.rowsPerPage}
                     onPageChange={table.onChangePage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={table.onChangeRowsPerPage}
                 />
             </Card>
@@ -358,7 +358,7 @@ export function EstimationListView({ hideTitle }: Props) {
 export function useTable() {
     const [page, setPage] = useState(0);
     const [orderBy, setOrderBy] = useState('ref_no');
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [selected, setSelected] = useState<string[]>([]);
     const [order, setOrder] = useState<'asc' | 'desc'>('asc');
 
