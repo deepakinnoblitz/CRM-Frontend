@@ -116,7 +116,7 @@ export function PurchaseDetailsDialog({ open, onClose, purchaseId }: Props) {
                                     gridTemplateColumns: '2fr 1fr 1fr 1fr',
                                     p: 1.5,
                                     bgcolor: (theme) => theme.palette.grey[200],
-                                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`
+                                    borderBottom: (t) => `1px solid ${t.palette.divider}`
                                 }}>
                                     <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary' }}>ITEM</Typography>
                                     <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textAlign: 'right' }}>QTY</Typography>
@@ -129,7 +129,7 @@ export function PurchaseDetailsDialog({ open, onClose, purchaseId }: Props) {
                                             display: 'grid',
                                             gridTemplateColumns: '2fr 1fr 1fr 1fr',
                                             p: 1.5,
-                                            borderBottom: (theme) => index !== purchase.table_qecz.length - 1 ? `1px solid ${theme.palette.divider}` : 'none'
+                                            borderBottom: (t) => index !== purchase.table_qecz.length - 1 ? `1px solid ${t.palette.divider}` : 'none'
                                         }}>
                                             <Box>
                                                 <Typography variant="subtitle2">{item.service}</Typography>

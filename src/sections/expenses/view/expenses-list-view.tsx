@@ -172,7 +172,7 @@ export function ExpenseListView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
                             <ExpenseTableHead
                                 order={table.order}
                                 orderBy={table.orderBy}

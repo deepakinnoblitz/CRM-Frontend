@@ -195,7 +195,7 @@ export function InvoiceCollectionReportView() {
                 <Card>
                     <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
                         <Scrollbar>
-                            <Table size="medium" stickyHeader>
+                            <Table size="medium" stickyHeader sx={{ borderCollapse: 'collapse' }}>
                                 <TableHead>
                                     <TableRow sx={{ bgcolor: '#f4f6f8' }}>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Invoice</TableCell>
@@ -210,7 +210,14 @@ export function InvoiceCollectionReportView() {
                                 </TableHead>
                                 <TableBody>
                                     {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => (
-                                        <TableRow key={index} hover>
+                                        <TableRow 
+                                            key={index} 
+                                            hover
+                                            sx={{
+                                                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                            }}
+                                        >
                                             <TableCell sx={{ fontWeight: 600 }}>{row.invoice}</TableCell>
                                             <TableCell>{row.invoice_date ? dayjs(row.invoice_date).format('DD MMM YYYY') : '-'}</TableCell>
                                             <TableCell>

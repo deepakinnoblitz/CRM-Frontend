@@ -163,6 +163,8 @@ export function PurchaseListView({ hideHeader }: Props) {
     const notFound = !loading && data.length === 0 && (!!filterName || canReset);
     const empty = !loading && data.length === 0 && !filterName && !canReset;
 
+    const totalHeadCols = TABLE_HEAD.length + 1; // + 1 for Sno
+
     const content = (
         <>
             {!hideHeader && (
@@ -192,7 +194,7 @@ export function PurchaseListView({ hideHeader }: Props) {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
                             <PurchaseTableHead
                                 order={table.order}
                                 orderBy={table.orderBy}
@@ -233,16 +235,18 @@ export function PurchaseListView({ hideHeader }: Props) {
                                     />
                                 ))}
 
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                    {data.length > 0 && (
+                                        <TableEmptyRows
+                                            height={68}
+                                            emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                        />
+                                    )}
 
                                 {notFound && <TableNoData query={filterName} />}
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={7}>
+                                        <TableCell colSpan={totalHeadCols}>
                                             <EmptyContent
                                                 title="No purchases found"
                                                 description="Create a new purchase order to track your procurement."

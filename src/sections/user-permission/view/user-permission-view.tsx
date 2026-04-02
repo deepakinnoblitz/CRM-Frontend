@@ -250,7 +250,7 @@ export const UserPermissionView = forwardRef(({ hideHeader = false, hideActionBu
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
                             <UserPermissionTableHead
                                 headLabel={TABLE_HEAD}
                             />

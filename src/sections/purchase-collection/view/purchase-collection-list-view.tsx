@@ -254,6 +254,8 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
     const notFound = !loading && tableData.length === 0 && (!!filterName || canReset);
     const empty = !loading && tableData.length === 0 && !filterName && !canReset;
 
+    const totalHeadCols = TABLE_HEAD.length + 1; // + 1 for Sno
+
     // Assuming this is part of a functional component, and `router` is defined via `useRouter()`
     // and `hideHeader` is a prop passed to this component.
     // For example: export default function PurchaseCollectionListView({ hideHeader = false }: { hideHeader?: boolean }) {
@@ -320,7 +322,7 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
                             <PurchaseCollectionTableHead
                                 order={order}
                                 orderBy={orderBy}
@@ -349,10 +351,12 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
                                     />
                                 ))}
 
-                                <TableEmptyRows
-                                    height={77}
-                                    emptyRows={tableData.length < 5 ? 5 - tableData.length : 0}
-                                />
+                                    {tableData.length > 0 && (
+                                        <TableEmptyRows
+                                            height={77}
+                                            emptyRows={tableData.length < 5 ? 5 - tableData.length : 0}
+                                        />
+                                    )}
 
                                 {notFound && (
                                     <TableNoData searchQuery={filterName} />
@@ -360,7 +364,7 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
+                                        <TableCell colSpan={totalHeadCols}>
                                             <EmptyContent
                                                 title="No purchase settlements found"
                                                 description="Track your purchase payments to vendors here."

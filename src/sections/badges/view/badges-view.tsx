@@ -243,7 +243,7 @@ export function BadgesView() {
   }, []);
 
   const renderTabs = (
-    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
       <Tabs
         value={currentTab}
         onChange={handleChangeTab}

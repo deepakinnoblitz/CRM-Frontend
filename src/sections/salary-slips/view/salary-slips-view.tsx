@@ -343,7 +343,7 @@ export function SalarySlipsView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: { xs: 300, md: 800 } }}>
+                        <Table sx={{ minWidth: { xs: 300, md: 800 }, borderCollapse: 'collapse' }}>
                             <SalarySlipTableHead
                                 order={order}
                                 orderBy={orderBy}

@@ -48,7 +48,15 @@ export function AssetAssignmentTableRow({
     const isActive = !row.returned_on;
 
     return (
-        <TableRow hover selected={selected} sx={{ cursor: 'pointer' }}>
+        <TableRow
+            hover
+            selected={selected}
+            sx={{
+                cursor: 'pointer',
+                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                '&:last-child td, &:last-child th': { borderBottom: 0 },
+            }}
+        >
             {!hideCheckbox && (
                 <TableCell padding="checkbox">
                     <Checkbox

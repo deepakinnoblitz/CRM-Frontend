@@ -38,7 +38,13 @@ export function EmployeeDailyLogTableRow({ row, index, isHR, onView }: Props) {
     const isActive = status === 'Active';
 
     return (
-        <TableRow hover>
+        <TableRow
+            hover
+            sx={{
+                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                '&:last-child td, &:last-child th': { borderBottom: 0 },
+            }}
+        >
             <TableCell>
                 <Box
                     sx={{

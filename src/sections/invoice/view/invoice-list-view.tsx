@@ -213,7 +213,7 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
                             <InvoiceTableHead
                                 order={table.order}
                                 orderBy={table.orderBy}
