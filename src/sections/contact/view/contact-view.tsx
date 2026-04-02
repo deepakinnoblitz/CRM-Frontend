@@ -52,7 +52,7 @@ const CONTACT_SORT_OPTIONS = [
 
 export function ContactView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [filters, setFilters] = useState({
         customer_type: 'all',
@@ -484,7 +484,7 @@ export function ContactView() {
 
                             <TableBody>
                                 {loading && (
-                                    <TableEmptyRows height={68} emptyRows={rowsPerPage} />
+                                    <TableEmptyRows height={68} emptyRows={5} />
                                 )}
 
                                 {!loading && data.map((row, index) => (
@@ -526,7 +526,7 @@ export function ContactView() {
                                 )}
 
                                 {!empty && (
-                                    <TableEmptyRows height={68} emptyRows={rowsPerPage - data.length} />
+                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
                                 )}
                             </TableBody>
                         </Table>
@@ -539,7 +539,7 @@ export function ContactView() {
                     page={page}
                     rowsPerPage={rowsPerPage}
                     onPageChange={onChangePage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={onChangeRowsPerPage}
                 />
             </Card>

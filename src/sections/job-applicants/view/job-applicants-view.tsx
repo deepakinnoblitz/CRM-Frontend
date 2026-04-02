@@ -50,7 +50,7 @@ import { JobApplicantsTableFiltersDrawer } from 'src/sections/job-applicants/job
 
 export function JobApplicantsView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('creation');
@@ -400,7 +400,7 @@ export function JobApplicantsView() {
                                 {!empty && (
                                     <TableEmptyRows
                                         height={68}
-                                        emptyRows={Math.max(0, rowsPerPage - data.length)}
+                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
                                     />
                                 )}
                             </TableBody>
@@ -414,7 +414,7 @@ export function JobApplicantsView() {
                     count={total}
                     rowsPerPage={rowsPerPage}
                     onPageChange={handleChangePage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
             </Card>

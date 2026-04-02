@@ -310,7 +310,7 @@ export function ExpensesView() {
                                 {!empty && (
                                     <TableEmptyRows
                                         height={68}
-                                        emptyRows={Math.max(0, rowsPerPage - data.length)}
+                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
                                     />
                                 )}
                             </TableBody>
@@ -324,7 +324,7 @@ export function ExpensesView() {
                     count={total}
                     rowsPerPage={rowsPerPage}
                     onPageChange={handleChangePage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
             </Card>

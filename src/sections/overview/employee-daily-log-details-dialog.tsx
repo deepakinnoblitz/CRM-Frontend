@@ -14,7 +14,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 
-import { fDate, fTime, fDecimalHours } from 'src/utils/format-time';
+import { fDate, fTime, fDateTime, fDecimalHours } from 'src/utils/format-time';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -123,9 +123,9 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
     }
 
     const getStatusColor = (status?: string, type?: string) => {
+        if (type === 'Offline' || status === 'Offline') return alpha(theme.palette.grey[500], 0.16);
         if (type === 'Break') return alpha('#f59e0b', 0.8);
-        if (type === 'Offline') return alpha(theme.palette.grey[500], 0.16);
-
+        
         const s = status || 'Available';
         if (s === 'Available') return alpha(theme.palette.success.main, 0.8);
         if (s === 'Busy' || s === 'Do Not Disturb') return alpha(theme.palette.error.main, 0.8);
@@ -151,7 +151,8 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
             textColor = theme.palette.text.disabled;
         }
 
-        const labelContent = seg.status || seg.type;
+        const labelContent = (seg.status === 'Available' ? 'Active' : seg.status) || seg.type;
+        const displayLabel = labelContent === 'Offline' ? 'Offline - Logout' : labelContent;
 
         return {
             left,
@@ -159,7 +160,7 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
             color,
             textColor,
             label: formatShortDuration(duration),
-            tooltip: `${labelContent}: ${formattedTimeFromSec(seg.from)} - ${formattedTimeFromSec(seg.to)} (${fDecimalHours(duration / 3600)})`,
+            tooltip: `${displayLabel}: ${formattedTimeFromSec(seg.from)} - ${formattedTimeFromSec(seg.to)} (${fDecimalHours(duration / 3600)})`,
             showLabel: width > 8 && !isOffline && !isShortActive
         };
     });
@@ -236,11 +237,11 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
             {/* Legend */}
             <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 2.5, px: 0.5 }}>
                 {[
-                    { label: 'Available - Logged In', color: theme.palette.success.main },
+                    { label: 'Active', color: theme.palette.success.main },
                     { label: 'Busy / DND', color: theme.palette.error.main },
                     { label: 'Away', color: '#d97706' },
                     { label: 'Break', color: '#f59e0b' },
-                    { label: 'Offline - Logout', color: theme.palette.grey[400] },
+                    { label: 'Offline - Logout', color: theme.palette.grey[500] },
                 ].map((item) => (
                     <Stack key={item.label} direction="row" alignItems="center" spacing={0.75}>
                         <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: item.color }} />
@@ -266,14 +267,14 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
 
     if (!session) return null;
 
-    const { login_date, login_time, logout_time, total_work_hours, status, intervals = [], breaks = [] } = session;
+    const { employee_name, login_date, login_time, logout_time, total_work_hours, total_break_hours, status, intervals = [], breaks = [] } = session;
 
     const renderDetailItem = (label: string, value: string) => (
         <Box>
             <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
                 {label}
             </Typography>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 15 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 16 }}>
                 {value}
             </Typography>
         </Box>
@@ -302,7 +303,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 900 }}>
-                    Details for {fDate(login_date, 'DD MMM YYYY')}
+                    Details for {employee_name || 'Employee'} - {fDate(login_date, 'DD MMM YYYY')}
                 </Typography>
                 <IconButton onClick={onClose}>
                     <Iconify icon="mingcute:close-line" />
@@ -335,31 +336,54 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                         </Stack>
 
                         <Box
-                            display="grid"
-                            gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
-                            gap={{ xs: 3, sm: 4 }}
-                            sx={{ mt: 1, pl: { sm: 2 } }}
+                            sx={{
+                                p: 1.5,
+                                borderRadius: 1.5,
+                                bgcolor: alpha(theme.palette.grey[500], 0.04),
+                                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                            }}
                         >
-                            {renderDetailItem(
-                                "Login Date",
-                                login_date ? fDate(login_date, 'DD MMM YYYY') : '-'
-                            )}
-                            {renderDetailItem(
-                                "Status",
-                                status ? (status === 'Available' ? 'Available - Logged In' : status === 'Offline' ? 'Offline - Logout' : status.charAt(0).toUpperCase() + status.slice(1)) : 'Unknown'
-                            )}
-                            {renderDetailItem(
-                                "Login Time",
-                                login_time ? `${fDate(login_date, 'DD MMM YYYY')} ${fTime(login_time)}` : '-'
-                            )}
-                            {renderDetailItem(
-                                "Logout Time",
-                                logout_time ? `${fDate(login_date, 'DD MMM YYYY')} ${fTime(logout_time)}` : 'Active'
-                            )}
-                            {renderDetailItem(
-                                "Total Work Hours",
-                                total_work_hours ? fDecimalHours(total_work_hours) : '0 secs'
-                            )}
+                            <Box
+                                display="grid"
+                                gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(4, 1fr)' }}
+                                gap={2}
+                                sx={{ mb:5 }}
+                            >
+                                {renderDetailItem(
+                                    "Login Date",
+                                    login_date ? fDate(login_date, 'DD MMM YYYY') : '-'
+                                )}
+                                {renderDetailItem(
+                                    "Login Time",
+                                    login_time ? fDateTime(login_time, 'h:mm:ss a') : '-'
+                                )}
+                                {renderDetailItem(
+                                    "Logout Time",
+                                    logout_time ? fDateTime(logout_time, 'h:mm:ss a') : 'Active'
+                                )}
+                                {renderDetailItem(
+                                    "Status",
+                                    status ? (status === 'Available' ? 'Active' : status === 'Offline' ? 'Offline - Logout' : status.charAt(0).toUpperCase() + status.slice(1)) : 'Unknown'
+                                )}
+                            </Box>
+
+                            <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
+
+                            <Box
+                                display="grid"
+                                gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
+                                gap={2}
+                                sx={{ mt: 3 }}
+                            >
+                                {renderDetailItem(
+                                    "Total Work Hours",
+                                    total_work_hours ? fDecimalHours(total_work_hours) : '0 secs'
+                                )}
+                                {renderDetailItem(
+                                    "Total Break Hours",
+                                    total_break_hours ? fDecimalHours(total_break_hours) : '0 secs'
+                                )}
+                            </Box>
                         </Box>
                     </Box>
 
@@ -432,11 +456,11 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                             <Box>
                                                 <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
                                                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                                        {fTime(interval.from_time)} — {interval.to_time ? fTime(interval.to_time) : 'Active'}
+                                                        {fTime(interval.from_time)} — {interval.to_time ? fTime(interval.to_time) : (intervalStatus === 'Offline' ? 'Logout' : 'Active')}
                                                     </Typography>
-                                                    
-                                                    {/* Don't display Offline - Logout badge for Tracking (Active) sessions */}
-                                                    {(!interval.to_time && intervalStatus === 'Offline') ? null : (
+
+                                                    {/* Badge for status */}
+                                                    {(!interval.to_time && intervalStatus === 'Offline') ? (
                                                         <Box
                                                             sx={{
                                                                 px: 0.75,
@@ -450,7 +474,39 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                                                 border: `1px solid ${alpha(statusColor, 0.2)}`
                                                             }}
                                                         >
-                                                            {intervalStatus === 'Available' ? 'Available - Logged In' : intervalStatus === 'Offline' ? 'Offline - Logout' : intervalStatus}
+                                                            Offline - Logout
+                                                        </Box>
+                                                    ) : (!interval.to_time && intervalStatus !== 'Offline') ? (
+                                                        <Box
+                                                            sx={{
+                                                                px: 0.75,
+                                                                py: 0.15,
+                                                                borderRadius: 0.5,
+                                                                fontSize: 10,
+                                                                fontWeight: 900,
+                                                                textTransform: 'uppercase',
+                                                                bgcolor: alpha(statusColor, 0.1),
+                                                                color: statusColor,
+                                                                border: `1px solid ${alpha(statusColor, 0.2)}`
+                                                            }}
+                                                        >
+                                                            Active
+                                                        </Box>
+                                                    ) : (
+                                                        <Box
+                                                            sx={{
+                                                                px: 0.75,
+                                                                py: 0.15,
+                                                                borderRadius: 0.5,
+                                                                fontSize: 10,
+                                                                fontWeight: 900,
+                                                                textTransform: 'uppercase',
+                                                                bgcolor: alpha(statusColor, 0.1),
+                                                                color: statusColor,
+                                                                border: `1px solid ${alpha(statusColor, 0.2)}`
+                                                            }}
+                                                        >
+                                                            {intervalStatus === 'Available' ? 'Active' : intervalStatus === 'Offline' ? 'Offline - Logout' : intervalStatus}
                                                         </Box>
                                                     )}
                                                 </Stack>
@@ -537,9 +593,9 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                                     border: `1px solid ${borderColor}`
                                                 }}
                                             >
-                                                <Iconify 
-                                                    icon={(isAway ? "ph:moon-fill" : "ph:coffee-fill") as any} 
-                                                    sx={{ color: isAway ? '#d97706' : 'warning.main' }} 
+                                                <Iconify
+                                                    icon={(isAway ? "ph:moon-fill" : "ph:coffee-fill") as any}
+                                                    sx={{ color: isAway ? '#d97706' : 'warning.main' }}
                                                 />
                                                 <Box>
                                                     <Typography variant="body2" sx={{ fontWeight: 700 }}>

@@ -58,7 +58,7 @@ export function WFHAttendanceView() {
     const { socket } = useSocket(user?.email);
     const theme = useTheme();
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('modified');
@@ -572,7 +572,7 @@ export function WFHAttendanceView() {
                                 {!empty && (
                                     <TableEmptyRows
                                         height={68}
-                                        emptyRows={Math.max(0, rowsPerPage - data.length)}
+                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
                                     />
                                 )}
                             </TableBody>
@@ -586,7 +586,7 @@ export function WFHAttendanceView() {
                     page={page}
                     rowsPerPage={rowsPerPage}
                     onPageChange={(_e, newPage) => setPage(newPage)}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
                 />
             </Card>

@@ -55,7 +55,7 @@ export function EmployeeMonthlyAwardView() {
   
   const [currentTab, setCurrentTab] = useState('awards');
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
   const [sortBy, setSortBy] = useState('modified_desc');
 
@@ -129,7 +129,7 @@ export function EmployeeMonthlyAwardView() {
     }
   };
 
-  const emptyRows = Math.max(0, rowsPerPage - awards.length);
+  const emptyRows = awards.length < 5 ? 5 - awards.length : 0;
   const notFound = !awards.length && !!filterName && !loading;
   const emptyAwards = !awards.length && !filterName && !loading;
 
@@ -277,7 +277,7 @@ export function EmployeeMonthlyAwardView() {
               count={total}
               rowsPerPage={rowsPerPage}
               onPageChange={(e, newPage) => setPage(newPage)}
-              rowsPerPageOptions={[5, 10, 25]}
+              rowsPerPageOptions={[10, 25, 50]}
               onRowsPerPageChange={(e) => {
                 setRowsPerPage(parseInt(e.target.value, 10));
                 setPage(0);

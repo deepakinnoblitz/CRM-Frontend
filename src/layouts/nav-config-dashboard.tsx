@@ -24,6 +24,11 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:home-2-bold-duotone" as any} />,
   },
   {
+    title: 'Task Manager',
+    path: '/task-manager',
+    icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
+  },
+  {
     title: 'Employee Records',
     path: '/employee',
     icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
@@ -104,11 +109,6 @@ export const hrNavData = [
       { title: 'Company Expenses', path: '/expense-tracker' },
       { title: 'Reimbursement Claim List', path: '/reimbursement-claims' },
     ],
-  },
-  {
-    title: 'Task Manager',
-    path: '/task-manager',
-    icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
   },
   {
     title: 'Employee Performance',
@@ -483,8 +483,8 @@ export function getNavData(roles: string[] = []) {
     // If the employee also has Task Manager role, rename "My Tasks" → "Task Manager"
     const processedEmployeeNav = hasRole('Task Manager')
       ? employeeNavData.map((item) =>
-          item.title === 'My Tasks' ? { ...item, title: 'Task Manager' } : item
-        )
+        item.title === 'My Tasks' ? { ...item, title: 'Task Manager' } : item
+      )
       : employeeNavData;
     addItems(processedEmployeeNav);
     hasCustomRole = true;

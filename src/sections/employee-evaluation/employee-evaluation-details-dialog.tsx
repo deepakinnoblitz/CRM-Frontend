@@ -103,7 +103,7 @@ export function EmployeeEvaluationEventDetailsDialog({ open, onClose, event }: P
                         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3, pl: 1}}>
                             <InfoRow icon="solar:user-id-bold" iconColor="#6366f1" label="Employee" value={`${employee_name} (${employee})`} />
                             <InfoRow icon="solar:shield-user-bold" iconColor="#8b5cf6" label="HR User" value={hr_user} />
-                            <InfoRow icon="solar:user-speak-bold" iconColor="#f59e0b" label="Trait" value={trait} />
+                            <InfoRow icon="solar:user-speak-bold" iconColor="#f59e0b" label="Criteria" value={trait} />
                             <InfoRow icon="solar:calendar-bold" iconColor="#f97316" label="Evaluation Date" value={fDate(evaluation_date, 'DD-MM-YYYY')} />
                         </Box>
 

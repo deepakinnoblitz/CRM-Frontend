@@ -90,6 +90,12 @@ export async function fetchEmployeeEvaluationTraits(params: {
     };
 }
 
+export async function fetchEmployeeEvaluationTrait(name: string): Promise<EmployeeEvaluationTrait> {
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Evaluation Trait&name=${name}`);
+    if (!res.ok) throw new Error("Failed to fetch evaluation trait details");
+    return (await res.json()).message;
+}
+
 export async function createEmployeeEvaluationTrait(data: Partial<EmployeeEvaluationTrait>) {
     const res = await frappeRequest('/api/method/frappe.client.insert', {
         method: 'POST',
@@ -416,11 +422,10 @@ export async function cancelEmployeeEvaluationEvent(name: string) {
 }
 
 export async function deleteEmployeeEvaluationEvent(name: string) {
-    const res = await frappeRequest('/api/method/frappe.client.delete', {
+    const res = await frappeRequest('/api/method/company.company.doctype.employee_evaluation.employee_evaluation.hard_delete_evaluation', {
         method: 'POST',
         headers: await getAuthHeaders(),
         body: JSON.stringify({
-            doctype: 'Employee Evaluation',
             name: name
         })
     });
@@ -450,12 +455,13 @@ export async function updateEmployeeEvaluationEvent(name: string, data: Partial<
     return (await res.json()).message;
 }
 
-export async function resetAllEmployeeScores(password: string) {
-    const res = await frappeRequest('/api/method/company.company.doctype.employee_evaluation.employee_evaluation.reset_all_employee_scores', {
+export async function resetEmployeeScores(password: string, employees?: string[]) {
+    const res = await frappeRequest('/api/method/company.company.doctype.employee_evaluation.employee_evaluation.reset_employee_scores', {
         method: 'POST',
         headers: await getAuthHeaders(),
         body: JSON.stringify({
-            password: password
+            password,
+            employees: employees ? JSON.stringify(employees) : undefined
         })
     });
 

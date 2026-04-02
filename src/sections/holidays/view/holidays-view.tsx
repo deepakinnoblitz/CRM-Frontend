@@ -106,7 +106,7 @@ interface Holiday {
 
 export function HolidaysView() {
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('modified');
@@ -484,7 +484,7 @@ export function HolidaysView() {
                                 {!empty && (
                                     <TableEmptyRows
                                         height={68}
-                                        emptyRows={Math.max(0, rowsPerPage - filteredData.length)}
+                                        emptyRows={filteredData.length < 5 ? 5 - filteredData.length : 0}
                                     />
                                 )}
                             </TableBody>
@@ -498,7 +498,7 @@ export function HolidaysView() {
                     count={total}
                     rowsPerPage={rowsPerPage}
                     onPageChange={handleChangePage}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
             </Card>

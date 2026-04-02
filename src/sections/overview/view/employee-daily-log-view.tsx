@@ -54,7 +54,7 @@ export function EmployeeDailyLogView() {
     const { socket } = useSocket(user?.email);
 
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     
     const [filterName, setFilterName] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
@@ -124,7 +124,7 @@ export function EmployeeDailyLogView() {
     };
 
     const notFound = !loading && sessions.length === 0 && (!!filterName || canReset);
-    const emptyRows = (!loading && sessions.length > 0) ? Math.max(0, rowsPerPage - sessions.length) : 0;
+    const emptyRows = (!loading && sessions.length > 0) ? (sessions.length < 5 ? 5 - sessions.length : 0) : 0;
 
     return (
         <DashboardContent maxWidth={false}>
@@ -213,7 +213,7 @@ export function EmployeeDailyLogView() {
                         setRowsPerPage(parseInt(e.target.value, 10));
                         setPage(0);
                     }}
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[10, 25, 50]}
                 />
             </Card>
 

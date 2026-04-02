@@ -31,13 +31,13 @@ type Props = {
     open: boolean;
     onClose: VoidFunction;
     onSuccess: VoidFunction;
-    traits: EmployeeEvaluationTrait[];
     selectedEvent?: any;
 };
 
 
-export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, traits, selectedEvent }: Props) {
+export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, selectedEvent }: Props) {
     const [employees, setEmployees] = useState<any[]>([]);
+    const [traits, setTraits] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const { data: evaluationPoints } = useEmployeeEvaluationPoints();
 
@@ -76,13 +76,17 @@ export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, tr
             getForValueOptions('Employee')
                 .then(setEmployees)
                 .catch(console.error);
+            
+            getForValueOptions('Evaluation Trait')
+                .then(setTraits)
+                .catch(console.error);
         }
     }, [open]);
 
     const validate = () => {
         const newErrors: Record<string, string> = {};
         if (!formData.employee) newErrors.employee = 'Employee is required';
-        if (!formData.trait) newErrors.trait = 'Trait is required';
+        if (!formData.trait) newErrors.trait = 'Criteria is required';
         if (!formData.evaluation_type) newErrors.evaluation_type = 'Type is required';
         if (!formData.evaluation_date) newErrors.evaluation_date = 'Date is required';
 
@@ -166,42 +170,65 @@ export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, tr
                             )}
                         />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="Trait"
-                            required
-                            value={formData.trait}
-                            onChange={(e) => {
-                                setFormData({ ...formData, trait: e.target.value });
+                            options={traits}
+                            getOptionLabel={(option) => {
+                                if (typeof option === 'string') return option;
+                                return option.trait_name || option.name;
+                            }}
+                            value={traits.find((t) => t.name === formData.trait) || null}
+                            onChange={(_, newValue) => {
+                                setFormData({ ...formData, trait: newValue?.name || '' });
                                 if (errors.trait) setErrors({ ...errors, trait: '' });
                             }}
-                            error={!!errors.trait}
-                            helperText={errors.trait}
-                        >
-                            {traits.map((trait) => (
-                                <MenuItem key={trait.name} value={trait.name}>
-                                    {trait.trait_name}
-                                </MenuItem>
-                            ))}
-                        </TextField>
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Criteria"
+                                    required
+                                    error={!!errors.trait}
+                                    helperText={errors.trait}
+                                    InputLabelProps={{ shrink: true }}
+                                    placeholder='Select Criteria'
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 1.5,
+                                        },
+                                    }}
+                                />
+                            )}
+                        />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="Evaluation Type"
-                            required
-                            value={formData.evaluation_type}
-                            onChange={(e) => setFormData({ ...formData, evaluation_type: e.target.value })}
-                            error={!!errors.evaluation_type}
-                            helperText={errors.evaluation_type}
-                        >
-                            {evaluationPoints.map((point) => (
-                                <MenuItem key={point.name} value={point.name}>
-                                    {point.point_name}
-                                </MenuItem>
-                            ))}
-                        </TextField>
+                            options={evaluationPoints}
+                            getOptionLabel={(option) => {
+                                if (typeof option === 'string') return option;
+                                return option.point_name || option.name;
+                            }}
+                            value={evaluationPoints.find((p) => p.name === formData.evaluation_type) || null}
+                            onChange={(_, newValue) => {
+                                setFormData({ ...formData, evaluation_type: newValue?.name || '' });
+                                if (errors.evaluation_type) setErrors({ ...errors, evaluation_type: '' });
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Evaluation Type"
+                                    required
+                                    error={!!errors.evaluation_type}
+                                    helperText={errors.evaluation_type}
+                                    InputLabelProps={{ shrink: true }}
+                                    placeholder='Select Type'
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 1.5,
+                                        },
+                                    }}
+                                />
+                            )}
+                        />
 
                         <DatePicker
                             label="Evaluation Date"

@@ -46,7 +46,7 @@ const TABS = [
 export function BadgesView() {
   const [currentTab, setCurrentTab] = useState('badges');
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
   const [sortBy, setSortBy] = useState('modified_desc');
   
@@ -381,7 +381,10 @@ export function BadgesView() {
                 )}
 
                 {!isEmpty && !notFound && (
-                   <TableEmptyRows height={77} emptyRows={rowsPerPage - (currentTab === 'badges' ? badges.length : assignments.length)} />
+                   <TableEmptyRows 
+                     height={77} 
+                     emptyRows={(currentTab === 'badges' ? badges.length : assignments.length) < 5 ? 5 - (currentTab === 'badges' ? badges.length : assignments.length) : 0} 
+                   />
                 )}
                 
                 {notFound && (
@@ -398,7 +401,7 @@ export function BadgesView() {
           count={currentTab === 'badges' ? totalBadges : totalAssignments}
           rowsPerPage={rowsPerPage}
           onPageChange={(e, newPage) => setPage(newPage)}
-          rowsPerPageOptions={[5, 10, 25]}
+          rowsPerPageOptions={[10, 25, 50]}
           onRowsPerPageChange={(e) => {
             setRowsPerPage(parseInt(e.target.value, 10));
             setPage(0);

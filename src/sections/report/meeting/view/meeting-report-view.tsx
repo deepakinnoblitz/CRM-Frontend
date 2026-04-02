@@ -422,7 +422,7 @@ export function MeetingReportView() {
                         onPageChange={onChangePage}
                         rowsPerPage={rowsPerPage}
                         onRowsPerPageChange={onChangeRowsPerPage}
-                        rowsPerPageOptions={[5, 10, 25]}
+                        rowsPerPageOptions={[10, 25, 50]}
                     />
                 </Card>
             </Stack>
