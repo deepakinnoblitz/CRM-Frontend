@@ -42,6 +42,7 @@
     "@iconify/react": "^5.2.1",
     "@mui/lab": "^7.0.0-beta.10",
     "@mui/material": "^7.0.1",
+    "@mui/x-charts": "^8.28.0",
     "@mui/x-date-pickers": "^8.22.1",
     "apexcharts": "^4.5.0",
     "dayjs": "^1.11.19",
