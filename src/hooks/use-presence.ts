@@ -31,10 +31,12 @@ export function usePresence() {
     try {
       const data = await getPresence(employeeId);
       if (data) {
-        setStatus(data.presence?.status || 'Offline');
+        const newStatus = data.presence?.status || 'Offline';
+        setStatus(newStatus);
         setStatusMessage(data.presence?.status_message || '');
         setSession(data.session);
         setActiveBreak(data.break);
+        localStorage.setItem('user_presence_status', newStatus);
       }
     } catch (error) {
       console.error('Error fetching presence:', error);

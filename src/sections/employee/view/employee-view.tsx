@@ -410,7 +410,7 @@ export function EmployeeView() {
     const validateForm = (): { isValid: boolean; firstErrorField?: string; firstErrorMessage?: string } => {
         const errors: Record<string, string> = {};
         const requiredFields = [
-            { name: 'employee_id', label: 'Employee ID' },
+            // { name: 'employee_id', label: 'Employee ID' },
             { name: 'employee_name', label: 'Employee Name' },
             { name: 'email', label: 'Email' },
             { name: 'date_of_joining', label: 'Joining Date' },
@@ -871,7 +871,7 @@ export function EmployeeView() {
                                 showIndex
                                 headLabel={[
                                     { id: 'employee_name', label: 'Name', minWidth: 180 },
-                                    { id: 'employee_id', label: 'ID', minWidth: 80 },
+                                    // { id: 'employee_id', label: 'ID', minWidth: 80 },
                                     { id: 'department', label: 'Department', minWidth: 120 },
                                     { id: 'designation', label: 'Designation', minWidth: 120 },
                                     { id: 'status', label: 'Status', minWidth: 100 },
@@ -954,7 +954,7 @@ export function EmployeeView() {
                             {/* Section 1: Personal Information */}
                             <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Personal Information</Typography>
                             <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
-                                {renderField('employee_id', 'Employee ID', 'text', [], {}, true)}
+                                {renderField('employee_id', 'Employee ID', 'text', [], {}, false)}
                                 {renderField('employee_name', 'Employee Name', 'text', [], {}, true)}
                                 {renderField('email', 'Email', 'text', [], {}, true)}
                                 {renderField('personal_email', 'Personal Email')}
