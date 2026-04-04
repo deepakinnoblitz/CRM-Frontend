@@ -22,6 +22,32 @@ const router = createBrowserRouter([
   basename: '/',
 });
 
+// ----------------------------------------------------------------------
+
+window.addEventListener('beforeunload', (e) => {
+  // 1. Check if we are on the sign-in page.
+  if (window.location.pathname.includes('/sign-in')) {
+    return undefined;
+  }
+
+  // 2. Check user presence status from localStorage
+  const status = localStorage.getItem('user_presence_status');
+  if (status !== 'Available') {
+    return undefined;
+  }
+
+  // 3. Standard prompt setup. 
+  // Custom message is ignored by modern browsers but 'returnValue' is required.
+  const confirmationMessage = '\\o/';
+  if (e) {
+    e.preventDefault();
+    e.returnValue = confirmationMessage;
+  }
+  return confirmationMessage;
+});
+
+// ----------------------------------------------------------------------
+
 const root = createRoot(document.getElementById('root')!);
 
 root.render(

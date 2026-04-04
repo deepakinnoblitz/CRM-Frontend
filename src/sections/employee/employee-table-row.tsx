@@ -101,11 +101,11 @@ export function EmployeeTableRow({
                 </Box>
             </TableCell>
 
-            <TableCell>
+            {/* <TableCell>
                 <Typography variant="body2" noWrap>
                     {row.employeeId}
                 </Typography>
-            </TableCell>
+            </TableCell> */}
 
             <TableCell>
                 <Typography variant="body2" noWrap>
