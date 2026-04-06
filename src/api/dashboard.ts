@@ -383,6 +383,34 @@ export async function fetchWeeklyPresentChartData(): Promise<
     const data = await res.json();
     return data.message || [];
 }
+// Get weekly present/absent count data
+export async function fetchWeeklyPresentAbsentChartData(params?: {
+    filter_type?: string;
+    from_date?: string;
+    to_date?: string;
+}): Promise<Array<{ date: string; day: string; present: number; absent: number }>> {
+    let url = '/api/method/company.company.frontend_api.get_weekly_present_absent_data';
+    
+    if (params) {
+        const queryParams = new URLSearchParams();
+        if (params.filter_type) queryParams.append('filter_type', params.filter_type);
+        if (params.from_date) queryParams.append('from_date', params.from_date);
+        if (params.to_date) queryParams.append('to_date', params.to_date);
+        
+        const queryString = queryParams.toString();
+        if (queryString) {
+            url += `?${queryString}`;
+        }
+    }
+
+    const res = await frappeRequest(url);
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch weekly present absent chart data'));
+    }
+    const data = await res.json();
+    return data.message || [];
+}
 
 export interface SalesDashboardData {
     total_sales: number;

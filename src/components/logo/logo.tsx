@@ -8,6 +8,8 @@ import { styled } from '@mui/material/styles';
 
 import { RouterLink } from 'src/routes/components';
 
+import { useHRMSSettings } from 'src/hooks/use-hrms-settings';
+
 import { CONFIG } from 'src/config-global';
 
 import { logoClasses } from './classes';
@@ -27,7 +29,8 @@ export function Logo({
   isSingle = true,
   ...other
 }: LogoProps) {
-  const logoUrl = `${CONFIG.assetsDir}/logo/Innoblitz_logo.png`;
+  const { settings } = useHRMSSettings();
+  const logoUrl = settings?.app_logo;
 
   const singleLogo = (
     <Box
@@ -70,7 +73,7 @@ export function Logo({
       ]}
       {...other}
     >
-      {isSingle ? singleLogo : fullLogo}
+      {logoUrl && (isSingle ? singleLogo : fullLogo)}
     </LogoRoot>
   );
 }
