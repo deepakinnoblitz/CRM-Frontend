@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -54,6 +55,8 @@ const defaultKanbanFilters: TaskFiltersProps = {
 export default function TaskManagerView() {
     const { user } = useAuth();
     const { socket } = useSocket(user?.email);
+    const [searchParams] = useSearchParams();
+    const viewMode = searchParams.get('view');
 
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
@@ -199,12 +202,16 @@ export default function TaskManagerView() {
     // Regular employees only see tasks assigned to them.
     const isTaskManager = user?.roles?.includes('Task Manager') || user?.roles?.includes('HR') || user?.roles?.includes('Administrator');
 
-    // Base set of tasks based on role
-    const baseTasks = isTaskManager
+    const canSeeAll = isTaskManager && viewMode === 'all';
+
+    // Base set of tasks based on role and view parameter
+    const baseTasks = canSeeAll
         ? tasks
         : (user?.employee
             ? tasks.filter((task) => task.assignees?.some((a) => a.employee === user.employee))
             : tasks);
+
+    const pageTitle = canSeeAll ? 'Task Manager' : 'My Tasks';
 
     const kanbanTasks = sortTasks(baseTasks.filter((task) => {
         if (filterName && !task.title.toLowerCase().includes(filterName.toLowerCase())) return false;
@@ -227,7 +234,7 @@ export default function TaskManagerView() {
             <Container maxWidth="xl" sx={{ height: 1, display: 'flex', flexDirection: 'column', px: { xs: 2, md: 1 } }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                     <Box>
-                        <Typography variant="h4" gutterBottom>Task Manager</Typography>
+                        <Typography variant="h4" gutterBottom>{pageTitle}</Typography>
                     </Box>
 
                     <Stack direction="row" spacing={1.5} alignItems="center">
@@ -268,7 +275,7 @@ export default function TaskManagerView() {
                             </ToggleButton>
                         </ToggleButtonGroup>
 
-                        {(isTaskManager || permissions.create) && (
+                        {canSeeAll && (
                             <Button
                                 variant="contained"
                                 startIcon={<Iconify icon="mingcute:add-line" />}

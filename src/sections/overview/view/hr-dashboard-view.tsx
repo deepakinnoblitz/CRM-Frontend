@@ -14,7 +14,8 @@ import {
     fetchRecentAnnouncements,
     fetchTodayLeaveEmployees,
     fetchMissingAttendanceChartData,
-    fetchWeeklyPresentChartData
+    fetchWeeklyPresentChartData,
+    fetchWeeklyPresentAbsentChartData
 } from 'src/api/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -28,6 +29,7 @@ import { HRDashboardTable } from '../hr-dashboard-table';
 import { DashboardEomCard } from '../dashboard-eom-card';
 import { WeeklyPresentChart } from '../weekly-present-chart';
 import { MissingAttendanceChart } from '../missing-attendance-chart';
+import { WeeklyPresentAbsentChart } from '../weekly-present-absent-chart';
 
 // ----------------------------------------------------------------------
 
@@ -43,7 +45,14 @@ export function HRDashboardView() {
         todays_birthdays: [],
         holidays: [],
         missing_attendance_chart: [],
-        weekly_present_chart: []
+        weekly_present_chart: [],
+        weekly_present_absent: []
+    });
+
+    const [attendanceFilter, setAttendanceFilter] = useState('Last 7 Days');
+    const [attendanceDates, setAttendanceDates] = useState<{ from: string; to: string }>({
+        from: '',
+        to: ''
     });
 
     useEffect(() => {
@@ -59,7 +68,8 @@ export function HRDashboardView() {
                     totalEmployees,
                     pendingLeaves,
                     missingAttendanceChart,
-                    weeklyPresentChart
+                    weeklyPresentChart,
+                    weeklyPresentAbsent
                 ] = await Promise.all([
                     fetchRecentAnnouncements(),
                     fetchTodayBirthdays(),
@@ -70,7 +80,8 @@ export function HRDashboardView() {
                     fetchTotalEmployeeCount(),
                     fetchPendingLeaveCount(),
                     fetchMissingAttendanceChartData(),
-                    fetchWeeklyPresentChartData()
+                    fetchWeeklyPresentChartData(),
+                    fetchWeeklyPresentAbsentChartData()
                 ]);
 
                 console.log('Holidays data received:', holidays);
@@ -85,7 +96,8 @@ export function HRDashboardView() {
                     pending_leaves: pendingLeaves,
                     total_employees: totalEmployees,
                     missing_attendance_chart: missingAttendanceChart,
-                    weekly_present_chart: weeklyPresentChart
+                    weekly_present_chart: weeklyPresentChart,
+                    weekly_present_absent: weeklyPresentAbsent
                 });
             } catch (error) {
                 console.error('Failed to load HR dashboard data:', error);
@@ -94,6 +106,24 @@ export function HRDashboardView() {
 
         loadData();
     }, []);
+
+    const handleAttendanceFilterChange = async (filter: string, from?: string, to?: string) => {
+        setAttendanceFilter(filter);
+        if (from && to) {
+            setAttendanceDates({ from, to });
+        }
+        
+        try {
+            const weeklyPresentAbsent = await fetchWeeklyPresentAbsentChartData({
+                filter_type: filter,
+                from_date: from,
+                to_date: to
+            });
+            setData((prev: any) => ({ ...prev, weekly_present_absent: weeklyPresentAbsent }));
+        } catch (error) {
+            console.error('Failed to update attendance chart:', error);
+        }
+    };
 
     const handleMonthChange = async (date: Date) => {
         try {
@@ -152,23 +182,33 @@ export function HRDashboardView() {
                     />
                 </Grid>
 
+                {/* Weekly Present/Absent Chart */}
+                <Grid size={{ xs: 12 }}>
+                    <WeeklyPresentAbsentChart
+                        title="Weekly Present / Absent"
+                        data={data.weekly_present_absent}
+                        filter={attendanceFilter}
+                        onFilterChange={handleAttendanceFilterChange}
+                    />
+                </Grid>
+
                 {/* Missing Attendance Chart */}
-                <Grid size={{ xs: 12, md: 6 }}>
+                {/* <Grid size={{ xs: 12, md: 6 }}>
                     <MissingAttendanceChart
                         title="Missing Attendance"
                         subheader="Last 7 days"
                         data={data.missing_attendance_chart}
                     />
-                </Grid>
+                </Grid> */}
 
                 {/* Weekly Present Count Chart */}
-                <Grid size={{ xs: 12, md: 6 }}>
+                {/* <Grid size={{ xs: 12, md: 6 }}>
                     <WeeklyPresentChart
                         title="Weekly Present Count"
                         subheader="Current week (Mon-Sun)"
                         data={data.weekly_present_chart}
                     />
-                </Grid>
+                </Grid> */}
 
                 {/* Today's Leaves */}
                 <Grid size={{ xs: 12, md: 6 }}>

@@ -25,7 +25,7 @@ export const hrNavData = [
   },
   {
     title: 'Task Manager',
-    path: '/task-manager',
+    path: '/task-manager?view=all',
     icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
   },
   {
@@ -187,7 +187,7 @@ export const employeeNavData = [
   },
   {
     title: 'My Tasks',
-    path: '/task-manager',
+    path: '/task-manager?view=mine',
     icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
   },
   {
@@ -480,12 +480,15 @@ export function getNavData(roles: string[] = []) {
   }
 
   if (hasRole('Employee')) {
-    // If the employee also has Task Manager role, rename "My Tasks" → "Task Manager"
-    const processedEmployeeNav = hasRole('Task Manager')
-      ? employeeNavData.map((item) =>
-        item.title === 'My Tasks' ? { ...item, title: 'Task Manager' } : item
-      )
-      : employeeNavData;
+    const processedEmployeeNav = [...employeeNavData];
+    if (hasRole('Task Manager')) {
+      const taskManagerItem = hrNavData.find((item) => item.title === 'Task Manager');
+      if (taskManagerItem) {
+        // Find if it's already there to avoid duplicates, though addItems handles it.
+        // We insert at index 1 (Second position)
+        processedEmployeeNav.splice(1, 0, taskManagerItem);
+      }
+    }
     addItems(processedEmployeeNav);
     hasCustomRole = true;
   }
