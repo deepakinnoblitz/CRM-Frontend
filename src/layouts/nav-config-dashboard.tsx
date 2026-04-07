@@ -138,7 +138,22 @@ export const hrNavData = [
       { title: 'Attendance Report', path: '/reports/attendance' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
     ],
-  }
+  },
+  {
+    title: 'Masters',
+    path: '/department',
+    icon: <Iconify icon={"solar:folder-bold-duotone" as any} />,
+    children: [
+      { title: 'Department', path: '/department' },
+      { title: 'Project', path: '/project' },
+      { title: 'Activity Type', path: '/activity-type' },
+      { title: 'Claim Type', path: '/claim-type' },
+      { title: 'Bank Account', path: '/bank-account' },
+      { title: 'Asset Category', path: '/asset-category' },
+      { title: 'Criteria Category', path: '/performance-criteria-category' },
+      { title: 'Designation', path: '/designation' },
+    ],
+  },
 ];
 
 

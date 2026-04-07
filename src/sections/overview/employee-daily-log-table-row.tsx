@@ -92,7 +92,7 @@ export function EmployeeDailyLogTableRow({ row, index, isHR, onView }: Props) {
                 </Typography>
             </TableCell>
 
-            <TableCell>
+            {/* <TableCell>
                 <Label
                     variant="soft"
                     color={isActive ? 'success' : 'default'}
@@ -100,14 +100,14 @@ export function EmployeeDailyLogTableRow({ row, index, isHR, onView }: Props) {
                 >
                     {status}
                 </Label>
+            </TableCell> */}
+
+            <TableCell>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>{fTime(login_time)}</Typography>
             </TableCell>
 
             <TableCell>
-                <Typography variant="body2">{fTime(login_time)}</Typography>
-            </TableCell>
-
-            <TableCell>
-                <Typography variant="body2" sx={{ color: !logout_time ? 'primary.main' : 'text.primary', fontWeight: !logout_time ? 700 : 400 }}>
+                <Typography variant="body2" sx={{ color: !logout_time ? 'primary.main' : 'text.primary', fontWeight: !logout_time ? 700 : 500 }}>
                     {logout_time ? fTime(logout_time) : 'Active'}
                 </Typography>
             </TableCell>

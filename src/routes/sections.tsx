@@ -119,6 +119,15 @@ export const PurchaseCollectionDetailsPage = lazy(() => import('src/pages/purcha
 export const UserPermissionsPage = lazy(() => import('src/pages/user-permissions'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 export const DailyLogPage = lazy(() => import('src/pages/daily-log'));
+export const SettingsPage = lazy(() => import('src/pages/settings'));
+export const DepartmentPage = lazy(() => import('src/pages/department'));
+export const ProjectPage = lazy(() => import('src/pages/project'));
+export const ActivityTypePage = lazy(() => import('src/pages/activity-type'));
+export const ClaimTypePage = lazy(() => import('src/pages/claim-type'));
+export const BankAccountPage = lazy(() => import('src/pages/bank-account'));
+export const AssetCategoryPage = lazy(() => import('src/pages/asset-category'));
+export const PerformanceCriteriaCategoryPage = lazy(() => import('src/pages/performance-criteria-category'));
+export const DesignationPage = lazy(() => import('src/pages/designation'));
 
 
 const renderFallback = () => (
@@ -203,6 +212,14 @@ export const routesSection: RouteObject[] = [
       { path: 'wfh-attendance', element: <WFHAttendancePage /> },
       { path: 'daily-log', element: <DailyLogPage /> },
       { path: 'import-attendance', element: <ImportAttendancePage /> },
+      { path: 'department', element: <DepartmentPage /> },
+      { path: 'project', element: <ProjectPage /> },
+      { path: 'activity-type', element: <ActivityTypePage /> },
+      { path: 'claim-type', element: <ClaimTypePage /> },
+      { path: 'bank-account', element: <BankAccountPage /> },
+      { path: 'asset-category', element: <AssetCategoryPage /> },
+      { path: 'performance-criteria-category', element: <PerformanceCriteriaCategoryPage /> },
+      { path: 'designation', element: <DesignationPage /> },
       { path: 'timesheet-reports', element: <TimesheetReportPage /> },
       {
         path: 'expenses',
@@ -273,6 +290,7 @@ export const routesSection: RouteObject[] = [
       { path: 'employee-evaluation', element: <EmployeeEvaluationPage /> },
       { path: 'badges', element: <BadgesPage /> },
       { path: 'employee-monthly-award', element: <EmployeeMonthlyAwardPage /> },
+      { path: 'settings', element: <SettingsPage /> },
     ],
   },
   {

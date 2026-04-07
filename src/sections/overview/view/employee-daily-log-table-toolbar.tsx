@@ -138,7 +138,7 @@ export function EmployeeDailyLogTableToolbar({
               onClick={handleSortClick}
               sx={{
                 flexGrow: { xs: 1, md: 0 },
-                minWidth: { xs: '0', md: 160 },
+                minWidth: { xs: '0', md: 180 },
                 height: 40,
                 px: 2,
                 color: 'text.primary',
@@ -147,6 +147,7 @@ export function EmployeeDailyLogTableToolbar({
                 borderColor: 'divider',
                 borderRadius: 1,
                 fontWeight: 500,
+                whiteSpace: 'nowrap',
                 '&:hover': {
                   bgcolor: 'action.hover',
                 },

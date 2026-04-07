@@ -125,13 +125,24 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                         p: 1.5,
                         zIndex: 1,
                     },
+                    '& .fc .fc-col-header-cell': {
+                        bgcolor: alpha('#87CEEB', 0.2), // Sky blue background
+                        py: 1,
+                        '&:first-of-type': {
+                            borderTopLeftRadius: 12,
+                        },
+                        '&:last-of-type': {
+                            borderTopRightRadius: 12,
+                        },
+                    },
                     '& .fc .fc-col-header-cell-cushion': {
-                        color: theme.palette.text.disabled,
-                        fontWeight: 700,
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
                         textTransform: 'uppercase',
-                        fontSize: '0.65rem',
-                        letterSpacing: 1.2,
-                        py: 2,
+                        letterSpacing: 1,
+                        color: theme.palette.text.primary,
+                        padding: '8px 6px',
+                        display: 'inline-block',
                     },
                     '& .fc .fc-scrollgrid': {
                         border: 'none',

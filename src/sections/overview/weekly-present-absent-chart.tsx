@@ -44,10 +44,14 @@ export function WeeklyPresentAbsentChart({
     // Prepare chart data
     const categories = data.map((item) => {
         const date = new Date(item.date);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return `${dateStr}, ${item.day}`;
     });
     const presentSeries = data.map((item) => item.present || 0);
     const absentSeries = data.map((item) => item.absent || 0);
+
+    const maxVal = Math.max(...presentSeries, ...absentSeries, 0);
+    const yMax = maxVal === 0 ? 10 : Math.ceil(maxVal * 1.2 / 5) * 5; // Round to nearest 5 with 20% cushion
 
     const chartOptions = useChart({
         chart: {
@@ -108,6 +112,8 @@ export function WeeklyPresentAbsentChart({
             axisTicks: { show: false },
         },
         yaxis: {
+            min: 0,
+            max: yMax,
             title: {
                 text: 'Employee Count',
                 offsetX: -30,

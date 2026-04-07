@@ -27,7 +27,7 @@ type Props = CardProps & {
     data: AttendanceRecord[];
 };
 
-const TOTAL_HOURS = 9;
+const TOTAL_HOURS = 8;
 
 export function AttendanceStatusCards({ title, data, sx, ...other }: Props) {
     const theme = useTheme();

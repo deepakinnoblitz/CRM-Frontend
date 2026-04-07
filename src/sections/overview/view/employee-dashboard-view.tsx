@@ -101,6 +101,7 @@ export function EmployeeDashboardView() {
                     <PremiumWorkingHours
                         data={(data.weekly_attendance || []).slice(0, 6)}
                         weeklyTarget={45}
+                        source={data.weekly_chart_source}
                     />
                 </Grid>
 
@@ -125,6 +126,7 @@ export function EmployeeDashboardView() {
                         calendarData={data.monthly_attendance_list || []}
                         joiningDate={data.joining_date}
                         breakdown={data.monthly_attendance_breakdown} // Pass backend breakdown
+                        hideMissing={data.hide_missing} // Hide missing for Daily Log
                         sx={{ pt: 5 }}
                     />
                 </Grid>
@@ -171,7 +173,7 @@ export function EmployeeDashboardView() {
                                         const hasOutTime = !!record.check_out;
                                         const isIncomplete = (hasInTime && !hasOutTime) || (!hasInTime && hasOutTime);
 
-                                        if (isIncomplete && (isPast || isToday)) {
+                                        if (isIncomplete && (isPast || isToday) && !data.hide_missing) {
                                             eventTitle = 'Missing';
                                             bgColor = '#FFC107'; // Amber/Yellow for Missing
                                         } else if (record.status === 'Present') {
