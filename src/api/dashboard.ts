@@ -178,6 +178,8 @@ export interface EmployeeDashboardData {
     joining_date?: string | null;
     start_date?: string;
     end_date?: string;
+    weekly_chart_source?: 'Attendance' | 'Daily Log';
+    hide_missing?: boolean;
 }
 
 export async function fetchRecentAnnouncements(): Promise<any[]> {
@@ -347,6 +349,20 @@ export async function fetchPendingLeaveCount(): Promise<number> {
     const filters = [['Leave Application', 'workflow_state', '=', 'Pending']];
     const res = await frappeRequest(
         `/api/method/frappe.client.get_count?doctype=Leave Application&filters=${encodeURIComponent(JSON.stringify(filters))}`
+    );
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch pending leave count'));
+    }
+    const data = await res.json();
+    return data.message || 0;
+}
+
+// Get pending leave applications count
+export async function fetchPendingRequestCount(): Promise<number> {
+    const filters = [['Request', 'workflow_state', '=', 'Pending']];
+    const res = await frappeRequest(
+        `/api/method/frappe.client.get_count?doctype=Request&filters=${encodeURIComponent(JSON.stringify(filters))}`
     );
     if (!res.ok) {
         const error = await res.json();

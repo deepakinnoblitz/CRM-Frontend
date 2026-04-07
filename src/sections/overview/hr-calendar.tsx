@@ -149,34 +149,41 @@ export function HRCalendar({ title, subheader, events, onDateChange, ...other }:
                         padding: '8px',
                     },
                     '& .fc .fc-daygrid-day.fc-day-today': {
-                        bgcolor: alpha(theme.palette.primary.main, 0.08),
+                        bgcolor: alpha('#87CEEB', 0.15), // Light sky blue background for the cell
                         '& .fc-daygrid-day-number': {
-                            bgcolor: theme.palette.primary.main,
-                            color: theme.palette.primary.contrastText,
+                            bgcolor: '#87CEEB', // Vibrant sky blue circle
+                            color: '#fff', // White number for contrast
                             borderRadius: '50%',
-                            width: 32,
-                            height: 32,
+                            width: 28,
+                            height: 28,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontWeight: 700,
+                            fontWeight: 800,
                         },
                     },
                     '& .fc .fc-col-header-cell': {
-                        bgcolor: alpha(theme.palette.grey[500], 0.04),
-                        borderBottom: `2px solid ${alpha(theme.palette.grey[500], 0.12)}`,
+                        bgcolor: alpha('#87CEEB', 0.2), // Sky blue background
+                        borderBottom: `2px solid ${alpha('#87CEEB', 0.4)}`,
                         py: 1.5,
+                        '&:first-of-type': {
+                            borderTopLeftRadius: 12,
+                        },
+                        '&:last-of-type': {
+                            borderTopRightRadius: 12,
+                        },
                     },
                     '& .fc .fc-col-header-cell-cushion': {
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
                         textTransform: 'uppercase',
-                        letterSpacing: 0.5,
-                        color: theme.palette.text.secondary,
-                        padding: '8px',
+                        letterSpacing: 1,
+                        color: theme.palette.text.primary, // Neutral professional color
+                        padding: '10px 8px',
+                        display: 'inline-block',
                     },
                     '& .fc .fc-daygrid-day-frame': {
-                        minHeight: 100,
+                        minHeight: 80,
                         padding: '4px',
                     },
                     '& .fc .fc-event': {
@@ -235,6 +242,7 @@ export function HRCalendar({ title, subheader, events, onDateChange, ...other }:
                     }}
                     height="auto"
                     contentHeight="auto"
+                    aspectRatio={1} // SQUARE CELLS
                     stickyHeaderDates
                     eventColor={theme.palette.primary.main}
                     eventTextColor={theme.palette.primary.contrastText}

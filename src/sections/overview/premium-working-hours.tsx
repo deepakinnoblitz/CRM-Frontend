@@ -30,6 +30,7 @@ type Props = CardProps & {
     title?: string;
     data: AttendanceRecord[];
     weeklyTarget?: number;
+    source?: 'Attendance' | 'Daily Log';
 };
 
 // Styled Components
@@ -86,7 +87,7 @@ const StatusPill = styled(Box)<{ bgcolor: string; color: string }>(({ bgcolor, c
     alignItems: 'center',
 }));
 
-export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, weeklyTarget = 45, sx, ...other }: Props) {
+export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, weeklyTarget = 45, source = 'Attendance', sx, ...other }: Props) {
     const theme = useTheme();
 
     // Get today's date
@@ -201,10 +202,16 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                         const isToday = record.date === todayStr;
                         const isNonWorking = record.holiday_info && record.holiday_is_working_day === 0;
 
-                        const progress = Math.min((record.working_hours / 9) * 100, 100);
+                        const progress = Math.min((record.working_hours / 8) * 100, 100);
 
                         // Improved hours label logic (Center text)
-                        let centerLabel = `${record.working_hours.toFixed(1)}h`;
+                        const totalMinutes = Math.round(record.working_hours * 60);
+                        const h = Math.floor(totalMinutes / 60);
+                        const m = totalMinutes % 60;
+                        
+                        let centerLabel = h > 0 ? `${h} hr${h > 1 ? 's' : ''}` : '';
+                        centerLabel += `${centerLabel ? " " : ""}${m} min${m > 1 ? "s" : ""}`;
+                        if (!centerLabel) centerLabel = "0 mins";
                         if (record.working_hours === 0) {
                             if (isNonWorking && (record.status === 'Holiday' || record.status === 'Weekly Off' || record.status === 'Not Marked')) {
                                 centerLabel = record.holiday_info ? record.holiday_info.toUpperCase() : 'HOLIDAY';
@@ -242,8 +249,8 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                             flexShrink: 0
                                         }}
                                     />
-                                    <Typography variant="subtitle2" sx={{ color: isToday ? 'primary.main' : 'text.primary', fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.75, fontSize: '0.75rem' }}>
-                                        {fDate(record.date, 'ddd, DD MMM')}
+                                    <Typography variant="subtitle2" sx={{ color: isToday ? 'primary.main' : 'text.primary', fontWeight: 900, letterSpacing: 0.75, fontSize: '0.75rem' }}>
+                                        {fDate(record.date, 'dddd, DD MMMM')}
                                     </Typography>
                                     {isToday && (
                                         <Box
@@ -273,75 +280,90 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, week
                                         display: 'flex',
                                         flexDirection: 'column',
                                         justifyContent: 'center',
-                                        minHeight: 120
+                                        alignItems: 'center',
+                                        minHeight: 120,
+                                        textAlign: 'center'
                                     }}
                                 >
-                                    <Box sx={{ width: '100%' }}>
-                                        <Stack
-                                            direction={{ xs: 'column', sm: 'row' }}
-                                            spacing={1}
-                                            alignItems={{ xs: 'flex-start', sm: 'center' }}
-                                            justifyContent={isNonWorking && record.working_hours === 0 ? "center" : "space-between"}
-                                            sx={{ mb: 1.5, flexWrap: 'wrap', gap: 0.5 }}
+                                    {isNonWorking && record.working_hours === 0 ? (
+                                        <Typography
+                                            variant="h6"
+                                            sx={{
+                                                fontWeight: 800,
+                                                lineHeight: 1.2,
+                                                width: 1,
+                                                textAlign: 'center',
+                                                fontSize: centerLabel.length > 20 ? '0.75rem' : '1rem',
+                                                color: 'error.main'
+                                            }}
                                         >
-                                            <Typography
-                                                variant="h6"
-                                                sx={{
-                                                    fontWeight: 800,
-                                                    lineHeight: 1.2,
-                                                    textAlign: isNonWorking && record.working_hours === 0 ? 'center' : 'inherit',
-                                                    fontSize: centerLabel.length > 20 ? '0.7rem' : (centerLabel.length > 12 ? '0.8125rem' : '1rem'),
-                                                    color: record.working_hours >= 9 ? 'success.main' :
-                                                        (record.working_hours > 0 ? 'error.main' :
-                                                            (centerLabel.includes('HOLIDAY') || centerLabel.includes('SATURDAY') || centerLabel.includes('SUNDAY') ? 'error.main' :
-                                                                (centerLabel === 'Will Update Soon' ? 'info.main' : 'text.primary')))
-                                                }}
+                                            {centerLabel}
+                                        </Typography>
+                                    ) : (
+                                        <Box sx={{ width: '100%' }}>
+                                            <Stack
+                                                direction="row"
+                                                alignItems="center"
+                                                justifyContent="space-between"
+                                                sx={{ mb: 1.5, flexWrap: 'wrap', gap: 0.5, width: 1 }}
                                             >
-                                                {centerLabel}
-                                            </Typography>
-                                            {!isNonWorking && status.label.toUpperCase() !== centerLabel && (
-                                                <StatusPill bgcolor={status.bgcolor} color={status.dotColor} sx={{ px: 1, py: 0.35, fontSize: '0.6rem', fontWeight: 800, flexShrink: 0 }}>
-                                                    {status.label}
-                                                </StatusPill>
-                                            )}
-                                        </Stack>
-
-                                        {record.working_hours > 0 && (
-                                            <Box sx={{ mb: 1.5 }}>
-                                                <LinearProgress
-                                                    variant="determinate"
-                                                    value={progress}
+                                                <Typography
+                                                    variant="h6"
                                                     sx={{
-                                                        height: 6,
-                                                        borderRadius: 3,
-                                                        bgcolor: alpha(status.dotColor, 0.1),
-                                                        [`& .MuiLinearProgress-bar`]: {
-                                                            borderRadius: 3,
-                                                            bgcolor: status.dotColor,
-                                                            backgroundImage: `linear-gradient(90deg, ${alpha(status.dotColor, 0.6)} 0%, ${status.dotColor} 100%)`
-                                                        }
+                                                        fontWeight: 800,
+                                                        lineHeight: 1.2,
+                                                        fontSize: centerLabel.length > 20 ? '0.7rem' : (centerLabel.length > 12 ? '0.8125rem' : '1rem'),
+                                                        color: record.working_hours >= 8 ? 'success.main' :
+                                                            (record.working_hours > 0 ? 'error.main' :
+                                                                (centerLabel === 'Will Update Soon' ? 'info.main' : 'text.primary'))
                                                     }}
-                                                />
-                                            </Box>
-                                        )}
-
-                                        {!(isNonWorking && record.working_hours === 0) && (
-                                            <Stack direction="row" spacing={1} sx={{ color: 'text.secondary', flexWrap: 'wrap', gap: 0.5 }}>
-                                                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
-                                                    <Iconify icon={"solar:login-3-bold-duotone" as any} width={14} sx={{ color: 'text.disabled', flexShrink: 0 }} />
-                                                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.7rem' }}>
-                                                        {formatTime(record.check_in)}
-                                                    </Typography>
-                                                </Stack>
-                                                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
-                                                    <Iconify icon={"solar:logout-3-bold-duotone" as any} width={14} sx={{ color: 'text.disabled', flexShrink: 0 }} />
-                                                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.7rem' }}>
-                                                        {formatTime(record.check_out)}
-                                                    </Typography>
-                                                </Stack>
+                                                >
+                                                    {centerLabel}
+                                                </Typography>
+                                                {status.label.toUpperCase() !== centerLabel && (
+                                                    <StatusPill bgcolor={status.bgcolor} color={status.dotColor} sx={{ px: 1, py: 0.35, fontSize: '0.6rem', fontWeight: 800, flexShrink: 0 }}>
+                                                        {status.label}
+                                                    </StatusPill>
+                                                )}
                                             </Stack>
-                                        )}
-                                    </Box>
+
+                                            {record.working_hours > 0 && (
+                                                <Box sx={{ mb: 1.5 }}>
+                                                    <LinearProgress
+                                                        variant="determinate"
+                                                        value={progress}
+                                                        sx={{
+                                                            height: 6,
+                                                            borderRadius: 3,
+                                                            bgcolor: alpha(status.dotColor, 0.1),
+                                                            [`& .MuiLinearProgress-bar`]: {
+                                                                borderRadius: 3,
+                                                                bgcolor: status.dotColor,
+                                                                backgroundImage: `linear-gradient(90deg, ${alpha(status.dotColor, 0.6)} 0%, ${status.dotColor} 100%)`
+                                                            }
+                                                        }}
+                                                    />
+                                                </Box>
+                                            )}
+
+                                            {!(isNonWorking && record.working_hours === 0) && (
+                                                <Stack direction="row" spacing={1} sx={{ color: 'text.secondary', flexWrap: 'wrap', gap: 1.5 }}>
+                                                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
+                                                        <Iconify icon={"solar:login-3-bold-duotone" as any} width={14} sx={{ color: 'text.disabled', flexShrink: 0 }} />
+                                                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.7rem' }}>
+                                                            {source === 'Daily Log' ? 'Login' : 'In'}: {formatTime(record.check_in)}
+                                                        </Typography>
+                                                    </Stack>
+                                                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
+                                                        <Iconify icon={"solar:logout-3-bold-duotone" as any} width={14} sx={{ color: 'text.disabled', flexShrink: 0 }} />
+                                                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.7rem' }}>
+                                                            {source === 'Daily Log' ? 'Logout' : 'Out'}: {formatTime(record.check_out)}
+                                                        </Typography>
+                                                    </Stack>
+                                                </Stack>
+                                            )}
+                                        </Box>
+                                    )}
 
                                     {isToday && (
                                         <Box

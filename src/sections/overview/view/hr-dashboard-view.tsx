@@ -10,6 +10,7 @@ import {
     fetchAttendanceStats,
     fetchUpcomingRenewals,
     fetchPendingLeaveCount,
+    fetchPendingRequestCount,
     fetchTotalEmployeeCount,
     fetchRecentAnnouncements,
     fetchTodayLeaveEmployees,
@@ -39,6 +40,7 @@ export function HRDashboardView() {
         announcements: [],
         total_employees: 0,
         pending_leaves: 0,
+        pending_request: 0,
         present_today: 0,
         missing_attendance: 0,
         todays_leaves: [],
@@ -67,6 +69,7 @@ export function HRDashboardView() {
                     renewals,
                     totalEmployees,
                     pendingLeaves,
+                    pendingRequest,
                     missingAttendanceChart,
                     weeklyPresentChart,
                     weeklyPresentAbsent
@@ -79,6 +82,7 @@ export function HRDashboardView() {
                     fetchUpcomingRenewals(),
                     fetchTotalEmployeeCount(),
                     fetchPendingLeaveCount(),
+                    fetchPendingRequestCount(),
                     fetchMissingAttendanceChartData(),
                     fetchWeeklyPresentChartData(),
                     fetchWeeklyPresentAbsentChartData()
@@ -95,6 +99,7 @@ export function HRDashboardView() {
                     missing_attendance: stats?.missing || 0,
                     pending_leaves: pendingLeaves,
                     total_employees: totalEmployees,
+                    pending_request: pendingRequest,
                     missing_attendance_chart: missingAttendanceChart,
                     weekly_present_chart: weeklyPresentChart,
                     weekly_present_absent: weeklyPresentAbsent
@@ -160,7 +165,7 @@ export function HRDashboardView() {
                     <HRSummaryWidget
                         title="Total Employees"
                         total={data.total_employees || 0}
-                        icon={<Iconify icon={"solar:users-group-rounded-bold-duotone" as any} width={32} />}
+                        icon={<Iconify icon="solar:users-group-rounded-bold-duotone" width={32} />}
                     />
                 </Grid>
 
@@ -169,16 +174,25 @@ export function HRDashboardView() {
                         title="Pending Leave Applications"
                         total={data.pending_leaves || 0}
                         color="warning"
-                        icon={<Iconify icon={"solar:calendar-date-bold-duotone" as any} width={32} />}
+                        icon={<Iconify icon="solar:calendar-add-bold-duotone" width={32} />}
                     />
                 </Grid>
 
-                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                {/* <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                     <HRSummaryWidget
                         title="Yesterday Missing Attendance"
                         total={data.missing_attendance || 0}
                         color="error"
                         icon={<Iconify icon={"solar:close-circle-bold-duotone" as any} width={32} />}
+                    />
+                </Grid> */}
+
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <HRSummaryWidget
+                        title="Pending Request Applications"
+                        total={data.pending_request || 0}
+                        color="info"
+                        icon={<Iconify icon="solar:clipboard-list-bold-duotone" width={32} />}
                     />
                 </Grid>
 
@@ -239,7 +253,7 @@ export function HRDashboardView() {
                 </Grid>
 
                 {/* Upcoming Renewals */}
-                <Grid size={{ xs: 12 }}>
+                {/* <Grid size={{ xs: 12 }}>
                     <HRDashboardTable
                         title="Upcoming Renewals"
                         tableData={data.renewals || []}
@@ -253,12 +267,12 @@ export function HRDashboardView() {
                         ]}
                         emptyMessage="No upcoming renewals"
                     />
-                </Grid>
+                </Grid> */}
 
                 {/* Holiday Calendar */}
                 <Grid size={{ xs: 12 }}>
                     <HRCalendar
-                        title="Holiday Calendar"
+                        title="Monthly Calendar"
                         subheader="Upcoming holidays for this month"
                         onDateChange={handleMonthChange}
                         events={(() => {

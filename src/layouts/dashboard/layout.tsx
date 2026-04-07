@@ -284,7 +284,16 @@ export function DashboardLayout({
 
 
           {/** @slot Account drawer */}
-          <AccountPopover data={_account} />
+          <AccountPopover
+            data={(_account || []).filter((item) => {
+              if (item.label === 'Settings') {
+                return (user?.roles || []).some((role: string) =>
+                  ['HR', 'Administrator', 'System Manager'].includes(role)
+                );
+              }
+              return true;
+            })}
+          />
         </Box>
       ),
     };

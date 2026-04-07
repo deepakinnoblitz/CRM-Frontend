@@ -9,18 +9,21 @@ export function usePresenceLog(
     limitPageLength: number = 10,
     dateSearch: string = '',
     status: string = 'all',
-    sortBy: string = 'login_date_desc'
+    sortBy: string = 'login_date_desc',
+    employee: string = 'all',
+    day: string = 'all',
+    date: string = ''
 ) {
     const [data, setData] = useState<any[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
+ 
     const refetch = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await fetchDetailedSessions(limitStart, limitPageLength, dateSearch, status, sortBy);
+            const result = await fetchDetailedSessions(limitStart, limitPageLength, dateSearch, status, sortBy, employee, day, date);
             setData(result.data || []);
             setTotalCount(result.total_count || 0);
         } catch (err: any) {
@@ -29,7 +32,7 @@ export function usePresenceLog(
         } finally {
             setLoading(false);
         }
-    }, [limitStart, limitPageLength, dateSearch, status, sortBy]);
+    }, [limitStart, limitPageLength, dateSearch, status, sortBy, employee, day, date]);
 
     useEffect(() => {
         refetch();
