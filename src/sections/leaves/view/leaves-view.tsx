@@ -367,10 +367,10 @@ export function LeavesView() {
         }
     };
 
-    const handleClarify = async (id: string, message: string) => {
+    const handleClarify = async (id: string, action: string, message: string) => {
         try {
             const leave = await getHRDoc('Leave Application', id);
-            const fields = ['hr_query', 'hr_query_2', 'hr_query_3', 'hr_query_4', 'hr_query_5'];
+            const fields = ['hr_query', 'hr_query_2', 'hr_query_3', 'hr_query_4', 'hr_query_5', 'employee_reply', 'employee_reply_2', 'employee_reply_3', 'employee_reply_4', 'employee_reply_5'];
             const nextField = fields.find(f => !leave[f]);
 
             if (!nextField) {
@@ -378,7 +378,7 @@ export function LeavesView() {
             }
 
             const updateData = { [nextField]: message };
-            await updateLeaveStatus(id, 'Clarification Requested', updateData);
+            await applyLeaveWorkflowAction(id, action, undefined, updateData);
 
             setSnackbar({ open: true, message: 'Clarification requested successfully', severity: 'success' });
             await refetch();
@@ -520,7 +520,7 @@ export function LeavesView() {
                                         onView={() => handleOpenDetails(row.name)}
                                         onDelete={() => handleDeleteClick(row.name)}
                                         onApplyAction={(action) => handleApplyAction(row.name, action)}
-                                        onClarify={(message) => handleClarify(row.name, message)}
+                                        onClarify={(action, message) => handleClarify(row.name, action, message)}
                                         canDelete={permissions.delete}
                                         isHR={isHR}
                                     />

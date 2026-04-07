@@ -48,7 +48,7 @@ type Props = {
     onView: VoidFunction;
     onDelete: VoidFunction;
     onApplyAction: (action: string) => void;
-    onClarify: (message: string) => Promise<void>;
+    onClarify: (action: string, message: string) => Promise<void>;
     canDelete?: boolean;
     isHR?: boolean;
     hideCheckbox?: boolean;
@@ -87,6 +87,7 @@ export function LeavesTableRow({
 
     const [openClarification, setOpenClarification] = useState(false);
 
+    const [selectedAction, setSelectedAction] = useState<string | null>(null);
     const [submittingClarification, setSubmittingClarification] = useState(false);
 
     const [actions, setActions] = useState<WorkflowAction[]>([]);
@@ -133,6 +134,7 @@ export function LeavesTableRow({
         });
 
         if (lowerAction.includes('clarification') || lowerAction.includes('query') || lowerAction.includes('reply')) {
+            setSelectedAction(action);
             setOpenClarification(true);
         } else {
             onApplyAction(action);
@@ -161,8 +163,9 @@ export function LeavesTableRow({
     const handleClarifyConfirm = async (message: string) => {
         try {
             setSubmittingClarification(true);
-            await onClarify(message);
+            await onClarify(selectedAction || '', message);
             setOpenClarification(false);
+            setSelectedAction(null);
         } catch (error) {
             console.error(error);
         } finally {

@@ -75,6 +75,7 @@ export function SettingsView() {
       setSaving(true);
       await updateHRMSSettings(settings);
       setSnackbar({ open: true, message: 'Settings updated successfully', severity: 'success' });
+      await fetchSettings();
     } catch (error: any) {
       console.error('Failed to update settings:', error);
       setSnackbar({ open: true, message: error.message || 'Failed to update settings', severity: 'error' });

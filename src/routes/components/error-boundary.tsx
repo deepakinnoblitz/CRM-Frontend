@@ -1,8 +1,18 @@
 import type { Theme, CSSObject } from '@mui/material/styles';
 
+import { varAlpha } from 'minimal-shared/utils';
 import { useRouteError, isRouteErrorResponse } from 'react-router';
 
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
 import GlobalStyles from '@mui/material/GlobalStyles';
+
+import { Iconify } from 'src/components/iconify';
+
+import { RouterLink } from './router-link';
 
 // ----------------------------------------------------------------------
 
@@ -11,158 +21,199 @@ export function ErrorBoundary() {
 
   return (
     <>
-      {inputGlobalStyles()}
-
-      <div className={errorBoundaryClasses.root}>
-        <div className={errorBoundaryClasses.container}>{renderErrorMessage(error)}</div>
-      </div>
+      <GlobalStyles styles={globalStyles} />
+      <Box className={errorBoundaryClasses.root}>
+        {renderErrorMessage(error)}
+      </Box>
     </>
   );
 }
 
-// ----------------------------------------------------------------------
-
 function parseStackTrace(stack?: string) {
   if (!stack) return { filePath: null, functionName: null };
-
   const filePathMatch = stack.match(/\/src\/[^?]+/);
-  const functionNameMatch = stack.match(/at (\S+)/);
-
-  return {
-    filePath: filePathMatch ? filePathMatch[0] : null,
-    functionName: functionNameMatch ? functionNameMatch[1] : null,
-  };
+  return { filePath: filePathMatch ? filePathMatch[0] : null };
 }
 
 function renderErrorMessage(error: any) {
+  const isChunkError =
+    error instanceof Error &&
+    (error.message.includes('Failed to fetch dynamically imported module') ||
+      error.message.includes('ChunkLoadError'));
+
+  if (isChunkError) {
+    return (
+      <Container className={errorBoundaryClasses.container}>
+        <Box sx={{ p: 4, textAlign: 'center' }}>
+          <Iconify
+            icon={"solar:restart-square-bold-duotone" as any}
+            width={120}
+            sx={{ mb: 3, color: '#08a3cd', opacity: 0.8 }}
+          />
+
+          <Typography variant="h3" sx={{ mb: 2, fontWeight: 800 }}>
+            Updates Available
+          </Typography>
+
+          <Typography sx={{ color: 'text.secondary', mb: 4, maxWidth: 480, mx: 'auto' }}>
+            The application has been updated with new features or the server was restarted. 
+            Please reload the page to continue using the latest version.
+          </Typography>
+
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => window.location.reload()}
+              startIcon={<Iconify icon={"solar:refresh-bold" as any} />}
+              sx={{
+                px: 5,
+                bgcolor: '#08a3cd',
+                '&:hover': { bgcolor: '#068fb3' },
+                boxShadow: `0 8px 16px rgba(8, 163, 205, 0.24)`
+              }}
+            >
+              Reload Application
+            </Button>
+            <Button
+              component={RouterLink}
+              href="/"
+              variant="outlined"
+              size="large"
+              color="inherit"
+              sx={{ px: 4, fontWeight: 600 }}
+            >
+              Go to Home
+            </Button>
+          </Box>
+        </Box>
+      </Container>
+    );
+  }
+
   if (isRouteErrorResponse(error)) {
     return (
-      <>
-        <h1 className={errorBoundaryClasses.title}>
-          {error.status}: {error.statusText}
-        </h1>
-        <p className={errorBoundaryClasses.message}>{error.data}</p>
-      </>
+      <Container className={errorBoundaryClasses.container}>
+         <Box sx={{ p: 4, textAlign: 'center' }}>
+          <Iconify
+              icon={"solar:shield-warning-bold-duotone" as any}
+              width={100}
+              sx={{ mb: 3, color: '#ff5555' }}
+            />
+          <Typography variant="h3" sx={{ mb: 2 }}>{error.status}: {error.statusText}</Typography>
+          <Typography sx={{ color: 'text.secondary', mb: 4 }}>{error.data}</Typography>
+          <Button component={RouterLink} href="/" variant="contained" size="large" sx={{ bgcolor: '#08a3cd' }}>
+            Go to Home
+          </Button>
+        </Box>
+      </Container>
     );
   }
 
   if (error instanceof Error) {
-    const { filePath, functionName } = parseStackTrace(error.stack);
+    const { filePath } = parseStackTrace(error.stack);
 
     return (
-      <>
-        <h1 className={errorBoundaryClasses.title}>Unexpected Application Error!</h1>
-        <p className={errorBoundaryClasses.message}>
-          {error.name}: {error.message}
-        </p>
-        <pre className={errorBoundaryClasses.details}>{error.stack}</pre>
-        {(filePath || functionName) && (
-          <p className={errorBoundaryClasses.filePath}>
-            {filePath} ({functionName})
-          </p>
-        )}
-      </>
+      <Container className={errorBoundaryClasses.container} sx={{ maxWidth: 800 }}>
+        <Box sx={{ p: 4 }}>
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
+             <Iconify icon={"solar:danger-bold-duotone" as any} width={48} sx={{ color: '#ff5555' }} />
+             <Typography variant="h4">Unexpected Application Error!</Typography>
+          </Stack>
+          
+          <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 2 }}>
+             {filePath && `Location: ${filePath}`}
+          </Typography>
+
+          <Box sx={{ p: 2, bgcolor: '#2a1e1e', color: '#ff5555', borderRadius: 1, mb: 3, borderLeft: '4px solid #ff5555' }}>
+             <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                {error.name}: {error.message}
+             </Typography>
+          </Box>
+
+          <pre className={errorBoundaryClasses.details}>{error.stack}</pre>
+
+          <Box sx={{ mt: 5, display: 'flex', gap: 2, justifyContent: 'center' }}>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => window.location.reload()}
+              startIcon={<Iconify icon={"solar:refresh-bold" as any} />}
+              sx={{ px: 4, bgcolor: '#08a3cd' }}
+            >
+              Try Again
+            </Button>
+            <Button component={RouterLink} href="/" variant="outlined" size="large" color="inherit" sx={{ px: 4 }}>
+              Go to Home
+            </Button>
+          </Box>
+        </Box>
+      </Container>
     );
   }
 
-  return <h1 className={errorBoundaryClasses.title}>Unknown Error</h1>;
+  return (
+    <Container className={errorBoundaryClasses.container}>
+       <Box sx={{ p: 4, textAlign: 'center' }}>
+          <Typography variant="h3">Something went wrong</Typography>
+          <Button component={RouterLink} href="/" variant="contained" sx={{ mt: 4, bgcolor: '#08a3cd' }}>
+              Go to Home
+          </Button>
+       </Box>
+    </Container>
+  );
 }
-
-// ----------------------------------------------------------------------
 
 const errorBoundaryClasses = {
   root: 'error-boundary-root',
   container: 'error-boundary-container',
-  title: 'error-boundary-title',
   details: 'error-boundary-details',
-  message: 'error-boundary-message',
-  filePath: 'error-boundary-file-path',
 };
 
-const cssVars: CSSObject = {
-  '--info-color': '#2dd9da',
-  '--warning-color': '#e2aa53',
-  '--error-color': '#ff5555',
-  '--error-background': '#2a1e1e',
-  '--details-background': '#111111',
-  '--root-background': '#2c2c2e',
-  '--container-background': '#1c1c1e',
-  '--font-stack-monospace':
-    '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace',
-  '--font-stack-sans':
-    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+const globalStyles = (theme: Theme) => {
+  const isDark = theme.palette.mode === 'dark';
+  
+  // Safe fallbacks for colors
+  const bgColor = theme.palette.background.default || (isDark ? '#161c24' : '#ffffff');
+  const paperColor = theme.palette.background.paper || (isDark ? '#212b36' : '#ffffff');
+  const primaryColor = '#08a3cd';
+
+  return {
+    [`& .${errorBoundaryClasses.root}`]: {
+      display: 'flex',
+      minHeight: '100vh',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: `linear-gradient(135deg, ${bgColor} 0%, ${isDark ? '#000000' : '#f4f6f8'} 100%)`,
+      padding: theme.spacing(3),
+    },
+    [`& .${errorBoundaryClasses.container}`]: {
+      backgroundColor: paperColor,
+      borderRadius: theme.spacing(2),
+      boxShadow: '0 24px 48px -12px rgba(0, 0, 0, 0.16)',
+      padding: 0,
+      overflow: 'hidden',
+      position: 'relative' as any,
+      '&::before': {
+        content: '""',
+        position: 'absolute' as any,
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 6,
+        background: `linear-gradient(90deg, ${primaryColor} 0%, #068fb3 100%)`,
+      }
+    },
+    [`& .${errorBoundaryClasses.details}`]: {
+      margin: 0,
+      padding: theme.spacing(2),
+      fontSize: theme.typography.pxToRem(12),
+      fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace',
+      overflow: 'auto',
+      maxHeight: 320,
+      borderRadius: theme.spacing(1),
+      color: '#e2aa53',
+      backgroundColor: '#111111',
+    },
+  };
 };
-
-const rootStyles = (): CSSObject => ({
-  display: 'flex',
-  flex: '1 1 auto',
-  alignItems: 'center',
-  padding: '10vh 15px 0',
-  flexDirection: 'column',
-  fontFamily: 'var(--font-stack-sans)',
-});
-
-const contentStyles = (): CSSObject => ({
-  gap: 24,
-  padding: 20,
-  width: '100%',
-  maxWidth: 960,
-  display: 'flex',
-  borderRadius: 8,
-  flexDirection: 'column',
-  backgroundColor: 'var(--container-background)',
-});
-
-const titleStyles = (theme: Theme): CSSObject => ({
-  margin: 0,
-  lineHeight: 1.2,
-  fontSize: theme.typography.pxToRem(20),
-  fontWeight: theme.typography.fontWeightBold,
-});
-
-const messageStyles = (theme: Theme): CSSObject => ({
-  margin: 0,
-  lineHeight: 1.5,
-  padding: '12px 16px',
-  whiteSpace: 'pre-wrap',
-  color: 'var(--error-color)',
-  fontSize: theme.typography.pxToRem(14),
-  fontFamily: 'var(--font-stack-monospace)',
-  backgroundColor: 'var(--error-background)',
-  borderLeft: '2px solid var(--error-color)',
-  fontWeight: theme.typography.fontWeightBold,
-});
-
-const detailsStyles = (): CSSObject => ({
-  margin: 0,
-  padding: 16,
-  lineHeight: 1.5,
-  overflow: 'auto',
-  borderRadius: 'inherit',
-  color: 'var(--warning-color)',
-  backgroundColor: 'var(--details-background)',
-});
-
-const filePathStyles = (): CSSObject => ({
-  marginTop: 0,
-  color: 'var(--info-color)',
-});
-
-const inputGlobalStyles = () => (
-  <GlobalStyles
-    styles={(theme) => ({
-      body: {
-        ...cssVars,
-        margin: 0,
-        color: 'white',
-        backgroundColor: 'var(--root-background)',
-        [`& .${errorBoundaryClasses.root}`]: rootStyles(),
-        [`& .${errorBoundaryClasses.container}`]: contentStyles(),
-        [`& .${errorBoundaryClasses.title}`]: titleStyles(theme),
-        [`& .${errorBoundaryClasses.message}`]: messageStyles(theme),
-        [`& .${errorBoundaryClasses.filePath}`]: filePathStyles(),
-        [`& .${errorBoundaryClasses.details}`]: detailsStyles(),
-      },
-    })}
-  />
-);

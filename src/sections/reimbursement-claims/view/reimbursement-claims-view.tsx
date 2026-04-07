@@ -646,6 +646,7 @@ export function ReimbursementClaimsView() {
                     <DatePicker
                         label={label}
                         value={dateValue}
+                        format="DD-MM-YYYY"
                         onChange={(newValue) => {
                             const val = newValue && dayjs(newValue).isValid() ? dayjs(newValue).format('YYYY-MM-DD') : '';
                             if (fieldname === 'date_of_expense') {

@@ -15,7 +15,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 
 import { getHRDoc } from 'src/api/hr-management';
-import { type WorkflowAction, getLeaveWorkflowActions, updateLeaveStatus } from 'src/api/leaves';
+import { type WorkflowAction, getLeaveWorkflowActions, updateLeaveStatus, applyLeaveWorkflowAction } from 'src/api/leaves';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -130,7 +130,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                 // If there's a generic comment, we could handle it too, but here we focus on clarifications
             }
 
-            await updateLeaveStatus(leaveId, status, updateData);
+            await applyLeaveWorkflowAction(leaveId, actionToApply.action, comment, updateData);
 
             setComment('');
             setCommentDialogOpen(false);
