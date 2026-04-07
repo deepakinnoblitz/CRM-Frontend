@@ -148,7 +148,7 @@ export async function getLeaveWorkflowActions(currentState: string): Promise<Wor
     return data.actions || [];
 }
 
-export async function applyLeaveWorkflowAction(name: string, action: string, comment?: string) {
+export async function applyLeaveWorkflowAction(name: string, action: string, comment?: string, updateData?: any) {
     const headers = await getAuthHeaders();
 
     const res = await frappeRequest("/api/method/company.company.frontend_api.apply_workflow_action", {
@@ -158,7 +158,8 @@ export async function applyLeaveWorkflowAction(name: string, action: string, com
             doctype: "Leave Application",
             name,
             action,
-            comment
+            comment,
+            update_data: updateData
         })
     });
 
