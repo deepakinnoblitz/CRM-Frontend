@@ -35,17 +35,15 @@ export function SalarySlipPreviewDialog({ open, onClose, onConfirm, data }: Prop
     const renderHeader = (
         <Box
             sx={{
-                p: 3,
+                p: 2,
                 mb: 3,
                 textAlign: 'center',
                 borderRadius: 2,
                 position: 'relative',
                 overflow: 'hidden',
-                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
-                border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
             }}
         >
-            <Typography variant="h5" sx={{ mb: 1, fontWeight: 800, color: 'primary.main' }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 800, color: 'primary.main', fontSize: '22px' }}>
                 SALARY SLIP
             </Typography>
             <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
@@ -56,27 +54,37 @@ export function SalarySlipPreviewDialog({ open, onClose, onConfirm, data }: Prop
 
     const renderEmployeeDetails = (
         <Box sx={{ mb: 4 }}>
-            <SectionHeader title="Employee Details" icon="solar:user-id-bold" color="primary.main" />
             <Box
                 sx={{
-                    p: 3,
-                    borderRadius: 2,
+                    borderRadius: 1.5,
                     display: 'grid',
-                    gap: 3,
-                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                    overflow: 'hidden',
+                    bgcolor: 'background.paper',
                     border: (theme) => `1px solid ${theme.palette.divider}`,
-                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                 }}
             >
-                <InfoRow label="Employee" value={data.employee} />
-                <InfoRow label="Bank Name" value={data.bank_name || '-'} />
+                <SubHeader title="Employee Information" />
                 <InfoRow label="Employee Name" value={data.employee_name} />
-                <InfoRow label="Email" value={data.email || '-'} />
-                <InfoRow label="Department" value={data.department || '-'} />
+                <InfoRow label="Employee ID" value={data.employee_id || data.employee} />
+
+                <SubHeader title="Contact Details" />
+                <InfoRow label="Official Email" value={data.email || '-'} />
                 <InfoRow label="Personal Email" value={data.personal_email || '-'} />
+                <InfoRow label="Employee Phone Number" value={data.phone_number || '-'} />
+
+
+                <SubHeader title="Job Details" />
+                <InfoRow label="Department" value={data.department || '-'} />
                 <InfoRow label="Designation" value={data.designation || '-'} />
-                <Box />
                 <InfoRow label="Date of Joining" value={formatDate(data.date_of_joining)} />
+
+                <SubHeader title="Bank Details" />
+                <InfoRow label="Account Name" value={data.bank_account_name || '-'} />
+                <InfoRow label="Account No" value={data.account_number || '-'} />
+                <InfoRow label="Bank Name" value={data.bank_name || '-'} />
+                <InfoRow label="Branch" value={data.branch || '-'} />
+                <InfoRow label="IFSC" value={data.ifsc_code || '-'} />
             </Box>
         </Box>
     );
@@ -95,8 +103,8 @@ export function SalarySlipPreviewDialog({ open, onClose, onConfirm, data }: Prop
                     gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
                 }}
             >
-                <InfoRow label="No of Leave" value={data.no_of_leave || 0} />
                 <InfoRow label="Total Working Days" value={data.total_working_days || 0} />
+                <InfoRow label="No of Leave" value={data.no_of_leave || 0} />
                 <InfoRow label="LOP Days" value={data.lop_days || 0} />
                 <InfoRow label="No of Paid Leave" value={data.no_of_paid_leave || 0} />
             </Box>
@@ -218,11 +226,11 @@ function SectionHeader({ title, icon, color = 'text.secondary' }: { title: strin
 
 function InfoRow({ label, value }: { label: string; value: string }) {
     return (
-        <Box>
-            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+        <Box sx={{ px: 2.5, py: 2 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5, fontWeight: 500 }}>
                 {label}
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
                 {value}
             </Typography>
         </Box>
@@ -237,6 +245,31 @@ function AmountRow({ label, amount, isTotal = false, color }: { label: string; a
             </Typography>
             <Typography variant={isTotal ? 'subtitle1' : 'body2'} sx={{ fontWeight: isTotal ? 800 : 600, color: isTotal ? color : 'inherit' }}>
                 ₹{amount?.toLocaleString() || 0}
+            </Typography>
+        </Box>
+    );
+}
+
+function SubHeader({ title }: { title: string }) {
+    return (
+        <Box
+            sx={{
+                gridColumn: '1 / -1',
+                bgcolor: 'rgb(245 245 245 / 56%)',
+                py: 1.5,
+                px: 2.5,
+                borderBottom: (theme) => `1px solid ${alpha(theme.palette.divider, 0.4)}`,
+            }}
+        >
+            <Typography
+                variant="overline"
+                sx={{
+                    color: 'text.secondary',
+                    fontWeight: 800,
+                    fontSize: 13,
+                }}
+            >
+                {title}
             </Typography>
         </Box>
     );
