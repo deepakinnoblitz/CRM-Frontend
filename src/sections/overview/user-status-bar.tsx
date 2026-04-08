@@ -249,12 +249,12 @@ export function UserStatusBar() {
     useEffect(() => {
         let interval: any;
         let lastTick = Date.now();
-        
+
         if (statusName && statusName !== 'Offline' && session) {
             interval = setInterval(() => {
                 const now = Date.now();
                 const delta = Math.floor((now - lastTick) / 1000);
-                
+
                 if (delta >= 1) {
                     if (statusName === 'Break') {
                         setBreakTimer((prev) => prev + delta);
@@ -296,16 +296,20 @@ export function UserStatusBar() {
 
     const statusOptions = [
         { label: 'Available - Logged In', value: 'Available', color: '#22c55e', icon: 'ph:check-circle-fill', buttonIcon: 'ph:check-circle-fill' },
-        { label: 'Busy', value: 'Busy', color: '#ef4444', icon: 'ph:minus-circle-fill', buttonIcon: 'ph:minus-circle-fill' },
-        { label: 'Do not disturb', value: 'Do Not Disturb', color: '#b91c1c', icon: 'ph:prohibit-fill', buttonIcon: 'ph:prohibit-fill' },
-        { label: 'Break', value: 'Break', color: '#f59e0b', icon: 'ph:coffee-fill', buttonIcon: 'ph:coffee-fill' },
-        { label: 'Away', value: 'Away', color: '#d97706', icon: 'ph:moon-fill', buttonIcon: 'ph:moon-fill' },
+        { label: 'In Client Meeting', value: 'Busy', color: '#ef4444', icon: 'ph:minus-circle-fill', buttonIcon: 'ph:minus-circle-fill' },
+        { label: 'Team Discussion', value: 'Do Not Disturb', color: '#b91c1c', icon: 'ph:prohibit-fill', buttonIcon: 'ph:prohibit-fill' },
+        { label: 'Lunch Break', value: 'Break', color: '#f59e0b', icon: 'ph:coffee-fill', buttonIcon: 'ph:coffee-fill' },
+        { label: 'Break', value: 'Away', color: '#d97706', icon: 'ph:moon-fill', buttonIcon: 'ph:moon-fill' },
         { label: 'Offline - Logout', value: 'Offline', color: '#9ca3af', icon: 'ph:power-fill', buttonIcon: 'ph:power-fill' },
     ];
 
     const STATUS_DISPLAY_MAP: Record<string, string> = {
-        Available: 'Available - Logged In',
-        Offline: 'Offline - Logout',
+        'Available': 'Available - Logged In',
+        'Busy': 'In Client Meeting',
+        'Do Not Disturb': 'Team Discussion',
+        'Break': 'Lunch Break',
+        'Away': 'Break',
+        'Offline': 'Offline - Logout',
     };
 
     const currentStatus = statusOptions.find(opt => opt.value === statusName) || statusOptions[5];
@@ -336,7 +340,7 @@ export function UserStatusBar() {
                     </>
                 ) : (
                     <>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, fontSize:'14px' }}>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, fontSize: '14px' }}>
                             Today Active Time:
                         </Typography>
                         <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 600 }}>
@@ -403,17 +407,17 @@ export function UserStatusBar() {
                         },
                         animation: 'pulseGlow 2s infinite ease-in-out',
                         '@keyframes pulseGlow': {
-                            '0%': { 
+                            '0%': {
                                 transform: 'scale(1)',
-                                boxShadow: `0 0 0 0 ${alpha(theme.palette.success.main, 0.4)}` 
+                                boxShadow: `0 0 0 0 ${alpha(theme.palette.success.main, 0.4)}`
                             },
-                            '50%': { 
+                            '50%': {
                                 transform: 'scale(1.04)',
-                                boxShadow: `0 0 20px 4px ${alpha(theme.palette.success.main, 0.2)}` 
+                                boxShadow: `0 0 20px 4px ${alpha(theme.palette.success.main, 0.2)}`
                             },
-                            '100%': { 
+                            '100%': {
                                 transform: 'scale(1)',
-                                boxShadow: `0 0 0 0 ${alpha(theme.palette.success.main, 0)}` 
+                                boxShadow: `0 0 0 0 ${alpha(theme.palette.success.main, 0)}`
                             },
                         },
                     }}
@@ -750,10 +754,10 @@ export function UserStatusBar() {
                         {statusName !== 'Available' && statusName !== 'Offline' && (
                             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                 Default for <b>{STATUS_DISPLAY_MAP[statusName] || statusName}</b>: &quot;{{
-                                    Busy: 'In a meeting',
-                                    'Do Not Disturb': 'Do not disturb',
-                                    Break: 'On a break',
-                                    Away: 'Stepped away',
+                                    Busy: 'In client meeting',
+                                    'Do Not Disturb': 'Team discussion',
+                                    Break: 'On lunch break',
+                                    Away: 'Break',
                                 }[statusName] || ''}&quot;
                             </Typography>
                         )}

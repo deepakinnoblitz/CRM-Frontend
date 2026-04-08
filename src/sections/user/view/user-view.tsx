@@ -90,6 +90,7 @@ export const UserView = forwardRef(({ hideHeader = false, hideActionButton = fal
 
   const [openDelete, setOpenDelete] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleOpenCreate = () => {
     setSelectedUser(null);
@@ -157,6 +158,7 @@ export const UserView = forwardRef(({ hideHeader = false, hideActionButton = fal
   const handleCloseCreate = () => setOpenCreate(false);
 
   const handleSubmit = async () => {
+    setIsSubmitting(true);
     try {
       if (selectedUser) {
         await updateUser(selectedUser.name, {
@@ -201,6 +203,8 @@ export const UserView = forwardRef(({ hideHeader = false, hideActionButton = fal
       handleCloseCreate();
     } catch (error: any) {
       setSnackbar({ open: true, message: error.message || 'Operation failed', severity: 'error' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -361,6 +365,7 @@ export const UserView = forwardRef(({ hideHeader = false, hideActionButton = fal
         formData={formData}
         setFormData={setFormData}
         onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
         onChangePassword={async (userId: string, newPassword: string) => {
           const { changeUserPassword } = await import('src/api/users');
           try {

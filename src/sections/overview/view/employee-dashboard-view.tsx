@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 
+import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+
+import { usePresence } from 'src/hooks/use-presence';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
@@ -20,6 +23,7 @@ import { LeaveStatusCards } from '../leave-status-cards';
 import { DashboardEomCard } from '../dashboard-eom-card';
 import { MissingTimesheets } from '../missing-timesheets';
 import { PremiumWorkingHours } from '../premium-working-hours';
+import { TodayPresenceWidget } from '../today-presence-widget';
 import { PersonalityManagement } from '../personality-management';
 import { CalendarAttendanceChart } from '../calendar-attendance-chart';
 
@@ -27,6 +31,7 @@ import { CalendarAttendanceChart } from '../calendar-attendance-chart';
 
 export function EmployeeDashboardView() {
     const { user } = useAuth();
+    const { status: currentStatus } = usePresence();
     const [data, setData] = useState<EmployeeDashboardData | null>(null);
 
     useEffect(() => {
@@ -83,6 +88,10 @@ export function EmployeeDashboardView() {
             </Typography>
 
             <DashboardEomCard />
+
+            {/* <Box sx={{ mt: 3 }}>
+                <TodayPresenceWidget />
+            </Box> */}
 
             <Grid container spacing={3} sx={{ mt: 3 }}>
                 {/* 1. Latest Announcements */}
@@ -173,15 +182,27 @@ export function EmployeeDashboardView() {
                                         const hasOutTime = !!record.check_out;
                                         const isIncomplete = (hasInTime && !hasOutTime) || (!hasInTime && hasOutTime);
 
-                                        if (isIncomplete && (isPast || isToday) && !data.hide_missing) {
+                                        if (isToday && currentStatus !== 'Offline') {
+                                            eventTitle = currentStatus === 'Available' ? 'Available' : currentStatus;
+                                            if (currentStatus === 'Available') {
+                                                bgColor = '#22C55E'; // Green
+                                            } else if (currentStatus === 'Busy' || currentStatus === 'Do Not Disturb') {
+                                                bgColor = '#FF5630'; // Red
+                                            } else {
+                                                bgColor = '#FFAB00'; // Orange for Break/Away
+                                            }
+                                        } else if (isIncomplete && (isPast || isToday) && !data.hide_missing) {
                                             eventTitle = 'Missing';
                                             bgColor = '#FFC107'; // Amber/Yellow for Missing
                                         } else if (record.status === 'Present') {
                                             eventTitle = 'Present';
                                             bgColor = '#22C55E'; // Green
-                                        } else if (record.status === 'Absent') {
+                                        } else if (record.status === 'Absent' && isPast) {
                                             eventTitle = 'Absent';
                                             bgColor = '#FF5630'; // Red
+                                        } else if (record.status === 'Absent' && isToday) {
+                                            eventTitle = 'Offline';
+                                            bgColor = '#9E9E9E'; // Gray for Offline today
                                         } else if (record.status === 'On Leave' || record.status === 'Leave') {
                                             eventTitle = 'On Leave';
                                             bgColor = '#00B8D9'; // Blue/Cyan for Leave
@@ -206,8 +227,9 @@ export function EmployeeDashboardView() {
                                                 eventTitle = 'Present';
                                                 bgColor = '#22C55E';
                                             } else {
-                                                // Today unmarked
-                                                return null;
+                                                // Today unmarked/offline
+                                                eventTitle = 'Offline';
+                                                bgColor = '#9E9E9E';
                                             }
                                         } else if (isHoliday) {
                                             // Future Working Holiday

@@ -24,9 +24,9 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { AssetCategoryDialog } from '../asset-category-dialog';
 import { TableNoData } from '../../../lead/table-no-data';
 import { LeadTableHead } from '../../../lead/lead-table-head';
+import { AssetCategoryDialog } from '../asset-category-dialog';
 import { TableEmptyRows } from '../../../lead/table-empty-rows';
 import { LeadTableToolbar } from '../../../lead/lead-table-toolbar';
 import { AssetCategoryTableRow } from '../asset-category-table-row';

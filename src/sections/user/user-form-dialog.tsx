@@ -15,12 +15,14 @@ import Checkbox from '@mui/material/Checkbox';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import CircularProgress from '@mui/material/CircularProgress'
 
 import { frappeRequest } from 'src/utils/csrf';
 
@@ -82,17 +84,46 @@ const Android12Button = styled(Button)(({ theme }) => ({
     borderRadius: 20,
     textTransform: 'none',
     fontWeight: 500,
-    padding: '4px 12px',
-    fontSize: '0.875rem',
+    padding: '8px 20px',
+    fontSize: '0.925rem',
+
     boxShadow: 'none',
     '&:hover': {
         boxShadow: 'none',
     },
 }));
 
+// Android 12 Loading Button Style
+const Android12LoadingButton = styled(LoadingButton)(({ theme }) => ({
+    borderRadius: 20,
+    textTransform: 'none',
+    fontWeight: 500,
+    padding: '8px 20px',
+    fontSize: '0.925rem',
+
+    boxShadow: 'none',
+    '&:hover': {
+        boxShadow: 'none',
+    },
+}));
+
+
+
 // ----------------------------------------------------------------------
 
+const ALLOWED_ROLES = [
+    'System Manager',
+    'Employee',
+    'Renewal User',
+    'CRM User',
+    'Task Manager',
+    'CRM And Sales',
+    'HR',
+    'Chat Bot',
+];
+
 type Props = {
+
     open: boolean;
     onClose: VoidFunction;
     selectedUser: any;
@@ -100,6 +131,7 @@ type Props = {
     setFormData: (data: any) => void;
     onSubmit: VoidFunction;
     onChangePassword?: (userId: string, newPassword: string) => Promise<void>;
+    isSubmitting?: boolean;
 };
 
 export function UserFormDialog({
@@ -110,6 +142,7 @@ export function UserFormDialog({
     setFormData,
     onSubmit,
     onChangePassword,
+    isSubmitting = false,
 }: Props) {
     const [currentTab, setCurrentTab] = useState('details');
     const [roles, setRoles] = useState<any[]>([]);
@@ -130,6 +163,8 @@ export function UserFormDialog({
     const [passwordError, setPasswordError] = useState('');
     const showNewPassword = useBoolean();
     const showConfirmPassword = useBoolean();
+    const [isSubmittingPermission, setIsSubmittingPermission] = useState(false);
+
 
     // Validation state
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -159,12 +194,20 @@ export function UserFormDialog({
         }
 
         setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        return newErrors;
     };
 
     const handleSubmitWrapper = () => {
-        if (validate()) {
+        const validationErrors = validate();
+        if (Object.keys(validationErrors).length === 0) {
             onSubmit();
+        } else {
+            // Jump to the first tab with an error
+            if (validationErrors.email || validationErrors.first_name) {
+                setCurrentTab('details');
+            } else if (validationErrors.password) {
+                setCurrentTab('password');
+            }
         }
     };
 
@@ -306,6 +349,7 @@ export function UserFormDialog({
     const handleCreatePermission = async () => {
         if (!selectedUser?.email || !permissionFormData.allow || !permissionFormData.for_value) return;
 
+        setIsSubmittingPermission(true);
         try {
             await createUserPermission({
                 user: selectedUser.email,
@@ -317,8 +361,12 @@ export function UserFormDialog({
             loadUserPermissions();
         } catch (error: any) {
             console.error('Failed to create permission:', error);
+        } finally {
+            setIsSubmittingPermission(false);
         }
+
     };
+
 
     const handleDeletePermission = async (permissionName: string) => {
         try {
@@ -456,21 +504,24 @@ export function UserFormDialog({
                 </Stack>
 
                 <Grid container spacing={3}>
-                    {roles.map((role) => (
-                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={role.name}>
-                            <FormControlLabel
-                                control={
-                                    <Android12Switch
-                                        checked={(formData.roles || []).includes(role.name)}
-                                        onChange={() => handleRoleToggle(role.name)}
-                                        size="small"
-                                    />
-                                }
-                                label={role.name}
-                            />
-                        </Grid>
-                    ))}
+                    {roles
+                        .filter((role) => ALLOWED_ROLES.includes(role.name))
+                        .map((role) => (
+                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={role.name}>
+                                <FormControlLabel
+                                    control={
+                                        <Android12Switch
+                                            checked={(formData.roles || []).includes(role.name)}
+                                            onChange={() => handleRoleToggle(role.name)}
+                                            size="small"
+                                        />
+                                    }
+                                    label={role.name}
+                                />
+                            </Grid>
+                        ))}
                 </Grid>
+
             </Stack>
         </Box>
     );
@@ -635,8 +686,10 @@ export function UserFormDialog({
                     for_value: data.for_value
                 })}
                 onSubmit={handleCreatePermission}
+                isSubmitting={isSubmittingPermission}
                 hideUserField
             />
+
         </Box>
     );
 
@@ -652,24 +705,33 @@ export function UserFormDialog({
             <Tabs value={currentTab} onChange={handleTabChange} sx={{ px: 3, borderBottom: 1, borderColor: 'divider' }}>
                 <Tab label="User Details" value="details" />
                 <Tab label="Roles & Permissions" value="roles" />
-                <Tab label="Allow Modules" value="modules" />
+                {/* <Tab label="Allow Modules" value="modules" /> */}
                 {selectedUser && <Tab label="User Permissions" value="permissions" />}
                 <Tab label="Password" value="password" />
             </Tabs>
 
+
             <DialogContent sx={{ p: 0 }}>
                 {currentTab === 'details' && renderUserDetailsTab}
                 {currentTab === 'roles' && renderRolesTab}
-                {currentTab === 'modules' && renderModulesTab}
+                {/* {currentTab === 'modules' && renderModulesTab} */}
                 {currentTab === 'permissions' && selectedUser && renderUserPermissionsTab}
                 {currentTab === 'password' && renderPasswordTab}
             </DialogContent>
 
+
             <DialogActions>
-                <Button variant="contained" onClick={handleSubmitWrapper}>
+                <Android12LoadingButton
+                    variant="contained"
+                    onClick={handleSubmitWrapper}
+                    loading={isSubmitting}
+                    sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+                >
                     {selectedUser ? 'Update' : 'Create'}
-                </Button>
+                </Android12LoadingButton>
             </DialogActions>
+
+
         </Dialog>
     );
 }
