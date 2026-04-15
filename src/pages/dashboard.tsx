@@ -36,9 +36,9 @@ export default function Page() {
       <title>{`Dashboard - ${CONFIG.appName}`}</title>
       <meta
         name="description"
-        content="Innoblitz ERP"
+        content="Innoblitz"
       />
-      <meta name="keywords" content="Innoblitz ERP" />
+      <meta name="keywords" content="Innoblitz" />
 
       {renderDashboard()}
     </>

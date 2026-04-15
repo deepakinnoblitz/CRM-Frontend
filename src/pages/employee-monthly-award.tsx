@@ -1,3 +1,5 @@
+import { CONFIG } from 'src/config-global';
+
 import { EmployeeMonthlyAwardView } from 'src/sections/employee-monthly-award/view/employee-monthly-award-view';
 
 // ----------------------------------------------------------------------
@@ -5,7 +7,7 @@ import { EmployeeMonthlyAwardView } from 'src/sections/employee-monthly-award/vi
 export default function EmployeeMonthlyAwardPage() {
   return (
     <>
-      <title> Employee Monthly Award | HRMS</title>
+      <title>{`Employee Monthly Award - ${CONFIG.appName}`}</title>
       <EmployeeMonthlyAwardView />
     </>
   );
