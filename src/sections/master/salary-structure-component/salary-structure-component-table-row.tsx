@@ -88,7 +88,7 @@ export function SalaryStructureComponentTableRow({
         </Stack>
       </TableCell>
 
-      <TableCell>
+      <TableCell align="center">
         <Label
           variant="soft"
           color={typeColor(type) as any}
@@ -98,13 +98,21 @@ export function SalaryStructureComponentTableRow({
         </Label>
       </TableCell>
 
-      <TableCell>
+      <TableCell align="center">
+        {row.is_default ? (
+          <Iconify icon="solar:check-circle-bold" sx={{ color: 'success.main' }} />
+        ) : (
+          <Iconify icon="solar:close-circle-bold" sx={{ color: 'error.main' }} />
+        )}
+      </TableCell>
+
+      <TableCell align="right">
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {percentage != null && percentage > 0 ? `${percentage}%` : '-'}
         </Typography>
       </TableCell>
 
-      <TableCell>
+      <TableCell align="right">
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {static_amount != null && static_amount > 0
             ? static_amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })

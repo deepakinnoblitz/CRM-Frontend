@@ -5,14 +5,19 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import Checkbox from '@mui/material/Checkbox';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import {
+    fetchSalaryComponents,
+} from 'src/api/hr-management';
 import {
     createSalaryStructureComponent,
     updateSalaryStructureComponent,
@@ -39,6 +44,7 @@ export function SalaryStructureComponentDialog({ open, onClose, onSuccess, id }:
     const [type, setType] = useState<string>('Earnings');
     const [percentage, setPercentage] = useState<string>('');
     const [staticAmount, setStaticAmount] = useState<string>('');
+    const [isDefault, setIsDefault] = useState(false);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -63,6 +69,7 @@ export function SalaryStructureComponentDialog({ open, onClose, onSuccess, id }:
                         setType(data.type || 'Earning');
                         setPercentage(data.percentage != null ? String(data.percentage) : '');
                         setStaticAmount(data.static_amount != null ? String(data.static_amount) : '');
+                        setIsDefault(!!data.is_default);
                     } catch (err) {
                         console.error('Failed to fetch component:', err);
                         setSnackbar({ open: true, message: 'Failed to fetch details', severity: 'error' });
@@ -74,6 +81,7 @@ export function SalaryStructureComponentDialog({ open, onClose, onSuccess, id }:
                     setType('Earning');
                     setPercentage('');
                     setStaticAmount('');
+                    setIsDefault(false);
                 }
                 setError('');
             }
@@ -93,11 +101,28 @@ export function SalaryStructureComponentDialog({ open, onClose, onSuccess, id }:
             setLoading(true);
             setError('');
 
+            if (isDefault && type === 'Earning') {
+                const val = percentage !== '' ? parseFloat(percentage) : 0;
+                const allComponents = await fetchSalaryComponents();
+                const otherDefaultEarningsTotal = allComponents
+                    .filter((c: any) => c.is_default && c.type === 'Earning' && c.name !== id)
+                    .reduce((sum: number, c: any) => sum + (parseFloat(c.percentage) || 0), 0);
+
+                if (otherDefaultEarningsTotal + val > 100) {
+                    const msg = `Total Default Earnings cannot exceed 100%. Current total with this change: ${(otherDefaultEarningsTotal + val).toFixed(2)}%`;
+                    setError(msg);
+                    setSnackbar({ open: true, message: msg, severity: 'error' });
+                    setLoading(false);
+                    return;
+                }
+            }
+
             const data: Partial<SalaryStructureComponent> = {
                 component_name: componentName,
                 type: type as any,
                 percentage: percentage !== '' ? parseFloat(percentage) : undefined,
                 static_amount: staticAmount !== '' ? parseFloat(staticAmount) : undefined,
+                is_default: isDefault ? 1 : 0,
             };
 
             if (id) {
@@ -198,6 +223,18 @@ export function SalaryStructureComponentDialog({ open, onClose, onSuccess, id }:
                             InputLabelProps={{ shrink: true }}
                             inputProps={{ min: 0, step: 0.01 }}
                             helperText="Leave blank if not applicable"
+                        />
+
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={isDefault}
+                                    onChange={(e) => setIsDefault(e.target.checked)}
+                                    color="primary"
+                                />
+                            }
+                            label="Is Default"
+                            sx={{ mt: 1 }}
                         />
                     </Box>
                 </Box>

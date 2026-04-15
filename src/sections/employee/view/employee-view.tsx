@@ -463,6 +463,72 @@ export function EmployeeView() {
     }, [formErrors.salary_components]);
 
 
+    const handleDefaultSplitting = async () => {
+        const ctcValue = parseFloat(formData.ctc) || 0;
+        if (ctcValue <= 0) {
+            setSnackbar({ open: true, message: 'Please enter a valid CTC amount first', severity: 'warning' });
+            return;
+        }
+
+        try {
+            const defaults = salaryComponents.filter(comp => comp.is_default);
+
+            if (defaults.length === 0) {
+                setSnackbar({ open: true, message: 'No default salary components found. Please configure them in Masters.', severity: 'warning' });
+                return;
+            }
+
+            const totalEarningPercent = defaults
+                .filter(comp => comp.type === 'Earning')
+                .reduce((sum, comp) => sum + (parseFloat(comp.percentage) || 0), 0);
+
+            if (totalEarningPercent !== 100) {
+                setSnackbar({ 
+                    open: true, 
+                    message: `Invalid configuration: Total Default Earning percentage must be exactly 100%. (Current total: ${totalEarningPercent.toFixed(2)}%)`, 
+                    severity: 'error' 
+                });
+                return;
+            }
+
+            const earnings: any[] = [];
+            const deductions: any[] = [];
+
+            defaults.forEach((comp: any) => {
+                let val = 0;
+                const percent = parseFloat(comp.percentage) || 0;
+                if (percent > 0) {
+                    val = (ctcValue * percent) / 100;
+                } else {
+                    val = parseFloat(comp.static_amount) || 0;
+                }
+
+                const row = {
+                    component_name: comp.component_name,
+                    amount: val,
+                    type: comp.type
+                };
+
+                if (comp.type === 'Earning') {
+                    earnings.push(row);
+                } else {
+                    deductions.push(row);
+                }
+            });
+
+            setFormData(prev => ({
+                ...prev,
+                earnings,
+                deductions
+            }));
+
+            setSnackbar({ open: true, message: 'Default splitting applied successfully', severity: 'success' });
+        } catch (error) {
+            console.error('Failed to apply default splitting:', error);
+            setSnackbar({ open: true, message: 'Failed to apply splitting', severity: 'error' });
+        }
+    };
+
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, fieldname: string) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -752,6 +818,9 @@ export function EmployeeView() {
             error: !!formErrors[fieldname],
             helperText: formErrors[fieldname],
             ...extraProps,
+            InputProps: {
+                ...extraProps.InputProps,
+            },
             sx: {
                 '& .MuiFormLabel-asterisk': {
                     color: 'red',
@@ -1301,7 +1370,37 @@ export function EmployeeView() {
 
                             {/* CTC Field - Full Width */}
                             <Box sx={{ mb: 3 }}>
-                                {renderField('ctc', 'CTC (Monthly)', 'number', [], { onBlur: handleCTCOnBlur }, false)}
+                                {renderField('ctc', 'CTC (Monthly)', 'number', [], { 
+                                    onBlur: handleCTCOnBlur,
+                                    InputProps: {
+                                        endAdornment: (
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                onClick={handleDefaultSplitting}
+                                                sx={{ 
+                                                    whiteSpace: 'nowrap',
+                                                    mx: 1,
+                                                    py: 1.5,
+                                                    px: 3,
+                                                    height: 32,
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 1),
+                                                    color: 'common.white',
+                                                    boxShadow: (theme) => theme.customShadows.z8,
+                                                    '&:hover': { 
+                                                        bgcolor: (theme) => theme.palette.primary.dark,
+                                                        boxShadow: (theme) => theme.customShadows.z16,
+                                                    }
+                                                }}
+                                                startIcon={<Iconify icon={"solar:magic-stick-bold" as any} width={16} />}
+                                            >
+                                                Default Splitting
+                                            </Button>
+                                        )
+                                    }
+                                }, false)}
                             </Box>
 
                             {/* Two Column Layout: Earnings and Deductions */}

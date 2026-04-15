@@ -683,6 +683,7 @@ export interface SalaryStructureComponent {
     name: string;
     component_name: string;
     type?: 'Earning' | 'Deduction';
+    is_default?: number;
     percentage?: number;
     static_amount?: number;
     creation?: string;

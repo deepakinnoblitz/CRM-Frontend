@@ -34,9 +34,10 @@ import { SalaryStructureComponentTableRow } from '../salary-structure-component-
 
 const TABLE_HEAD = [
   { id: 'component_name', label: 'Component' },
-  { id: 'type', label: 'Type' },
-  { id: 'percentage', label: 'Percentage' },
-  { id: 'static_amount', label: 'Static Amount' },
+  { id: 'type', label: 'Type', align: 'center' },
+  { id: 'is_default', label: 'Default', align: 'center' },
+  { id: 'percentage', label: 'Percentage', align: 'right' },
+  { id: 'static_amount', label: 'Static Amount', align: 'right' },
   { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
@@ -82,6 +83,10 @@ export function SalaryStructureComponentView() {
 
   const notFound = !data.length && !!filterName;
   const empty = !loading && !data.length && !filterName;
+
+  const totalDefaultEarningPercent = data
+    .filter((c) => c.is_default && c.type === 'Earning')
+    .reduce((sum, c) => sum + (parseFloat(c.percentage) || 0), 0);
 
   const handleSortChange = (value: string) => {
     const [id, ord] = value.split('_');
@@ -131,6 +136,22 @@ export function SalaryStructureComponentView() {
         </Button>
       </Stack>
 
+      <Alert
+        severity={totalDefaultEarningPercent === 100 ? 'success' : 'warning'}
+        variant="outlined"
+        sx={{ mb: 3, border: (theme) => `1px solid ${totalDefaultEarningPercent === 100 ? theme.palette.success.main : theme.palette.warning.main}20` }}
+        icon={<Iconify icon={totalDefaultEarningPercent === 100 ? "solar:check-circle-bold" : "solar:info-circle-bold"} />}
+      >
+        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+          Default Earning Configuration: {totalDefaultEarningPercent.toFixed(2)}%
+        </Typography>
+        <Typography variant="caption" sx={{ display: 'block', opacity: 0.8 }}>
+          {totalDefaultEarningPercent === 100 
+            ? 'Configuration is valid for Default Splitting.' 
+            : `Total Default Earning percentage must be exactly 100% for proper splitting. Current total: ${totalDefaultEarningPercent.toFixed(2)}%`}
+        </Typography>
+      </Alert>
+
       <Card>
         <LeadTableToolbar
           numSelected={0}
@@ -178,7 +199,7 @@ export function SalaryStructureComponentView() {
 
                 {empty && (
                   <TableRow>
-                    <TableCell colSpan={6} sx={{ py: 10, textAlign: 'center' }}>
+                    <TableCell colSpan={7} sx={{ py: 10, textAlign: 'center' }}>
                       <EmptyContent
                         title="No Components Found"
                         description="It looks like there are no salary structure components yet."
