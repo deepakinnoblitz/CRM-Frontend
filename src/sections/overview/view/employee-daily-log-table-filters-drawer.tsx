@@ -28,8 +28,10 @@ type Props = {
     onFilterEmployee: (value: string) => void;
     filterDay: string;
     onFilterDay: (value: string) => void;
-    filterDate: string;
-    onFilterDate: (value: string) => void;
+    filterStartDate: string;
+    onFilterStartDate: (value: string) => void;
+    filterEndDate: string;
+    onFilterEndDate: (value: string) => void;
     canReset: boolean;
     onResetFilters: () => void;
     options: {
@@ -49,8 +51,10 @@ export function EmployeeDailyLogTableFiltersDrawer({
     onFilterEmployee,
     filterDay,
     onFilterDay,
-    filterDate,
-    onFilterDate,
+    filterStartDate,
+    onFilterStartDate,
+    filterEndDate,
+    onFilterEndDate,
     canReset,
     onResetFilters,
     options,
@@ -228,29 +232,51 @@ export function EmployeeDailyLogTableFiltersDrawer({
     const renderDate = (
         <Stack spacing={1.5}>
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Date
+                Date Range
             </Typography>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                    label="Filter by date"
-                    format="DD-MM-YYYY"
-                    value={filterDate ? dayjs(filterDate) : null}
-                    onChange={(newValue) => {
-                        onFilterDate(newValue ? dayjs(newValue).format('YYYY-MM-DD') : '');
-                    }}
-                    slotProps={{
-                        textField: {
-                            fullWidth: true,
-                            size: 'medium',
-                            sx: {
-                                '& .MuiOutlinedInput-root': {
-                                    borderRadius: 1.5,
-                                    bgcolor: 'background.neutral',
+                <Stack spacing={2}>
+                    <DatePicker
+                        label="From Date"
+                        format="DD-MM-YYYY"
+                        value={filterStartDate ? dayjs(filterStartDate) : null}
+                        onChange={(newValue) => {
+                            onFilterStartDate(newValue ? dayjs(newValue).format('YYYY-MM-DD') : '');
+                        }}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                size: 'small',
+                                sx: {
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                    },
                                 },
                             },
-                        },
-                    }}
-                />
+                        }}
+                    />
+                    <DatePicker
+                        label="To Date"
+                        format="DD-MM-YYYY"
+                        value={filterEndDate ? dayjs(filterEndDate) : null}
+                        onChange={(newValue) => {
+                            onFilterEndDate(newValue ? dayjs(newValue).format('YYYY-MM-DD') : '');
+                        }}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                size: 'small',
+                                sx: {
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                    },
+                                },
+                            },
+                        }}
+                    />
+                </Stack>
             </LocalizationProvider>
         </Stack>
     );

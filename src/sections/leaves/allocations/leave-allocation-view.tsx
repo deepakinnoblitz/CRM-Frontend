@@ -131,11 +131,13 @@ export function LeaveAllocationView() {
         rowsPerPage,
         filterName,
         {
-            ...(filters.status !== 'all' ? { workflow_state: filters.status } : {}),
+            ...(filters.status !== 'all' ? { status: filters.status } : {}),
             ...(filters.leave_type !== 'all' ? { leave_type: filters.leave_type } : {}),
             ...(filters.employee ? { employee: filters.employee } : {}),
-            ...(filters.startDate ? { from_date: ['>=', filters.startDate] } : {}),
-            ...(filters.endDate ? { to_date: ['<=', filters.endDate] } : {}),
+            // Show allocations that overlap with the selected range:
+            // Allocation's 'to_date' must be after or on 'startDate' AND 'from_date' must be before or on 'endDate'
+            ...(filters.startDate ? { to_date: ['>=', filters.startDate] } : {}),
+            ...(filters.endDate ? { from_date: ['<=', filters.endDate] } : {}),
         },
         orderBy,
         order,

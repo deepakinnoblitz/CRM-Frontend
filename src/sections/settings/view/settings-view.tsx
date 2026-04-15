@@ -19,15 +19,19 @@ import { Iconify } from 'src/components/iconify';
 import { useAuth } from 'src/auth/auth-context';
 
 import { SettingsLogo } from '../settings-logo';
+import { SettingsCurrency } from '../settings-currency';
 import { SettingsDashboard } from '../settings-dashboard';
+import { SettingsSalarySlip } from '../settings-salary-slip';
 import { SettingsNotifications } from '../settings-notifications';
 
 // ----------------------------------------------------------------------
 
 const TABS = [
   { value: 'logo', label: 'Logo', icon: <Iconify icon={"solar:gallery-bold-duotone" as any} width={24} /> },
+  { value: 'currency', label: 'Currency & Locale', icon: <Iconify icon={"solar:globus-bold-duotone" as any} width={24} /> },
   { value: 'dashboard', label: 'Dashboard', icon: <Iconify icon={"solar:chart-bold-duotone" as any} width={24} /> },
   { value: 'notifications', label: 'Notifications', icon: <Iconify icon={"solar:bell-bold-duotone" as any} width={24} /> },
+  { value: 'salary', label: 'Salary Slip', icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} width={24} /> },
 ];
 
 export function SettingsView() {
@@ -181,6 +185,13 @@ export function SettingsView() {
           />
         )}
 
+        {currentTab === 'currency' && (
+          <SettingsCurrency
+            data={settings}
+            onChange={handleUpdateField}
+          />
+        )}
+
         {currentTab === 'dashboard' && (
           <SettingsDashboard
             data={settings}
@@ -190,6 +201,13 @@ export function SettingsView() {
 
         {currentTab === 'notifications' && (
           <SettingsNotifications
+            data={settings}
+            onChange={handleUpdateField}
+          />
+        )}
+
+        {currentTab === 'salary' && (
+          <SettingsSalarySlip
             data={settings}
             onChange={handleUpdateField}
           />

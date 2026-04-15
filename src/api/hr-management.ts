@@ -147,3 +147,21 @@ export async function createDesignation(data: { designation_name: string; depart
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create designation"));
     return json.message;
 }
+
+// Fetch HR Settings
+export async function getHRSettings() {
+    const res = await frappeRequest("/api/method/company.company.api.get_hrms_settings");
+    if (!res.ok) {
+        return {
+            default_currency: "INR",
+            currency_symbol: "₹",
+            default_locale: "en-IN"
+        };
+    }
+    const json = await res.json();
+    return json.message || {
+        default_currency: "INR",
+        currency_symbol: "₹",
+        default_locale: "en-IN"
+    };
+}

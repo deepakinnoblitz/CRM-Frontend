@@ -12,6 +12,7 @@ import Snackbar from '@mui/material/Snackbar';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
+import LoadingButton from '@mui/lab/LoadingButton';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 
@@ -20,7 +21,7 @@ import { useSalarySlips } from 'src/hooks/useSalarySlips';
 import { getDoctypeList } from 'src/api/leads';
 import { getCurrentUserInfo } from 'src/api/auth';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getSalarySlip, deleteSalarySlip } from 'src/api/salary-slips';
+import { getSalarySlip, deleteSalarySlip, submitSalarySlip, getSalarySlipWithDetails } from 'src/api/salary-slips';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -35,6 +36,7 @@ import { LeadTableToolbar as SalarySlipTableToolbar } from 'src/sections/lead/le
 import { SalarySlipDetailsDialog } from 'src/sections/report/salary-slips/salary-slip-details-dialog';
 
 import SalarySlipCreateDialog from '../salary-slip-create-dialog';
+import { SalarySlipEditDialog } from '../salary-slip-edit-dialog';
 import { SalarySlipFiltersDrawer } from '../salary-slip-filters-drawer';
 import SalarySlipAutoAllocateDialog from '../salary-slip-auto-allocate-dialog';
 
@@ -42,8 +44,8 @@ import type { SalarySlipFiltersProps } from '../salary-slip-filters-drawer';
 
 
 const SORT_OPTIONS = [
-    { value: 'pay_period_start_desc', label: 'Newest First' },
-    { value: 'pay_period_start_asc', label: 'Oldest First' },
+    { value: 'modified_desc', label: 'Newest First' },
+    { value: 'modified_asc', label: 'Oldest First' },
     { value: 'employee_name_asc', label: 'Employee: A to Z' },
     { value: 'employee_name_desc', label: 'Employee: Z to A' },
 ];
@@ -54,7 +56,7 @@ export function SalarySlipsView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('pay_period_start');
+    const [orderBy, setOrderBy] = useState('modified');
     const [filters, setFilters] = useState<SalarySlipFiltersProps>({
         employee: 'all',
         department: 'all',
@@ -165,7 +167,9 @@ export function SalarySlipsView() {
 
     // Dialog state
     const [openCreate, setOpenCreate] = useState(false);
+    const [openEdit, setOpenEdit] = useState(false);
     const [openAutoAllocate, setOpenAutoAllocate] = useState(false);
+
 
 
     // View state
@@ -184,6 +188,19 @@ export function SalarySlipsView() {
         open: false,
         slipName: '',
     });
+
+    const [deleting, setDeleting] = useState(false);
+    
+    // Submit confirmation
+    const [submitDialog, setSubmitDialog] = useState<{
+        open: boolean;
+        slipName: string;
+    }>({
+        open: false,
+        slipName: '',
+    });
+
+    const [submitting, setSubmitting] = useState(false);
 
     // Snackbar
     const [snackbar, setSnackbar] = useState<{
@@ -213,8 +230,8 @@ export function SalarySlipsView() {
 
     const handleViewRow = useCallback(async (row: any) => {
         try {
-            const fullData = await getSalarySlip(row.name);
-            setViewSlip(fullData);
+            const enrichedData = await getSalarySlipWithDetails(row.name);
+            setViewSlip(enrichedData);
             setOpenView(true);
         } catch (error: any) {
             setSnackbar({
@@ -227,10 +244,11 @@ export function SalarySlipsView() {
 
     const handleEditRow = useCallback(async (row: any) => {
         try {
-            const fullData = await getSalarySlip(row.name);
-            setEditSlip(fullData);
-            setOpenCreate(true);
+            const enrichedData = await getSalarySlipWithDetails(row.name);
+            setEditSlip(enrichedData);
+            setOpenEdit(true);
         } catch (error: any) {
+
             setSnackbar({
                 open: true,
                 message: error.message || 'Failed to load record',
@@ -244,6 +262,7 @@ export function SalarySlipsView() {
     }, []);
 
     const handleConfirmDelete = useCallback(async () => {
+        setDeleting(true);
         try {
             await deleteSalarySlip(deleteDialog.slipName);
             setSnackbar({
@@ -259,9 +278,37 @@ export function SalarySlipsView() {
                 message: error.message || 'Failed to delete record',
                 severity: 'error',
             });
+        } finally {
+            setDeleting(false);
             setDeleteDialog({ open: false, slipName: '' });
         }
     }, [deleteDialog.slipName, refetch]);
+
+    const handleSubmitRow = useCallback((name: string) => {
+        setSubmitDialog({ open: true, slipName: name });
+    }, []);
+
+    const handleConfirmSubmit = useCallback(async () => {
+        setSubmitting(true);
+        try {
+            await submitSalarySlip(submitDialog.slipName);
+            setSnackbar({
+                open: true,
+                message: 'Salary slip submitted successfully',
+                severity: 'success',
+            });
+            setSubmitDialog({ open: false, slipName: '' });
+            refetch();
+        } catch (error: any) {
+            setSnackbar({
+                open: true,
+                message: error.message || 'Failed to submit record',
+                severity: 'error',
+            });
+        } finally {
+            setSubmitting(false);
+        }
+    }, [submitDialog.slipName, refetch]);
 
 
     const handleChangePage = (event: unknown, newPage: number) => {
@@ -384,6 +431,7 @@ export function SalarySlipsView() {
                                         onSelectRow={() => handleSelectRow(row.name)}
                                         onView={() => handleViewRow(row)}
                                         onEdit={() => handleEditRow(row)}
+                                        onSubmit={() => handleSubmitRow(row.name)}
                                         onDelete={() => handleDeleteRow(row.name)}
                                         isHR={isHR}
                                     />
@@ -428,6 +476,7 @@ export function SalarySlipsView() {
 
             {/* View Dialog */}
             <SalarySlipDetailsDialog
+                key={viewSlip?.name || 'view'}
                 open={openView}
                 onClose={() => setOpenView(false)}
                 slip={viewSlip}
@@ -445,6 +494,22 @@ export function SalarySlipsView() {
                 </Alert>
             </Snackbar>
 
+            <SalarySlipEditDialog
+                key={editSlip?.name || 'edit'}
+                open={openEdit}
+                onClose={() => {
+                    setOpenEdit(false);
+                    setEditSlip(null);
+                }}
+                slip={editSlip}
+                onSuccess={async (message) => {
+                    setSnackbar({ open: true, message, severity: 'success' });
+                    // Small delay to ensure DB commit is visible to the next fetch
+                    await new Promise((resolve) => setTimeout(resolve, 500));
+                    refetch();
+                }}
+            />
+
             <SalarySlipCreateDialog
                 open={openCreate}
                 onClose={() => {
@@ -460,6 +525,7 @@ export function SalarySlipsView() {
                 }}
                 slip={editSlip}
             />
+
 
 
             <SalarySlipAutoAllocateDialog
@@ -493,14 +559,36 @@ export function SalarySlipsView() {
                 title="Delete Salary Slip"
                 content="Are you sure you want to delete this salary slip? This action cannot be undone."
                 action={
-                    <Button
+                    <LoadingButton
                         variant="contained"
                         color="error"
+                        loading={deleting}
                         onClick={handleConfirmDelete}
                         sx={{ borderRadius: 1.5, minWidth: 100 }}
                     >
                         Delete
-                    </Button>
+                    </LoadingButton>
+                }
+            />
+
+            {/* Submit Confirmation Dialog */}
+            <ConfirmDialog
+                open={submitDialog.open}
+                onClose={() => setSubmitDialog({ open: false, slipName: '' })}
+                title="Submit Salary Slip"
+                content="Are you sure you want to submit this salary slip? This action is permanent and will finalize the slip."
+                icon="solar:check-circle-bold"
+                iconColor="success.main"
+                action={
+                    <LoadingButton
+                        variant="contained"
+                        color="success"
+                        loading={submitting}
+                        onClick={handleConfirmSubmit}
+                        sx={{ borderRadius: 1.5, minWidth: 100 }}
+                    >
+                        Submit
+                    </LoadingButton>
                 }
             />
 
