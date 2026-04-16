@@ -253,11 +253,13 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
     if (showInfo) {
         return (
             <ChatInfo
+                user={user}
                 channel={channel}
                 messages={messages}
                 onClose={() => setShowInfo(false)}
                 onCloseChannel={handleCloseChannel}
                 onReopenChannel={handleReopenChannel}
+                onRefresh={onRefresh}
             />
         )
     }
@@ -301,8 +303,13 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                             height: 40,
                             mr: 2,
                             fontWeight: 'fontWeightBold',
-                            color: stringToDarkColor(channel.displayName || ''),
-                            bgcolor: stringToColor(channel.displayName || ''),
+                            color: (channel.avatar_url || channel.channel_image || channel.channel_info?.avatar) ? 'text.secondary' : stringToDarkColor(channel.displayName || ''),
+                            bgcolor: (channel.avatar_url || channel.channel_image || channel.channel_info?.avatar) ? 'common.white' : stringToColor(channel.displayName || ''),
+                            border: (t) => (channel.avatar_url || channel.channel_image || channel.channel_info?.avatar) ? `solid 1px ${t.palette.divider}` : 'none',
+                            '& img': {
+                                objectFit: 'contain',
+                                padding: 0.5,
+                            }
                         }}
                     >
                         {channel.displayName?.charAt(0).toUpperCase()}
@@ -319,7 +326,7 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                     </Stack>
                 </Stack>
 
-                {channel.type === 'Direct' && (
+                {(channel.type === 'Direct' || channel.type === 'Group') && (
                     <Stack direction="row" spacing={1.5} sx={{ mr: 1 }}>
                         <Button
                             variant="contained"
@@ -401,8 +408,9 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                             isMe={isMe}
                             isSameDate={isSameDate}
                             onDelete={handleDelete}
+                            showSender={channel.type !== 'Direct' && !isMe}
                         />
-                    )
+                    );
                 })}
             </Box>
 
@@ -442,9 +450,10 @@ type ChatMessageItemProps = {
     isMe: boolean;
     isSameDate: boolean;
     onDelete: (name: string) => void;
+    showSender?: boolean;
 };
 
-const ChatMessageItem = memo(({ msg, isMe, isSameDate, onDelete }: ChatMessageItemProps) => {
+const ChatMessageItem = memo(({ msg, isMe, isSameDate, onDelete, showSender }: ChatMessageItemProps) => {
     // Determine content type
     const isDeleted = msg.content?.includes('deleted-message-text');
     const isVoiceClip = !isDeleted && (msg.is_voice_clip === 1 || msg.content?.includes('<audio'));
@@ -523,6 +532,21 @@ const ChatMessageItem = memo(({ msg, isMe, isSameDate, onDelete }: ChatMessageIt
                                 }),
                             }}
                         >
+                            {showSender && (
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        color: isMe ? 'inherit' : stringToDarkColor(msg.sender || msg.sender_email || ''),
+                                        fontWeight: 'bold',
+                                        display: 'block',
+                                        mb: 0.5,
+                                        fontSize: '11px',
+                                        opacity: isMe ? 0.8 : 1
+                                    }}
+                                >
+                                    {msg.sender || msg.sender_email}
+                                </Typography>
+                            )}
                             {isVoiceClip ? (
                                 <ChatAudioPlayer src={getAudioSrc()} isMe={isMe} />
                             ) : (

@@ -30,7 +30,7 @@ type Props = {
     presences: Record<string, any>;
     selectedChannel: any;
     onSelectChannel: (channel: any) => void;
-    onOpenContacts: () => void;
+    onOpenContacts: (mode?: 'direct' | 'group') => void;
     loading: boolean;
 };
 
@@ -73,7 +73,7 @@ export default function ChatSidebar({ user, channels, presences, selectedChannel
             >
                 <Typography variant="h6" sx={{ fontWeight: 'fontWeightBold' }}>InnoChat</Typography>
                 <Stack direction="row" spacing={1}>
-                    <IconButton size="small" color="inherit" onClick={onOpenContacts}>
+                    <IconButton size="small" color="inherit" onClick={() => onOpenContacts()} title="New Chat">
                         <Iconify icon="mingcute:add-line" width={24} />
                     </IconButton>
                 </Stack>
@@ -175,7 +175,12 @@ export default function ChatSidebar({ user, channels, presences, selectedChannel
                                                     height: 40,
                                                     fontWeight: 'fontWeightBold',
                                                     color: channel.avatar_url ? 'text.secondary' : stringToDarkColor(channel.displayName || ''),
-                                                    bgcolor: channel.avatar_url ? 'transparent' : stringToColor(channel.displayName || ''),
+                                                    bgcolor: channel.avatar_url ? 'common.white' : stringToColor(channel.displayName || ''),
+                                                    border: (t) => channel.avatar_url ? `solid 1px ${t.palette.divider}` : 'none',
+                                                    '& img': {
+                                                        objectFit: 'contain',
+                                                        padding: 0.5,
+                                                    }
                                                 }}
                                             >
                                                 {channel.displayName?.charAt(0).toUpperCase()}

@@ -69,6 +69,7 @@ export const chatApi = {
     createGroup: async (data: {
         selected_contacts_list: string; // JSON string
         user: string;
+        channel_name?: string;
     }) => {
         const response = await frappeRequest(`${BASE_URL}.create_group`, {
             method: 'POST',
@@ -136,5 +137,25 @@ export const chatApi = {
             }),
         });
         return response.json();
+    },
+
+    getChatMembers: async (room: string) => {
+        const params = new URLSearchParams({ room });
+        const response = await frappeRequest(`${BASE_URL}.get_chat_members?${params}`);
+        return handleResponse(response);
+    },
+
+    checkIfRoomAdmin: async (room: string, email: string) => {
+        const params = new URLSearchParams({ room, email });
+        const response = await frappeRequest(`${BASE_URL}.check_if_room_admin?${params}`);
+        return handleResponse(response);
+    },
+
+    updateGroupInfo: async (room: string, data: { channel_name?: string; channel_image?: string }) => {
+        const response = await frappeRequest(`${BASE_URL}.update_group_info`, {
+            method: 'POST',
+            body: JSON.stringify({ room, ...data }),
+        });
+        return handleResponse(response);
     },
 };
