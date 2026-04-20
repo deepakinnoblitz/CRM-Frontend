@@ -90,7 +90,7 @@ export async function getDocTypeMetadata(doctype: string) {
 
 // Salary Component API
 export async function fetchSalaryComponents() {
-    const res = await frappeRequest(`/api/method/frappe.client.get_list?doctype=Salary Structure Component&fields=${JSON.stringify(["component_name", "field_name", "type", "percentage", "static_amount"])}&limit_page_length=100`);
+    const res = await frappeRequest(`/api/method/frappe.client.get_list?doctype=Salary Structure Component&fields=${JSON.stringify(["component_name", "type", "percentage", "static_amount", "is_default"])}&limit_page_length=100`);
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to fetch salary components"));
     return json.message || [];
@@ -146,4 +146,22 @@ export async function createDesignation(data: { designation_name: string; depart
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create designation"));
     return json.message;
+}
+
+// Fetch HR Settings
+export async function getHRSettings() {
+    const res = await frappeRequest("/api/method/company.company.api.get_hrms_settings");
+    if (!res.ok) {
+        return {
+            default_currency: "INR",
+            currency_symbol: "₹",
+            default_locale: "en-IN"
+        };
+    }
+    const json = await res.json();
+    return json.message || {
+        default_currency: "INR",
+        currency_symbol: "₹",
+        default_locale: "en-IN"
+    };
 }

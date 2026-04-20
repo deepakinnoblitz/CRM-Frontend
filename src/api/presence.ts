@@ -64,6 +64,7 @@ export async function updatePresenceSettings(settings: {
   idle_threshold?: number,
   away_threshold?: number,
   break_threshold?: number,
+  offline_threshold?: number,
   enable_auto_resume_break?: boolean,
   event_mousemove: boolean,
   event_keydown: boolean,

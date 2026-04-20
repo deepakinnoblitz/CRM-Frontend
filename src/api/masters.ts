@@ -678,3 +678,71 @@ export async function getDesignation(name: string) {
     if (!res.ok) throw new Error("Failed to fetch designation details");
     return (await res.json()).message;
 }
+
+export interface SalaryStructureComponent {
+    name: string;
+    component_name: string;
+    type?: 'Earning' | 'Deduction';
+    is_default?: number;
+    percentage?: number;
+    static_amount?: number;
+    creation?: string;
+    modified?: string;
+}
+
+// Salary Structure Component APIs
+export const fetchSalaryStructureComponents = (params: any) => {
+    const { search, ...restParams } = params;
+
+    const or_filters = search ? [
+        ["Salary Structure Component", "component_name", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("Salary Structure Component", {
+        ...restParams,
+        search: undefined,
+        or_filters
+    });
+};
+
+export async function createSalaryStructureComponent(data: Partial<SalaryStructureComponent>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "Salary Structure Component", ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create salary structure component"));
+    return json.message;
+}
+
+export async function updateSalaryStructureComponent(name: string, data: Partial<SalaryStructureComponent>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Salary Structure Component", name, fieldname: data })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update salary structure component"));
+    return json.message;
+}
+
+export async function deleteSalaryStructureComponent(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Salary Structure Component", name })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete salary structure component"));
+    return true;
+}
+
+export async function getSalaryStructureComponent(name: string) {
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Salary Structure Component&name=${encodeURIComponent(name)}`);
+    if (!res.ok) throw new Error("Failed to fetch salary structure component details");
+    return (await res.json()).message;
+}

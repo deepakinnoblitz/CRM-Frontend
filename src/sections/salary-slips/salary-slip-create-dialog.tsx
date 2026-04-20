@@ -129,7 +129,15 @@ export default function SalarySlipCreateDialog({ open, onClose, onSuccess, onErr
             const year = formData.pay_period_start.year();
             const month = formData.pay_period_start.month() + 1; // dayjs months are 0-indexed
 
-            const result = await generateSalarySlipFromEmployee(formData.employee, year, month);
+            const result = await generateSalarySlipFromEmployee(
+                formData.employee,
+                year,
+                month,
+                formData.pay_period_start.format('YYYY-MM-DD'),
+                formData.pay_period_end.format('YYYY-MM-DD')
+            );
+
+
             onSuccess(result || 'Salary slip generated successfully');
             handleClose();
         } catch (error: any) {
@@ -160,7 +168,16 @@ export default function SalarySlipCreateDialog({ open, onClose, onSuccess, onErr
                 // For new slips, use the generation API to calculate salary
                 const year = formData.pay_period_start.year();
                 const month = formData.pay_period_start.month() + 1;
-                const result = await generateSalarySlipFromEmployee(formData.employee, year, month);
+
+                const result = await generateSalarySlipFromEmployee(
+                    formData.employee,
+                    year,
+                    month,
+                    formData.pay_period_start.format('YYYY-MM-DD'),
+                    formData.pay_period_end.format('YYYY-MM-DD')
+                );
+
+
                 onSuccess(result || 'Salary slip generated successfully');
             }
 
@@ -291,7 +308,7 @@ export default function SalarySlipCreateDialog({ open, onClose, onSuccess, onErr
                     onClick={handleSubmit}
                     disabled={!formData.employee}
                 >
-                    {slip ? 'Update' : 'Create'}
+                    {slip ? 'Update' : 'Generate'}
                 </LoadingButton>
             </DialogActions>
 

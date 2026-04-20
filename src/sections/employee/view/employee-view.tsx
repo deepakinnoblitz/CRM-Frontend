@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { MuiTelInput } from 'mui-tel-input';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -9,10 +9,12 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
+import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TextField from '@mui/material/TextField';
@@ -32,12 +34,14 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useEmployees } from 'src/hooks/useEmployees';
 
+import { fNumber, fCurrency } from 'src/utils/format-number';
+
 import { getDoctypeList } from 'src/api/leads';
 import { uploadFile } from 'src/api/data-import';
 import { getStates, getCities } from 'src/api/location';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { createEmployee, updateEmployee, deleteEmployee } from 'src/api/employees';
-import { getHRPermissions, getDocTypeMetadata, fetchSalaryComponents } from 'src/api/hr-management';
+import { createEmployee, updateEmployee, deleteEmployee, getEmployee } from 'src/api/employees';
+import { getHRPermissions, getDocTypeMetadata, fetchSalaryComponents, getHRSettings } from 'src/api/hr-management';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -56,6 +60,100 @@ const filter = createFilterOptions<any>();
 import { LeadTableHead as EmployeeTableHead } from '../../lead/lead-table-head';
 import { EmployeeDetailsDialog } from '../../report/employee/employee-details-dialog';
 import { LeadTableToolbar as EmployeeTableToolbar } from '../../lead/lead-table-toolbar';
+
+// ----------------------------------------------------------------------
+
+const SalaryRow = memo(({ 
+    index, 
+    type, 
+    row, 
+    componentOptions, 
+    hrSettings, 
+    onRowChange, 
+    onRowRemove,
+    hasError
+}: {
+    index: number;
+    type: 'Earning' | 'Deduction';
+    row: any;
+    componentOptions: string[];
+    hrSettings: any;
+    onRowChange: (index: number, type: 'Earning' | 'Deduction', field: string, value: any) => void;
+    onRowRemove: (index: number, type: 'Earning' | 'Deduction') => void;
+    hasError: boolean;
+}) => (
+    <TableRow
+        sx={{
+            '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) },
+            borderBottom: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.1)}`
+        }}
+    >
+        <TableCell sx={{ py: 1 }}>
+            <Autocomplete
+                fullWidth
+                size="small"
+                options={componentOptions}
+                value={row.component_name || ''}
+                onChange={(e, newValue) => onRowChange(index, type, 'component_name', newValue || '')}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        variant="standard"
+                        placeholder="Select Component"
+                        error={!row.component_name && hasError}
+                        InputProps={{ 
+                            ...params.InputProps, 
+                            disableUnderline: true, 
+                            sx: { 
+                                typography: 'body2', 
+                                fontWeight: 500,
+                                color: !row.component_name ? 'error.main' : 'inherit'
+                            } 
+                        }}
+                    />
+                )}
+            />
+        </TableCell>
+        <TableCell align="right" sx={{ py: 1, px: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: 140 }}>
+                    <Typography 
+                        variant="body2" 
+                        sx={{ 
+                            color: 'text.primary', 
+                            fontWeight: 600,
+                            fontFamily: "Arial, 'sans-serif'",
+                            mr: 0.5
+                        }}
+                    >
+                        {hrSettings.currency_symbol}
+                    </Typography>
+                    <TextField
+                        size="small"
+                        type="number"
+                        variant="standard"
+                        value={row.amount || ''}
+                        placeholder="0"
+                        onChange={(e) => onRowChange(index, type, 'amount', parseFloat(e.target.value) || 0)}
+                        inputProps={{ sx: { textAlign: 'right', typography: 'body2', fontWeight: 600, p: 0, width: 110 } }}
+                        InputProps={{ disableUnderline: true }}
+                    />
+                </Stack>
+            </Box>
+        </TableCell>
+        <TableCell align="center" sx={{ py: 1 }}>
+            <IconButton
+                size="small"
+                onClick={() => onRowRemove(index, type)}
+                sx={{ color: 'text.disabled', '&:hover': { color: 'error.main' } }}
+            >
+                <Iconify icon="solar:trash-bin-trash-bold" width={18} />
+            </IconButton>
+        </TableCell>
+    </TableRow>
+));
+
+SalaryRow.displayName = 'SalaryRow';
 
 // ----------------------------------------------------------------------
 
@@ -106,6 +204,12 @@ export function EmployeeView() {
     });
 
 
+    const [hrSettings, setHRSettings] = useState<{ default_currency: string; currency_symbol: string; default_locale: string }>({
+        default_currency: 'INR',
+        currency_symbol: '₹',
+        default_locale: 'en-IN'
+    });
+
     // Alert & Dialog State
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
@@ -142,6 +246,8 @@ export function EmployeeView() {
 
     useEffect(() => {
         getHRPermissions('Employee').then(setPermissions);
+        getHRSettings().then(setHRSettings);
+        fetchSalaryComponents().then(setSalaryComponents);
 
         getDocTypeMetadata('Employee').then((meta) => {
             // Create a lookup map for fields and pre-compile visibility functions
@@ -185,6 +291,30 @@ export function EmployeeView() {
             }
         }).catch(console.error);
     }, []);
+
+    // Memoized component lists to avoid filtering during render
+    const earningComponents = useMemo(() => 
+        salaryComponents.filter(c => c.type === 'Earning').map(c => c.component_name),
+    [salaryComponents]);
+
+    const deductionComponents = useMemo(() => 
+        salaryComponents.filter(c => c.type === 'Deduction').map(c => c.component_name),
+    [salaryComponents]);
+
+    // Memoized totals calculation
+    const totals = useMemo(() => {
+        const earnings = formData.earnings || [];
+        const deductions = formData.deductions || [];
+
+        const total_earnings = earnings.reduce((sum: number, item: any) => sum + (parseFloat(item.amount) || 0), 0);
+        const total_deductions = deductions.reduce((sum: number, item: any) => sum + (parseFloat(item.amount) || 0), 0);
+        
+        return {
+            total_earnings,
+            total_deductions,
+            net_salary: total_earnings - total_deductions
+        };
+    }, [formData.earnings, formData.deductions]);
 
 
     // Integrated into handleInputChange for performance and consistency
@@ -250,28 +380,152 @@ export function EmployeeView() {
         if (ctcValue <= 0) return;
 
         try {
-            const components = await fetchSalaryComponents();
-            setSalaryComponents(components);
+            const components = salaryComponents; // Use pre-fetched components
 
-            setFormData(prev => {
-                const next = { ...prev };
-                components.forEach((comp: any) => {
-                    const field = comp.field_name;
-                    if (!field) return;
+            const earnings: any[] = [];
+            const deductions: any[] = [];
 
-                    let val = 0;
-                    const percent = parseFloat(comp.percentage) || 0;
-                    if (percent > 0) {
-                        val = (ctcValue * percent) / 100;
-                    } else {
-                        val = parseFloat(comp.static_amount) || 0;
-                    }
-                    next[field] = val;
-                });
-                return next;
+            components.forEach((comp: any) => {
+                let val = 0;
+                const percent = parseFloat(comp.percentage) || 0;
+                if (percent > 0) {
+                    val = (ctcValue * percent) / 100;
+                } else {
+                    val = parseFloat(comp.static_amount) || 0;
+                }
+
+                const row = {
+                    component_name: comp.component_name,
+                    amount: val,
+                    type: comp.type
+                };
+
+                if (comp.type === 'Earning') {
+                    earnings.push(row);
+                } else {
+                    deductions.push(row);
+                }
             });
+
+            setFormData(prev => ({
+                ...prev,
+                earnings,
+                deductions,
+                total_earnings: earnings.reduce((sum, item) => sum + item.amount, 0),
+                total_deductions: deductions.reduce((sum, item) => sum + item.amount, 0),
+                net_salary: earnings.reduce((sum, item) => sum + item.amount, 0) - deductions.reduce((sum, item) => sum + item.amount, 0)
+            }));
         } catch (error) {
             console.error('Failed to fetch salary components on blur:', error);
+        }
+    };
+
+    const handleAddSalaryRow = (type: 'Earning' | 'Deduction') => {
+        const field = type === 'Earning' ? 'earnings' : 'deductions';
+        const newRow = { component_name: '', amount: 0, type };
+
+        setFormData(prev => {
+            const currentRows = prev[field] || [];
+            return {
+                ...prev,
+                [field]: [...currentRows, newRow]
+            };
+        });
+    };
+
+    const handleRemoveSalaryRow = (index: number, type: 'Earning' | 'Deduction') => {
+        const field = type === 'Earning' ? 'earnings' : 'deductions';
+        setFormData(prev => {
+            const currentRows = [...(prev[field] || [])];
+            currentRows.splice(index, 1);
+            return {
+                ...prev,
+                [field]: currentRows
+            };
+        });
+    };
+
+    const handleSalaryRowChange = useCallback((index: number, type: 'Earning' | 'Deduction', field: string, value: any) => {
+        const dataField = type === 'Earning' ? 'earnings' : 'deductions';
+        setFormData(prev => {
+            const currentRows = [...(prev[dataField] || [])];
+            currentRows[index] = { ...currentRows[index], [field]: value };
+            return {
+                ...prev,
+                [dataField]: currentRows
+            };
+        });
+
+        // Clear component error when typing
+        if (formErrors.salary_components) {
+            setFormErrors(prev => ({ ...prev, salary_components: '' }));
+        }
+    }, [formErrors.salary_components]);
+
+
+    const handleDefaultSplitting = async () => {
+        const ctcValue = parseFloat(formData.ctc) || 0;
+        if (ctcValue <= 0) {
+            setSnackbar({ open: true, message: 'Please enter a valid CTC amount first', severity: 'warning' });
+            return;
+        }
+
+        try {
+            const defaults = salaryComponents.filter(comp => comp.is_default);
+
+            if (defaults.length === 0) {
+                setSnackbar({ open: true, message: 'No default salary components found. Please configure them in Masters.', severity: 'warning' });
+                return;
+            }
+
+            const totalEarningPercent = defaults
+                .filter(comp => comp.type === 'Earning')
+                .reduce((sum, comp) => sum + (parseFloat(comp.percentage) || 0), 0);
+
+            if (totalEarningPercent !== 100) {
+                setSnackbar({ 
+                    open: true, 
+                    message: `Invalid configuration: Total Default Earning percentage must be exactly 100%. (Current total: ${totalEarningPercent.toFixed(2)}%)`, 
+                    severity: 'error' 
+                });
+                return;
+            }
+
+            const earnings: any[] = [];
+            const deductions: any[] = [];
+
+            defaults.forEach((comp: any) => {
+                let val = 0;
+                const percent = parseFloat(comp.percentage) || 0;
+                if (percent > 0) {
+                    val = (ctcValue * percent) / 100;
+                } else {
+                    val = parseFloat(comp.static_amount) || 0;
+                }
+
+                const row = {
+                    component_name: comp.component_name,
+                    amount: val,
+                    type: comp.type
+                };
+
+                if (comp.type === 'Earning') {
+                    earnings.push(row);
+                } else {
+                    deductions.push(row);
+                }
+            });
+
+            setFormData(prev => ({
+                ...prev,
+                earnings,
+                deductions
+            }));
+
+            setSnackbar({ open: true, message: 'Default splitting applied successfully', severity: 'success' });
+        } catch (error) {
+            console.error('Failed to apply default splitting:', error);
+            setSnackbar({ open: true, message: 'Failed to apply splitting', severity: 'error' });
         }
     };
 
@@ -433,6 +687,14 @@ export function EmployeeView() {
             errors.personal_email = 'Invalid email format';
         }
 
+        // Salary Table Validation
+        const incompleteEarnings = (formData.earnings || []).some((row: any) => !row.component_name);
+        const incompleteDeductions = (formData.deductions || []).some((row: any) => !row.component_name);
+
+        if (incompleteEarnings || incompleteDeductions) {
+            errors.salary_components = 'Please select a Component Name for all salary rows';
+        }
+
         setFormErrors(errors);
 
         const isValid = Object.keys(errors).length === 0;
@@ -467,7 +729,7 @@ export function EmployeeView() {
             setCreating(true);
             setServerAlert({ message: '', severity: 'info' });
 
-            const dataToSave = { ...formData };
+            const dataToSave: any = { ...formData, ...totals };
             if (dataToSave.employee_name) dataToSave.employee_name = dataToSave.employee_name.trim();
             if (dataToSave.employee_id) dataToSave.employee_id = dataToSave.employee_id.trim();
             if (dataToSave.email) dataToSave.email = dataToSave.email.trim();
@@ -494,16 +756,31 @@ export function EmployeeView() {
         }
     };
 
-    const handleEditRow = (id: string) => {
-        setCurrentEmployeeId(id);
-        const fullRow = data.find((item: any) => item.name === id);
-        if (fullRow) {
-            const cleanedRow = { ...fullRow };
-            if (cleanedRow.phone) cleanedRow.phone = cleanPhoneNumber(cleanedRow.phone);
-            if (cleanedRow.office_phone_number) cleanedRow.office_phone_number = cleanPhoneNumber(cleanedRow.office_phone_number);
-            setFormData(cleanedRow);
+    const handleEditRow = async (id: string) => {
+        try {
+            setCurrentEmployeeId(id);
+            const fullDoc = await getEmployee(id);
+            if (fullDoc) {
+                const cleanedRow = { ...fullDoc };
+                if (cleanedRow.phone) cleanedRow.phone = cleanPhoneNumber(cleanedRow.phone);
+                if (cleanedRow.office_phone_number) cleanedRow.office_phone_number = cleanPhoneNumber(cleanedRow.office_phone_number);
+                setFormData(cleanedRow);
+
+                // Fetch states if country exists
+                if (cleanedRow.country) {
+                    const states = await getStates(cleanedRow.country);
+                    setStateOptions(['', ...states, 'Others']);
+                    if (cleanedRow.state) {
+                        const cities = await getCities(cleanedRow.country, cleanedRow.state);
+                        setCityOptions(['', ...cities, 'Others']);
+                    }
+                }
+            }
+            setOpenCreate(true);
+        } catch (error) {
+            console.error('Failed to load employee details:', error);
+            setSnackbar({ open: true, message: 'Failed to load employee details', severity: 'error' });
         }
-        setOpenCreate(true);
     };
 
 
@@ -541,6 +818,9 @@ export function EmployeeView() {
             error: !!formErrors[fieldname],
             helperText: formErrors[fieldname],
             ...extraProps,
+            InputProps: {
+                ...extraProps.InputProps,
+            },
             sx: {
                 '& .MuiFormLabel-asterisk': {
                     color: 'red',
@@ -787,6 +1067,79 @@ export function EmployeeView() {
         return <TextField {...commonProps} />;
     };
 
+    const renderSalaryTable = (type: 'Earning' | 'Deduction') => {
+        const rows = type === 'Earning' ? (formData.earnings || []) : (formData.deductions || []);
+
+        return (
+            <Box sx={{ mt: 3 }}>
+                <Typography variant="subtitle2" sx={{
+                    mb: 1.5,
+                    fontWeight: 700,
+                    color: type === 'Earning' ? 'success.main' : 'error.main',
+                    textTransform: 'uppercase',
+                    letterSpacing: 1
+                }}>
+                    {type === 'Earning' ? 'Earnings' : 'Deductions'}
+                </Typography>
+                <TableContainer sx={{
+                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.2)}`,
+                    borderRadius: 1.25,
+                    overflow: 'hidden',
+                    bgcolor: 'background.paper',
+                    boxShadow: (theme) => theme.customShadows.z1
+                }}>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ py: 1.5, bgcolor: '#08a3cd', color: 'common.white', fontWeight: 700, width: '60%' }}>
+                                    Component Name *
+                                </TableCell>
+                                <TableCell align="right" sx={{ py: 1.5, bgcolor: '#08a3cd', color: 'common.white', fontWeight: 700, width: '35%' }}>
+                                    Amount
+                                </TableCell>
+                                <TableCell width={48} sx={{ py: 1.5, bgcolor: '#08a3cd' }} />
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {rows.map((row: any, index: number) => (
+                                <SalaryRow
+                                    key={index}
+                                    index={index}
+                                    type={type}
+                                    row={row}
+                                    componentOptions={type === 'Earning' ? earningComponents : deductionComponents}
+                                    hrSettings={hrSettings}
+                                    onRowChange={handleSalaryRowChange}
+                                    onRowRemove={handleRemoveSalaryRow}
+                                    hasError={formData.earnings?.length > 0 || formData.deductions?.length > 0}
+                                />
+                            ))}
+                            {rows.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={3} align="center" sx={{ py: 3, typography: 'body2', color: 'text.disabled' }}>
+                                        No data available
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                    <Button
+                        size="small"
+                        color="info"
+                        variant="text"
+                        startIcon={<Iconify icon="solar:add-circle-bold" />}
+                        onClick={() => handleAddSalaryRow(type)}
+                        sx={{ fontWeight: 700 }}
+                    >
+                        Add Row
+                    </Button>
+                </Box>
+            </Box>
+        );
+    };
+
     const sortOptions = [
         { value: 'newest', label: 'Newest First' },
         { value: 'oldest', label: 'Oldest First' },
@@ -940,7 +1293,7 @@ export function EmployeeView() {
             </Card>
 
             {/* CREATE/EDIT DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg">
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {currentEmployeeId ? 'Edit Employee' : 'New Employee'}
                     <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
@@ -952,78 +1305,144 @@ export function EmployeeView() {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <Box sx={{ p: 2 }}>
                             {/* Section 1: Personal Information */}
-                            <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Personal Information</Typography>
-                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
-                                {renderField('employee_id', 'Employee ID', 'text', [], {}, false)}
-                                {renderField('employee_name', 'Employee Name', 'text', [], {}, true)}
-                                {renderField('email', 'Email', 'text', [], {}, true)}
-                                {renderField('personal_email', 'Personal Email')}
-                                {renderField('phone', 'Personal Phone Number', 'phone')}
-                                {renderField('office_phone_number', 'Office Phone', 'phone')}
-                                {renderField('dob', 'Date of Birth', 'date')}
-                                {renderField('country', 'Country', 'autocomplete', fieldOptions['country'] || [])}
-                                {renderField('state', 'State', 'autocomplete', stateOptions)}
-                                {renderField('city', 'City', 'autocomplete', cityOptions)}
-                                {renderField('profile_picture', 'Profile Picture', 'file')}
-                            </Box>
+                            {useMemo(() => (
+                                <>
+                                    <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Personal Information</Typography>
+                                    <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
+                                        {renderField('employee_id', 'Employee ID', 'text', [], {}, false)}
+                                        {renderField('employee_name', 'Employee Name', 'text', [], {}, true)}
+                                        {renderField('email', 'Email', 'text', [], {}, true)}
+                                        {renderField('personal_email', 'Personal Email')}
+                                        {renderField('phone', 'Personal Phone Number', 'phone')}
+                                        {renderField('office_phone_number', 'Office Phone', 'phone')}
+                                        {renderField('dob', 'Date of Birth', 'date')}
+                                        {renderField('country', 'Country', 'autocomplete', fieldOptions['country'] || [])}
+                                        {renderField('state', 'State', 'autocomplete', stateOptions)}
+                                        {renderField('city', 'City', 'autocomplete', cityOptions)}
+                                        {renderField('profile_picture', 'Profile Picture', 'file')}
+                                    </Box>
+                                </>
+                            ), [
+                                formData.employee_id, formData.employee_name, formData.email, formData.personal_email, 
+                                formData.phone, formData.office_phone_number, formData.dob, formData.country, 
+                                formData.state, formData.city, formData.profile_picture,
+                                formErrors, fieldOptions, stateOptions, cityOptions, uploading
+                            ])}
 
                             {/* Section 2: Employment Details */}
-                            <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Employment Details</Typography>
-                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
-                                {renderField('department', 'Department', 'link', fieldOptions['department'] || [])}
-                                {renderField('designation', 'Designation', 'text')}
-                                {renderField('date_of_joining', 'Joining Date', 'date', [], {}, true)}
-                                {renderField('user', 'User Login (Email)', 'autocomplete', fieldOptions['user'] || [], {}, true)}
-                                {renderField('status', 'Status', 'select', ['Active', 'Inactive'], {}, true)}
-                                {renderField('skip_probation', 'Skip Probation', 'checkbox')}
-                            </Box>
+                            {useMemo(() => (
+                                <>
+                                    <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Employment Details</Typography>
+                                    <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
+                                        {renderField('department', 'Department', 'link', fieldOptions['department'] || [])}
+                                        {renderField('designation', 'Designation', 'text')}
+                                        {renderField('date_of_joining', 'Joining Date', 'date', [], {}, true)}
+                                        {renderField('user', 'User Login (Email)', 'autocomplete', fieldOptions['user'] || [], {}, true)}
+                                        {renderField('status', 'Status', 'select', ['Active', 'Inactive'], {}, true)}
+                                        {renderField('skip_probation', 'Skip Probation', 'checkbox')}
+                                    </Box>
+                                </>
+                            ), [
+                                formData.department, formData.designation, formData.date_of_joining, 
+                                formData.user, formData.status, formData.skip_probation,
+                                formErrors, fieldOptions
+                            ])}
 
                             {/* Section 3: Financial & Bank Details */}
-                            <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Financial & Bank Details</Typography>
-                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
-                                {renderField('bank_name', 'Bank Name')}
-                                {renderField('bank_account', 'Bank Account', 'autocomplete', fieldOptions['bank_account'] || [])}
-                                {renderField('pf_number', 'PF Number')}
-                                {renderField('esi_no', 'ESI No')}
-                            </Box>
+                            {useMemo(() => (
+                                <>
+                                    <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Financial & Bank Details</Typography>
+                                    <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
+                                        {renderField('bank_name', 'Bank Name')}
+                                        {renderField('bank_account', 'Bank Account', 'autocomplete', fieldOptions['bank_account'] || [])}
+                                        {renderField('pf_number', 'PF Number')}
+                                        {renderField('esi_no', 'ESI No')}
+                                    </Box>
+                                </>
+                            ), [
+                                formData.bank_name, formData.bank_account, formData.pf_number, formData.esi_no,
+                                formErrors, fieldOptions
+                            ])}
 
 
                             {/* Section 4: Salary & breakdown */}
-                            <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Salary Details (Auto-calculated)</Typography>
+                            <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Salary Details</Typography>
 
                             {/* CTC Field - Full Width */}
                             <Box sx={{ mb: 3 }}>
-                                {renderField('ctc', 'CTC (Monthly)', 'number', [], { onBlur: handleCTCOnBlur }, false)}
+                                {renderField('ctc', 'CTC (Monthly)', 'number', [], { 
+                                    onBlur: handleCTCOnBlur,
+                                    InputProps: {
+                                        endAdornment: (
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                onClick={handleDefaultSplitting}
+                                                sx={{ 
+                                                    whiteSpace: 'nowrap',
+                                                    mx: 1,
+                                                    py: 1.5,
+                                                    px: 3,
+                                                    height: 32,
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 1),
+                                                    color: 'common.white',
+                                                    boxShadow: (theme) => theme.customShadows.z8,
+                                                    '&:hover': { 
+                                                        bgcolor: (theme) => theme.palette.primary.dark,
+                                                        boxShadow: (theme) => theme.customShadows.z16,
+                                                    }
+                                                }}
+                                                startIcon={<Iconify icon={"solar:magic-stick-bold" as any} width={16} />}
+                                            >
+                                                Default Splitting
+                                            </Button>
+                                        )
+                                    }
+                                }, false)}
                             </Box>
 
                             {/* Two Column Layout: Earnings and Deductions */}
                             <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3}>
                                 {/* Left Column - Earnings */}
                                 <Box>
-                                    {/* <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: 'success.main' }}>
-                                        Earnings
-                                    </Typography> */}
-                                    <Box display="flex" flexDirection="column" gap={2}>
-                                        {renderField('basic_pay', 'Basic Pay', 'number')}
-                                        {renderField('hra', 'HRA', 'number')}
-                                        {renderField('conveyance_allowances', 'Conveyance Allowances', 'number')}
-                                        {renderField('medical_allowances', 'Medical Allowances', 'number')}
-                                        {renderField('other_allowances', 'Other Allowances', 'number')}
-                                    </Box>
+                                    {renderSalaryTable('Earning')}
                                 </Box>
 
                                 {/* Right Column - Deductions */}
                                 <Box>
-                                    {/* <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: 'error.main' }}>
-                                        Deductions
-                                    </Typography> */}
-                                    <Box display="flex" flexDirection="column" gap={2}>
-                                        {renderField('pf', 'PF Deduction', 'number')}
-                                        {renderField('health_insurance', 'ESI/Health Insurance', 'number')}
-                                        {renderField('professional_tax', 'Professional Tax', 'number')}
-                                        {renderField('loan_recovery', 'Loan Recovery', 'number')}
-                                    </Box>
+                                    {renderSalaryTable('Deduction')}
                                 </Box>
+                            </Box>
+
+                            {/* Net Salary Summary */}
+                            <Box sx={{ mt: 4, p: 3, borderRadius: 2, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05), border: (theme) => `1px dashed ${alpha(theme.palette.primary.main, 0.3)}` }}>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Box>
+                                        <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>Net Salary (Monthly)</Typography>
+                                        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 800, display: 'flex', alignItems: 'center' }}>
+                                            <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mr: 1, fontSize: '0.8em' }}>{hrSettings.currency_symbol}</Box>
+                                            {fNumber(totals.net_salary || 0, { locale: hrSettings.default_locale })}
+                                        </Typography>
+                                    </Box>
+                                    <Stack direction="row" spacing={4}>
+                                        <Box sx={{ textAlign: 'right' }}>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Earnings</Typography>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'success.main', display: 'flex', alignItems: 'center' }}>
+                                                + <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mx: 0.5 }}>{hrSettings.currency_symbol}</Box>
+                                                {fNumber(totals.total_earnings || 0, { locale: hrSettings.default_locale })}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ textAlign: 'right' }}>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Deductions</Typography>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'error.main', display: 'flex', alignItems: 'center' }}>
+                                                - <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mx: 0.5 }}>{hrSettings.currency_symbol}</Box>
+                                                {fNumber(totals.total_deductions || 0, { locale: hrSettings.default_locale })}
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                </Stack>
                             </Box>
                         </Box>
                     </LocalizationProvider>

@@ -1,3 +1,5 @@
+import { CONFIG } from 'src/config-global';
+
 import { BadgesView } from 'src/sections/badges/view/badges-view';
 
 // ----------------------------------------------------------------------
@@ -5,7 +7,7 @@ import { BadgesView } from 'src/sections/badges/view/badges-view';
 export default function BadgesPage() {
   return (
     <>
-      <title> Badges | HRMS</title>
+      <title>{`Badges - ${CONFIG.appName}`}</title>
       <BadgesView />
     </>
   );

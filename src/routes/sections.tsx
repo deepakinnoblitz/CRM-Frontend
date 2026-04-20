@@ -128,6 +128,7 @@ export const BankAccountPage = lazy(() => import('src/pages/bank-account'));
 export const AssetCategoryPage = lazy(() => import('src/pages/asset-category'));
 export const PerformanceCriteriaCategoryPage = lazy(() => import('src/pages/performance-criteria-category'));
 export const DesignationPage = lazy(() => import('src/pages/designation'));
+export const SalaryStructureComponentPage = lazy(() => import('src/pages/salary-structure-component'));
 
 
 const renderFallback = () => (
@@ -220,6 +221,7 @@ export const routesSection: RouteObject[] = [
       { path: 'asset-category', element: <AssetCategoryPage /> },
       { path: 'performance-criteria-category', element: <PerformanceCriteriaCategoryPage /> },
       { path: 'designation', element: <DesignationPage /> },
+      { path: 'salary-structure-component', element: <SalaryStructureComponentPage /> },
       { path: 'timesheet-reports', element: <TimesheetReportPage /> },
       {
         path: 'expenses',

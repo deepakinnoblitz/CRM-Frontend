@@ -1,3 +1,5 @@
+import { CONFIG } from 'src/config-global';
+
 import { EmployeeEvaluationView } from 'src/sections/employee-evaluation/view/employee-evaluation-view';
 
 // ----------------------------------------------------------------------
@@ -5,7 +7,7 @@ import { EmployeeEvaluationView } from 'src/sections/employee-evaluation/view/em
 export default function EmployeeEvaluationPage() {
   return (
     <>
-      <title> Employee Evaluation | HRMS</title>
+      <title>{`Employee Evaluation - ${CONFIG.appName}`}</title>
       <EmployeeEvaluationView />
     </>
   );

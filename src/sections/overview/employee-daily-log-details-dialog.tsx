@@ -21,6 +21,15 @@ import { Scrollbar } from 'src/components/scrollbar';
 
 // ----------------------------------------------------------------------
 
+const STATUS_DISPLAY_MAP: Record<string, string> = {
+    Available: 'Active',
+    Busy: 'In client meeting',
+    'Do Not Disturb': 'Team discussion',
+    Break: 'Lunch Break',
+    Away: 'Break',
+    Offline: 'Offline - Logout',
+};
+
 const SessionTimelineBar = ({ session }: { session: any }) => {
     const theme = useTheme();
     if (!session || !session.login_time) return null;
@@ -125,10 +134,11 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
     const getStatusColor = (status?: string, type?: string) => {
         if (type === 'Offline' || status === 'Offline') return alpha(theme.palette.grey[500], 0.16);
         if (type === 'Break') return alpha('#f59e0b', 0.8);
-        
+
         const s = status || 'Available';
         if (s === 'Available') return alpha(theme.palette.success.main, 0.8);
-        if (s === 'Busy' || s === 'Do Not Disturb') return alpha(theme.palette.error.main, 0.8);
+        if (s === 'Busy') return alpha('#ef4444', 0.8);
+        if (s === 'Do Not Disturb') return alpha('#b91c1c', 0.8);
         if (s === 'Away') return alpha('#d97706', 0.8);
         return alpha(theme.palette.success.main, 0.8);
     };
@@ -151,8 +161,7 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
             textColor = theme.palette.text.disabled;
         }
 
-        const labelContent = (seg.status === 'Available' ? 'Active' : seg.status) || seg.type;
-        const displayLabel = labelContent === 'Offline' ? 'Offline - Logout' : labelContent;
+        const displayLabel = STATUS_DISPLAY_MAP[seg.status] || seg.type;
 
         return {
             left,
@@ -238,9 +247,10 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
             <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 2.5, px: 0.5 }}>
                 {[
                     { label: 'Active', color: theme.palette.success.main },
-                    { label: 'Busy / DND', color: theme.palette.error.main },
-                    { label: 'Away', color: '#d97706' },
-                    { label: 'Break', color: '#f59e0b' },
+                    { label: 'In client meeting', color: '#ef4444' },
+                    { label: 'Team discussion', color: '#b91c1c' },
+                    { label: 'Break', color: '#d97706' },
+                    { label: 'Lunch Break', color: '#f59e0b' },
                     { label: 'Offline - Logout', color: theme.palette.grey[500] },
                 ].map((item) => (
                     <Stack key={item.label} direction="row" alignItems="center" spacing={0.75}>
@@ -302,7 +312,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                <Typography variant="h6" component="span" sx={{ fontWeight: 900 }}>
                     Details for {employee_name || 'Employee'} - {fDate(login_date, 'DD MMM YYYY')}
                 </Typography>
                 <IconButton onClick={onClose}>
@@ -347,7 +357,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                 display="grid"
                                 gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(4, 1fr)' }}
                                 gap={2}
-                                sx={{ mb:5 }}
+                                sx={{ mb: 5 }}
                             >
                                 {renderDetailItem(
                                     "Login Date",
@@ -363,7 +373,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                 )}
                                 {renderDetailItem(
                                     "Status",
-                                    status ? (status === 'Available' ? 'Active' : status === 'Offline' ? 'Offline - Logout' : status.charAt(0).toUpperCase() + status.slice(1)) : 'Unknown'
+                                    status ? (STATUS_DISPLAY_MAP[status as keyof typeof STATUS_DISPLAY_MAP] || status) : 'Unknown'
                                 )}
                             </Box>
 
@@ -419,12 +429,14 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                 {intervals.slice(0, limit).map((interval: any, index: number) => {
                                     const intervalStatus = interval.status || 'Available';
                                     const isAvailable = intervalStatus === 'Available';
-                                    const isBusy = intervalStatus === 'Busy' || intervalStatus === 'Do Not Disturb';
+                                    const isBusy = intervalStatus === 'Busy';
+                                    const isDnd = intervalStatus === 'Do Not Disturb';
                                     const isAway = intervalStatus === 'Away';
                                     const isOffline = intervalStatus === 'Offline';
 
                                     let statusColor = theme.palette.success.main;
-                                    if (isBusy) statusColor = theme.palette.error.main;
+                                    if (isBusy) statusColor = '#ef4444';
+                                    if (isDnd) statusColor = '#b91c1c';
                                     if (isAway) statusColor = theme.palette.warning.main;
                                     if (isOffline) statusColor = theme.palette.text.disabled;
 
@@ -459,56 +471,21 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                                         {fTime(interval.from_time)} — {interval.to_time ? fTime(interval.to_time) : (intervalStatus === 'Offline' ? 'Logout' : 'Active')}
                                                     </Typography>
 
-                                                    {/* Badge for status */}
-                                                    {(!interval.to_time && intervalStatus === 'Offline') ? (
-                                                        <Box
-                                                            sx={{
-                                                                px: 0.75,
-                                                                py: 0.15,
-                                                                borderRadius: 0.5,
-                                                                fontSize: 10,
-                                                                fontWeight: 900,
-                                                                textTransform: 'uppercase',
-                                                                bgcolor: alpha(statusColor, 0.1),
-                                                                color: statusColor,
-                                                                border: `1px solid ${alpha(statusColor, 0.2)}`
-                                                            }}
-                                                        >
-                                                            Offline - Logout
-                                                        </Box>
-                                                    ) : (!interval.to_time && intervalStatus !== 'Offline') ? (
-                                                        <Box
-                                                            sx={{
-                                                                px: 0.75,
-                                                                py: 0.15,
-                                                                borderRadius: 0.5,
-                                                                fontSize: 10,
-                                                                fontWeight: 900,
-                                                                textTransform: 'uppercase',
-                                                                bgcolor: alpha(statusColor, 0.1),
-                                                                color: statusColor,
-                                                                border: `1px solid ${alpha(statusColor, 0.2)}`
-                                                            }}
-                                                        >
-                                                            Active
-                                                        </Box>
-                                                    ) : (
-                                                        <Box
-                                                            sx={{
-                                                                px: 0.75,
-                                                                py: 0.15,
-                                                                borderRadius: 0.5,
-                                                                fontSize: 10,
-                                                                fontWeight: 900,
-                                                                textTransform: 'uppercase',
-                                                                bgcolor: alpha(statusColor, 0.1),
-                                                                color: statusColor,
-                                                                border: `1px solid ${alpha(statusColor, 0.2)}`
-                                                            }}
-                                                        >
-                                                            {intervalStatus === 'Available' ? 'Active' : intervalStatus === 'Offline' ? 'Offline - Logout' : intervalStatus}
-                                                        </Box>
-                                                    )}
+                                                    <Box
+                                                        sx={{
+                                                            px: 0.75,
+                                                            py: 0.15,
+                                                            borderRadius: 0.5,
+                                                            fontSize: 10,
+                                                            fontWeight: 900,
+                                                            textTransform: 'uppercase',
+                                                            bgcolor: alpha(statusColor, 0.1),
+                                                            color: statusColor,
+                                                            border: `1px solid ${alpha(statusColor, 0.2)}`
+                                                        }}
+                                                    >
+                                                        {STATUS_DISPLAY_MAP[intervalStatus as keyof typeof STATUS_DISPLAY_MAP] || intervalStatus}
+                                                    </Box>
                                                 </Stack>
                                                 <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase' }}>
                                                     Duration: {formatSecondsToDetailed(interval.duration_seconds)}
@@ -562,7 +539,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                     <Iconify icon={"ph:coffee-fill" as any} width={20} />
                                 </Box>
                                 <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                    Break Intervals
+                                    Lunch Break Intervals
                                 </Typography>
                             </Stack>
 
@@ -602,7 +579,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                                         {fTime(brk.break_start)} — {brk.break_end ? fTime(brk.break_end) : 'Current'}
                                                     </Typography>
                                                     <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25, fontWeight: 600 }}>
-                                                        {isAway ? 'Stepped Away (Inactivity)' : (brk.reason || 'Manual Break')}
+                                                        {isAway ? 'Break (Inactivity)' : ((brk.reason || 'Manual Break').replace('Away to Break', ' Break to Lunch Break'))}
                                                     </Typography>
                                                     <Typography variant="caption" sx={{ color: isAway ? '#d97706' : 'warning.main', fontWeight: 900 }}>
                                                         {formatDetailedDuration(brk.break_duration)}

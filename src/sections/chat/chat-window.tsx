@@ -53,9 +53,10 @@ type Props = {
     onRefresh?: () => void;
     onStartCall?: (type: 'audio' | 'video') => void;
     onBack?: () => void;
+    refreshTrigger?: number;
 };
 
-export default function ChatWindow({ user, channel, socket, isConnected, onRefresh, onStartCall, onBack }: Props) {
+export default function ChatWindow({ user, channel, socket, isConnected, onRefresh, onStartCall, onBack, refreshTrigger }: Props) {
     const [messages, setMessages] = useState<any[]>([]);
     const [showInfo, setShowInfo] = useState(false);
     const [confirmDeleteMessage, setConfirmDeleteMessage] = useState<string | null>(null);
@@ -91,12 +92,31 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
         }
     }, [socket, isConnected, channel.room]);
 
+    // External refresh trigger (e.g. after starting a group call)
+    useEffect(() => {
+        if (refreshTrigger && refreshTrigger > 0) {
+            setTimeout(() => {
+                fetchMessages();
+                if (onRefresh) onRefresh();
+            }, 1200);
+        }
+    }, [refreshTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
+
     useEffect(() => {
         if (socket) {
             const handleMessage = async (data: any) => {
                 const eventRoom = data.room || data.room_name;
                 // Check if the event is for the current room
                 const isRelevantRoom = eventRoom === channel.room;
+
+                // DEBUG: Tracer to see every single packet from the server
+                // console.log('TRACE: Socket event received:', {
+                //     type: data.realtime_type,
+                //     room: eventRoom,
+                //     relevant: isRelevantRoom,
+                //     content: data.content?.substring(0, 20),
+                //     messageType: data.message_type
+                // });
 
                 if (isRelevantRoom) {
                     if (data.realtime_type === 'message_deleted') {
@@ -117,12 +137,34 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                     } else if (data.realtime_type === 'trigger_channel_status') {
                         if (onRefresh) onRefresh();
                     } else {
-                        // For new messages, only fetch if it's not a local optimistic update
-                        // or if it's from another user
-                        if (data.user !== user.full_name) {
-                            await fetchMessages();
+                        // Detect call-related messages from any field
+                        const rawContent = String(data.content || data.last_message || '');
+                        const rawMsgType = String(data.message_type || data.realtime_type || '');
+                        const isCallRelated =
+                            rawContent.includes('[CALL_') ||
+                            rawContent.includes('[GROUP_CALL]') ||
+                            rawMsgType.includes('[CALL_') ||
+                            rawMsgType.toLowerCase().includes('group_call') ||
+                            rawMsgType.toLowerCase().includes('notification') ||
+                            data.message_type?.includes('[CALL_');
+
+                        // console.log('REALTIME MESSAGE RECEIVED:', { 
+                        //     fromMe: data.user === user.full_name, 
+                        //     isCallRelated, 
+                        //     messageType: data.message_type,
+                        //     content: rawContent.substring(0, 40),
+                        // });
+
+                        // Always refresh for call-related messages (even if sent by self)
+                        // For regular messages only refresh if from another user
+                        if (isCallRelated || data.user !== user.full_name) {
+                            // const delay = isCallRelated ? 1000 : 100;
+                            // console.log(`REFRESH TRIGGERED (delay: ${delay}ms)`);
+                            setTimeout(async () => {
+                                await fetchMessages();
+                                if (onRefresh) onRefresh();
+                            }, 1000);
                         }
-                        if (onRefresh) onRefresh();
                     }
                 }
             };
@@ -131,10 +173,15 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
             socket.on(channel.room, handleMessage);
             // Listen to general update_room events which might carry the deletion
             socket.on('update_room', handleMessage);
+            // Listen to broad message events
+            socket.on('msg', handleMessage);
+            socket.on('new_chat_notification', handleMessage);
 
             return () => {
                 socket.off(channel.room, handleMessage);
                 socket.off('update_room', handleMessage);
+                socket.off('msg', handleMessage);
+                socket.off('new_chat_notification', handleMessage);
             };
         }
         return undefined;
@@ -253,11 +300,13 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
     if (showInfo) {
         return (
             <ChatInfo
+                user={user}
                 channel={channel}
                 messages={messages}
                 onClose={() => setShowInfo(false)}
                 onCloseChannel={handleCloseChannel}
                 onReopenChannel={handleReopenChannel}
+                onRefresh={onRefresh}
             />
         )
     }
@@ -301,8 +350,13 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                             height: 40,
                             mr: 2,
                             fontWeight: 'fontWeightBold',
-                            color: stringToDarkColor(channel.displayName || ''),
-                            bgcolor: stringToColor(channel.displayName || ''),
+                            color: (channel.avatar_url || channel.channel_image || channel.channel_info?.avatar) ? 'text.secondary' : stringToDarkColor(channel.displayName || ''),
+                            bgcolor: (channel.avatar_url || channel.channel_image || channel.channel_info?.avatar) ? 'common.white' : stringToColor(channel.displayName || ''),
+                            border: (t) => (channel.avatar_url || channel.channel_image || channel.channel_info?.avatar) ? `solid 1px ${t.palette.divider}` : 'none',
+                            '& img': {
+                                objectFit: 'contain',
+                                padding: 0.5,
+                            }
                         }}
                     >
                         {channel.displayName?.charAt(0).toUpperCase()}
@@ -319,7 +373,7 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                     </Stack>
                 </Stack>
 
-                {channel.type === 'Direct' && (
+                {(channel.type === 'Direct' || channel.type === 'Group') && (
                     <Stack direction="row" spacing={1.5} sx={{ mr: 1 }}>
                         <Button
                             variant="contained"
@@ -394,6 +448,29 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                     const prevMsg = messages[index - 1];
                     const isSameDate = prevMsg && fDateSeparator(prevMsg.send_date) === fDateSeparator(msg.send_date);
 
+                    // Strip HTML tags and check plain text for [GROUP_CALL] tag — purely content-based
+                    const rawContent = String(msg.content || '');
+                    const plainContent = rawContent.replace(/<[^>]*>/g, '');
+                    const isCallInvite = plainContent.includes('[GROUP_CALL]');
+
+                    // Only mark concluded if a CALL_ENDED/MISSED log appears AFTER this message (by index and timestamp)
+                    const isConcluded = isCallInvite && messages.some((m, idx) => {
+                        if (idx <= index) return false;
+                        if (idx > index + 20) return false;
+
+                        const mTime = new Date(m.send_date).getTime();
+                        const inviteTime = new Date(msg.send_date).getTime();
+                        if (mTime < inviteTime) return false;
+
+                        const mType = m.message_type || '';
+                        const mText = m.content || '';
+
+                        // Check for ending tag in both type and text
+                        const isEndLog = /CALL_(ENDED|MISSED)/i.test(mType) || /CALL_(ENDED|MISSED)/i.test(mText);
+
+                        return isEndLog;
+                    });
+
                     return (
                         <ChatMessageItem
                             key={msg.message_name || index}
@@ -401,8 +478,11 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                             isMe={isMe}
                             isSameDate={isSameDate}
                             onDelete={handleDelete}
+                            showSender={channel.type !== 'Direct' && !isMe}
+                            onJoinCall={onStartCall}
+                            isConcluded={isConcluded}
                         />
-                    )
+                    );
                 })}
             </Box>
 
@@ -442,12 +522,41 @@ type ChatMessageItemProps = {
     isMe: boolean;
     isSameDate: boolean;
     onDelete: (name: string) => void;
+    showSender?: boolean;
+    onJoinCall?: (type: 'audio' | 'video') => void;
+    isConcluded?: boolean;
 };
 
-const ChatMessageItem = memo(({ msg, isMe, isSameDate, onDelete }: ChatMessageItemProps) => {
-    // Determine content type
+const ChatMessageItem = memo(({ msg, isMe, isSameDate, onDelete, showSender, onJoinCall, isConcluded }: ChatMessageItemProps) => {
     const isDeleted = msg.content?.includes('deleted-message-text');
     const isVoiceClip = !isDeleted && (msg.is_voice_clip === 1 || msg.content?.includes('<audio'));
+    // Purely content-based detection — strip HTML and check for the tag
+    const plainText = String(msg.content || '').replace(/<[^>]*>/g, '');
+    const isCallInvite = !isDeleted && plainText.includes('[GROUP_CALL]');
+
+    // Check for the [CALL_ tag anywhere (type or content)
+    const callLogMetadata = (msg.message_type?.includes('[CALL_') ? msg.message_type : msg.content) || '';
+    const callLogMatch = callLogMetadata.match(/\[CALL_(ENDED|MISSED): ([^|\]]+)(?:\|(\d+))?\]/);
+    const isCallEnded = !isDeleted && callLogMatch?.[1] === 'ENDED';
+    const isCallMissed = !isDeleted && callLogMatch?.[1] === 'MISSED';
+
+    const callTypeFound = msg.content?.includes('video') ? 'video' : 'audio';
+
+    const parseCallData = () => {
+        if (callLogMatch) {
+            return {
+                type: callLogMatch[2].trim(),
+                duration: callLogMatch[3] ? parseInt(callLogMatch[3], 10) : 0
+            };
+        }
+        return { type: callTypeFound, duration: 0 };
+    };
+
+    const formatDuration = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+    };
 
     // Extract audio src if it's in the content string but not explicit attachment
     const getAudioSrc = () => {
@@ -455,6 +564,39 @@ const ChatMessageItem = memo(({ msg, isMe, isSameDate, onDelete }: ChatMessageIt
         const match = msg.content?.match(/src="([^"]+)"/);
         return match ? match[1] : '';
     };
+
+    if (isCallEnded || isCallMissed) {
+        const data = parseCallData();
+        const isVideo = data.type.includes('video');
+        const isGroup = data.type.startsWith('group_');
+
+        return (
+            <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="center"
+                spacing={1}
+                sx={{
+                    width: 1,
+                    my: 1,
+                    py: 0.5,
+                }}
+            >
+                <Iconify
+                    icon={(isVideo ? "solar:videocamera-record-bold" : "solar:phone-bold") as any}
+                    width={16}
+                    sx={{ color: isCallMissed ? 'error.main' : 'text.disabled' }}
+                />
+                <Typography variant="caption" sx={{ color: isCallMissed ? 'error.main' : 'text.disabled', fontWeight: isCallMissed ? 'bold' : 'normal' }}>
+                    {isCallMissed
+                        ? (isGroup ? 'Missed meeting' : 'Missed call')
+                        : (isGroup ? 'Meeting finished' : (isVideo ? 'Video' : 'Audio') + ' call')
+                    }
+                    {isCallEnded && ` · ${formatDuration(data.duration)}`}
+                </Typography>
+            </Stack>
+        );
+    }
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -505,16 +647,29 @@ const ChatMessageItem = memo(({ msg, isMe, isSameDate, onDelete }: ChatMessageIt
 
                         <Box
                             sx={{
-                                p: isVoiceClip ? 0.5 : 1.5,
                                 minWidth: 48,
                                 maxWidth: 1,
                                 borderRadius: 1.5,
                                 typography: 'body2',
-                                bgcolor: (theme) => isMe
-                                    ? theme.palette.primary.main
-                                    : alpha(theme.palette.primary.main, 0.08),
-                                color: isMe ? 'primary.contrastText' : 'text.primary',
+                                bgcolor: (theme) => {
+                                    if (isCallInvite && isConcluded) return alpha(theme.palette.info.main, 0.08);
+                                    return isMe
+                                        ? theme.palette.primary.main
+                                        : alpha(theme.palette.primary.main, 0.1);
+                                },
+                                color: (theme) => {
+                                    if (isCallInvite && isConcluded) return theme.palette.info.darker;
+                                    return isMe ? theme.palette.primary.contrastText : 'text.primary';
+                                },
                                 position: 'relative',
+                                width: isCallInvite ? 300 : 'auto',
+                                border: (theme) => (isCallInvite && isConcluded) ? `1px solid ${alpha(theme.palette.info.main, 0.15)}` : 'none',
+                                boxShadow: (theme) => {
+                                    if (isCallInvite && !isConcluded) return `0 12px 24px ${alpha(theme.palette.primary.main, 0.2)}`;
+                                    if (isCallInvite && isConcluded) return `0 4px 12px ${alpha(theme.palette.info.main, 0.1)}`;
+                                    return 'none';
+                                },
+                                p: isCallInvite ? 3 : (isVoiceClip ? 0.5 : 1.5),
                                 ...(isMe && {
                                     borderTopRightRadius: 0,
                                 }),
@@ -523,7 +678,118 @@ const ChatMessageItem = memo(({ msg, isMe, isSameDate, onDelete }: ChatMessageIt
                                 }),
                             }}
                         >
-                            {isVoiceClip ? (
+                            {showSender && (
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        color: isConcluded
+                                            ? 'info.darker'
+                                            : (isMe ? '#fff' : stringToDarkColor(msg.sender || msg.sender_email || '')),
+                                        fontWeight: 'bold',
+                                        display: 'block',
+                                        mb: 1.5,
+                                        fontSize: '11px',
+                                        opacity: (isMe && !isConcluded) ? 0.8 : 1
+                                    }}
+                                >
+                                    {msg.sender || msg.sender_email}
+                                </Typography>
+                            )}
+                            {isCallInvite ? (
+                                <Stack spacing={3}>
+                                    <Stack direction="row" alignItems="center" spacing={3}>
+                                        <Box
+                                            sx={{
+                                                width: 56,
+                                                height: 56,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                borderRadius: 2,
+                                                bgcolor: isConcluded
+                                                    ? (theme) => alpha(theme.palette.info.main, 0.12)
+                                                    : (isMe ? alpha('#fff', 0.2) : 'primary.main'),
+                                                position: 'relative',
+                                                boxShadow: isConcluded ? 'none' : `0 0 15px ${alpha('#fff', 0.3)}`,
+                                                '&::after': !isConcluded ? {
+                                                    content: '""',
+                                                    position: 'absolute',
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    borderRadius: 2,
+                                                    border: `2px solid ${alpha('#fff', 0.5)}`,
+                                                    animation: 'pulse 2s infinite',
+                                                } : {}
+                                            }}
+                                        >
+                                            <Iconify
+                                                icon={(callTypeFound === 'video' ? "solar:videocamera-record-bold" : "solar:phone-bold") as any}
+                                                width={30}
+                                                sx={{ color: isConcluded ? 'info.main' : '#fff' }}
+                                            />
+                                        </Box>
+                                        <Box>
+                                            <Typography
+                                                variant="subtitle1"
+                                                sx={{
+                                                    color: isConcluded ? 'info.darker' : (isMe ? '#fff' : 'text.primary'),
+                                                    fontWeight: 'bold',
+                                                    lineHeight: 1.1,
+                                                    fontSize: '15px'
+                                                }}
+                                            >
+                                                Group {callTypeFound} call
+                                            </Typography>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    color: isConcluded ? 'info.dark' : (isMe ? alpha('#fff', 0.7) : 'text.secondary'),
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 1.2,
+                                                    mt: 0.8,
+                                                    fontSize: '11px'
+                                                }}
+                                            >
+                                                {isConcluded ? (
+                                                    <>
+                                                        <Iconify icon="solar:check-circle-bold" width={14} />
+                                                        Meeting finished
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#4caf50', animation: 'blink 1.5s infinite' }} />
+                                                        Ongoing meeting...
+                                                    </>
+                                                )}
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                    {!isConcluded && (
+                                        <Button
+                                            fullWidth
+                                            variant="contained"
+                                            size="medium"
+                                            onClick={() => onJoinCall?.(callTypeFound as any)}
+                                            sx={{
+                                                bgcolor: isMe ? '#fff' : 'primary.main',
+                                                color: isMe ? 'primary.main' : '#fff',
+                                                fontWeight: 'bold',
+                                                borderRadius: 1.2,
+                                                py: 1.2,
+                                                '&:hover': {
+                                                    bgcolor: isMe ? alpha('#fff', 0.9) : 'primary.dark',
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: (theme) => theme.customShadows.z12,
+                                                },
+                                                transition: (theme) => theme.transitions.create(['background-color', 'transform', 'box-shadow']),
+                                            }}
+                                        >
+                                            Join Now
+                                        </Button>
+                                    )}
+                                </Stack>
+                            ) : isVoiceClip ? (
                                 <ChatAudioPlayer src={getAudioSrc()} isMe={isMe} />
                             ) : (
                                 <Box

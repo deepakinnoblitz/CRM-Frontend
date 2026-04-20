@@ -1,3 +1,4 @@
+import { CONFIG } from 'src/config-global';
 
 import { RenewalTrackerView } from 'src/sections/renewal-tracker/view/renewal-tracker-view';
 
@@ -5,6 +6,9 @@ import { RenewalTrackerView } from 'src/sections/renewal-tracker/view/renewal-tr
 
 export default function RenewalTrackerPage() {
     return (
-        <RenewalTrackerView />
+        <>
+            <title>{`Renewal Tracker - ${CONFIG.appName}`}</title>
+            <RenewalTrackerView />
+        </>
     );
 }

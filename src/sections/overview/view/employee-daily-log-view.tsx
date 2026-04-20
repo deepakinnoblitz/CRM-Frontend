@@ -60,7 +60,8 @@ export function EmployeeDailyLogView() {
     const [filterStatus, setFilterStatus] = useState('all');
     const [filterEmployee, setFilterEmployee] = useState('all');
     const [filterDay, setFilterDay] = useState('all');
-    const [filterDate, setFilterDate] = useState<string>('');
+    const [filterStartDate, setFilterStartDate] = useState<string>('');
+    const [filterEndDate, setFilterEndDate] = useState<string>('');
     const [sortBy, setSortBy] = useState('login_date_desc');
 
     const [employees, setEmployees] = useState<{ value: string; label: string }[]>([]);
@@ -102,7 +103,9 @@ export function EmployeeDailyLogView() {
         sortBy,
         filterEmployee,
         filterDay,
-        filterDate
+        '',
+        filterStartDate,
+        filterEndDate
     );
 
     useEffect(() => {
@@ -159,8 +162,13 @@ export function EmployeeDailyLogView() {
         setPage(0);
     };
 
-    const handleFilterDate = (value: string) => {
-        setFilterDate(value);
+    const handleFilterStartDate = (value: string) => {
+        setFilterStartDate(value);
+        setPage(0);
+    };
+    
+    const handleFilterEndDate = (value: string) => {
+        setFilterEndDate(value);
         setPage(0);
     };
 
@@ -168,11 +176,12 @@ export function EmployeeDailyLogView() {
         setFilterStatus('all');
         setFilterEmployee('all');
         setFilterDay('all');
-        setFilterDate('');
+        setFilterStartDate('');
+        setFilterEndDate('');
         setPage(0);
     };
 
-    const canReset = filterStatus !== 'all' || filterEmployee !== 'all' || filterDay !== 'all' || !!filterDate;
+    const canReset = filterStatus !== 'all' || filterEmployee !== 'all' || filterDay !== 'all' || !!filterStartDate || !!filterEndDate;
 
     const handleSortChange = (value: string) => {
         setSortBy(value);
@@ -293,8 +302,10 @@ export function EmployeeDailyLogView() {
                 onFilterEmployee={handleFilterEmployee}
                 filterDay={filterDay}
                 onFilterDay={handleFilterDay}
-                filterDate={filterDate}
-                onFilterDate={handleFilterDate}
+                filterStartDate={filterStartDate}
+                onFilterStartDate={handleFilterStartDate}
+                filterEndDate={filterEndDate}
+                onFilterEndDate={handleFilterEndDate}
                 canReset={canReset}
                 onResetFilters={handleResetFilters}
                 options={{ 

@@ -16,8 +16,8 @@ import TablePagination from '@mui/material/TablePagination';
 
 import { useEvaluationTraitCategories } from 'src/hooks/use-masters';
 
-import { deleteEvaluationTraitCategory } from 'src/api/masters';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { deleteEvaluationTraitCategory } from 'src/api/masters';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
