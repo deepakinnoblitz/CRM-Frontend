@@ -37,6 +37,7 @@ export const chatApi = {
         is_voice_clip?: number;
         is_document?: number;
         id_message_local_from_app?: string;
+        message_type?: string;
     }) => {
         const response = await frappeRequest(`${BASE_URL}.send`, {
             method: 'POST',
@@ -155,6 +156,14 @@ export const chatApi = {
         const response = await frappeRequest(`${BASE_URL}.update_group_info`, {
             method: 'POST',
             body: JSON.stringify({ room, ...data }),
+        });
+        return handleResponse(response);
+    },
+
+    getLiveKitToken: async (roomName: string) => {
+        const response = await frappeRequest('/api/method/company.company.frontend_api.get_livekit_token', {
+            method: 'POST',
+            body: JSON.stringify({ room_name: roomName }),
         });
         return handleResponse(response);
     },

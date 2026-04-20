@@ -199,6 +199,35 @@ export default function ChatSidebar({ user, channels, presences, selectedChannel
                                     secondary={
                                         (() => {
                                             const content = channel.last_message || '';
+
+                                            // Check for call log (ENDED/MISSED) FIRST — this is the last message after a meeting concludes
+                                            const callLogMatch = content.match(/\[CALL_(ENDED|MISSED): ([^|\]]+)(?:\|(\d+))?\]/);
+                                            if (callLogMatch) {
+                                                const isMissed = callLogMatch[1] === 'MISSED';
+                                                const type = callLogMatch[2].trim();
+                                                const isGroup = type.startsWith('group_');
+                                                const isVideo = type.includes('video');
+                                                return (
+                                                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ color: isMissed ? 'error.main' : 'inherit' }}>
+                                                        <Iconify
+                                                            icon={(isVideo ? "solar:videocamera-record-bold" : "solar:phone-bold") as any}
+                                                            width={14}
+                                                        />
+                                                        <span>{isMissed ? (isGroup ? 'Missed meeting' : 'Missed call') : (isGroup ? 'Meeting finished' : (isVideo ? 'Video' : 'Audio') + ' call')}</span>
+                                                    </Stack>
+                                                );
+                                            }
+
+                                            // GROUP_CALL invite is still the last message → meeting is ongoing
+                                            if (content.includes('[GROUP_CALL]')) {
+                                                return (
+                                                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ color: 'success.main' }}>
+                                                        <Iconify icon={"solar:videocamera-record-bold" as any} width={14} />
+                                                        <span>Ongoing meeting...</span>
+                                                    </Stack>
+                                                );
+                                            }
+
                                             if (content.includes('recording') || content.includes('<audio')) {
                                                 return (
                                                     <Stack direction="row" alignItems="center" spacing={0.5}>

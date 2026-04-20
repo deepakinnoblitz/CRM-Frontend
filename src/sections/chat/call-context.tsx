@@ -1,11 +1,15 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 
+import Alert from '@mui/material/Alert';
+import Snackbar from '@mui/material/Snackbar';
+
 import { useWebRTC } from 'src/hooks/use-webrtc';
 import { useSocket } from 'src/hooks/use-socket';
 
 import ChatCallDialog from 'src/sections/chat/chat-call-dialog';
 
 import { useAuth } from 'src/auth/auth-context';
+
 
 // ----------------------------------------------------------------------
 
@@ -31,7 +35,7 @@ export function CallProvider({ children }: Props) {
     const { user } = useAuth();
     const { socket } = useSocket(user?.email);
 
-    const webrtc = useWebRTC(user?.email, socket);
+    const webrtc = useWebRTC(user as any, socket);
 
     return (
         <CallContext.Provider value={webrtc}>
@@ -51,7 +55,26 @@ export function CallProvider({ children }: Props) {
                 onToggleVideo={webrtc.toggleVideo}
                 isAudioMuted={webrtc.isAudioMuted}
                 isVideoDisabled={webrtc.isVideoDisabled}
+                isGroupCall={webrtc.isGroupCall}
+                liveKitToken={webrtc.liveKitToken}
+                liveKitUrl={webrtc.liveKitUrl}
             />
+
+            <Snackbar
+                open={!!webrtc.callError}
+                autoHideDuration={6000}
+                onClose={() => webrtc.setCallError(null)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert
+                    onClose={() => webrtc.setCallError(null)}
+                    severity="error"
+                    variant="filled"
+                    sx={{ width: '100%', boxShadow: (t) => t.customShadows.z24 }}
+                >
+                    {webrtc.callError}
+                </Alert>
+            </Snackbar>
         </CallContext.Provider>
     );
 }

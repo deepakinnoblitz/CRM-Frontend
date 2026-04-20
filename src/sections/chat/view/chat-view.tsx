@@ -33,6 +33,7 @@ export default function ChatView() {
     const [openContacts, setOpenContacts] = useState(false);
     const [contactMode, setContactMode] = useState<'direct' | 'group'>('direct');
     const [loading, setLoading] = useState(true);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const { socket, isConnected, subscribeToRoom } = useSocket(user?.email);
 
@@ -50,6 +51,7 @@ export default function ChatView() {
         toggleVideo,
         isAudioMuted,
         isVideoDisabled,
+        startGroupCall,
     } = useCall();
 
     useEffect(() => {
@@ -273,13 +275,15 @@ export default function ChatView() {
                             onRefresh={fetchChannels}
                             onBack={() => setSelectedChannel(null)}
                             onStartCall={(type) => {
-                                const contactEmail = enrichedSelectedChannel.type === 'Direct'
-                                    ? enrichedSelectedChannel.contact
-                                    : null; // For now only Direct calls
-                                if (contactEmail) {
-                                    startCall(contactEmail, enrichedSelectedChannel.room, type);
+                                if (enrichedSelectedChannel.type === 'Direct') {
+                                    startCall(enrichedSelectedChannel.contact, enrichedSelectedChannel.room, type);
+                                } else {
+                                    startGroupCall(enrichedSelectedChannel.room, type);
+                                    // Bump refreshTrigger so ChatWindow re-fetches to show [GROUP_CALL] invite
+                                    setTimeout(() => setRefreshTrigger(t => t + 1), 500);
                                 }
                             }}
+                            refreshTrigger={refreshTrigger}
                         />
                     ) : (
                         <Stack
