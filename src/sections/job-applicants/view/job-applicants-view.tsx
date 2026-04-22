@@ -352,6 +352,7 @@ export function JobApplicantsView() {
                                 numSelected={selected.length}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 showIndex
+                                hideCheckbox
                                 headLabel={[
                                     { id: 'applicant_name', label: 'Name' },
                                     { id: 'job_title', label: 'Job Opening' },
@@ -375,6 +376,7 @@ export function JobApplicantsView() {
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
+                                        hideCheckbox
                                         onView={() => handleViewRow(row)}
                                         onEdit={() => handleEditRow(row)}
                                         onDelete={() => handleDeleteRow(row.name)}

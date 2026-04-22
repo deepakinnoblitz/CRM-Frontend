@@ -92,8 +92,9 @@ export const hrNavData = [
     path: '/assets',
     icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
     children: [
-      { title: 'Asset List', path: '/assets' },
-      { title: 'Assets Assignment', path: '/asset-assignments' },
+      { title: 'Asset List', path: '/assets/list' },
+      { title: 'Asset Assignments', path: '/assets/assignments' },
+      { title: 'Asset Requests', path: '/assets/requests' },
     ],
   },
   {
@@ -128,6 +129,7 @@ export const hrNavData = [
       { title: 'Job Opening List', path: '/job-openings' },
       { title: 'Job Applicant List', path: '/job-applicants' },
       { title: 'Interview List', path: '/interviews' },
+      { title: 'Employee Referral List', path: '/employee-referrals?view=hr' },
     ],
   },
   {
@@ -170,7 +172,11 @@ export const employeeNavData = [
     path: '/my-profile',
     icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
   },
-
+  {
+    title: 'My Tasks',
+    path: '/task-manager?view=mine',
+    icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
+  },
   {
     title: 'My Attendance',
     path: '/attendance',
@@ -202,11 +208,6 @@ export const employeeNavData = [
     icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
   },
   {
-    title: 'My Tasks',
-    path: '/task-manager?view=mine',
-    icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
-  },
-  {
     title: 'My Salary Slip',
     path: '/salary-slips',
     icon: <Iconify icon={"solar:bill-bold-duotone" as any} />,
@@ -217,9 +218,18 @@ export const employeeNavData = [
     icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
   },
   {
-    title: 'My Asset List',
-    path: '/asset-assignments',
-    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
+    title: 'My Assets',
+    path: '/assets',
+    icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
+    children: [
+      { title: 'My Asset List', path: '/assets/assignments' },
+      { title: 'My Asset Requests', path: '/assets/requests' },
+    ],
+  },
+  {
+    title: 'Refer a Friend',
+    path: '/employee-referrals',
+    icon: <Iconify icon={"solar:user-plus-bold-duotone" as any} />,
   },
   {
     title: 'Timesheet Report',

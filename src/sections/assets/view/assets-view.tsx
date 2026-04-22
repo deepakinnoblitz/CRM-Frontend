@@ -34,6 +34,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useAssets } from 'src/hooks/useAssets';
 
+import { frappeRequest } from 'src/utils/csrf';
+
 import { DashboardContent } from 'src/layouts/dashboard';
 import { createAsset, updateAsset, deleteAsset, getAssetPermissions, getAssetCategories, createAssetCategory } from 'src/api/assets';
 
@@ -58,7 +60,7 @@ export function AssetsView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('creation');
+    const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
 
     const [filters, setFilters] = useState<{
@@ -96,6 +98,13 @@ export function AssetsView() {
     const [purchaseCost, setPurchaseCost] = useState('');
     const [currentStatus, setCurrentStatus] = useState('Available');
     const [description, setDescription] = useState('');
+    const [touched, setTouched] = useState(false);
+
+    // attachment upload state
+    const [assetAttachment, setAssetAttachment] = useState('');
+    const [pendingFile, setPendingFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const [attachmentError, setAttachmentError] = useState('');
 
     // Permissions
     const [permissions, setPermissions] = useState({ read: false, write: false, delete: false });
@@ -138,8 +147,8 @@ export function AssetsView() {
     };
 
     const handleSortChange = (value: string) => {
-        if (value === 'date_desc') { setOrderBy('creation'); setOrder('desc'); }
-        else if (value === 'date_asc') { setOrderBy('creation'); setOrder('asc'); }
+        if (value === 'date_desc') { setOrderBy('modified'); setOrder('desc'); }
+        else if (value === 'date_asc') { setOrderBy('modified'); setOrder('asc'); }
         else if (value === 'cost_desc') { setOrderBy('purchase_cost'); setOrder('desc'); }
         else if (value === 'cost_asc') { setOrderBy('purchase_cost'); setOrder('asc'); }
         else if (value === 'name_asc') { setOrderBy('asset_name'); setOrder('asc'); }
@@ -148,7 +157,7 @@ export function AssetsView() {
     };
 
     const getCurrentSortValue = () => {
-        if (orderBy === 'creation') return order === 'desc' ? 'date_desc' : 'date_asc';
+        if (orderBy === 'modified') return order === 'desc' ? 'date_desc' : 'date_asc';
         if (orderBy === 'purchase_cost') return order === 'desc' ? 'cost_desc' : 'cost_asc';
         if (orderBy === 'asset_name') return order === 'desc' ? 'name_desc' : 'name_asc';
         return 'date_desc';
@@ -189,6 +198,10 @@ export function AssetsView() {
         setPurchaseCost('');
         setCurrentStatus('Available');
         setDescription('');
+        setTouched(false);
+        setAssetAttachment('');
+        setPendingFile(null);
+        setAttachmentError('');
         setOpenCreate(true);
         loadCategories();
     };
@@ -216,6 +229,10 @@ export function AssetsView() {
         setPurchaseCost('');
         setCurrentStatus('Available');
         setDescription('');
+        setTouched(false);
+        setAssetAttachment('');
+        setPendingFile(null);
+        setAttachmentError('');
     };
 
     const handleEditRow = useCallback((row: any) => {
@@ -227,6 +244,10 @@ export function AssetsView() {
         setPurchaseCost(row.purchase_cost?.toString() || '');
         setCurrentStatus(row.current_status || 'Available');
         setDescription(row.description || '');
+        setTouched(false);
+        setAssetAttachment(row.asset_attachment || '');
+        setPendingFile(null);
+        setAttachmentError('');
         setIsEdit(true);
         setOpenCreate(true);
         loadCategories();
@@ -256,6 +277,41 @@ export function AssetsView() {
 
     const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        setTouched(true);
+
+        if (!assetName.trim() || !category) {
+            return;
+        }
+
+        let finalAttachmentUrl = assetAttachment;
+
+        if (pendingFile) {
+            setUploading(true);
+            const formDataUpload = new FormData();
+            formDataUpload.append('file', pendingFile, pendingFile.name);
+            formDataUpload.append('is_private', '0');
+
+            try {
+                const response = await frappeRequest('/api/method/upload_file', {
+                    method: 'POST',
+                    body: formDataUpload,
+                });
+                const result = await response.json();
+                
+                const fileUrl = result.message?.file_url || result.file_url;
+                if (fileUrl) {
+                    finalAttachmentUrl = fileUrl;
+                } else {
+                    console.warn('Unexpected upload response format:', result);
+                    setSnackbar({ open: true, message: 'File upload failed, proceeding without attachment', severity: 'error' });
+                }
+            } catch (error) {
+                console.error('Upload failed:', error);
+                setSnackbar({ open: true, message: 'File upload failed, proceeding without attachment', severity: 'error' });
+            } finally {
+                setUploading(false);
+            }
+        }
 
         const assetData = {
             asset_name: assetName.trim(),
@@ -265,6 +321,7 @@ export function AssetsView() {
             purchase_cost: parseFloat(purchaseCost) || 0,
             current_status: currentStatus,
             description: description.trim(),
+            asset_attachment: finalAttachmentUrl
         };
 
         try {
@@ -280,6 +337,22 @@ export function AssetsView() {
         } catch (error: any) {
             setSnackbar({ open: true, message: error.message || 'Operation failed', severity: 'error' });
         }
+    };
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setAttachmentError('');
+        
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
+        if (file.size > MAX_FILE_SIZE) {
+            setAttachmentError('File size is too large. Maximum allowed size is 5MB.');
+            return;
+        }
+
+        setPendingFile(file);
+        setAssetAttachment('');
     };
 
     const handleCreateCategory = async () => {
@@ -541,7 +614,7 @@ export function AssetsView() {
 
             {/* Create/Edit Dialog */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-                <form onSubmit={handleCreate}>
+                <form onSubmit={handleCreate} noValidate>
                     <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         {isEdit ? 'Edit Asset' : 'New Asset'}
                         <IconButton onClick={handleCloseCreate}>
@@ -557,6 +630,8 @@ export function AssetsView() {
                                 value={assetName}
                                 onChange={(e) => setAssetName(e.target.value)}
                                 required
+                                error={touched && !assetName.trim()}
+                                helperText={touched && !assetName.trim() ? 'Asset Name is required' : ''}
                                 placeholder="Enter asset name"
                             />
 
@@ -565,7 +640,6 @@ export function AssetsView() {
                                 label="Asset Tag / Serial Number"
                                 value={assetTag}
                                 onChange={(e) => setAssetTag(e.target.value)}
-                                required
                                 placeholder="Enter Tag / Serial Number"
                             />
 
@@ -631,6 +705,9 @@ export function AssetsView() {
                                         {...params}
                                         label="Category"
                                         placeholder="Search or create category..."
+                                        required
+                                        error={touched && !category}
+                                        helperText={touched && !category ? 'Category is required' : ''}
                                         InputProps={{
                                             ...params.InputProps,
                                             endAdornment: (
@@ -661,6 +738,7 @@ export function AssetsView() {
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                 <DatePicker
                                     label="Purchase Date"
+                                    format="DD-MM-YYYY"
                                     value={purchaseDate ? dayjs(purchaseDate) : null}
                                     onChange={(newValue) => setPurchaseDate(newValue?.format('YYYY-MM-DD') || '')}
                                     slotProps={{
@@ -692,13 +770,97 @@ export function AssetsView() {
                                 placeholder="Enter asset description"
                                 sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}
                             />
+
+                            {/* Attachments Section */}
+                            <Box
+                                sx={{
+                                    p: 3,
+                                    borderRadius: 2,
+                                    gridColumn: { xs: '1', sm: '1 / -1' },
+                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                    border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
+                                }}
+                            >
+                                <Stack
+                                    direction={{ xs: 'column', sm: 'row' }}
+                                    alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                    justifyContent="space-between"
+                                    spacing={2}
+                                    sx={{ mb: 2.5 }}
+                                >
+                                    <Typography variant="h6">Attachments</Typography>
+
+                                    <Button
+                                        variant="contained"
+                                        component="label"
+                                        color="primary"
+                                        size="small"
+                                        startIcon={<Iconify icon={"solar:upload-bold" as any} />}
+                                        disabled={uploading}
+                                        sx={{ minWidth: { xs: 1, sm: 'auto' } }}
+                                    >
+                                        {uploading ? 'Uploading...' : 'Upload File'}
+                                        <input type="file" hidden onChange={handleFileUpload} />
+                                    </Button>
+                                </Stack>
+
+                                <Stack spacing={1}>
+                                    {!assetAttachment && !pendingFile ? (
+                                        <Stack alignItems="center" justifyContent="center" sx={{ py: 3, color: 'text.disabled' }}>
+                                            <Iconify icon={"solar:file-bold" as any} width={40} height={40} sx={{ mb: 1, opacity: 0.48 }} />
+                                            <Typography variant="body2">No attachments yet</Typography>
+                                        </Stack>
+                                    ) : (
+                                        <Stack
+                                            direction="row"
+                                            alignItems="center"
+                                            sx={{
+                                                px: 1.5,
+                                                py: 0.75,
+                                                borderRadius: 1.5,
+                                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                            }}
+                                        >
+                                            <Iconify icon={"solar:link-bold" as any} width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
+                                            <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
+                                                {pendingFile ? pendingFile.name : (assetAttachment.split('/').pop() || assetAttachment)}
+                                            </Typography>
+                                            <Button
+                                                size="small"
+                                                color="inherit"
+                                                onClick={() => { setAssetAttachment(''); setPendingFile(null); }}
+                                                sx={{
+                                                    px: 1.5,
+                                                    py: 0,
+                                                    height: 26,
+                                                    borderRadius: 1.5,
+                                                    minWidth: 'auto',
+                                                    typography: 'caption',
+                                                    bgcolor: 'background.paper',
+                                                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.24)}`,
+                                                    '&:hover': {
+                                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                                    },
+                                                }}
+                                            >
+                                                Remove
+                                            </Button>
+                                        </Stack>
+                                    )}
+                                    {attachmentError && (
+                                        <Typography variant="caption" color="error" sx={{ mt: 1, textAlign: 'center' }}>
+                                            {attachmentError}
+                                        </Typography>
+                                    )}
+                                </Stack>
+                            </Box>
                         </Box>
                     </DialogContent>
 
                     <DialogActions>
-                        <Button type="submit" variant="contained">
+                        <LoadingButton type="submit" variant="contained" loading={uploading}>
                             {isEdit ? 'Update' : 'Create'}
-                        </Button>
+                        </LoadingButton>
                     </DialogActions>
                 </form>
             </Dialog>
