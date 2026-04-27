@@ -99,6 +99,7 @@ export function LeaveAllocationView() {
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
     const [totalLeaves, setTotalLeaves] = useState('');
+    const [leavesTaken, setLeavesTaken] = useState('');
     const [status, setStatus] = useState('Approved');
 
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
@@ -175,6 +176,7 @@ export function LeaveAllocationView() {
                 from_date: fromDate,
                 to_date: toDate,
                 total_leaves_allocated: Number(totalLeaves),
+                total_leaves_taken: Number(leavesTaken || 0),
                 status,
             };
 
@@ -201,6 +203,7 @@ export function LeaveAllocationView() {
         setFromDate(row.from_date);
         setToDate(row.to_date);
         setTotalLeaves(String(row.total_leaves_allocated));
+        setLeavesTaken(String(row.total_leaves_taken || 0));
         setStatus(row.status || 'Approved');
         setIsEdit(true);
         setOpenCreate(true);
@@ -226,6 +229,7 @@ export function LeaveAllocationView() {
         setFromDate('');
         setToDate('');
         setTotalLeaves('');
+        setLeavesTaken('');
         setStatus('Approved');
         setFormErrors({});
         setIsEdit(false);
@@ -464,20 +468,32 @@ export function LeaveAllocationView() {
                             </Box>
                         </LocalizationProvider>
 
-                        <TextField
-                            fullWidth
-                            label="Total Leaves Allocated"
-                            type="number"
-                            value={totalLeaves}
-                            onChange={(e) => {
-                                setTotalLeaves(e.target.value);
-                                if (formErrors.totalLeaves) setFormErrors(prev => ({ ...prev, totalLeaves: '' }));
-                            }}
-                            required
-                            error={!!formErrors.totalLeaves}
-                            helperText={formErrors.totalLeaves}
-                            sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
-                        />
+                        <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                            <TextField
+                                fullWidth
+                                label="Total Leaves Allocated"
+                                type="number"
+                                value={totalLeaves}
+                                onChange={(e) => {
+                                    setTotalLeaves(e.target.value);
+                                    if (formErrors.totalLeaves) setFormErrors(prev => ({ ...prev, totalLeaves: '' }));
+                                }}
+                                required
+                                error={!!formErrors.totalLeaves}
+                                helperText={formErrors.totalLeaves}
+                                sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
+                            />
+                            
+                            <TextField
+                                fullWidth
+                                label="Total Leaves Taken"
+                                type="number"
+                                value={leavesTaken}
+                                onChange={(e) => {
+                                    setLeavesTaken(e.target.value);
+                                }}
+                            />
+                        </Box>
 
                         <TextField
                             select
