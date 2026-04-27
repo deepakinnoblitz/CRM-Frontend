@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
         position: 'tl',
         initialIsOpen: false,
       },
-    }), 
+    }),
   ],
 
   resolve: {
@@ -34,25 +34,37 @@ export default defineConfig(({ mode }) => ({
 
   server: {
     port: PORT,
-    host: 'erp.localhost.innoblitz',
+    host: true,
     hmr: {
       host: 'erp.localhost.innoblitz',
     },
     proxy: {
       // 🔹 Frappe APIs 
       '/api': {
-        target: 'http://erp.localhost.innoblitz:8025',
+        target: 'http://localhost:8025',
+        router: (req) => {
+          const host = req.headers.host?.split(':')[0] || 'localhost';
+          return `http://${host}:8025`;
+        },
         changeOrigin: true,
         secure: false,
       },
       // 🔹 File assets
       '/files': {
-        target: 'http://erp.localhost.innoblitz:8025',
+        target: 'http://localhost:8025',
+        router: (req) => {
+          const host = req.headers.host?.split(':')[0] || 'localhost';
+          return `http://${host}:8025`;
+        },
         changeOrigin: true,
         secure: false,
       },
       '/private': {
-        target: 'http://erp.localhost.innoblitz:8025',
+        target: 'http://localhost:8025',
+        router: (req) => {
+          const host = req.headers.host?.split(':')[0] || 'localhost';
+          return `http://${host}:8025`;
+        },
         changeOrigin: true,
         secure: false,
       }

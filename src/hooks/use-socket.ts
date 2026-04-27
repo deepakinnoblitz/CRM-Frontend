@@ -12,10 +12,10 @@ export function useSocket(userEmail?: string) {
             // Priority: Explicit host mapping -> Window hostname -> Default development site
             const getSiteName = () => {
                 const host = window.location.hostname;
-                if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('erp.localhost')) {
+                if (host === 'localhost' || host === '127.0.0.1') {
                     return 'erp.localhost.innoblitz';
                 }
-                return host; // In production, usually the hostname is the site name
+                return host;
             };
 
             const siteName = getSiteName();
