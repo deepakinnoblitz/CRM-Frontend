@@ -6,6 +6,7 @@ import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
 
 import { fDate } from 'src/utils/format-time';
 
@@ -19,6 +20,7 @@ type Props = {
         id: string;
         asset_name: string;
         employee_name: string;
+        assigned_to: string;
         assigned_on: string;
         returned_on?: string;
     };
@@ -31,6 +33,7 @@ type Props = {
     hideCheckbox?: boolean;
     canEdit?: boolean;
     canDelete?: boolean;
+    isHR?: boolean;
 };
 
 export function AssetAssignmentTableRow({
@@ -44,6 +47,7 @@ export function AssetAssignmentTableRow({
     hideCheckbox,
     canEdit = true,
     canDelete = true,
+    isHR = false,
 }: Props) {
     const isActive = !row.returned_on;
 
@@ -98,7 +102,12 @@ export function AssetAssignmentTableRow({
 
             <TableCell onClick={onView} sx={{ fontWeight: 700 }}>{row.asset_name}</TableCell>
 
-            <TableCell onClick={onView}>{row.employee_name}</TableCell>
+            {isHR && (
+                <TableCell onClick={onView}>
+                    <Typography variant="subtitle2" noWrap>{row.employee_name}</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>{row.assigned_to}</Typography>
+                </TableCell>
+            )}
 
             <TableCell onClick={onView} sx={{ display: { xs: 'none', md: 'table-cell' } }}>{fDate(row.assigned_on)}</TableCell>
 

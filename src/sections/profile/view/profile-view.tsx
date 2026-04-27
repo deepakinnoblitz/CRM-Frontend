@@ -147,47 +147,8 @@ export function ProfileView() {
 
     const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
 
-    const fileRef = useRef<HTMLInputElement>(null);
 
-    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
 
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('doctype', 'User');
-        formData.append('docname', user?.email || '');
-        formData.append('fieldname', 'user_image');
-        formData.append('is_private', '0');
-        formData.append('folder', 'Home');
-
-        try {
-            const response = await frappeRequest('/api/method/company.company.frontend_api.upload_profile_image', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (data.message && data.message.status === 'success') {
-                setSnackbar({ open: true, message: 'Profile picture updated!', severity: 'success' });
-                // Update global user context
-                if (user) {
-                    const updatedUser = {
-                        ...user,
-                        user_image: data.message.file_url
-                    };
-                    setUser(updatedUser);
-                }
-            } else {
-                setSnackbar({ open: true, message: 'Failed to upload image', severity: 'error' });
-            }
-
-        } catch (error) {
-            console.error(error);
-            setSnackbar({ open: true, message: 'Error uploading image', severity: 'error' });
-        }
-    };
 
     const handleSaveProfile = async () => {
         try {
@@ -231,13 +192,13 @@ export function ProfileView() {
     return (
         <DashboardContent maxWidth={false}>
             <Container maxWidth="lg">
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
-                    <Typography variant="h4">
-                        My Profile
-                    </Typography>
-                </Stack>
+                <Stack spacing={4} sx={{ maxWidth: 900, mx: 'auto' }}>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                        <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                            My Profile
+                        </Typography>
+                    </Stack>
 
-                <Stack spacing={3} sx={{ maxWidth: 800, mx: 'auto' }}>
                     <Card>
                         <CardHeader
                             title="Basic Info"
@@ -260,44 +221,31 @@ export function ProfileView() {
                         />
 
                         <CardContent>
-                            <Stack alignItems="center" sx={{ mb: 5, position: 'relative' }}>
-                                <input
-                                    type="file"
-                                    ref={fileRef}
-                                    onChange={handleFileChange}
-                                    style={{ display: 'none' }}
-                                    accept="image/*"
+                            <Stack direction="row" spacing={3} alignItems="center" sx={{ mb: 5 }}>
+                                <Avatar
+                                    alt={user.full_name}
+                                    src={user.user_image}
+                                    sx={{
+                                        width: 120,
+                                        height: 120,
+                                        border: (theme) => `solid 4px ${theme.palette.background.paper}`,
+                                        boxShadow: (theme) => theme.customShadows.z12,
+                                    }}
                                 />
-
-                                <Box sx={{ position: 'relative' }}>
-                                    <Avatar
-                                        alt={user.full_name}
-                                        src={user.user_image}
-                                        sx={{
-                                            width: 144,
-                                            height: 144,
-                                            mb: 3,
-                                            border: (theme) => `solid 2px ${theme.palette.background.default}`,
-                                        }}
-                                    />
-                                    <IconButton
-                                        onClick={() => fileRef.current?.click()}
-                                        sx={{
-                                            position: 'absolute',
-                                            bottom: 24,
-                                            right: 0,
-                                            width: 40,
-                                            height: 40,
-                                            bgcolor: 'common.white',
-                                            boxShadow: (theme) => theme.customShadows.z8,
-                                            '&:hover': {
-                                                bgcolor: 'grey.200',
-                                            },
-                                        }}
-                                    >
-                                        <Iconify icon="solar:pen-bold" color="text.secondary" width={24} />
-                                    </IconButton>
-                                </Box>
+                                <Stack spacing={0.5}>
+                                    <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                                        {user.full_name}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <Iconify icon="solar:letter-bold" width={16} />
+                                        {user.email}
+                                    </Typography>
+                                    {user.employee && (
+                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                            ID: {user.employee}
+                                        </Typography>
+                                    )}
+                                </Stack>
                             </Stack>
 
                             <Grid container spacing={3}>
@@ -334,7 +282,7 @@ export function ProfileView() {
                                         label="Full Name"
                                         value={fullName}
                                         InputProps={{ readOnly: true }}
-                                        helperText="Automatically generated"
+                                        placeholder="Full name will be generated"
                                     />
                                 </Grid>
 
@@ -361,8 +309,8 @@ export function ProfileView() {
 
                     <Card>
                         <CardHeader title="Access & Permissions" subheader="Roles and allowed modules" />
-                        <CardContent>
-                            <Grid container spacing={3}>
+                        <CardContent sx={{ pt: 3 }}>
+                            <Grid container spacing={4}>
                                 <Grid size={{ xs: 12 }}>
                                     <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
                                         Roles

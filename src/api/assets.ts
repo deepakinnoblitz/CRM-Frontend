@@ -10,6 +10,7 @@ export interface Asset {
     purchase_cost: number;
     current_status: string;
     description: string;
+    asset_attachment?: string;
     creation?: string;
     modified?: string;
 }
@@ -52,7 +53,7 @@ async function fetchFrappeList(params: {
         ['Asset', 'category', 'like', `%${params.search}%`]
     ] : [];
 
-    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "creation desc";
+    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "modified desc";
 
     const query = new URLSearchParams({
         doctype: 'Asset',

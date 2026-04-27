@@ -1,5 +1,6 @@
 import Box from '@mui/material/Box';
 import Dialog from '@mui/material/Dialog';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -79,24 +80,23 @@ export function AssetDetailsDialog({ open, onClose, asset }: Props) {
 
                         {/* Asset Information */}
                         <Box>
-                            <SectionHeader title="Asset Information" icon="solar:document-bold" />
+                            <SectionHeader title="Asset Information" />
                             <Box
                                 sx={{
                                     display: 'grid',
                                     gap: 3,
-                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(3, 1fr)' },
                                 }}
                             >
                                 <DetailItem label="Asset Name" value={asset.asset_name} icon="solar:tag-bold" />
                                 <DetailItem label="Asset Tag" value={asset.asset_tag} icon="solar:hashtag-bold" />
                                 <DetailItem label="Category" value={asset.category} icon="solar:folder-bold" />
-                                <DetailItem label="Status" value={asset.current_status} icon="solar:flag-bold" />
                             </Box>
                         </Box>
 
                         {/* Purchase Details */}
                         <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                            <SectionHeader title="Purchase Details" icon="solar:wallet-bold" noMargin />
+                            <SectionHeader title="Purchase Details" noMargin />
                             <Box sx={{ mt: 3, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
                                 <DetailItem
                                     label="Purchase Date"
@@ -114,11 +114,27 @@ export function AssetDetailsDialog({ open, onClose, asset }: Props) {
                         {/* Description */}
                         {asset.description && (
                             <Box>
-                                <SectionHeader title="Description" icon="solar:notes-bold" />
+                                <SectionHeader title="Description" />
                                 <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                         {asset.description}
                                     </Typography>
+                                </Box>
+                            </Box>
+                        )}
+
+                        {/* Attachment */}
+                        {asset.asset_attachment && (
+                            <Box>
+                                <SectionHeader title="Attachment" />
+                                <Box sx={{ p: 2, bgcolor: 'background.neutral', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Iconify icon={"solar:file-bold" as any} width={24} sx={{ color: 'text.secondary' }} />
+                                    <Typography variant="body2" sx={{ fontWeight: 600, flexGrow: 1 }} noWrap>
+                                        {asset.asset_attachment.split('/').pop() || 'Attached File'}
+                                    </Typography>
+                                    <Button size="small" variant="outlined" component="a" href={asset.asset_attachment} target="_blank" rel="noopener noreferrer">
+                                        View File
+                                    </Button>
                                 </Box>
                             </Box>
                         )}
@@ -134,11 +150,10 @@ export function AssetDetailsDialog({ open, onClose, asset }: Props) {
     );
 }
 
-function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: string, noMargin?: boolean }) {
+function SectionHeader({ title, noMargin = false }: { title: string, noMargin?: boolean }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
-            <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '15px' }}>
                 {title}
             </Typography>
         </Box>
