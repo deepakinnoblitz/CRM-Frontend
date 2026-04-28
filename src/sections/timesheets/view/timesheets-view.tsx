@@ -633,7 +633,7 @@ export function TimesheetsView() {
     const empty = !data.length && !filterName;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Timesheets

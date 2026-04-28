@@ -138,6 +138,7 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
     children: [
       { title: 'Attendance Report', path: '/reports/attendance' },
+      { title: 'Daily Log Report', path: '/reports/daily-log' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
     ],
   },
@@ -240,6 +241,11 @@ export const employeeNavData = [
     title: 'Attendance Report',
     path: '/reports/attendance',
     icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+  },
+  {
+    title: 'Daily Log Report',
+    path: '/reports/daily-log',
+    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
   }
 ];
 
@@ -276,7 +282,8 @@ export const salesNavData = [
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
       { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
-      { title: 'Attendance Report', path: '/reports/attendance' }
+      { title: 'Attendance Report', path: '/reports/attendance' },
+      { title: 'Daily Log Report', path: '/reports/daily-log' }
     ]
   }
 ];
@@ -344,6 +351,7 @@ export const crmNavData = [
       { title: 'Accounts Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
       { title: 'Meeting Report', path: '/reports/meeting' },
+      { title: 'Daily Log Report', path: '/reports/daily-log' }
     ]
   },
   {
@@ -411,7 +419,8 @@ export const crmAndSalesNavData = [
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
       { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
-      { title: 'Attendance Report', path: '/reports/attendance' }
+      { title: 'Attendance Report', path: '/reports/attendance' },
+      { title: 'Daily Log Report', path: '/reports/daily-log' }
     ]
   }
 ];
@@ -439,7 +448,8 @@ export function hasValidRole(roles: string[] = []): boolean {
   return hasValid;
 }
 
-export function getNavData(roles: string[] = []) {
+export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM') {
+  console.log('getNavData called with view:', view, 'roles:', roles);
   const mergedNav: NavItem[] = [];
   const seenPaths = new Set<string>();
 
@@ -476,11 +486,19 @@ export function getNavData(roles: string[] = []) {
     return { hasAccess: false, navData: [] };
   }
 
-  // If Administrator, show EVERYTHING
-  if (roles.includes('Administrator')) {
-    addItems(hrNavData);
-    addItems(employeeNavData);
-    addItems(crmAndSalesNavData);
+  // If Administrator, show view-specific navigation or EVERYTHING
+  const isAdmin = roles.some(role => ['administrator', 'system manager'].includes(role.toLowerCase()));
+
+  if (isAdmin) {
+    if (view === 'HR') {
+      addItems(hrNavData);
+    } else if (view === 'CRM') {
+      addItems(crmAndSalesNavData);
+    } else {
+      addItems(hrNavData);
+      addItems(employeeNavData);
+      addItems(crmAndSalesNavData);
+    }
     addItems([
       {
         title: 'User Management',
@@ -492,9 +510,12 @@ export function getNavData(roles: string[] = []) {
   }
 
   let hasCustomRole = false;
-  const hasRole = (pattern: string) => roles.includes(pattern);
+  const hasRole = (pattern: string) => roles.some(role => role.toLowerCase() === pattern.toLowerCase());
 
-  if (hasRole('HR')) {
+  const hasHR = hasRole('HR');
+  const hasSalesOrCRM = hasRole('Sales') || hasRole('CRM User') || hasRole('CRM And Sales');
+
+  if (view === 'HR' && hasHR) {
     let filteredHrNav = hrNavData;
     if (!hasRole('Task Manager')) {
       filteredHrNav = hrNavData.filter(
@@ -503,35 +524,48 @@ export function getNavData(roles: string[] = []) {
     }
     addItems(filteredHrNav);
     hasCustomRole = true;
-  }
-
-  if (hasRole('Employee')) {
-    const processedEmployeeNav = [...employeeNavData];
-    if (hasRole('Task Manager')) {
-      const taskManagerItem = hrNavData.find((item) => item.title === 'Task Manager');
-      if (taskManagerItem) {
-        // Find if it's already there to avoid duplicates, though addItems handles it.
-        // We insert at index 1 (Second position)
-        processedEmployeeNav.splice(1, 0, taskManagerItem);
-      }
-    }
-    addItems(processedEmployeeNav);
-    hasCustomRole = true;
-  }
-
-  if (hasRole('Sales')) {
-    addItems(salesNavData);
-    hasCustomRole = true;
-  }
-
-  if (hasRole('CRM User')) {
-    addItems(crmNavData);
-    hasCustomRole = true;
-  }
-
-  if (hasRole('CRM And Sales')) {
+  } else if (view === 'CRM' && hasSalesOrCRM) {
     addItems(crmAndSalesNavData);
     hasCustomRole = true;
+  } else {
+    // Default logic (merged or first available)
+    if (hasHR) {
+      let filteredHrNav = hrNavData;
+      if (!hasRole('Task Manager')) {
+        filteredHrNav = hrNavData.filter(
+          (item) => item.title !== 'Task Manager' && item.title !== 'Employee Evaluation'
+        );
+      }
+      addItems(filteredHrNav);
+      hasCustomRole = true;
+    }
+
+    if (hasRole('Employee')) {
+      const processedEmployeeNav = [...employeeNavData];
+      if (hasRole('Task Manager')) {
+        const taskManagerItem = hrNavData.find((item) => item.title === 'Task Manager');
+        if (taskManagerItem) {
+          processedEmployeeNav.splice(1, 0, taskManagerItem);
+        }
+      }
+      addItems(processedEmployeeNav);
+      hasCustomRole = true;
+    }
+
+    if (hasRole('Sales')) {
+      addItems(salesNavData);
+      hasCustomRole = true;
+    }
+
+    if (hasRole('CRM User')) {
+      addItems(crmNavData);
+      hasCustomRole = true;
+    }
+
+    if (hasRole('CRM And Sales')) {
+      addItems(crmAndSalesNavData);
+      hasCustomRole = true;
+    }
   }
 
   if (!hasCustomRole) {

@@ -280,7 +280,7 @@ export function BadgesView() {
   const isEmpty = ((currentTab === 'badges' && !badges.length) || (currentTab === 'assignments' && !assignments.length)) && !filterName;
 
   return (
-    <DashboardContent maxWidth={false}>
+    <DashboardContent maxWidth={false}  sx={{mt: 2}}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
         <Typography variant="h4">Badges Management</Typography>
       </Stack>

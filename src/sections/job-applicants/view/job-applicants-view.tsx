@@ -308,7 +308,7 @@ export function JobApplicantsView() {
     const empty = !data.length && !filterName;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5 }}>
                 <Typography variant="h4">Job Applicants</Typography>
                 {permissions.write && (

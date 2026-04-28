@@ -5,6 +5,8 @@ import { SnackbarProvider } from 'notistack';
 
 import { usePathname } from 'src/routes/hooks';
 
+import { DashboardViewProvider } from 'src/hooks/dashboard-view-context';
+
 import { ThemeProvider } from 'src/theme/theme-provider';
 
 import { AuthProvider } from 'src/auth/auth-context';
@@ -21,11 +23,13 @@ export default function App({ children }: AppProps) {
 
   return (
     <AuthProvider>
-      <ThemeProvider>
-        <SnackbarProvider anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-          {children}
-        </SnackbarProvider>
-      </ThemeProvider>
+      <DashboardViewProvider>
+        <ThemeProvider>
+          <SnackbarProvider anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+            {children}
+          </SnackbarProvider>
+        </ThemeProvider>
+      </DashboardViewProvider>
     </AuthProvider>
   );
 }

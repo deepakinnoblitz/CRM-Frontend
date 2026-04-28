@@ -71,6 +71,7 @@ export const InvoiceCollectionReportPage = lazy(() => import('src/pages/reports/
 export const PurchaseCollectionReportPage = lazy(() => import('src/pages/reports/purchase-settlement-report'));
 export const TimesheetReportPage = lazy(() => import('src/pages/reports/timesheet'));
 export const AttendanceReportPage = lazy(() => import('src/pages/reports/attendance'));
+export const DailyLogReportPage = lazy(() => import('src/pages/reports/daily-log'));
 export const EmployeePage = lazy(() => import('src/pages/employee'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
 export const LeavesPage = lazy(() => import('src/pages/leaves'));
@@ -141,16 +142,7 @@ const renderFallback = () => (
       alignItems: 'center',
       justifyContent: 'center',
     }}
-  >
-    <LinearProgress
-      sx={{
-        width: 1,
-        maxWidth: 320,
-        bgcolor: (theme) => varAlpha(theme.vars.palette.text.primaryChannel, 0.16),
-        [`& .${linearProgressClasses.bar}`]: { bgcolor: 'text.primary' },
-      }}
-    />
-  </Box>
+  />
 );
 
 export const routesSection: RouteObject[] = [
@@ -297,6 +289,7 @@ export const routesSection: RouteObject[] = [
           { path: 'purchase-settlement', element: <PurchaseCollectionReportPage /> },
           { path: 'timesheet', element: <TimesheetReportPage /> },
           { path: 'attendance', element: <AttendanceReportPage /> },
+          { path: 'daily-log', element: <DailyLogReportPage /> },
         ],
       },
       { path: 'employee-evaluation', element: <EmployeeEvaluationPage /> },

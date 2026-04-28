@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
+import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
 
 import { usePresence } from 'src/hooks/use-presence';
@@ -32,15 +33,19 @@ import { CalendarAttendanceChart } from '../calendar-attendance-chart';
 export function EmployeeDashboardView() {
     const { user } = useAuth();
     const { status: currentStatus } = usePresence();
+    const [loading, setLoading] = useState(true);
     const [data, setData] = useState<EmployeeDashboardData | null>(null);
 
     useEffect(() => {
         const loadData = async () => {
+            setLoading(true);
             try {
                 const dashboardData = await fetchEmployeeDashboardData();
                 setData(dashboardData);
             } catch (error) {
                 console.error('Failed to load employee dashboard data:', error);
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -77,13 +82,39 @@ export function EmployeeDashboardView() {
         }
     };
 
-    if (!data) {
-        return null;
+    if (loading || !data) {
+        return (
+            <DashboardContent maxWidth="xl">
+                <Skeleton variant="text" sx={{ width: 300, height: 40, mb: 5 }} />
+                
+                <Skeleton variant="rectangular" sx={{ width: 1, height: 160, borderRadius: 2, mb: 3 }} />
+
+                <Grid container spacing={3}>
+                    <Grid size={{ xs: 12 }}>
+                        <Skeleton variant="rectangular" sx={{ width: 1, height: 100, borderRadius: 2 }} />
+                    </Grid>
+
+                    <Grid size={{ xs: 12 }}>
+                        <Skeleton variant="rectangular" sx={{ width: 1, height: 140, borderRadius: 2 }} />
+                    </Grid>
+
+                    <Grid size={{ xs: 12 }}>
+                        <Skeleton variant="rectangular" sx={{ width: 1, height: 80, borderRadius: 2 }} />
+                    </Grid>
+
+                    {[...Array(2)].map((_, i) => (
+                        <Grid key={i} size={{ xs: 12, md: 6 }}>
+                            <Skeleton variant="rectangular" sx={{ width: 1, height: 400, borderRadius: 2 }} />
+                        </Grid>
+                    ))}
+                </Grid>
+            </DashboardContent>
+        );
     }
 
     return (
         <DashboardContent maxWidth="xl">
-            <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
+            <Typography variant="h4" sx={{ mb: { xs: 3, md: 2 } }}>
                 Hi, {data.employee_name || user?.full_name || 'Employee'}, Welcome back 👋
             </Typography>
 

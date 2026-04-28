@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
         position: 'tl',
         initialIsOpen: false,
       },
-    }), 
+    }),
   ],
 
   resolve: {

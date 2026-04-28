@@ -1,5 +1,4 @@
-import type dayjs from 'dayjs';
-
+import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -27,11 +26,11 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
-import { fDate, formatPatterns } from 'src/utils/format-time';
+import { fDate } from 'src/utils/format-time';
 
-import { runReport } from 'src/api/reports';
 import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { fetchDetailedSessions } from 'src/api/presence-log';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -39,14 +38,16 @@ import { Scrollbar } from 'src/components/scrollbar';
 
 import { useAuth } from 'src/auth/auth-context';
 
-import { AttendanceDetailsDialog } from '../attendance-details-dialog';
+import { EmployeeDailyLogDetailsDialog } from '../../../overview/employee-daily-log-details-dialog';
 
+// ----------------------------------------------------------------------
 
-export function AttendanceReportView() {
+export function DailyLogReportView() {
+    const theme = useTheme();
     const { user } = useAuth();
+    
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
-
     const [isHR, setIsHR] = useState(false);
 
     // Filters
@@ -54,19 +55,8 @@ export function AttendanceReportView() {
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [employee, setEmployee] = useState('all');
     const [status, setStatus] = useState('all');
-    const [sortBy, setSortBy] = useState('date_asc');
-
-    useEffect(() => {
-        if (user && user.roles) {
-            const hrRoles = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
-            const hasHRRole = user.roles.some((role: string) => hrRoles.includes(role));
-            setIsHR(hasHRRole);
-            if (!hasHRRole && user.employee) {
-                setEmployee(user.employee);
-            }
-        }
-    }, [user]);
-
+    const [sortBy, setSortBy] = useState('login_date_desc');
+    const [day, setDay] = useState('all');
 
     // Options
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
@@ -80,10 +70,85 @@ export function AttendanceReportView() {
 
     // Details Dialog
     const [openDetails, setOpenDetails] = useState(false);
-    const [selectedAttendanceName, setSelectedAttendanceName] = useState<string | null>(null);
+    const [selectedSession, setSelectedSession] = useState<any>(null);
 
-    const handleViewDetails = (name: string) => {
-        setSelectedAttendanceName(name);
+    useEffect(() => {
+        if (user && user.roles) {
+            const hrRoles = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
+            const hasHRRole = user.roles.some((role: string) => hrRoles.includes(role));
+            setIsHR(hasHRRole);
+            if (!hasHRRole && user.employee) {
+                setEmployee(user.employee);
+            }
+        }
+    }, [user]);
+
+    useEffect(() => {
+        getDoctypeList('Employee', ['name', 'employee_name']).then(setEmployeeOptions);
+    }, []);
+
+    const fetchReport = useCallback(async () => {
+        // We fetch a larger limit for the report view, or implement proper backend pagination if needed.
+        // For now, let's fetch up to 1000 records if dates are selected.
+        setLoading(true);
+        try {
+            const result = await fetchDetailedSessions(
+                0, 
+                1000, 
+                '', 
+                status, 
+                sortBy, 
+                employee, 
+                day, 
+                '', 
+                fromDate?.format('YYYY-MM-DD') || '', 
+                toDate?.format('YYYY-MM-DD') || ''
+            );
+            setReportData(result.data || []);
+            setPage(0);
+        } catch (error) {
+            console.error('Failed to fetch daily log report:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, [fromDate, toDate, employee, status, sortBy, day]);
+
+    useEffect(() => {
+        fetchReport();
+    }, [fetchReport]);
+
+    const handleReset = () => {
+        setFromDate(null);
+        setToDate(null);
+        if (isHR) {
+            setEmployee('all');
+        } else if (user?.employee) {
+            setEmployee(user.employee);
+        }
+        setStatus('all');
+        setDay('all');
+        setSortBy('login_date_desc');
+    };
+
+    const handleExport = () => {
+        const exportData = reportData.map((row) => ({
+            Employee: row.employee_name,
+            ID: row.employee,
+            Date: fDate(row.login_date, 'DD/MM/YYYY'),
+            Login: row.login_time ? dayjs(row.login_time).format('HH:mm:ss') : '---',
+            Logout: row.logout_time ? dayjs(row.logout_time).format('HH:mm:ss') : '---',
+            'Working Hours': row.total_work_hours?.toFixed(2) || '0.00',
+            'Break Hours': row.total_break_hours?.toFixed(2) || '0.00',
+            Status: row.status
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Daily Log Report");
+        XLSX.writeFile(workbook, "Daily_Log_Report.xlsx");
+    };
+
+    const handleViewDetails = (session: any) => {
+        setSelectedSession(session);
         setOpenDetails(true);
     };
 
@@ -115,112 +180,18 @@ export function AttendanceReportView() {
         setSelected(newSelected);
     };
 
-    const fetchReport = useCallback(async () => {
-        if (!fromDate || !toDate) {
-            setReportData([]);
-            return;
-        }
-        setLoading(true);
-        try {
-            const filters: any = {};
-            if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
-            if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
-            if (employee !== 'all') filters.employee = employee;
-            if (status !== 'all') filters.status = status;
-
-            const result = await runReport('Attendance Report', filters);
-            let finalData = result.result || [];
-
-            // Sort Data
-            finalData = [...finalData].sort((a, b) => {
-                const dateA = a.attendance_date;
-                const dateB = b.attendance_date;
-                const nameA = (a.employee_name || '').toLowerCase();
-                const nameB = (b.employee_name || '').toLowerCase();
-
-                switch (sortBy) {
-                    case 'date_asc':
-                        if (dateA !== dateB) return dateA.localeCompare(dateB);
-                        return nameA.localeCompare(nameB);
-                    case 'date_desc':
-                        if (dateB !== dateA) return dateB.localeCompare(dateA);
-                        return nameA.localeCompare(nameB);
-                    case 'name_asc':
-                        if (nameA !== nameB) return nameA.localeCompare(nameB);
-                        return dateB.localeCompare(dateA);
-                    case 'name_desc':
-                        if (nameA !== nameB) return nameB.localeCompare(nameA);
-                        return dateB.localeCompare(dateA);
-                    default:
-                        return 0;
-                }
-            });
-
-            setReportData(finalData);
-            setPage(0);
-        } catch (error) {
-            console.error('Failed to fetch attendance report:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [fromDate, toDate, employee, status, sortBy]);
-
-    useEffect(() => {
-        fetchReport();
-    }, [fetchReport]);
-
-    const handleReset = () => {
-        setFromDate(null);
-        setToDate(null);
-        if (isHR) {
-            setEmployee('all');
-        } else if (user?.employee) {
-            setEmployee(user.employee);
-        }
-        setStatus('all');
-        setSortBy('date_asc');
-    };
-
-
-    useEffect(() => {
-        getDoctypeList('Employee', ['name', 'employee_name']).then(setEmployeeOptions);
-    }, []);
-
-    const handleExport = () => {
-        const exportData = reportData.map(({ docstatus, ...rest }) => rest);
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
-        XLSX.writeFile(workbook, "Attendance_Report.xlsx");
-    };
-
-    const onChangePage = useCallback((event: unknown, newPage: number) => {
-        setPage(newPage);
-    }, []);
-
-    const onChangeRowsPerPage = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-        setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0);
-    }, []);
-
-    const totalDaysPresent = reportData.filter(d => d.status === 'Present').length;
-    const totalEntries = reportData.length;
-
-    const getStatusColor = (s: string) => {
-        switch (s) {
-            case 'Present': return 'success';
-            case 'Absent': return 'error';
-            case 'On Leave': return 'info';
-            case 'Half Day': return 'warning';
-            default: return 'default';
-        }
-    };
+    // Summary stats
+    const totalSessions = reportData.length;
+    const totalWorkHours = reportData.reduce((acc, curr) => acc + (curr.total_work_hours || 0), 0);
+    const totalBreakHours = reportData.reduce((acc, curr) => acc + (curr.total_break_hours || 0), 0);
+    const activeSessions = reportData.filter(d => d.status === 'Active').length;
+    const inactiveSessions = reportData.filter(d => d.status === 'Inactive').length;
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Typography variant="h4">Attendance Report</Typography>
+                    <Typography variant="h4">Employee Daily Log Report</Typography>
                     <Stack direction="row" spacing={1}>
                         <Button
                             variant="outlined"
@@ -280,22 +251,6 @@ export function AttendanceReportView() {
                             setEmployee(newValue?.name || 'all');
                         }}
                         disabled={!isHR}
-                        renderOption={(props, option) => (
-                            <Box component="li" {...props} sx={{ fontSize: '0.85rem' }}>
-                                {option.name === 'all' ? (
-                                    option.employee_name
-                                ) : (
-                                    <Stack spacing={0.5}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                            {option.employee_name}
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                            ID: {option.name}
-                                        </Typography>
-                                    </Stack>
-                                )}
-                            </Box>
-                        )}
                         renderInput={(params) => (
                             <TextField
                                 {...params}
@@ -305,8 +260,6 @@ export function AttendanceReportView() {
                         )}
                     />
 
-
-
                     <FormControl size="small" sx={{ minWidth: 140 }}>
                         <Select
                             value={status}
@@ -314,12 +267,25 @@ export function AttendanceReportView() {
                             displayEmpty
                         >
                             <MenuItem value="all">All Status</MenuItem>
-                            <MenuItem value="Present">Present</MenuItem>
-                            <MenuItem value="Absent">Absent</MenuItem>
-                            <MenuItem value="On Leave">On Leave</MenuItem>
-                            <MenuItem value="Half Day">Half Day</MenuItem>
-                            <MenuItem value="Holiday">Holiday</MenuItem>
-                            <MenuItem value="Missing">Missing</MenuItem>
+                            <MenuItem value="Active">Active</MenuItem>
+                            <MenuItem value="Inactive">Inactive</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    <FormControl size="small" sx={{ minWidth: 140 }}>
+                        <Select
+                            value={day}
+                            onChange={(e) => setDay(e.target.value)}
+                            displayEmpty
+                        >
+                            <MenuItem value="all">All Days</MenuItem>
+                            <MenuItem value="Monday">Monday</MenuItem>
+                            <MenuItem value="Tuesday">Tuesday</MenuItem>
+                            <MenuItem value="Wednesday">Wednesday</MenuItem>
+                            <MenuItem value="Thursday">Thursday</MenuItem>
+                            <MenuItem value="Friday">Friday</MenuItem>
+                            <MenuItem value="Saturday">Saturday</MenuItem>
+                            <MenuItem value="Sunday">Sunday</MenuItem>
                         </Select>
                     </FormControl>
 
@@ -328,10 +294,10 @@ export function AttendanceReportView() {
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value)}
                         >
-                            <MenuItem value="date_asc">Date ↓ (Asc)</MenuItem>
-                            <MenuItem value="date_desc">Date ↑ (Desc)</MenuItem>
-                            <MenuItem value="name_asc">Name: A to Z</MenuItem>
-                            <MenuItem value="name_desc">Name: Z to A</MenuItem>
+                            <MenuItem value="login_date_desc">Date ↓ (Desc)</MenuItem>
+                            <MenuItem value="login_date_asc">Date ↑ (Asc)</MenuItem>
+                            <MenuItem value="working_hours_desc">Working Hrs: High to Low</MenuItem>
+                            <MenuItem value="working_hours_asc">Working Hrs: Low to High</MenuItem>
                         </Select>
                     </FormControl>
 
@@ -353,26 +319,21 @@ export function AttendanceReportView() {
                         gridTemplateColumns: {
                             xs: 'repeat(1, 1fr)',
                             sm: 'repeat(2, 1fr)',
-                            md: 'repeat(6, 1fr)', // 6 columns for 6 cards
+                            md: 'repeat(5, 1fr)',
                         },
                     }}
                 >
-                    <SummaryCard item={{ label: 'Total Entries', value: reportData.length, indicator: 'blue' }} />
-                    <SummaryCard item={{ label: 'Present', value: reportData.filter(d => d.status === 'Present').length, indicator: 'green' }} />
-                    <SummaryCard item={{ label: 'Absent', value: reportData.filter(d => d.status === 'Absent').length, indicator: 'red' }} />
-                    <SummaryCard item={{ label: 'Half Day', value: reportData.filter(d => d.status === 'Half Day').length, indicator: 'orange' }} />
-                    <SummaryCard item={{ label: 'Missing', value: reportData.filter(d => d.status === 'Missing').length, indicator: 'orange' }} />
-                    <SummaryCard item={{ label: 'Holiday', value: reportData.filter(d => d.status === 'Holiday').length, indicator: 'blue' }} />
+                    <SummaryCard item={{ label: 'Total Days', value: totalSessions, indicator: 'blue' }} />
+                    <SummaryCard item={{ label: 'Work Hours', value: totalWorkHours.toFixed(1), suffix: 'Hrs', indicator: 'green' }} />
+                    <SummaryCard item={{ label: 'Break Hours', value: totalBreakHours.toFixed(1), suffix: 'Hrs', indicator: 'orange' }} />
+                    <SummaryCard item={{ label: 'Active', value: activeSessions, indicator: 'green' }} />
+                    <SummaryCard item={{ label: 'Inactive', value: inactiveSessions, indicator: 'red' }} />
                 </Box>
 
                 <Card>
                     <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
                         <Scrollbar>
-                            <Table
-                                size="medium"
-                                stickyHeader
-                                sx={{ borderCollapse: 'collapse' }}
-                            >
+                            <Table size="medium" stickyHeader sx={{ borderCollapse: 'collapse' }}>
                                 <TableHead>
                                     <TableRow sx={{ bgcolor: '#f4f6f8' }}>
                                         <TableCell padding="checkbox">
@@ -384,10 +345,11 @@ export function AttendanceReportView() {
                                         </TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Employee</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Login</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Logout</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Work Hours</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Break Hours</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>In Time</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Out Time</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Working Hours</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', position: 'sticky', right: 0, bgcolor: '#f4f6f8', zIndex: 11 }}>Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
@@ -398,10 +360,8 @@ export function AttendanceReportView() {
                                             const isSelected = selected.indexOf(row.name) !== -1;
                                             return (
                                                 <TableRow
-                                                    key={`${row.employee}-${row.attendance_date}-${index}`}
+                                                    key={row.name}
                                                     hover
-                                                    role="checkbox"
-                                                    aria-checked={isSelected}
                                                     selected={isSelected}
                                                     sx={{
                                                         '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
@@ -411,25 +371,24 @@ export function AttendanceReportView() {
                                                     <TableCell padding="checkbox">
                                                         <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                     </TableCell>
-                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.attendance_date, 'DD/MM/YYYY')}</TableCell>
+                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.login_date, 'DD/MM/YYYY')}</TableCell>
                                                     <TableCell>
                                                         <Typography variant="subtitle2">{row.employee_name}</Typography>
                                                         <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
                                                     </TableCell>
+                                                    <TableCell>{row.login_time ? dayjs(row.login_time).format('HH:mm:ss') : '---'}</TableCell>
+                                                    <TableCell>{row.logout_time ? dayjs(row.logout_time).format('HH:mm:ss') : '---'}</TableCell>
+                                                    <TableCell sx={{ fontWeight: 'bold' }}>{row.total_work_hours?.toFixed(2) || '0.00'} Hrs</TableCell>
+                                                    <TableCell>{row.total_break_hours?.toFixed(2) || '0.00'} Hrs</TableCell>
                                                     <TableCell>
-                                                        <Label color={getStatusColor(row.status)} variant="soft">
+                                                        <Label color={row.status === 'Active' ? 'success' : 'error'} variant="soft">
                                                             {row.status}
                                                         </Label>
                                                     </TableCell>
-                                                    <TableCell>{row.in_time || '---'}</TableCell>
-                                                    <TableCell>{row.out_time || '---'}</TableCell>
-                                                    <TableCell sx={{ fontWeight: 'bold' }}>{row.working_hours_display || '---'}</TableCell>
-                                                    <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
-                                                        {row.status !== 'Holiday' && (
-                                                            <IconButton onClick={() => handleViewDetails(row.name)} sx={{ color: 'info.main' }}>
-                                                                <Iconify icon={"solar:eye-bold" as any} />
-                                                            </IconButton>
-                                                        )}
+                                                    <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper' }}>
+                                                        <IconButton onClick={() => handleViewDetails(row)} sx={{ color: 'info.main' }}>
+                                                            <Iconify icon={"solar:eye-bold" as any} />
+                                                        </IconButton>
                                                     </TableCell>
                                                 </TableRow>
                                             );
@@ -437,20 +396,13 @@ export function AttendanceReportView() {
 
                                     {reportData.length === 0 && !loading && (
                                         <TableRow>
-                                            <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                                                {!fromDate || !toDate ? (
-                                                    <Stack spacing={1} alignItems="center">
-                                                        <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                        <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                            Please Select Filters
-                                                        </Typography>
-                                                    </Stack>
-                                                ) : (
-                                                    <Stack spacing={1} alignItems="center">
-                                                        <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                        <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
-                                                    </Stack>
-                                                )}
+                                            <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                                <Stack spacing={1} alignItems="center">
+                                                    <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                        No data found
+                                                    </Typography>
+                                                </Stack>
                                             </TableCell>
                                         </TableRow>
                                     )}
@@ -462,21 +414,24 @@ export function AttendanceReportView() {
                         component="div"
                         count={reportData.length}
                         page={page}
-                        onPageChange={onChangePage}
+                        onPageChange={(e, newPage) => setPage(newPage)}
                         rowsPerPage={rowsPerPage}
-                        onRowsPerPageChange={onChangeRowsPerPage}
+                        onRowsPerPageChange={(e) => {
+                            setRowsPerPage(parseInt(e.target.value, 10));
+                            setPage(0);
+                        }}
                         rowsPerPageOptions={[10, 25, 50]}
                     />
                 </Card>
             </Stack>
 
-            <AttendanceDetailsDialog
+            <EmployeeDailyLogDetailsDialog
                 open={openDetails}
-                attendanceId={selectedAttendanceName}
                 onClose={() => {
                     setOpenDetails(false);
-                    setSelectedAttendanceName(null);
+                    setSelectedSession(null);
                 }}
+                session={selectedSession}
             />
         </DashboardContent>
     );
@@ -499,12 +454,12 @@ function SummaryCard({ item }: { item: any }) {
 
     const getIcon = (label: string) => {
         const t = label.toLowerCase();
-        if (t.includes('present')) return 'solar:check-circle-bold-duotone';
-        if (t.includes('absent')) return 'solar:calendar-date-bold-duotone';
-        if (t.includes('half day')) return 'solar:clock-circle-bold-duotone';
-        if (t.includes('missing')) return 'solar:danger-circle-bold-duotone';
-        if (t.includes('holiday')) return 'solar:cup-star-bold-duotone';
-        if (t.includes('entries')) return 'solar:list-bold-duotone';
+        if (t.includes('work')) return 'solar:clock-circle-bold-duotone';
+        if (t.includes('break')) return 'solar:cup-hot-bold-duotone';
+        if (t.includes('active')) return 'solar:check-circle-bold-duotone';
+        if (t.includes('inactive')) return 'solar:danger-circle-bold-duotone';
+        if (t.includes('days')) return 'solar:calendar-date-bold-duotone';
+        if (t.includes('sessions')) return 'solar:list-bold-duotone';
         return 'solar:chart-2-bold-duotone';
     };
 

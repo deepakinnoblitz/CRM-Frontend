@@ -192,7 +192,7 @@ export function EmployeeReferralsView() {
   };
 
   return (
-    <DashboardContent maxWidth={false}>
+    <DashboardContent maxWidth={false} sx={{mt: 2}}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={{ xs: 3, md: 3 }}>
         <Typography variant="h4">{viewType === 'hr' ? 'Referral Management' : 'Employee Referrals'}</Typography>
       </Stack>

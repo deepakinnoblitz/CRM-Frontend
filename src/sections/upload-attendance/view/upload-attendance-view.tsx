@@ -180,7 +180,7 @@ export function UploadAttendanceView() {
     const notFound = !loading && data.length === 0;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box display="flex" alignItems="center" mb={5}>
                 <Typography variant="h4" flexGrow={1}>
                     Import Attendance
