@@ -196,7 +196,7 @@ export function DepartmentView() {
   const canReset = filters.status !== 'all';
 
   return (
-    <DashboardContent maxWidth={false}>
+    <DashboardContent maxWidth={false} sx={{mt: 2}}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
         <Typography variant="h4">Department List</Typography>
         <Button

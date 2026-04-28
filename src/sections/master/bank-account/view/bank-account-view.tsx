@@ -115,7 +115,7 @@ export function BankAccountView() {
   };
 
   return (
-    <DashboardContent maxWidth={false}>
+    <DashboardContent maxWidth={false} sx={{mt: 2}}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
         <Typography variant="h4">Bank Account List</Typography>
         <Button

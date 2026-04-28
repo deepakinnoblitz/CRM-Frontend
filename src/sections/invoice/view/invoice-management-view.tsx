@@ -118,7 +118,7 @@ export function InvoiceManagementView({ hideHeader = false }: { hideHeader?: boo
     }
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             {content}
         </DashboardContent>
     );

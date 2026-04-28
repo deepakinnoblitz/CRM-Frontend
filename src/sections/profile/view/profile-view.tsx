@@ -190,7 +190,7 @@ export function ProfileView() {
     }
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Container maxWidth="lg">
                 <Stack spacing={4} sx={{ maxWidth: 900, mx: 'auto' }}>
                     <Stack direction="row" alignItems="center" justifyContent="space-between">

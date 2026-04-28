@@ -1,9 +1,11 @@
 import type { Breakpoint } from '@mui/material/styles';
 
+import { useMemo } from 'react';
 import { merge } from 'es-toolkit';
 import { useBoolean } from 'minimal-shared/hooks';
 
 import Box from '@mui/material/Box';
+import Fade from '@mui/material/Fade';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
@@ -12,6 +14,7 @@ import { useTheme, alpha } from '@mui/material/styles';
 import { RouterLink } from 'src/routes/components';
 
 import { useSocket } from 'src/hooks/use-socket';
+import { useDashboardView } from 'src/hooks/dashboard-view-context';
 import { useUnreadCountsContext } from 'src/hooks/unread-counts-context';
 
 import { CONFIG } from 'src/config-global';
@@ -21,6 +24,7 @@ import { Label } from 'src/components/label';
 import { CallProvider } from 'src/sections/chat/call-context';
 import ChatNotifications from 'src/sections/chat/chat-notifications';
 import { UserStatusBar } from 'src/sections/overview/user-status-bar';
+import { DashboardSwitcher } from 'src/sections/overview/dashboard-switcher';
 
 import { useAuth } from 'src/auth/auth-context';
 
@@ -68,139 +72,20 @@ export function DashboardLayout({
 
   const { unreadCounts } = useUnreadCountsContext();
 
-  const { navData } = getNavData(user?.roles);
+  const { view } = useDashboardView();
 
-  // Inject unread counts into navData
-  navData.forEach((item: any) => {
-    item.info = undefined;
-    // Check main items
-    if (
-      (item.title === 'Leave Application') &&
-      unreadCounts.counts['Leave Application'] > 0
-    ) {
-      item.info = (
-        <Label
-          color="error"
-          variant="filled"
-          sx={{
-            height: 20,
-            minWidth: 20,
-            fontSize: '0.75rem',
-            px: 0.5,
-            borderRadius: 0.75,
-            fontWeight: 'bold',
-          }}
-        >
-          {unreadCounts.counts['Leave Application']}
-        </Label>
-      );
-    }
-    if ((item.title === 'Request List') && unreadCounts.counts.Request > 0) {
-      item.info = (
-        <Label
-          color="error"
-          variant="filled"
-          sx={{
-            height: 20,
-            minWidth: 20,
-            fontSize: '0.75rem',
-            px: 0.5,
-            borderRadius: 0.75,
-            fontWeight: 'bold',
-          }}
-        >
-          {unreadCounts.counts.Request}
-        </Label>
-      );
-    }
-    if (
-      (item.title === 'WFH Attendance') &&
-      unreadCounts.counts['WFH Attendance'] > 0
-    ) {
-      item.info = (
-        <Label
-          color="error"
-          variant="filled"
-          sx={{
-            height: 20,
-            minWidth: 20,
-            fontSize: '0.75rem',
-            px: 0.5,
-            borderRadius: 0.75,
-            fontWeight: 'bold',
-          }}
-        >
-          {unreadCounts.counts['WFH Attendance']}
-        </Label>
-      );
-    }
-
-    // Aggregation for Parent Items
-    if (item.children) {
-      let groupCount = 0;
-      item.children.forEach((child: any) => {
-        child.info = undefined;
-        if (child.title === 'Leave Application' && unreadCounts.counts['Leave Application'] > 0) {
-          child.info = (
-            <Label
-              color="error"
-              variant="filled"
-              sx={{
-                height: 18,
-                minWidth: 18,
-                fontSize: '0.7rem',
-                px: 0.5,
-                borderRadius: 0.5,
-                fontWeight: 'bold',
-              }}
-            >
-              {unreadCounts.counts['Leave Application']}
-            </Label>
-          );
-          groupCount += unreadCounts.counts['Leave Application'];
-        }
-        if (child.title === 'WFH Attendance' && unreadCounts.counts['WFH Attendance'] > 0) {
-          child.info = (
-            <Label
-              color="error"
-              variant="filled"
-              sx={{
-                height: 18,
-                minWidth: 18,
-                fontSize: '0.7rem',
-                px: 0.5,
-                borderRadius: 0.5,
-                fontWeight: 'bold',
-              }}
-            >
-              {unreadCounts.counts['WFH Attendance']}
-            </Label>
-          );
-          groupCount += unreadCounts.counts['WFH Attendance'];
-        }
-        if (child.title === 'Request List' && unreadCounts.counts.Request > 0) {
-          child.info = (
-            <Label
-              color="error"
-              variant="filled"
-              sx={{
-                height: 18,
-                minWidth: 18,
-                fontSize: '0.7rem',
-                px: 0.5,
-                borderRadius: 0.5,
-                fontWeight: 'bold',
-              }}
-            >
-              {unreadCounts.counts.Request}
-            </Label>
-          );
-          groupCount += unreadCounts.counts.Request;
-        }
-      });
-
-      // If any children had unread counts, show the total on the parent item
-      if (groupCount > 0) {
+  const { navData } = useMemo(() => {
+    console.log('Recalculating navData for view:', view);
+    const result = getNavData(user?.roles, view);
+    
+    // Inject unread counts into navData
+    result.navData.forEach((item: any) => {
+      item.info = undefined;
+      // Check main items
+      if (
+        (item.title === 'Leave Application') &&
+        unreadCounts.counts['Leave Application'] > 0
+      ) {
         item.info = (
           <Label
             color="error"
@@ -214,12 +99,138 @@ export function DashboardLayout({
               fontWeight: 'bold',
             }}
           >
-            {groupCount}
+            {unreadCounts.counts['Leave Application']}
           </Label>
         );
       }
-    }
-  });
+      if ((item.title === 'Request List') && unreadCounts.counts.Request > 0) {
+        item.info = (
+          <Label
+            color="error"
+            variant="filled"
+            sx={{
+              height: 20,
+              minWidth: 20,
+              fontSize: '0.75rem',
+              px: 0.5,
+              borderRadius: 0.75,
+              fontWeight: 'bold',
+            }}
+          >
+            {unreadCounts.counts.Request}
+          </Label>
+        );
+      }
+      if (
+        (item.title === 'WFH Attendance') &&
+        unreadCounts.counts['WFH Attendance'] > 0
+      ) {
+        item.info = (
+          <Label
+            color="error"
+            variant="filled"
+            sx={{
+              height: 20,
+              minWidth: 20,
+              fontSize: '0.75rem',
+              px: 0.5,
+              borderRadius: 0.75,
+              fontWeight: 'bold',
+            }}
+          >
+            {unreadCounts.counts['WFH Attendance']}
+          </Label>
+        );
+      }
+
+      // Aggregation for Parent Items
+      if (item.children) {
+        let groupCount = 0;
+        item.children.forEach((child: any) => {
+          child.info = undefined;
+          if (child.title === 'Leave Application' && unreadCounts.counts['Leave Application'] > 0) {
+            child.info = (
+              <Label
+                color="error"
+                variant="filled"
+                sx={{
+                  height: 18,
+                  minWidth: 18,
+                  fontSize: '0.7rem',
+                  px: 0.5,
+                  borderRadius: 0.5,
+                  fontWeight: 'bold',
+                }}
+              >
+                {unreadCounts.counts['Leave Application']}
+              </Label>
+            );
+            groupCount += unreadCounts.counts['Leave Application'];
+          }
+          if (child.title === 'WFH Attendance' && unreadCounts.counts['WFH Attendance'] > 0) {
+            child.info = (
+              <Label
+                color="error"
+                variant="filled"
+                sx={{
+                  height: 18,
+                  minWidth: 18,
+                  fontSize: '0.7rem',
+                  px: 0.5,
+                  borderRadius: 0.5,
+                  fontWeight: 'bold',
+                }}
+              >
+                {unreadCounts.counts['WFH Attendance']}
+              </Label>
+            );
+            groupCount += unreadCounts.counts['WFH Attendance'];
+          }
+          if (child.title === 'Request List' && unreadCounts.counts.Request > 0) {
+            child.info = (
+              <Label
+                color="error"
+                variant="filled"
+                sx={{
+                  height: 18,
+                  minWidth: 18,
+                  fontSize: '0.7rem',
+                  px: 0.5,
+                  borderRadius: 0.5,
+                  fontWeight: 'bold',
+                }}
+              >
+                {unreadCounts.counts.Request}
+              </Label>
+            );
+            groupCount += unreadCounts.counts.Request;
+          }
+        });
+
+        // If any children had unread counts, show the total on the parent item
+        if (groupCount > 0) {
+          item.info = (
+            <Label
+              color="error"
+              variant="filled"
+              sx={{
+                height: 20,
+                minWidth: 20,
+                fontSize: '0.75rem',
+                px: 0.5,
+                borderRadius: 0.75,
+                fontWeight: 'bold',
+              }}
+            >
+              {groupCount}
+            </Label>
+          );
+        }
+      }
+    });
+
+    return result;
+  }, [user?.roles, view, unreadCounts]);
 
 
   const renderHeader = () => {
@@ -242,8 +253,11 @@ export function DashboardLayout({
             onClick={onOpen}
             sx={{ mr: 1, ml: -1, [theme.breakpoints.up(layoutQuery)]: { display: 'none' } }}
           />
-          <NavMobile data={navData} open={open} onClose={onClose} />
+          <NavMobile key={view} data={navData} open={open} onClose={onClose} />
 
+          <Box sx={{ ml: 2, display: 'inline-flex' }}>
+            <DashboardSwitcher />
+          </Box>
         </>
       ),
       rightArea: (
@@ -316,44 +330,42 @@ export function DashboardLayout({
 
   return (
     <CallProvider>
-      <LayoutSection
-        /** **************************************
-         * @Header
-         *************************************** */
-        headerSection={renderHeader()}
-        /** **************************************
-         * @Sidebar
-         *************************************** */
-        sidebarSection={
-          <NavDesktop data={navData} layoutQuery={layoutQuery} />
-        }
-
-        /** **************************************
-         * @Footer
-         *************************************** */
-        footerSection={renderFooter()}
-        /** **************************************
-         * @Styles
-         *************************************** */
-        cssVars={{ ...dashboardLayoutVars(theme), ...cssVars }}
-        sx={[
-          {
-            bgcolor: 'common.white',
-            [`& .${layoutClasses.sidebarContainer}`]: {
-              [theme.breakpoints.up(layoutQuery)]: {
-                pl: 'var(--layout-nav-vertical-width)',
-                transition: theme.transitions.create(['padding-left'], {
-                  easing: 'var(--layout-transition-easing)',
-                  duration: 'var(--layout-transition-duration)',
-                }),
-              },
+      <Fade in timeout={700} key={view}>
+        <Box
+          sx={{
+            height: 1,
+            animation: 'fadeIn 0.6s ease-in-out',
+            '@keyframes fadeIn': {
+              '0%': { opacity: 0 },
+              '100%': { opacity: 1 },
             },
-          },
-          ...(Array.isArray(sx) ? sx : [sx]),
-        ]}
-      >
-        {renderMain()}
-      </LayoutSection>
+          }}
+        >
+          <LayoutSection
+            headerSection={renderHeader()}
+            sidebarSection={<NavDesktop key={view} data={navData} layoutQuery={layoutQuery} />}
+            footerSection={renderFooter()}
+            cssVars={{ ...dashboardLayoutVars(theme), ...cssVars }}
+            sx={[
+              {
+                bgcolor: 'common.white',
+                [`& .${layoutClasses.sidebarContainer}`]: {
+                  [theme.breakpoints.up(layoutQuery)]: {
+                    pl: 'var(--layout-nav-vertical-width)',
+                    transition: theme.transitions.create(['padding-left'], {
+                      easing: 'var(--layout-transition-easing)',
+                      duration: 'var(--layout-transition-duration)',
+                    }),
+                  },
+                },
+              },
+              ...(Array.isArray(sx) ? sx : [sx]),
+            ]}
+          >
+            {renderMain()}
+          </LayoutSection>
+        </Box>
+      </Fade>
     </CallProvider>
   );
 }

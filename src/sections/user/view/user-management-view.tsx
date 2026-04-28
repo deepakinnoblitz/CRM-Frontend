@@ -141,7 +141,7 @@ export function UserManagementView({ hideHeader = false }: { hideHeader?: boolea
     }
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             {content}
         </DashboardContent>
     );

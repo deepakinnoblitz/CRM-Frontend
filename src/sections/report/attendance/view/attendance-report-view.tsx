@@ -217,7 +217,7 @@ export function AttendanceReportView() {
     };
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
                     <Typography variant="h4">Attendance Report</Typography>

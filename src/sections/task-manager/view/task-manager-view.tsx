@@ -230,7 +230,7 @@ export default function TaskManagerView() {
     const listTasks = sortTasks(baseTasks);
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Container maxWidth="xl" sx={{ height: 1, display: 'flex', flexDirection: 'column', px: { xs: 2, md: 1 } }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                     <Box>
