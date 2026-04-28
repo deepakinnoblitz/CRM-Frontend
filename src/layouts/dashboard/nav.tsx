@@ -1,5 +1,6 @@
 import type { Theme, SxProps, Breakpoint } from '@mui/material/styles';
 
+import { useLocation } from 'react-router';
 import { varAlpha } from 'minimal-shared/utils';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -43,7 +44,7 @@ export function NavDesktop({
     <Box
       sx={{
         pt: 2.5,
-        px: 2.5,
+        px: 2,
         top: 0,
         left: 0,
         height: 1,
@@ -91,7 +92,7 @@ export function NavMobile({
       sx={{
         [`& .${drawerClasses.paper}`]: {
           pt: 2.5,
-          px: 2.5,
+          px: 2,
           overflow: 'unset',
           width: 'var(--layout-nav-mobile-width)',
           bgcolor: theme.vars.palette.grey[200],
@@ -108,6 +109,9 @@ export function NavMobile({
 
 export function NavContent({ data, slots, sx }: Omit<NavContentProps, 'workspaces'>) {
   const pathname = usePathname();
+  const { search } = useLocation();
+
+  const fullPath = pathname + search;
 
   return (
     <>
@@ -128,9 +132,9 @@ export function NavContent({ data, slots, sx }: Omit<NavContentProps, 'workspace
             ...(Array.isArray(sx) ? sx : [sx]),
           ]}
         >
-          <List disablePadding sx={{ px: 2, gap: 1, display: 'flex', flexDirection: 'column', py: 1 }}>
+          <List disablePadding sx={{ px: 1.5, gap: 1, display: 'flex', flexDirection: 'column', py: 1 }}>
             {data.map((item) => (
-              <NavListItem key={item.title} item={item} pathname={pathname} />
+              <NavListItem key={item.title} item={item} fullPath={fullPath} />
             ))}
           </List>
         </Box>
@@ -143,14 +147,15 @@ export function NavContent({ data, slots, sx }: Omit<NavContentProps, 'workspace
 
 // ----------------------------------------------------------------------
 
-function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
+function NavListItem({ item, fullPath }: { item: NavItem; fullPath: string }) {
   const [open, setOpen] = useState(false);
 
   const handleToggle = useCallback(() => {
     setOpen((prev) => !prev);
   }, []);
 
-  const isActived = item.path === pathname || (item.children && item.children.some(child => child.path === pathname));
+  const isActived = (item.path === '/' ? fullPath === '/' : fullPath.startsWith(item.path)) ||
+    (item.children && item.children.some(child => child.path === '/' ? fullPath === '/' : fullPath.startsWith(child.path)));
 
   const renderContent = (
     <ListItemButton
@@ -160,10 +165,10 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
         : { component: RouterLink, href: item.path })}
       sx={[
         (theme) => ({
-          pl: 2,
-          py: 1.25,
+          pl: 1.5,
+          py: 0.875,
           gap: 2,
-          pr: 1.5,
+          pr: 1,
           borderRadius: 1.25,
           typography: 'body2',
           fontWeight: 'fontWeightMedium',
@@ -180,7 +185,7 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
             width: 3,
             height: 0,
             borderRadius: '0 4px 4px 0',
-            bgcolor: theme.vars.palette.primary.main,
+            bgcolor: '#08a3cd',
             transition: 'height 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
           },
           '&:hover': {
@@ -190,15 +195,15 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
           },
           ...(isActived && {
             fontWeight: 'fontWeightSemiBold',
-            color: theme.vars.palette.primary.main,
-            bgcolor: varAlpha(theme.vars.palette.primary.mainChannel, 0.12),
+            color: '#08a3cd',
+            bgcolor: varAlpha('8 163 205', 0.12),
             boxShadow: 'none',
             '&::before': {
               display: 'block',
               height: '70%',
             },
             '&:hover': {
-              bgcolor: varAlpha(theme.vars.palette.primary.mainChannel, 0.16),
+              bgcolor: varAlpha('8 163 205', 0.16),
               transform: 'translateX(4px)',
             },
           }),
@@ -259,7 +264,7 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
             }
           }}>
             {item.children.map((child: any) => {
-              const isChildActived = child.path === pathname;
+              const isChildActived = child.path === '/' ? fullPath === '/' : fullPath.startsWith(child.path);
 
               return (
                 <ListItemButton
@@ -268,8 +273,8 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
                   href={child.path}
                   sx={[
                     (theme) => ({
-                      pl: 2,
-                      py: 0.875,
+                      pl: 1.25,
+                      py: 0.75,
                       borderRadius: 1,
                       typography: 'body2',
                       fontSize: '0.875rem',
@@ -282,8 +287,8 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
                       },
                       ...(isChildActived && {
                         fontWeight: 'fontWeightSemiBold',
-                        color: theme.vars.palette.primary.main,
-                        bgcolor: varAlpha(theme.vars.palette.primary.mainChannel, 0.08),
+                        color: '#08a3cd',
+                        bgcolor: varAlpha('8 163 205', 0.08),
                       }),
                     }),
                   ]}

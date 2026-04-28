@@ -190,9 +190,9 @@ export function ProfileView() {
     }
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Container maxWidth="lg">
-                <Stack spacing={4} sx={{ maxWidth: 900, mx: 'auto' }}>
+                <Stack spacing={4} sx={{ maxWidth: 1200, mx: 'auto' }}>
                     <Stack direction="row" alignItems="center" justifyContent="space-between">
                         <Typography variant="h4" sx={{ fontWeight: 800 }}>
                             My Profile
@@ -200,55 +200,76 @@ export function ProfileView() {
                     </Stack>
 
                     <Card>
-                        <CardHeader
-                            title="Basic Info"
-                            subheader="Review your personal details"
-                            action={
+                        <CardContent>
+                            <Stack direction="row" alignItems="center" sx={{ mb: 3, p: 2 }}>
+                                <Stack direction="row" spacing={3} alignItems="center">
+                                    <Avatar
+                                        alt={user.full_name}
+                                        src={user.user_image}
+                                        sx={{
+                                            width: 120,
+                                            height: 120,
+                                            border: (theme) => `solid 4px ${theme.palette.background.paper}`,
+                                            boxShadow: (theme) => theme.customShadows.z12,
+                                        }}
+                                    />
+                                    <Stack spacing={0.5}>
+                                        <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                                            {user.full_name}
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                            <Iconify icon="solar:letter-bold" width={16} />
+                                            {user.email}
+                                        </Typography>
+                                        {user.employee && (
+                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                                ID: {user.employee}
+                                            </Typography>
+                                        )}
+                                    </Stack>
+                                </Stack>
+
+                                <Box sx={{ flexGrow: 1 }} />
+
                                 <Stack direction="row" spacing={2}>
                                     <Button
                                         variant="outlined"
                                         color="inherit"
                                         onClick={changePassword.onTrue}
                                         startIcon={<Iconify icon="solar:shield-keyhole-bold-duotone" />}
+                                        sx={{
+                                            borderRadius: 1,
+                                            textTransform: 'none',
+                                            fontWeight: 600,
+                                        }}
                                     >
                                         Change Password
                                     </Button>
-                                    <Button variant="contained" color="primary" onClick={handleSaveProfile}>
+                                    <Button
+                                        variant="contained"
+                                        onClick={handleSaveProfile}
+                                        sx={{
+                                            bgcolor: '#08a3cd',
+                                            '&:hover': { bgcolor: '#068fb3' },
+                                            borderRadius: 1,
+                                            textTransform: 'none',
+                                            fontWeight: 600,
+                                            px: 3
+                                        }}
+                                    >
                                         Save Changes
                                     </Button>
                                 </Stack>
-                            }
-                        />
 
-                        <CardContent>
-                            <Stack direction="row" spacing={3} alignItems="center" sx={{ mb: 5 }}>
-                                <Avatar
-                                    alt={user.full_name}
-                                    src={user.user_image}
-                                    sx={{
-                                        width: 120,
-                                        height: 120,
-                                        border: (theme) => `solid 4px ${theme.palette.background.paper}`,
-                                        boxShadow: (theme) => theme.customShadows.z12,
-                                    }}
-                                />
-                                <Stack spacing={0.5}>
-                                    <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                                        {user.full_name}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <Iconify icon="solar:letter-bold" width={16} />
-                                        {user.email}
-                                    </Typography>
-                                    {user.employee && (
-                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
-                                            ID: {user.employee}
-                                        </Typography>
-                                    )}
-                                </Stack>
                             </Stack>
 
-                            <Grid container spacing={3}>
+                            <CardHeader
+                                title="Basic Info"
+                                subheader="Review your personal details"
+                                sx={{ mb: 3 }}
+                            />
+
+                            <Grid container spacing={3} sx={{ mx: 2 }}>
                                 <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         fullWidth
@@ -286,7 +307,7 @@ export function ProfileView() {
                                     />
                                 </Grid>
 
-                                <Grid size={{ xs: 12, sm: 6 }}>
+                                {/* <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Username"
@@ -302,14 +323,14 @@ export function ProfileView() {
                                         value={user.email || ''}
                                         InputProps={{ readOnly: true }}
                                     />
-                                </Grid>
+                                </Grid> */}
                             </Grid>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader title="Access & Permissions" subheader="Roles and allowed modules" />
-                        <CardContent sx={{ pt: 3 }}>
+                        <CardContent sx={{ pt: 3, pl: 3 }}>
                             <Grid container spacing={4}>
                                 <Grid size={{ xs: 12 }}>
                                     <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
@@ -317,12 +338,17 @@ export function ProfileView() {
                                     </Typography>
                                     <Stack direction="row" flexWrap="wrap" gap={1}>
                                         {user.roles.map((role) => (
-                                            <Chip key={role} label={role} size="small" variant="outlined" />
+                                            <Chip
+                                                key={role}
+                                                label={role}
+                                                color="primary"
+                                                sx={{ fontWeight: 600 }}
+                                            />
                                         ))}
                                     </Stack>
                                 </Grid>
 
-                                <Grid size={{ xs: 12 }}>
+                                {/* <Grid size={{ xs: 12 }}>
                                     <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
                                         Allowed Modules
                                     </Typography>
@@ -335,7 +361,7 @@ export function ProfileView() {
                                             <Typography variant="body2" sx={{ color: 'text.secondary' }}>No extra modules allowed</Typography>
                                         )}
                                     </Stack>
-                                </Grid>
+                                </Grid> */}
                             </Grid>
                         </CardContent>
                     </Card>
@@ -343,7 +369,7 @@ export function ProfileView() {
             </Container>
 
             <Dialog open={changePassword.value} onClose={changePassword.onFalse} maxWidth="sm" fullWidth>
-                <DialogTitle>Change Password</DialogTitle>
+                <DialogTitle sx={{ mt: 1 }}>Change Password</DialogTitle>
                 <DialogContent>
                     <Stack spacing={2} sx={{ mt: 1 }}>
                         {errorMessage && (
@@ -408,11 +434,31 @@ export function ProfileView() {
                         />
                     </Stack>
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={changePassword.onFalse} variant="outlined" color="inherit">
+                <DialogActions sx={{ px: 3, pb: 3 }}>
+                    <Button
+                        onClick={changePassword.onFalse}
+                        variant="outlined"
+                        color="inherit"
+                        sx={{
+                            borderRadius: 1,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                        }}
+                    >
                         Cancel
                     </Button>
-                    <Button onClick={handleChangePassword} variant="contained" color="inherit">
+                    <Button
+                        onClick={handleChangePassword}
+                        variant="contained"
+                        sx={{
+                            bgcolor: '#08a3cd',
+                            '&:hover': { bgcolor: '#068fb3' },
+                            borderRadius: 1,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            px: 3
+                        }}
+                    >
                         Update Password
                     </Button>
                 </DialogActions>

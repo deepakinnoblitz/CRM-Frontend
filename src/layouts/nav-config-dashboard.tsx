@@ -138,6 +138,7 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
     children: [
       { title: 'Attendance Report', path: '/reports/attendance' },
+      { title: 'Daily Log Report', path: '/reports/daily-log' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
     ],
   },
@@ -240,6 +241,11 @@ export const employeeNavData = [
     title: 'Attendance Report',
     path: '/reports/attendance',
     icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+  },
+  {
+    title: 'Daily Log Report',
+    path: '/reports/daily-log',
+    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
   }
 ];
 
@@ -276,7 +282,8 @@ export const salesNavData = [
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
       { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
-      { title: 'Attendance Report', path: '/reports/attendance' }
+      { title: 'Attendance Report', path: '/reports/attendance' },
+      { title: 'Daily Log Report', path: '/reports/daily-log' }
     ]
   }
 ];
@@ -344,6 +351,7 @@ export const crmNavData = [
       { title: 'Accounts Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
       { title: 'Meeting Report', path: '/reports/meeting' },
+      { title: 'Daily Log Report', path: '/reports/daily-log' }
     ]
   },
   {
@@ -411,7 +419,8 @@ export const crmAndSalesNavData = [
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
       { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
-      { title: 'Attendance Report', path: '/reports/attendance' }
+      { title: 'Attendance Report', path: '/reports/attendance' },
+      { title: 'Daily Log Report', path: '/reports/daily-log' }
     ]
   }
 ];
