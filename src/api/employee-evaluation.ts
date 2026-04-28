@@ -79,7 +79,7 @@ export async function fetchEmployeeEvaluationTraits(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Evaluation Trait&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Evaluation Trait&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch evaluation traits");
@@ -299,7 +299,7 @@ export async function fetchEmployeeEvaluationEvents(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Employee Evaluation&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Employee Evaluation&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch employee evaluations");
@@ -358,7 +358,7 @@ export async function fetchEmployeeEvaluationScoreLogs(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Employee Evaluation Score Log&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Employee Evaluation Score Log&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch employee evaluation score logs");
