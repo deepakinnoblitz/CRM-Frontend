@@ -93,6 +93,7 @@ export function DashboardEomCard() {
                 border: `1px solid ${alpha('#D4AF37', 0.4)}`,
             }}
         >
+            
             {/* Background Sparkles Left */}
             {sparkles.left.map((s, i) => (
                 <Box

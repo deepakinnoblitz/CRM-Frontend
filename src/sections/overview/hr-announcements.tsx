@@ -1,6 +1,6 @@
 import type { CardProps } from '@mui/material/Card';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -9,7 +9,8 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
-import { alpha, useTheme, keyframes } from '@mui/material/styles';
+import IconButton from '@mui/material/IconButton';
+import { alpha, keyframes, useTheme } from '@mui/material/styles';
 
 import { fDate } from 'src/utils/format-time';
 
@@ -18,8 +19,8 @@ import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 const marqueeAnimation = keyframes`
-  0% { left: 100%; transform: translateX(0); }
-  100% { left: 0; transform: translateX(-100%); }
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 `;
 
 type AnnouncementItem = {
@@ -37,121 +38,260 @@ type Props = CardProps & {
 export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
     const theme = useTheme();
     const [open, setOpen] = useState(false);
+    const [pinned, setPinned] = useState(false);
     const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     if (list.length === 0) return null;
 
-    // ── Hover helpers ─────────────────────────────────────────────────
-    // Both the banner AND the panel share one wrapper Box.
-    // onMouseLeave only fires when the mouse truly leaves that wrapper,
-    // so there's no gap/flicker between the banner and the dropdown.
+    const featuredItem = list[0];
+
     const scheduleClose = () => {
+        if (pinned) return;
         closeTimer.current = setTimeout(() => setOpen(false), 150);
     };
     const cancelClose = () => {
         if (closeTimer.current) clearTimeout(closeTimer.current);
     };
+    const handleToggle = () => {
+        cancelClose();
+        setPinned((prev) => {
+            const next = !prev;
+            setOpen(next);
+            return next;
+        });
+    };
+
+    // useEffect(() => () => {
+    //     if (closeTimer.current) clearTimeout(closeTimer.current);
+    // }, []);
 
     return (
         <Box
-            onMouseEnter={() => { cancelClose(); setOpen(true); }}
+            onMouseEnter={() => {
+                cancelClose();
+                setOpen(true);
+            }}
             onMouseLeave={scheduleClose}
             sx={{ position: 'relative' }}
         >
-            {/* ── Banner ── */}
             <Card
                 {...other}
                 sx={{
-                    p: { xs: 1, sm: 1.5 },
+                    px: { xs: 1.5, sm: 2 },
+                    py: { xs: 1.25, sm: 1.5 },
                     display: 'flex',
                     alignItems: 'center',
+                    gap: { xs: 1.25, sm: 2 },
                     overflow: 'hidden',
-                    background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 1)} 0%, ${alpha(theme.palette.primary.dark, 1)} 100%)`,
-                    color: 'primary.contrastText',
-                    borderRadius: 1,
-                    boxShadow: theme.customShadows.z8,
+                    background: `
+                        linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.2)} 0%, ${alpha('#8b5cf6', 0.12)} 48%, ${alpha('#14b8a6', 0.14)} 100%),
+                        ${alpha(theme.palette.common.white, 0.72)}
+                    `,
+                    backdropFilter: 'blur(18px)',
+                    WebkitBackdropFilter: 'blur(18px)',
+                    border: `1px solid ${alpha(theme.palette.common.white, 0.7)}`,
+                    color: '#1f2937',
+                    borderRadius: 4,
+                    boxShadow: 'none',
                     position: 'relative',
-                    height: 52,
-                    cursor: 'default',
-                    transition: 'filter 0.2s',
-                    '&:hover': { filter: 'brightness(1.08)' },
+                    minHeight: { xs: 72, sm: 80 },
+                    cursor: 'pointer',
+                    transition: theme.transitions.create(['transform', 'box-shadow', 'border-color', 'background'], {
+                        duration: theme.transitions.duration.shorter,
+                    }),
+                    '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        inset: 1,
+                        borderRadius: 'inherit',
+                        background: `linear-gradient(180deg, ${alpha(theme.palette.common.white, 0.38)} 0%, ${alpha(theme.palette.common.white, 0.08)} 100%)`,
+                        pointerEvents: 'none',
+                    },
+                    '&:hover': {
+                        transform: 'translateY(-1px)',
+                        boxShadow: 'none',
+                        borderColor: alpha(theme.palette.primary.main, 0.24),
+                        background: `
+                            linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.22)} 0%, ${alpha('#8b5cf6', 0.14)} 48%, ${alpha('#14b8a6', 0.16)} 100%),
+                            ${alpha(theme.palette.common.white, 0.76)}
+                        `,
+                    },
                     ...other.sx,
                 }}
+                onClick={handleToggle}
             >
-                {/* Left label */}
                 <Stack
                     direction="row"
                     alignItems="center"
-                    spacing={{ xs: 0.75, sm: 1.5 }}
+                    spacing={1.25}
                     sx={{
                         zIndex: 1,
                         flexShrink: 0,
-                        pr: { xs: 1.5, sm: 2 },
-                        borderRight: `1px solid ${alpha(theme.palette.common.white, 0.2)}`,
-                        bgcolor: 'primary.main',
-                        height: '100%',
+                        minWidth: { sm: 210 },
                     }}
                 >
-                    <Iconify icon={"solar:volume-loud-bold-duotone" as any} width={22} />
-                    <Typography
-                        variant="subtitle2"
-                        sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1, display: { xs: 'none', sm: 'block' } }}
-                    >
-                        Announcements
-                    </Typography>
-
-                    {/* Count badge */}
-                    <Chip
-                        label={list.length}
-                        size="small"
-                        sx={{
-                            height: 18,
-                            fontSize: '0.65rem',
-                            fontWeight: 700,
-                            bgcolor: alpha(theme.palette.common.white, 0.25),
-                            color: 'inherit',
-                            '& .MuiChip-label': { px: 0.8 },
-                        }}
-                    />
-                </Stack>
-
-                {/* Marquee */}
-                <Box sx={{ flexGrow: 1, overflow: 'hidden', position: 'relative', height: '100%', display: 'flex', alignItems: 'center' }}>
                     <Box
                         sx={{
-                            display: 'flex',
-                            position: 'absolute',
-                            whiteSpace: 'nowrap',
-                            animation: `${marqueeAnimation} 40s linear infinite`,
-                            animationFillMode: 'backwards',
-                            '&:hover': { animationPlayState: 'paused' },
+                            width: 42,
+                            height: 42,
+                            borderRadius: 2.5,
+                            display: 'grid',
+                            placeItems: 'center',
+                            color: 'primary.main',
+                            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.22)} 0%, ${alpha('#8b5cf6', 0.18)} 100%)`,
+                            border: `1px solid ${alpha(theme.palette.common.white, 0.65)}`,
+                            boxShadow: `inset 0 1px 0 ${alpha(theme.palette.common.white, 0.6)}`,
                         }}
                     >
-                        {list.map((item, index) => (
-                            <Stack key={index} direction="row" alignItems="center" spacing={1} sx={{ mx: 4 }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                    {item.title}:
-                                </Typography>
-                                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                                    {item.message}
-                                </Typography>
-                                <Typography variant="caption" sx={{ opacity: 0.6, fontSize: '0.7rem' }}>
-                                    ({fDate(item.posting_date)})
-                                </Typography>
-                            </Stack>
-                        ))}
+                        <Iconify icon={"solar:bell-bing-bold-duotone" as any} width={22} />
+                    </Box>
+
+                    <Box sx={{ minWidth: 0 }}>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                            <Typography
+                                variant="subtitle2"
+                                sx={{
+                                    fontWeight: 800,
+                                    letterSpacing: '0.08em',
+                                    textTransform: 'uppercase',
+                                    color: '#0f172a',
+                                }}
+                            >
+                                {title || 'Announcements'}
+                            </Typography>
+                            <Chip
+                                label={list.length}
+                                size="small"
+                                sx={{
+                                    height: 22,
+                                    bgcolor: theme.palette.primary.main,
+                                    color: theme.palette.primary.contrastText,
+                                    fontWeight: 800,
+                                    '& .MuiChip-label': { px: 0.9 },
+                                }}
+                            />
+                        </Stack>
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                color: alpha('#1f2937', 0.62),
+                                display: { xs: 'none', sm: 'block' },
+                                mt: 0.25,
+                            }}
+                        >
+                            {subheader || 'Latest team and policy updates'}
+                        </Typography>
+                    </Box>
+                </Stack>
+
+                <Box
+                    sx={{
+                        flex: '1 1 auto',
+                        minWidth: 0,
+                        zIndex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Box sx={{ minWidth: 0 }}>
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                color: alpha('#1f2937', 0.72),
+                                mb: 0.35,
+                                display: { xs: 'none', md: 'block' },
+                            }}
+                        >
+                            Featured update
+                        </Typography>
+                        <Box
+                            sx={{
+                                position: 'relative',
+                                overflow: 'hidden',
+                                pr: { xs: 0, sm: 1 },
+                                maskImage: {
+                                    xs: 'linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%)',
+                                    sm: 'linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)',
+                                },
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    width: 'max-content',
+                                    minWidth: '200%',
+                                    animation: `${marqueeAnimation} 28s linear infinite`,
+                                    '&:hover': {
+                                        animationPlayState: 'paused',
+                                    },
+                                }}
+                            >
+                                {[0, 1].map((copy) => (
+                                    <Typography
+                                        key={copy}
+                                        variant="body1"
+                                        sx={{
+                                            color: '#1f2937',
+                                            fontWeight: 600,
+                                            lineHeight: 1.45,
+                                            whiteSpace: 'nowrap',
+                                            pr: 6,
+                                        }}
+                                    >
+                                        <Box component="span" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                                            {featuredItem.title}:
+                                        </Box>{' '}
+                                        {featuredItem.message}
+                                    </Typography>
+                                ))}
+                            </Box>
+                        </Box>
                     </Box>
                 </Box>
 
-                {/* Hint arrow */}
-                <Iconify
-                    icon="solar:alt-arrow-down-bold"
-                    width={18}
-                    sx={{ flexShrink: 0, ml: 1, opacity: 0.7, transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'none' }}
-                />
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={1}
+                    sx={{ zIndex: 1, flexShrink: 0, ml: 'auto' }}
+                >
+             
+                    <IconButton
+                        size="small"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            handleToggle();
+                        }}
+                        sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 2.5,
+                            color: '#1f2937',
+                            bgcolor: alpha(theme.palette.common.white, 0.34),
+                            border: `1px solid ${alpha(theme.palette.common.white, 0.78)}`,
+                            backdropFilter: 'blur(12px)',
+                            transition: theme.transitions.create(['transform', 'background-color'], {
+                                duration: theme.transitions.duration.shorter,
+                            }),
+                            '&:hover': {
+                                bgcolor: alpha(theme.palette.common.white, 0.5),
+                            },
+                        }}
+                    >
+                        <Iconify
+                            icon="solar:alt-arrow-down-bold"
+                            width={18}
+                            sx={{
+                                transition: theme.transitions.create('transform', {
+                                    duration: theme.transitions.duration.shorter,
+                                }),
+                                transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                            }}
+                        />
+                    </IconButton>
+                </Stack>
             </Card>
 
-            {/* ── Dropdown Panel (sibling in same wrapper — no portal gap) ── */}
             {open && (
                 <Paper
                     elevation={8}
@@ -159,17 +299,20 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                         position: 'absolute',
                         top: '100%',
                         left: 0,
-                        right: 0,
                         zIndex: 1300,
-                        width: 380,
+                        width: { xs: '100%', sm: 420 },
+                        maxWidth: '100%',
                         maxHeight: 440,
                         overflow: 'hidden',
-                        borderRadius: 2,
-                        mt: '2px',
-                        boxShadow: theme.customShadows.z24,
+                        borderRadius: 3,
+                        mt: 1,
+                        background: alpha(theme.palette.background.paper, 0.9),
+                        backdropFilter: 'blur(18px)',
+                        WebkitBackdropFilter: 'blur(18px)',
+                        border: `1px solid ${alpha(theme.palette.common.white, 0.75)}`,
+                        boxShadow: 'none',
                     }}
                 >
-                    {/* Panel Header */}
                     <Stack
                         direction="row"
                         alignItems="center"
@@ -177,11 +320,23 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                         sx={{
                             px: 2,
                             py: 1.5,
-                            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 1)} 0%, ${alpha(theme.palette.primary.dark, 1)} 100%)`,
-                            color: 'primary.contrastText',
+                            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.16)} 0%, ${alpha('#8b5cf6', 0.1)} 100%)`,
+                            color: '#1f2937',
                         }}
                     >
-                        <Iconify icon={"solar:volume-loud-bold-duotone" as any} width={20} />
+                        <Box
+                            sx={{
+                                width: 34,
+                                height: 34,
+                                borderRadius: 2,
+                                display: 'grid',
+                                placeItems: 'center',
+                                color: 'primary.main',
+                                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                            }}
+                        >
+                            <Iconify icon={"solar:bell-bing-bold-duotone" as any} width={18} />
+                        </Box>
                         <Typography variant="subtitle1" sx={{ fontWeight: 700, flexGrow: 1 }}>
                             Announcements
                         </Typography>
@@ -189,22 +344,27 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                             label={`${list.length} total`}
                             size="small"
                             sx={{
-                                fontSize: '0.65rem',
                                 fontWeight: 700,
-                                bgcolor: alpha(theme.palette.common.white, 0.2),
-                                color: 'inherit',
+                                bgcolor: alpha(theme.palette.primary.main, 0.12),
+                                color: 'primary.main',
                             }}
                         />
                     </Stack>
 
-                    {/* Items */}
                     <Box sx={{ overflowY: 'auto', maxHeight: 360 }}>
                         {list.map((item, index) => (
                             <Box key={index}>
                                 <Stack
                                     direction="row"
                                     spacing={1.5}
-                                    sx={{ px: 2, py: 1.5, '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.06) } }}
+                                    sx={{
+                                        px: 2,
+                                        py: 1.5,
+                                        transition: theme.transitions.create('background-color', {
+                                            duration: theme.transitions.duration.shortest,
+                                        }),
+                                        '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.05) },
+                                    }}
                                 >
                                     <Box
                                         sx={{
