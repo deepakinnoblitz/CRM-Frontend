@@ -155,10 +155,10 @@ export function TimesheetsReportView() {
 
                 switch (sortBy) {
                     case 'date_asc':
-                        if (dateA !== dateB) return dateA.localeCompare(dateB);
+                        if (dateB !== dateA) return dateB.localeCompare(dateA);
                         return nameA.localeCompare(nameB);
                     case 'date_desc':
-                        if (dateB !== dateA) return dateB.localeCompare(dateA);
+                        if (dateA !== dateB) return dateA.localeCompare(dateB);
                         return nameA.localeCompare(nameB);
                     case 'name_asc':
                         if (nameA !== nameB) return nameA.localeCompare(nameB);
@@ -221,11 +221,13 @@ export function TimesheetsReportView() {
         setPage(0);
     }, []);
 
-    const totalHours = reportData.find(d => d.timesheet_date === 'TOTAL')?.hours || 0;
+    const totalHours = reportData
+        .filter(d => d.timesheet_date !== 'TOTAL')
+        .reduce((acc, curr) => acc + (curr.hours || 0), 0);
     const totalEntries = reportData.filter(d => d.timesheet_date !== 'TOTAL').length;
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
                     <Typography variant="h4">Timesheet Report</Typography>
@@ -269,21 +271,21 @@ export function TimesheetsReportView() {
                                 format="DD-MM-YYYY"
                                 value={fromDate}
                                 onChange={(newValue) => setFromDate(newValue)}
-                                slotProps={{ textField: { size: 'small', sx: { width: 170 } } }}
+                                slotProps={{ textField: { size: 'small', sx: { flexGrow: 1, maxWidth: 170 } } }}
                             />
                             <DatePicker
                                 label="To Date"
                                 format="DD-MM-YYYY"
                                 value={toDate}
                                 onChange={(newValue) => setToDate(newValue)}
-                                slotProps={{ textField: { size: 'small', sx: { width: 170 } } }}
+                                slotProps={{ textField: { size: 'small', sx: { flexGrow: 1, maxWidth: 170 } } }}
                             />
                         </LocalizationProvider>
 
                         {/* Employee */}
                         <Autocomplete
                             size="small"
-                            sx={{ minWidth: 180 }}
+                            sx={{ flexGrow: 1, minWidth: 200 }}
                             options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
                             getOptionLabel={(option) =>
                                 option.name === 'all'
@@ -323,7 +325,7 @@ export function TimesheetsReportView() {
                         {/* Project */}
                         <Autocomplete
                             size="small"
-                            sx={{ minWidth: 180 }}
+                            sx={{ flexGrow: 1, minWidth: 180 }}
                             options={[{ name: 'all', project: 'All Projects' }, ...projectOptions]}
                             getOptionLabel={(option) => option.project || ''}
                             value={
@@ -345,7 +347,7 @@ export function TimesheetsReportView() {
                         {/* Activity */}
                         <Autocomplete
                             size="small"
-                            sx={{ minWidth: 170 }}
+                            sx={{ flexGrow: 1, minWidth: 180 }}
                             options={[{ name: 'all', activity_type: 'All Activities' }, ...activityTypeOptions]}
                             getOptionLabel={(option) => option.activity_type || ''}
                             value={
@@ -365,19 +367,15 @@ export function TimesheetsReportView() {
                         />
 
                         {/* Sort */}
-                        <FormControl size="small" sx={{ minWidth: 140 }}>
+                        <FormControl size="small" sx={{ flexGrow: 1, minWidth: 140 }}>
                             <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                                <MenuItem value="date_asc" sx={{ fontSize: '0.85rem' }}>Date ↓ (Asc)</MenuItem>
-                                <MenuItem value="date_desc" sx={{ fontSize: '0.85rem' }}>Date ↑ (Desc)</MenuItem>
+                                <MenuItem value="date_asc" sx={{ fontSize: '0.85rem' }}>Date ↓ (Latest)</MenuItem>
+                                <MenuItem value="date_desc" sx={{ fontSize: '0.85rem' }}>Date ↑ (Oldest)</MenuItem>
                                 <MenuItem value="name_asc" sx={{ fontSize: '0.85rem' }}>Name: A to Z</MenuItem>
                                 <MenuItem value="name_desc" sx={{ fontSize: '0.85rem' }}>Name: Z to A</MenuItem>
                             </Select>
                         </FormControl>
 
-                    </Stack>
-
-                    {/* 🔹 Bottom Row – Export Button */}
-                    <Stack direction="row" justifyContent="flex-end">
                         <Button
                             variant="contained"
                             startIcon={<Iconify icon={"solar:export-bold" as any} />}
@@ -385,11 +383,15 @@ export function TimesheetsReportView() {
                             sx={{
                                 bgcolor: '#08a3cd',
                                 color: 'common.white',
-                                '&:hover': { bgcolor: '#068fb3' }, marginRight: 2, marginTop: 2
+                                '&:hover': { bgcolor: '#068fb3' },
+                                height: 40,
+                                px: 3,
+                                ml: { md: 'auto' }
                             }}
                         >
                             Export
                         </Button>
+
                     </Stack>
 
                 </Card>
@@ -463,7 +465,7 @@ export function TimesheetsReportView() {
                                                         <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
                                                     </TableCell>
                                                     <TableCell>{row.project}</TableCell>
-                                                    <TableCell>{row.activity_type}</TableCell>
+                                                    <TableCell sx={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.activity_type}</TableCell>
                                                     <TableCell sx={{ fontWeight: 'bold' }}>{row.hours} hrs</TableCell>
                                                     <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                         {row.description}
@@ -478,11 +480,11 @@ export function TimesheetsReportView() {
                                         })}
 
                                     {/* Total Row */}
-                                    {reportData.find(d => d.timesheet_date === 'TOTAL') && (
+                                    {reportData.length > 0 && (
                                         <TableRow sx={{ bgcolor: alpha(theme.palette.success.main, 0.08) }}>
                                             <TableCell padding="checkbox" />
                                             <TableCell colSpan={4} sx={{ fontWeight: 'bold', color: 'success.main' }}>TOTAL</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: 'success.main' }}>{totalHours} hrs</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: 'success.main' }}>{totalHours.toFixed(2)} hrs</TableCell>
                                             <TableCell colSpan={2} />
                                         </TableRow>
                                     )}

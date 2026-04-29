@@ -140,10 +140,10 @@ export function AttendanceReportView() {
 
                 switch (sortBy) {
                     case 'date_asc':
-                        if (dateA !== dateB) return dateA.localeCompare(dateB);
+                        if (dateB !== dateA) return dateB.localeCompare(dateA);
                         return nameA.localeCompare(nameB);
                     case 'date_desc':
-                        if (dateB !== dateA) return dateB.localeCompare(dateA);
+                        if (dateA !== dateB) return dateA.localeCompare(dateB);
                         return nameA.localeCompare(nameB);
                     case 'name_asc':
                         if (nameA !== nameB) return nameA.localeCompare(nameB);
@@ -217,7 +217,7 @@ export function AttendanceReportView() {
     };
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
                     <Typography variant="h4">Attendance Report</Typography>
@@ -243,36 +243,35 @@ export function AttendanceReportView() {
 
                 <Card
                     sx={{
-                        p: 1.5,
+                        p: 2.5,
                         display: 'flex',
-                        gap: 1.5,
-                        flexWrap: 'nowrap',
-                        alignItems: 'center',
-                        overflowX: 'auto',
+                        flexDirection: 'column',
+                        gap: 2,
                         bgcolor: 'background.neutral',
                         border: (t) => `1px solid ${t.palette.divider}`,
                     }}
                 >
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <DatePicker
-                            label="From Date"
-                            format="DD/MM/YYYY"
-                            value={fromDate}
-                            onChange={(newValue) => setFromDate(newValue)}
-                            slotProps={{ textField: { size: 'small', sx: { width: 180 } } }}
-                        />
-                        <DatePicker
-                            label="To Date"
-                            format="DD/MM/YYYY"
-                            value={toDate}
-                            onChange={(newValue) => setToDate(newValue)}
-                            slotProps={{ textField: { size: 'small', sx: { width: 180 } } }}
-                        />
-                    </LocalizationProvider>
+                    <Stack direction="row" gap={1.5} alignItems="center" flexWrap="wrap">
+                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DatePicker
+                                label="From Date"
+                                format="DD-MM-YYYY"
+                                value={fromDate}
+                                onChange={(newValue) => setFromDate(newValue)}
+                                slotProps={{ textField: { size: 'small', sx: { flexGrow: 1, maxWidth: 180 } } }}
+                            />
+                            <DatePicker
+                                label="To Date"
+                                format="DD-MM-YYYY"
+                                value={toDate}
+                                onChange={(newValue) => setToDate(newValue)}
+                                slotProps={{ textField: { size: 'small', sx: { flexGrow: 1, maxWidth: 180 } } }}
+                            />
+                        </LocalizationProvider>
 
                     <Autocomplete
                         size="small"
-                        sx={{ minWidth: 200 }}
+                        sx={{ flexGrow: 1, minWidth: 200 }}
                         options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
                         getOptionLabel={(option) => option.name === 'all' ? option.employee_name : `${option.employee_name} (${option.name})`}
                         value={employee === 'all' ? { name: 'all', employee_name: 'All Employees' } : (employeeOptions.find((opt) => opt.name === employee) || null)}
@@ -307,7 +306,7 @@ export function AttendanceReportView() {
 
 
 
-                    <FormControl size="small" sx={{ minWidth: 140 }}>
+                    <FormControl size="small" sx={{ flexGrow: 1, minWidth: 140 }}>
                         <Select
                             value={status}
                             onChange={(e) => setStatus(e.target.value)}
@@ -323,13 +322,13 @@ export function AttendanceReportView() {
                         </Select>
                     </FormControl>
 
-                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                    <FormControl size="small" sx={{ flexGrow: 1, minWidth: 180 }}>
                         <Select
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value)}
                         >
-                            <MenuItem value="date_asc">Date ↓ (Asc)</MenuItem>
-                            <MenuItem value="date_desc">Date ↑ (Desc)</MenuItem>
+                            <MenuItem value="date_asc">Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="date_desc">Date ↑ (Oldest)</MenuItem>
                             <MenuItem value="name_asc">Name: A to Z</MenuItem>
                             <MenuItem value="name_desc">Name: Z to A</MenuItem>
                         </Select>
@@ -340,11 +339,19 @@ export function AttendanceReportView() {
                         variant="contained"
                         startIcon={<Iconify icon={"solar:export-bold" as any} />}
                         onClick={handleExport}
-                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                        sx={{
+                            bgcolor: '#08a3cd',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#068fb3' },
+                            height: 40,
+                            px: 3,
+                            ml: { md: 'auto' }
+                        }}
                     >
                         Export
                     </Button>
-                </Card>
+                </Stack>
+            </Card>
 
                 <Box
                     sx={{
@@ -411,7 +418,7 @@ export function AttendanceReportView() {
                                                     <TableCell padding="checkbox">
                                                         <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                     </TableCell>
-                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.attendance_date, 'DD/MM/YYYY')}</TableCell>
+                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.attendance_date, 'DD-MM-YYYY')}</TableCell>
                                                     <TableCell>
                                                         <Typography variant="subtitle2">{row.employee_name}</Typography>
                                                         <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
