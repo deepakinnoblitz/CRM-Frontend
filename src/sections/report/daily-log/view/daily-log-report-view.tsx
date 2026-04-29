@@ -45,7 +45,7 @@ import { EmployeeDailyLogDetailsDialog } from '../../../overview/employee-daily-
 export function DailyLogReportView() {
     const theme = useTheme();
     const { user } = useAuth();
-    
+
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [isHR, setIsHR] = useState(false);
@@ -93,15 +93,15 @@ export function DailyLogReportView() {
         setLoading(true);
         try {
             const result = await fetchDetailedSessions(
-                0, 
-                1000, 
-                '', 
-                status, 
-                sortBy, 
-                employee, 
-                day, 
-                '', 
-                fromDate?.format('YYYY-MM-DD') || '', 
+                0,
+                1000,
+                '',
+                status,
+                sortBy,
+                employee,
+                day,
+                '',
+                fromDate?.format('YYYY-MM-DD') || '',
                 toDate?.format('YYYY-MM-DD') || ''
             );
             setReportData(result.data || []);
@@ -134,7 +134,7 @@ export function DailyLogReportView() {
         const exportData = reportData.map((row) => ({
             Employee: row.employee_name,
             ID: row.employee,
-            Date: fDate(row.login_date, 'DD/MM/YYYY'),
+            Date: fDate(row.login_date, 'DD-MM-YYYY'),
             Login: row.login_time ? dayjs(row.login_time).format('HH:mm:ss') : '---',
             Logout: row.logout_time ? dayjs(row.logout_time).format('HH:mm:ss') : '---',
             'Working Hours': row.total_work_hours?.toFixed(2) || '0.00',
@@ -214,36 +214,35 @@ export function DailyLogReportView() {
 
                 <Card
                     sx={{
-                        p: 1.5,
+                        p: 2.5,
                         display: 'flex',
-                        gap: 1.5,
-                        flexWrap: 'nowrap',
-                        alignItems: 'center',
-                        overflowX: 'auto',
+                        flexDirection: 'column',
+                        gap: 2,
                         bgcolor: 'background.neutral',
                         border: (t) => `1px solid ${t.palette.divider}`,
                     }}
                 >
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <DatePicker
-                            label="From Date"
-                            format="DD/MM/YYYY"
-                            value={fromDate}
-                            onChange={(newValue) => setFromDate(newValue)}
-                            slotProps={{ textField: { size: 'small', sx: { width: 180 } } }}
-                        />
-                        <DatePicker
-                            label="To Date"
-                            format="DD/MM/YYYY"
-                            value={toDate}
-                            onChange={(newValue) => setToDate(newValue)}
-                            slotProps={{ textField: { size: 'small', sx: { width: 180 } } }}
-                        />
-                    </LocalizationProvider>
+                    <Stack direction="row" gap={1.5} alignItems="center" flexWrap="wrap">
+                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DatePicker
+                                label="From Date"
+                                format="DD-MM-YYYY"
+                                value={fromDate}
+                                onChange={(newValue) => setFromDate(newValue)}
+                                slotProps={{ textField: { size: 'small', sx: { flexGrow: 1, maxWidth: 170 } } }}
+                            />
+                            <DatePicker
+                                label="To Date"
+                                format="DD-MM-YYYY"
+                                value={toDate}
+                                onChange={(newValue) => setToDate(newValue)}
+                                slotProps={{ textField: { size: 'small', sx: { flexGrow: 1, maxWidth: 170 } } }}
+                            />
+                        </LocalizationProvider>
 
                     <Autocomplete
                         size="small"
-                        sx={{ minWidth: 200 }}
+                        sx={{ flexGrow: 1, minWidth: 200 }}
                         options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
                         getOptionLabel={(option) => option.name === 'all' ? option.employee_name : `${option.employee_name} (${option.name})`}
                         value={employee === 'all' ? { name: 'all', employee_name: 'All Employees' } : (employeeOptions.find((opt) => opt.name === employee) || null)}
@@ -260,7 +259,7 @@ export function DailyLogReportView() {
                         )}
                     />
 
-                    <FormControl size="small" sx={{ minWidth: 140 }}>
+                    <FormControl size="small" sx={{ flexGrow: 1, minWidth: 140 }}>
                         <Select
                             value={status}
                             onChange={(e) => setStatus(e.target.value)}
@@ -272,7 +271,7 @@ export function DailyLogReportView() {
                         </Select>
                     </FormControl>
 
-                    <FormControl size="small" sx={{ minWidth: 140 }}>
+                    <FormControl size="small" sx={{ flexGrow: 1, minWidth: 140 }}>
                         <Select
                             value={day}
                             onChange={(e) => setDay(e.target.value)}
@@ -289,13 +288,13 @@ export function DailyLogReportView() {
                         </Select>
                     </FormControl>
 
-                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                    <FormControl size="small" sx={{ flexGrow: 1, minWidth: 180 }}>
                         <Select
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value)}
                         >
-                            <MenuItem value="login_date_desc">Date ↓ (Desc)</MenuItem>
-                            <MenuItem value="login_date_asc">Date ↑ (Asc)</MenuItem>
+                            <MenuItem value="login_date_desc">Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="login_date_asc">Date ↑ (Oldest)</MenuItem>
                             <MenuItem value="working_hours_desc">Working Hrs: High to Low</MenuItem>
                             <MenuItem value="working_hours_asc">Working Hrs: Low to High</MenuItem>
                         </Select>
@@ -306,11 +305,19 @@ export function DailyLogReportView() {
                         variant="contained"
                         startIcon={<Iconify icon={"solar:export-bold" as any} />}
                         onClick={handleExport}
-                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                        sx={{
+                            bgcolor: '#08a3cd',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#068fb3' },
+                            height: 40,
+                            px: 3,
+                            ml: { md: 'auto' }
+                        }}
                     >
                         Export
                     </Button>
-                </Card>
+                </Stack>
+            </Card>
 
                 <Box
                     sx={{
@@ -371,8 +378,8 @@ export function DailyLogReportView() {
                                                     <TableCell padding="checkbox">
                                                         <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                     </TableCell>
-                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.login_date, 'DD/MM/YYYY')}</TableCell>
-                                                    <TableCell>
+                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.login_date, 'DD-MM-YYYY')}</TableCell>
+                                                    <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                         <Typography variant="subtitle2">{row.employee_name}</Typography>
                                                         <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
                                                     </TableCell>

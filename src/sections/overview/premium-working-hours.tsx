@@ -25,12 +25,15 @@ type AttendanceRecord = {
     holiday_is_working_day: number;
 };
 
-type Props = CardProps & {
+interface Props {
     title?: string;
     data: AttendanceRecord[];
     weeklyTarget?: number;
     source?: 'Attendance' | 'Daily Log';
-};
+    onRefreshData?: () => void | Promise<void>;
+    sx?: any;
+    [key: string]: any;
+}
 
 const fadeInUp = keyframes`
   0% {
@@ -89,6 +92,14 @@ const StatusChip = styled(Chip)(({ theme }) => ({
     },
 }));
 
+function formatHours(decimalHours: number) {
+    const hrs = Math.floor(decimalHours);
+    const mins = Math.round((decimalHours - hrs) * 60);
+    if (hrs === 0) return `${mins} mins`;
+    if (mins === 0) return `${hrs} hrs`;
+    return `${hrs} hrs ${mins} mins`;
+}
+
 function formatClock(timeStr: string | null) {
     if (!timeStr) return '--:--';
     try {
@@ -101,7 +112,7 @@ function formatClock(timeStr: string | null) {
     }
 }
 
-export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, source = 'Attendance', sx, ...other }: Props) {
+export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, source = 'Attendance', onRefreshData, sx, ...other }: Props) {
     const theme = useTheme();
 
     const today = new Date();
@@ -131,6 +142,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, sour
             };
         }
 
+
         if (isToday && hasCheckIn && !hasCheckOut) {
             return {
                 label: 'Now',
@@ -146,7 +158,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, sour
         if (hours >= 8) {
             return {
                 label: 'Completed',
-                title: `${hours.toFixed(1)} hrs logged`,
+                title: `${formatHours(hours)} logged`,
                 subtitle: 'Goal reached',
                 chip: 'COMPLETED',
                 icon: 'solar:check-circle-bold-duotone',
@@ -158,7 +170,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, sour
         if (hours >= 4) {
             return {
                 label: 'Partial',
-                title: `${hours.toFixed(1)} hrs logged`,
+                title: `${formatHours(hours)} logged`,
                 subtitle: 'Partial day',
                 chip: 'PARTIAL',
                 icon: 'solar:clock-circle-bold-duotone',
@@ -167,14 +179,27 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, sour
             };
         }
 
-        if (!hasCheckIn && !hasCheckOut) {
+        if (record.status === 'Absent') {
             return {
-                label: 'Missing Log',
-                title: 'No logs',
-                subtitle: 'Please update attendance',
-                chip: 'MISSING LOG',
-                icon: 'solar:document-text-bold-duotone',
-                color: '#64748b',
+                label: 'Absent',
+                title: 'Absent',
+                subtitle: 'Attendance marked as absent',
+                chip: 'ABSENT',
+                icon: 'solar:close-circle-bold-duotone',
+                color: theme.palette.error.main,
+                isToday,
+            };
+        }
+
+        if (!hasCheckIn && !hasCheckOut) {
+            const isDailyLog = source === 'Daily Log';
+            return {
+                label: isDailyLog ? 'Absent' : 'Missing Log',
+                title: isDailyLog ? 'Absent' : 'No logs',
+                subtitle: isDailyLog ? 'Daily log not submitted' : 'Please update attendance',
+                chip: isDailyLog ? 'ABSENT' : 'MISSING LOG',
+                icon: isDailyLog ? 'solar:close-circle-bold-duotone' : 'solar:document-text-bold-duotone',
+                color: isDailyLog ? theme.palette.error.main : '#64748b',
                 isToday,
             };
         }
@@ -182,7 +207,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, sour
         if (hours > 0) {
             return {
                 label: 'Absent',
-                title: `${hours.toFixed(1)} hrs logged`,
+                title: `${formatHours(hours)} logged`,
                 subtitle: 'Below expected hours',
                 chip: 'ABSENT',
                 icon: 'solar:close-circle-bold-duotone',
@@ -191,13 +216,14 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, sour
             };
         }
 
+        const isDailyLog = source === 'Daily Log';
         return {
-            label: 'Missing Log',
-            title: 'No logs',
-            subtitle: 'Please update attendance',
-            chip: 'MISSING LOG',
-            icon: 'solar:document-text-bold-duotone',
-            color: '#64748b',
+            label: isDailyLog ? 'Absent' : 'Missing Log',
+            title: isDailyLog ? 'Absent' : 'No logs',
+            subtitle: isDailyLog ? 'Daily log not submitted' : 'Please update attendance',
+            chip: isDailyLog ? 'ABSENT' : 'MISSING LOG',
+            icon: isDailyLog ? 'solar:close-circle-bold-duotone' : 'solar:document-text-bold-duotone',
+            color: isDailyLog ? theme.palette.error.main : '#64748b',
             isToday,
         };
     };
@@ -231,10 +257,10 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, sour
                     sx={{ mb: 2.5 }}
                 >
                     <Box>
-                        <Typography sx={{ fontSize: { xs: '1.6rem', md: '1.95rem' }, fontWeight: 800, color: '#1e293b', letterSpacing: '-0.04em' }}>
+                        <Typography sx={{ fontSize: { xs: '1.2rem', md: '1.4rem' }, fontWeight: 800, color: '#1e293b', letterSpacing: '-0.04em' }}>
                             {title}
                         </Typography>
-                        <Typography sx={{ mt: 0.6, color: '#64748b', fontSize: '0.98rem', fontWeight: 500 }}>
+                        <Typography sx={{ mt: 0.6, color: '#64748b', fontSize: '0.88rem', fontWeight: 500 }}>
                             {dateRange}
                         </Typography>
                     </Box>
@@ -259,6 +285,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, sour
                         </Stack> */}
 
                         <IconButton
+                            onClick={onRefreshData}
                             sx={{
                                 width: 42,
                                 height: 42,

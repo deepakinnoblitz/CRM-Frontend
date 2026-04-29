@@ -25,6 +25,8 @@ import {
     acceptTaskManager,
     closeTaskManager,
     reopenTaskManager,
+    putOnHoldTaskManager,
+    resumeTaskManager,
     getTaskManager
 } from 'src/api/task-manager';
 
@@ -34,6 +36,8 @@ import { useAuth } from 'src/auth/auth-context';
 
 import { TaskCloseDialog } from './task-close-dialog';
 import { TaskReopenDialog } from './task-reopen-dialog';
+import { TaskResumeDialog } from './task-resume-dialog';
+import { TaskOnHoldDialog } from './task-on-hold-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -53,6 +57,7 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string;
     'In Progress': { color: '#f97316', bg: '#fff7ed', border: '#fed7aa', icon: 'solar:refresh-bold' },
     'Completed': { color: '#22c55e', bg: '#f0fdf4', border: '#bbf7d0', icon: 'solar:check-circle-bold' },
     'Reopened': { color: '#ef4444', bg: '#fef2f2', border: '#fecaca', icon: 'solar:restart-bold' },
+    'On Hold': { color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', icon: 'solar:pause-bold' },
 };
 
 // ── Priority config ──
@@ -102,6 +107,8 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
     const [task, setTask] = useState<TaskManager | null>(null);
     const [closeTaskOpen, setCloseTaskOpen] = useState(false);
     const [reopenTaskOpen, setReopenTaskOpen] = useState(false);
+    const [onHoldOpen, setOnHoldOpen] = useState(false);
+    const [resumeOpen, setResumeOpen] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
     useEffect(() => {
@@ -159,6 +166,36 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
         } catch (error: any) {
             console.error(error);
             setSnackbar({ open: true, message: error?.message || 'Failed to reopen task', severity: 'error' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleConfirmOnHold = async (remarks: string) => {
+        setLoading(true);
+        try {
+            await putOnHoldTaskManager(task.name, remarks);
+            setOnHoldOpen(false);
+            setSnackbar({ open: true, message: 'Task put on hold', severity: 'success' });
+            if (onSuccess) onSuccess();
+        } catch (error: any) {
+            console.error(error);
+            setSnackbar({ open: true, message: error?.message || 'Failed to put task on hold', severity: 'error' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleConfirmResume = async (remarks: string) => {
+        setLoading(true);
+        try {
+            await resumeTaskManager(task.name, remarks);
+            setResumeOpen(false);
+            setSnackbar({ open: true, message: 'Task resumed successfully', severity: 'success' });
+            if (onSuccess) onSuccess();
+        } catch (error: any) {
+            console.error(error);
+            setSnackbar({ open: true, message: error?.message || 'Failed to resume task', severity: 'error' });
         } finally {
             setLoading(false);
         }
@@ -348,14 +385,14 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                         {/* Action Buttons Toolbar */}
                         <Box sx={{ px: 3, pb: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.neutral' }}>
                             <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
-                                {/* Accept */}
+                                {/* Accept — Open or Reopened */}
                                 {(task.status === 'Open' || task.status === 'Reopened') && (
                                     <Button
                                         variant="contained"
                                         color="info"
                                         size="medium"
                                         disabled={loading}
-                                        startIcon={<Iconify icon="solar:play-bold" />}
+                                        startIcon={<Iconify icon="solar:play-bold" width={16}/>}
                                         onClick={() => handleAction(() => acceptTaskManager(task.name), 'Task Accepted')}
                                         sx={{ fontWeight: 800, px: 2, borderRadius: 1.25 }}
                                     >
@@ -363,9 +400,8 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                                     </Button>
                                 )}
 
-
-                                {/* Close Task */}
-                                {task.status === 'In Progress' && (
+                                {/* Close Task — In Progress or On Hold */}
+                                {(task.status === 'In Progress' || task.status === 'On Hold') && (
                                     <Button
                                         variant="contained"
                                         color="success"
@@ -376,6 +412,47 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                                         sx={{ fontWeight: 800, px: 2, borderRadius: 1.25 }}
                                     >
                                         Close Task
+                                    </Button>
+                                )}
+
+                                {/* On Hold — Open, In Progress, or Reopened */}
+                                {(task.status === 'Open' || task.status === 'In Progress' || task.status === 'Reopened') && (
+                                    <Button
+                                        variant="contained"
+                                        size="medium"
+                                        disabled={loading}
+                                        startIcon={<Iconify icon="solar:pause-bold" width={16} />}
+                                        onClick={() => setOnHoldOpen(true)}
+                                        sx={{
+                                            fontWeight: 800,
+                                            px: 2,
+                                            borderRadius: 1.25,
+                                            bgcolor: '#f59e0b',
+                                            color: '#fff',
+                                            '&:hover': { bgcolor: '#d97706' },
+                                        }}
+                                    >
+                                        Put On Hold
+                                    </Button>
+                                )}
+
+                                {/* Resume — only when On Hold */}
+                                {task.status === 'On Hold' && (
+                                    <Button
+                                        variant="contained"
+                                        size="medium"
+                                        disabled={loading}
+                                        startIcon={<Iconify icon={"solar:play-circle-bold" as any} />}
+                                        onClick={() => setResumeOpen(true)}
+                                        sx={{
+                                            fontWeight: 800,
+                                            px: 2,
+                                            borderRadius: 1.25,
+                                            bgcolor: '#0891b2',
+                                            '&:hover': { bgcolor: '#0e7490' },
+                                        }}
+                                    >
+                                        Resume Task
                                     </Button>
                                 )}
 
@@ -517,6 +594,20 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                 open={reopenTaskOpen}
                 onClose={() => setReopenTaskOpen(false)}
                 onConfirmed={handleConfirmReopen}
+                loading={loading}
+            />
+
+            <TaskOnHoldDialog
+                open={onHoldOpen}
+                onClose={() => setOnHoldOpen(false)}
+                onConfirmed={handleConfirmOnHold}
+                loading={loading}
+            />
+
+            <TaskResumeDialog
+                open={resumeOpen}
+                onClose={() => setResumeOpen(false)}
+                onConfirmed={handleConfirmResume}
                 loading={loading}
             />
 
