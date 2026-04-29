@@ -85,8 +85,8 @@ const Android12Switch = styled(Switch)(({ theme }: { theme: Theme }) => ({
 // ----------------------------------------------------------------------
 
 const ANNOUNCEMENT_SORT_OPTIONS = [
-    { value: 'creation_desc', label: 'Newest First' },
-    { value: 'creation_asc', label: 'Oldest First' },
+    { value: 'modified_desc', label: 'Newest First' },
+    { value: 'modified_asc', label: 'Oldest First' },
     { value: 'announcement_name_asc', label: 'Title: A to Z' },
     { value: 'announcement_name_desc', label: 'Title: Z to A' },
 ];
@@ -96,7 +96,7 @@ export function AnnouncementsView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('creation');
+    const [orderBy, setOrderBy] = useState('modified');
     const [openFilters, setOpenFilters] = useState(false);
     const [filters, setFilters] = useState<{
         startDate: string | null;
