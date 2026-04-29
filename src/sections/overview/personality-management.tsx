@@ -45,7 +45,7 @@ export function PersonalityManagement() {
     const totalScore = stats?.totalScore ?? 100;
 
     return (
-        <Card
+       <Card
             sx={{
                 p: 2,
                 boxShadow: theme.palette.mode === 'light' ? theme.shadows[8] : theme.shadows[12],
@@ -183,6 +183,6 @@ export function PersonalityManagement() {
                     </Box>
                 </Box>
             </Stack>
-        </Card>
+        </Card> 
     );
 }

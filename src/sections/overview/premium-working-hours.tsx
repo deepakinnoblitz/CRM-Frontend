@@ -269,7 +269,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, sour
                                 color: '#475569',
                             }}
                         >
-                            <Iconify icon="solar:refresh-outline" width={20} />
+                            <Iconify icon={`solar:refresh-outline` as any} width={20} />
                         </IconButton>
                     </Stack>
                 </Stack>
@@ -375,12 +375,12 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, sour
                                                 flexWrap: 'wrap',
                                             }}
                                         >
-                                            <Iconify icon="solar:login-3-linear" width={16} sx={{ color: status.color }} />
+                                            <Iconify icon={`solar:login-3-linear` as any} width={16} sx={{ color: status.color }} />
                                             <Typography sx={{ fontSize: '0.70rem' }}>
                                                 {loginLabel}: {formatClock(record.check_in)}
                                             </Typography>
                                             <Typography sx={{ color: '#cbd5e1', fontWeight: 300 }}>|</Typography>
-                                            <Iconify icon="solar:logout-3-linear" width={16} sx={{ color: status.color }} />
+                                            <Iconify icon={`solar:logout-3-linear` as any} width={16} sx={{ color: status.color }} />
                                             <Typography sx={{ fontSize: '0.70rem' }}>
                                                 {logoutLabel}: {formatClock(record.check_out)}
                                             </Typography>
@@ -403,7 +403,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, sour
                     }}
                 >
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#64748b', flexWrap: 'wrap' }}>
-                        <Iconify icon="solar:info-circle-linear" width={18} />
+                        <Iconify icon={`solar:info-circle-linear` as any} width={18} />
                         <Typography sx={{ fontSize: '0.92rem' }}>All times are in your local timezone</Typography>
                     </Stack>
 
@@ -425,7 +425,7 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, sour
                     </Stack>
 
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#94a3b8' }}>
-                        <Iconify icon="solar:stars-line-duotone" width={18} />
+                        <Iconify icon={`solar:stars-line-duotone` as any} width={18} />
                         <Typography sx={{ fontSize: '0.9rem' }}>Compact weekly overview</Typography>
                     </Stack>
                 </Stack>
