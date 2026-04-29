@@ -139,7 +139,7 @@ export function EmployeeDashboardView() {
                 {/* 2. Last Seven Days Working Hours (Premium Widget) */}
                 <Grid size={{ xs: 12 }}>
                     <PremiumWorkingHours
-                        data={(data.weekly_attendance || []).slice(0, 6)}
+                        data={(data.weekly_attendance || []).slice(0, 7)}
                         weeklyTarget={45}
                         source={data.weekly_chart_source}
                     />

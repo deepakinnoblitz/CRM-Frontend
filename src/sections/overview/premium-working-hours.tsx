@@ -1,14 +1,13 @@
 import type { CardProps } from '@mui/material/Card';
 
-import { useState } from 'react';
-
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
-import CardHeader from '@mui/material/CardHeader';
+import Tooltip from '@mui/material/Tooltip';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import LinearProgress from '@mui/material/LinearProgress';
-import { alpha, useTheme, styled } from '@mui/material/styles';
+import { alpha, keyframes, styled, useTheme } from '@mui/material/styles';
 
 import { fDate } from 'src/utils/format-time';
 
@@ -33,371 +32,403 @@ type Props = CardProps & {
     source?: 'Attendance' | 'Daily Log';
 };
 
-// Styled Components
-const GlassSummaryCard = styled(Box)(({ theme }) => ({
-    padding: theme.spacing(2.5),
-    borderRadius: 20,
-    background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)}, ${alpha(theme.palette.primary.main, 0.02)})`,
-    backdropFilter: 'blur(20px)',
-    border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.spacing(2),
-    transition: theme.transitions.create(['transform', 'box-shadow']),
+const fadeInUp = keyframes`
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const DayCard = styled(Card, {
+    shouldForwardProp: (prop) => !['accentColor', 'isToday'].includes(String(prop)),
+})<{ accentColor: string; isToday?: boolean }>(({ theme, accentColor, isToday }) => ({
+    position: 'relative',
+    minHeight: 164,
+    padding: theme.spacing(1.75),
+    borderRadius: 18,
+    overflow: 'hidden',
+    background: alpha('#ffffff', 0.96),
+    border: `1px solid ${alpha(isToday ? accentColor : '#dbe4f0', isToday ? 0.34 : 0.95)}`,
+    boxShadow: `0 10px 24px ${alpha('#0f172a', 0.05)}`,
+    transition: theme.transitions.create(['transform', 'box-shadow', 'border-color', 'background-color'], {
+        duration: theme.transitions.duration.shorter,
+    }),
+    animation: `${fadeInUp} 360ms ease both`,
     '&:hover': {
-        transform: 'translateY(-4px)',
-        boxShadow: `0 12px 32px ${alpha(theme.palette.primary.main, 0.16)}`,
+        transform: 'translateY(-3px)',
+        boxShadow: `0 14px 28px ${alpha('#0f172a', 0.08)}`,
+        borderColor: alpha(accentColor, 0.3),
+        backgroundColor: '#ffffff',
+    },
+    '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 10,
+        bottom: 10,
+        left: 0,
+        width: 3,
+        borderRadius: 999,
+        background: accentColor,
+        pointerEvents: 'none',
     },
 }));
 
-const TimelineDayCard = styled(Card, {
-    shouldForwardProp: (prop) => prop !== 'isToday' && prop !== 'statusColor',
-})<{ isToday?: boolean; statusColor?: string }>(
-    ({ theme, isToday, statusColor }) => ({
-        padding: theme.spacing(2),
-        borderRadius: 20,
-        backgroundColor: alpha(statusColor || theme.palette.grey[300], 0.04),
-        border: `1px solid ${alpha(statusColor || theme.palette.grey[300], 0.2)}`,
-        boxShadow: isToday
-            ? `0 12px 32px ${alpha(statusColor || theme.palette.primary.main, 0.12)}, 0 4px 12px ${alpha(statusColor || theme.palette.primary.main, 0.08)}`
-            : `0 8px 24px ${alpha(theme.palette.common.black, 0.04)}, 0 2px 8px ${alpha(theme.palette.common.black, 0.02)}`,
-        transition: theme.transitions.create(['transform', 'box-shadow', 'border-color', 'background-color']),
-        cursor: 'pointer',
-        position: 'relative',
-        overflow: 'visible',
-        '&:hover': {
-            transform: 'translateY(-6px) scale(1.01)',
-            boxShadow: `0 20px 48px ${alpha(statusColor || theme.palette.common.black, 0.12)}`,
-            borderColor: alpha(statusColor || theme.palette.grey[300], 0.4),
-            backgroundColor: alpha(statusColor || theme.palette.grey[300], 0.08),
-        },
-    })
-);
-
-const StatusPill = styled(Box)<{ bgcolor: string; color: string }>(({ bgcolor, color }) => ({
-    padding: '4px 10px',
-    borderRadius: 8,
-    backgroundColor: bgcolor,
-    color: color,
-    fontSize: '0.6875rem',
+const StatusChip = styled(Chip)(({ theme }) => ({
+    height: 28,
+    borderRadius: 999,
+    fontSize: '0.68rem',
     fontWeight: 800,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    display: 'inline-flex',
-    alignItems: 'center',
+    letterSpacing: 0.02,
+    '& .MuiChip-label': {
+        paddingLeft: theme.spacing(1),
+        paddingRight: theme.spacing(1),
+    },
 }));
 
-export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, weeklyTarget = 45, source = 'Attendance', sx, ...other }: Props) {
+function formatClock(timeStr: string | null) {
+    if (!timeStr) return '--:--';
+    try {
+        const [hh, mm] = timeStr.split(':');
+        const hour = Number(hh);
+        const suffix = hour >= 12 ? 'PM' : 'AM';
+        return `${hour % 12 || 12}:${mm} ${suffix}`;
+    } catch {
+        return '--:--';
+    }
+}
+
+export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, source = 'Attendance', sx, ...other }: Props) {
     const theme = useTheme();
 
-    // Get today's date
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-    // Calculate analytics
-    const totalHours = data.reduce((sum, record) => sum + (record.working_hours || 0), 0);
-    const daysWithData = data.filter((r) => r.check_in || r.check_out).length;
-    const avgHours = daysWithData > 0 ? totalHours / daysWithData : 0;
+    const dateRange =
+        data.length > 0
+            ? `${fDate(data[0].date, 'DD MMM YYYY')} - ${fDate(data[data.length - 1].date, 'DD MMM YYYY')}`
+            : '';
 
-    // Updated logic: Include holidays/non-working days as present
-    const daysPresent = data.filter((r) =>
-        (r.check_in && r.check_out) ||
-        (r.holiday_info && r.holiday_is_working_day === 0)
-    ).length;
-
-    // Format time
-    const formatTime = (timeStr: string | null) => {
-        if (!timeStr) return '--:--';
-        try {
-            const parts = timeStr.split(':');
-            const hr = parseInt(parts[0], 10);
-            const min = parts[1];
-            const ampm = hr >= 12 ? 'PM' : 'AM';
-            return `${hr % 12 || 12}:${min} ${ampm}`;
-        } catch (e) { return '--:--'; }
-    };
-
-    // Get status info
-    const getStatusInfo = (record: AttendanceRecord) => {
+    const getDayStatus = (record: AttendanceRecord) => {
         const isToday = record.date === todayStr;
-        const status = record.status;
-        const holiday = record.holiday_info;
-        const isNonWorking = holiday && record.holiday_is_working_day === 0;
+        const holiday = Boolean(record.holiday_info && record.holiday_is_working_day === 0);
+        const hasCheckIn = Boolean(record.check_in);
+        const hasCheckOut = Boolean(record.check_out);
+        const hours = record.working_hours || 0;
 
-        // Colors mapping
-        const colors: Record<string, string> = {
-            'Present': theme.palette.success.main,
-            'In Office': theme.palette.info.main,
-            'Missing': theme.palette.warning.main,
-            'Missing Log': theme.palette.warning.main,
-            'Half Day': theme.palette.warning.main,
-            'On Leave': theme.palette.success.main,
-            'Holiday': theme.palette.error.main,
-            'Absent': theme.palette.error.main,
-            'Updating...': theme.palette.info.main,
-            'Not Marked': theme.palette.error.main,
-            'Weekly Off': theme.palette.error.main,
-        };
-
-        let label = status;
-        if (status === 'Missing') label = 'Missing Log';
-        if (status === 'Not Marked') label = isToday ? 'Updating...' : 'Absent';
-
-        // Special case for today: if only check-in exists
-        if (isToday && record.check_in && !record.check_out) {
-            label = 'In Office';
+        if (holiday) {
+            return {
+                label: 'Holiday',
+                title: record.holiday_info || 'Holiday',
+                subtitle: 'Holiday - enjoy the day',
+                chip: 'HOLIDAY',
+                icon: 'solar:sun-bold-duotone',
+                color: '#f59e0b',
+                isToday,
+            };
         }
 
-        const color = colors[label] || (isNonWorking ? theme.palette.error.main : theme.palette.grey[500]);
-
-        // For non-working days (holidays/weekends) without logs, show specific holiday info in the small pill
-        if (isNonWorking && !record.check_in && !record.check_out && (status === 'Holiday' || status === 'Weekly Off' || status === 'Not Marked')) {
+        if (isToday && hasCheckIn && !hasCheckOut) {
             return {
-                label: holiday || label,
-                color,
-                dotColor: color,
-                bgcolor: alpha(color, 0.12)
+                label: 'Now',
+                title: 'Tracking Live',
+                subtitle: 'Updating now',
+                chip: 'NOW',
+                icon: 'solar:play-bold-duotone',
+                color: theme.palette.primary.main,
+                isToday,
+            };
+        }
+
+        if (hours >= 8) {
+            return {
+                label: 'Completed',
+                title: `${hours.toFixed(1)} hrs logged`,
+                subtitle: 'Goal reached',
+                chip: 'COMPLETED',
+                icon: 'solar:check-circle-bold-duotone',
+                color: theme.palette.success.main,
+                isToday,
+            };
+        }
+
+        if (hours >= 4) {
+            return {
+                label: 'Partial',
+                title: `${hours.toFixed(1)} hrs logged`,
+                subtitle: 'Partial day',
+                chip: 'PARTIAL',
+                icon: 'solar:clock-circle-bold-duotone',
+                color: theme.palette.warning.main,
+                isToday,
+            };
+        }
+
+        if (!hasCheckIn && !hasCheckOut) {
+            return {
+                label: 'Missing Log',
+                title: 'No logs',
+                subtitle: 'Please update attendance',
+                chip: 'MISSING LOG',
+                icon: 'solar:document-text-bold-duotone',
+                color: '#64748b',
+                isToday,
+            };
+        }
+
+        if (hours > 0) {
+            return {
+                label: 'Absent',
+                title: `${hours.toFixed(1)} hrs logged`,
+                subtitle: 'Below expected hours',
+                chip: 'ABSENT',
+                icon: 'solar:close-circle-bold-duotone',
+                color: theme.palette.error.main,
+                isToday,
             };
         }
 
         return {
-            label,
-            color,
-            dotColor: color,
-            bgcolor: alpha(color, 0.12)
+            label: 'Missing Log',
+            title: 'No logs',
+            subtitle: 'Please update attendance',
+            chip: 'MISSING LOG',
+            icon: 'solar:document-text-bold-duotone',
+            color: '#64748b',
+            isToday,
         };
     };
 
+    const legendItems = [
+        { label: 'Live / Tracking', color: theme.palette.primary.main },
+        { label: 'Completed', color: theme.palette.success.main },
+        { label: 'Partial', color: theme.palette.warning.main },
+        { label: 'Absent', color: theme.palette.error.main },
+        { label: 'Missing / No Data', color: '#64748b' },
+        { label: 'Holiday', color: '#f59e0b' },
+    ];
+
     return (
         <Card
-            sx={{
-                background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.grey[500], 0.05)} 100%)`,
-                border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
-                ...sx
-            }}
             {...other}
+            sx={{
+                borderRadius: 4,
+                border: `1px solid ${alpha('#dbe4f0', 0.8)}`,
+                background: '#ffffff',
+                boxShadow: `0 18px 40px ${alpha('#0f172a', 0.06)}`,
+                ...sx,
+            }}
         >
-            <CardHeader
-                title={title}
-                subheader={data.length > 0 ? `${fDate(data[0].date)} - ${fDate(data[data.length - 1].date)}` : ''}
-                titleTypographyProps={{ variant: 'h6', sx: { fontWeight: 800, color: '#1C252E' } }}
-                sx={{ mb: 3 }}
-            />
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
+                <Stack
+                    direction={{ xs: 'column', md: 'row' }}
+                    alignItems={{ xs: 'flex-start', md: 'center' }}
+                    justifyContent="space-between"
+                    spacing={2}
+                    sx={{ mb: 2.5 }}
+                >
+                    <Box>
+                        <Typography sx={{ fontSize: { xs: '1.6rem', md: '1.95rem' }, fontWeight: 800, color: '#1e293b', letterSpacing: '-0.04em' }}>
+                            {title}
+                        </Typography>
+                        <Typography sx={{ mt: 0.6, color: '#64748b', fontSize: '0.98rem', fontWeight: 500 }}>
+                            {dateRange}
+                        </Typography>
+                    </Box>
 
-            <Box sx={{ px: { xs: 1.5, sm: 3 }, pb: 4 }}>
+                    <Stack direction="row" spacing={1.5}>
+                        {/* <Stack
+                            direction="row"
+                            alignItems="center"
+                            spacing={1}
+                            sx={{
+                                height: 42,
+                                px: 1.5,
+                                borderRadius: 2,
+                                border: `1px solid ${alpha('#cbd5e1', 0.9)}`,
+                                backgroundColor: alpha('#ffffff', 0.96),
+                                boxShadow: `0 6px 14px ${alpha('#0f172a', 0.04)}`,
+                            }}
+                        >
+                            <Iconify icon="solar:calendar-mark-bold-duotone" width={18} sx={{ color: '#334155' }} />
+                            <Typography sx={{ fontWeight: 600, color: '#1e293b', fontSize: '0.95rem' }}>This Week</Typography>
+                            <Iconify icon="solar:alt-arrow-down-linear" width={16} sx={{ color: '#475569' }} />
+                        </Stack> */}
 
-                {/* 3-Column Grid Layout (Desktop) / Vertical Stack (Mobile) */}
+                        <IconButton
+                            sx={{
+                                width: 42,
+                                height: 42,
+                                borderRadius: 2,
+                                border: `1px solid ${alpha('#cbd5e1', 0.9)}`,
+                                backgroundColor: alpha('#ffffff', 0.96),
+                                boxShadow: `0 6px 14px ${alpha('#0f172a', 0.04)}`,
+                                color: '#475569',
+                            }}
+                        >
+                            <Iconify icon="solar:refresh-outline" width={20} />
+                        </IconButton>
+                    </Stack>
+                </Stack>
+
                 <Box
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-                        rowGap: 5,
-                        columnGap: 4,
-                        width: '100%',
-                        py: 3
+                        gridTemplateColumns: {
+                            xs: '1fr',
+                            sm: 'repeat(2, minmax(0, 1fr))',
+                            md: 'repeat(3, minmax(0, 1fr))',
+                            xl: 'repeat(4, minmax(0, 1fr))',
+                        },
+                        gap: { xs: 1.5, md: 2 },
                     }}
                 >
                     {data.map((record, index) => {
-                        const status = getStatusInfo(record);
-                        const isToday = record.date === todayStr;
-                        const isNonWorking = record.holiday_info && record.holiday_is_working_day === 0;
-
-                        const progress = Math.min((record.working_hours / 8) * 100, 100);
-
-                        // Improved hours label logic (Center text)
-                        const totalMinutes = Math.round(record.working_hours * 60);
-                        const h = Math.floor(totalMinutes / 60);
-                        const m = totalMinutes % 60;
-                        
-                        let centerLabel = h > 0 ? `${h} hr${h > 1 ? 's' : ''}` : '';
-                        centerLabel += `${centerLabel ? " " : ""}${m} min${m > 1 ? "s" : ""}`;
-                        if (!centerLabel) centerLabel = "0 mins";
-                        if (record.working_hours === 0) {
-                            if (isNonWorking && (record.status === 'Holiday' || record.status === 'Weekly Off' || record.status === 'Not Marked')) {
-                                centerLabel = record.holiday_info ? record.holiday_info.toUpperCase() : 'HOLIDAY';
-                            } else if (status.label === 'In Office') {
-                                centerLabel = 'IN OFFICE';
-                            } else if (status.label === 'Missing Log') {
-                                centerLabel = 'MISSING LOG';
-                            } else if (isToday && status.label === 'Updating...') {
-                                centerLabel = 'Will Update Soon';
-                            } else {
-                                centerLabel = status.label.toUpperCase();
-                            }
-                        }
+                        const status = getDayStatus(record);
+                        const loginLabel = source === 'Daily Log' ? 'Login' : 'In';
+                        const logoutLabel = source === 'Daily Log' ? 'Logout' : 'Out';
 
                         return (
-                            <Box
-                                key={index}
-                                sx={{
-                                    position: 'relative',
-                                    display: 'flex',
-                                    flexDirection: 'column'
-                                }}
-                            >
-                                {/* Date Header */}
-                                <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 2, ml: 0.75, flexWrap: 'wrap' }}>
-                                    <Box
-                                        sx={{
-                                            width: 10,
-                                            height: 10,
-                                            borderRadius: '50%',
-                                            bgcolor: 'background.paper',
-                                            border: `2.5px solid ${status.dotColor}`,
-                                            boxShadow: `0 0 0 4px ${alpha(status.dotColor, 0.1)}`,
-                                            zIndex: 1,
-                                            flexShrink: 0
-                                        }}
-                                    />
-                                    <Typography variant="subtitle2" sx={{ color: isToday ? 'primary.main' : 'text.primary', fontWeight: 900, letterSpacing: 0.75, fontSize: '0.75rem' }}>
-                                        {fDate(record.date, 'dddd, DD MMMM')}
-                                    </Typography>
-                                    {isToday && (
-                                        <Box
-                                            sx={{
-                                                px: 1,
-                                                py: 0.2,
-                                                borderRadius: 0.75,
-                                                bgcolor: alpha(theme.palette.primary.main, 0.12),
-                                                color: 'primary.main',
-                                                typography: 'overline',
-                                                fontWeight: 900,
-                                                fontSize: '0.65rem',
-                                                flexShrink: 0,
-                                            }}
-                                        >
-                                            Now
-                                        </Box>
-                                    )}
-                                </Stack>
-
-                                <TimelineDayCard
-                                    isToday={isToday}
-                                    statusColor={status.dotColor}
+                                <DayCard
+                                    accentColor={status.color}
+                                    isToday={status.isToday}
                                     sx={{
-                                        p: { xs: 2, sm: 3 },
-                                        height: '100%',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        minHeight: 120,
-                                        textAlign: 'center'
+                                        animationDelay: `${index * 60}ms`,
+                                        ...(status.isToday && {
+                                            backgroundColor: alpha(status.color, 0.03),
+                                        }),
                                     }}
                                 >
-                                    {isNonWorking && record.working_hours === 0 ? (
+                                    <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
                                         <Typography
-                                            variant="h6"
                                             sx={{
+                                                fontSize: '0.76rem',
                                                 fontWeight: 800,
-                                                lineHeight: 1.2,
-                                                width: 1,
-                                                textAlign: 'center',
-                                                fontSize: centerLabel.length > 20 ? '0.75rem' : '1rem',
-                                                color: 'error.main'
+                                                letterSpacing: '0.04em',
+                                                textTransform: 'uppercase',
+                                                color: status.isToday ? status.color : '#334155',
                                             }}
                                         >
-                                            {centerLabel}
+                                        {fDate(record.date, 'ddd,DD MMMM')}
                                         </Typography>
-                                    ) : (
-                                        <Box sx={{ width: '100%' }}>
-                                            <Stack
-                                                direction="row"
-                                                alignItems="center"
-                                                justifyContent="space-between"
-                                                sx={{ mb: 1.5, flexWrap: 'wrap', gap: 0.5, width: 1 }}
-                                            >
-                                                <Typography
-                                                    variant="h6"
-                                                    sx={{
-                                                        fontWeight: 800,
-                                                        lineHeight: 1.2,
-                                                        fontSize: centerLabel.length > 20 ? '0.7rem' : (centerLabel.length > 12 ? '0.8125rem' : '1rem'),
-                                                        color: record.working_hours >= 8 ? 'success.main' :
-                                                            (record.working_hours > 0 ? 'error.main' :
-                                                                (centerLabel === 'Will Update Soon' ? 'info.main' : 'text.primary'))
-                                                    }}
-                                                >
-                                                    {centerLabel}
-                                                </Typography>
-                                                {status.label.toUpperCase() !== centerLabel && (
-                                                    <StatusPill bgcolor={status.bgcolor} color={status.dotColor} sx={{ px: 1, py: 0.35, fontSize: '0.6rem', fontWeight: 800, flexShrink: 0 }}>
-                                                        {status.label}
-                                                    </StatusPill>
-                                                )}
-                                            </Stack>
 
-                                            {record.working_hours > 0 && (
-                                                <Box sx={{ mb: 1.5 }}>
-                                                    <LinearProgress
-                                                        variant="determinate"
-                                                        value={progress}
+                                        <StatusChip
+                                            label={
+                                                <Stack direction="row" alignItems="center" spacing={0.75}>
+                                                    <Box
                                                         sx={{
-                                                            height: 6,
-                                                            borderRadius: 3,
-                                                            bgcolor: alpha(status.dotColor, 0.1),
-                                                            [`& .MuiLinearProgress-bar`]: {
-                                                                borderRadius: 3,
-                                                                bgcolor: status.dotColor,
-                                                                backgroundImage: `linear-gradient(90deg, ${alpha(status.dotColor, 0.6)} 0%, ${status.dotColor} 100%)`
-                                                            }
+                                                            width: 8,
+                                                            height: 8,
+                                                            borderRadius: '50%',
+                                                            bgcolor: status.color,
+                                                            boxShadow: `0 0 0 3px ${alpha(status.color, 0.12)}`,
                                                         }}
                                                     />
-                                                </Box>
-                                            )}
-
-                                            {!(isNonWorking && record.working_hours === 0) && (
-                                                <Stack direction="row" spacing={1} sx={{ color: 'text.secondary', flexWrap: 'wrap', gap: 1.5 }}>
-                                                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
-                                                        <Iconify icon={"solar:login-3-bold-duotone" as any} width={14} sx={{ color: 'text.disabled', flexShrink: 0 }} />
-                                                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.7rem' }}>
-                                                            {source === 'Daily Log' ? 'Login' : 'In'}: {formatTime(record.check_in)}
-                                                        </Typography>
-                                                    </Stack>
-                                                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
-                                                        <Iconify icon={"solar:logout-3-bold-duotone" as any} width={14} sx={{ color: 'text.disabled', flexShrink: 0 }} />
-                                                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.7rem' }}>
-                                                            {source === 'Daily Log' ? 'Logout' : 'Out'}: {formatTime(record.check_out)}
-                                                        </Typography>
-                                                    </Stack>
+                                                    <Box component="span">{status.chip}</Box>
                                                 </Stack>
-                                            )}
-                                        </Box>
-                                    )}
-
-                                    {isToday && (
-                                        <Box
+                                            }
                                             sx={{
-                                                width: 8,
-                                                height: 8,
-                                                borderRadius: '50%',
-                                                bgcolor: 'primary.main',
-                                                position: 'absolute',
-                                                top: 12,
-                                                right: 12,
-                                                '&::after': {
-                                                    content: '""',
-                                                    position: 'absolute',
-                                                    top: -4,
-                                                    left: -4,
-                                                    right: -4,
-                                                    bottom: -4,
-                                                    borderRadius: '50%',
-                                                    border: `2px solid ${theme.palette.primary.main}`,
-                                                    animation: 'pulse 2s infinite',
-                                                },
-                                                '@keyframes pulse': {
-                                                    '0%': { transform: 'scale(1)', opacity: 0.8 },
-                                                    '100%': { transform: 'scale(2.5)', opacity: 0 }
-                                                }
+                                                backgroundColor: alpha(status.color, 0.08),
+                                                color: status.color,
+                                                border: `1px solid ${alpha(status.color, 0.14)}`,
                                             }}
                                         />
-                                    )}
-                                </TimelineDayCard>
-                            </Box>
+                                    </Stack>
+
+                                    <Stack sx={{ mt: 1.5, gap: 0.8 }}>
+                                        <Stack direction="row" alignItems="center" spacing={1}>
+                                            <Box
+                                                sx={{
+                                                    width: 34,
+                                                    height: 34,
+                                                    borderRadius: 2.5,
+                                                    display: 'grid',
+                                                    placeItems: 'center',
+                                                    bgcolor: alpha(status.color, 0.1),
+                                                    color: status.color,
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                <Iconify icon={status.icon as any} width={20} />
+                                            </Box>
+                                            <Box sx={{ minWidth: 0 }}>
+                                                <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: '#1e293b', lineHeight: 1.25 }} noWrap>
+                                                    {status.title}
+                                                </Typography>
+                                                <Typography sx={{ color: '#64748b', fontSize: '0.82rem', mt: 0.2 }} noWrap>
+                                                    {status.subtitle}
+                                                </Typography>
+                                            </Box>
+                                        </Stack>
+
+                                        <Stack
+                                            direction="row"
+                                            alignItems="center"
+                                            spacing={1}
+                                            sx={{
+                                                pt: 1,
+                                                borderTop: `1px solid ${alpha('#cbd5e1', 0.6)}`,
+                                                color: '#64748b',
+                                                flexWrap: 'wrap',
+                                            }}
+                                        >
+                                            <Iconify icon="solar:login-3-linear" width={16} sx={{ color: status.color }} />
+                                            <Typography sx={{ fontSize: '0.70rem' }}>
+                                                {loginLabel}: {formatClock(record.check_in)}
+                                            </Typography>
+                                            <Typography sx={{ color: '#cbd5e1', fontWeight: 300 }}>|</Typography>
+                                            <Iconify icon="solar:logout-3-linear" width={16} sx={{ color: status.color }} />
+                                            <Typography sx={{ fontSize: '0.70rem' }}>
+                                                {logoutLabel}: {formatClock(record.check_out)}
+                                            </Typography>
+                                        </Stack>
+                                    </Stack>
+                                </DayCard>
                         );
                     })}
                 </Box>
+
+                <Stack
+                    direction={{ xs: 'column', lg: 'row' }}
+                    alignItems={{ xs: 'flex-start', lg: 'center' }}
+                    justifyContent="space-between"
+                    spacing={2}
+                    sx={{
+                        mt: 3,
+                        pt: 2.25,
+                        borderTop: `1px solid ${alpha('#dbe4f0', 0.9)}`,
+                    }}
+                >
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#64748b', flexWrap: 'wrap' }}>
+                        <Iconify icon="solar:info-circle-linear" width={18} />
+                        <Typography sx={{ fontSize: '0.92rem' }}>All times are in your local timezone</Typography>
+                    </Stack>
+
+                    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
+                        {legendItems.map((item) => (
+                            <Stack key={item.label} direction="row" alignItems="center" spacing={0.8}>
+                                <Box
+                                    sx={{
+                                        width: 10,
+                                        height: 10,
+                                        borderRadius: '50%',
+                                        bgcolor: item.color,
+                                        boxShadow: `0 0 0 3px ${alpha(item.color, 0.12)}`,
+                                    }}
+                                />
+                                <Typography sx={{ fontSize: '0.86rem', color: '#475569' }}>{item.label}</Typography>
+                            </Stack>
+                        ))}
+                    </Stack>
+
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#94a3b8' }}>
+                        <Iconify icon="solar:stars-line-duotone" width={18} />
+                        <Typography sx={{ fontSize: '0.9rem' }}>Compact weekly overview</Typography>
+                    </Stack>
+                </Stack>
             </Box>
         </Card>
     );
