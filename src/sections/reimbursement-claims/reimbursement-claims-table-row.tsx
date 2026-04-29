@@ -4,9 +4,9 @@ import dayjs from 'dayjs';
 import { useState } from 'react';
 
 import Box from '@mui/material/Box';
+import Badge from '@mui/material/Badge';
 import Popover from '@mui/material/Popover';
 import { alpha } from '@mui/material/styles';
-import Badge from '@mui/material/Badge';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
@@ -17,9 +17,7 @@ import IconButton from '@mui/material/IconButton';
 import { useUnreadCountsContext } from 'src/hooks/unread-counts-context';
 
 import { Label } from 'src/components/label';
-
 import { Iconify } from 'src/components/iconify';
-
 // ----------------------------------------------------------------------
 
 type Props = {
