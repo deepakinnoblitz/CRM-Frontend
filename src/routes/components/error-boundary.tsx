@@ -1,6 +1,5 @@
-import type { Theme, CSSObject } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
 
-import { varAlpha } from 'minimal-shared/utils';
 import { useRouteError, isRouteErrorResponse } from 'react-router';
 
 import Box from '@mui/material/Box';
@@ -22,9 +21,7 @@ export function ErrorBoundary() {
   return (
     <>
       <GlobalStyles styles={globalStyles} />
-      <Box className={errorBoundaryClasses.root}>
-        {renderErrorMessage(error)}
-      </Box>
+      <Box className={errorBoundaryClasses.root}>{renderErrorMessage(error)}</Box>
     </>
   );
 }
@@ -46,7 +43,7 @@ function renderErrorMessage(error: any) {
       <Container className={errorBoundaryClasses.container}>
         <Box sx={{ p: 4, textAlign: 'center' }}>
           <Iconify
-            icon={"solar:restart-square-bold-duotone" as any}
+            icon={'solar:restart-square-bold-duotone' as any}
             width={120}
             sx={{ mb: 3, color: '#08a3cd', opacity: 0.8 }}
           />
@@ -56,8 +53,8 @@ function renderErrorMessage(error: any) {
           </Typography>
 
           <Typography sx={{ color: 'text.secondary', mb: 4, maxWidth: 480, mx: 'auto' }}>
-            The application has been updated with new features or the server was restarted. 
-            Please reload the page to continue using the latest version.
+            The application has been updated with new features or the server was restarted. Please
+            reload the page to continue using the latest version.
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
@@ -65,12 +62,12 @@ function renderErrorMessage(error: any) {
               variant="contained"
               size="large"
               onClick={() => window.location.reload()}
-              startIcon={<Iconify icon={"solar:refresh-bold" as any} />}
+              startIcon={<Iconify icon={'solar:refresh-bold' as any} />}
               sx={{
                 px: 5,
                 bgcolor: '#08a3cd',
                 '&:hover': { bgcolor: '#068fb3' },
-                boxShadow: `0 8px 16px rgba(8, 163, 205, 0.24)`
+                boxShadow: `0 8px 16px rgba(8, 163, 205, 0.24)`,
               }}
             >
               Reload Application
@@ -94,15 +91,23 @@ function renderErrorMessage(error: any) {
   if (isRouteErrorResponse(error)) {
     return (
       <Container className={errorBoundaryClasses.container}>
-         <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Box sx={{ p: 4, textAlign: 'center' }}>
           <Iconify
-              icon={"solar:shield-warning-bold-duotone" as any}
-              width={100}
-              sx={{ mb: 3, color: '#ff5555' }}
-            />
-          <Typography variant="h3" sx={{ mb: 2 }}>{error.status}: {error.statusText}</Typography>
+            icon={'solar:shield-warning-bold-duotone' as any}
+            width={100}
+            sx={{ mb: 3, color: '#ff5555' }}
+          />
+          <Typography variant="h3" sx={{ mb: 2 }}>
+            {error.status}: {error.statusText}
+          </Typography>
           <Typography sx={{ color: 'text.secondary', mb: 4 }}>{error.data}</Typography>
-          <Button component={RouterLink} href="/" variant="contained" size="large" sx={{ bgcolor: '#08a3cd' }}>
+          <Button
+            component={RouterLink}
+            href="/"
+            variant="contained"
+            size="large"
+            sx={{ bgcolor: '#08a3cd' }}
+          >
             Go to Home
           </Button>
         </Box>
@@ -117,18 +122,31 @@ function renderErrorMessage(error: any) {
       <Container className={errorBoundaryClasses.container} sx={{ maxWidth: 800 }}>
         <Box sx={{ p: 4 }}>
           <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
-             <Iconify icon={"solar:danger-bold-duotone" as any} width={48} sx={{ color: '#ff5555' }} />
-             <Typography variant="h4">Unexpected Application Error!</Typography>
+            <Iconify
+              icon={'solar:danger-bold-duotone' as any}
+              width={48}
+              sx={{ color: '#ff5555' }}
+            />
+            <Typography variant="h4">Unexpected Application Error!</Typography>
           </Stack>
-          
+
           <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 2 }}>
-             {filePath && `Location: ${filePath}`}
+            {filePath && `Location: ${filePath}`}
           </Typography>
 
-          <Box sx={{ p: 2, bgcolor: '#2a1e1e', color: '#ff5555', borderRadius: 1, mb: 3, borderLeft: '4px solid #ff5555' }}>
-             <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                {error.name}: {error.message}
-             </Typography>
+          <Box
+            sx={{
+              p: 2,
+              bgcolor: '#2a1e1e',
+              color: '#ff5555',
+              borderRadius: 1,
+              mb: 3,
+              borderLeft: '4px solid #ff5555',
+            }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              {error.name}: {error.message}
+            </Typography>
           </Box>
 
           <pre className={errorBoundaryClasses.details}>{error.stack}</pre>
@@ -138,12 +156,19 @@ function renderErrorMessage(error: any) {
               variant="contained"
               size="large"
               onClick={() => window.location.reload()}
-              startIcon={<Iconify icon={"solar:refresh-bold" as any} />}
+              startIcon={<Iconify icon={'solar:refresh-bold' as any} />}
               sx={{ px: 4, bgcolor: '#08a3cd' }}
             >
               Try Again
             </Button>
-            <Button component={RouterLink} href="/" variant="outlined" size="large" color="inherit" sx={{ px: 4 }}>
+            <Button
+              component={RouterLink}
+              href="/"
+              variant="outlined"
+              size="large"
+              color="inherit"
+              sx={{ px: 4 }}
+            >
               Go to Home
             </Button>
           </Box>
@@ -154,12 +179,17 @@ function renderErrorMessage(error: any) {
 
   return (
     <Container className={errorBoundaryClasses.container}>
-       <Box sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h3">Something went wrong</Typography>
-          <Button component={RouterLink} href="/" variant="contained" sx={{ mt: 4, bgcolor: '#08a3cd' }}>
-              Go to Home
-          </Button>
-       </Box>
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography variant="h3">Something went wrong</Typography>
+        <Button
+          component={RouterLink}
+          href="/"
+          variant="contained"
+          sx={{ mt: 4, bgcolor: '#08a3cd' }}
+        >
+          Go to Home
+        </Button>
+      </Box>
     </Container>
   );
 }
@@ -172,7 +202,7 @@ const errorBoundaryClasses = {
 
 const globalStyles = (theme: Theme) => {
   const isDark = theme.palette.mode === 'dark';
-  
+
   // Safe fallbacks for colors
   const bgColor = theme.palette.background.default || (isDark ? '#161c24' : '#ffffff');
   const paperColor = theme.palette.background.paper || (isDark ? '#212b36' : '#ffffff');
@@ -202,7 +232,7 @@ const globalStyles = (theme: Theme) => {
         right: 0,
         height: 6,
         background: `linear-gradient(90deg, ${primaryColor} 0%, #068fb3 100%)`,
-      }
+      },
     },
     [`& .${errorBoundaryClasses.details}`]: {
       margin: 0,

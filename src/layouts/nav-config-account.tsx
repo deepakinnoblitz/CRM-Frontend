@@ -19,5 +19,5 @@ export const _account: AccountPopoverProps['data'] = [
     label: 'Settings',
     href: '/settings',
     icon: <Iconify width={22} icon="solar:settings-bold-duotone" />,
-  }
+  },
 ];

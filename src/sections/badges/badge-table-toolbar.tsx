@@ -86,8 +86,8 @@ export function BadgeTableToolbar({
             <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
           </InputAdornment>
         }
-        sx={{ 
-          maxWidth: 480, 
+        sx={{
+          maxWidth: 480,
           flexGrow: 1,
           '& .MuiOutlinedInput-notchedOutline': {
             borderColor: (theme) => alpha(theme.palette.grey[500], 0.32),
@@ -130,7 +130,7 @@ export function BadgeTableToolbar({
         <Button
           variant="text"
           color="inherit"
-          startIcon={<Iconify icon={"solar:sort-bold" as any} />}
+          startIcon={<Iconify icon={'solar:sort-bold' as any} />}
           onClick={handleSortClick}
           sx={{
             minWidth: 160,

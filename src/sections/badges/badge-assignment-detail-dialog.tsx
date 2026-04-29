@@ -24,7 +24,9 @@ export function BadgeAssignmentDetailDialog({ open, onClose, assignment }: Props
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 2 }}>
+      <DialogTitle
+        sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 2 }}
+      >
         Assignment Details
         <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary' }}>
           <Iconify icon="mingcute:close-line" width={24} />
@@ -49,7 +51,7 @@ export function BadgeAssignmentDetailDialog({ open, onClose, assignment }: Props
                 p: 1,
               }}
             >
-              {(assignment['badge.icon'] || assignment.badge_icon || assignment.icon) ? (
+              {assignment['badge.icon'] || assignment.badge_icon || assignment.icon ? (
                 <Box
                   component="img"
                   src={assignment['badge.icon'] || assignment.badge_icon || assignment.icon}
@@ -90,9 +92,7 @@ export function BadgeAssignmentDetailDialog({ open, onClose, assignment }: Props
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 Awarded By
               </Typography>
-              <Typography variant="subtitle2">
-                {assignment.awarded_by}
-              </Typography>
+              <Typography variant="subtitle2">{assignment.awarded_by}</Typography>
             </Stack>
           </Stack>
 

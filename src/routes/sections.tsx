@@ -16,7 +16,6 @@ import { DashboardLayout } from 'src/layouts/dashboard';
 import { AuthGuard } from 'src/auth/auth-guard';
 import { useAuth } from 'src/auth/auth-context';
 
-
 // ----------------------------------------------------------------------
 
 function DashboardLayoutWrapper({ children }: { children: React.ReactNode }) {
@@ -25,9 +24,7 @@ function DashboardLayoutWrapper({ children }: { children: React.ReactNode }) {
 
   return (
     <UnreadCountsProvider socket={socket}>
-      <DashboardLayout>
-        {children}
-      </DashboardLayout>
+      <DashboardLayout>{children}</DashboardLayout>
     </UnreadCountsProvider>
   );
 }
@@ -67,8 +64,12 @@ export const PurchaseReportPage = lazy(() => import('src/pages/reports/purchase'
 export const ExpenseReportPage = lazy(() => import('src/pages/reports/expense'));
 export const EstimationReportPage = lazy(() => import('src/pages/reports/estimation'));
 export const InvoiceReportPage = lazy(() => import('src/pages/reports/invoice'));
-export const InvoiceCollectionReportPage = lazy(() => import('src/pages/reports/invoice-collection'));
-export const PurchaseCollectionReportPage = lazy(() => import('src/pages/reports/purchase-settlement-report'));
+export const InvoiceCollectionReportPage = lazy(
+  () => import('src/pages/reports/invoice-collection')
+);
+export const PurchaseCollectionReportPage = lazy(
+  () => import('src/pages/reports/purchase-settlement-report')
+);
 export const TimesheetReportPage = lazy(() => import('src/pages/reports/timesheet'));
 export const AttendanceReportPage = lazy(() => import('src/pages/reports/attendance'));
 export const EmployeePage = lazy(() => import('src/pages/employee'));
@@ -113,11 +114,15 @@ export const PurchaseDetailsPage = lazy(() => import('src/pages/purchase/details
 export const InvoiceCollectionListPage = lazy(() => import('src/pages/invoice-collection/list'));
 export const InvoiceCollectionCreatePage = lazy(() => import('src/pages/invoice-collection/new'));
 export const InvoiceCollectionEditPage = lazy(() => import('src/pages/invoice-collection/edit'));
-export const InvoiceCollectionDetailsPage = lazy(() => import('src/pages/invoice-collection/details'));
+export const InvoiceCollectionDetailsPage = lazy(
+  () => import('src/pages/invoice-collection/details')
+);
 export const PurchaseCollectionListPage = lazy(() => import('src/pages/purchase-collection/list'));
 export const PurchaseCollectionCreatePage = lazy(() => import('src/pages/purchase-collection/new'));
 export const PurchaseCollectionEditPage = lazy(() => import('src/pages/purchase-collection/edit'));
-export const PurchaseCollectionDetailsPage = lazy(() => import('src/pages/purchase-collection/details'));
+export const PurchaseCollectionDetailsPage = lazy(
+  () => import('src/pages/purchase-collection/details')
+);
 export const UserPermissionsPage = lazy(() => import('src/pages/user-permissions'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 export const DailyLogPage = lazy(() => import('src/pages/daily-log'));
@@ -128,10 +133,13 @@ export const ActivityTypePage = lazy(() => import('src/pages/activity-type'));
 export const ClaimTypePage = lazy(() => import('src/pages/claim-type'));
 export const BankAccountPage = lazy(() => import('src/pages/bank-account'));
 export const AssetCategoryPage = lazy(() => import('src/pages/asset-category'));
-export const PerformanceCriteriaCategoryPage = lazy(() => import('src/pages/performance-criteria-category'));
+export const PerformanceCriteriaCategoryPage = lazy(
+  () => import('src/pages/performance-criteria-category')
+);
 export const DesignationPage = lazy(() => import('src/pages/designation'));
-export const SalaryStructureComponentPage = lazy(() => import('src/pages/salary-structure-component'));
-
+export const SalaryStructureComponentPage = lazy(
+  () => import('src/pages/salary-structure-component')
+);
 
 const renderFallback = () => (
   <Box

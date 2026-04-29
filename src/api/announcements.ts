@@ -2,136 +2,143 @@ import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 export interface Announcement {
-    name: string;
-    announcement_name: string;
-    announcement: string;
-    is_active: 0 | 1;
-    creation?: string;
-    modified?: string;
+  name: string;
+  announcement_name: string;
+  announcement: string;
+  is_active: 0 | 1;
+  creation?: string;
+  modified?: string;
 }
 
 async function fetchFrappeList(params: {
-    page: number;
-    page_size: number;
-    search?: string;
-    filters?: any;
-    orderBy?: string;
-    order?: 'asc' | 'desc';
+  page: number;
+  page_size: number;
+  search?: string;
+  filters?: any;
+  orderBy?: string;
+  order?: 'asc' | 'desc';
 }) {
-    const filters: any[] = [];
+  const filters: any[] = [];
 
-    if (params.search) {
-        filters.push(['Announcement', 'announcement_name', 'like', `%${params.search}%`]);
+  if (params.search) {
+    filters.push(['Announcement', 'announcement_name', 'like', `%${params.search}%`]);
+  }
+
+  if (params.filters) {
+    if (params.filters.startDate || params.filters.endDate) {
+      const start = params.filters.startDate || '1970-01-01';
+      const end = params.filters.endDate || '2099-12-31';
+      filters.push(['Announcement', 'creation', 'between', [start, end]]);
     }
+  }
 
-    if (params.filters) {
-        if (params.filters.startDate || params.filters.endDate) {
-            const start = params.filters.startDate || '1970-01-01';
-            const end = params.filters.endDate || '2099-12-31';
-            filters.push(['Announcement', 'creation', 'between', [start, end]]);
-        }
-    }
+  const orderByParam =
+    params.orderBy && params.order ? `${params.orderBy} ${params.order}` : 'creation desc';
 
-    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "creation desc";
+  const query = new URLSearchParams({
+    doctype: 'Announcement',
+    fields: JSON.stringify(['*']),
+    filters: JSON.stringify(filters),
+    limit_start: String((params.page - 1) * params.page_size),
+    limit_page_length: String(params.page_size),
+    order_by: orderByParam,
+  });
 
-    const query = new URLSearchParams({
-        doctype: 'Announcement',
-        fields: JSON.stringify(["*"]),
-        filters: JSON.stringify(filters),
-        limit_start: String((params.page - 1) * params.page_size),
-        limit_page_length: String(params.page_size),
-        order_by: orderByParam
-    });
+  const [res, countRes] = await Promise.all([
+    frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+    frappeRequest(
+      `/api/method/frappe.client.get_count?doctype=Announcement&filters=${encodeURIComponent(JSON.stringify(filters))}`
+    ),
+  ]);
 
-    const [res, countRes] = await Promise.all([
-        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Announcement&filters=${encodeURIComponent(JSON.stringify(filters))}`)
-    ]);
+  if (!res.ok) throw new Error('Failed to fetch announcements');
 
-    if (!res.ok) throw new Error("Failed to fetch announcements");
+  const data = await res.json();
+  const countData = await countRes.json();
 
-    const data = await res.json();
-    const countData = await countRes.json();
-
-    return {
-        data: data.message || [],
-        total: countData.message || 0
-    };
+  return {
+    data: data.message || [],
+    total: countData.message || 0,
+  };
 }
 
 export const fetchAnnouncements = (params: any) => fetchFrappeList(params);
 
 export async function createAnnouncement(data: Partial<Announcement>) {
-    const headers = await getAuthHeaders();
+  const headers = await getAuthHeaders();
 
-    const res = await frappeRequest("/api/method/frappe.client.insert", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ doc: { doctype: "Announcement", ...data } })
-    });
+  const res = await frappeRequest('/api/method/frappe.client.insert', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ doc: { doctype: 'Announcement', ...data } }),
+  });
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to create announcement"));
-    }
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(handleFrappeError(error, 'Failed to create announcement'));
+  }
 
-    return (await res.json()).message;
+  return (await res.json()).message;
 }
 
 export async function updateAnnouncement(name: string, data: Partial<Announcement>) {
-    const headers = await getAuthHeaders();
+  const headers = await getAuthHeaders();
 
-    const res = await frappeRequest("/api/method/frappe.client.set_value", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-            doctype: "Announcement",
-            name,
-            fieldname: data
-        })
-    });
+  const res = await frappeRequest('/api/method/frappe.client.set_value', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      doctype: 'Announcement',
+      name,
+      fieldname: data,
+    }),
+  });
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to update announcement"));
-    }
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(handleFrappeError(error, 'Failed to update announcement'));
+  }
 
-    return (await res.json()).message;
+  return (await res.json()).message;
 }
 
 export async function deleteAnnouncement(name: string) {
-    const headers = await getAuthHeaders();
+  const headers = await getAuthHeaders();
 
-    const res = await frappeRequest("/api/method/frappe.client.delete", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ doctype: "Announcement", name })
-    });
+  const res = await frappeRequest('/api/method/frappe.client.delete', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ doctype: 'Announcement', name }),
+  });
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to delete announcement"));
-    }
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(handleFrappeError(error, 'Failed to delete announcement'));
+  }
 
-    return true;
+  return true;
 }
 
 export async function getAnnouncement(name: string) {
-    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Announcement&name=${name}`);
+  const res = await frappeRequest(
+    `/api/method/frappe.client.get?doctype=Announcement&name=${name}`
+  );
 
-    if (!res.ok) {
-        throw new Error("Failed to fetch announcement details");
-    }
+  if (!res.ok) {
+    throw new Error('Failed to fetch announcement details');
+  }
 
-    return (await res.json()).message;
+  return (await res.json()).message;
 }
 
 export async function getAnnouncementPermissions() {
-    const res = await frappeRequest("/api/method/company.company.frontend_api.get_doc_permissions?doctype=Announcement");
+  const res = await frappeRequest(
+    '/api/method/company.company.frontend_api.get_doc_permissions?doctype=Announcement'
+  );
 
-    if (!res.ok) {
-        return { read: false, write: false, delete: false };
-    }
+  if (!res.ok) {
+    return { read: false, write: false, delete: false };
+  }
 
-    return (await res.json()).message || { read: false, write: false, delete: false };
+  return (await res.json()).message || { read: false, write: false, delete: false };
 }

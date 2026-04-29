@@ -16,7 +16,7 @@ import { useUnreadCountsContext } from 'src/hooks/unread-counts-context';
 import { fTimeDist } from 'src/utils/format-time';
 
 import { markAsRead } from 'src/api/unread-counts';
-import { getRequestWorkflowActions, type WorkflowAction } from 'src/api/requests';
+import { type WorkflowAction, getRequestWorkflowActions } from 'src/api/requests';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -26,285 +26,316 @@ import { ClarificationDialog } from '../report/requests/clarification-dialog';
 // ----------------------------------------------------------------------
 
 export type RequestTableRowProps = {
-    row: {
-        id: string;
-        name: string;
-        employee_id: string;
-        employee_name: string;
-        subject: string;
-        workflow_state?: string;
-        creation?: string;
-        modified?: string;
-        owner?: string;
-        hrQueryCount?: number;
-        empReplyCount?: number;
-    };
-    selected: boolean;
-    onSelectRow: () => void;
-    onView: () => void;
-    onEdit: () => void;
-    onDelete: () => void;
-    canEdit: boolean;
-    canDelete: boolean;
-    hideCheckbox?: boolean;
-    index?: number;
-    onApplyAction: (action: string) => void;
-    onClarify: (message: string) => Promise<void>;
-    isHR?: boolean;
+  row: {
+    id: string;
+    name: string;
+    employee_id: string;
+    employee_name: string;
+    subject: string;
+    workflow_state?: string;
+    creation?: string;
+    modified?: string;
+    owner?: string;
+    hrQueryCount?: number;
+    empReplyCount?: number;
+  };
+  selected: boolean;
+  onSelectRow: () => void;
+  onView: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  canEdit: boolean;
+  canDelete: boolean;
+  hideCheckbox?: boolean;
+  index?: number;
+  onApplyAction: (action: string) => void;
+  onClarify: (message: string) => Promise<void>;
+  isHR?: boolean;
 };
 
-
 export function RequestTableRow({
-    row,
-    selected,
-    onSelectRow,
-    onView,
-    onEdit,
-    onDelete,
-    canEdit,
-    canDelete,
-    hideCheckbox = false,
-    index,
-    onApplyAction,
-    onClarify,
-    isHR,
+  row,
+  selected,
+  onSelectRow,
+  onView,
+  onEdit,
+  onDelete,
+  canEdit,
+  canDelete,
+  hideCheckbox = false,
+  index,
+  onApplyAction,
+  onClarify,
+  isHR,
 }: RequestTableRowProps) {
-    const { unreadCounts } = useUnreadCountsContext();
+  const { unreadCounts } = useUnreadCountsContext();
 
-    const isUnread = unreadCounts.unread_ids.Request?.includes(row.id);
+  const isUnread = unreadCounts.unread_ids.Request?.includes(row.id);
 
-    const [openMenu, setOpenMenu] = useState<HTMLElement | null>(null);
-    const [actions, setActions] = useState<WorkflowAction[]>([]);
-    const [loadingActions, setLoadingActions] = useState(false);
-    const [openClarification, setOpenClarification] = useState(false);
-    const [submittingClarification, setSubmittingClarification] = useState(false);
+  const [openMenu, setOpenMenu] = useState<HTMLElement | null>(null);
+  const [actions, setActions] = useState<WorkflowAction[]>([]);
+  const [loadingActions, setLoadingActions] = useState(false);
+  const [openClarification, setOpenClarification] = useState(false);
+  const [submittingClarification, setSubmittingClarification] = useState(false);
 
-    const handleOpenMenu = async (event: React.MouseEvent<HTMLElement>) => {
-        setOpenMenu(event.currentTarget);
-        try {
-            setLoadingActions(true);
-            const availableActions = await getRequestWorkflowActions(row.workflow_state || 'Open');
-            setActions(availableActions);
-        } catch (error) {
-            console.error('Failed to fetch actions:', error);
-        } finally {
-            setLoadingActions(false);
-        }
-    };
+  const handleOpenMenu = async (event: React.MouseEvent<HTMLElement>) => {
+    setOpenMenu(event.currentTarget);
+    try {
+      setLoadingActions(true);
+      const availableActions = await getRequestWorkflowActions(row.workflow_state || 'Open');
+      setActions(availableActions);
+    } catch (error) {
+      console.error('Failed to fetch actions:', error);
+    } finally {
+      setLoadingActions(false);
+    }
+  };
 
-    const handleCloseMenu = () => {
-        setOpenMenu(null);
-    };
+  const handleCloseMenu = () => {
+    setOpenMenu(null);
+  };
 
-    const filteredActions = actions.filter((action) => {
-        const lowerAction = action.action.toLowerCase();
-        const isClarification = lowerAction.includes('clarification') || lowerAction.includes('query');
-        const isReply = lowerAction.includes('reply');
+  const filteredActions = actions.filter((action) => {
+    const lowerAction = action.action.toLowerCase();
+    const isClarification = lowerAction.includes('clarification') || lowerAction.includes('query');
+    const isReply = lowerAction.includes('reply');
 
-        const hrCount = row.hrQueryCount || 0;
-        const empCount = row.empReplyCount || 0;
+    const hrCount = row.hrQueryCount || 0;
+    const empCount = row.empReplyCount || 0;
 
-        if (isClarification && isHR && hrCount >= 5) return false;
-        if (isReply && !isHR && empCount >= 5) return false;
+    if (isClarification && isHR && hrCount >= 5) return false;
+    if (isReply && !isHR && empCount >= 5) return false;
 
-        return true;
+    return true;
+  });
+
+  const handleAction = (action: string) => {
+    const lowerAction = action.toLowerCase();
+
+    // Mark as read when action is taken
+    markAsRead('Request', row.id).then(() => {
+      window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
     });
 
-    const handleAction = (action: string) => {
-        const lowerAction = action.toLowerCase();
+    if (
+      lowerAction.includes('clarification') ||
+      lowerAction.includes('query') ||
+      lowerAction.includes('reply')
+    ) {
+      setOpenClarification(true);
+    } else {
+      onApplyAction(action);
+    }
+    handleCloseMenu();
+  };
 
-        // Mark as read when action is taken
-        markAsRead('Request', row.id).then(() => {
-            window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
-        });
+  const handleClarifyConfirm = async (message: string) => {
+    try {
+      setSubmittingClarification(true);
+      await onClarify(message);
+      setOpenClarification(false);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSubmittingClarification(false);
+    }
+  };
 
-        if (lowerAction.includes('clarification') || lowerAction.includes('query') || lowerAction.includes('reply')) {
-            setOpenClarification(true);
-        } else {
-            onApplyAction(action);
-        }
-        handleCloseMenu();
-    };
+  const getActionColor = (action: string) => {
+    const lower = action.toLowerCase();
+    if (lower.includes('approve')) return 'success.main';
+    if (lower.includes('reject')) return 'error.main';
+    if (lower.includes('clarification') || lower.includes('query')) return 'warning.main';
+    if (lower.includes('reply')) return 'info.main';
+    return 'primary.main';
+  };
 
-    const handleClarifyConfirm = async (message: string) => {
-        try {
-            setSubmittingClarification(true);
-            await onClarify(message);
-            setOpenClarification(false);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setSubmittingClarification(false);
-        }
-    };
+  const getActionIcon = (action: string): any => {
+    const lower = action.toLowerCase();
+    if (lower.includes('approve')) return 'solar:check-circle-bold';
+    if (lower.includes('reject')) return 'mingcute:close-line';
+    if (lower.includes('clarification') || lower.includes('query'))
+      return 'solar:question-square-bold';
+    if (lower.includes('reply')) return 'solar:chat-round-dots-bold';
+    return 'solar:pen-bold';
+  };
 
-    const getActionColor = (action: string) => {
-        const lower = action.toLowerCase();
-        if (lower.includes('approve')) return 'success.main';
-        if (lower.includes('reject')) return 'error.main';
-        if (lower.includes('clarification') || lower.includes('query')) return 'warning.main';
-        if (lower.includes('reply')) return 'info.main';
-        return 'primary.main';
-    };
+  const showActions =
+    isHR &&
+    (row.workflow_state === 'Pending' ||
+      row.workflow_state === 'Open' ||
+      row.workflow_state === 'Clarification Requested');
 
-    const getActionIcon = (action: string): any => {
-        const lower = action.toLowerCase();
-        if (lower.includes('approve')) return 'solar:check-circle-bold';
-        if (lower.includes('reject')) return 'mingcute:close-line';
-        if (lower.includes('clarification') || lower.includes('query')) return 'solar:question-square-bold';
-        if (lower.includes('reply')) return 'solar:chat-round-dots-bold';
-        return 'solar:pen-bold';
-    };
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Approved':
+        return 'success';
+      case 'Rejected':
+        return 'error';
+      case 'Pending':
+      case 'Clarification Requested':
+        return 'warning';
+      case 'Open':
+        return 'info';
+      default:
+        return 'default';
+    }
+  };
 
-    const showActions = isHR && (row.workflow_state === 'Pending' || row.workflow_state === 'Open' || row.workflow_state === 'Clarification Requested');
+  return (
+    <TableRow
+      hover
+      tabIndex={-1}
+      role="checkbox"
+      selected={selected}
+      sx={{
+        '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+        '&:last-child td, &:last-child th': { borderBottom: 0 },
+      }}
+    >
+      {!hideCheckbox && (
+        <TableCell padding="checkbox">
+          <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
+        </TableCell>
+      )}
 
-    const getStatusColor = (status: string) => {
-
-        switch (status) {
-            case 'Approved': return 'success';
-            case 'Rejected': return 'error';
-            case 'Pending':
-            case 'Clarification Requested': return 'warning';
-            case 'Open': return 'info';
-            default: return 'default';
-        }
-    };
-
-    return (
-        <TableRow
-            hover
-            tabIndex={-1}
-            role="checkbox"
-            selected={selected}
+      {typeof index === 'number' && (
+        <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+          <Box
             sx={{
-                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                '&:last-child td, &:last-child th': { borderBottom: 0 },
+              width: 28,
+              height: 28,
+              display: 'flex',
+              borderRadius: '50%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+              color: 'primary.main',
+              typography: 'subtitle2',
+              fontWeight: 800,
+              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+              mx: 'auto',
+              transition: (theme) =>
+                theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+              '&:hover': {
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                transform: 'scale(1.1)',
+              },
             }}
-        >
-            {!hideCheckbox && (
-                <TableCell padding="checkbox">
-                    <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
-                </TableCell>
-            )}
+          >
+            {index + 1}
+          </Box>
+        </TableCell>
+      )}
 
-            {typeof index === 'number' && (
-                <TableCell align="center" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                    <Box
-                        sx={{
-                            width: 28,
-                            height: 28,
-                            display: 'flex',
-                            borderRadius: '50%',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                            color: 'primary.main',
-                            typography: 'subtitle2',
-                            fontWeight: 800,
-                            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
-                            mx: 'auto',
-                            transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
-                            '&:hover': {
-                                bgcolor: 'primary.main',
-                                color: 'primary.contrastText',
-                                transform: 'scale(1.1)',
-                            },
-                        }}
-                    >
-                        {index + 1}
-                    </Box>
-                </TableCell>
-            )}
+      <TableCell>
+        <Box>
+          <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
+            {row.employee_name || '-'}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ color: 'text.secondary', display: { xs: 'none', md: 'block' } }}
+          >
+            {row.employee_id || '-'}
+          </Typography>
+        </Box>
+      </TableCell>
 
-            <TableCell>
-                <Box>
-                    <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
-                        {row.employee_name || '-'}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary', display: { xs: 'none', md: 'block' } }}>
-                        {row.employee_id || '-'}
-                    </Typography>
-                </Box>
-            </TableCell>
+      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{row.subject || '-'}</TableCell>
 
-            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{row.subject || '-'}</TableCell>
+      <TableCell>
+        <Label color={getStatusColor(row.workflow_state || '')}>
+          {row.workflow_state || 'Open'}
+        </Label>
+      </TableCell>
 
-            <TableCell>
-                <Label color={getStatusColor(row.workflow_state || '')}>
-                    {row.workflow_state || 'Open'}
-                </Label>
-            </TableCell>
-
-            <TableCell align="right">
-                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
-                    <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 2, fontSize: 12, display: { xs: 'none', md: 'block' } }}>
-                        {row.modified ? fTimeDist(row.modified) : '-'}
-                    </Box>
-                    <IconButton size="small" color="primary" onClick={onView}>
-                        <Badge
-                            color="error"
-                            variant="dot"
-                            invisible={!isUnread}
-                            sx={{
-                                '& .MuiBadge-badge': {
-                                    width: 6,
-                                    height: 6,
-                                    minWidth: 6,
-                                },
-                            }}
-                        >
-                            <Iconify icon="solar:eye-bold" />
-                        </Badge>
-                    </IconButton>
-
-                    {showActions && (
-                        <IconButton size="small" onClick={handleOpenMenu} sx={{ color: 'warning.main' }}>
-                            <Iconify icon="eva:more-vertical-fill" />
-                        </IconButton>
-                    )}
-                </Box>
-            </TableCell>
-
-            <Popover
-                open={!!openMenu}
-                anchorEl={openMenu}
-                onClose={handleCloseMenu}
-                anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                PaperProps={{
-                    sx: { width: 180, p: 1 },
-                }}
+      <TableCell align="right">
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
+          <Box
+            sx={{
+              typography: 'body2',
+              color: 'text.secondary',
+              fontWeight: 700,
+              mr: 2,
+              fontSize: 12,
+              display: { xs: 'none', md: 'block' },
+            }}
+          >
+            {row.modified ? fTimeDist(row.modified) : '-'}
+          </Box>
+          <IconButton size="small" color="primary" onClick={onView}>
+            <Badge
+              color="error"
+              variant="dot"
+              invisible={!isUnread}
+              sx={{
+                '& .MuiBadge-badge': {
+                  width: 6,
+                  height: 6,
+                  minWidth: 6,
+                },
+              }}
             >
-                {loadingActions ? (
-                    <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}>
-                        <Iconify icon={"svg-spinners:18-dots-indicator" as any} />
-                    </Box>
-                ) : (
-                    <>
-                        {filteredActions.map((action) => (
-                            <MenuItem key={action.action} onClick={() => handleAction(action.action)} sx={{ color: getActionColor(action.action) }}>
-                                <Iconify icon={getActionIcon(action.action)} sx={{ mr: 2 }} />
-                                {action.action}
-                            </MenuItem>
-                        ))}
-                        {actions.length === 0 && (
-                            <Typography variant="caption" sx={{ p: 1, color: 'text.disabled', textAlign: 'center', display: 'block' }}>
-                                No actions available
-                            </Typography>
-                        )}
-                    </>
-                )}
-            </Popover>
+              <Iconify icon="solar:eye-bold" />
+            </Badge>
+          </IconButton>
 
-            <ClarificationDialog
-                open={openClarification}
-                onClose={() => setOpenClarification(false)}
-                onConfirm={handleClarifyConfirm}
-                title="Ask Clarification"
-                label="Query"
-                loading={submittingClarification}
-            />
-        </TableRow>
-    );
+          {showActions && (
+            <IconButton size="small" onClick={handleOpenMenu} sx={{ color: 'warning.main' }}>
+              <Iconify icon="eva:more-vertical-fill" />
+            </IconButton>
+          )}
+        </Box>
+      </TableCell>
 
+      <Popover
+        open={!!openMenu}
+        anchorEl={openMenu}
+        onClose={handleCloseMenu}
+        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{
+          sx: { width: 180, p: 1 },
+        }}
+      >
+        {loadingActions ? (
+          <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}>
+            <Iconify icon={'svg-spinners:18-dots-indicator' as any} />
+          </Box>
+        ) : (
+          <>
+            {filteredActions.map((action) => (
+              <MenuItem
+                key={action.action}
+                onClick={() => handleAction(action.action)}
+                sx={{ color: getActionColor(action.action) }}
+              >
+                <Iconify icon={getActionIcon(action.action)} sx={{ mr: 2 }} />
+                {action.action}
+              </MenuItem>
+            ))}
+            {actions.length === 0 && (
+              <Typography
+                variant="caption"
+                sx={{ p: 1, color: 'text.disabled', textAlign: 'center', display: 'block' }}
+              >
+                No actions available
+              </Typography>
+            )}
+          </>
+        )}
+      </Popover>
+
+      <ClarificationDialog
+        open={openClarification}
+        onClose={() => setOpenClarification(false)}
+        onConfirm={handleClarifyConfirm}
+        title="Ask Clarification"
+        label="Query"
+        loading={submittingClarification}
+      />
+    </TableRow>
+  );
 }

@@ -1,6 +1,6 @@
 /**
  * CSRF Token Management Utility
- * 
+ *
  * This module handles CSRF token retrieval and management for Frappe API calls.
  * CSRF tokens are required for all POST, PUT, DELETE requests to prevent
  * Cross-Site Request Forgery attacks.
@@ -10,10 +10,10 @@
  * Show session expired message
  */
 function showSessionExpiredMessage(): Promise<void> {
-    return new Promise((resolve) => {
-        // Create overlay
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
+  return new Promise((resolve) => {
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
@@ -27,9 +27,9 @@ function showSessionExpiredMessage(): Promise<void> {
             backdrop-filter: blur(4px);
         `;
 
-        // Create message box
-        const messageBox = document.createElement('div');
-        messageBox.style.cssText = `
+    // Create message box
+    const messageBox = document.createElement('div');
+    messageBox.style.cssText = `
             background: white;
             padding: 32px 48px;
             border-radius: 16px;
@@ -39,9 +39,9 @@ function showSessionExpiredMessage(): Promise<void> {
             animation: slideIn 0.3s ease-out;
         `;
 
-        // Add animation keyframes
-        const style = document.createElement('style');
-        style.textContent = `
+    // Add animation keyframes
+    const style = document.createElement('style');
+    style.textContent = `
             @keyframes slideIn {
                 from {
                     opacity: 0;
@@ -53,20 +53,20 @@ function showSessionExpiredMessage(): Promise<void> {
                 }
             }
         `;
-        document.head.appendChild(style);
+    document.head.appendChild(style);
 
-        // Create icon
-        const icon = document.createElement('div');
-        icon.innerHTML = `
+    // Create icon
+    const icon = document.createElement('div');
+    icon.innerHTML = `
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto 16px;">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="#f44336"/>
             </svg>
         `;
 
-        // Create title
-        const title = document.createElement('div');
-        title.textContent = 'Session Expired';
-        title.style.cssText = `
+    // Create title
+    const title = document.createElement('div');
+    title.textContent = 'Session Expired';
+    title.style.cssText = `
             font-size: 24px;
             font-weight: 700;
             color: #212B36;
@@ -74,78 +74,78 @@ function showSessionExpiredMessage(): Promise<void> {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         `;
 
-        // Create message
-        const message = document.createElement('div');
-        message.textContent = 'Your session has expired. Please log in again.';
-        message.style.cssText = `
+    // Create message
+    const message = document.createElement('div');
+    message.textContent = 'Your session has expired. Please log in again.';
+    message.style.cssText = `
             font-size: 14px;
             color: #637381;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         `;
 
-        // Assemble
-        messageBox.appendChild(icon);
-        messageBox.appendChild(title);
-        messageBox.appendChild(message);
-        overlay.appendChild(messageBox);
-        document.body.appendChild(overlay);
+    // Assemble
+    messageBox.appendChild(icon);
+    messageBox.appendChild(title);
+    messageBox.appendChild(message);
+    overlay.appendChild(messageBox);
+    document.body.appendChild(overlay);
 
-        // Remove after 2 seconds
-        setTimeout(() => {
-            overlay.style.opacity = '0';
-            overlay.style.transition = 'opacity 0.3s ease-out';
-            setTimeout(() => {
-                document.body.removeChild(overlay);
-                document.head.removeChild(style);
-                resolve();
-            }, 300);
-        }, 2000);
-    });
+    // Remove after 2 seconds
+    setTimeout(() => {
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.3s ease-out';
+      setTimeout(() => {
+        document.body.removeChild(overlay);
+        document.head.removeChild(style);
+        resolve();
+      }, 300);
+    }, 2000);
+  });
 }
 
 /**
  * Handle CSRF error by logging out user and redirecting to sign-in
  */
 export async function handleCSRFError(): Promise<void> {
-    console.error('CSRF Token Error detected - logging out user');
+  console.error('CSRF Token Error detected - logging out user');
 
-    // Show session expired message
-    await showSessionExpiredMessage();
+  // Show session expired message
+  await showSessionExpiredMessage();
 
-    // Clear local storage
-    localStorage.clear();
+  // Clear local storage
+  localStorage.clear();
 
-    try {
-        // Read CSRF token from cookie before it disappears
-        const csrfToken = getCSRFTokenFromCookie() || '';
-        // Call logout API endpoint — include the token so this POST itself doesn't throw CSRF error
-        await fetch('/api/method/logout', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'X-Frappe-CSRF-Token': csrfToken,
-            },
-        });
-    } catch (error) {
-        console.error('Error during logout:', error);
-    }
+  try {
+    // Read CSRF token from cookie before it disappears
+    const csrfToken = getCSRFTokenFromCookie() || '';
+    // Call logout API endpoint — include the token so this POST itself doesn't throw CSRF error
+    await fetch('/api/method/logout', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'X-Frappe-CSRF-Token': csrfToken,
+      },
+    });
+  } catch (error) {
+    console.error('Error during logout:', error);
+  }
 
-    // Redirect to sign-in page — prevents blank/Frappe error pages
-    window.location.href = '/sign-in';
+  // Redirect to sign-in page — prevents blank/Frappe error pages
+  window.location.href = '/sign-in';
 }
-
-
 
 /**
  * Check if error response contains CSRF error
  */
 export function isCSRFError(json: any): boolean {
-    if (!json) return false;
+  if (!json) return false;
 
-    const errorMessage = json.exception || json.message || '';
-    return errorMessage.includes('CSRFTokenError') ||
-        errorMessage.includes('Invalid Request') ||
-        json.exc_type === 'CSRFTokenError';
+  const errorMessage = json.exception || json.message || '';
+  return (
+    errorMessage.includes('CSRFTokenError') ||
+    errorMessage.includes('Invalid Request') ||
+    json.exc_type === 'CSRFTokenError'
+  );
 }
 
 /**
@@ -153,17 +153,17 @@ export function isCSRFError(json: any): boolean {
  * Frappe stores the CSRF token in a cookie named 'csrf_token'
  */
 export function getCSRFTokenFromCookie(): string | null {
-    const name = 'csrf_token=';
-    const decodedCookie = decodeURIComponent(document.cookie);
-    const cookieArray = decodedCookie.split(';');
+  const name = 'csrf_token=';
+  const decodedCookie = decodeURIComponent(document.cookie);
+  const cookieArray = decodedCookie.split(';');
 
-    for (let i = 0; i < cookieArray.length; i++) {
-        const cookie = cookieArray[i].trim();
-        if (cookie.indexOf(name) === 0) {
-            return cookie.substring(name.length, cookie.length);
-        }
+  for (let i = 0; i < cookieArray.length; i++) {
+    const cookie = cookieArray[i].trim();
+    if (cookie.indexOf(name) === 0) {
+      return cookie.substring(name.length, cookie.length);
     }
-    return null;
+  }
+  return null;
 }
 
 /**
@@ -172,30 +172,30 @@ export function getCSRFTokenFromCookie(): string | null {
  * a fresh CSRF token in the response headers
  */
 export async function fetchCSRFToken(): Promise<string | null> {
-    try {
-        const response = await fetch('/api/method/company.company.frontend_api.get_csrf_token', {
-            credentials: 'include'
-        });
+  try {
+    const response = await fetch('/api/method/company.company.frontend_api.get_csrf_token', {
+      credentials: 'include',
+    });
 
-        if (!response.ok) {
-            console.error('Failed to fetch CSRF token');
-            return null;
-        }
-
-        const data = await response.json();
-        const token = data.message;
-
-        if (token) {
-            // Also update the cookie so getCSRFTokenFromCookie can find it next time
-            document.cookie = `csrf_token=${token}; path=/; SameSite=Lax`;
-            return token;
-        }
-
-        return null;
-    } catch (error) {
-        console.error('Error fetching CSRF token:', error);
-        return null;
+    if (!response.ok) {
+      console.error('Failed to fetch CSRF token');
+      return null;
     }
+
+    const data = await response.json();
+    const token = data.message;
+
+    if (token) {
+      // Also update the cookie so getCSRFTokenFromCookie can find it next time
+      document.cookie = `csrf_token=${token}; path=/; SameSite=Lax`;
+      return token;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching CSRF token:', error);
+    return null;
+  }
 }
 
 /**
@@ -203,29 +203,31 @@ export async function fetchCSRFToken(): Promise<string | null> {
  * This is the main function to use when making API calls
  */
 export async function getCSRFToken(): Promise<string> {
-    // First try to get from cookie (fastest)
-    let token = getCSRFTokenFromCookie();
+  // First try to get from cookie (fastest)
+  let token = getCSRFTokenFromCookie();
 
-    // If not in cookie, fetch a fresh one
-    if (!token) {
-        token = await fetchCSRFToken();
-    }
+  // If not in cookie, fetch a fresh one
+  if (!token) {
+    token = await fetchCSRFToken();
+  }
 
-    return token || '';
+  return token || '';
 }
 
 /**
  * Create headers object with CSRF token included
  * Use this helper to ensure all your requests have the proper headers
  */
-export async function getAuthHeaders(additionalHeaders: Record<string, string> = {}): Promise<HeadersInit> {
-    const csrfToken = await getCSRFToken();
+export async function getAuthHeaders(
+  additionalHeaders: Record<string, string> = {}
+): Promise<HeadersInit> {
+  const csrfToken = await getCSRFToken();
 
-    return {
-        'Content-Type': 'application/json',
-        'X-Frappe-CSRF-Token': csrfToken,
-        ...additionalHeaders
-    };
+  return {
+    'Content-Type': 'application/json',
+    'X-Frappe-CSRF-Token': csrfToken,
+    ...additionalHeaders,
+  };
 }
 
 /**
@@ -233,80 +235,80 @@ export async function getAuthHeaders(additionalHeaders: Record<string, string> =
  * and handles CSRF errors with auto-logout
  */
 export async function frappeRequest(url: string, options: RequestInit = {}): Promise<Response> {
-    const headers = await getAuthHeaders(options.headers as Record<string, string> || {});
+  const headers = await getAuthHeaders((options.headers as Record<string, string>) || {});
 
-    // Remove Content-Type header if body is FormData to let browser set it with boundary
-    if (options.body instanceof FormData) {
-        if (headers instanceof Headers) {
-            headers.delete('Content-Type');
-        } else if (typeof headers === 'object' && headers !== null) {
-            delete (headers as any)['Content-Type'];
-        }
+  // Remove Content-Type header if body is FormData to let browser set it with boundary
+  if (options.body instanceof FormData) {
+    if (headers instanceof Headers) {
+      headers.delete('Content-Type');
+    } else if (typeof headers === 'object' && headers !== null) {
+      delete (headers as any)['Content-Type'];
     }
+  }
 
-    let response = await fetch(url, {
-        ...options,
-        headers,
-        credentials: 'include'
-    });
+  let response = await fetch(url, {
+    ...options,
+    headers,
+    credentials: 'include',
+  });
 
-    // Check for CSRF errors
-    if (!response.ok) {
-        try {
-            const clone = response.clone();
-            const json = await clone.json();
+  // Check for CSRF errors
+  if (!response.ok) {
+    try {
+      const clone = response.clone();
+      const json = await clone.json();
 
-            if (isCSRFError(json)) {
-                console.warn('CSRF token invalid, refreshing...');
+      if (isCSRFError(json)) {
+        console.warn('CSRF token invalid, refreshing...');
 
-                // Token might be expired, try to fetch a new one explicitly
-                const newToken = await fetchCSRFToken();
+        // Token might be expired, try to fetch a new one explicitly
+        const newToken = await fetchCSRFToken();
 
-                if (newToken) {
-                    console.log('Got new CSRF token, retrying request...');
+        if (newToken) {
+          console.log('Got new CSRF token, retrying request...');
 
-                    // Update header with new token
-                    if (headers instanceof Headers) {
-                        headers.set('X-Frappe-CSRF-Token', newToken);
-                    } else if (typeof headers === 'object' && headers !== null) {
-                        (headers as any)['X-Frappe-CSRF-Token'] = newToken;
-                    }
+          // Update header with new token
+          if (headers instanceof Headers) {
+            headers.set('X-Frappe-CSRF-Token', newToken);
+          } else if (typeof headers === 'object' && headers !== null) {
+            (headers as any)['X-Frappe-CSRF-Token'] = newToken;
+          }
 
-                    // Retry request with new token
-                    response = await fetch(url, {
-                        ...options,
-                        headers,
-                        credentials: 'include'
-                    });
+          // Retry request with new token
+          response = await fetch(url, {
+            ...options,
+            headers,
+            credentials: 'include',
+          });
 
-                    // Check if retry failed (only checking for CSRF again)
-                    if (!response.ok) {
-                        const retryClone = response.clone();
-                        const retryJson = await retryClone.json();
+          // Check if retry failed (only checking for CSRF again)
+          if (!response.ok) {
+            const retryClone = response.clone();
+            const retryJson = await retryClone.json();
 
-                        if (isCSRFError(retryJson)) {
-                            console.error('CSRF Retry failed');
-                            handleCSRFError();
-                            throw new Error('CSRF Token Error - Session expired');
-                        }
-                    }
-                } else {
-                    console.error('Failed to refresh CSRF token');
-                    handleCSRFError();
-                    throw new Error('CSRF Token Error - Session expired');
-                }
+            if (isCSRFError(retryJson)) {
+              console.error('CSRF Retry failed');
+              handleCSRFError();
+              throw new Error('CSRF Token Error - Session expired');
             }
-        } catch (e) {
-            // If not a JSON response or parsing fails, continue
-            if (e instanceof Error && e.message.includes('CSRF')) {
-                throw e;
-            }
-            // For other errors during retry or parsing, we just return the original response 
-            // (or let the caller handle the error from the retried response)
+          }
+        } else {
+          console.error('Failed to refresh CSRF token');
+          handleCSRFError();
+          throw new Error('CSRF Token Error - Session expired');
         }
+      }
+    } catch (e) {
+      // If not a JSON response or parsing fails, continue
+      if (e instanceof Error && e.message.includes('CSRF')) {
+        throw e;
+      }
+      // For other errors during retry or parsing, we just return the original response
+      // (or let the caller handle the error from the retried response)
     }
+  }
 
-    return response;
+  return response;
 }
 
 /**
@@ -314,21 +316,22 @@ export async function frappeRequest(url: string, options: RequestInit = {}): Pro
  * Use this for all API calls that need automatic logout on CSRF error
  */
 export async function safeAPICall<T>(
-    apiCall: () => Promise<T>,
-    errorMessage: string = 'API call failed'
+  apiCall: () => Promise<T>,
+  errorMessage: string = 'API call failed'
 ): Promise<T> {
-    try {
-        return await apiCall();
-    } catch (error: any) {
-        // Check if it's a CSRF error
-        if (error.message?.includes('CSRFTokenError') ||
-            error.message?.includes('Invalid Request') ||
-            error.exc_type === 'CSRFTokenError') {
-            handleCSRFError();
-            throw new Error('Session expired - Please log in again');
-        }
-
-        throw new Error(error.message || errorMessage);
+  try {
+    return await apiCall();
+  } catch (error: any) {
+    // Check if it's a CSRF error
+    if (
+      error.message?.includes('CSRFTokenError') ||
+      error.message?.includes('Invalid Request') ||
+      error.exc_type === 'CSRFTokenError'
+    ) {
+      handleCSRFError();
+      throw new Error('Session expired - Please log in again');
     }
-}
 
+    throw new Error(error.message || errorMessage);
+  }
+}

@@ -12,84 +12,87 @@ import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 type Props = {
-    children: React.ReactNode;
+  children: React.ReactNode;
 };
 
 export default function ChatNotifications({ children }: Props) {
-    const theme = useTheme();
-    const { user } = useAuth();
-    const [unreadCount, setUnreadCount] = useState(0);
+  const theme = useTheme();
+  const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
 
-    const { socket, subscribeToRoom } = useSocket(user?.email);
+  const { socket, subscribeToRoom } = useSocket(user?.email);
 
-    const fetchUnreadCount = useCallback(async () => {
-        if (!user?.email) return;
+  const fetchUnreadCount = useCallback(async () => {
+    if (!user?.email) return;
 
-        try {
-            const data = await chatApi.getChannelsList(user.email);
-            const channelList = data?.message?.results || [];
+    try {
+      const data = await chatApi.getChannelsList(user.email);
+      const channelList = data?.message?.results || [];
 
-            const total = channelList.reduce((sum: number, channel: any) => sum + (channel.user_unread_messages || 0), 0);
-            setUnreadCount(total);
+      const total = channelList.reduce(
+        (sum: number, channel: any) => sum + (channel.user_unread_messages || 0),
+        0
+      );
+      setUnreadCount(total);
 
-            // Subscribe to all rooms for real-time updates
-            channelList.forEach((channel: any) => {
-                subscribeToRoom(channel.room);
-            });
-        } catch (error) {
-            console.error('Failed to fetch unread count', error);
+      // Subscribe to all rooms for real-time updates
+      channelList.forEach((channel: any) => {
+        subscribeToRoom(channel.room);
+      });
+    } catch (error) {
+      console.error('Failed to fetch unread count', error);
+    }
+  }, [user?.email, subscribeToRoom]);
+
+  useEffect(() => {
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
+  useEffect(() => {
+    if (socket) {
+      const handleNewMessage = (data: any) => {
+        // If message is from someone else, increment count locally
+        if (data.sender_email !== user?.email) {
+          setUnreadCount((prev) => prev + 1);
         }
-    }, [user?.email, subscribeToRoom]);
+      };
 
-    useEffect(() => {
+      const handleUpdateSync = () => {
+        // Re-fetch to ensure sync with backend
         fetchUnreadCount();
-    }, [fetchUnreadCount]);
+      };
 
-    useEffect(() => {
-        if (socket) {
-            const handleNewMessage = (data: any) => {
-                // If message is from someone else, increment count locally
-                if (data.sender_email !== user?.email) {
-                    setUnreadCount((prev) => prev + 1);
-                }
-            };
+      socket.on('msg', handleNewMessage);
+      socket.on('update_room', handleUpdateSync);
+      socket.on('mark_read_update', handleUpdateSync);
 
-            const handleUpdateSync = () => {
-                // Re-fetch to ensure sync with backend
-                fetchUnreadCount();
-            };
+      window.addEventListener('REFRESH_CHAT_UNREAD_COUNT', handleUpdateSync);
 
-            socket.on('msg', handleNewMessage);
-            socket.on('update_room', handleUpdateSync);
-            socket.on('mark_read_update', handleUpdateSync);
+      return () => {
+        socket.off('msg', handleNewMessage);
+        socket.off('update_room', handleUpdateSync);
+        socket.off('mark_read_update', handleUpdateSync);
+        window.removeEventListener('REFRESH_CHAT_UNREAD_COUNT', handleUpdateSync);
+      };
+    }
+    return undefined;
+  }, [socket, user?.email, fetchUnreadCount]);
 
-            window.addEventListener('REFRESH_CHAT_UNREAD_COUNT', handleUpdateSync);
-
-            return () => {
-                socket.off('msg', handleNewMessage);
-                socket.off('update_room', handleUpdateSync);
-                socket.off('mark_read_update', handleUpdateSync);
-                window.removeEventListener('REFRESH_CHAT_UNREAD_COUNT', handleUpdateSync);
-            };
-        }
-        return undefined;
-    }, [socket, user?.email, fetchUnreadCount]);
-
-    return (
-        <Badge
-            badgeContent={unreadCount}
-            color="error"
-            max={99}
-            sx={{
-                '& .MuiBadge-badge': {
-                    right: 35,
-                    top: 15,
-                    border: `2px solid ${theme.palette.background.paper}`,
-                    padding: '0 4px',
-                },
-            }}
-        >
-            {children}
-        </Badge>
-    );
+  return (
+    <Badge
+      badgeContent={unreadCount}
+      color="error"
+      max={99}
+      sx={{
+        '& .MuiBadge-badge': {
+          right: 35,
+          top: 15,
+          border: `2px solid ${theme.palette.background.paper}`,
+          padding: '0 4px',
+        },
+      }}
+    >
+      {children}
+    </Badge>
+  );
 }

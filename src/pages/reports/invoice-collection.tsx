@@ -5,10 +5,10 @@ import { InvoiceCollectionReportView } from 'src/sections/report/view/invoice-co
 // ----------------------------------------------------------------------
 
 export default function InvoiceCollectionReportPage() {
-    return (
-        <>
-            <title>{`Invoice Collection Report - ${CONFIG.appName}`}</title>
-            <InvoiceCollectionReportView />
-        </>
-    );
+  return (
+    <>
+      <title>{`Invoice Collection Report - ${CONFIG.appName}`}</title>
+      <InvoiceCollectionReportView />
+    </>
+  );
 }

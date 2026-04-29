@@ -58,933 +58,1023 @@ import { LeadTableToolbar as DealTableToolbar } from '../../lead/lead-table-tool
 // ----------------------------------------------------------------------
 
 export function DealView() {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const currentTab = searchParams.get('tab') || 'deals';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get('tab') || 'deals';
 
-    const handleChangeTab = useCallback(
-        (event: React.SyntheticEvent, newValue: string) => {
-            setSearchParams({ tab: newValue });
-        },
-        [setSearchParams]
-    );
+  const handleChangeTab = useCallback(
+    (event: React.SyntheticEvent, newValue: string) => {
+      setSearchParams({ tab: newValue });
+    },
+    [setSearchParams]
+  );
 
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [filterName, setFilterName] = useState('');
-    const [filterStage, setFilterStage] = useState('all');
-    const [filters, setFilters] = useState({
-        type: 'all',
-        contact: 'all',
-        account: 'all',
-        source_lead: 'all',
-        stage: 'all',
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [filterName, setFilterName] = useState('');
+  const [filterStage, setFilterStage] = useState('all');
+  const [filters, setFilters] = useState({
+    type: 'all',
+    contact: 'all',
+    account: 'all',
+    source_lead: 'all',
+    stage: 'all',
+  });
+  const [openFilters, setOpenFilters] = useState(false);
+  const [sortBy, setSortBy] = useState('modified_desc');
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const STAGE_OPTIONS = [
+    { value: 'Qualification', label: 'Qualification' },
+    { value: 'Needs Analysis', label: 'Needs Analysis' },
+    { value: 'Meeting Scheduled', label: 'Meeting Scheduled' },
+    { value: 'Proposal Sent', label: 'Proposal Sent' },
+    { value: 'Negotiation', label: 'Negotiation' },
+    { value: 'Closed Won', label: 'Closed Won' },
+    { value: 'Closed Lost', label: 'Closed Lost' },
+  ];
+
+  const [openCreate, setOpenCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [currentDealId, setCurrentDealId] = useState<string | null>(null);
+  const [viewOnly, setViewOnly] = useState(false);
+  const [openView, setOpenView] = useState(false);
+
+  // Form state
+  const [dealTitle, setDealTitle] = useState('');
+  const [account, setAccount] = useState('');
+  const [contact, setContact] = useState('');
+  const [value, setValue] = useState<number | string>('');
+  const [expectedCloseDate, setExpectedCloseDate] = useState<Dayjs | null>(null);
+  const [stage, setStage] = useState('Qualification');
+  const [probability, setProbability] = useState<number | string>('');
+  const [dealType, setDealType] = useState('New Business');
+  const [sourceLead, setSourceLead] = useState('');
+  const [nextStep, setNextStep] = useState('');
+  const [notes, setNotes] = useState('');
+  const [attachments, setAttachments] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  // Dropdown Options
+  const [accountOptions, setAccountOptions] = useState<any[]>([]);
+  const [contactOptions, setContactOptions] = useState<any[]>([]);
+
+  // Alert & Dialog State
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: string | null }>({
+    open: false,
+    id: null,
+  });
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  // Permissions State
+  const [permissions, setPermissions] = useState<{
+    read: boolean;
+    write: boolean;
+    delete: boolean;
+  }>({
+    read: true,
+    write: true,
+    delete: true,
+  });
+
+  // Validation State
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
+
+  const { data, total, loading, refetch } = useDeals(
+    page,
+    rowsPerPage,
+    filterName,
+    filterStage,
+    sortBy,
+    filters
+  );
+
+  const handleFilters = (update: any) => {
+    setFilters((prev) => ({ ...prev, ...update }));
+    setPage(0);
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      type: 'all',
+      contact: 'all',
+      account: 'all',
+      source_lead: 'all',
+      stage: 'all',
     });
-    const [openFilters, setOpenFilters] = useState(false);
-    const [sortBy, setSortBy] = useState('modified_desc');
-    const [selected, setSelected] = useState<string[]>([]);
+    setPage(0);
+  };
 
-    const STAGE_OPTIONS = [
-        { value: 'Qualification', label: 'Qualification' },
-        { value: 'Needs Analysis', label: 'Needs Analysis' },
-        { value: 'Meeting Scheduled', label: 'Meeting Scheduled' },
-        { value: 'Proposal Sent', label: 'Proposal Sent' },
-        { value: 'Negotiation', label: 'Negotiation' },
-        { value: 'Closed Won', label: 'Closed Won' },
-        { value: 'Closed Lost', label: 'Closed Lost' },
-    ];
+  const canReset =
+    filters.type !== 'all' ||
+    filters.contact !== 'all' ||
+    filters.account !== 'all' ||
+    filters.source_lead !== 'all' ||
+    filters.stage !== 'all';
 
-    const [openCreate, setOpenCreate] = useState(false);
-    const [creating, setCreating] = useState(false);
-    const [currentDealId, setCurrentDealId] = useState<string | null>(null);
-    const [viewOnly, setViewOnly] = useState(false);
-    const [openView, setOpenView] = useState(false);
+  const SOURCE_LEAD_OPTIONS = [
+    'Advertisement',
+    'Cold Call',
+    'Employee Referral',
+    'External Referral',
+    'Online Store',
+    'Website',
+    'Social Media',
+    'Email Campaign',
+    'Walk In',
+    'Trade Show / Event',
+    'Partner',
+    'Distributor',
+    'Telemarketing',
+    'Existing Customer',
+    'Repeat Customer',
+    'Direct Mail',
+    'Marketplace',
+    'Google Ads',
+    'Facebook / Instagram Ads',
+    'LinkedIn',
+    'WhatsApp',
+    'Customer Support',
+    'Inbound Call',
+    'Outbound Call',
+    'Other',
+  ];
 
-    // Form state
-    const [dealTitle, setDealTitle] = useState('');
-    const [account, setAccount] = useState('');
-    const [contact, setContact] = useState('');
-    const [value, setValue] = useState<number | string>('');
-    const [expectedCloseDate, setExpectedCloseDate] = useState<Dayjs | null>(null);
-    const [stage, setStage] = useState('Qualification');
-    const [probability, setProbability] = useState<number | string>('');
-    const [dealType, setDealType] = useState('New Business');
-    const [sourceLead, setSourceLead] = useState('');
-    const [nextStep, setNextStep] = useState('');
-    const [notes, setNotes] = useState('');
-    const [attachments, setAttachments] = useState<any[]>([]);
-    const [uploading, setUploading] = useState(false);
+  useEffect(() => {
+    // Fetch dropdown options on mount - get full objects for filter drawer
+    Promise.all([
+      fetch(
+        '/api/method/frappe.client.get_list?doctype=Accounts&fields=["name","account_name"]&limit_page_length=999',
+        { credentials: 'include' }
+      ),
+      fetch(
+        '/api/method/frappe.client.get_list?doctype=Contacts&fields=["name","first_name"]&limit_page_length=999',
+        { credentials: 'include' }
+      ),
+    ])
+      .then(async ([accountsRes, contactsRes]) => {
+        const accounts = await accountsRes.json();
+        const contacts = await contactsRes.json();
 
-    // Dropdown Options
-    const [accountOptions, setAccountOptions] = useState<any[]>([]);
-    const [contactOptions, setContactOptions] = useState<any[]>([]);
+        setAccountOptions(accounts.message || []);
+        setContactOptions(contacts.message || []);
+      })
+      .catch((err) => console.error('Failed to fetch dropdown options', err));
 
-    // Alert & Dialog State
-    const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
-        open: false,
-        message: '',
+    // Fetch Permissions
+    getDealPermissions().then(setPermissions);
+  }, []);
+
+  const handleOpenCreate = () => {
+    setViewOnly(false);
+    setCurrentDealId(null);
+    setDealTitle('');
+    setAccount('');
+    setContact('');
+    setValue('');
+    setExpectedCloseDate(null);
+    setStage('Qualification');
+    setProbability('');
+    setDealType('New Business');
+    setSourceLead('');
+    setNextStep('');
+    setNotes('');
+    setAttachments([]);
+    setValidationErrors({});
+    setOpenCreate(true);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Store the local file object
+    setAttachments([file]);
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleCloseCreate = () => {
+    setOpenCreate(false);
+    setCurrentDealId(null);
+    setViewOnly(false);
+    setDealTitle('');
+    setAccount('');
+    setContact('');
+    setValue('');
+    setExpectedCloseDate(null);
+    setStage('Qualification');
+    setProbability('');
+    setDealType('New Business');
+    setSourceLead('');
+    setNextStep('');
+    setNotes('');
+    setAttachments([]);
+    setValidationErrors({}); // Clear errors on close
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setConfirmDelete({ open: true, id });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete.id) return;
+    try {
+      await deleteDeal(confirmDelete.id);
+      setSnackbar({ open: true, message: 'Deal deleted successfully', severity: 'success' });
+      await refetch();
+    } catch (e: any) {
+      console.error(e);
+      const friendlyMsg = getFriendlyErrorMessage(e);
+      setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
+    } finally {
+      setConfirmDelete({ open: false, id: null });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(selected.map((id) => deleteDeal(id)));
+      setSnackbar({
+        open: true,
+        message: `${selected.length} deals deleted successfully`,
         severity: 'success',
-    });
+      });
+      setSelected([]);
+      await refetch();
+    } catch (e: any) {
+      console.error(e);
+      const friendlyMsg = getFriendlyErrorMessage(e);
+      setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
+    }
+  };
 
-    // Permissions State
-    const [permissions, setPermissions] = useState<{ read: boolean; write: boolean; delete: boolean }>({
-        read: true,
-        write: true,
-        delete: true,
-    });
+  const handleSelectAllRows = (checked: boolean, ids: string[]) => {
+    if (checked) {
+      setSelected(ids);
+      return;
+    }
+    setSelected([]);
+  };
 
-    // Validation State
-    const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
+  const handleSelectRow = (id: string) => {
+    const selectedIndex = selected.indexOf(id);
+    let newSelected: string[] = [];
 
-    const { data, total, loading, refetch } = useDeals(
-        page,
-        rowsPerPage,
-        filterName,
-        filterStage,
-        sortBy,
-        filters
-    );
+    if (selectedIndex === -1) {
+      newSelected = newSelected.concat(selected, id);
+    } else if (selectedIndex === 0) {
+      newSelected = newSelected.concat(selected.slice(1));
+    } else if (selectedIndex === selected.length - 1) {
+      newSelected = newSelected.concat(selected.slice(0, -1));
+    } else if (selectedIndex > 0) {
+      newSelected = newSelected.concat(
+        selected.slice(0, selectedIndex),
+        selected.slice(selectedIndex + 1)
+      );
+    }
+    setSelected(newSelected);
+  };
 
-    const handleFilters = (update: any) => {
-        setFilters((prev) => ({ ...prev, ...update }));
-        setPage(0);
-    };
+  const handleCreate = async () => {
+    // Validation
+    const newErrors: { [key: string]: boolean } = {};
+    const missingFields: string[] = [];
 
-    const handleResetFilters = () => {
-        setFilters({
-            type: 'all',
-            contact: 'all',
-            account: 'all',
-            source_lead: 'all',
-            stage: 'all',
-        });
-        setPage(0);
-    };
+    if (!dealTitle) {
+      newErrors.dealTitle = true;
+      missingFields.push('Deal Title');
+    }
+    if (!account) {
+      newErrors.account = true;
+      missingFields.push('Account');
+    }
+    if (!value) {
+      newErrors.value = true;
+      missingFields.push('Deal Value');
+    }
+    if (!stage) {
+      newErrors.stage = true;
+      missingFields.push('Stage');
+    }
 
-    const canReset =
-        filters.type !== 'all' ||
-        filters.contact !== 'all' ||
-        filters.account !== 'all' ||
-        filters.source_lead !== 'all' ||
-        filters.stage !== 'all';
+    if (Object.keys(newErrors).length > 0) {
+      setValidationErrors(newErrors);
+      setSnackbar({
+        open: true,
+        message: `Please fill in mandatory fields: ${missingFields.join(', ')}`,
+        severity: 'error',
+      });
+      return;
+    }
 
-    const SOURCE_LEAD_OPTIONS = [
-        'Advertisement', 'Cold Call', 'Employee Referral', 'External Referral', 'Online Store',
-        'Website', 'Social Media', 'Email Campaign', 'Walk In', 'Trade Show / Event',
-        'Partner', 'Distributor', 'Telemarketing', 'Existing Customer', 'Repeat Customer',
-        'Direct Mail', 'Marketplace', 'Google Ads', 'Facebook / Instagram Ads', 'LinkedIn',
-        'WhatsApp', 'Customer Support', 'Inbound Call', 'Outbound Call', 'Other'
-    ];
+    try {
+      setCreating(true);
 
-    useEffect(() => {
-        // Fetch dropdown options on mount - get full objects for filter drawer
-        Promise.all([
-            fetch('/api/method/frappe.client.get_list?doctype=Accounts&fields=["name","account_name"]&limit_page_length=999', { credentials: 'include' }),
-            fetch('/api/method/frappe.client.get_list?doctype=Contacts&fields=["name","first_name"]&limit_page_length=999', { credentials: 'include' }),
-        ]).then(async ([accountsRes, contactsRes]) => {
-            const accounts = await accountsRes.json();
-            const contacts = await contactsRes.json();
+      const dealData = {
+        deal_title: dealTitle,
+        account,
+        contact,
+        value: Number(value),
+        expected_close_date: expectedCloseDate ? expectedCloseDate.format('YYYY-MM-DD') : '',
+        stage: stage as any,
+        probability: probability ? Number(probability) : undefined,
+        type: dealType as any,
+        source_lead: sourceLead,
+        next_step: nextStep,
+        notes,
+        attachments: '',
+      };
 
-            setAccountOptions(accounts.message || []);
-            setContactOptions(contacts.message || []);
-        }).catch(err => console.error('Failed to fetch dropdown options', err));
-
-        // Fetch Permissions
-        getDealPermissions().then(setPermissions);
-    }, []);
-
-    const handleOpenCreate = () => {
-        setViewOnly(false);
-        setCurrentDealId(null);
-        setDealTitle('');
-        setAccount('');
-        setContact('');
-        setValue('');
-        setExpectedCloseDate(null);
-        setStage('Qualification');
-        setProbability('');
-        setDealType('New Business');
-        setSourceLead('');
-        setNextStep('');
-        setNotes('');
-        setAttachments([]);
-        setValidationErrors({});
-        setOpenCreate(true);
-    };
-
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        // Store the local file object
-        setAttachments([file]);
-    };
-
-    const handleRemoveAttachment = (index: number) => {
-        setAttachments((prev) => prev.filter((_, i) => i !== index));
-    };
-
-    const handleCloseCreate = () => {
-        setOpenCreate(false);
-        setCurrentDealId(null);
-        setViewOnly(false);
-        setDealTitle('');
-        setAccount('');
-        setContact('');
-        setValue('');
-        setExpectedCloseDate(null);
-        setStage('Qualification');
-        setProbability('');
-        setDealType('New Business');
-        setSourceLead('');
-        setNextStep('');
-        setNotes('');
-        setAttachments([]);
-        setValidationErrors({}); // Clear errors on close
-    };
-
-    const handleCloseSnackbar = () => {
-        setSnackbar((prev) => ({ ...prev, open: false }));
-    };
-
-    const handleDeleteClick = (id: string) => {
-        setConfirmDelete({ open: true, id });
-    };
-
-    const handleConfirmDelete = async () => {
-        if (!confirmDelete.id) return;
+      // Upload files if any
+      if (attachments.length > 0 && attachments[0] instanceof File) {
+        setUploading(true);
         try {
-            await deleteDeal(confirmDelete.id);
-            setSnackbar({ open: true, message: 'Deal deleted successfully', severity: 'success' });
-            await refetch();
-        } catch (e: any) {
-            console.error(e);
-            const friendlyMsg = getFriendlyErrorMessage(e);
-            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
+          const uploaded = await uploadFile(attachments[0]);
+          dealData.attachments = uploaded.file_url;
+        } catch (error: any) {
+          throw new Error(`File upload failed: ${error.message}`);
         } finally {
-            setConfirmDelete({ open: false, id: null });
+          setUploading(false);
         }
-    };
+      } else if (attachments.length > 0) {
+        dealData.attachments = attachments[0].url || attachments[0];
+      }
 
-    const handleBulkDelete = async () => {
-        try {
-            await Promise.all(selected.map((id) => deleteDeal(id)));
-            setSnackbar({ open: true, message: `${selected.length} deals deleted successfully`, severity: 'success' });
-            setSelected([]);
-            await refetch();
-        } catch (e: any) {
-            console.error(e);
-            const friendlyMsg = getFriendlyErrorMessage(e);
-            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
-        }
-    };
+      if (currentDealId) {
+        await updateDeal(currentDealId, dealData);
+        setSnackbar({ open: true, message: 'Deal updated successfully', severity: 'success' });
+      } else {
+        await createDeal(dealData);
+        setSnackbar({ open: true, message: 'Deal created successfully', severity: 'success' });
+      }
 
-    const handleSelectAllRows = (checked: boolean, ids: string[]) => {
-        if (checked) {
-            setSelected(ids);
-            return;
-        }
-        setSelected([]);
-    };
+      await refetch();
+      handleCloseCreate();
+    } catch (err: any) {
+      console.error(err);
+      const friendlyMsg = getFriendlyErrorMessage(err);
+      setSnackbar({
+        open: true,
+        message: friendlyMsg || (currentDealId ? 'Failed to update deal' : 'Failed to create deal'),
+        severity: 'error',
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
 
-    const handleSelectRow = (id: string) => {
-        const selectedIndex = selected.indexOf(id);
-        let newSelected: string[] = [];
+  const handleEditRow = (id: string) => {
+    setViewOnly(false);
+    setCurrentDealId(id);
 
-        if (selectedIndex === -1) {
-            newSelected = newSelected.concat(selected, id);
-        } else if (selectedIndex === 0) {
-            newSelected = newSelected.concat(selected.slice(1));
-        } else if (selectedIndex === selected.length - 1) {
-            newSelected = newSelected.concat(selected.slice(0, -1));
-        } else if (selectedIndex > 0) {
-            newSelected = newSelected.concat(
-                selected.slice(0, selectedIndex),
-                selected.slice(selectedIndex + 1)
-            );
-        }
-        setSelected(newSelected);
-    };
+    const fullRow = data.find((item) => item.name === id);
+    if (fullRow) {
+      setDealTitle(fullRow.deal_title || '');
+      setAccount(fullRow.account || '');
+      setContact(fullRow.contact || '');
+      setValue(fullRow.value || '');
+      setExpectedCloseDate(fullRow.expected_close_date ? dayjs(fullRow.expected_close_date) : null);
+      setStage(fullRow.stage || 'Qualification');
+      setProbability(fullRow.probability || '');
+      setDealType(fullRow.type || 'New Business');
+      setSourceLead(fullRow.source_lead || '');
+      setNextStep(fullRow.next_step || '');
+      setNotes(fullRow.notes || '');
+      setAttachments(fullRow.attachments ? [fullRow.attachments] : []);
+    }
+    setOpenCreate(true);
+  };
 
-    const handleCreate = async () => {
-        // Validation
-        const newErrors: { [key: string]: boolean } = {};
-        const missingFields: string[] = [];
+  const handleViewRow = (id: string) => {
+    setCurrentDealId(id);
+    setOpenView(true);
+  };
 
-        if (!dealTitle) {
-            newErrors.dealTitle = true;
-            missingFields.push('Deal Title');
-        }
-        if (!account) {
-            newErrors.account = true;
-            missingFields.push('Account');
-        }
-        if (!value) {
-            newErrors.value = true;
-            missingFields.push('Deal Value');
-        }
-        if (!stage) {
-            newErrors.stage = true;
-            missingFields.push('Stage');
-        }
+  const onChangePage = (_: unknown, newPage: number) => setPage(newPage);
 
-        if (Object.keys(newErrors).length > 0) {
-            setValidationErrors(newErrors);
-            setSnackbar({
-                open: true,
-                message: `Please fill in mandatory fields: ${missingFields.join(', ')}`,
-                severity: 'error'
-            });
-            return;
-        }
+  const onChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(e.target.value, 10));
+    setPage(0);
+  };
 
-        try {
-            setCreating(true);
+  const notFound =
+    !loading && data.length === 0 && (!!filterName || filterStage !== 'all' || canReset);
+  const empty = !loading && data.length === 0 && !filterName && filterStage === 'all' && !canReset;
 
-            const dealData = {
-                deal_title: dealTitle,
-                account,
-                contact,
-                value: Number(value),
-                expected_close_date: expectedCloseDate ? expectedCloseDate.format('YYYY-MM-DD') : '',
-                stage: stage as any,
-                probability: probability ? Number(probability) : undefined,
-                type: dealType as any,
-                source_lead: sourceLead,
-                next_step: nextStep,
-                notes,
-                attachments: '',
-            };
+  return (
+    <>
+      {/* CREATE DEAL DIALOG */}
+      <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
+        <DialogTitle
+          sx={{
+            m: 0,
+            p: 2,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          {viewOnly ? 'Deal Details' : currentDealId ? 'Edit Deal' : 'New Deal'}
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseCreate}
+            sx={{
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <Iconify icon="mingcute:close-line" />
+          </IconButton>
+        </DialogTitle>
 
-            // Upload files if any
-            if (attachments.length > 0 && attachments[0] instanceof File) {
-                setUploading(true);
-                try {
-                    const uploaded = await uploadFile(attachments[0]);
-                    dealData.attachments = uploaded.file_url;
-                } catch (error: any) {
-                    throw new Error(`File upload failed: ${error.message}`);
-                } finally {
-                    setUploading(false);
+        <DialogContent dividers>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Box
+              sx={{
+                display: 'grid',
+                margin: '1rem',
+                columnGap: 2,
+                rowGap: 3,
+                gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+              }}
+            >
+              <TextField
+                fullWidth
+                label="Deal Title"
+                value={dealTitle}
+                onChange={(e) => {
+                  setDealTitle(e.target.value);
+                  if (e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, dealTitle: false }));
+                }}
+                required
+                error={!!validationErrors.dealTitle}
+                slotProps={{ input: { readOnly: viewOnly } }}
+              />
+
+              <Autocomplete
+                fullWidth
+                options={accountOptions}
+                value={accountOptions.find((a) => a.name === account) || null}
+                onChange={(event, newValue) => {
+                  setAccount(newValue?.name || '');
+                  if (newValue) setValidationErrors((prev) => ({ ...prev, account: false }));
+                }}
+                getOptionLabel={(option) =>
+                  `${option.account_name || option.name} (${option.name})`
                 }
-            } else if (attachments.length > 0) {
-                dealData.attachments = attachments[0].url || attachments[0];
-            }
+                disabled={viewOnly}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      bgcolor: '#F0F8FF',
+                      '& .MuiAutocomplete-listbox': {
+                        bgcolor: '#F0F8FF',
+                      },
+                    },
+                  },
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Account"
+                    required
+                    error={!!validationErrors.account}
+                  />
+                )}
+              />
 
-            if (currentDealId) {
-                await updateDeal(currentDealId, dealData);
-                setSnackbar({ open: true, message: 'Deal updated successfully', severity: 'success' });
-            } else {
-                await createDeal(dealData);
-                setSnackbar({ open: true, message: 'Deal created successfully', severity: 'success' });
-            }
+              <Autocomplete
+                fullWidth
+                options={contactOptions}
+                value={contactOptions.find((c) => c.name === contact) || null}
+                onChange={(event, newValue) => setContact(newValue?.name || '')}
+                getOptionLabel={(option) => `${option.first_name || option.name} (${option.name})`}
+                disabled={viewOnly}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      bgcolor: '#F0F8FF',
+                      '& .MuiAutocomplete-listbox': {
+                        bgcolor: '#F0F8FF',
+                      },
+                    },
+                  },
+                }}
+                renderInput={(params) => <TextField {...params} label="Contact" />}
+              />
 
-            await refetch();
-            handleCloseCreate();
-        } catch (err: any) {
-            console.error(err);
-            const friendlyMsg = getFriendlyErrorMessage(err);
-            setSnackbar({ open: true, message: friendlyMsg || (currentDealId ? 'Failed to update deal' : 'Failed to create deal'), severity: 'error' });
-        } finally {
-            setCreating(false);
-        }
-    };
+              <TextField
+                fullWidth
+                label="Deal Value"
+                type="number"
+                value={value}
+                onChange={(e) => {
+                  setValue(e.target.value);
+                  if (e.target.value) setValidationErrors((prev) => ({ ...prev, value: false }));
+                }}
+                required
+                error={!!validationErrors.value}
+                slotProps={{ input: { readOnly: viewOnly } }}
+              />
 
-    const handleEditRow = (id: string) => {
-        setViewOnly(false);
-        setCurrentDealId(id);
+              <DatePicker
+                label="Expected Close Date"
+                value={expectedCloseDate}
+                onChange={(newValue) => setExpectedCloseDate(newValue)}
+                disabled={viewOnly}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                  },
+                }}
+              />
 
-        const fullRow = data.find((item) => item.name === id);
-        if (fullRow) {
-            setDealTitle(fullRow.deal_title || '');
-            setAccount(fullRow.account || '');
-            setContact(fullRow.contact || '');
-            setValue(fullRow.value || '');
-            setExpectedCloseDate(fullRow.expected_close_date ? dayjs(fullRow.expected_close_date) : null);
-            setStage(fullRow.stage || 'Qualification');
-            setProbability(fullRow.probability || '');
-            setDealType(fullRow.type || 'New Business');
-            setSourceLead(fullRow.source_lead || '');
-            setNextStep(fullRow.next_step || '');
-            setNotes(fullRow.notes || '');
-            setAttachments(fullRow.attachments ? [fullRow.attachments] : []);
-        }
-        setOpenCreate(true);
-    };
+              <TextField
+                select
+                fullWidth
+                label="Stage"
+                value={stage}
+                onChange={(e) => {
+                  setStage(e.target.value);
+                  if (e.target.value) setValidationErrors((prev) => ({ ...prev, stage: false }));
+                }}
+                required
+                error={!!validationErrors.stage}
+                disabled={viewOnly}
+                SelectProps={{ native: true }}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
+                  },
+                }}
+              >
+                <option value="Qualification">Qualification</option>
+                <option value="Needs Analysis">Needs Analysis</option>
+                <option value="Meeting Scheduled">Meeting Scheduled</option>
+                <option value="Proposal Sent">Proposal Sent</option>
+                <option value="Negotiation">Negotiation</option>
+                <option value="Closed Won">Closed Won</option>
+                <option value="Closed Lost">Closed Lost</option>
+              </TextField>
 
-    const handleViewRow = (id: string) => {
-        setCurrentDealId(id);
-        setOpenView(true);
-    };
+              <TextField
+                fullWidth
+                label="Probability (%)"
+                type="number"
+                value={probability}
+                onChange={(e) => setProbability(e.target.value)}
+                slotProps={{ input: { readOnly: viewOnly } }}
+              />
 
-    const onChangePage = (_: unknown, newPage: number) => setPage(newPage);
+              <TextField
+                select
+                fullWidth
+                label="Type"
+                value={dealType}
+                onChange={(e) => setDealType(e.target.value)}
+                disabled={viewOnly}
+                SelectProps={{ native: true }}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
+                  },
+                }}
+              >
+                <option value="New Business">New Business</option>
+                <option value="Existing Business">Existing Business</option>
+              </TextField>
 
-    const onChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setRowsPerPage(parseInt(e.target.value, 10));
-        setPage(0);
-    };
+              <TextField
+                select
+                fullWidth
+                label="Source Lead"
+                value={sourceLead}
+                onChange={(e) => setSourceLead(e.target.value)}
+                disabled={viewOnly}
+                SelectProps={{ native: true }}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
+                  },
+                }}
+              >
+                <option value="" disabled>
+                  Select Source
+                </option>
+                {SOURCE_LEAD_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </TextField>
 
-    const notFound = !loading && data.length === 0 && (!!filterName || filterStage !== 'all' || canReset);
-    const empty = !loading && data.length === 0 && !filterName && filterStage === 'all' && !canReset;
+              <TextField
+                fullWidth
+                label="Next Step"
+                value={nextStep}
+                onChange={(e) => setNextStep(e.target.value)}
+                slotProps={{ input: { readOnly: viewOnly } }}
+              />
 
-    return (
-        <>
-            {/* CREATE DEAL DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {viewOnly ? 'Deal Details' : (currentDealId ? 'Edit Deal' : 'New Deal')}
-                    <IconButton
-                        aria-label="close"
-                        onClick={handleCloseCreate}
-                        sx={{
-                            color: (theme) => theme.palette.grey[500],
-                        }}
+              <TextField
+                fullWidth
+                label="Notes"
+                multiline
+                rows={3}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                sx={{ gridColumn: { sm: 'span 2' } }}
+                slotProps={{ input: { readOnly: viewOnly } }}
+              />
+
+              <Box
+                sx={{
+                  gridColumn: { sm: 'span 2' },
+                  p: 3,
+                  borderRadius: 2,
+                  bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                  border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
+                }}
+              >
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ mb: 2.5 }}
+                >
+                  <Typography variant="h6">Attachments</Typography>
+
+                  {!viewOnly && (
+                    <Button
+                      variant="contained"
+                      component="label"
+                      color="primary"
+                      size="small"
+                      startIcon={<Iconify icon={'solar:upload-bold' as any} />}
+                      disabled={uploading}
                     >
-                        <Iconify icon="mingcute:close-line" />
-                    </IconButton>
-                </DialogTitle>
-
-                <DialogContent dividers>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <Box
-                            sx={{
-                                display: 'grid',
-                                margin: '1rem',
-                                columnGap: 2,
-                                rowGap: 3,
-                                gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
-                            }}
-                        >
-                            <TextField
-                                fullWidth
-                                label="Deal Title"
-                                value={dealTitle}
-                                onChange={(e) => {
-                                    setDealTitle(e.target.value);
-                                    if (e.target.value) setValidationErrors(prev => ({ ...prev, dealTitle: false }));
-                                }}
-                                required
-                                error={!!validationErrors.dealTitle}
-                                slotProps={{ input: { readOnly: viewOnly } }}
-                            />
-
-                            <Autocomplete
-                                fullWidth
-                                options={accountOptions}
-                                value={accountOptions.find((a) => a.name === account) || null}
-                                onChange={(event, newValue) => {
-                                    setAccount(newValue?.name || '');
-                                    if (newValue) setValidationErrors((prev) => ({ ...prev, account: false }));
-                                }}
-                                getOptionLabel={(option) => `${option.account_name || option.name} (${option.name})`}
-                                disabled={viewOnly}
-                                slotProps={{
-                                    paper: {
-                                        sx: {
-                                            bgcolor: '#F0F8FF',
-                                            '& .MuiAutocomplete-listbox': {
-                                                bgcolor: '#F0F8FF',
-                                            },
-                                        }
-                                    }
-                                }}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="Account"
-                                        required
-                                        error={!!validationErrors.account}
-                                    />
-                                )}
-                            />
-
-                            <Autocomplete
-                                fullWidth
-                                options={contactOptions}
-                                value={contactOptions.find((c) => c.name === contact) || null}
-                                onChange={(event, newValue) => setContact(newValue?.name || '')}
-                                getOptionLabel={(option) => `${option.first_name || option.name} (${option.name})`}
-                                disabled={viewOnly}
-                                slotProps={{
-                                    paper: {
-                                        sx: {
-                                            bgcolor: '#F0F8FF',
-                                            '& .MuiAutocomplete-listbox': {
-                                                bgcolor: '#F0F8FF',
-                                            },
-                                        }
-                                    }
-                                }}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="Contact"
-                                    />
-                                )}
-                            />
-
-                            <TextField
-                                fullWidth
-                                label="Deal Value"
-                                type="number"
-                                value={value}
-                                onChange={(e) => {
-                                    setValue(e.target.value);
-                                    if (e.target.value) setValidationErrors(prev => ({ ...prev, value: false }));
-                                }}
-                                required
-                                error={!!validationErrors.value}
-                                slotProps={{ input: { readOnly: viewOnly } }}
-                            />
-
-                            <DatePicker
-                                label="Expected Close Date"
-                                value={expectedCloseDate}
-                                onChange={(newValue) => setExpectedCloseDate(newValue)}
-                                disabled={viewOnly}
-                                slotProps={{
-                                    textField: {
-                                        fullWidth: true
-                                    }
-                                }}
-                            />
-
-                            <TextField
-                                select
-                                fullWidth
-                                label="Stage"
-                                value={stage}
-                                onChange={(e) => {
-                                    setStage(e.target.value);
-                                    if (e.target.value) setValidationErrors(prev => ({ ...prev, stage: false }));
-                                }}
-                                required
-                                error={!!validationErrors.stage}
-                                disabled={viewOnly}
-                                SelectProps={{ native: true }}
-                                InputLabelProps={{ shrink: true }}
-                                sx={{
-                                    "& .MuiInputBase-input.Mui-disabled": {
-                                        WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                                    },
-                                }}
-                            >
-                                <option value="Qualification">Qualification</option>
-                                <option value="Needs Analysis">Needs Analysis</option>
-                                <option value="Meeting Scheduled">Meeting Scheduled</option>
-                                <option value="Proposal Sent">Proposal Sent</option>
-                                <option value="Negotiation">Negotiation</option>
-                                <option value="Closed Won">Closed Won</option>
-                                <option value="Closed Lost">Closed Lost</option>
-                            </TextField>
-
-                            <TextField
-                                fullWidth
-                                label="Probability (%)"
-                                type="number"
-                                value={probability}
-                                onChange={(e) => setProbability(e.target.value)}
-                                slotProps={{ input: { readOnly: viewOnly } }}
-                            />
-
-                            <TextField
-                                select
-                                fullWidth
-                                label="Type"
-                                value={dealType}
-                                onChange={(e) => setDealType(e.target.value)}
-                                disabled={viewOnly}
-                                SelectProps={{ native: true }}
-                                InputLabelProps={{ shrink: true }}
-                                sx={{
-                                    "& .MuiInputBase-input.Mui-disabled": {
-                                        WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                                    },
-                                }}
-                            >
-                                <option value="New Business">New Business</option>
-                                <option value="Existing Business">Existing Business</option>
-                            </TextField>
-
-                            <TextField
-                                select
-                                fullWidth
-                                label="Source Lead"
-                                value={sourceLead}
-                                onChange={(e) => setSourceLead(e.target.value)}
-                                disabled={viewOnly}
-                                SelectProps={{ native: true }}
-                                InputLabelProps={{ shrink: true }}
-                                sx={{
-                                    "& .MuiInputBase-input.Mui-disabled": {
-                                        WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                                    },
-                                }}
-                            >
-                                <option value="" disabled>Select Source</option>
-                                {SOURCE_LEAD_OPTIONS.map((option) => (
-                                    <option key={option} value={option}>
-                                        {option}
-                                    </option>
-                                ))}
-                            </TextField>
-
-                            <TextField
-                                fullWidth
-                                label="Next Step"
-                                value={nextStep}
-                                onChange={(e) => setNextStep(e.target.value)}
-                                slotProps={{ input: { readOnly: viewOnly } }}
-                            />
-
-                            <TextField
-                                fullWidth
-                                label="Notes"
-                                multiline
-                                rows={3}
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                sx={{ gridColumn: { sm: 'span 2' } }}
-                                slotProps={{ input: { readOnly: viewOnly } }}
-                            />
-
-                            <Box
-                                sx={{
-                                    gridColumn: { sm: 'span 2' },
-                                    p: 3,
-                                    borderRadius: 2,
-                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
-                                    border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
-                                }}
-                            >
-                                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
-                                    <Typography variant="h6">Attachments</Typography>
-
-                                    {!viewOnly && (
-                                        <Button
-                                            variant="contained"
-                                            component="label"
-                                            color="primary"
-                                            size="small"
-                                            startIcon={<Iconify icon={"solar:upload-bold" as any} />}
-                                            disabled={uploading}
-                                        >
-                                            {uploading ? 'Uploading...' : 'Upload File'}
-                                            <input type="file" hidden onChange={handleFileUpload} />
-                                        </Button>
-                                    )}
-                                </Stack>
-
-                                <Stack spacing={1}>
-                                    {attachments.length === 0 ? (
-                                        <Stack alignItems="center" justifyContent="center" sx={{ py: 3, color: 'text.disabled' }}>
-                                            <Iconify icon={"solar:file-bold" as any} width={40} height={40} sx={{ mb: 1, opacity: 0.48 }} />
-                                            <Typography variant="body2">No attachments yet</Typography>
-                                        </Stack>
-                                    ) : (
-                                        attachments.map((file: any, index) => (
-                                            <Stack
-                                                key={index}
-                                                direction="row"
-                                                alignItems="center"
-                                                sx={{
-                                                    px: 1.5,
-                                                    py: 0.75,
-                                                    borderRadius: 1.5,
-                                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                                }}
-                                            >
-                                                <Iconify icon={"solar:link-bold" as any} width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
-                                                <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
-                                                    {typeof file === 'string' ? file.split('/').pop() : (file.url?.split('/').pop() || file.name)}
-                                                </Typography>
-                                                {!viewOnly && (
-                                                    <Button
-                                                        size="small"
-                                                        color="inherit"
-                                                        onClick={() => handleRemoveAttachment(index)}
-                                                        sx={{
-                                                            px: 1.5,
-                                                            py: 0,
-                                                            height: 26,
-                                                            borderRadius: 1.5,
-                                                            minWidth: 'auto',
-                                                            typography: 'caption',
-                                                            bgcolor: 'background.paper',
-                                                            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.24)}`,
-                                                            '&:hover': {
-                                                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                                            }
-                                                        }}
-                                                    >
-                                                        Clear
-                                                    </Button>
-                                                )}
-                                                {viewOnly && (
-                                                    <IconButton
-                                                        size="small"
-                                                        color="primary"
-                                                        href={typeof file === 'string' ? file : file.url}
-                                                        target="_blank"
-                                                        sx={{
-                                                            bgcolor: 'background.paper',
-                                                            boxShadow: (theme) => theme.customShadows.z1,
-                                                            '&:hover': { bgcolor: 'background.neutral' }
-                                                        }}
-                                                    >
-                                                        <Iconify icon={"solar:download-bold" as any} width={16} />
-                                                    </IconButton>
-                                                )}
-                                            </Stack>
-                                        ))
-                                    )}
-                                </Stack>
-                            </Box>
-                        </Box>
-                    </LocalizationProvider>
-                </DialogContent>
-
-                <DialogActions>
-                    {!viewOnly && (
-                        <Button variant="contained" onClick={handleCreate} disabled={creating}>
-                            {creating ? (currentDealId ? 'Updating...' : 'Creating...') : (currentDealId ? 'Update Deal' : 'Create Deal')}
-                        </Button>
-                    )}
-                </DialogActions>
-            </Dialog>
-
-            {/* MAIN CONTENT */}
-            <DashboardContent maxWidth={false}>
-                <Stack spacing={3}>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
-                        <Typography variant="h4">Deals, Estimations & Invoices</Typography>
-                    </Stack>
-
-                    <Tabs
-                        value={currentTab}
-                        onChange={handleChangeTab}
-                        sx={{
-                            px: 2.5,
-                            boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
-                        }}
-                    >
-                        <Tab
-                            key="deals"
-                            value="deals"
-                            label="Deals"
-                            icon={<Iconify icon={"solar:hand-money-bold-duotone" as any} width={24} />}
-                            iconPosition="start"
-                        />
-                        <Tab
-                            key="estimations"
-                            value="estimations"
-                            label="Estimations"
-                            icon={<Iconify icon={"solar:document-text-bold-duotone" as any} width={24} />}
-                            iconPosition="start"
-                        />
-                        <Tab
-                            key="invoices"
-                            value="invoices"
-                            label="Invoices"
-                            icon={<Iconify icon={"solar:bill-list-bold-duotone" as any} width={24} />}
-                            iconPosition="start"
-                        />
-                    </Tabs>
-
-                    {currentTab === 'deals' && (
-                        <>
-                            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-                                <Typography variant="h6" sx={{ flexGrow: 1 }} />
-
-                                {permissions.write && (
-                                    <Button
-                                        variant="contained"
-                                        startIcon={<Iconify icon="mingcute:add-line" />}
-                                        onClick={handleOpenCreate}
-                                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                                    >
-                                        New Deal
-                                    </Button>
-                                )}
-                            </Box>
-
-                            <Card>
-                                <DealTableToolbar
-                                    numSelected={selected.length}
-                                    filterName={filterName}
-                                    onFilterName={(e) => {
-                                        setFilterName(e.target.value);
-                                        setPage(0);
-                                    }}
-                                    searchPlaceholder="Search deals..."
-                                    onOpenFilter={() => setOpenFilters(true)}
-                                    canReset={canReset}
-                                    sortBy={sortBy}
-                                    onSortChange={setSortBy}
-                                    onDelete={handleBulkDelete}
-                                    sortOptions={[
-                                        { value: 'modified_desc', label: 'Newest First' },
-                                        { value: 'modified_asc', label: 'Oldest First' },
-                                        { value: 'deal_title_asc', label: 'Title: A to Z' },
-                                        { value: 'deal_title_desc', label: 'Title: Z to A' },
-                                        { value: 'account_asc', label: 'Account: A to Z' },
-                                        { value: 'account_desc', label: 'Account: Z to A' },
-                                        { value: 'contact_name_asc', label: 'Contact Name: A to Z' },
-                                        { value: 'contact_name_desc', label: 'Contact Name: Z to A' },
-                                        { value: 'value_desc', label: 'Deal Value: High to Low' },
-                                        { value: 'value_asc', label: 'Deal Value: Low to High' },
-                                    ]}
-                                />
-
-                                <Scrollbar>
-                                    <TableContainer sx={{ overflow: 'unset' }}>
-                                        <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
-                                            <DealTableHead
-                                                rowCount={total}
-                                                numSelected={selected.length}
-                                                onSelectAllRows={(checked: boolean) =>
-                                                    handleSelectAllRows(
-                                                        checked,
-                                                        data.map((row) => row.name)
-                                                    )
-                                                }
-                                                hideCheckbox
-                                                showIndex
-                                                headLabel={[
-                                                    { id: 'deal_title', label: 'Title' },
-                                                    { id: 'account', label: 'Account' },
-                                                    { id: 'contact', label: 'Contact' },
-                                                    { id: 'value', label: 'Value' },
-                                                    { id: 'stage', label: 'Stage' },
-                                                    { id: 'expected_close_date', label: 'Expected Close' },
-                                                    { id: '' },
-                                                ]}
-                                            />
-
-                                            <TableBody>
-                                                {loading && (
-                                                    <TableEmptyRows height={68} emptyRows={5} />
-                                                )}
-
-                                                {!loading &&
-                                                    data.map((row, index) => (
-                                                        <DealTableRow
-                                                            key={row.name}
-                                                            index={page * rowsPerPage + index}
-                                                            hideCheckbox
-                                                            row={{
-                                                                id: row.name,
-                                                                title: row.deal_title ?? '-',
-                                                                account: row.account ?? '-',
-                                                                contact: row.contact ?? '-',
-                                                                contactName: row.contact_name ?? '',
-                                                                value: row.value ?? 0,
-                                                                stage: row.stage ?? '-',
-                                                                expectedCloseDate: row.expected_close_date ?? '-',
-                                                                avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
-                                                            }}
-                                                            selected={selected.includes(row.name)}
-                                                            onSelectRow={() => handleSelectRow(row.name)}
-                                                            onEdit={() => handleEditRow(row.name)}
-                                                            onDelete={() => handleDeleteClick(row.name)}
-                                                            onView={() => handleViewRow(row.name)}
-                                                            canEdit={permissions.write}
-                                                            canDelete={permissions.delete}
-                                                        />
-                                                    ))}
-
-                                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                                {empty && (
-                                                    <TableRow>
-                                                        <TableCell colSpan={10} align="center">
-                                                            <EmptyContent
-                                                                title="No deals found"
-                                                                description="Create a new deal to track your sales pipeline."
-                                                                icon="solar:hand-stars-bold-duotone"
-                                                            />
-                                                        </TableCell>
-                                                    </TableRow>
-                                                )}
-
-                                                {!empty && !loading && data.length < rowsPerPage && (
-                                                    <TableEmptyRows
-                                                        height={68}
-                                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                                    />
-                                                )}
-                                            </TableBody>
-                                        </Table>
-                                    </TableContainer>
-                                </Scrollbar>
-
-                                <TablePagination
-                                    component="div"
-                                    page={page}
-                                    count={total}
-                                    rowsPerPage={rowsPerPage}
-                                    onPageChange={onChangePage}
-                                    rowsPerPageOptions={[10, 25, 50]}
-                                    onRowsPerPageChange={onChangeRowsPerPage}
-                                />
-                            </Card>
-
-                            <DealDetailsDialog
-                                open={openView}
-                                onClose={() => setOpenView(false)}
-                                dealId={currentDealId}
-                                onEdit={handleEditRow}
-                            />
-                        </>
-                    )}
-
-                    {currentTab === 'estimations' && (
-                        <EstimationListView hideTitle />
-                    )}
-
-                    {currentTab === 'invoices' && (
-                        <InvoiceManagementView hideHeader />
-                    )}
+                      {uploading ? 'Uploading...' : 'Upload File'}
+                      <input type="file" hidden onChange={handleFileUpload} />
+                    </Button>
+                  )}
                 </Stack>
 
-                <DealTableFiltersDrawer
-                    open={openFilters}
-                    onOpen={() => setOpenFilters(true)}
-                    onClose={() => setOpenFilters(false)}
-                    filters={filters}
-                    onFilters={handleFilters}
-                    canReset={canReset}
-                    onResetFilters={handleResetFilters}
-                    options={{
-                        contacts: contactOptions,
-                        accounts: accountOptions,
-                        source_leads: SOURCE_LEAD_OPTIONS,
+                <Stack spacing={1}>
+                  {attachments.length === 0 ? (
+                    <Stack
+                      alignItems="center"
+                      justifyContent="center"
+                      sx={{ py: 3, color: 'text.disabled' }}
+                    >
+                      <Iconify
+                        icon={'solar:file-bold' as any}
+                        width={40}
+                        height={40}
+                        sx={{ mb: 1, opacity: 0.48 }}
+                      />
+                      <Typography variant="body2">No attachments yet</Typography>
+                    </Stack>
+                  ) : (
+                    attachments.map((file: any, index) => (
+                      <Stack
+                        key={index}
+                        direction="row"
+                        alignItems="center"
+                        sx={{
+                          px: 1.5,
+                          py: 0.75,
+                          borderRadius: 1.5,
+                          bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                        }}
+                      >
+                        <Iconify
+                          icon={'solar:link-bold' as any}
+                          width={20}
+                          sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }}
+                        />
+                        <Typography
+                          variant="body2"
+                          noWrap
+                          sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}
+                        >
+                          {typeof file === 'string'
+                            ? file.split('/').pop()
+                            : file.url?.split('/').pop() || file.name}
+                        </Typography>
+                        {!viewOnly && (
+                          <Button
+                            size="small"
+                            color="inherit"
+                            onClick={() => handleRemoveAttachment(index)}
+                            sx={{
+                              px: 1.5,
+                              py: 0,
+                              height: 26,
+                              borderRadius: 1.5,
+                              minWidth: 'auto',
+                              typography: 'caption',
+                              bgcolor: 'background.paper',
+                              border: (theme) =>
+                                `1px solid ${alpha(theme.palette.grey[500], 0.24)}`,
+                              '&:hover': {
+                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                              },
+                            }}
+                          >
+                            Clear
+                          </Button>
+                        )}
+                        {viewOnly && (
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            href={typeof file === 'string' ? file : file.url}
+                            target="_blank"
+                            sx={{
+                              bgcolor: 'background.paper',
+                              boxShadow: (theme) => theme.customShadows.z1,
+                              '&:hover': { bgcolor: 'background.neutral' },
+                            }}
+                          >
+                            <Iconify icon={'solar:download-bold' as any} width={16} />
+                          </IconButton>
+                        )}
+                      </Stack>
+                    ))
+                  )}
+                </Stack>
+              </Box>
+            </Box>
+          </LocalizationProvider>
+        </DialogContent>
+
+        <DialogActions>
+          {!viewOnly && (
+            <Button variant="contained" onClick={handleCreate} disabled={creating}>
+              {creating
+                ? currentDealId
+                  ? 'Updating...'
+                  : 'Creating...'
+                : currentDealId
+                  ? 'Update Deal'
+                  : 'Create Deal'}
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {/* MAIN CONTENT */}
+      <DashboardContent maxWidth={false}>
+        <Stack spacing={3}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Typography variant="h4">Deals, Estimations & Invoices</Typography>
+          </Stack>
+
+          <Tabs
+            value={currentTab}
+            onChange={handleChangeTab}
+            sx={{
+              px: 2.5,
+              boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
+            }}
+          >
+            <Tab
+              key="deals"
+              value="deals"
+              label="Deals"
+              icon={<Iconify icon={'solar:hand-money-bold-duotone' as any} width={24} />}
+              iconPosition="start"
+            />
+            <Tab
+              key="estimations"
+              value="estimations"
+              label="Estimations"
+              icon={<Iconify icon={'solar:document-text-bold-duotone' as any} width={24} />}
+              iconPosition="start"
+            />
+            <Tab
+              key="invoices"
+              value="invoices"
+              label="Invoices"
+              icon={<Iconify icon={'solar:bill-list-bold-duotone' as any} width={24} />}
+              iconPosition="start"
+            />
+          </Tabs>
+
+          {currentTab === 'deals' && (
+            <>
+              <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+                <Typography variant="h6" sx={{ flexGrow: 1 }} />
+
+                {permissions.write && (
+                  <Button
+                    variant="contained"
+                    startIcon={<Iconify icon="mingcute:add-line" />}
+                    onClick={handleOpenCreate}
+                    sx={{
+                      bgcolor: '#08a3cd',
+                      color: 'common.white',
+                      '&:hover': { bgcolor: '#068fb3' },
                     }}
+                  >
+                    New Deal
+                  </Button>
+                )}
+              </Box>
+
+              <Card>
+                <DealTableToolbar
+                  numSelected={selected.length}
+                  filterName={filterName}
+                  onFilterName={(e) => {
+                    setFilterName(e.target.value);
+                    setPage(0);
+                  }}
+                  searchPlaceholder="Search deals..."
+                  onOpenFilter={() => setOpenFilters(true)}
+                  canReset={canReset}
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
+                  onDelete={handleBulkDelete}
+                  sortOptions={[
+                    { value: 'modified_desc', label: 'Newest First' },
+                    { value: 'modified_asc', label: 'Oldest First' },
+                    { value: 'deal_title_asc', label: 'Title: A to Z' },
+                    { value: 'deal_title_desc', label: 'Title: Z to A' },
+                    { value: 'account_asc', label: 'Account: A to Z' },
+                    { value: 'account_desc', label: 'Account: Z to A' },
+                    { value: 'contact_name_asc', label: 'Contact Name: A to Z' },
+                    { value: 'contact_name_desc', label: 'Contact Name: Z to A' },
+                    { value: 'value_desc', label: 'Deal Value: High to Low' },
+                    { value: 'value_asc', label: 'Deal Value: Low to High' },
+                  ]}
                 />
 
-                <ConfirmDialog
-                    open={confirmDelete.open}
-                    onClose={() => setConfirmDelete({ open: false, id: null })}
-                    title="Confirm Delete"
-                    content="Are you sure you want to delete this deal?"
-                    action={
-                        <Button onClick={handleConfirmDelete} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
-                            Delete
-                        </Button>
-                    }
-                />
+                <Scrollbar>
+                  <TableContainer sx={{ overflow: 'unset' }}>
+                    <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
+                      <DealTableHead
+                        rowCount={total}
+                        numSelected={selected.length}
+                        onSelectAllRows={(checked: boolean) =>
+                          handleSelectAllRows(
+                            checked,
+                            data.map((row) => row.name)
+                          )
+                        }
+                        hideCheckbox
+                        showIndex
+                        headLabel={[
+                          { id: 'deal_title', label: 'Title' },
+                          { id: 'account', label: 'Account' },
+                          { id: 'contact', label: 'Contact' },
+                          { id: 'value', label: 'Value' },
+                          { id: 'stage', label: 'Stage' },
+                          { id: 'expected_close_date', label: 'Expected Close' },
+                          { id: '' },
+                        ]}
+                      />
 
-                <Snackbar
-                    open={snackbar.open}
-                    autoHideDuration={6000}
-                    onClose={handleCloseSnackbar}
-                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                >
-                    <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
-                        {snackbar.message}
-                    </Alert>
-                </Snackbar>
-            </DashboardContent >
-        </>
-    );
+                      <TableBody>
+                        {loading && <TableEmptyRows height={68} emptyRows={5} />}
+
+                        {!loading &&
+                          data.map((row, index) => (
+                            <DealTableRow
+                              key={row.name}
+                              index={page * rowsPerPage + index}
+                              hideCheckbox
+                              row={{
+                                id: row.name,
+                                title: row.deal_title ?? '-',
+                                account: row.account ?? '-',
+                                contact: row.contact ?? '-',
+                                contactName: row.contact_name ?? '',
+                                value: row.value ?? 0,
+                                stage: row.stage ?? '-',
+                                expectedCloseDate: row.expected_close_date ?? '-',
+                                avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
+                              }}
+                              selected={selected.includes(row.name)}
+                              onSelectRow={() => handleSelectRow(row.name)}
+                              onEdit={() => handleEditRow(row.name)}
+                              onDelete={() => handleDeleteClick(row.name)}
+                              onView={() => handleViewRow(row.name)}
+                              canEdit={permissions.write}
+                              canDelete={permissions.delete}
+                            />
+                          ))}
+
+                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                        {empty && (
+                          <TableRow>
+                            <TableCell colSpan={10} align="center">
+                              <EmptyContent
+                                title="No deals found"
+                                description="Create a new deal to track your sales pipeline."
+                                icon="solar:hand-stars-bold-duotone"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )}
+
+                        {!empty && !loading && data.length < rowsPerPage && (
+                          <TableEmptyRows
+                            height={68}
+                            emptyRows={data.length < 5 ? 5 - data.length : 0}
+                          />
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Scrollbar>
+
+                <TablePagination
+                  component="div"
+                  page={page}
+                  count={total}
+                  rowsPerPage={rowsPerPage}
+                  onPageChange={onChangePage}
+                  rowsPerPageOptions={[10, 25, 50]}
+                  onRowsPerPageChange={onChangeRowsPerPage}
+                />
+              </Card>
+
+              <DealDetailsDialog
+                open={openView}
+                onClose={() => setOpenView(false)}
+                dealId={currentDealId}
+                onEdit={handleEditRow}
+              />
+            </>
+          )}
+
+          {currentTab === 'estimations' && <EstimationListView hideTitle />}
+
+          {currentTab === 'invoices' && <InvoiceManagementView hideHeader />}
+        </Stack>
+
+        <DealTableFiltersDrawer
+          open={openFilters}
+          onOpen={() => setOpenFilters(true)}
+          onClose={() => setOpenFilters(false)}
+          filters={filters}
+          onFilters={handleFilters}
+          canReset={canReset}
+          onResetFilters={handleResetFilters}
+          options={{
+            contacts: contactOptions,
+            accounts: accountOptions,
+            source_leads: SOURCE_LEAD_OPTIONS,
+          }}
+        />
+
+        <ConfirmDialog
+          open={confirmDelete.open}
+          onClose={() => setConfirmDelete({ open: false, id: null })}
+          title="Confirm Delete"
+          content="Are you sure you want to delete this deal?"
+          action={
+            <Button
+              onClick={handleConfirmDelete}
+              color="error"
+              variant="contained"
+              sx={{ borderRadius: 1.5, minWidth: 100 }}
+            >
+              Delete
+            </Button>
+          }
+        />
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </DashboardContent>
+    </>
+  );
 }

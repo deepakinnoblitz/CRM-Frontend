@@ -35,7 +35,17 @@ export function EmployeeEvaluationEventTableRow({
   onCancel,
   index,
 }: Props) {
-  const { name, employee, employee_name, trait, evaluation_type, score_change, evaluation_date, hr_user, docstatus } = row;
+  const {
+    name,
+    employee,
+    employee_name,
+    trait,
+    evaluation_type,
+    score_change,
+    evaluation_date,
+    hr_user,
+    docstatus,
+  } = row;
 
   return (
     <TableRow
@@ -49,24 +59,25 @@ export function EmployeeEvaluationEventTableRow({
       <TableCell align="center">
         <Box
           sx={{
-              width: 28,
-              height: 28,
-              display: 'flex',
-              borderRadius: '50%',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-              color: 'primary.main',
-              typography: 'subtitle2',
-              fontWeight: 800,
-              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
-              mx: 'auto',
-              transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
-              '&:hover': {
-                  bgcolor: 'primary.main',
-                  color: 'primary.contrastText',
-                  transform: 'scale(1.1)',
-              },
+            width: 28,
+            height: 28,
+            display: 'flex',
+            borderRadius: '50%',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+            color: 'primary.main',
+            typography: 'subtitle2',
+            fontWeight: 800,
+            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+            mx: 'auto',
+            transition: (theme) =>
+              theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+            '&:hover': {
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              transform: 'scale(1.1)',
+            },
           }}
         >
           {index + 1}
@@ -100,7 +111,10 @@ export function EmployeeEvaluationEventTableRow({
       <TableCell>{score_change > 0 ? `+${score_change}` : score_change}</TableCell>
       <TableCell>{fDate(evaluation_date, 'DD-MM-YYYY')}</TableCell>
       <TableCell>
-        <Label variant="soft" color={(docstatus === 1 && 'success') || (docstatus === 2 && 'error') || 'warning'}>
+        <Label
+          variant="soft"
+          color={(docstatus === 1 && 'success') || (docstatus === 2 && 'error') || 'warning'}
+        >
           {docstatus === 0 ? 'Draft' : docstatus === 1 ? 'Submitted' : 'Cancelled'}
         </Label>
       </TableCell>

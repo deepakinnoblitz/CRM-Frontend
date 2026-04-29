@@ -4,7 +4,12 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { fetchDashboardStats, type DashboardStats, fetchTodayActivities, type TodayActivities } from 'src/api/dashboard';
+import {
+  fetchDashboardStats,
+  type DashboardStats,
+  fetchTodayActivities,
+  type TodayActivities,
+} from 'src/api/dashboard';
 
 import { useAuth } from 'src/auth/auth-context';
 
@@ -43,7 +48,7 @@ export function OverviewAnalyticsView() {
     const loadData = async () => {
       const [statsData, activitiesData] = await Promise.all([
         fetchDashboardStats(),
-        fetchTodayActivities()
+        fetchTodayActivities(),
       ]);
       setStats(statsData);
       setActivities(activitiesData);
@@ -74,9 +79,22 @@ export function OverviewAnalyticsView() {
             title="Total Leads"
             percent={getPercentChange(stats?.charts?.leads)}
             total={stats?.leads || 0}
-            icon={<img alt="Leads" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-users.svg`} />}
+            icon={
+              <img
+                alt="Leads"
+                src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-users.svg`}
+              />
+            }
             chart={{
-              categories: stats?.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+              categories: stats?.charts?.categories || [
+                'Mon',
+                'Tue',
+                'Wed',
+                'Thu',
+                'Fri',
+                'Sat',
+                'Sun',
+              ],
               series: stats?.charts?.leads || [0, 0, 0, 0, 0, 0, 0],
             }}
           />
@@ -89,9 +107,22 @@ export function OverviewAnalyticsView() {
             percent={getPercentChange(stats?.charts?.contacts)}
             total={stats?.contacts || 0}
             color="secondary"
-            icon={<img alt="Contacts" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-message.svg`} />}
+            icon={
+              <img
+                alt="Contacts"
+                src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-message.svg`}
+              />
+            }
             chart={{
-              categories: stats?.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+              categories: stats?.charts?.categories || [
+                'Mon',
+                'Tue',
+                'Wed',
+                'Thu',
+                'Fri',
+                'Sat',
+                'Sun',
+              ],
               series: stats?.charts?.contacts || [0, 0, 0, 0, 0, 0, 0],
             }}
           />
@@ -104,9 +135,22 @@ export function OverviewAnalyticsView() {
             percent={getPercentChange(stats?.charts?.deals)}
             total={stats?.deals || 0}
             color="warning"
-            icon={<img alt="Deals" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-buy.svg`} />}
+            icon={
+              <img
+                alt="Deals"
+                src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-buy.svg`}
+              />
+            }
             chart={{
-              categories: stats?.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+              categories: stats?.charts?.categories || [
+                'Mon',
+                'Tue',
+                'Wed',
+                'Thu',
+                'Fri',
+                'Sat',
+                'Sun',
+              ],
               series: stats?.charts?.deals || [0, 0, 0, 0, 0, 0, 0],
             }}
           />
@@ -118,9 +162,22 @@ export function OverviewAnalyticsView() {
             percent={getPercentChange(stats?.charts?.accounts)}
             total={stats?.accounts || 0}
             color="info"
-            icon={<img alt="Accounts" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-users.svg`} />}
+            icon={
+              <img
+                alt="Accounts"
+                src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-users.svg`}
+              />
+            }
             chart={{
-              categories: stats?.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+              categories: stats?.charts?.categories || [
+                'Mon',
+                'Tue',
+                'Wed',
+                'Thu',
+                'Fri',
+                'Sat',
+                'Sun',
+              ],
               series: stats?.charts?.accounts || [0, 0, 0, 0, 0, 0, 0],
             }}
           />
@@ -133,7 +190,6 @@ export function OverviewAnalyticsView() {
             meetings={activities?.meetings || []}
           />
         </Grid>
-
 
         {/* Leads by Status Chart */}
         <Grid size={{ xs: 12, md: 6 }}>
@@ -160,7 +216,6 @@ export function OverviewAnalyticsView() {
             }}
           />
         </Grid>
-
       </Grid>
     </DashboardContent>
   );

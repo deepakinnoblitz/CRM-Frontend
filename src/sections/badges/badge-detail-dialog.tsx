@@ -22,7 +22,9 @@ export function BadgeDetailDialog({ open, onClose, badge }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 2 }}>
+      <DialogTitle
+        sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 2 }}
+      >
         Badge Details
         <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary' }}>
           <Iconify icon="mingcute:close-line" width={24} />
@@ -74,8 +76,18 @@ export function BadgeDetailDialog({ open, onClose, badge }: Props) {
             </Label>
           </Stack>
 
-          <Box sx={{ width: '100%', p: 2.5, borderRadius: 2, bgcolor: (theme) => theme.palette.background.neutral }}>
-            <Typography variant="overline" sx={{ color: 'text.secondary', mb: 1, display: 'block', fontWeight: 700 }}>
+          <Box
+            sx={{
+              width: '100%',
+              p: 2.5,
+              borderRadius: 2,
+              bgcolor: (theme) => theme.palette.background.neutral,
+            }}
+          >
+            <Typography
+              variant="overline"
+              sx={{ color: 'text.secondary', mb: 1, display: 'block', fontWeight: 700 }}
+            >
               Description
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.6 }}>

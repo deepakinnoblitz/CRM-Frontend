@@ -107,7 +107,7 @@ export function AnalyticsWidgetSummary({
             zIndex: 1,
             pointerEvents: 'none',
             backgroundImage: `linear-gradient(135deg, ${alpha(theme.palette[color].main, 0.01)} 0%, ${alpha(theme.palette[color].main, 0.05)} 100%)`,
-          }
+          },
         },
         ...(Array.isArray(sx) ? sx : [sx]),
       ]}
@@ -129,9 +129,7 @@ export function AnalyticsWidgetSummary({
         >
           {icon}
         </Box>
-        <Box sx={{ zIndex: 2 }}>
-          {renderTrending()}
-        </Box>
+        <Box sx={{ zIndex: 2 }}>{renderTrending()}</Box>
       </Stack>
 
       <Box
@@ -144,7 +142,10 @@ export function AnalyticsWidgetSummary({
         }}
       >
         <Box sx={{ flexGrow: 1, minWidth: 112 }}>
-          <Typography variant="subtitle2" sx={{ mb: 0.5, color: 'text.secondary', fontWeight: 'medium' }}>
+          <Typography
+            variant="subtitle2"
+            sx={{ mb: 0.5, color: 'text.secondary', fontWeight: 'medium' }}
+          >
             {title}
           </Typography>
 

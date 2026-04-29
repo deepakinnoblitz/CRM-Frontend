@@ -5,11 +5,11 @@ import { InvoiceCollectionCreateView } from 'src/sections/invoice-collection/vie
 // ----------------------------------------------------------------------
 
 export default function InvoiceCollectionCreatePage() {
-    return (
-        <>
-            <title>{`Create Collection - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Create Collection - ${CONFIG.appName}`}</title>
 
-            <InvoiceCollectionCreateView />
-        </>
-    );
+      <InvoiceCollectionCreateView />
+    </>
+  );
 }

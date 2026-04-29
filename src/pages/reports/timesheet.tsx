@@ -5,10 +5,10 @@ import { TimesheetsReportView } from 'src/sections/report/timesheets/view/timesh
 // ----------------------------------------------------------------------
 
 export default function TimesheetReportPage() {
-    return (
-        <>
-            <title>{`Timesheet Report - ${CONFIG.appName}`}</title>
-            <TimesheetsReportView />
-        </>
-    );
+  return (
+    <>
+      <title>{`Timesheet Report - ${CONFIG.appName}`}</title>
+      <TimesheetsReportView />
+    </>
+  );
 }

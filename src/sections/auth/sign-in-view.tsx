@@ -100,13 +100,8 @@ export function SignInView() {
           input: {
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton
-                  onClick={() => setShowPassword(!showPassword)}
-                  edge="end"
-                >
-                  <Iconify
-                    icon={showPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
-                  />
+                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                  <Iconify icon={showPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
                 </IconButton>
               </InputAdornment>
             ),
@@ -174,7 +169,9 @@ export function SignInView() {
           }}
         />
 
-        <Typography variant="h5" sx={{ mt: -3 }}>Sign in</Typography>
+        <Typography variant="h5" sx={{ mt: -3 }}>
+          Sign in
+        </Typography>
 
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           Don’t have an account?
@@ -209,4 +206,3 @@ export function SignInView() {
     </>
   );
 }
-

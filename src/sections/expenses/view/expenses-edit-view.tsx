@@ -5,7 +5,7 @@ import { ExpenseForm } from '../expenses-form';
 // ----------------------------------------------------------------------
 
 export function ExpenseEditView() {
-    const { id } = useParams();
+  const { id } = useParams();
 
-    return <ExpenseForm id={id} />;
+  return <ExpenseForm id={id} />;
 }

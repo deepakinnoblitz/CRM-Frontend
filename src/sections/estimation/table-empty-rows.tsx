@@ -4,24 +4,24 @@ import TableCell from '@mui/material/TableCell';
 // ----------------------------------------------------------------------
 
 type TableEmptyRowsProps = {
-    height: number;
-    emptyRows: number;
+  height: number;
+  emptyRows: number;
 };
 
 export function TableEmptyRows({ emptyRows, height }: TableEmptyRowsProps) {
-    if (!emptyRows) {
-        return null;
-    }
+  if (!emptyRows) {
+    return null;
+  }
 
-    return (
-        <TableRow
-            sx={{
-                ...(height && {
-                    height: height * emptyRows,
-                }),
-            }}
-        >
-            <TableCell colSpan={9} />
-        </TableRow>
-    );
+  return (
+    <TableRow
+      sx={{
+        ...(height && {
+          height: height * emptyRows,
+        }),
+      }}
+    >
+      <TableCell colSpan={9} />
+    </TableRow>
+  );
 }

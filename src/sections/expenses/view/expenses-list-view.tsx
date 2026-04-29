@@ -26,7 +26,6 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { emptyRows } from '../utils';
 import { TableNoData } from '../table-no-data';
 import { TableEmptyRows } from '../table-empty-rows';
 import { ExpenseTableRow } from '../expenses-table-row';
@@ -37,312 +36,327 @@ import { ExpenseTableFiltersDrawer } from '../expenses-table-filters-drawer';
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
-    { id: 'expense_no', label: 'Expense No' },
-    { id: 'expense_category', label: 'Category' },
-    { id: 'date', label: 'Date' },
-    { id: 'payment_type', label: 'Payment Type' },
-    { id: 'total', label: 'Total', align: 'right' },
-    { id: '' },
+  { id: 'expense_no', label: 'Expense No' },
+  { id: 'expense_category', label: 'Category' },
+  { id: 'date', label: 'Date' },
+  { id: 'payment_type', label: 'Payment Type' },
+  { id: 'total', label: 'Total', align: 'right' },
+  { id: '' },
 ];
 
 // ----------------------------------------------------------------------
 
 export function ExpenseListView() {
-    const table = useTable();
-    const router = useRouter();
+  const table = useTable();
+  const router = useRouter();
 
-    const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
-    const [filterName, setFilterName] = useState('');
-    const [sortBy, setSortBy] = useState('modified_desc');
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: string | null }>({
+    open: false,
+    id: null,
+  });
+  const [filterName, setFilterName] = useState('');
+  const [sortBy, setSortBy] = useState('modified_desc');
 
-    const [openFilters, setOpenFilters] = useState(false);
-    const [filters, setFilters] = useState({
-        expense_id: '',
-        expense_category: 'all',
-        payment_type: 'all',
-        start_date: null as string | null,
-        end_date: null as string | null,
+  const [openFilters, setOpenFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    expense_id: '',
+    expense_category: 'all',
+    payment_type: 'all',
+    start_date: null as string | null,
+    end_date: null as string | null,
+  });
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+  const [paymentTypeOptions, setPaymentTypeOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    getDoctypeList('Expense Category', ['name']).then((res) => {
+      setCategoryOptions(res.map((item: any) => item.name));
     });
-    const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
-    const [paymentTypeOptions, setPaymentTypeOptions] = useState<string[]>([]);
-
-    useEffect(() => {
-        getDoctypeList('Expense Category', ['name']).then((res) => {
-            setCategoryOptions(res.map((item: any) => item.name));
-        });
-        getDoctypeList('Payment Type', ['name']).then((res) => {
-            setPaymentTypeOptions(res.map((item: any) => item.name));
-        });
-    }, []);
-
-    const handleFilters = (newFilters: any) => {
-        setFilters((prev) => ({ ...prev, ...newFilters }));
-        table.onResetPage();
-    };
-
-    const handleResetFilters = () => {
-        setFilters({ expense_id: '', expense_category: 'all', payment_type: 'all', start_date: null, end_date: null });
-        table.onResetPage();
-    };
-
-    const canReset = !!filters.expense_id || filters.expense_category !== 'all' || filters.payment_type !== 'all' || !!filters.start_date || !!filters.end_date;
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-        open: false,
-        message: '',
-        severity: 'success',
+    getDoctypeList('Payment Type', ['name']).then((res) => {
+      setPaymentTypeOptions(res.map((item: any) => item.name));
     });
+  }, []);
 
-    const { data, total, loading, refetch } = useExpense(
-        table.page,
-        table.rowsPerPage,
-        filterName,
-        filters,
-        sortBy
-    );
+  const handleFilters = (newFilters: any) => {
+    setFilters((prev) => ({ ...prev, ...newFilters }));
+    table.onResetPage();
+  };
 
-    const handleFilterName = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => {
-            setFilterName(event.target.value);
-            table.onResetPage();
-        },
-        [table]
-    );
+  const handleResetFilters = () => {
+    setFilters({
+      expense_id: '',
+      expense_category: 'all',
+      payment_type: 'all',
+      start_date: null,
+      end_date: null,
+    });
+    table.onResetPage();
+  };
 
-    const handleCreateNew = () => {
-        router.push('/expenses/new');
-    };
+  const canReset =
+    !!filters.expense_id ||
+    filters.expense_category !== 'all' ||
+    filters.payment_type !== 'all' ||
+    !!filters.start_date ||
+    !!filters.end_date;
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
-    const handleEditRow = (id: string) => {
-        router.push(`/expenses/${encodeURIComponent(id)}/edit`);
-    };
+  const { data, total, loading, refetch } = useExpense(
+    table.page,
+    table.rowsPerPage,
+    filterName,
+    filters,
+    sortBy
+  );
 
-    const handleViewRow = (id: string) => {
-        router.push(`/expenses/${encodeURIComponent(id)}/view`);
-    };
+  const handleFilterName = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setFilterName(event.target.value);
+      table.onResetPage();
+    },
+    [table]
+  );
 
-    const handleDeleteRow = useCallback((id: string) => {
-        setConfirmDelete({ open: true, id });
-    }, []);
+  const handleCreateNew = () => {
+    router.push('/expenses/new');
+  };
 
-    const handleConfirmDelete = async () => {
-        if (!confirmDelete.id) return;
-        try {
-            await deleteExpense(confirmDelete.id);
-            setSnackbar({ open: true, message: 'Expense deleted successfully', severity: 'success' });
-            await refetch();
-        } catch (e) {
-            console.error(e);
-            setSnackbar({ open: true, message: 'Failed to delete expense', severity: 'error' });
-        } finally {
-            setConfirmDelete({ open: false, id: null });
-        }
-    };
+  const handleEditRow = (id: string) => {
+    router.push(`/expenses/${encodeURIComponent(id)}/edit`);
+  };
 
-    const handleCloseSnackbar = () => {
-        setSnackbar((prev) => ({ ...prev, open: false }));
-    };
+  const handleViewRow = (id: string) => {
+    router.push(`/expenses/${encodeURIComponent(id)}/view`);
+  };
 
-    const notFound = !loading && data.length === 0 && !!filterName;
-    const empty = !loading && data.length === 0 && !filterName && !canReset;
+  const handleDeleteRow = useCallback((id: string) => {
+    setConfirmDelete({ open: true, id });
+  }, []);
 
-    return (
-        <DashboardContent maxWidth={false}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">Expenses</Typography>
-                <Button
-                    variant="contained"
-                    color="info"
-                    startIcon={<Iconify icon="mingcute:add-line" />}
-                    onClick={handleCreateNew}
-                >
-                    New Expense
-                </Button>
-            </Stack>
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete.id) return;
+    try {
+      await deleteExpense(confirmDelete.id);
+      setSnackbar({ open: true, message: 'Expense deleted successfully', severity: 'success' });
+      await refetch();
+    } catch (e) {
+      console.error(e);
+      setSnackbar({ open: true, message: 'Failed to delete expense', severity: 'error' });
+    } finally {
+      setConfirmDelete({ open: false, id: null });
+    }
+  };
 
-            <Card>
-                <ExpenseTableToolbar
-                    numSelected={table.selected.length}
-                    filterName={filterName}
-                    onFilterName={handleFilterName}
-                    sortBy={sortBy}
-                    onSortChange={setSortBy}
-                    onOpenFilter={() => setOpenFilters(true)}
-                    canReset={canReset}
-                />
+  const handleCloseSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
 
-                <Scrollbar>
-                    <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
-                            <ExpenseTableHead
-                                order={table.order}
-                                orderBy={table.orderBy}
-                                rowCount={total}
-                                numSelected={table.selected.length}
-                                onSort={table.onSort}
-                                onSelectAllRows={(checked) =>
-                                    table.onSelectAllRows(
-                                        checked,
-                                        data.map((row) => row.name)
-                                    )
-                                }
-                                headLabel={TABLE_HEAD}
-                            />
-                            <TableBody>
-                                {data.map((row) => (
-                                    <ExpenseTableRow
-                                        key={row.name}
-                                        row={{
-                                            id: row.name,
-                                            expense_no: row.expense_no || '',
-                                            expense_category: row.expense_category || '',
-                                            date: row.date,
-                                            payment_type: row.payment_type || '',
-                                            total: row.total || 0,
-                                        }}
-                                        selected={table.selected.includes(row.name)}
-                                        onSelectRow={() => table.onSelectRow(row.name)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onView={() => handleViewRow(row.name)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit
-                                        canDelete
-                                    />
-                                ))}
+  const notFound = !loading && data.length === 0 && !!filterName;
+  const empty = !loading && data.length === 0 && !filterName && !canReset;
 
-                                    <TableEmptyRows
-                                        height={77}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+  return (
+    <DashboardContent maxWidth={false}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+        <Typography variant="h4">Expenses</Typography>
+        <Button
+          variant="contained"
+          color="info"
+          startIcon={<Iconify icon="mingcute:add-line" />}
+          onClick={handleCreateNew}
+        >
+          New Expense
+        </Button>
+      </Stack>
 
-                                {notFound && <TableNoData searchQuery={filterName} />}
+      <Card>
+        <ExpenseTableToolbar
+          numSelected={table.selected.length}
+          filterName={filterName}
+          onFilterName={handleFilterName}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          onOpenFilter={() => setOpenFilters(true)}
+          canReset={canReset}
+        />
 
-                                {empty && (
-                                    <TableRow>
-                                        <TableCell colSpan={6}>
-                                            <EmptyContent
-                                                title="No expenses found"
-                                                description="Record and track your business expenses efficiently."
-                                                icon="solar:bill-list-bold-duotone"
-                                            />
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Scrollbar>
-
-                <TablePagination
-                    page={table.page}
-                    component="div"
-                    count={total}
-                    rowsPerPage={table.rowsPerPage}
-                    onPageChange={table.onChangePage}
-                    rowsPerPageOptions={[10, 25, 50]}
-                    onRowsPerPageChange={table.onChangeRowsPerPage}
-                />
-            </Card>
-
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={6000}
-                onClose={handleCloseSnackbar}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-                <Alert
-                    onClose={handleCloseSnackbar}
-                    severity={snackbar.severity}
-                    sx={{
-                        width: '100%',
-                        boxShadow: (theme) => theme.customShadows.z20
-                    }}
-                >
-                    <AlertTitle>{snackbar.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
-
-            <ConfirmDialog
-                open={confirmDelete.open}
-                onClose={() => setConfirmDelete({ open: false, id: null })}
-                title="Confirm Delete"
-                content="Are you sure you want to delete this expense?"
-                action={
-                    <Button
-                        variant="contained"
-                        color="error"
-                        onClick={handleConfirmDelete}
-                        sx={{ borderRadius: 1.5, minWidth: 100 }}
-                    >
-                        Delete
-                    </Button>
+        <Scrollbar>
+          <TableContainer sx={{ overflow: 'unset' }}>
+            <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
+              <ExpenseTableHead
+                order={table.order}
+                orderBy={table.orderBy}
+                rowCount={total}
+                numSelected={table.selected.length}
+                onSort={table.onSort}
+                onSelectAllRows={(checked) =>
+                  table.onSelectAllRows(
+                    checked,
+                    data.map((row) => row.name)
+                  )
                 }
-            />
-            <ExpenseTableFiltersDrawer
-                open={openFilters}
-                onOpen={() => setOpenFilters(true)}
-                onClose={() => setOpenFilters(false)}
-                filters={filters}
-                onFilters={handleFilters}
-                canReset={canReset}
-                onResetFilters={handleResetFilters}
-                options={{
-                    categories: categoryOptions,
-                    paymentTypes: paymentTypeOptions,
-                }}
-            />
-        </DashboardContent>
-    );
+                headLabel={TABLE_HEAD}
+              />
+              <TableBody>
+                {data.map((row) => (
+                  <ExpenseTableRow
+                    key={row.name}
+                    row={{
+                      id: row.name,
+                      expense_no: row.expense_no || '',
+                      expense_category: row.expense_category || '',
+                      date: row.date,
+                      payment_type: row.payment_type || '',
+                      total: row.total || 0,
+                    }}
+                    selected={table.selected.includes(row.name)}
+                    onSelectRow={() => table.onSelectRow(row.name)}
+                    onEdit={() => handleEditRow(row.name)}
+                    onView={() => handleViewRow(row.name)}
+                    onDelete={() => handleDeleteRow(row.name)}
+                    canEdit
+                    canDelete
+                  />
+                ))}
+
+                <TableEmptyRows height={77} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+
+                {notFound && <TableNoData searchQuery={filterName} />}
+
+                {empty && (
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <EmptyContent
+                        title="No expenses found"
+                        description="Record and track your business expenses efficiently."
+                        icon="solar:bill-list-bold-duotone"
+                      />
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Scrollbar>
+
+        <TablePagination
+          page={table.page}
+          component="div"
+          count={total}
+          rowsPerPage={table.rowsPerPage}
+          onPageChange={table.onChangePage}
+          rowsPerPageOptions={[10, 25, 50]}
+          onRowsPerPageChange={table.onChangeRowsPerPage}
+        />
+      </Card>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{
+            width: '100%',
+            boxShadow: (theme) => theme.customShadows.z20,
+          }}
+        >
+          <AlertTitle>{snackbar.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      <ConfirmDialog
+        open={confirmDelete.open}
+        onClose={() => setConfirmDelete({ open: false, id: null })}
+        title="Confirm Delete"
+        content="Are you sure you want to delete this expense?"
+        action={
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmDelete}
+            sx={{ borderRadius: 1.5, minWidth: 100 }}
+          >
+            Delete
+          </Button>
+        }
+      />
+      <ExpenseTableFiltersDrawer
+        open={openFilters}
+        onOpen={() => setOpenFilters(true)}
+        onClose={() => setOpenFilters(false)}
+        filters={filters}
+        onFilters={handleFilters}
+        canReset={canReset}
+        onResetFilters={handleResetFilters}
+        options={{
+          categories: categoryOptions,
+          paymentTypes: paymentTypeOptions,
+        }}
+      />
+    </DashboardContent>
+  );
 }
 
 // ----------------------------------------------------------------------
 
 export function useTable() {
-    const [page, setPage] = useState(0);
-    const [orderBy, setOrderBy] = useState('expense_category');
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [selected, setSelected] = useState<string[]>([]);
-    const [order, setOrder] = useState<'asc' | 'desc'>('asc');
+  const [page, setPage] = useState(0);
+  const [orderBy, setOrderBy] = useState('expense_category');
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [order, setOrder] = useState<'asc' | 'desc'>('asc');
 
-    const onSort = useCallback(
-        (id: string) => {
-            const isAsc = orderBy === id && order === 'asc';
-            setOrder(isAsc ? 'desc' : 'asc');
-            setOrderBy(id);
-        },
-        [order, orderBy]
+  const onSort = useCallback(
+    (id: string) => {
+      const isAsc = orderBy === id && order === 'asc';
+      setOrder(isAsc ? 'desc' : 'asc');
+      setOrderBy(id);
+    },
+    [order, orderBy]
+  );
+
+  const onSelectAllRows = useCallback((checked: boolean, ids: string[]) => {
+    setSelected(checked ? ids : []);
+  }, []);
+
+  const onSelectRow = useCallback((value: string) => {
+    setSelected((prev: string[]) =>
+      prev.includes(value) ? prev.filter((v: string) => v !== value) : [...prev, value]
     );
+  }, []);
 
-    const onSelectAllRows = useCallback((checked: boolean, ids: string[]) => {
-        setSelected(checked ? ids : []);
-    }, []);
+  const onResetPage = () => setPage(0);
 
-    const onSelectRow = useCallback((value: string) => {
-        setSelected((prev: string[]) =>
-            prev.includes(value) ? prev.filter((v: string) => v !== value) : [...prev, value]
-        );
-    }, []);
+  const onChangePage = (_: unknown, newPage: number) => setPage(newPage);
 
-    const onResetPage = () => setPage(0);
+  const onChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(e.target.value, 10));
+    onResetPage();
+  };
 
-    const onChangePage = (_: unknown, newPage: number) => setPage(newPage);
-
-    const onChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setRowsPerPage(parseInt(e.target.value, 10));
-        onResetPage();
-    };
-
-    return {
-        page,
-        order,
-        orderBy,
-        rowsPerPage,
-        selected,
-        onSort,
-        onSelectRow,
-        onSelectAllRows,
-        onResetPage,
-        onChangePage,
-        onChangeRowsPerPage,
-    };
+  return {
+    page,
+    order,
+    orderBy,
+    rowsPerPage,
+    selected,
+    onSort,
+    onSelectRow,
+    onSelectAllRows,
+    onResetPage,
+    onChangePage,
+    onChangeRowsPerPage,
+  };
 }

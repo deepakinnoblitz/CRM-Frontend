@@ -5,11 +5,11 @@ import InvoiceCollectionEditView from 'src/sections/invoice-collection/view/invo
 // ----------------------------------------------------------------------
 
 export default function InvoiceCollectionEditPage() {
-    return (
-        <>
-            <title>{`Edit Collection - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Edit Collection - ${CONFIG.appName}`}</title>
 
-            <InvoiceCollectionEditView />
-        </>
-    );
+      <InvoiceCollectionEditView />
+    </>
+  );
 }

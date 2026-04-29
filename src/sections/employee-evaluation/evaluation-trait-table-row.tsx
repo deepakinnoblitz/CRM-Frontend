@@ -15,12 +15,7 @@ type Props = {
   onDelete: () => void;
 };
 
-export function EmployeeEvaluationTraitTableRow({
-  row,
-  index,
-  onEdit,
-  onDelete,
-}: Props) {
+export function EmployeeEvaluationTraitTableRow({ row, index, onEdit, onDelete }: Props) {
   const { trait_name, category, description } = row;
 
   return (
@@ -34,24 +29,25 @@ export function EmployeeEvaluationTraitTableRow({
       <TableCell align="center">
         <Box
           sx={{
-              width: 28,
-              height: 28,
-              display: 'flex',
-              borderRadius: '50%',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-              color: 'primary.main',
-              typography: 'subtitle2',
-              fontWeight: 800,
-              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
-              mx: 'auto',
-              transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
-              '&:hover': {
-                  bgcolor: 'primary.main',
-                  color: 'primary.contrastText',
-                  transform: 'scale(1.1)',
-              },
+            width: 28,
+            height: 28,
+            display: 'flex',
+            borderRadius: '50%',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+            color: 'primary.main',
+            typography: 'subtitle2',
+            fontWeight: 800,
+            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+            mx: 'auto',
+            transition: (theme) =>
+              theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+            '&:hover': {
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              transform: 'scale(1.1)',
+            },
           }}
         >
           {index + 1}
@@ -59,7 +55,9 @@ export function EmployeeEvaluationTraitTableRow({
       </TableCell>
       <TableCell sx={{ fontWeight: 'bold' }}>{trait_name}</TableCell>
       <TableCell>{category || '-'}</TableCell>
-      <TableCell sx={{ color: 'text.secondary', typography: 'body2' }}>{description || '-'}</TableCell>
+      <TableCell sx={{ color: 'text.secondary', typography: 'body2' }}>
+        {description || '-'}
+      </TableCell>
       <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
         <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
           <Iconify icon="solar:pen-bold" />

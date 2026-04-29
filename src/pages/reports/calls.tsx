@@ -5,10 +5,10 @@ import { CallsReportView } from 'src/sections/report/calls/view/calls-report-vie
 // ----------------------------------------------------------------------
 
 export default function CallsReportPage() {
-    return (
-        <>
-            <title>{`Calls Report - ${CONFIG.appName}`}</title>
-            <CallsReportView />
-        </>
-    );
+  return (
+    <>
+      <title>{`Calls Report - ${CONFIG.appName}`}</title>
+      <CallsReportView />
+    </>
+  );
 }

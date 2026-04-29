@@ -5,11 +5,11 @@ import { InvoiceDetailsView } from 'src/sections/invoice/view/invoice-details-vi
 // ----------------------------------------------------------------------
 
 export default function Page() {
-    return (
-        <>
-            <title> {`Invoice Details - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title> {`Invoice Details - ${CONFIG.appName}`}</title>
 
-            <InvoiceDetailsView />
-        </>
-    );
+      <InvoiceDetailsView />
+    </>
+  );
 }

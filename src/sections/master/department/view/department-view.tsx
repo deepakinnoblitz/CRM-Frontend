@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
@@ -56,20 +55,24 @@ export function DepartmentView() {
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [orderBy, setOrderBy] = useState('modified');
   const [selected, setSelected] = useState<string[]>([]);
-  
+
   const [filters, setFilters] = useState({ status: 'all' });
   const [openFilters, setOpenFilters] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
   const [detailsId, setDetailsId] = useState<string | null>(null);
   const [openForm, setOpenForm] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  
+
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: string | null }>({
     open: false,
     id: null,
   });
 
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({
     open: false,
     message: '',
     severity: 'success',
@@ -173,10 +176,18 @@ export function DepartmentView() {
     if (confirmDelete.id) {
       try {
         await deleteDepartment(confirmDelete.id);
-        setSnackbar({ open: true, message: 'Department deleted successfully', severity: 'success' });
+        setSnackbar({
+          open: true,
+          message: 'Department deleted successfully',
+          severity: 'success',
+        });
         refetch();
       } catch (error: any) {
-        setSnackbar({ open: true, message: error.message || 'Failed to delete department', severity: 'error' });
+        setSnackbar({
+          open: true,
+          message: error.message || 'Failed to delete department',
+          severity: 'error',
+        });
         console.error(error);
       } finally {
         setConfirmDelete({ open: false, id: null });
@@ -253,23 +264,20 @@ export function DepartmentView() {
                   />
                 ))}
 
-                <TableEmptyRows
-                    height={68}
-                    emptyRows={data.length < 5 ? 5 - data.length : 0}
-                />
+                <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
 
                 {notFound && <TableNoData searchQuery={filterName} />}
 
                 {empty && (
-                    <TableRow>
-                        <TableCell colSpan={6} sx={{ py: 10 }}>
-                            <EmptyContent
-                                title="No Departments Found"
-                                description="It looks like there are no departments yet."
-                                icon="solar:buildings-bold-duotone"
-                            />
-                        </TableCell>
-                    </TableRow>
+                  <TableRow>
+                    <TableCell colSpan={6} sx={{ py: 10 }}>
+                      <EmptyContent
+                        title="No Departments Found"
+                        description="It looks like there are no departments yet."
+                        icon="solar:buildings-bold-duotone"
+                      />
+                    </TableCell>
+                  </TableRow>
                 )}
               </TableBody>
             </Table>
@@ -329,7 +337,11 @@ export function DepartmentView() {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%', whiteSpace: 'pre-line' }}>
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: '100%', whiteSpace: 'pre-line' }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

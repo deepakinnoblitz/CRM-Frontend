@@ -7,13 +7,13 @@ import { PurchaseDetailsView } from 'src/sections/purchase/view';
 // ----------------------------------------------------------------------
 
 export default function PurchaseViewPage() {
-    const { id } = useParams();
+  const { id } = useParams();
 
-    return (
-        <>
-            <title> {`Purchase Detail - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title> {`Purchase Detail - ${CONFIG.appName}`}</title>
 
-            <PurchaseDetailsView />
-        </>
-    );
+      <PurchaseDetailsView />
+    </>
+  );
 }

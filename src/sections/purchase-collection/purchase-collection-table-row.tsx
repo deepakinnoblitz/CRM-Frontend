@@ -15,112 +15,118 @@ import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 type Props = {
-    row: PurchaseCollection;
-    selected: boolean;
-    onSelectRow: () => void;
-    onViewRow: () => void;
-    onEditRow: () => void;
-    onDeleteRow: () => void;
-    isLatest?: boolean;
-    hideCheckbox?: boolean;
-    index?: number;
+  row: PurchaseCollection;
+  selected: boolean;
+  onSelectRow: () => void;
+  onViewRow: () => void;
+  onEditRow: () => void;
+  onDeleteRow: () => void;
+  isLatest?: boolean;
+  hideCheckbox?: boolean;
+  index?: number;
 };
 
 export default function PurchaseCollectionTableRow({
-    row,
-    selected,
-    onSelectRow,
-    onViewRow,
-    onEditRow,
-    onDeleteRow,
-    isLatest = true,
-    hideCheckbox = false,
-    index,
+  row,
+  selected,
+  onSelectRow,
+  onViewRow,
+  onEditRow,
+  onDeleteRow,
+  isLatest = true,
+  hideCheckbox = false,
+  index,
 }: Props) {
-    const { name, purchase, vendor_name, collection_date, amount_collected, amount_pending, mode_of_payment } = row;
+  const {
+    name,
+    purchase,
+    vendor_name,
+    collection_date,
+    amount_collected,
+    amount_pending,
+    mode_of_payment,
+  } = row;
 
-    return (
-        <TableRow
-            hover
-            tabIndex={-1}
-            role="checkbox"
-            selected={selected}
+  return (
+    <TableRow
+      hover
+      tabIndex={-1}
+      role="checkbox"
+      selected={selected}
+      sx={{
+        '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+        '&:last-child td, &:last-child th': { borderBottom: 0 },
+      }}
+    >
+      {!hideCheckbox && (
+        <TableCell padding="checkbox">
+          <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
+        </TableCell>
+      )}
+
+      {typeof index === 'number' && (
+        <TableCell align="center">
+          <Box
             sx={{
-                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                '&:last-child td, &:last-child th': { borderBottom: 0 },
+              width: 28,
+              height: 28,
+              display: 'flex',
+              borderRadius: '50%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+              color: 'primary.main',
+              typography: 'subtitle2',
+              fontWeight: 800,
+              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+              mx: 'auto',
+              transition: (theme) =>
+                theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+              '&:hover': {
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                transform: 'scale(1.1)',
+              },
             }}
-        >
-            {!hideCheckbox && (
-                <TableCell padding="checkbox">
-                    <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
-                </TableCell>
-            )}
+          >
+            {index + 1}
+          </Box>
+        </TableCell>
+      )}
 
-            {typeof index === 'number' && (
-                <TableCell align="center">
-                    <Box
-                        sx={{
-                            width: 28,
-                            height: 28,
-                            display: 'flex',
-                            borderRadius: '50%',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                            color: 'primary.main',
-                            typography: 'subtitle2',
-                            fontWeight: 800,
-                            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
-                            mx: 'auto',
-                            transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
-                            '&:hover': {
-                                bgcolor: 'primary.main',
-                                color: 'primary.contrastText',
-                                transform: 'scale(1.1)',
-                            },
-                        }}
-                    >
-                        {index + 1}
-                    </Box>
-                </TableCell>
-            )}
+      <TableCell component="th" scope="row">
+        <Box sx={{ gap: 2, display: 'flex', alignItems: 'center' }}>{name}</Box>
+      </TableCell>
 
-            <TableCell component="th" scope="row">
-                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center' }}>
-                    {name}
-                </Box>
-            </TableCell>
+      <TableCell>{purchase}</TableCell>
 
-            <TableCell>{purchase}</TableCell>
+      <TableCell>{vendor_name}</TableCell>
 
-            <TableCell>{vendor_name}</TableCell>
+      <TableCell>{fDate(collection_date)}</TableCell>
 
-            <TableCell>{fDate(collection_date)}</TableCell>
+      <TableCell>{mode_of_payment}</TableCell>
 
-            <TableCell>{mode_of_payment}</TableCell>
+      <TableCell align="right">{fCurrency(amount_collected)}</TableCell>
 
-            <TableCell align="right">{fCurrency(amount_collected)}</TableCell>
+      <TableCell align="right">{fCurrency(amount_pending || 0)}</TableCell>
 
-            <TableCell align="right">{fCurrency(amount_pending || 0)}</TableCell>
-
-            <TableCell align="right">
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <IconButton onClick={onViewRow} sx={{ color: 'info.main' }}>
-                        <Iconify icon="solar:eye-bold" />
-                    </IconButton>
-                    {isLatest && (
-                        <IconButton onClick={onEditRow} sx={{ color: 'primary.main' }}>
-                            <Iconify icon="solar:pen-bold" />
-                        </IconButton>
-                    )}
-                    {isLatest && (
-                        <IconButton onClick={onDeleteRow} sx={{ color: 'error.main' }}>
-                            <Iconify icon="solar:trash-bin-trash-bold" />
-                        </IconButton>
-                    )}
-                </Box>
-            </TableCell>
-        </TableRow>
-    );
+      <TableCell align="right">
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <IconButton onClick={onViewRow} sx={{ color: 'info.main' }}>
+            <Iconify icon="solar:eye-bold" />
+          </IconButton>
+          {isLatest && (
+            <IconButton onClick={onEditRow} sx={{ color: 'primary.main' }}>
+              <Iconify icon="solar:pen-bold" />
+            </IconButton>
+          )}
+          {isLatest && (
+            <IconButton onClick={onDeleteRow} sx={{ color: 'error.main' }}>
+              <Iconify icon="solar:trash-bin-trash-bold" />
+            </IconButton>
+          )}
+        </Box>
+      </TableCell>
+    </TableRow>
+  );
 }
-

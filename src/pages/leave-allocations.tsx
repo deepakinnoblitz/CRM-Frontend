@@ -5,11 +5,11 @@ import { LeaveAllocationView } from 'src/sections/leaves/allocations/leave-alloc
 // ----------------------------------------------------------------------
 
 export default function LeaveAllocationsPage() {
-    return (
-        <>
-            <title>{`Leave Allocations - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Leave Allocations - ${CONFIG.appName}`}</title>
 
-            <LeaveAllocationView />
-        </>
-    );
+      <LeaveAllocationView />
+    </>
+  );
 }

@@ -5,10 +5,10 @@ import { PurchaseCollectionReportView } from 'src/sections/report/view/purchase-
 // ----------------------------------------------------------------------
 
 export default function PurchaseCollectionReportPage() {
-    return (
-        <>
-            <title>{`Purchase Settlement Report - ${CONFIG.appName}`}</title>
-            <PurchaseCollectionReportView />
-        </>
-    );
+  return (
+    <>
+      <title>{`Purchase Settlement Report - ${CONFIG.appName}`}</title>
+      <PurchaseCollectionReportView />
+    </>
+  );
 }

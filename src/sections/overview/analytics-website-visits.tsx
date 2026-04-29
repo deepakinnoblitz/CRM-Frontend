@@ -24,7 +24,14 @@ type Props = CardProps & {
   chartType?: 'bar' | 'line' | 'area';
 };
 
-export function AnalyticsWebsiteVisits({ title, subheader, chart, chartType = 'bar', sx, ...other }: Props) {
+export function AnalyticsWebsiteVisits({
+  title,
+  subheader,
+  chart,
+  chartType = 'bar',
+  sx,
+  ...other
+}: Props) {
   const theme = useTheme();
 
   const chartColors = chart.colors ?? [

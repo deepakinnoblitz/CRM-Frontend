@@ -45,24 +45,25 @@ export function BankAccountTableRow({
         <TableCell align="center">
           <Box
             sx={{
-                width: 28,
-                height: 28,
-                display: 'flex',
-                borderRadius: '50%',
-                alignItems: 'center',
-                justifyContent: 'center',
-                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                color: 'primary.main',
-                typography: 'subtitle2',
-                fontWeight: 800,
-                border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
-                mx: 'auto',
-                transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
-                '&:hover': {
-                    bgcolor: 'primary.main',
-                    color: 'primary.contrastText',
-                    transform: 'scale(1.1)',
-                },
+              width: 28,
+              height: 28,
+              display: 'flex',
+              borderRadius: '50%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+              color: 'primary.main',
+              typography: 'subtitle2',
+              fontWeight: 800,
+              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+              mx: 'auto',
+              transition: (theme) =>
+                theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+              '&:hover': {
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                transform: 'scale(1.1)',
+              },
             }}
           >
             {index + 1}
@@ -72,12 +73,12 @@ export function BankAccountTableRow({
 
       <TableCell>
         <Stack spacing={0.5}>
-            <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
-                {bank_account_name}
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                {account_type}
-            </Typography>
+          <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
+            {bank_account_name}
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            {account_type}
+          </Typography>
         </Stack>
       </TableCell>
 

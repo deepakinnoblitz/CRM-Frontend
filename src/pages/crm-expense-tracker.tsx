@@ -5,10 +5,10 @@ import CRMExpenseTrackerView from 'src/sections/crm-expense-tracker/view/crm-exp
 // ----------------------------------------------------------------------
 
 export default function CRMExpenseTrackerPage() {
-    return (
-        <>
-            <title>{`Expense Tracker - ${CONFIG.appName}`}</title>
-            <CRMExpenseTrackerView />
-        </>
-    );
+  return (
+    <>
+      <title>{`Expense Tracker - ${CONFIG.appName}`}</title>
+      <CRMExpenseTrackerView />
+    </>
+  );
 }

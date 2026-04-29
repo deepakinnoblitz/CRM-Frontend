@@ -115,7 +115,11 @@ export function SalaryStructureComponentView() {
         setSnackbar({ open: true, message: 'Component deleted successfully', severity: 'success' });
         refetch();
       } catch (error: any) {
-        setSnackbar({ open: true, message: error.message || 'Failed to delete', severity: 'error' });
+        setSnackbar({
+          open: true,
+          message: error.message || 'Failed to delete',
+          severity: 'error',
+        });
       } finally {
         setConfirmDelete({ open: false, id: null });
       }
@@ -139,15 +143,27 @@ export function SalaryStructureComponentView() {
       <Alert
         severity={totalDefaultEarningPercent === 100 ? 'success' : 'warning'}
         variant="outlined"
-        sx={{ mb: 3, border: (theme) => `1px solid ${totalDefaultEarningPercent === 100 ? theme.palette.success.main : theme.palette.warning.main}20` }}
-        icon={<Iconify icon={totalDefaultEarningPercent === 100 ? "solar:check-circle-bold" : "solar:info-circle-bold"} />}
+        sx={{
+          mb: 3,
+          border: (theme) =>
+            `1px solid ${totalDefaultEarningPercent === 100 ? theme.palette.success.main : theme.palette.warning.main}20`,
+        }}
+        icon={
+          <Iconify
+            icon={
+              totalDefaultEarningPercent === 100
+                ? 'solar:check-circle-bold'
+                : 'solar:info-circle-bold'
+            }
+          />
+        }
       >
         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
           Default Earning Configuration: {totalDefaultEarningPercent.toFixed(2)}%
         </Typography>
         <Typography variant="caption" sx={{ display: 'block', opacity: 0.8 }}>
-          {totalDefaultEarningPercent === 100 
-            ? 'Configuration is valid for Default Splitting.' 
+          {totalDefaultEarningPercent === 100
+            ? 'Configuration is valid for Default Splitting.'
             : `Total Default Earning percentage must be exactly 100% for proper splitting. Current total: ${totalDefaultEarningPercent.toFixed(2)}%`}
         </Typography>
       </Alert>
@@ -175,7 +191,7 @@ export function SalaryStructureComponentView() {
                 headLabel={TABLE_HEAD}
                 rowCount={total}
                 numSelected={0}
-                onSelectAllRows={() => { }}
+                onSelectAllRows={() => {}}
                 showIndex
                 hideCheckbox
               />
@@ -189,11 +205,14 @@ export function SalaryStructureComponentView() {
                     selected={false}
                     onEditRow={() => handleEditRow(row.name)}
                     onDeleteRow={() => handleDeleteRow(row.name)}
-                    onSelectRow={() => { }}
+                    onSelectRow={() => {}}
                   />
                 ))}
 
-                <TableEmptyRows height={68} emptyRows={!empty && data.length < 5 ? 5 - data.length : 0} />
+                <TableEmptyRows
+                  height={68}
+                  emptyRows={!empty && data.length < 5 ? 5 - data.length : 0}
+                />
 
                 {notFound && <TableNoData searchQuery={filterName} />}
 

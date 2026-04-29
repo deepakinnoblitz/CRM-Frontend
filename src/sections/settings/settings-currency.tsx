@@ -69,7 +69,7 @@ export function SettingsCurrency({ data, onChange }: Props) {
               color: '#FF5630',
             }}
           >
-            <Iconify icon={"solar:global-bold-duotone" as any} width={28} />
+            <Iconify icon={'solar:global-bold-duotone' as any} width={28} />
           </Box>
 
           <ListItemText
@@ -87,22 +87,29 @@ export function SettingsCurrency({ data, onChange }: Props) {
             SelectProps={{
               MenuProps: { PaperProps: { sx: { maxHeight: 240 } } },
             }}
-            sx={{ 
-                minWidth: 180,
-                '& .MuiOutlinedInput-root': {
-                    bgcolor: 'background.neutral',
-                    '& fieldset': { border: 'none' },
-                    '&:hover fieldset': { border: 'none' },
-                    '&.Mui-focused fieldset': { border: 'none' },
-                    border: (theme) => `solid 1px ${theme.palette.divider}`,
-                    borderRadius: 1,
-                }
+            sx={{
+              minWidth: 180,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: 'background.neutral',
+                '& fieldset': { border: 'none' },
+                '&:hover fieldset': { border: 'none' },
+                '&.Mui-focused fieldset': { border: 'none' },
+                border: (theme) => `solid 1px ${theme.palette.divider}`,
+                borderRadius: 1,
+              },
             }}
           >
             {CURRENCY_OPTIONS.map((option) => (
               <MenuItem key={option.value} value={option.value} sx={{ py: 1 }}>
                 <Stack direction="row" alignItems="center" spacing={1.5}>
-                  <Box sx={{ width: 24, textAlign: 'center', fontWeight: 'bold', color: 'primary.main' }}>
+                  <Box
+                    sx={{
+                      width: 24,
+                      textAlign: 'center',
+                      fontWeight: 'bold',
+                      color: 'primary.main',
+                    }}
+                  >
                     {option.symbol}
                   </Box>
                   <Typography variant="body2">{option.label}</Typography>
@@ -155,18 +162,18 @@ export function SettingsCurrency({ data, onChange }: Props) {
             value={data?.default_locale || 'en-IN'}
             onChange={(event) => onChange('default_locale', event.target.value)}
             SelectProps={{
-                MenuProps: { PaperProps: { sx: { maxHeight: 240 } } },
+              MenuProps: { PaperProps: { sx: { maxHeight: 240 } } },
             }}
-            sx={{ 
-                minWidth: 180,
-                '& .MuiOutlinedInput-root': {
-                    bgcolor: 'background.neutral',
-                    '& fieldset': { border: 'none' },
-                    '&:hover fieldset': { border: 'none' },
-                    '&.Mui-focused fieldset': { border: 'none' },
-                    border: (theme) => `solid 1px ${theme.palette.divider}`,
-                    borderRadius: 1,
-                }
+            sx={{
+              minWidth: 180,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: 'background.neutral',
+                '& fieldset': { border: 'none' },
+                '&:hover fieldset': { border: 'none' },
+                '&.Mui-focused fieldset': { border: 'none' },
+                border: (theme) => `solid 1px ${theme.palette.divider}`,
+                borderRadius: 1,
+              },
             }}
           >
             {LOCALE_OPTIONS.map((option) => (
@@ -183,4 +190,3 @@ export function SettingsCurrency({ data, onChange }: Props) {
     </Card>
   );
 }
-

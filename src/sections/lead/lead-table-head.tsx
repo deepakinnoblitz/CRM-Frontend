@@ -48,7 +48,15 @@ export function LeadTableHead({
         )}
 
         {showIndex && (
-          <TableCell align="center" sx={{ fontWeight: 800, color: 'text.secondary', width: 50, display: { xs: 'none', md: 'table-cell' } }}>
+          <TableCell
+            align="center"
+            sx={{
+              fontWeight: 800,
+              color: 'text.secondary',
+              width: 50,
+              display: { xs: 'none', md: 'table-cell' },
+            }}
+          >
             S.No
           </TableCell>
         )}

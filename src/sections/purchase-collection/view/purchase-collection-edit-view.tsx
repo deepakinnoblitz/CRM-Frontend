@@ -17,61 +17,49 @@ import PurchaseCollectionNewEditForm from '../purchase-collection-new-edit-form'
 // ----------------------------------------------------------------------
 
 export function PurchaseCollectionEditView() {
-    const params = useParams();
-    const { id } = params;
-    const router = useRouter();
-    const formRef = useRef<any>(null);
+  const params = useParams();
+  const { id } = params;
+  const router = useRouter();
+  const formRef = useRef<any>(null);
 
-    const [currentPurchaseCollection, setCurrentPurchaseCollection] = useState<PurchaseCollection>();
-    const [loading, setLoading] = useState(false);
+  const [currentPurchaseCollection, setCurrentPurchaseCollection] = useState<PurchaseCollection>();
+  const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (id) {
-            getPurchaseCollection(id as string).then(setCurrentPurchaseCollection);
-        }
-    }, [id]);
+  useEffect(() => {
+    if (id) {
+      getPurchaseCollection(id as string).then(setCurrentPurchaseCollection);
+    }
+  }, [id]);
 
-    const handleSave = () => {
-        if (formRef.current) {
-            formRef.current.handleSubmit();
-        }
-    };
+  const handleSave = () => {
+    if (formRef.current) {
+      formRef.current.handleSubmit();
+    }
+  };
 
-    const handleCancel = () => {
-        router.push('/purchase?tab=collections');
-    };
+  const handleCancel = () => {
+    router.push('/purchase?tab=collections');
+  };
 
-    return (
-        <DashboardContent maxWidth={false}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">
-                    Edit Settlement: {currentPurchaseCollection?.name}
-                </Typography>
-                <Stack direction="row" spacing={2}>
-                    <Button
-                        variant="outlined"
-                        color="inherit"
-                        onClick={handleCancel}
-                        disabled={loading}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleSave}
-                        disabled={loading}
-                    >
-                        {loading ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                </Stack>
-            </Stack>
+  return (
+    <DashboardContent maxWidth={false}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+        <Typography variant="h4">Edit Settlement: {currentPurchaseCollection?.name}</Typography>
+        <Stack direction="row" spacing={2}>
+          <Button variant="outlined" color="inherit" onClick={handleCancel} disabled={loading}>
+            Cancel
+          </Button>
+          <Button variant="contained" color="primary" onClick={handleSave} disabled={loading}>
+            {loading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </Stack>
+      </Stack>
 
-            <PurchaseCollectionNewEditForm
-                ref={formRef}
-                currentPurchaseCollection={currentPurchaseCollection}
-                onLoadingChange={setLoading}
-            />
-        </DashboardContent>
-    );
+      <PurchaseCollectionNewEditForm
+        ref={formRef}
+        currentPurchaseCollection={currentPurchaseCollection}
+        onLoadingChange={setLoading}
+      />
+    </DashboardContent>
+  );
 }

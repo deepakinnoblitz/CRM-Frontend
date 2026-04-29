@@ -1,4 +1,3 @@
-
 import { CONFIG } from 'src/config-global';
 
 import { PurchaseCollectionDetailsView } from 'src/sections/purchase-collection/view/purchase-collection-details-view';
@@ -6,11 +5,11 @@ import { PurchaseCollectionDetailsView } from 'src/sections/purchase-collection/
 // ----------------------------------------------------------------------
 
 export default function PurchaseCollectionDetailsPage() {
-    return (
-        <>
-            <title>{`Purchase Collection Details - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Purchase Collection Details - ${CONFIG.appName}`}</title>
 
-            <PurchaseCollectionDetailsView />
-        </>
-    );
+      <PurchaseCollectionDetailsView />
+    </>
+  );
 }

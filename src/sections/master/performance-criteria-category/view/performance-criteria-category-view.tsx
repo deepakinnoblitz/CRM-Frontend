@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
@@ -51,16 +50,20 @@ export function PerformanceCriteriaCategoryView() {
   const [filterName, setFilterName] = useState('');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [orderBy, setOrderBy] = useState('modified');
-  
+
   const [openForm, setOpenForm] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  
+
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: string | null }>({
     open: false,
     id: null,
   });
 
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({
     open: false,
     message: '',
     severity: 'success',
@@ -104,7 +107,11 @@ export function PerformanceCriteriaCategoryView() {
         setSnackbar({ open: true, message: 'Category deleted successfully', severity: 'success' });
         refetch();
       } catch (error: any) {
-        setSnackbar({ open: true, message: error.message || 'Failed to delete', severity: 'error' });
+        setSnackbar({
+          open: true,
+          message: error.message || 'Failed to delete',
+          severity: 'error',
+        });
       } finally {
         setConfirmDelete({ open: false, id: null });
       }
@@ -166,23 +173,20 @@ export function PerformanceCriteriaCategoryView() {
                   />
                 ))}
 
-                <TableEmptyRows
-                    height={68}
-                    emptyRows={data.length < 5 ? 5 - data.length : 0}
-                />
+                <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
 
                 {notFound && <TableNoData searchQuery={filterName} />}
 
                 {empty && (
-                    <TableRow>
-                        <TableCell colSpan={6} sx={{ py: 10 }}>
-                            <EmptyContent
-                                title="No Categories Found"
-                                description="It looks like there are no categories yet."
-                                icon="solar:bill-list-bold-duotone"
-                            />
-                        </TableCell>
-                    </TableRow>
+                  <TableRow>
+                    <TableCell colSpan={6} sx={{ py: 10 }}>
+                      <EmptyContent
+                        title="No Categories Found"
+                        description="It looks like there are no categories yet."
+                        icon="solar:bill-list-bold-duotone"
+                      />
+                    </TableCell>
+                  </TableRow>
                 )}
               </TableBody>
             </Table>
@@ -226,7 +230,11 @@ export function PerformanceCriteriaCategoryView() {
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%', whiteSpace: 'pre-line' }}>
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%', whiteSpace: 'pre-line' }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

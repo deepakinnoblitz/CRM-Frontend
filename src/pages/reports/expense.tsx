@@ -5,10 +5,10 @@ import { ExpenseReportView } from 'src/sections/report/expense/view/expense-repo
 // ----------------------------------------------------------------------
 
 export default function ExpenseReportPage() {
-    return (
-        <>
-            <title>{`Expense Report - ${CONFIG.appName}`}</title>
-            <ExpenseReportView />
-        </>
-    );
+  return (
+    <>
+      <title>{`Expense Report - ${CONFIG.appName}`}</title>
+      <ExpenseReportView />
+    </>
+  );
 }

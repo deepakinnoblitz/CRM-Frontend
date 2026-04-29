@@ -33,7 +33,10 @@ export function fNumber(inputValue: InputNumberValue, options?: Options & { loca
 
 // ----------------------------------------------------------------------
 
-export function fCurrency(inputValue: InputNumberValue, options?: Options & { locale?: string; currency?: string }) {
+export function fCurrency(
+  inputValue: InputNumberValue,
+  options?: Options & { locale?: string; currency?: string }
+) {
   const code = options?.locale || DEFAULT_LOCALE.code;
   const currency = options?.currency || DEFAULT_LOCALE.currency;
 
@@ -42,7 +45,7 @@ export function fCurrency(inputValue: InputNumberValue, options?: Options & { lo
 
   const fm = new Intl.NumberFormat(code, {
     style: 'currency',
-    currency: currency,
+    currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
     ...options,
@@ -71,7 +74,10 @@ export function fPercent(inputValue: InputNumberValue, options?: Options & { loc
 
 // ----------------------------------------------------------------------
 
-export function fShortenNumber(inputValue: InputNumberValue, options?: Options & { locale?: string }) {
+export function fShortenNumber(
+  inputValue: InputNumberValue,
+  options?: Options & { locale?: string }
+) {
   const code = options?.locale || DEFAULT_LOCALE.code;
 
   const number = processInput(inputValue);

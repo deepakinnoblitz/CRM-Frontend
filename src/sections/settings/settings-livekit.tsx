@@ -4,7 +4,6 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
-import InputAdornment from '@mui/material/InputAdornment';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -75,7 +74,8 @@ export function SettingsLiveKit({ data, onChange }: Props) {
                 borderRadius: 1.5,
                 alignItems: 'center',
                 justifyContent: 'center',
-                bgcolor: (theme) => (theme.palette.mode === 'light' ? `${item.color}14` : `${item.color}29`),
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'light' ? `${item.color}14` : `${item.color}29`,
                 color: item.color,
               }}
             >
@@ -96,16 +96,16 @@ export function SettingsLiveKit({ data, onChange }: Props) {
               placeholder={item.placeholder}
               value={data?.[item.fieldname] || ''}
               onChange={(event) => onChange(item.fieldname, event.target.value)}
-              sx={{ 
+              sx={{
                 maxWidth: 320,
                 '& .MuiOutlinedInput-root': {
-                    bgcolor: 'background.neutral',
-                    '& fieldset': { border: 'none' },
-                    '&:hover fieldset': { border: 'none' },
-                    '&.Mui-focused fieldset': { border: 'none' },
-                    border: (theme) => `solid 1px ${theme.palette.divider}`,
-                    borderRadius: 1,
-                }
+                  bgcolor: 'background.neutral',
+                  '& fieldset': { border: 'none' },
+                  '&:hover fieldset': { border: 'none' },
+                  '&.Mui-focused fieldset': { border: 'none' },
+                  border: (theme) => `solid 1px ${theme.palette.divider}`,
+                  borderRadius: 1,
+                },
               }}
             />
           </Stack>

@@ -8,19 +8,22 @@ import { ErrorBoundary } from './routes/components';
 
 // ----------------------------------------------------------------------
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      Component: () => (
+        <App>
+          <Outlet />
+        </App>
+      ),
+      errorElement: <ErrorBoundary />,
+      children: routesSection,
+    },
+  ],
   {
-    Component: () => (
-      <App>
-        <Outlet />
-      </App>
-    ),
-    errorElement: <ErrorBoundary />,
-    children: routesSection,
-  },
-], {
-  basename: '/',
-});
+    basename: '/',
+  }
+);
 
 // ----------------------------------------------------------------------
 
@@ -36,7 +39,7 @@ window.addEventListener('beforeunload', (e) => {
     return undefined;
   }
 
-  // 3. Standard prompt setup. 
+  // 3. Standard prompt setup.
   // Custom message is ignored by modern browsers but 'returnValue' is required.
   const confirmationMessage = '\\o/';
   if (e) {

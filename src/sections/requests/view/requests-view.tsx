@@ -1,5 +1,4 @@
-import dayjs from 'dayjs';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -8,27 +7,19 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import Select from '@mui/material/Select';
-import Popover from '@mui/material/Popover';
 import Snackbar from '@mui/material/Snackbar';
-import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import InputLabel from '@mui/material/InputLabel';
 import DialogTitle from '@mui/material/DialogTitle';
-import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useSocket } from 'src/hooks/use-socket';
 import { useRequests } from 'src/hooks/useRequests';
@@ -37,7 +28,15 @@ import { getCurrentUserInfo } from 'src/api/auth';
 import { fetchEmployees } from 'src/api/employees';
 import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { createRequest, updateRequest, deleteRequest, getRequestPermissions, applyRequestWorkflowAction, updateRequestStatus, getRequest } from 'src/api/requests';
+import {
+  getRequest,
+  createRequest,
+  updateRequest,
+  deleteRequest,
+  updateRequestStatus,
+  getRequestPermissions,
+  applyRequestWorkflowAction,
+} from 'src/api/requests';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -81,7 +80,7 @@ export function RequestsView() {
 
   const [openFilters, setOpenFilters] = useState(false);
 
-  const effectiveEmployee = isHR ? (filterEmployee || 'all') : (user?.employee || 'all');
+  const effectiveEmployee = isHR ? filterEmployee || 'all' : user?.employee || 'all';
 
   const { data, total, refetch } = useRequests(
     page + 1,
@@ -99,7 +98,10 @@ export function RequestsView() {
   const [openCreate, setOpenCreate] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [currentRequest, setCurrentRequest] = useState<any>(null);
-  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: string | null }>({
+    open: false,
+    id: null,
+  });
 
   // Form state
   const [employeeId, setEmployeeId] = useState('');
@@ -117,7 +119,11 @@ export function RequestsView() {
   const [permissions, setPermissions] = useState({ read: false, write: false, delete: false });
 
   // Snackbar
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({
     open: false,
     message: '',
     severity: 'success',
@@ -149,13 +155,23 @@ export function RequestsView() {
     setOrder(ord as 'asc' | 'desc');
   };
 
-  const handleFilters = useCallback((update: Partial<{ status: string; employee: string | null; startDate: string | null; endDate: string | null }>) => {
-    if ('status' in update) setFilterStatus(update.status || 'all');
-    if ('employee' in update) setFilterEmployee(update.employee || null);
-    if ('startDate' in update) setStartDate(update.startDate || null);
-    if ('endDate' in update) setEndDate(update.endDate || null);
-    setPage(0);
-  }, []);
+  const handleFilters = useCallback(
+    (
+      update: Partial<{
+        status: string;
+        employee: string | null;
+        startDate: string | null;
+        endDate: string | null;
+      }>
+    ) => {
+      if ('status' in update) setFilterStatus(update.status || 'all');
+      if ('employee' in update) setFilterEmployee(update.employee || null);
+      if ('startDate' in update) setStartDate(update.startDate || null);
+      if ('endDate' in update) setEndDate(update.endDate || null);
+      setPage(0);
+    },
+    []
+  );
 
   const handleResetFilters = () => {
     setStartDate(null);
@@ -183,11 +199,19 @@ export function RequestsView() {
   const handleBulkDelete = async () => {
     try {
       await Promise.all(selected.map((name) => deleteRequest(name)));
-      setSnackbar({ open: true, message: `${selected.length} request(s) deleted successfully`, severity: 'success' });
+      setSnackbar({
+        open: true,
+        message: `${selected.length} request(s) deleted successfully`,
+        severity: 'success',
+      });
       setSelected([]);
       refetch();
     } catch (error: any) {
-      setSnackbar({ open: true, message: error.message || 'Failed to delete requests', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to delete requests',
+        severity: 'error',
+      });
     }
   };
 
@@ -234,26 +258,33 @@ export function RequestsView() {
     return Object.keys(errors).length === 0;
   };
 
-  const renderField = (fieldname: string, label: string, type: string = 'text', options: any[] = [], extraProps: any = {}, required: boolean = false) => {
+  const renderField = (
+    fieldname: string,
+    label: string,
+    type: string = 'text',
+    options: any[] = [],
+    extraProps: any = {},
+    required: boolean = false
+  ) => {
     const valueMap: Record<string, any> = {
       employeeId,
       subject,
-      message
+      message,
     };
 
     const onChangeMap: Record<string, any> = {
       employeeId: (val: any) => {
         setEmployeeId(val);
-        if (formErrors.employeeId) setFormErrors(prev => ({ ...prev, employeeId: '' }));
+        if (formErrors.employeeId) setFormErrors((prev) => ({ ...prev, employeeId: '' }));
       },
       subject: (val: any) => {
         setSubject(val);
-        if (formErrors.subject) setFormErrors(prev => ({ ...prev, subject: '' }));
+        if (formErrors.subject) setFormErrors((prev) => ({ ...prev, subject: '' }));
       },
       message: (val: any) => {
         setMessage(val);
-        if (formErrors.message) setFormErrors(prev => ({ ...prev, message: '' }));
-      }
+        if (formErrors.message) setFormErrors((prev) => ({ ...prev, message: '' }));
+      },
     };
 
     const commonProps = {
@@ -270,8 +301,8 @@ export function RequestsView() {
         '& .MuiFormLabel-asterisk': {
           color: 'red',
         },
-        ...extraProps.sx
-      }
+        ...extraProps.sx,
+      },
     };
 
     if (type === 'select' || type === 'link') {
@@ -324,7 +355,11 @@ export function RequestsView() {
       setSnackbar({ open: true, message: 'Request deleted successfully', severity: 'success' });
       refetch();
     } catch (error: any) {
-      setSnackbar({ open: true, message: error.message || 'Failed to delete request', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to delete request',
+        severity: 'error',
+      });
     } finally {
       setConfirmDelete({ open: false, id: null });
     }
@@ -336,7 +371,11 @@ export function RequestsView() {
       setSnackbar({ open: true, message: `Request ${action}ed successfully`, severity: 'success' });
       await refetch();
     } catch (error: any) {
-      setSnackbar({ open: true, message: error.message || `Failed to ${action} request`, severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: error.message || `Failed to ${action} request`,
+        severity: 'error',
+      });
     }
   };
 
@@ -345,7 +384,7 @@ export function RequestsView() {
       const request = await getRequest(id);
       // Assuming Request doctype has hr_query fields similar to Leave Application
       const fields = ['hr_query', 'hr_query_2', 'hr_query_3', 'hr_query_4', 'hr_query_5'];
-      const nextField = fields.find(f => !request[f]);
+      const nextField = fields.find((f) => !request[f]);
 
       if (!nextField) {
         throw new Error('Maximum clarification limit reached');
@@ -354,18 +393,23 @@ export function RequestsView() {
       const updateData = { [nextField]: clarificationMessage };
       await updateRequestStatus(id, 'Clarification Requested', updateData);
 
-      setSnackbar({ open: true, message: 'Clarification requested successfully', severity: 'success' });
+      setSnackbar({
+        open: true,
+        message: 'Clarification requested successfully',
+        severity: 'success',
+      });
       await refetch();
     } catch (error: any) {
-      setSnackbar({ open: true, message: error.message || 'Failed to request clarification', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to request clarification',
+        severity: 'error',
+      });
       throw error;
     }
   };
 
   const handleCreate = async () => {
-
-
-
     const requestData = {
       employee_id: employeeId.trim(),
       subject: subject.trim(),
@@ -376,7 +420,7 @@ export function RequestsView() {
       setSnackbar({
         open: true,
         message: 'Missing required information. Please check the highlighted fields.',
-        severity: 'error'
+        severity: 'error',
       });
       return;
     }
@@ -456,9 +500,14 @@ export function RequestsView() {
             { value: 'subject_desc', label: 'Subject: Z to A' },
           ]}
           onOpenFilter={() => setOpenFilters(true)}
-          canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all' || filterEmployee !== null}
+          canReset={
+            !!startDate ||
+            !!endDate ||
+            !!filterName ||
+            filterStatus !== 'all' ||
+            filterEmployee !== null
+          }
         />
-
 
         <Scrollbar>
           <TableContainer sx={{ overflow: 'unset' }}>
@@ -468,16 +517,17 @@ export function RequestsView() {
                 orderBy={orderBy}
                 rowCount={data.length}
                 numSelected={selected.length}
-
-
                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                 onSort={handleSort}
-
                 hideCheckbox
                 showIndex
                 headLabel={[
                   { id: 'employee_name', label: 'Employee Name' },
-                  { id: 'subject', label: 'Subject', sx: { display: { xs: 'none', md: 'table-cell' } } },
+                  {
+                    id: 'subject',
+                    label: 'Subject',
+                    sx: { display: { xs: 'none', md: 'table-cell' } },
+                  },
                   { id: 'workflow_state', label: 'Status' },
                   { id: '', label: '' },
                 ]}
@@ -498,11 +548,11 @@ export function RequestsView() {
                       creation: row.creation,
                       modified: row.modified,
                       owner: row.owner,
-                      hrQueryCount: [1, 2, 3, 4, 5].filter(i => {
+                      hrQueryCount: [1, 2, 3, 4, 5].filter((i) => {
                         const field = i === 1 ? 'hr_query' : `hr_query_${i}`;
                         return row[field] && String(row[field]).trim();
                       }).length,
-                      empReplyCount: [1, 2, 3, 4, 5].filter(i => {
+                      empReplyCount: [1, 2, 3, 4, 5].filter((i) => {
                         const field = i === 1 ? 'employee_reply' : `employee_reply_${i}`;
                         return row[field] && String(row[field]).trim();
                       }).length,
@@ -515,11 +565,11 @@ export function RequestsView() {
                     canEdit={permissions.write}
                     canDelete={permissions.delete}
                     onApplyAction={(action) => handleApplyAction(row.name, action)}
-                    onClarify={(clarificationMessage) => handleClarify(row.name, clarificationMessage)}
+                    onClarify={(clarificationMessage) =>
+                      handleClarify(row.name, clarificationMessage)
+                    }
                     isHR={isHR}
                   />
-
-
                 ))}
 
                 {notFound && <TableNoData searchQuery={filterName} />}
@@ -537,10 +587,7 @@ export function RequestsView() {
                 )}
 
                 {!empty && (
-                  <TableEmptyRows
-                    height={68}
-                    emptyRows={data.length < 5 ? 5 - data.length : 0}
-                  />
+                  <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
                 )}
               </TableBody>
             </Table>
@@ -560,8 +607,15 @@ export function RequestsView() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-
-        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <DialogTitle
+          sx={{
+            m: 0,
+            p: 2,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
           {isEdit ? 'Edit Request' : 'New Request'}
           <IconButton onClick={handleCloseCreate}>
             <Iconify icon="mingcute:close-line" />
@@ -602,7 +656,7 @@ export function RequestsView() {
                 value={employees.find((emp) => emp.name === employeeId) || null}
                 onChange={(event, newValue) => {
                   setEmployeeId(newValue?.name || '');
-                  if (formErrors.employeeId) setFormErrors(prev => ({ ...prev, employeeId: '' }));
+                  if (formErrors.employeeId) setFormErrors((prev) => ({ ...prev, employeeId: '' }));
                 }}
                 readOnly={!isHR && !isEdit}
                 disabled={!isHR && !isEdit}
@@ -639,17 +693,34 @@ export function RequestsView() {
                 )}
               />
             )}
-            {renderField('subject', 'Subject', 'text', [], { placeholder: 'Enter request subject' }, true)}
-            {renderField('message', 'Message', 'textarea', [], { placeholder: 'Enter request details' }, true)}
+            {renderField(
+              'subject',
+              'Subject',
+              'text',
+              [],
+              { placeholder: 'Enter request subject' },
+              true
+            )}
+            {renderField(
+              'message',
+              'Message',
+              'textarea',
+              [],
+              { placeholder: 'Enter request details' },
+              true
+            )}
           </Box>
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleCreate} variant="contained" sx={{ bgcolor: "#08a3cd", "&": { bgcolor: "#068fb3" } }}>
+          <Button
+            onClick={handleCreate}
+            variant="contained"
+            sx={{ bgcolor: '#08a3cd', '&': { bgcolor: '#068fb3' } }}
+          >
             {isEdit ? 'Update' : 'Submit'}
           </Button>
         </DialogActions>
-
       </Dialog>
 
       {/* View Dialog */}
@@ -679,7 +750,12 @@ export function RequestsView() {
         title="Confirm Delete"
         content="Are you sure you want to delete this request?"
         action={
-          <Button onClick={handleConfirmDelete} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            sx={{ borderRadius: 1.5, minWidth: 100 }}
+          >
             Delete
           </Button>
         }

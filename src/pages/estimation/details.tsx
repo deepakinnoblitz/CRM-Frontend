@@ -7,13 +7,13 @@ import { EstimationDetailsView } from 'src/sections/estimation/view';
 // ----------------------------------------------------------------------
 
 export default function EstimationDetailsPage() {
-    const { id } = useParams();
+  const { id } = useParams();
 
-    return (
-        <>
-            <title>{`Estimation details: ${id} - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Estimation details: ${id} - ${CONFIG.appName}`}</title>
 
-            <EstimationDetailsView />
-        </>
-    );
+      <EstimationDetailsView />
+    </>
+  );
 }

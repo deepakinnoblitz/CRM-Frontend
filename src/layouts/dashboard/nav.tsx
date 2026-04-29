@@ -128,7 +128,10 @@ export function NavContent({ data, slots, sx }: Omit<NavContentProps, 'workspace
             ...(Array.isArray(sx) ? sx : [sx]),
           ]}
         >
-          <List disablePadding sx={{ px: 2, gap: 1, display: 'flex', flexDirection: 'column', py: 1 }}>
+          <List
+            disablePadding
+            sx={{ px: 2, gap: 1, display: 'flex', flexDirection: 'column', py: 1 }}
+          >
             {data.map((item) => (
               <NavListItem key={item.title} item={item} pathname={pathname} />
             ))}
@@ -150,14 +153,14 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
     setOpen((prev) => !prev);
   }, []);
 
-  const isActived = item.path === pathname || (item.children && item.children.some(child => child.path === pathname));
+  const isActived =
+    item.path === pathname ||
+    (item.children && item.children.some((child) => child.path === pathname));
 
   const renderContent = (
     <ListItemButton
       disableGutters
-      {...(item.children
-        ? { onClick: handleToggle }
-        : { component: RouterLink, href: item.path })}
+      {...(item.children ? { onClick: handleToggle } : { component: RouterLink, href: item.path })}
       sx={[
         (theme) => ({
           pl: 2,
@@ -205,7 +208,17 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
         }),
       ]}
     >
-      <Box component="span" sx={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'inherit' }}>
+      <Box
+        component="span"
+        sx={{
+          width: 24,
+          height: 24,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'inherit',
+        }}
+      >
         {item.icon}
       </Box>
 
@@ -227,7 +240,7 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
             ml: 1,
             flexShrink: 0,
             transition: 'transform 0.2s',
-            ...(open && { transform: 'rotate(0deg)' })
+            ...(open && { transform: 'rotate(0deg)' }),
           }}
         />
       )}
@@ -240,24 +253,27 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
 
       {item.children && (
         <Collapse in={open} timeout="auto" unmountOnExit>
-          <List disablePadding sx={{
-            pl: 4,
-            mt: 0.5,
-            gap: 0.5,
-            display: 'flex',
-            flexDirection: 'column',
-            position: 'relative',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              left: 16,
-              top: 0,
-              bottom: 0,
-              width: 2,
-              bgcolor: (theme) => varAlpha(theme.vars.palette.grey['500Channel'], 0.12),
-              borderRadius: 1,
-            }
-          }}>
+          <List
+            disablePadding
+            sx={{
+              pl: 4,
+              mt: 0.5,
+              gap: 0.5,
+              display: 'flex',
+              flexDirection: 'column',
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                left: 16,
+                top: 0,
+                bottom: 0,
+                width: 2,
+                bgcolor: (theme) => varAlpha(theme.vars.palette.grey['500Channel'], 0.12),
+                borderRadius: 1,
+              },
+            }}
+          >
             {item.children.map((child: any) => {
               const isChildActived = child.path === pathname;
 
@@ -301,7 +317,8 @@ function NavListItem({ item, pathname }: { item: NavItem; pathname: string }) {
                       ...(isChildActived && {
                         opacity: 1,
                         transform: 'scale(1.3)',
-                        boxShadow: (theme) => `0 0 0 3px ${varAlpha(theme.vars.palette.primary.mainChannel, 0.2)}`,
+                        boxShadow: (theme) =>
+                          `0 0 0 3px ${varAlpha(theme.vars.palette.primary.mainChannel, 0.2)}`,
                       }),
                     }}
                   />

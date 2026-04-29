@@ -5,11 +5,11 @@ import { PurchaseManagementView } from 'src/sections/purchase/view';
 // ----------------------------------------------------------------------
 
 export default function PurchaseListPage() {
-    return (
-        <>
-            <title>{`Purchases - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Purchases - ${CONFIG.appName}`}</title>
 
-            <PurchaseManagementView />
-        </>
-    );
+      <PurchaseManagementView />
+    </>
+  );
 }

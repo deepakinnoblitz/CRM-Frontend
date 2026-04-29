@@ -35,8 +35,6 @@ export function NavUpgrade({ sx, ...other }: StackProps) {
       >
         More features?
       </Typography>
-
-
     </Box>
   );
 }

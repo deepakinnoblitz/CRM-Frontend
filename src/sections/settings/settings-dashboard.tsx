@@ -3,10 +3,10 @@ import Grid from '@mui/material/Grid';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
+import { useTheme } from '@mui/material/styles';
 import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
-import { alpha, useTheme } from '@mui/material/styles';
 import { Box, Stack, Divider, InputAdornment } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
@@ -29,7 +29,7 @@ export function SettingsDashboard({ data, onChange }: Props) {
           <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
             <Typography variant="h6">Dashboard Configuration</Typography>
           </Stack>
-          
+
           <Grid container spacing={3}>
             <Grid size={{ xs: 12 }}>
               <FormControl fullWidth>
@@ -42,14 +42,26 @@ export function SettingsDashboard({ data, onChange }: Props) {
                   onChange={(e) => onChange('weekly_chart_source', e.target.value)}
                   startAdornment={
                     <InputAdornment position="start">
-                      <Iconify icon={"solar:database-bold" as any} sx={{ color: 'text.disabled', ml: 1 }} />
+                      <Iconify
+                        icon={'solar:database-bold' as any}
+                        sx={{ color: 'text.disabled', ml: 1 }}
+                      />
                     </InputAdornment>
                   }
                 >
                   <MenuItem value="Attendance">Attendance (Standard Records)</MenuItem>
                   <MenuItem value="Daily Log">Daily Log (Dynamic Sessions)</MenuItem>
                 </Select>
-                <Typography variant="caption" sx={{ mt: 1.5, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    mt: 1.5,
+                    color: 'text.secondary',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                  }}
+                >
                   <Iconify icon="solar:info-circle-bold" width={16} />
                   Choose between official attendance records or real-time daily activity logs.
                 </Typography>
@@ -102,7 +114,10 @@ export function SettingsDashboard({ data, onChange }: Props) {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Iconify icon={"solar:minus-circle-bold" as any} sx={{ color: 'warning.main' }} />
+                      <Iconify
+                        icon={'solar:minus-circle-bold' as any}
+                        sx={{ color: 'warning.main' }}
+                      />
                     </InputAdornment>
                   ),
                   endAdornment: <InputAdornment position="end">hrs</InputAdornment>,

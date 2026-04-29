@@ -1,4 +1,3 @@
-
 import Box from '@mui/material/Box';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
@@ -27,7 +26,7 @@ export function TableNoData({ notFound, searchQuery }: Props) {
             width={64}
             sx={{ color: 'text.disabled', mb: 2, opacity: 0.48 }}
           />
-          
+
           <Typography variant="h6" sx={{ mb: 1, color: 'text.disabled' }}>
             No tasks found
           </Typography>

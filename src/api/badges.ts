@@ -6,7 +6,16 @@ import { handleFrappeError } from 'src/utils/api-error-handler';
 export async function fetchEmployeeBadges(employeeId: string) {
   const query = new URLSearchParams({
     doctype: 'Employee Badge Assignment',
-    fields: JSON.stringify(['name', 'employee', 'employee_name', 'badge', 'awarded_on', 'awarded_by', 'reason', 'badge.icon']),
+    fields: JSON.stringify([
+      'name',
+      'employee',
+      'employee_name',
+      'badge',
+      'awarded_on',
+      'awarded_by',
+      'reason',
+      'badge.icon',
+    ]),
     filters: JSON.stringify([['employee', '=', employeeId]]),
     order_by: 'awarded_on desc, `tabEmployee Badge Assignment`.creation desc',
   });
@@ -91,9 +100,12 @@ export async function assignBadge(data: any) {
 }
 
 export async function deleteBadge(name: string) {
-  const res = await frappeRequest(`/api/method/frappe.client.delete?doctype=Employee Badge&name=${name}`, {
-    method: 'DELETE',
-  });
+  const res = await frappeRequest(
+    `/api/method/frappe.client.delete?doctype=Employee Badge&name=${name}`,
+    {
+      method: 'DELETE',
+    }
+  );
 
   if (!res.ok) {
     const error = await res.json();
@@ -104,9 +116,12 @@ export async function deleteBadge(name: string) {
 }
 
 export async function deleteBadgeAssignment(name: string) {
-  const res = await frappeRequest(`/api/method/frappe.client.delete?doctype=Employee Badge Assignment&name=${name}`, {
-    method: 'DELETE',
-  });
+  const res = await frappeRequest(
+    `/api/method/frappe.client.delete?doctype=Employee Badge Assignment&name=${name}`,
+    {
+      method: 'DELETE',
+    }
+  );
 
   if (!res.ok) {
     const error = await res.json();

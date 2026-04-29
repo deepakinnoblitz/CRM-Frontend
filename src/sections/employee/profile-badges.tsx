@@ -1,12 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
+import { useTheme } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import { useTheme, alpha } from '@mui/material/styles';
 
 import { fetchEmployeeBadges } from 'src/api/badges';
 
@@ -99,7 +97,7 @@ export function ProfileBadges({ employeeId }: Props) {
             '&:hover': { bgcolor: 'background.neutral' },
           }}
         >
-          <Iconify icon={"eva:arrow-ios-back-fill" as any} width={24} />
+          <Iconify icon={'eva:arrow-ios-back-fill' as any} width={24} />
         </IconButton>
       )}
 
@@ -146,7 +144,7 @@ export function ProfileBadges({ employeeId }: Props) {
             '&:hover': { bgcolor: 'background.neutral' },
           }}
         >
-          <Iconify icon={"eva:arrow-ios-forward-fill" as any} width={24} />
+          <Iconify icon={'eva:arrow-ios-forward-fill' as any} width={24} />
         </IconButton>
       )}
     </Box>
@@ -161,7 +159,9 @@ function BadgeItem({ assignment }: { assignment: any }) {
       title={
         <Box sx={{ p: 1 }}>
           <Typography variant="subtitle2">{assignment.badge}</Typography>
-          <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>{assignment.reason || 'Achievement'}</Typography>
+          <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>
+            {assignment.reason || 'Achievement'}
+          </Typography>
           <Typography variant="caption" sx={{ color: 'text.disabled' }}>
             Awarded on: {assignment.awarded_on}
           </Typography>
@@ -205,7 +205,7 @@ function BadgeItem({ assignment }: { assignment: any }) {
             '&:hover': {
               transform: 'scale(1.05)',
               boxShadow: theme.customShadows.z8,
-            }
+            },
           }}
         >
           {assignment['badge.icon'] || assignment.badge_icon || assignment.icon ? (

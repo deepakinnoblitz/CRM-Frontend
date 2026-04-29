@@ -1,7 +1,7 @@
-import { Socket } from 'socket.io-client';
-import React, { useMemo, useContext, createContext } from 'react';
+import type { Socket } from 'socket.io-client';
+import type { UnreadCounts } from 'src/api/unread-counts';
 
-import { UnreadCounts } from 'src/api/unread-counts';
+import React, { useMemo, useContext, createContext } from 'react';
 
 import { useUnreadCounts } from './useUnreadCounts';
 
@@ -41,8 +41,6 @@ export function UnreadCountsProvider({ children, socket }: Props) {
   );
 
   return (
-    <UnreadCountsContext.Provider value={memoizedValue}>
-      {children}
-    </UnreadCountsContext.Provider>
+    <UnreadCountsContext.Provider value={memoizedValue}>{children}</UnreadCountsContext.Provider>
   );
 }

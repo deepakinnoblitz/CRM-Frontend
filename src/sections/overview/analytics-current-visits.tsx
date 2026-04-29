@@ -58,7 +58,7 @@ export function AnalyticsCurrentVisits({ title, subheader, chart, sx, ...other }
       sx={{
         border: (t) => `1px solid ${alpha(t.palette.grey[500], 0.08)}`,
         boxShadow: (t) => t.customShadows?.card,
-        ...sx
+        ...sx,
       }}
       {...other}
     >

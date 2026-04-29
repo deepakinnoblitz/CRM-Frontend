@@ -1,5 +1,4 @@
 import dayjs from 'dayjs';
-import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -20,273 +19,277 @@ import { Scrollbar } from 'src/components/scrollbar';
 // ----------------------------------------------------------------------
 
 type Props = {
-    open: boolean;
-    onOpen: () => void;
-    onClose: () => void;
-    filters: any;
-    onFilters: (update: any) => void;
-    canReset: boolean;
-    onResetFilters: () => void;
-    employeeOptions: any[];
-    isHR?: boolean;
+  open: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  filters: any;
+  onFilters: (update: any) => void;
+  canReset: boolean;
+  onResetFilters: () => void;
+  employeeOptions: any[];
+  isHR?: boolean;
 };
 
 export function AttendanceTableFiltersDrawer({
-    open,
-    onOpen,
-    onClose,
-    filters,
-    onFilters,
-    canReset,
-    onResetFilters,
-    employeeOptions,
-    isHR,
+  open,
+  onOpen,
+  onClose,
+  filters,
+  onFilters,
+  canReset,
+  onResetFilters,
+  employeeOptions,
+  isHR,
 }: Props) {
-    const renderHead = (
-        <Box
-            sx={{
-                py: 2.5,
-                pl: 3,
-                pr: 2,
-                display: 'flex',
-                alignItems: 'center',
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-            }}
-        >
-            <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
-                Filters
-            </Typography>
+  const renderHead = (
+    <Box
+      sx={{
+        py: 2.5,
+        pl: 3,
+        pr: 2,
+        display: 'flex',
+        alignItems: 'center',
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+      }}
+    >
+      <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
+        Filters
+      </Typography>
 
-            <IconButton
-                onClick={onResetFilters}
-                disabled={!canReset}
-                sx={{
-                    mr: 0.5,
-                    color: canReset ? 'primary.main' : 'text.disabled',
-                    '&:hover': {
-                        bgcolor: canReset ? 'primary.lighter' : 'transparent',
-                    },
-                }}
-            >
-                <Badge color="error" variant="dot" invisible={!canReset}>
-                    <Iconify icon="solar:restart-bold" width={20} />
-                </Badge>
-            </IconButton>
+      <IconButton
+        onClick={onResetFilters}
+        disabled={!canReset}
+        sx={{
+          mr: 0.5,
+          color: canReset ? 'primary.main' : 'text.disabled',
+          '&:hover': {
+            bgcolor: canReset ? 'primary.lighter' : 'transparent',
+          },
+        }}
+      >
+        <Badge color="error" variant="dot" invisible={!canReset}>
+          <Iconify icon="solar:restart-bold" width={20} />
+        </Badge>
+      </IconButton>
 
-            <IconButton
-                onClick={onClose}
-                sx={{
-                    color: 'text.secondary',
-                    '&:hover': {
-                        bgcolor: 'action.hover',
-                    },
-                }}
-            >
-                <Iconify icon="mingcute:close-line" width={20} />
-            </IconButton>
-        </Box>
-    );
+      <IconButton
+        onClick={onClose}
+        sx={{
+          color: 'text.secondary',
+          '&:hover': {
+            bgcolor: 'action.hover',
+          },
+        }}
+      >
+        <Iconify icon="mingcute:close-line" width={20} />
+      </IconButton>
+    </Box>
+  );
 
-    return (
-        <Drawer
-            anchor="right"
-            open={open}
-            onClose={onClose}
-            slotProps={{
-                paper: {
-                    sx: {
-                        width: 320,
-                        boxShadow: (theme: any) => theme.customShadows.z24,
-                    },
-                },
-            }}
-            sx={{
-                zIndex: (theme) => theme.zIndex.drawer + 100,
-            }}
-        >
-            {renderHead}
+  return (
+    <Drawer
+      anchor="right"
+      open={open}
+      onClose={onClose}
+      slotProps={{
+        paper: {
+          sx: {
+            width: 320,
+            boxShadow: (theme: any) => theme.customShadows.z24,
+          },
+        },
+      }}
+      sx={{
+        zIndex: (theme) => theme.zIndex.drawer + 100,
+      }}
+    >
+      {renderHead}
 
-            <Scrollbar>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Stack spacing={3} sx={{ p: 3 }}>
-
-                        {isHR && (
-                            <Stack spacing={1.5}>
-                                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                    Employee
-                                </Typography>
-                                <Autocomplete
-                                    fullWidth
-                                    options={['all', ...employeeOptions.map((e) => e.name)]}
-                                    getOptionLabel={(option) => {
-                                        if (option === 'all') return 'All Employees';
-                                        const employee = employeeOptions.find((e) => e.name === option);
-                                        return employee ? `${employee.employee_name} (${employee.name})` : option;
-                                    }}
-                                    value={filters.employee || 'all'}
-                                    onChange={(event, newValue) => onFilters({ employee: newValue === 'all' ? null : newValue })}
-                                    renderInput={(params) => (
-                                        <TextField
-                                            {...params}
-                                            placeholder="Search employee..."
-                                            size="small"
-                                            sx={{
-                                                '& .MuiOutlinedInput-root': {
-                                                    borderRadius: 1.5,
-                                                    bgcolor: 'background.neutral',
-                                                    '&:hover': {
-                                                        bgcolor: 'action.hover',
-                                                    },
-                                                },
-                                            }}
-                                        />
-                                    )}
-                                    renderOption={(props, option) => {
-                                        if (option === 'all') {
-                                            const { key, ...itemProps } = props as any;
-                                            return (
-                                                <li key="all" {...itemProps}>
-                                                    All Employees
-                                                </li>
-                                            );
-                                        }
-                                        const employee = employeeOptions.find((e) => e.name === option);
-                                        const { key, ...optionProps } = props as any;
-                                        return (
-                                            <li key={key} {...optionProps}>
-                                                <Stack spacing={0.5}>
-                                                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                                        {employee?.employee_name}
-                                                    </Typography>
-                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                                        ID: {employee?.name}
-                                                    </Typography>
-                                                </Stack>
-                                            </li>
-                                        );
-                                    }}
-                                />
-                            </Stack>
-                        )}
-
-                        <Stack spacing={1.5}>
-                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                Date Range
-                            </Typography>
-                            <Stack spacing={2}>
-                                <DatePicker
-                                    label="Start Date"
-                                    format="DD-MM-YYYY"
-                                    value={filters.startDate ? dayjs(filters.startDate) : null}
-                                    onChange={(newValue) => onFilters({ startDate: newValue ? newValue.format('YYYY-MM-DD') : null })}
-                                    slotProps={{
-                                        textField: {
-                                            fullWidth: true,
-                                            size: 'small',
-                                            sx: {
-                                                '& .MuiOutlinedInput-root': {
-                                                    borderRadius: 1.5,
-                                                    bgcolor: 'background.neutral',
-                                                    '&:hover': {
-                                                        bgcolor: 'action.hover',
-                                                    },
-                                                },
-                                            }
-                                        }
-                                    }}
-                                />
-                                <DatePicker
-                                    label="End Date"
-                                    format="DD-MM-YYYY"
-                                    value={filters.endDate ? dayjs(filters.endDate) : null}
-                                    onChange={(newValue) => onFilters({ endDate: newValue ? newValue.format('YYYY-MM-DD') : null })}
-                                    slotProps={{
-                                        textField: {
-                                            fullWidth: true,
-                                            size: 'small',
-                                            sx: {
-                                                '& .MuiOutlinedInput-root': {
-                                                    borderRadius: 1.5,
-                                                    bgcolor: 'background.neutral',
-                                                    '&:hover': {
-                                                        bgcolor: 'action.hover',
-                                                    },
-                                                },
-                                            }
-                                        }
-                                    }}
-                                />
-                            </Stack>
+      <Scrollbar>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <Stack spacing={3} sx={{ p: 3 }}>
+            {isHR && (
+              <Stack spacing={1.5}>
+                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                  Employee
+                </Typography>
+                <Autocomplete
+                  fullWidth
+                  options={['all', ...employeeOptions.map((e) => e.name)]}
+                  getOptionLabel={(option) => {
+                    if (option === 'all') return 'All Employees';
+                    const employee = employeeOptions.find((e) => e.name === option);
+                    return employee ? `${employee.employee_name} (${employee.name})` : option;
+                  }}
+                  value={filters.employee || 'all'}
+                  onChange={(event, newValue) =>
+                    onFilters({ employee: newValue === 'all' ? null : newValue })
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Search employee..."
+                      size="small"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1.5,
+                          bgcolor: 'background.neutral',
+                          '&:hover': {
+                            bgcolor: 'action.hover',
+                          },
+                        },
+                      }}
+                    />
+                  )}
+                  renderOption={(props, option) => {
+                    if (option === 'all') {
+                      const { key, ...itemProps } = props as any;
+                      return (
+                        <li key="all" {...itemProps}>
+                          All Employees
+                        </li>
+                      );
+                    }
+                    const employee = employeeOptions.find((e) => e.name === option);
+                    const { key, ...optionProps } = props as any;
+                    return (
+                      <li key={key} {...optionProps}>
+                        <Stack spacing={0.5}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                            {employee?.employee_name}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            ID: {employee?.name}
+                          </Typography>
                         </Stack>
+                      </li>
+                    );
+                  }}
+                />
+              </Stack>
+            )}
 
-                        <Stack spacing={1.5}>
-                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                Status
-                            </Typography>
-                            <TextField
-                                select
-                                fullWidth
-                                value={filters.status}
-                                onChange={(e) => onFilters({ status: e.target.value })}
-                                SelectProps={{ native: true }}
-                                size="small"
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        borderRadius: 1.5,
-                                        bgcolor: 'background.neutral',
-                                        '&:hover': {
-                                            bgcolor: 'action.hover',
-                                        },
-                                    },
-                                }}
-                            >
-                                <option value="all">All Status</option>
-                                <option value="Present">Present</option>
-                                <option value="Absent">Absent</option>
-                                <option value="Half Day">Half Day</option>
-                                <option value="On Leave">On Leave</option>
-                                <option value="Holiday">Holiday</option>
-                            </TextField>
-                        </Stack>
+            <Stack spacing={1.5}>
+              <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Date Range
+              </Typography>
+              <Stack spacing={2}>
+                <DatePicker
+                  label="Start Date"
+                  format="DD-MM-YYYY"
+                  value={filters.startDate ? dayjs(filters.startDate) : null}
+                  onChange={(newValue) =>
+                    onFilters({ startDate: newValue ? newValue.format('YYYY-MM-DD') : null })
+                  }
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      size: 'small',
+                      sx: {
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1.5,
+                          bgcolor: 'background.neutral',
+                          '&:hover': {
+                            bgcolor: 'action.hover',
+                          },
+                        },
+                      },
+                    },
+                  }}
+                />
+                <DatePicker
+                  label="End Date"
+                  format="DD-MM-YYYY"
+                  value={filters.endDate ? dayjs(filters.endDate) : null}
+                  onChange={(newValue) =>
+                    onFilters({ endDate: newValue ? newValue.format('YYYY-MM-DD') : null })
+                  }
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      size: 'small',
+                      sx: {
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1.5,
+                          bgcolor: 'background.neutral',
+                          '&:hover': {
+                            bgcolor: 'action.hover',
+                          },
+                        },
+                      },
+                    },
+                  }}
+                />
+              </Stack>
+            </Stack>
 
-                    </Stack>
-                </LocalizationProvider>
-            </Scrollbar>
-
-            <Box
+            <Stack spacing={1.5}>
+              <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                Status
+              </Typography>
+              <TextField
+                select
+                fullWidth
+                value={filters.status}
+                onChange={(e) => onFilters({ status: e.target.value })}
+                SelectProps={{ native: true }}
+                size="small"
                 sx={{
-                    p: 2.5,
-                    borderTop: '1px solid',
-                    borderColor: 'divider',
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1.5,
                     bgcolor: 'background.neutral',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
+                  },
                 }}
-            >
-                <Button
-                    fullWidth
-                    size="large"
-                    color="inherit"
-                    variant="outlined"
-                    onClick={onResetFilters}
-                    disabled={!canReset}
-                    startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
-                    sx={{
-                        borderRadius: 1.5,
-                        borderColor: 'divider',
-                        fontWeight: 600,
-                        '&:hover': {
-                            borderColor: 'error.main',
-                            color: 'error.main',
-                            bgcolor: 'error.lighter',
-                        },
-                        '&.Mui-disabled': {
-                            borderColor: 'divider',
-                        },
-                    }}
-                >
-                    Clear All Filters
-                </Button>
-            </Box>
-        </Drawer>
-    );
+              >
+                <option value="all">All Status</option>
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+                <option value="Half Day">Half Day</option>
+                <option value="On Leave">On Leave</option>
+                <option value="Holiday">Holiday</option>
+              </TextField>
+            </Stack>
+          </Stack>
+        </LocalizationProvider>
+      </Scrollbar>
+
+      <Box
+        sx={{
+          p: 2.5,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.neutral',
+        }}
+      >
+        <Button
+          fullWidth
+          size="large"
+          color="inherit"
+          variant="outlined"
+          onClick={onResetFilters}
+          disabled={!canReset}
+          startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+          sx={{
+            borderRadius: 1.5,
+            borderColor: 'divider',
+            fontWeight: 600,
+            '&:hover': {
+              borderColor: 'error.main',
+              color: 'error.main',
+              bgcolor: 'error.lighter',
+            },
+            '&.Mui-disabled': {
+              borderColor: 'divider',
+            },
+          }}
+        >
+          Clear All Filters
+        </Button>
+      </Box>
+    </Drawer>
+  );
 }

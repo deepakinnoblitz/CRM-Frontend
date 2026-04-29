@@ -32,7 +32,14 @@ type Props = {
   jobOptions: { name: string; job_title: string }[];
 };
 
-export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, jobOptions }: Props) {
+export function ReferralModal({
+  open,
+  onClose,
+  onSuccess,
+  onError,
+  selectedJob,
+  jobOptions,
+}: Props) {
   const [formData, setFormData] = useState({
     candidate_name: '',
     candidate_email: '',
@@ -69,11 +76,11 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
   const handlePhoneChange = (value: string) => {
     setFormData((prev) => ({ ...prev, candidate_phone: value }));
     if (errors.candidate_phone) {
-        setErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors.candidate_phone;
-            return newErrors;
-        });
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.candidate_phone;
+        return newErrors;
+      });
     }
   };
 
@@ -99,7 +106,7 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
         });
         const result = await res.json();
         const fileUrl = result.message?.file_url || result.file_url;
-        
+
         if (fileUrl) {
           setFormData((prev) => ({ ...prev, resume: fileUrl }));
         } else {
@@ -115,7 +122,6 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
     }
   };
 
-
   const handleClearFile = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -126,7 +132,7 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.candidate_name) newErrors.candidate_name = 'Candidate Name is required';
     if (!formData.candidate_email) {
       newErrors.candidate_email = 'Candidate Email is required';
@@ -160,7 +166,7 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
     try {
       const submissionData = {
         ...formData,
-        candidate_phone: formatPhoneNumber(formData.candidate_phone)
+        candidate_phone: formatPhoneNumber(formData.candidate_phone),
       };
       await submitReferral(submissionData);
 
@@ -177,7 +183,6 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
         notes: '',
       });
       setFileName(null);
-
     } catch (error: any) {
       console.error(error);
       onError(error.message || 'Failed to submit referral');
@@ -198,132 +203,157 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
       <DialogContent dividers>
         <Stack spacing={3} sx={{ pt: 1 }}>
           <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
-          <TextField
-            name="candidate_name"
-            label="Candidate Name *"
-            value={formData.candidate_name}
-            onChange={handleChange}
-            fullWidth
-            error={!!errors.candidate_name}
-            helperText={errors.candidate_name}
-          />
-          <TextField
-            name="candidate_email"
-            label="Candidate Email *"
-            value={formData.candidate_email}
-            onChange={handleChange}
-            fullWidth
-            error={!!errors.candidate_email}
-            helperText={errors.candidate_email}
-          />
-          <MuiTelInput
-            name="candidate_phone"
-            label="Candidate Phone"
-            defaultCountry="IN"
-            value={formData.candidate_phone}
-            onChange={handlePhoneChange}
-            fullWidth
-          />
-          <TextField
-            select
-            name="job_opening"
-            label="Job Opening *"
-            value={formData.job_opening}
-            onChange={handleChange}
-            fullWidth
-            disabled={!!selectedJob}
-            error={!!errors.job_opening}
-            helperText={errors.job_opening}
-          >
-            {jobOptions.map((option) => (
-              <MenuItem key={option.name} value={option.name}>
-                {option.job_title}
-              </MenuItem>
-            ))}
-          </TextField>
-          
-          <Box gridColumn="span 2">
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Resume (Attachment) <Box component="span" sx={{ color: 'error.main' }}>*</Box>
-            </Typography>
-            <Button
-              component="label"
+            <TextField
+              name="candidate_name"
+              label="Candidate Name *"
+              value={formData.candidate_name}
+              onChange={handleChange}
               fullWidth
-              variant="outlined"
-              sx={{
-                p: 3,
-                borderStyle: 'dashed',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-                alignItems: 'center',
-                color: (errors.resume ? 'error.main' : (fileName ? 'primary.main' : 'text.secondary')),
-                borderColor: errors.resume ? 'error.main' : 'divider',
-                bgcolor: (theme) => fileName ? alpha(theme.palette.primary.main, 0.04) : 'background.neutral',
-                '&:hover': {
-                  bgcolor: (theme) => alpha(fileName ? theme.palette.primary.main : theme.palette.text.primary, 0.08),
-                  borderColor: errors.resume ? 'error.main' : 'primary.main',
-                },
-              }}
+              error={!!errors.candidate_name}
+              helperText={errors.candidate_name}
+            />
+            <TextField
+              name="candidate_email"
+              label="Candidate Email *"
+              value={formData.candidate_email}
+              onChange={handleChange}
+              fullWidth
+              error={!!errors.candidate_email}
+              helperText={errors.candidate_email}
+            />
+            <MuiTelInput
+              name="candidate_phone"
+              label="Candidate Phone"
+              defaultCountry="IN"
+              value={formData.candidate_phone}
+              onChange={handlePhoneChange}
+              fullWidth
+            />
+            <TextField
+              select
+              name="job_opening"
+              label="Job Opening *"
+              value={formData.job_opening}
+              onChange={handleChange}
+              fullWidth
+              disabled={!!selectedJob}
+              error={!!errors.job_opening}
+              helperText={errors.job_opening}
             >
-              {uploading ? (
-                <Stack alignItems="center" spacing={1}>
-                  <CircularProgress size={24} color="inherit" />
-                  <Typography variant="caption">Uploading...</Typography>
-                </Stack>
-              ) : (
-                <>
-                  <Iconify icon={fileName ? "solar:document-bold-duotone" : "solar:upload-minimalistic-bold"} width={32} />
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {fileName || "Click to upload Resume (PDF, DOCX)"}
-                  </Typography>
-                </>
-              )}
-              {fileName && !uploading && (
-                <IconButton 
-                  size="small" 
-                  onClick={handleClearFile}
-                  sx={{ position: 'absolute', top: 8, right: 8 }}
+              {jobOptions.map((option) => (
+                <MenuItem key={option.name} value={option.name}>
+                  {option.job_title}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <Box gridColumn="span 2">
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Resume (Attachment){' '}
+                <Box component="span" sx={{ color: 'error.main' }}>
+                  *
+                </Box>
+              </Typography>
+              <Button
+                component="label"
+                fullWidth
+                variant="outlined"
+                sx={{
+                  p: 3,
+                  borderStyle: 'dashed',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                  alignItems: 'center',
+                  color: errors.resume
+                    ? 'error.main'
+                    : fileName
+                      ? 'primary.main'
+                      : 'text.secondary',
+                  borderColor: errors.resume ? 'error.main' : 'divider',
+                  bgcolor: (theme) =>
+                    fileName ? alpha(theme.palette.primary.main, 0.04) : 'background.neutral',
+                  '&:hover': {
+                    bgcolor: (theme) =>
+                      alpha(
+                        fileName ? theme.palette.primary.main : theme.palette.text.primary,
+                        0.08
+                      ),
+                    borderColor: errors.resume ? 'error.main' : 'primary.main',
+                  },
+                }}
+              >
+                {uploading ? (
+                  <Stack alignItems="center" spacing={1}>
+                    <CircularProgress size={24} color="inherit" />
+                    <Typography variant="caption">Uploading...</Typography>
+                  </Stack>
+                ) : (
+                  <>
+                    <Iconify
+                      icon={
+                        fileName ? 'solar:document-bold-duotone' : 'solar:upload-minimalistic-bold'
+                      }
+                      width={32}
+                    />
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {fileName || 'Click to upload Resume (PDF, DOCX)'}
+                    </Typography>
+                  </>
+                )}
+                {fileName && !uploading && (
+                  <IconButton
+                    size="small"
+                    onClick={handleClearFile}
+                    sx={{ position: 'absolute', top: 8, right: 8 }}
+                  >
+                    <Iconify icon="mingcute:close-line" width={16} />
+                  </IconButton>
+                )}
+                <input
+                  type="file"
+                  hidden
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                />
+              </Button>
+              {errors.resume && (
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'error.main', mt: 0.5, display: 'block' }}
                 >
-                  <Iconify icon="mingcute:close-line" width={16} />
-                </IconButton>
-              )}
-              <input type="file" hidden accept=".pdf,.doc,.docx" onChange={handleFileUpload} disabled={uploading} />
-            </Button>
-            {errors.resume && (
-                <Typography variant="caption" sx={{ color: 'error.main', mt: 0.5, display: 'block' }}>
-                    {errors.resume}
+                  {errors.resume}
                 </Typography>
-            )}
+              )}
+            </Box>
+
+            <TextField
+              name="relationship"
+              label="Relationship with Candidate"
+              value={formData.relationship}
+              onChange={handleChange}
+              fullWidth
+              sx={{ gridColumn: 'span 2' }}
+            />
+            <TextField
+              name="notes"
+              label="Notes"
+              value={formData.notes}
+              onChange={handleChange}
+              fullWidth
+              multiline
+              rows={3}
+              sx={{ gridColumn: 'span 2' }}
+            />
           </Box>
-
-
-          <TextField
-            name="relationship"
-            label="Relationship with Candidate"
-            value={formData.relationship}
-            onChange={handleChange}
-            fullWidth
-            sx={{ gridColumn: 'span 2' }}
-          />
-          <TextField
-            name="notes"
-            label="Notes"
-            value={formData.notes}
-            onChange={handleChange}
-            fullWidth
-            multiline
-            rows={3}
-            sx={{ gridColumn: 'span 2' }}
-          />
-        </Box>
         </Stack>
       </DialogContent>
 
       <DialogActions>
-        <Button 
-          onClick={handleSubmit} 
-          variant="contained" 
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
           disabled={uploading}
           loading={isSubmitting}
           sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}

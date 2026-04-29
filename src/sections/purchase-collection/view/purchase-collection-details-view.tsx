@@ -26,269 +26,419 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 // ----------------------------------------------------------------------
 
 export function PurchaseCollectionDetailsView() {
-    const { id } = useParams();
-    const router = useRouter();
+  const { id } = useParams();
+  const router = useRouter();
 
-    const [collection, setCollection] = useState<any>(null);
-    const [fetching, setFetching] = useState(true);
-    const [deleting, setDeleting] = useState(false);
-    const [isLatest, setIsLatest] = useState(false);
-    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  const [collection, setCollection] = useState<any>(null);
+  const [fetching, setFetching] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+  const [isLatest, setIsLatest] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error',
+  });
 
-    useEffect(() => {
-        if (id) {
-            getPurchaseCollection(id)
-                .then((data) => {
-                    setCollection(data);
-                    // Check if latest - fetch the most recent collection for this purchase
-                    fetch(`/api/method/frappe.client.get_list?doctype=Purchase Collection&fields=["name"]&filters=[["Purchase Collection","purchase","=","${data.purchase}"]]&order_by=collection_date desc&limit_page_length=1`, { credentials: 'include' })
-                        .then(res => res.json())
-                        .then(res => {
-                            if (res.message && res.message.length > 0) {
-                                setIsLatest(res.message[0].name === data.name);
-                            }
-                        })
-                        .catch(err => console.error('Failed to check if latest', err));
-                })
-                .catch((error) => {
-                    console.error('Failed to fetch collection:', error);
-                    setSnackbar({ open: true, message: 'Failed to load collection details', severity: 'error' });
-                })
-                .finally(() => setFetching(false));
-        }
-    }, [id]);
-
-    if (fetching) {
-        return (
-            <DashboardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                <CircularProgress />
-            </DashboardContent>
-        );
+  useEffect(() => {
+    if (id) {
+      getPurchaseCollection(id)
+        .then((data) => {
+          setCollection(data);
+          // Check if latest - fetch the most recent collection for this purchase
+          fetch(
+            `/api/method/frappe.client.get_list?doctype=Purchase Collection&fields=["name"]&filters=[["Purchase Collection","purchase","=","${data.purchase}"]]&order_by=collection_date desc&limit_page_length=1`,
+            { credentials: 'include' }
+          )
+            .then((res) => res.json())
+            .then((res) => {
+              if (res.message && res.message.length > 0) {
+                setIsLatest(res.message[0].name === data.name);
+              }
+            })
+            .catch((err) => console.error('Failed to check if latest', err));
+        })
+        .catch((error) => {
+          console.error('Failed to fetch collection:', error);
+          setSnackbar({
+            open: true,
+            message: 'Failed to load collection details',
+            severity: 'error',
+          });
+        })
+        .finally(() => setFetching(false));
     }
+  }, [id]);
 
-    if (!collection) {
-        return (
-            <DashboardContent maxWidth={false}>
-                <Typography variant="h4">Purchase Settlement not found</Typography>
-                <Button onClick={() => router.push('/purchase?tab=collections')} sx={{ mt: 3 }}>
-                    Go back to list
-                </Button>
-            </DashboardContent>
-        );
-    }
-
-    const {
-        purchase,
-        vendor,
-        vendor_name,
-        collection_date,
-        amount_to_pay,
-        amount_collected,
-        amount_pending,
-        mode_of_payment,
-        remarks,
-    } = collection;
-
-    const handleDelete = async () => {
-        if (!id) return;
-        try {
-            setDeleting(true);
-            await deletePurchaseCollection(id);
-            setSnackbar({ open: true, message: 'Collection deleted successfully', severity: 'success' });
-            setTimeout(() => router.push('/purchase?tab=collections'), 1500);
-        } catch (error) {
-            console.error('Failed to delete collection:', error);
-            setSnackbar({ open: true, message: 'Failed to delete collection', severity: 'error' });
-        } finally {
-            setDeleting(false);
-            setConfirmDeleteOpen(false);
-        }
-    };
-
+  if (fetching) {
     return (
-        <DashboardContent maxWidth={false}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">Purchase Settlement: {id}</Typography>
-                <Stack direction="row" spacing={2}>
-                    <Button
-                        variant="outlined"
-                        color="inherit"
-                        onClick={() => router.push('/purchase?tab=collections')}
-                        startIcon={<Iconify icon={"solar:arrow-left-bold" as any} />}
-                    >
-                        Back to List
-                    </Button>
-                    {isLatest && (
-                        <Button
-                            variant="contained"
-                            color="error"
-                            onClick={() => setConfirmDeleteOpen(true)}
-                            startIcon={<Iconify icon={"solar:trash-bin-trash-bold" as any} />}
-                        >
-                            Delete
-                        </Button>
-                    )}
-                    {isLatest && (
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={() => router.push(`/purchase-collections/${encodeURIComponent(id || '')}/edit`)}
-                            startIcon={<Iconify icon={"solar:pen-bold" as any} />}
-                        >
-                            Edit Settlement
-                        </Button>
-                    )}
-                </Stack>
+      <DashboardContent
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}
+      >
+        <CircularProgress />
+      </DashboardContent>
+    );
+  }
+
+  if (!collection) {
+    return (
+      <DashboardContent maxWidth={false}>
+        <Typography variant="h4">Purchase Settlement not found</Typography>
+        <Button onClick={() => router.push('/purchase?tab=collections')} sx={{ mt: 3 }}>
+          Go back to list
+        </Button>
+      </DashboardContent>
+    );
+  }
+
+  const {
+    purchase,
+    vendor,
+    vendor_name,
+    collection_date,
+    amount_to_pay,
+    amount_collected,
+    amount_pending,
+    mode_of_payment,
+    remarks,
+  } = collection;
+
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      setDeleting(true);
+      await deletePurchaseCollection(id);
+      setSnackbar({ open: true, message: 'Collection deleted successfully', severity: 'success' });
+      setTimeout(() => router.push('/purchase?tab=collections'), 1500);
+    } catch (error) {
+      console.error('Failed to delete collection:', error);
+      setSnackbar({ open: true, message: 'Failed to delete collection', severity: 'error' });
+    } finally {
+      setDeleting(false);
+      setConfirmDeleteOpen(false);
+    }
+  };
+
+  return (
+    <DashboardContent maxWidth={false}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+        <Typography variant="h4">Purchase Settlement: {id}</Typography>
+        <Stack direction="row" spacing={2}>
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={() => router.push('/purchase?tab=collections')}
+            startIcon={<Iconify icon={'solar:arrow-left-bold' as any} />}
+          >
+            Back to List
+          </Button>
+          {isLatest && (
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => setConfirmDeleteOpen(true)}
+              startIcon={<Iconify icon={'solar:trash-bin-trash-bold' as any} />}
+            >
+              Delete
+            </Button>
+          )}
+          {isLatest && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() =>
+                router.push(`/purchase-collections/${encodeURIComponent(id || '')}/edit`)
+              }
+              startIcon={<Iconify icon={'solar:pen-bold' as any} />}
+            >
+              Edit Settlement
+            </Button>
+          )}
+        </Stack>
+      </Stack>
+
+      <Card sx={{ p: 4, borderRadius: 2 }}>
+        <Stack spacing={4}>
+          {/* Header Info Sections */}
+          <Box
+            sx={{
+              display: 'grid',
+              columnGap: 4,
+              rowGap: 3,
+              gridTemplateColumns: {
+                xs: 'repeat(1, 1fr)',
+                sm: 'repeat(2, 1fr)',
+                md: 'repeat(3, 1fr)',
+              },
+            }}
+          >
+            {/* Purchase Section */}
+            <Stack spacing={1.5}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                sx={{ color: 'text.secondary' }}
+              >
+                <Iconify icon={'solar:document-text-bold-duotone' as any} width={20} />
+                <Typography
+                  variant="subtitle2"
+                  sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
+                >
+                  Purchase Details
+                </Typography>
+              </Stack>
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 1.5,
+                  bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                  border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                }}
+              >
+                <Typography variant="caption" color="text.disabled">
+                  Purchase Number
+                </Typography>
+                <Typography variant="subtitle1" color="primary.main" sx={{ mt: 0.5 }}>
+                  {purchase}
+                </Typography>
+                <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
+                <Typography variant="caption" color="text.disabled">
+                  Amount to Pay
+                </Typography>
+                <Typography variant="h6" sx={{ mt: 0.5 }}>
+                  {fCurrency(amount_to_pay)}
+                </Typography>
+              </Box>
             </Stack>
 
-            <Card sx={{ p: 4, borderRadius: 2 }}>
-                <Stack spacing={4}>
-                    {/* Header Info Sections */}
-                    <Box
-                        sx={{
-                            display: 'grid',
-                            columnGap: 4,
-                            rowGap: 3,
-                            gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-                        }}
-                    >
-                        {/* Purchase Section */}
-                        <Stack spacing={1.5}>
-                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                                <Iconify icon={"solar:document-text-bold-duotone" as any} width={20} />
-                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Purchase Details</Typography>
-                            </Stack>
-                            <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                                <Typography variant="caption" color="text.disabled">Purchase Number</Typography>
-                                <Typography variant="subtitle1" color="primary.main" sx={{ mt: 0.5 }}>{purchase}</Typography>
-                                <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
-                                <Typography variant="caption" color="text.disabled">Amount to Pay</Typography>
-                                <Typography variant="h6" sx={{ mt: 0.5 }}>{fCurrency(amount_to_pay)}</Typography>
-                            </Box>
-                        </Stack>
-
-                        {/* Vendor Section */}
-                        <Stack spacing={1.5}>
-                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                                <Iconify icon={"solar:user-rounded-bold-duotone" as any} width={20} />
-                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Vendor Details</Typography>
-                            </Stack>
-                            <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                                <Typography variant="caption" color="text.disabled">Vendor ID</Typography>
-                                <Typography variant="subtitle2" sx={{ mt: 0.5 }}>{vendor}</Typography>
-                                <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
-                                <Typography variant="caption" color="text.disabled">Name</Typography>
-                                <Typography variant="body2" sx={{ mt: 0.5 }}>{vendor_name || '-'}</Typography>
-                            </Box>
-                        </Stack>
-
-                        {/* Collection Details Section */}
-                        <Stack spacing={1.5}>
-                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                                <Iconify icon={"solar:calendar-bold-duotone" as any} width={20} />
-                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Collection Info</Typography>
-                            </Stack>
-                            <Stack spacing={2} sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Collection Date</Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{collection_date}</Typography>
-                                </Stack>
-                                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Payment Mode</Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{mode_of_payment}</Typography>
-                                </Stack>
-                            </Stack>
-                        </Stack>
-                    </Box>
-
-                    {/* Payment Summary */}
-                    <Box>
-                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2, color: 'text.secondary' }}>
-                            <Iconify icon={"solar:wad-of-money-bold-duotone" as any} width={20} />
-                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Payment Summary</Typography>
-                        </Stack>
-                        <Stack spacing={2} sx={{ p: 3, borderRadius: 2, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                            <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography variant="body2" color="text.secondary">Amount to Pay</Typography>
-                                <Typography variant="subtitle2">{fCurrency(amount_to_pay)}</Typography>
-                            </Stack>
-                            <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                    <Iconify icon={"solar:hand-money-bold-duotone" as any} width={16} sx={{ color: 'success.main' }} />
-                                    <Typography variant="body2" color="text.secondary">Amount Collected</Typography>
-                                </Stack>
-                                <Typography variant="subtitle2" color="success.main">{fCurrency(amount_collected)}</Typography>
-                            </Stack>
-                            <Divider sx={{ borderStyle: 'dashed' }} />
-                            <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                    <Iconify icon={"solar:wallet-2-bold-duotone" as any} width={20} sx={{ color: (amount_pending || 0) > 0 ? 'error.main' : 'success.main' }} />
-                                    <Typography variant="subtitle1" sx={{ color: (amount_pending || 0) > 0 ? 'error.main' : 'success.main' }}>Amount Pending</Typography>
-                                </Stack>
-                                <Typography variant="h5" color={(amount_pending || 0) > 0 ? "error.main" : "success.main"}>{fCurrency(amount_pending)}</Typography>
-                            </Stack>
-                        </Stack>
-                    </Box>
-
-                    {/* Remarks Section */}
-                    {remarks && (
-                        <Stack spacing={1}>
-                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                                <Iconify icon={"solar:notes-bold-duotone" as any} width={20} />
-                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Remarks</Typography>
-                            </Stack>
-                            <Typography variant="body2" sx={{
-                                p: 2,
-                                borderRadius: 1.5,
-                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
-                                border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
-                                whiteSpace: 'pre-wrap',
-                                minHeight: 80,
-                                color: 'text.secondary'
-                            }}>
-                                {remarks}
-                            </Typography>
-                        </Stack>
-                    )}
-                </Stack>
-            </Card>
-
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={6000}
-                onClose={() => setSnackbar({ ...snackbar, open: false })}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-                <Alert
-                    severity={snackbar.severity}
-                    sx={{
-                        width: '100%',
-                        boxShadow: (theme) => theme.customShadows.z20
-                    }}
+            {/* Vendor Section */}
+            <Stack spacing={1.5}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                sx={{ color: 'text.secondary' }}
+              >
+                <Iconify icon={'solar:user-rounded-bold-duotone' as any} width={20} />
+                <Typography
+                  variant="subtitle2"
+                  sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
                 >
-                    <AlertTitle>{snackbar.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
+                  Vendor Details
+                </Typography>
+              </Stack>
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 1.5,
+                  bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                  border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                }}
+              >
+                <Typography variant="caption" color="text.disabled">
+                  Vendor ID
+                </Typography>
+                <Typography variant="subtitle2" sx={{ mt: 0.5 }}>
+                  {vendor}
+                </Typography>
+                <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
+                <Typography variant="caption" color="text.disabled">
+                  Name
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 0.5 }}>
+                  {vendor_name || '-'}
+                </Typography>
+              </Box>
+            </Stack>
 
-            <ConfirmDialog
-                open={confirmDeleteOpen}
-                onClose={() => !deleting && setConfirmDeleteOpen(false)}
-                title="Confirm Delete"
-                content="Are you sure you want to delete this purchase settlement?"
-                action={
-                    <Button
-                        variant="contained"
-                        color="error"
-                        onClick={handleDelete}
-                        disabled={deleting}
-                        sx={{ borderRadius: 1.5, minWidth: 100 }}
-                    >
-                        {deleting ? 'Deleting...' : 'Delete'}
-                    </Button>
-                }
-            />
-        </DashboardContent>
-    );
+            {/* Collection Details Section */}
+            <Stack spacing={1.5}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                sx={{ color: 'text.secondary' }}
+              >
+                <Iconify icon={'solar:calendar-bold-duotone' as any} width={20} />
+                <Typography
+                  variant="subtitle2"
+                  sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
+                >
+                  Collection Info
+                </Typography>
+              </Stack>
+              <Stack
+                spacing={2}
+                sx={{
+                  p: 2,
+                  borderRadius: 1.5,
+                  bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                  border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                }}
+              >
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="caption" color="text.disabled">
+                    Collection Date
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>
+                    {collection_date}
+                  </Typography>
+                </Stack>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="caption" color="text.disabled">
+                    Payment Mode
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>
+                    {mode_of_payment}
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Stack>
+          </Box>
+
+          {/* Payment Summary */}
+          <Box>
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={1}
+              sx={{ mb: 2, color: 'text.secondary' }}
+            >
+              <Iconify icon={'solar:wad-of-money-bold-duotone' as any} width={20} />
+              <Typography
+                variant="subtitle2"
+                sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
+              >
+                Payment Summary
+              </Typography>
+            </Stack>
+            <Stack
+              spacing={2}
+              sx={{
+                p: 3,
+                borderRadius: 2,
+                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+              }}
+            >
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">
+                  Amount to Pay
+                </Typography>
+                <Typography variant="subtitle2">{fCurrency(amount_to_pay)}</Typography>
+              </Stack>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Iconify
+                    icon={'solar:hand-money-bold-duotone' as any}
+                    width={16}
+                    sx={{ color: 'success.main' }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    Amount Collected
+                  </Typography>
+                </Stack>
+                <Typography variant="subtitle2" color="success.main">
+                  {fCurrency(amount_collected)}
+                </Typography>
+              </Stack>
+              <Divider sx={{ borderStyle: 'dashed' }} />
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Iconify
+                    icon={'solar:wallet-2-bold-duotone' as any}
+                    width={20}
+                    sx={{ color: (amount_pending || 0) > 0 ? 'error.main' : 'success.main' }}
+                  />
+                  <Typography
+                    variant="subtitle1"
+                    sx={{ color: (amount_pending || 0) > 0 ? 'error.main' : 'success.main' }}
+                  >
+                    Amount Pending
+                  </Typography>
+                </Stack>
+                <Typography
+                  variant="h5"
+                  color={(amount_pending || 0) > 0 ? 'error.main' : 'success.main'}
+                >
+                  {fCurrency(amount_pending)}
+                </Typography>
+              </Stack>
+            </Stack>
+          </Box>
+
+          {/* Remarks Section */}
+          {remarks && (
+            <Stack spacing={1}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                sx={{ color: 'text.secondary' }}
+              >
+                <Iconify icon={'solar:notes-bold-duotone' as any} width={20} />
+                <Typography
+                  variant="subtitle2"
+                  sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
+                >
+                  Remarks
+                </Typography>
+              </Stack>
+              <Typography
+                variant="body2"
+                sx={{
+                  p: 2,
+                  borderRadius: 1.5,
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                  border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                  whiteSpace: 'pre-wrap',
+                  minHeight: 80,
+                  color: 'text.secondary',
+                }}
+              >
+                {remarks}
+              </Typography>
+            </Stack>
+          )}
+        </Stack>
+      </Card>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          severity={snackbar.severity}
+          sx={{
+            width: '100%',
+            boxShadow: (theme) => theme.customShadows.z20,
+          }}
+        >
+          <AlertTitle>{snackbar.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onClose={() => !deleting && setConfirmDeleteOpen(false)}
+        title="Confirm Delete"
+        content="Are you sure you want to delete this purchase settlement?"
+        action={
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDelete}
+            disabled={deleting}
+            sx={{ borderRadius: 1.5, minWidth: 100 }}
+          >
+            {deleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        }
+      />
+    </DashboardContent>
+  );
 }

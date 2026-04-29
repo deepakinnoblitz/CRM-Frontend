@@ -5,11 +5,11 @@ import { PurchaseCollectionEditView } from 'src/sections/purchase-collection/vie
 // ----------------------------------------------------------------------
 
 export default function PurchaseCollectionEditPage() {
-    return (
-        <>
-            <title>{`Edit Purchase Collection - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Edit Purchase Collection - ${CONFIG.appName}`}</title>
 
-            <PurchaseCollectionEditView />
-        </>
-    );
+      <PurchaseCollectionEditView />
+    </>
+  );
 }

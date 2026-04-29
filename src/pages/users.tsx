@@ -5,11 +5,11 @@ import { UserManagementView } from 'src/sections/user/view';
 // ----------------------------------------------------------------------
 
 export default function Page() {
-    return (
-        <>
-            <title>{`Users - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Users - ${CONFIG.appName}`}</title>
 
-            <UserManagementView />
-        </>
-    );
+      <UserManagementView />
+    </>
+  );
 }

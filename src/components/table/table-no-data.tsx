@@ -8,32 +8,30 @@ import Typography from '@mui/material/Typography';
 // ----------------------------------------------------------------------
 
 type TableNoDataProps = TableRowProps & {
-    searchQuery?: string;
-    colSpan?: number;
+  searchQuery?: string;
+  colSpan?: number;
 };
 
 export function TableNoData({ searchQuery, colSpan = 12, ...other }: TableNoDataProps) {
-    return (
-        <TableRow {...other}>
-            <TableCell align="center" colSpan={colSpan}>
-                <Box sx={{ py: 15, textAlign: 'center' }}>
-                    <Typography variant="h6" sx={{ mb: 1 }}>
-                        Not found
-                    </Typography>
+  return (
+    <TableRow {...other}>
+      <TableCell align="center" colSpan={colSpan}>
+        <Box sx={{ py: 15, textAlign: 'center' }}>
+          <Typography variant="h6" sx={{ mb: 1 }}>
+            Not found
+          </Typography>
 
-                    {searchQuery ? (
-                        <Typography variant="body2">
-                            No results found for &nbsp;
-                            <strong>&quot;{searchQuery}&quot;</strong>.
-                            <br /> Try checking for typos or using complete words.
-                        </Typography>
-                    ) : (
-                        <Typography variant="body2">
-                            No data available
-                        </Typography>
-                    )}
-                </Box>
-            </TableCell>
-        </TableRow>
-    );
+          {searchQuery ? (
+            <Typography variant="body2">
+              No results found for &nbsp;
+              <strong>&quot;{searchQuery}&quot;</strong>.
+              <br /> Try checking for typos or using complete words.
+            </Typography>
+          ) : (
+            <Typography variant="body2">No data available</Typography>
+          )}
+        </Box>
+      </TableCell>
+    </TableRow>
+  );
 }

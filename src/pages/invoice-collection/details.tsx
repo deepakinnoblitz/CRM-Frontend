@@ -3,5 +3,5 @@ import { InvoiceCollectionDetailsView } from 'src/sections/invoice-collection/vi
 // ----------------------------------------------------------------------
 
 export default function Page() {
-    return <InvoiceCollectionDetailsView />;
+  return <InvoiceCollectionDetailsView />;
 }

@@ -5,10 +5,10 @@ import { AttendanceReportView } from 'src/sections/report/attendance/view/attend
 // ----------------------------------------------------------------------
 
 export default function AttendanceReportPage() {
-    return (
-        <>
-            <title>{`Attendance Report - ${CONFIG.appName}`}</title>
-            <AttendanceReportView />
-        </>
-    );
+  return (
+    <>
+      <title>{`Attendance Report - ${CONFIG.appName}`}</title>
+      <AttendanceReportView />
+    </>
+  );
 }

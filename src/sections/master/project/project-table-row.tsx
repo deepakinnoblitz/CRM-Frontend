@@ -5,7 +5,6 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
-import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -47,24 +46,25 @@ export function ProjectTableRow({
         <TableCell align="center">
           <Box
             sx={{
-                width: 28,
-                height: 28,
-                display: 'flex',
-                borderRadius: '50%',
-                alignItems: 'center',
-                justifyContent: 'center',
-                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                color: 'primary.main',
-                typography: 'subtitle2',
-                fontWeight: 800,
-                border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
-                mx: 'auto',
-                transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
-                '&:hover': {
-                    bgcolor: 'primary.main',
-                    color: 'primary.contrastText',
-                    transform: 'scale(1.1)',
-                },
+              width: 28,
+              height: 28,
+              display: 'flex',
+              borderRadius: '50%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+              color: 'primary.main',
+              typography: 'subtitle2',
+              fontWeight: 800,
+              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+              mx: 'auto',
+              transition: (theme) =>
+                theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+              '&:hover': {
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                transform: 'scale(1.1)',
+              },
             }}
           >
             {index + 1}
@@ -86,12 +86,8 @@ export function ProjectTableRow({
         </Typography>
       </TableCell>
 
-
-
       <TableCell align="right">
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-
-
           <IconButton size="small" onClick={onEditRow} sx={{ color: 'primary.main' }}>
             <Iconify icon="solar:pen-bold" />
           </IconButton>

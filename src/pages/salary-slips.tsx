@@ -5,10 +5,10 @@ import { SalarySlipsView } from 'src/sections/salary-slips/view/salary-slips-vie
 // ----------------------------------------------------------------------
 
 export default function SalarySlipsPage() {
-    return (
-        <>
-            <title>{`Salary Slip - ${CONFIG.appName}`}</title>
-            <SalarySlipsView />
-        </>
-    );
+  return (
+    <>
+      <title>{`Salary Slip - ${CONFIG.appName}`}</title>
+      <SalarySlipsView />
+    </>
+  );
 }

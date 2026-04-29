@@ -36,7 +36,18 @@ import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 import { CONFIG } from 'src/config-global';
 import { DashboardContent } from 'src/layouts/dashboard';
 import locationData from 'src/assets/data/location_data.json';
-import { getLead, createLead, updateLead, deleteLead, convertLead, getDoctypeList, getWorkflowStates, getWorkflowActions, applyWorkflowAction, type ConvertLeadResponse } from 'src/api/leads';
+import {
+  getLead,
+  createLead,
+  updateLead,
+  deleteLead,
+  convertLead,
+  getDoctypeList,
+  getWorkflowStates,
+  getWorkflowActions,
+  applyWorkflowAction,
+  type ConvertLeadResponse,
+} from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -56,7 +67,6 @@ import { LeadDetailsDialog } from '../../report/lead-details-dialog';
 import { LeadTableFiltersDrawer } from '../lead-table-filters-drawer';
 import { AccountDetailsDialog } from '../../report/account/account-details-dialog';
 import { ContactDetailsDialog } from '../../report/contact/contact-details-dialog';
-
 
 // ----------------------------------------------------------------------
 
@@ -131,9 +141,14 @@ export function LeadView() {
   // Filter-specific location options
   const [filterStateOptions, setFilterStateOptions] = useState<string[]>([]);
   const [filterCityOptions, setFilterCityOptions] = useState<string[]>([]);
-  const [workflowActions, setWorkflowActions] = useState<{ action: string; next_state: string }[]>([]);
+  const [workflowActions, setWorkflowActions] = useState<{ action: string; next_state: string }[]>(
+    []
+  );
   const [allWorkflowStates, setAllWorkflowStates] = useState<string[]>([]);
-  const [pendingWorkflowChange, setPendingWorkflowChange] = useState<{ action: string; next_state: string } | null>(null);
+  const [pendingWorkflowChange, setPendingWorkflowChange] = useState<{
+    action: string;
+    next_state: string;
+  } | null>(null);
 
   // Convert Lead State
   const [converting, setConverting] = useState(false);
@@ -142,7 +157,11 @@ export function LeadView() {
   // Alert & Dialog State
   const [openDelete, setOpenDelete] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({
     open: false,
     message: '',
     severity: 'success',
@@ -156,7 +175,11 @@ export function LeadView() {
   const [openConvertConfirm, setOpenConvertConfirm] = useState(false);
 
   // Permissions State
-  const [permissions, setPermissions] = useState<{ read: boolean; write: boolean; delete: boolean }>({
+  const [permissions, setPermissions] = useState<{
+    read: boolean;
+    write: boolean;
+    delete: boolean;
+  }>({
     read: true,
     write: true,
     delete: true,
@@ -212,20 +235,24 @@ export function LeadView() {
 
   useEffect(() => {
     // Fetch dropdown options on mount
-    getDoctypeList('Lead From').then((list) => setLeadsFromOptions(list.map((item: any) => item.name || item.label || String(item))));
-    getDoctypeList('Service').then((list) => setServiceOptions(list.map((item: any) => item.name || item.label || String(item))));
+    getDoctypeList('Lead From').then((list) =>
+      setLeadsFromOptions(list.map((item: any) => item.name || item.label || String(item)))
+    );
+    getDoctypeList('Service').then((list) =>
+      setServiceOptions(list.map((item: any) => item.name || item.label || String(item)))
+    );
 
     // Fetch Permissions
-    import('src/api/leads').then(api => {
+    import('src/api/leads').then((api) => {
       api.getLeadPermissions().then(setPermissions);
     });
 
     // Populate Country Options from local JSON (remove duplicates)
     const countries = Array.from(new Set(locationData.map((c: any) => c.country)));
-    setCountryOptions(["", ...countries]);
+    setCountryOptions(['', ...countries]);
 
     // Fetch workflow states
-    getWorkflowStates('Lead').then(workflowData => {
+    getWorkflowStates('Lead').then((workflowData) => {
       setAllWorkflowStates(workflowData.states);
     });
   }, []);
@@ -236,7 +263,7 @@ export function LeadView() {
       const countryData = locationData.find((c: any) => c.country === country);
       if (countryData) {
         const states = countryData.states.map((s: any) => s.name);
-        setStateOptions(["", ...states, "Others"]);
+        setStateOptions(['', ...states, 'Others']);
       } else {
         setStateOptions([]);
       }
@@ -256,9 +283,9 @@ export function LeadView() {
         if (countryData) {
           const stateData = countryData.states.find((s: any) => s.name === state);
           if (stateData) {
-            setCityOptions(["", ...stateData.cities, "Others"]);
+            setCityOptions(['', ...stateData.cities, 'Others']);
           } else {
-            setCityOptions(["Others"]);
+            setCityOptions(['Others']);
           }
         }
       }
@@ -273,7 +300,7 @@ export function LeadView() {
       const countryData = locationData.find((c: any) => c.country === filters.country);
       if (countryData) {
         const states = countryData.states.map((s: any) => s.name);
-        setFilterStateOptions([...states, "Others"]);
+        setFilterStateOptions([...states, 'Others']);
       } else {
         setFilterStateOptions([]);
       }
@@ -292,9 +319,9 @@ export function LeadView() {
         if (countryData) {
           const stateData = countryData.states.find((s: any) => s.name === filters.state);
           if (stateData) {
-            setFilterCityOptions([...stateData.cities, "Others"]);
+            setFilterCityOptions([...stateData.cities, 'Others']);
           } else {
-            setFilterCityOptions(["Others"]);
+            setFilterCityOptions(['Others']);
           }
         }
       }
@@ -312,7 +339,7 @@ export function LeadView() {
 
   const handleCloseCreate = () => {
     setOpenCreate(false);
-    setValidationErrors({});// Clear errors
+    setValidationErrors({}); // Clear errors
     setCurrentLeadId(null);
     setViewOnly(false);
     setCurrentTab('general');
@@ -365,7 +392,11 @@ export function LeadView() {
   const handleBulkDelete = async () => {
     try {
       await Promise.all(table.selected.map((id) => deleteLead(id)));
-      setSnackbar({ open: true, message: `${table.selected.length} leads deleted successfully`, severity: 'success' });
+      setSnackbar({
+        open: true,
+        message: `${table.selected.length} leads deleted successfully`,
+        severity: 'success',
+      });
       table.onSelectAllRows(false, []);
       await refetch();
     } catch (e: any) {
@@ -409,7 +440,7 @@ export function LeadView() {
       setSnackbar({
         open: true,
         message: `Please fill in mandatory fields: ${missingFields.join(', ')}`,
-        severity: 'error'
+        severity: 'error',
       });
       return;
     }
@@ -474,7 +505,6 @@ export function LeadView() {
     return val;
   };
 
-
   const handleEditRow = async (row: any) => {
     setViewOnly(false);
     setValidationErrors({}); // Clear errors when opening edit
@@ -510,7 +540,7 @@ export function LeadView() {
         setWorkflowActions(actions);
       }
     } catch (error) {
-      console.error("Failed to fetch full lead", error);
+      console.error('Failed to fetch full lead', error);
       // Fallback to list data if full fetch fails
       const fallbackRow = data.find((item) => item.name === leadId);
       if (fallbackRow) {
@@ -551,8 +581,16 @@ export function LeadView() {
     <>
       {/* CREATE LEAD DIALOG */}
       <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {viewOnly ? 'Lead Details' : (currentLeadId ? 'Edit Lead' : 'New Lead')}
+        <DialogTitle
+          sx={{
+            m: 0,
+            p: 2,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          {viewOnly ? 'Lead Details' : currentLeadId ? 'Edit Lead' : 'New Lead'}
           <IconButton
             aria-label="close"
             onClick={handleCloseCreate}
@@ -565,10 +603,7 @@ export function LeadView() {
         </DialogTitle>
 
         <Box sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs
-            value={currentTab}
-            onChange={(e, newValue) => setCurrentTab(newValue)}
-          >
+          <Tabs value={currentTab} onChange={(e, newValue) => setCurrentTab(newValue)}>
             <Tab label="General" value="general" />
             {currentLeadId && <Tab label="Pipeline" value="pipeline" />}
             {currentLeadId && <Tab label="Followups" value="followups" />}
@@ -593,7 +628,7 @@ export function LeadView() {
                 value={leadName}
                 onChange={(e) => {
                   setLeadName(e.target.value);
-                  if (e.target.value) setValidationErrors(prev => ({ ...prev, leadName: false }));
+                  if (e.target.value) setValidationErrors((prev) => ({ ...prev, leadName: false }));
                 }}
                 required
                 error={!!validationErrors.leadName}
@@ -606,7 +641,8 @@ export function LeadView() {
                 value={companyName}
                 onChange={(e) => {
                   setCompanyName(e.target.value);
-                  if (e.target.value) setValidationErrors(prev => ({ ...prev, companyName: false }));
+                  if (e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, companyName: false }));
                 }}
                 required
                 error={!!validationErrors.companyName}
@@ -629,17 +665,17 @@ export function LeadView() {
                 value={phoneNumber}
                 onChange={(newValue: string) => {
                   setPhoneNumber(newValue);
-                  if (newValue) setValidationErrors(prev => ({ ...prev, phoneNumber: false }));
+                  if (newValue) setValidationErrors((prev) => ({ ...prev, phoneNumber: false }));
                 }}
                 required
                 disabled={viewOnly}
                 error={!!validationErrors.phoneNumber}
                 sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
                   },
-                  "& .MuiInputLabel-root.Mui-disabled": {
-                    color: "rgba(0, 0, 0, 0.6)",
+                  '& .MuiInputLabel-root.Mui-disabled': {
+                    color: 'rgba(0, 0, 0, 0.6)',
                   },
                 }}
               />
@@ -653,7 +689,6 @@ export function LeadView() {
                 slotProps={{ input: { readOnly: viewOnly } }}
               />
 
-
               <TextField
                 select
                 fullWidth
@@ -661,7 +696,8 @@ export function LeadView() {
                 value={leadsType}
                 onChange={(e) => {
                   setLeadsType(e.target.value as any);
-                  if (e.target.value) setValidationErrors(prev => ({ ...prev, leadsType: false }));
+                  if (e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, leadsType: false }));
                 }}
                 required
                 disabled={viewOnly}
@@ -669,16 +705,17 @@ export function LeadView() {
                 SelectProps={{ native: true }}
                 InputLabelProps={{ shrink: true }}
                 sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
                   },
                 }}
               >
-                <option value="" disabled>Select</option>
+                <option value="" disabled>
+                  Select
+                </option>
                 <option value="Incoming">Incoming</option>
                 <option value="Outgoing">Outgoing</option>
               </TextField>
-
 
               <TextField
                 select
@@ -687,7 +724,8 @@ export function LeadView() {
                 value={leadsFrom}
                 onChange={(e) => {
                   setLeadsFrom(e.target.value);
-                  if (e.target.value) setValidationErrors(prev => ({ ...prev, leadsFrom: false }));
+                  if (e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, leadsFrom: false }));
                 }}
                 required
                 disabled={viewOnly}
@@ -695,17 +733,20 @@ export function LeadView() {
                 SelectProps={{ native: true }}
                 InputLabelProps={{ shrink: true }}
                 sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
                   },
                 }}
               >
-                <option value="" disabled>Select</option>
+                <option value="" disabled>
+                  Select
+                </option>
                 {leadsFromOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
                 ))}
               </TextField>
-
 
               <TextField
                 select
@@ -717,14 +758,18 @@ export function LeadView() {
                 SelectProps={{ native: true }}
                 InputLabelProps={{ shrink: true }}
                 sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
                   },
                 }}
               >
-                <option value="" disabled>Select</option>
+                <option value="" disabled>
+                  Select
+                </option>
                 {serviceOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
                 ))}
               </TextField>
 
@@ -738,14 +783,18 @@ export function LeadView() {
                 SelectProps={{ native: true }}
                 InputLabelProps={{ shrink: true }}
                 sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
                   },
                 }}
               >
-                <option value="" disabled>Select</option>
+                <option value="" disabled>
+                  Select
+                </option>
                 {countryOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
                 ))}
               </TextField>
 
@@ -759,14 +808,18 @@ export function LeadView() {
                 SelectProps={{ native: true }}
                 InputLabelProps={{ shrink: true }}
                 sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
                   },
                 }}
               >
-                <option value="" disabled>{!country ? 'Select Country First' : 'Select'}</option>
+                <option value="" disabled>
+                  {!country ? 'Select Country First' : 'Select'}
+                </option>
                 {stateOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
                 ))}
               </TextField>
 
@@ -780,14 +833,18 @@ export function LeadView() {
                 SelectProps={{ native: true }}
                 InputLabelProps={{ shrink: true }}
                 sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
                   },
                 }}
               >
-                <option value="" disabled>{!state ? 'Select State First' : 'Select'}</option>
+                <option value="" disabled>
+                  {!state ? 'Select State First' : 'Select'}
+                </option>
                 {cityOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
                 ))}
               </TextField>
 
@@ -835,7 +892,13 @@ export function LeadView() {
           {currentTab === 'pipeline' && (
             <>
               {workflowState !== 'Closed' && (
-                <Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+                <Stack
+                  direction="row"
+                  justifyContent="flex-end"
+                  alignItems="center"
+                  spacing={2}
+                  sx={{ mb: 2 }}
+                >
                   <Typography variant="subtitle2" sx={{ color: 'text.primary' }}>
                     Change Workflow
                   </Typography>
@@ -848,8 +911,8 @@ export function LeadView() {
                       sx={{
                         bgcolor: 'common.white',
                         '& .MuiSelect-select': {
-                          color: 'text.secondary'
-                        }
+                          color: 'text.secondary',
+                        },
                       }}
                     >
                       {workflowActions.map((action) => {
@@ -880,18 +943,12 @@ export function LeadView() {
                   setPendingWorkflowChange({ action: `Move to ${newStage}`, next_state: newStage });
                 }}
               />
-              <LeadPipelineTimeline
-                title="State History"
-                list={pipelineTimeline}
-              />
+              <LeadPipelineTimeline title="State History" list={pipelineTimeline} />
             </>
           )}
 
           {currentTab === 'followups' && (
-            <LeadFollowupDetails
-              title="Followup History"
-              list={followupDetails}
-            />
+            <LeadFollowupDetails title="Followup History" list={followupDetails} />
           )}
 
           {currentTab === 'convert' && (
@@ -924,8 +981,6 @@ export function LeadView() {
                 </Box>
               ) : convertResult ? (
                 <Box>
-
-
                   <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
                     <Stack spacing={2.5}>
                       <Box>
@@ -946,7 +1001,7 @@ export function LeadView() {
                           sx={{
                             fontWeight: 800,
                             color: 'primary.main',
-                            cursor: convertResult.account ? 'pointer' : 'default'
+                            cursor: convertResult.account ? 'pointer' : 'default',
                           }}
                           onClick={() => {
                             if (convertResult.account) {
@@ -979,7 +1034,7 @@ export function LeadView() {
                           sx={{
                             fontWeight: 800,
                             color: 'primary.main',
-                            cursor: convertResult.contact ? 'pointer' : 'default'
+                            cursor: convertResult.contact ? 'pointer' : 'default',
                           }}
                           onClick={() => {
                             if (convertResult.contact) {
@@ -1067,7 +1122,13 @@ export function LeadView() {
         <DialogActions>
           {!viewOnly && currentTab === 'general' && (
             <Button variant="contained" onClick={handleCreate} disabled={creating}>
-              {creating ? (currentLeadId ? 'Updating...' : 'Creating...') : (currentLeadId ? 'Update Lead' : 'Create Lead')}
+              {creating
+                ? currentLeadId
+                  ? 'Updating...'
+                  : 'Creating...'
+                : currentLeadId
+                  ? 'Update Lead'
+                  : 'Create Lead'}
             </Button>
           )}
         </DialogActions>
@@ -1084,9 +1145,13 @@ export function LeadView() {
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
-                startIcon={<Iconify icon={"solar:import-bold-duotone" as any} />}
+                startIcon={<Iconify icon={'solar:import-bold-duotone' as any} />}
                 onClick={() => setOpenImport(true)}
-                sx={{ color: '#08a3cd', borderColor: '#08a3cd', '&:hover': { borderColor: '#068fb3', bgcolor: 'rgba(8, 163, 205, 0.04)' } }}
+                sx={{
+                  color: '#08a3cd',
+                  borderColor: '#08a3cd',
+                  '&:hover': { borderColor: '#068fb3', bgcolor: 'rgba(8, 163, 205, 0.04)' },
+                }}
               >
                 Import
               </Button>
@@ -1094,7 +1159,11 @@ export function LeadView() {
                 variant="contained"
                 startIcon={<Iconify icon="mingcute:add-line" />}
                 onClick={handleOpenCreate}
-                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                sx={{
+                  bgcolor: '#08a3cd',
+                  color: 'common.white',
+                  '&:hover': { bgcolor: '#068fb3' },
+                }}
               >
                 New Lead
               </Button>
@@ -1143,9 +1212,7 @@ export function LeadView() {
                 />
 
                 <TableBody>
-                  {loading && (
-                    <TableEmptyRows height={68} emptyRows={5} />
-                  )}
+                  {loading && <TableEmptyRows height={68} emptyRows={5} />}
 
                   {!loading &&
                     data.map((row, index) => (
@@ -1234,7 +1301,12 @@ export function LeadView() {
         title="Confirm Delete"
         content="Are you sure you want to delete this lead?"
         action={
-          <Button onClick={handleConfirmDelete} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            sx={{ borderRadius: 1.5, minWidth: 100 }}
+          >
             Delete
           </Button>
         }
@@ -1269,12 +1341,20 @@ export function LeadView() {
                   const newActions = await getWorkflowActions('Lead', newStage);
                   setWorkflowActions(newActions);
                   await refetch(); // Refresh table data
-                  setSnackbar({ open: true, message: 'Workflow status updated successfully', severity: 'success' });
+                  setSnackbar({
+                    open: true,
+                    message: 'Workflow status updated successfully',
+                    severity: 'success',
+                  });
                 }
                 setPendingWorkflowChange(null);
               } catch (error: any) {
                 console.error('Failed to update workflow status:', error);
-                setSnackbar({ open: true, message: error.message || 'Failed to update workflow status', severity: 'error' });
+                setSnackbar({
+                  open: true,
+                  message: error.message || 'Failed to update workflow status',
+                  severity: 'error',
+                });
                 setPendingWorkflowChange(null);
               }
             }}
@@ -1320,7 +1400,7 @@ export function LeadView() {
                 setSnackbar({
                   open: true,
                   message: 'Company Name is required to convert lead',
-                  severity: 'error'
+                  severity: 'error',
                 });
                 return;
               }
@@ -1329,7 +1409,7 @@ export function LeadView() {
                 setSnackbar({
                   open: true,
                   message: 'Email or Phone Number is required to convert lead',
-                  severity: 'error'
+                  severity: 'error',
                 });
                 return;
               }
@@ -1344,13 +1424,15 @@ export function LeadView() {
                   setSnackbar({
                     open: true,
                     message: combinedMsg,
-                    severity: result.messages.some((m: any) => m.type === 'warning') ? 'warning' : 'success'
+                    severity: result.messages.some((m: any) => m.type === 'warning')
+                      ? 'warning'
+                      : 'success',
                   });
                 } else {
                   setSnackbar({
                     open: true,
                     message: 'Lead converted successfully!',
-                    severity: 'success'
+                    severity: 'success',
                   });
                 }
               } catch (error: any) {
@@ -1358,7 +1440,7 @@ export function LeadView() {
                 setSnackbar({
                   open: true,
                   message: error.message || 'Failed to convert lead',
-                  severity: 'error'
+                  severity: 'error',
                 });
               } finally {
                 setConverting(false);

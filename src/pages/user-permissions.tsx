@@ -7,11 +7,11 @@ import { UserPermissionView } from 'src/sections/user-permission/view';
 const metadata = { title: `User Permission - ${CONFIG.appName}` };
 
 export default function Page() {
-    return (
-        <>
-            <title> {metadata.title}</title>
+  return (
+    <>
+      <title> {metadata.title}</title>
 
-            <UserPermissionView />
-        </>
-    );
+      <UserPermissionView />
+    </>
+  );
 }

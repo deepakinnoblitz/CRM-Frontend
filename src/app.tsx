@@ -18,7 +18,6 @@ type AppProps = {
 export default function App({ children }: AppProps) {
   useScrollToTop();
 
-
   return (
     <AuthProvider>
       <ThemeProvider>

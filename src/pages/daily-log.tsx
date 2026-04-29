@@ -5,10 +5,10 @@ import { EmployeeDailyLogView } from 'src/sections/overview/view/employee-daily-
 // ----------------------------------------------------------------------
 
 export default function Page() {
-    return (
-        <>
-            <title> {`Employee Daily Log - ${CONFIG.appName}`}</title>
-            <EmployeeDailyLogView />
-        </>
-    );
+  return (
+    <>
+      <title> {`Employee Daily Log - ${CONFIG.appName}`}</title>
+      <EmployeeDailyLogView />
+    </>
+  );
 }

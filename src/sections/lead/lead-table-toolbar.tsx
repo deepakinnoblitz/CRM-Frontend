@@ -41,7 +41,6 @@ type LeadTableToolbarProps = {
   sortOptions?: { value: string; label: string }[];
 };
 
-
 const DEFAULT_SORT_OPTIONS = [
   { value: 'modified_desc', label: 'Newest First' },
   { value: 'modified_asc', label: 'Oldest First' },
@@ -84,7 +83,9 @@ export function LeadTableToolbar({
     handleSortClose();
   };
 
-  const currentSortLabel = sortOptions.find((opt: { value: string; label: string }) => opt.value === sortBy)?.label || 'Sort';
+  const currentSortLabel =
+    sortOptions.find((opt: { value: string; label: string }) => opt.value === sortBy)?.label ||
+    'Sort';
 
   return (
     <Toolbar
@@ -97,7 +98,7 @@ export function LeadTableToolbar({
         py: { xs: 2, md: 0 },
         p: (theme) => ({
           xs: theme.spacing(2, 2),
-          md: theme.spacing(0, 1, 0, 3)
+          md: theme.spacing(0, 1, 0, 3),
         }),
         justifyContent: 'space-between',
         ...(numSelected > 0 && {
@@ -111,14 +112,16 @@ export function LeadTableToolbar({
           {numSelected} selected
         </Typography>
       ) : (
-        <Box sx={{
-          display: 'flex',
-          gap: 2,
-          alignItems: 'center',
-          flexGrow: 1,
-          flexDirection: { xs: 'column', sm: 'row' },
-          width: '100%'
-        }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            alignItems: 'center',
+            flexGrow: 1,
+            flexDirection: { xs: 'column', sm: 'row' },
+            width: '100%',
+          }}
+        >
           <OutlinedInput
             fullWidth
             value={filterName}
@@ -143,9 +146,7 @@ export function LeadTableToolbar({
                 onChange={onFilterStatus}
                 size="medium"
               >
-                <MenuItem value="all">
-                  All {filterLabel}
-                </MenuItem>
+                <MenuItem value="all">All {filterLabel}</MenuItem>
                 {options.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
                     {option.label}
@@ -157,13 +158,15 @@ export function LeadTableToolbar({
         </Box>
       )}
 
-      <Box sx={{
-        display: 'flex',
-        gap: 1,
-        alignItems: 'center',
-        justifyContent: { xs: 'flex-start', md: 'flex-end' },
-        width: { xs: '100%', md: 'auto' }
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          alignItems: 'center',
+          justifyContent: { xs: 'flex-start', md: 'flex-end' },
+          width: { xs: '100%', md: 'auto' },
+        }}
+      >
         {numSelected > 0 ? (
           <Tooltip title="Delete">
             <IconButton onClick={onDelete}>
@@ -202,7 +205,7 @@ export function LeadTableToolbar({
                 <Button
                   variant="text"
                   color="inherit"
-                  startIcon={<Iconify icon={"solar:sort-bold" as any} />}
+                  startIcon={<Iconify icon={'solar:sort-bold' as any} />}
                   onClick={handleSortClick}
                   sx={{
                     flexGrow: { xs: 1, md: 0 },

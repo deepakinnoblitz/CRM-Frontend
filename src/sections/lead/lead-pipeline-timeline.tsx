@@ -20,70 +20,74 @@ import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 type Props = CardProps & {
-    title?: string;
-    subheader?: string;
-    list: {
-        name: string;
-        state_from: string;
-        state_to: string;
-        date_and_time: string;
-        change_by: string;
-    }[];
+  title?: string;
+  subheader?: string;
+  list: {
+    name: string;
+    state_from: string;
+    state_to: string;
+    date_and_time: string;
+    change_by: string;
+  }[];
 };
 
 export function LeadPipelineTimeline({ title, subheader, list, sx, ...other }: Props) {
-    return (
-        <Card sx={sx} {...other}>
-            <CardHeader title={title} subheader={subheader} />
+  return (
+    <Card sx={sx} {...other}>
+      <CardHeader title={title} subheader={subheader} />
 
-            {list.length === 0 ? (
-                <Box sx={{ py: 6, textAlign: 'center' }}>
-                    <Iconify icon={"solar:history-bold-duotone" as any} width={48} sx={{ color: 'text.disabled', mb: 1, opacity: 0.24 }} />
-                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>
-                        No state history available
-                    </Typography>
-                </Box>
-            ) : (
-                <Timeline
-                    sx={{ m: 0, p: 3, [`& .${timelineItemClasses.root}:before`]: { flex: 0, padding: 0 } }}
-                >
-                    {[...list].reverse().map((item, index) => (
-                        <Item key={item.name} item={item} lastItem={index === list.length - 1} />
-                    ))}
-                </Timeline>
-            )}
-        </Card>
-    );
+      {list.length === 0 ? (
+        <Box sx={{ py: 6, textAlign: 'center' }}>
+          <Iconify
+            icon={'solar:history-bold-duotone' as any}
+            width={48}
+            sx={{ color: 'text.disabled', mb: 1, opacity: 0.24 }}
+          />
+          <Typography variant="body2" sx={{ color: 'text.disabled' }}>
+            No state history available
+          </Typography>
+        </Box>
+      ) : (
+        <Timeline
+          sx={{ m: 0, p: 3, [`& .${timelineItemClasses.root}:before`]: { flex: 0, padding: 0 } }}
+        >
+          {[...list].reverse().map((item, index) => (
+            <Item key={item.name} item={item} lastItem={index === list.length - 1} />
+          ))}
+        </Timeline>
+      )}
+    </Card>
+  );
 }
 
 // ----------------------------------------------------------------------
 
 type ItemProps = TimelineItemProps & {
-    lastItem: boolean;
-    item: Props['list'][number];
+  lastItem: boolean;
+  item: Props['list'][number];
 };
 
 function Item({ item, lastItem, ...other }: ItemProps) {
-    const safeStateFrom = getString(item.state_from);
-    const safeStateTo = getString(item.state_to);
-    const safeChangeBy = getString(item.change_by);
+  const safeStateFrom = getString(item.state_from);
+  const safeStateTo = getString(item.state_to);
+  const safeChangeBy = getString(item.change_by);
 
-    return (
-        <TimelineItem {...other}>
-            <TimelineSeparator>
-                <TimelineDot color="primary" />
-                {lastItem ? null : <TimelineConnector />}
-            </TimelineSeparator>
+  return (
+    <TimelineItem {...other}>
+      <TimelineSeparator>
+        <TimelineDot color="primary" />
+        {lastItem ? null : <TimelineConnector />}
+      </TimelineSeparator>
 
-            <TimelineContent>
-                <Typography variant="subtitle2">
-                    {safeStateFrom ? `${safeStateFrom} → ${safeStateTo}` : `Initial State: ${safeStateTo}`}
-                </Typography>
+      <TimelineContent>
+        <Typography variant="subtitle2">
+          {safeStateFrom ? `${safeStateFrom} → ${safeStateTo}` : `Initial State: ${safeStateTo}`}
+        </Typography>
 
-                <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                    {fDateTime(item.date_and_time)} by {safeChangeBy}
-                </Typography>
-            </TimelineContent>
-        </TimelineItem>
-    );
+        <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+          {fDateTime(item.date_and_time)} by {safeChangeBy}
+        </Typography>
+      </TimelineContent>
+    </TimelineItem>
+  );
 }

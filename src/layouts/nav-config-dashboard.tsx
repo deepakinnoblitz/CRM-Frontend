@@ -2,7 +2,6 @@ import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-
 export type NavItem = {
   title: string;
   path: string;
@@ -15,23 +14,22 @@ export type NavItem = {
   }[];
 };
 
-
 // ----------------------  HR NavBar ---------------------------------------------------
 export const hrNavData = [
   {
     title: 'HR Dashboard',
     path: '/',
-    icon: <Iconify icon={"solar:home-2-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:home-2-bold-duotone' as any} />,
   },
   {
     title: 'Task Manager',
     path: '/task-manager?view=all',
-    icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:checklist-minimalistic-bold-duotone' as any} />,
   },
   {
     title: 'Employee Records',
     path: '/employee',
-    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:users-group-rounded-bold-duotone' as any} />,
     children: [
       { title: 'Employee List', path: '/employee' },
       { title: 'Users List', path: '/users' },
@@ -40,7 +38,7 @@ export const hrNavData = [
   {
     title: 'Attendance Records',
     path: '/attendance',
-    icon: <Iconify icon={"solar:calendar-mark-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:calendar-mark-bold-duotone' as any} />,
     children: [
       { title: 'Attendance List', path: '/attendance' },
       { title: 'WFH Attendance', path: '/wfh-attendance' },
@@ -51,7 +49,7 @@ export const hrNavData = [
   {
     title: 'Leaves Records',
     path: '/leaves',
-    icon: <Iconify icon={"solar:calendar-date-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:calendar-date-bold-duotone' as any} />,
     children: [
       { title: 'Leave Application', path: '/leaves' },
       { title: 'Leave Allocate', path: '/leave-allocations' },
@@ -60,37 +58,37 @@ export const hrNavData = [
   {
     title: 'Request List',
     path: '/requests',
-    icon: <Iconify icon={"solar:document-text-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:document-text-bold-duotone' as any} />,
   },
   {
     title: 'Timesheets',
     path: '/timesheets',
-    icon: <Iconify icon={"solar:clock-circle-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:clock-circle-bold-duotone' as any} />,
   },
   {
     title: 'Salary Slips',
     path: '/salary-slips',
-    icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:bill-list-bold-duotone' as any} />,
   },
   {
     title: 'Timesheets',
     path: '/timesheets',
-    icon: <Iconify icon={"solar:clock-circle-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:clock-circle-bold-duotone' as any} />,
   },
   {
     title: 'Holidays List',
     path: '/holidays',
-    icon: <Iconify icon={"solar:list-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:list-bold-duotone' as any} />,
   },
   {
     title: 'Announcements',
     path: '/announcements',
-    icon: <Iconify icon={"solar:bell-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:bell-bold-duotone' as any} />,
   },
   {
     title: 'Asset Records',
     path: '/assets',
-    icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:laptop-bold-duotone' as any} />,
     children: [
       { title: 'Asset List', path: '/assets/list' },
       { title: 'Asset Assignments', path: '/assets/assignments' },
@@ -100,12 +98,12 @@ export const hrNavData = [
   {
     title: 'Salary Slips',
     path: '/salary-slips',
-    icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:bill-list-bold-duotone' as any} />,
   },
   {
     title: 'Expenses',
     path: '/expenses',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:wallet-money-bold-duotone' as any} />,
     children: [
       { title: 'Company Expenses', path: '/expense-tracker' },
       { title: 'Reimbursement Claim List', path: '/reimbursement-claims' },
@@ -114,7 +112,7 @@ export const hrNavData = [
   {
     title: 'Employee Performance',
     path: '/employee-evaluation',
-    icon: <Iconify icon={"solar:user-speak-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:user-speak-bold-duotone' as any} />,
     children: [
       { title: 'Employee Evaluation', path: '/employee-evaluation' },
       { title: 'Badges', path: '/badges' },
@@ -124,7 +122,7 @@ export const hrNavData = [
   {
     title: 'Recruitment',
     path: '/job-openings',
-    icon: <Iconify icon={"solar:buildings-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:buildings-bold-duotone' as any} />,
     children: [
       { title: 'Job Opening List', path: '/job-openings' },
       { title: 'Job Applicant List', path: '/job-applicants' },
@@ -135,7 +133,7 @@ export const hrNavData = [
   {
     title: 'Report',
     path: '/reports',
-    icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:laptop-bold-duotone' as any} />,
     children: [
       { title: 'Attendance Report', path: '/reports/attendance' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
@@ -144,7 +142,7 @@ export const hrNavData = [
   {
     title: 'Masters',
     path: '/department',
-    icon: <Iconify icon={"solar:folder-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:folder-bold-duotone' as any} />,
     children: [
       { title: 'Department', path: '/department' },
       { title: 'Project', path: '/project' },
@@ -159,68 +157,67 @@ export const hrNavData = [
   },
 ];
 
-
 // ----------------------  Employee NavBar ---------------------------------------------------
 export const employeeNavData = [
   {
     title: 'Employee Dashboard',
     path: '/',
-    icon: <Iconify icon={"solar:home-2-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:home-2-bold-duotone' as any} />,
   },
   {
     title: 'My Profile',
     path: '/my-profile',
-    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:users-group-rounded-bold-duotone' as any} />,
   },
   {
     title: 'My Tasks',
     path: '/task-manager?view=mine',
-    icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:checklist-minimalistic-bold-duotone' as any} />,
   },
   {
     title: 'My Attendance',
     path: '/attendance',
-    icon: <Iconify icon={"solar:clock-circle-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:clock-circle-bold-duotone' as any} />,
   },
   {
     title: 'My Activity Log',
     path: '/daily-log',
-    icon: <Iconify icon={"solar:calendar-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:calendar-bold-duotone' as any} />,
   },
   {
     title: 'My Leave Application',
     path: '/leaves',
-    icon: <Iconify icon={"solar:notes-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:notes-bold-duotone' as any} />,
   },
   {
     title: 'My Request List',
     path: '/requests',
-    icon: <Iconify icon={"solar:list-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:list-bold-duotone' as any} />,
   },
   {
     title: 'My Timesheet',
     path: '/timesheets',
-    icon: <Iconify icon={"solar:folder-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:folder-bold-duotone' as any} />,
   },
   {
     title: 'My WFH Attendance',
     path: '/wfh-attendance',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:document-bold-duotone' as any} />,
   },
   {
     title: 'My Salary Slip',
     path: '/salary-slips',
-    icon: <Iconify icon={"solar:bill-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:bill-bold-duotone' as any} />,
   },
   {
     title: 'My Reimbursement Claim',
     path: '/reimbursement-claims',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:wallet-money-bold-duotone' as any} />,
   },
   {
     title: 'My Assets',
     path: '/assets',
-    icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:laptop-bold-duotone' as any} />,
     children: [
       { title: 'My Asset List', path: '/assets/assignments' },
       { title: 'My Asset Requests', path: '/assets/requests' },
@@ -229,18 +226,18 @@ export const employeeNavData = [
   {
     title: 'Refer a Friend',
     path: '/employee-referrals',
-    icon: <Iconify icon={"solar:user-plus-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:user-plus-bold-duotone' as any} />,
   },
   {
     title: 'Timesheet Report',
     path: '/timesheet-reports',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:document-bold-duotone' as any} />,
   },
   {
     title: 'Attendance Report',
     path: '/reports/attendance',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
-  }
+    icon: <Iconify icon={'solar:document-bold-duotone' as any} />,
+  },
 ];
 
 // ----------------------  Sales NavBar ---------------------------------------------------
@@ -248,27 +245,27 @@ export const salesNavData = [
   {
     title: 'Dashboard',
     path: '/',
-    icon: <Iconify icon={"solar:widget-5-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:widget-5-bold-duotone' as any} />,
   },
   {
     title: 'Purchases',
     path: '/purchase',
-    icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:bag-bold-duotone' as any} />,
   },
   {
     title: 'Purchase Settlements',
     path: '/purchase-collections',
-    icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:wad-of-money-bold-duotone' as any} />,
   },
   {
     title: 'Expense Tracker',
     path: '/crm-expense-tracker',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:wallet-money-bold-duotone' as any} />,
   },
   {
     title: 'Reports',
     path: '/reports',
-    icon: <Iconify icon={"solar:chart-square-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:chart-square-bold-duotone' as any} />,
     children: [
       { title: 'Purchase Report', path: '/reports/purchase' },
       { title: 'Estimation Report', path: '/reports/estimation' },
@@ -276,80 +273,79 @@ export const salesNavData = [
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
       { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
-      { title: 'Attendance Report', path: '/reports/attendance' }
-    ]
-  }
+      { title: 'Attendance Report', path: '/reports/attendance' },
+    ],
+  },
 ];
-
 
 // ----------------------  CRM NavBar ---------------------------------------------------
 export const crmNavData = [
   {
     title: 'Dashboard',
     path: '/',
-    icon: <Iconify icon={"solar:widget-5-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:widget-5-bold-duotone' as any} />,
   },
   {
     title: 'Expense Tracker',
     path: '/crm-expense-tracker',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:wallet-money-bold-duotone' as any} />,
   },
   {
     title: 'Leads',
     path: '/leads',
-    icon: <Iconify icon={"solar:target-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:target-bold-duotone' as any} />,
   },
   {
     title: 'Contacts',
     path: '/contacts',
-    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:users-group-rounded-bold-duotone' as any} />,
   },
   {
     title: 'Accounts',
     path: '/accounts',
-    icon: <Iconify icon={"solar:buildings-2-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:buildings-2-bold-duotone' as any} />,
   },
   {
     title: 'Deals',
     path: '/deals',
-    icon: <Iconify icon={"solar:hand-money-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:hand-money-bold-duotone' as any} />,
   },
   {
     title: 'Events',
     path: '/events',
-    icon: <Iconify icon={"solar:calendar-mark-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:calendar-mark-bold-duotone' as any} />,
   },
   {
     title: 'Calls',
     path: '/calls',
-    icon: <Iconify icon={"solar:phone-calling-rounded-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:phone-calling-rounded-bold-duotone' as any} />,
   },
   {
     title: 'ToDo',
     path: '/todo',
-    icon: <Iconify icon={"solar:list-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:list-bold-duotone' as any} />,
   },
   {
     title: 'Meetings',
     path: '/meetings',
-    icon: <Iconify icon={"solar:videocamera-record-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:videocamera-record-bold-duotone' as any} />,
   },
   {
     title: 'Reports',
     path: '/reports',
-    icon: <Iconify icon={"solar:chart-square-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:chart-square-bold-duotone' as any} />,
     children: [
       { title: 'Lead Report', path: '/reports/lead' },
       { title: 'Contact Report', path: '/reports/contact' },
       { title: 'Accounts Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
       { title: 'Meeting Report', path: '/reports/meeting' },
-    ]
+    ],
   },
   {
     title: 'Chat',
     path: '/chat',
-    icon: <Iconify icon={"solar:chat-round-dots-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:chat-round-dots-bold-duotone' as any} />,
   },
 ];
 
@@ -358,47 +354,47 @@ export const crmAndSalesNavData = [
   {
     title: 'Dashboard',
     path: '/',
-    icon: <Iconify icon={"solar:widget-5-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:widget-5-bold-duotone' as any} />,
   },
   {
     title: 'Leads',
     path: '/leads',
-    icon: <Iconify icon={"solar:target-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:target-bold-duotone' as any} />,
   },
   {
     title: 'Contacts',
     path: '/contacts',
-    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:users-group-rounded-bold-duotone' as any} />,
   },
   {
     title: 'Accounts',
     path: '/accounts',
-    icon: <Iconify icon={"solar:buildings-2-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:buildings-2-bold-duotone' as any} />,
   },
   {
     title: 'Deals',
     path: '/deals',
-    icon: <Iconify icon={"solar:hand-money-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:hand-money-bold-duotone' as any} />,
   },
   {
     title: 'Purchases',
     path: '/purchase',
-    icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:bag-bold-duotone' as any} />,
   },
   {
     title: 'Expense Tracker',
     path: '/crm-expense-tracker',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:wallet-money-bold-duotone' as any} />,
   },
   {
     title: 'Calendar',
     path: '/events',
-    icon: <Iconify icon={"solar:calendar-mark-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:calendar-mark-bold-duotone' as any} />,
   },
   {
     title: 'Reports',
     path: '/reports',
-    icon: <Iconify icon={"solar:chart-square-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:chart-square-bold-duotone' as any} />,
     children: [
       { title: 'Lead Report', path: '/reports/lead' },
       { title: 'Contact Report', path: '/reports/contact' },
@@ -411,19 +407,18 @@ export const crmAndSalesNavData = [
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
       { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
-      { title: 'Attendance Report', path: '/reports/attendance' }
-    ]
-  }
+      { title: 'Attendance Report', path: '/reports/attendance' },
+    ],
+  },
 ];
 
 export const commonNavData = [
   {
     title: 'Dashboard',
     path: '/',
-    icon: <Iconify icon={"solar:widget-5-bold-duotone" as any} />,
+    icon: <Iconify icon={'solar:widget-5-bold-duotone' as any} />,
   },
 ];
-
 
 // Helper function to check if user has any valid role
 export function hasValidRole(roles: string[] = []): boolean {
@@ -485,8 +480,8 @@ export function getNavData(roles: string[] = []) {
       {
         title: 'User Management',
         path: '/users',
-        icon: <Iconify icon={"solar:settings-bold-duotone" as any} />,
-      }
+        icon: <Iconify icon={'solar:settings-bold-duotone' as any} />,
+      },
     ]);
     return { hasAccess: true, navData: mergedNav };
   }

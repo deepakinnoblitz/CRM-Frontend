@@ -5,40 +5,62 @@ import { fetchDetailedSessions } from 'src/api/presence-log';
 // ----------------------------------------------------------------------
 
 export function usePresenceLog(
-    limitStart: number = 0,
-    limitPageLength: number = 10,
-    dateSearch: string = '',
-    status: string = 'all',
-    sortBy: string = 'login_date_desc',
-    employee: string = 'all',
-    day: string = 'all',
-    date: string = '',
-    fromDate: string = '',
-    toDate: string = ''
+  limitStart: number = 0,
+  limitPageLength: number = 10,
+  dateSearch: string = '',
+  status: string = 'all',
+  sortBy: string = 'login_date_desc',
+  employee: string = 'all',
+  day: string = 'all',
+  date: string = '',
+  fromDate: string = '',
+  toDate: string = ''
 ) {
-    const [data, setData] = useState<any[]>([]);
-    const [totalCount, setTotalCount] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
- 
-    const refetch = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const result = await fetchDetailedSessions(limitStart, limitPageLength, dateSearch, status, sortBy, employee, day, date, fromDate, toDate);
-            setData(result.data || []);
-            setTotalCount(result.total_count || 0);
-        } catch (err: any) {
-            console.error('Failed to fetch presence logs:', err);
-            setError(err.message || 'Failed to fetch logs');
-        } finally {
-            setLoading(false);
-        }
-    }, [limitStart, limitPageLength, dateSearch, status, sortBy, employee, day, date, fromDate, toDate]);
+  const [data, setData] = useState<any[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        refetch();
-    }, [refetch]);
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchDetailedSessions(
+        limitStart,
+        limitPageLength,
+        dateSearch,
+        status,
+        sortBy,
+        employee,
+        day,
+        date,
+        fromDate,
+        toDate
+      );
+      setData(result.data || []);
+      setTotalCount(result.total_count || 0);
+    } catch (err: any) {
+      console.error('Failed to fetch presence logs:', err);
+      setError(err.message || 'Failed to fetch logs');
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    limitStart,
+    limitPageLength,
+    dateSearch,
+    status,
+    sortBy,
+    employee,
+    day,
+    date,
+    fromDate,
+    toDate,
+  ]);
 
-    return { data, totalCount, loading, error, refetch };
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  return { data, totalCount, loading, error, refetch };
 }

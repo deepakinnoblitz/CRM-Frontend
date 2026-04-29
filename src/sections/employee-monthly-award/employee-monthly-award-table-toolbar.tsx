@@ -108,7 +108,7 @@ export function EmployeeMonthlyAwardTableToolbar({
         <Button
           variant="text"
           color="inherit"
-          startIcon={<Iconify icon={"solar:sort-bold" as any} />}
+          startIcon={<Iconify icon={'solar:sort-bold' as any} />}
           onClick={handleSortClick}
           sx={{
             minWidth: 160,

@@ -13,48 +13,35 @@ import PurchaseCollectionNewEditForm from '../purchase-collection-new-edit-form'
 // ----------------------------------------------------------------------
 
 export function PurchaseCollectionCreateView() {
-    const router = useRouter();
-    const formRef = useRef<any>(null);
-    const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const formRef = useRef<any>(null);
+  const [loading, setLoading] = useState(false);
 
-    const handleCreate = () => {
-        if (formRef.current) {
-            formRef.current.handleSubmit();
-        }
-    };
+  const handleCreate = () => {
+    if (formRef.current) {
+      formRef.current.handleSubmit();
+    }
+  };
 
-    const handleCancel = () => {
-        router.push('/purchase?tab=collections');
-    };
+  const handleCancel = () => {
+    router.push('/purchase?tab=collections');
+  };
 
-    return (
-        <DashboardContent maxWidth={false}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">Create New Purchase Settlement</Typography>
-                <Stack direction="row" spacing={2}>
-                    <Button
-                        variant="outlined"
-                        color="inherit"
-                        onClick={handleCancel}
-                        disabled={loading}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleCreate}
-                        disabled={loading}
-                    >
-                        {loading ? 'Creating...' : 'Create Settlement'}
-                    </Button>
-                </Stack>
-            </Stack>
+  return (
+    <DashboardContent maxWidth={false}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+        <Typography variant="h4">Create New Purchase Settlement</Typography>
+        <Stack direction="row" spacing={2}>
+          <Button variant="outlined" color="inherit" onClick={handleCancel} disabled={loading}>
+            Cancel
+          </Button>
+          <Button variant="contained" color="primary" onClick={handleCreate} disabled={loading}>
+            {loading ? 'Creating...' : 'Create Settlement'}
+          </Button>
+        </Stack>
+      </Stack>
 
-            <PurchaseCollectionNewEditForm
-                ref={formRef}
-                onLoadingChange={setLoading}
-            />
-        </DashboardContent>
-    );
+      <PurchaseCollectionNewEditForm ref={formRef} onLoadingChange={setLoading} />
+    </DashboardContent>
+  );
 }

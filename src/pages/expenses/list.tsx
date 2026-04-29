@@ -5,11 +5,11 @@ import { ExpenseListView } from 'src/sections/expenses/view';
 // ----------------------------------------------------------------------
 
 export default function Page() {
-    return (
-        <>
-            <title>{`Expenses - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Expenses - ${CONFIG.appName}`}</title>
 
-            <ExpenseListView />
-        </>
-    );
+      <ExpenseListView />
+    </>
+  );
 }

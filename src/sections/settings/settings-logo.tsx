@@ -58,20 +58,26 @@ export function SettingsLogo({ value, onUpload }: Props) {
           }}
         >
           {value ? (
-            <Box
-              component="img"
-              src={value}
-              sx={{ width: 1, height: 1, objectFit: 'contain' }}
-            />
+            <Box component="img" src={value} sx={{ width: 1, height: 1, objectFit: 'contain' }} />
           ) : (
-            <Iconify icon={"solar:gallery-bold" as any} width={48} sx={{ color: 'text.disabled' }} />
+            <Iconify
+              icon={'solar:gallery-bold' as any}
+              width={48}
+              sx={{ color: 'text.disabled' }}
+            />
           )}
         </Box>
 
         <Button
           variant="contained"
           component="label"
-          startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <Iconify icon={"solar:upload-minimalistic-bold" as any} />}
+          startIcon={
+            uploading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <Iconify icon={'solar:upload-minimalistic-bold' as any} />
+            )
+          }
           disabled={uploading}
         >
           {uploading ? 'Uploading...' : 'Upload New Logo'}

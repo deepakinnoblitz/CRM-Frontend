@@ -1,6 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
-import { getPresence, pingPresence, updatePresence as apiUpdatePresence, checkTodayTimesheet, getPresenceSettings } from 'src/api/presence';
+import {
+  getPresence,
+  pingPresence,
+  checkTodayTimesheet,
+  getPresenceSettings,
+  updatePresence as apiUpdatePresence,
+} from 'src/api/presence';
 
 import { useAuth } from 'src/auth/auth-context';
 
@@ -20,7 +26,13 @@ export function usePresence() {
   const [awayThreshold, setAwayThreshold] = useState(300);
   const [breakThreshold, setBreakThreshold] = useState(900);
   const [enableAutoResumeBreak, setEnableAutoResumeBreak] = useState(true);
-  const [activityEvents, setActivityEvents] = useState(['mousemove', 'keydown', 'scroll', 'click', 'touchstart']);
+  const [activityEvents, setActivityEvents] = useState([
+    'mousemove',
+    'keydown',
+    'scroll',
+    'click',
+    'touchstart',
+  ]);
 
   const prevStatusBeforeIdle = useRef<string | null>(null);
 
@@ -60,7 +72,9 @@ export function usePresence() {
       if (settings.event_scroll) events.push('scroll');
       if (settings.event_click) events.push('click');
       if (settings.event_touchstart) events.push('touchstart');
-      setActivityEvents(events.length > 0 ? events : ['mousemove', 'keydown', 'scroll', 'click', 'touchstart']);
+      setActivityEvents(
+        events.length > 0 ? events : ['mousemove', 'keydown', 'scroll', 'click', 'touchstart']
+      );
     } catch (error) {
       console.error('Error fetching presence settings:', error);
     }
@@ -108,7 +122,12 @@ export function usePresence() {
 
   const idleAtRef = useRef<Date | null>(null);
 
-  const changeStatus = async (newStatus: string, message?: string, source: string = 'Manual', startTime?: string) => {
+  const changeStatus = async (
+    newStatus: string,
+    message?: string,
+    source: string = 'Manual',
+    startTime?: string
+  ) => {
     if (!employeeId) return;
     try {
       const res = await apiUpdatePresence(newStatus, employeeId, message, source, startTime);
@@ -116,7 +135,7 @@ export function usePresence() {
         setStatus(newStatus);
         setStatusMessage(res.status_message || message || '');
         fetchStatus();
-        
+
         // Trigger chat unread count refresh if status changed to Available
         if (newStatus === 'Available') {
           window.dispatchEvent(new Event('REFRESH_CHAT_UNREAD_COUNT'));
@@ -191,7 +210,10 @@ export function usePresence() {
       if (statusRef.current !== 'Available') return;
 
       // ── Stage 1: Schedule Away ──
-      const timeToAwayMs = Math.max(0, (awayThresholdRef.current - idleThresholdRef.current) * 1000);
+      const timeToAwayMs = Math.max(
+        0,
+        (awayThresholdRef.current - idleThresholdRef.current) * 1000
+      );
       if (awayTimerRef.current) clearTimeout(awayTimerRef.current);
 
       awayTimerRef.current = setTimeout(async () => {
@@ -199,25 +221,43 @@ export function usePresence() {
         console.log(`[Presence] Switching to Away.`);
         prevStatusBeforeIdle.current = 'Available';
         const capturedIdleAt = idleAtRef.current?.toISOString();
-        await changeStatusRef.current('Away', 'Auto-away due to inactivity', 'Idle', capturedIdleAt);
+        await changeStatusRef.current(
+          'Away',
+          'Auto-away due to inactivity',
+          'Idle',
+          capturedIdleAt
+        );
 
         // ── Stage 2: Schedule Break (set AFTER Away confirmed) ──
         if (breakTimerRef.current) clearTimeout(breakTimerRef.current);
-        const timeToBreakMs = Math.max(0, (breakThresholdRef.current - awayThresholdRef.current) * 1000);
+        const timeToBreakMs = Math.max(
+          0,
+          (breakThresholdRef.current - awayThresholdRef.current) * 1000
+        );
 
         breakTimerRef.current = setTimeout(() => {
           if (statusRef.current !== 'Away') return;
           console.log(`[Presence] Away too long — switching to Break. idleAt=${capturedIdleAt}`);
-          changeStatusRef.current('Break', 'Auto-transition from Away to Break', 'Idle', capturedIdleAt);
+          changeStatusRef.current(
+            'Break',
+            'Auto-transition from Away to Break',
+            'Idle',
+            capturedIdleAt
+          );
           breakTimerRef.current = null;
         }, timeToBreakMs);
-
       }, timeToAwayMs);
     },
     onActive: () => {
       // Clear both pending timers
-      if (awayTimerRef.current) { clearTimeout(awayTimerRef.current); awayTimerRef.current = null; }
-      if (breakTimerRef.current) { clearTimeout(breakTimerRef.current); breakTimerRef.current = null; }
+      if (awayTimerRef.current) {
+        clearTimeout(awayTimerRef.current);
+        awayTimerRef.current = null;
+      }
+      if (breakTimerRef.current) {
+        clearTimeout(breakTimerRef.current);
+        breakTimerRef.current = null;
+      }
 
       if (!isAutoStatusEnabledRef.current) return;
 
@@ -232,9 +272,8 @@ export function usePresence() {
       }
     },
     thresholdMs: idleThreshold * 1000,
-    activityEvents: activityEvents,
+    activityEvents,
   });
-
 
   // Secondary Resume Trigger: When user returns to the tab
   useEffect(() => {
@@ -243,11 +282,11 @@ export function usePresence() {
         fetchStatus();
         if (isAutoStatusEnabled) {
           if (statusRef.current === 'Away') {
-              console.log('[Presence] Tab became visible: Resuming from Away');
-              changeStatus('Available', 'Auto-resumed upon returning to tab', 'Manual');
+            console.log('[Presence] Tab became visible: Resuming from Away');
+            changeStatus('Available', 'Auto-resumed upon returning to tab', 'Manual');
           } else if (statusRef.current === 'Break' && enableAutoResumeBreak) {
-              console.log('[Presence] Tab became visible: Resuming from Break');
-              changeStatus('Available', 'Auto-resumed upon returning to tab', 'Manual');
+            console.log('[Presence] Tab became visible: Resuming from Break');
+            changeStatus('Available', 'Auto-resumed upon returning to tab', 'Manual');
           }
         }
       }
@@ -277,7 +316,6 @@ export function usePresence() {
       if (interval) clearInterval(interval);
     };
   }, [status, loading, employeeId]);
-
 
   return {
     status,

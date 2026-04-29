@@ -7,13 +7,13 @@ import { EstimationEditView } from 'src/sections/estimation/view';
 // ----------------------------------------------------------------------
 
 export default function EstimationEditPage() {
-    const { id } = useParams();
+  const { id } = useParams();
 
-    return (
-        <>
-            <title>{`Edit estimation: ${id} - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Edit estimation: ${id} - ${CONFIG.appName}`}</title>
 
-            <EstimationEditView />
-        </>
-    );
+      <EstimationEditView />
+    </>
+  );
 }

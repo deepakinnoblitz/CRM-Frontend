@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
 // ----------------------------------------------------------------------
 
@@ -9,7 +9,12 @@ type Config = {
   activityEvents?: string[];
 };
 
-export function useIdleDetection({ onIdle, onActive, thresholdMs = 60000, activityEvents }: Config) {
+export function useIdleDetection({
+  onIdle,
+  onActive,
+  thresholdMs = 60000,
+  activityEvents,
+}: Config) {
   const [isSystemMonitoring, setIsSystemMonitoring] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(Math.floor(thresholdMs / 1000));
   const lastStatus = useRef<string | null>(null);
@@ -65,9 +70,9 @@ export function useIdleDetection({ onIdle, onActive, thresholdMs = 60000, activi
     setRemainingSeconds(totalSeconds);
 
     countdownIntervalId.current = setInterval(() => {
-      setRemainingSeconds(prev => {
-          const next = prev > 0 ? prev - 1 : 0;
-          return next;
+      setRemainingSeconds((prev) => {
+        const next = prev > 0 ? prev - 1 : 0;
+        return next;
       });
     }, 1000);
 
@@ -98,18 +103,21 @@ export function useIdleDetection({ onIdle, onActive, thresholdMs = 60000, activi
   }, []);
 
   useEffect(() => {
-    const events = activityEvents && activityEvents.length > 0
-      ? activityEvents
-      : ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'];
+    const events =
+      activityEvents && activityEvents.length > 0
+        ? activityEvents
+        : ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'];
 
     const initDetector = async () => {
       // Always set up event listeners for local reset (countdown sync)
-      events.forEach(e => window.addEventListener(e, resetTimerRef.current));
+      events.forEach((e) => window.addEventListener(e, resetTimerRef.current));
 
       // 1. Try IdleDetector API (Chromium only)
       if ('IdleDetector' in window) {
         try {
-          const permission = await (window.navigator as any).permissions.query({ name: 'idle-detection' });
+          const permission = await (window.navigator as any).permissions.query({
+            name: 'idle-detection',
+          });
 
           if (permission.state === 'granted') {
             const detector = new (window as any).IdleDetector();
@@ -144,7 +152,7 @@ export function useIdleDetection({ onIdle, onActive, thresholdMs = 60000, activi
     initDetector();
 
     return () => {
-      events.forEach(e => window.removeEventListener(e, resetTimerRef.current));
+      events.forEach((e) => window.removeEventListener(e, resetTimerRef.current));
       if (timeoutId.current) clearTimeout(timeoutId.current);
       if (countdownIntervalId.current) clearInterval(countdownIntervalId.current);
       if (idleDetector.current) {

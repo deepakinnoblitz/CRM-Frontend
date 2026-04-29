@@ -96,11 +96,13 @@ export function ReferralTableFiltersDrawer({
 
   const renderStatus = currentTab === 'my-referrals' && (
     <Stack spacing={1.5}>
-      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Status</Typography>
+      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+        Status
+      </Typography>
       <Autocomplete
         fullWidth
         options={['all', 'Pending', 'Accepted', 'Rejected', 'Hired']}
-        getOptionLabel={(option) => option === 'all' ? 'All Statuses' : option}
+        getOptionLabel={(option) => (option === 'all' ? 'All Statuses' : option)}
         value={filters.status}
         onChange={(event, newValue) => handleFilterChange('status', newValue || 'all')}
         renderInput={(params) => (
@@ -122,43 +124,47 @@ export function ReferralTableFiltersDrawer({
   );
 
   const renderJobOpening = currentTab === 'my-referrals' && (
-      <Stack spacing={1.5}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Job Opening</Typography>
-        <Autocomplete
-          fullWidth
-          options={['all', ...jobOptions.map(j => j.name)]}
-          getOptionLabel={(option) => {
-            if (option === 'all') return 'All Jobs';
-            const job = jobOptions.find(j => j.name === option);
-            return job ? job.job_title : option;
-          }}
-          value={filters.job_opening}
-          onChange={(event, newValue) => handleFilterChange('job_opening', newValue || 'all')}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder="Search Jobs"
-              size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 1.5,
-                  bgcolor: 'background.neutral',
-                  '&:hover': { bgcolor: 'action.hover' },
-                },
-              }}
-            />
-          )}
-        />
-      </Stack>
+    <Stack spacing={1.5}>
+      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+        Job Opening
+      </Typography>
+      <Autocomplete
+        fullWidth
+        options={['all', ...jobOptions.map((j) => j.name)]}
+        getOptionLabel={(option) => {
+          if (option === 'all') return 'All Jobs';
+          const job = jobOptions.find((j) => j.name === option);
+          return job ? job.job_title : option;
+        }}
+        value={filters.job_opening}
+        onChange={(event, newValue) => handleFilterChange('job_opening', newValue || 'all')}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            placeholder="Search Jobs"
+            size="small"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 1.5,
+                bgcolor: 'background.neutral',
+                '&:hover': { bgcolor: 'action.hover' },
+              },
+            }}
+          />
+        )}
+      />
+    </Stack>
   );
 
   const renderLocation = currentTab === 'jobs' && (
     <Stack spacing={1.5}>
-      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Location</Typography>
+      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+        Location
+      </Typography>
       <Autocomplete
         fullWidth
         options={['all', ...locationOptions]}
-        getOptionLabel={(option) => option === 'all' ? 'All Locations' : option}
+        getOptionLabel={(option) => (option === 'all' ? 'All Locations' : option)}
         value={filters.location}
         onChange={(event, newValue) => handleFilterChange('location', newValue || 'all')}
         renderInput={(params) => (
@@ -186,7 +192,7 @@ export function ReferralTableFiltersDrawer({
       onClose={onClose}
       slotProps={{
         paper: {
-          sx: { 
+          sx: {
             width: 340,
             boxShadow: (theme) => theme.customShadows.z24,
           },
@@ -206,7 +212,14 @@ export function ReferralTableFiltersDrawer({
         </Stack>
       </Scrollbar>
 
-      <Box sx={{ p: 2.5, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.neutral' }}>
+      <Box
+        sx={{
+          p: 2.5,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.neutral',
+        }}
+      >
         <Button
           fullWidth
           size="large"
@@ -220,9 +233,9 @@ export function ReferralTableFiltersDrawer({
             borderColor: 'divider',
             fontWeight: 600,
             '&:hover': {
-                borderColor: 'error.main',
-                color: 'error.main',
-                bgcolor: 'error.lighter',
+              borderColor: 'error.main',
+              color: 'error.main',
+              bgcolor: 'error.lighter',
             },
           }}
         >

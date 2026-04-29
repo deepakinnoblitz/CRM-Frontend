@@ -17,9 +17,8 @@ import DialogContent from '@mui/material/DialogContent';
 
 import { frappeRequest } from 'src/utils/csrf';
 
-import { createBadge, updateBadge, deleteBadge, renameBadge } from 'src/api/badges';
+import { createBadge, updateBadge, renameBadge } from 'src/api/badges';
 
-import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -129,7 +128,7 @@ export function BadgeFormDialog({ open, onClose, onSuccess, onError, selectedBad
 
     setUploading(true);
     setErrors((prev) => ({ ...prev, icon: '' }));
-    
+
     if (file.type !== 'image/png') {
       setErrors((prev) => ({ ...prev, icon: 'Only PNG images are allowed' }));
       setUploading(false);
@@ -147,7 +146,7 @@ export function BadgeFormDialog({ open, onClose, onSuccess, onError, selectedBad
         setPreviewUrl(null);
         return;
       }
-      
+
       setPreviewUrl(localUrl);
       const formDataUpload = new FormData();
       formDataUpload.append('file', file, file.name);
@@ -159,7 +158,7 @@ export function BadgeFormDialog({ open, onClose, onSuccess, onError, selectedBad
           body: formDataUpload,
         });
         const result = await response.json();
-        
+
         const fileUrl = result.message?.file_url || result.file_url;
         if (fileUrl) {
           setFormData((prev) => ({ ...prev, icon: fileUrl }));
@@ -212,11 +211,22 @@ export function BadgeFormDialog({ open, onClose, onSuccess, onError, selectedBad
 
           <Stack spacing={1.5}>
             <Typography variant="subtitle2">
-              Badge Icon <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+              Badge Icon{' '}
+              <Box component="span" sx={{ color: 'error.main' }}>
+                *
+              </Box>
             </Typography>
-            
+
             <Alert severity="info" sx={{ py: 0, justifyContent: 'center' }}>
-              Only <Box component="span" sx={{ fontWeight: 'bold' }}>PNG</Box> format is allowed with a <Box component="span" sx={{ fontWeight: 'bold' }}>1:1 ratio</Box> (square).
+              Only{' '}
+              <Box component="span" sx={{ fontWeight: 'bold' }}>
+                PNG
+              </Box>{' '}
+              format is allowed with a{' '}
+              <Box component="span" sx={{ fontWeight: 'bold' }}>
+                1:1 ratio
+              </Box>{' '}
+              (square).
             </Alert>
 
             <Stack direction="row" spacing={3} justifyContent="center" sx={{ pt: 1 }}>
@@ -240,7 +250,7 @@ export function BadgeFormDialog({ open, onClose, onSuccess, onError, selectedBad
                   },
                 }}
               >
-                <Iconify icon={"solar:upload-minimalistic-bold" as any} width={32} />
+                <Iconify icon={'solar:upload-minimalistic-bold' as any} width={32} />
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                   {uploading ? '...' : 'Upload'}
                 </Typography>
@@ -263,20 +273,20 @@ export function BadgeFormDialog({ open, onClose, onSuccess, onError, selectedBad
                   p: 1.5,
                 }}
               >
-                 {previewUrl || formData.icon ? (
+                {previewUrl || formData.icon ? (
                   <Box
                     component="img"
                     src={previewUrl || formData.icon}
-                    sx={{ 
-                      maxWidth: '100%', 
-                      maxHeight: '100%', 
+                    sx={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
                       objectFit: 'contain',
                       borderRadius: 1,
                     }}
                   />
                 ) : (
                   <Stack alignItems="center" spacing={1} sx={{ color: 'text.disabled' }}>
-                    <Iconify icon={"solar:camera-bold" as any} width={32} />
+                    <Iconify icon={'solar:camera-bold' as any} width={32} />
                     <Typography variant="caption">Preview</Typography>
                   </Stack>
                 )}
@@ -284,7 +294,11 @@ export function BadgeFormDialog({ open, onClose, onSuccess, onError, selectedBad
             </Stack>
 
             {errors.icon && (
-              <Typography variant="caption" color="error" sx={{ px: 1, textAlign: 'center', display: 'block' }}>
+              <Typography
+                variant="caption"
+                color="error"
+                sx={{ px: 1, textAlign: 'center', display: 'block' }}
+              >
                 {errors.icon}
               </Typography>
             )}

@@ -17,61 +17,49 @@ import InvoiceCollectionNewEditForm from '../invoice-collection-new-edit-form';
 // ----------------------------------------------------------------------
 
 export default function InvoiceCollectionEditView() {
-    const params = useParams();
-    const { id } = params;
-    const router = useRouter();
-    const formRef = useRef<any>(null);
+  const params = useParams();
+  const { id } = params;
+  const router = useRouter();
+  const formRef = useRef<any>(null);
 
-    const [currentInvoiceCollection, setCurrentInvoiceCollection] = useState<InvoiceCollection>();
-    const [loading, setLoading] = useState(false);
+  const [currentInvoiceCollection, setCurrentInvoiceCollection] = useState<InvoiceCollection>();
+  const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (id) {
-            getInvoiceCollection(id as string).then(setCurrentInvoiceCollection);
-        }
-    }, [id]);
+  useEffect(() => {
+    if (id) {
+      getInvoiceCollection(id as string).then(setCurrentInvoiceCollection);
+    }
+  }, [id]);
 
-    const handleSave = () => {
-        if (formRef.current) {
-            formRef.current.handleSubmit();
-        }
-    };
+  const handleSave = () => {
+    if (formRef.current) {
+      formRef.current.handleSubmit();
+    }
+  };
 
-    const handleCancel = () => {
-        router.push('/deals?tab=invoices&subtab=collections');
-    };
+  const handleCancel = () => {
+    router.push('/deals?tab=invoices&subtab=collections');
+  };
 
-    return (
-        <DashboardContent maxWidth={false}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-                <Typography variant="h4">
-                    Edit Collection: {currentInvoiceCollection?.name}
-                </Typography>
-                <Stack direction="row" spacing={2}>
-                    <Button
-                        variant="outlined"
-                        color="inherit"
-                        onClick={handleCancel}
-                        disabled={loading}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleSave}
-                        disabled={loading}
-                    >
-                        {loading ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                </Stack>
-            </Stack>
+  return (
+    <DashboardContent maxWidth={false}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+        <Typography variant="h4">Edit Collection: {currentInvoiceCollection?.name}</Typography>
+        <Stack direction="row" spacing={2}>
+          <Button variant="outlined" color="inherit" onClick={handleCancel} disabled={loading}>
+            Cancel
+          </Button>
+          <Button variant="contained" color="primary" onClick={handleSave} disabled={loading}>
+            {loading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </Stack>
+      </Stack>
 
-            <InvoiceCollectionNewEditForm
-                ref={formRef}
-                currentInvoiceCollection={currentInvoiceCollection}
-                onLoadingChange={setLoading}
-            />
-        </DashboardContent>
-    );
+      <InvoiceCollectionNewEditForm
+        ref={formRef}
+        currentInvoiceCollection={currentInvoiceCollection}
+        onLoadingChange={setLoading}
+      />
+    </DashboardContent>
+  );
 }

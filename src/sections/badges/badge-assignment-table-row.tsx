@@ -43,12 +43,13 @@ export function BadgeAssignmentTableRow({ row, index, onView, onDelete }: Props)
             fontWeight: 800,
             border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
             mx: 'auto',
-            transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+            transition: (theme) =>
+              theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
             '&:hover': {
               bgcolor: 'primary.main',
               color: 'primary.contrastText',
               transform: 'scale(1.1)',
-            }
+            },
           }}
         >
           {index + 1}

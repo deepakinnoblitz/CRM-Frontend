@@ -89,11 +89,7 @@ export function SalaryStructureComponentTableRow({
       </TableCell>
 
       <TableCell align="center">
-        <Label
-          variant="soft"
-          color={typeColor(type) as any}
-          sx={{ fontWeight: 700 }}
-        >
+        <Label variant="soft" color={typeColor(type) as any} sx={{ fontWeight: 700 }}>
           {type || '-'}
         </Label>
       </TableCell>
@@ -115,7 +111,11 @@ export function SalaryStructureComponentTableRow({
       <TableCell align="right">
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {static_amount != null && static_amount > 0
-            ? static_amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })
+            ? static_amount.toLocaleString('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                maximumFractionDigits: 0,
+              })
             : '-'}
         </Typography>
       </TableCell>

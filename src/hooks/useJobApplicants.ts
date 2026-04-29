@@ -3,54 +3,54 @@ import { useState, useEffect, useCallback } from 'react';
 import { fetchJobApplicants } from 'src/api/job-applicants';
 
 export function useJobApplicants(
-    page: number = 1,
-    pageSize: number = 10,
-    search: string = '',
-    orderBy: string = 'creation',
-    order: 'asc' | 'desc' = 'desc',
-    filters?: {
-        status?: string;
-        job_title?: string;
-        startDate?: string | null;
-        endDate?: string | null;
-    }
+  page: number = 1,
+  pageSize: number = 10,
+  search: string = '',
+  orderBy: string = 'creation',
+  order: 'asc' | 'desc' = 'desc',
+  filters?: {
+    status?: string;
+    job_title?: string;
+    startDate?: string | null;
+    endDate?: string | null;
+  }
 ) {
-    const [data, setData] = useState<any[]>([]);
-    const [total, setTotal] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<any>(null);
+  const [data, setData] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<any>(null);
 
-    const refetch = useCallback(async () => {
-        try {
-            setLoading(true);
-            const result = await fetchJobApplicants({
-                page,
-                pageSize,
-                search,
-                orderBy,
-                order,
-                filters,
-            });
-            setData(result.data);
-            setTotal(result.total);
-            setError(null);
-        } catch (err: any) {
-            setError(err);
-            console.error('Failed to fetch job applicants:', err);
-        } finally {
-            setLoading(false);
-        }
-    }, [page, pageSize, search, orderBy, order, filters]);
+  const refetch = useCallback(async () => {
+    try {
+      setLoading(true);
+      const result = await fetchJobApplicants({
+        page,
+        pageSize,
+        search,
+        orderBy,
+        order,
+        filters,
+      });
+      setData(result.data);
+      setTotal(result.total);
+      setError(null);
+    } catch (err: any) {
+      setError(err);
+      console.error('Failed to fetch job applicants:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, search, orderBy, order, filters]);
 
-    useEffect(() => {
-        refetch();
-    }, [refetch]);
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
-    return {
-        data,
-        total,
-        loading,
-        error,
-        refetch,
-    };
+  return {
+    data,
+    total,
+    loading,
+    error,
+    refetch,
+  };
 }

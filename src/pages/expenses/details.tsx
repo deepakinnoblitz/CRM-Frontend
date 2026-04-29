@@ -7,13 +7,13 @@ import { ExpenseDetailsView } from 'src/sections/expenses/view';
 // ----------------------------------------------------------------------
 
 export default function Page() {
-    const { id } = useParams();
+  const { id } = useParams();
 
-    return (
-        <>
-            <title>{`Expense Details - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Expense Details - ${CONFIG.appName}`}</title>
 
-            <ExpenseDetailsView id={id} />
-        </>
-    );
+      <ExpenseDetailsView id={id} />
+    </>
+  );
 }

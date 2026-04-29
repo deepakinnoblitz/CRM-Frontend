@@ -16,11 +16,11 @@ export function BadgeTableHead({ headLabel }: Props) {
           <TableCell
             key={headCell.id}
             align={headCell.align || 'left'}
-            sx={{ 
-                width: headCell.width, 
-                minWidth: headCell.minWidth,
-                fontWeight: 'bold',
-                color: 'text.secondary',
+            sx={{
+              width: headCell.width,
+              minWidth: headCell.minWidth,
+              fontWeight: 'bold',
+              color: 'text.secondary',
             }}
           >
             {headCell.label}

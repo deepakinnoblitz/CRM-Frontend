@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
@@ -31,7 +30,6 @@ import { TableEmptyRows } from '../../../lead/table-empty-rows';
 import { ActivityTypeTableRow } from '../activity-type-table-row';
 import { LeadTableToolbar } from '../../../lead/lead-table-toolbar';
 
-
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
@@ -61,7 +59,11 @@ export function ActivityTypeView() {
     id: null,
   });
 
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({
     open: false,
     message: '',
     severity: 'success',
@@ -102,10 +104,18 @@ export function ActivityTypeView() {
     if (confirmDelete.id) {
       try {
         await deleteActivityType(confirmDelete.id);
-        setSnackbar({ open: true, message: 'Activity Type deleted successfully', severity: 'success' });
+        setSnackbar({
+          open: true,
+          message: 'Activity Type deleted successfully',
+          severity: 'success',
+        });
         refetch();
       } catch (error: any) {
-        setSnackbar({ open: true, message: error.message || 'Failed to delete', severity: 'error' });
+        setSnackbar({
+          open: true,
+          message: error.message || 'Failed to delete',
+          severity: 'error',
+        });
       } finally {
         setConfirmDelete({ open: false, id: null });
       }
@@ -149,7 +159,7 @@ export function ActivityTypeView() {
                 headLabel={TABLE_HEAD}
                 rowCount={total}
                 numSelected={0}
-                onSelectAllRows={() => { }}
+                onSelectAllRows={() => {}}
                 showIndex
                 hideCheckbox
               />
@@ -163,14 +173,11 @@ export function ActivityTypeView() {
                     selected={false}
                     onEditRow={() => handleEditRow(row.name)}
                     onDeleteRow={() => handleDeleteRow(row.name)}
-                    onSelectRow={() => { }}
+                    onSelectRow={() => {}}
                   />
                 ))}
 
-                <TableEmptyRows
-                    height={68}
-                    emptyRows={data.length < 5 ? 5 - data.length : 0}
-                />
+                <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
 
                 {notFound && <TableNoData searchQuery={filterName} />}
 
@@ -227,7 +234,11 @@ export function ActivityTypeView() {
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%', whiteSpace: 'pre-line' }}>
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%', whiteSpace: 'pre-line' }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

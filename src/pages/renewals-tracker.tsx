@@ -5,10 +5,10 @@ import { RenewalTrackerView } from 'src/sections/renewal-tracker/view/renewal-tr
 // ----------------------------------------------------------------------
 
 export default function RenewalTrackerPage() {
-    return (
-        <>
-            <title>{`Renewal Tracker - ${CONFIG.appName}`}</title>
-            <RenewalTrackerView />
-        </>
-    );
+  return (
+    <>
+      <title>{`Renewal Tracker - ${CONFIG.appName}`}</title>
+      <RenewalTrackerView />
+    </>
+  );
 }

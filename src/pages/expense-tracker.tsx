@@ -5,10 +5,10 @@ import ExpenseTrackerView from 'src/sections/expense-tracker/view/expense-tracke
 // ----------------------------------------------------------------------
 
 export default function ExpenseTrackerPage() {
-    return (
+  return (
     <>
-        <title>{`Expense Tracker - ${CONFIG.appName}`}</title>
-        <ExpenseTrackerView />
+      <title>{`Expense Tracker - ${CONFIG.appName}`}</title>
+      <ExpenseTrackerView />
     </>
-    );
+  );
 }

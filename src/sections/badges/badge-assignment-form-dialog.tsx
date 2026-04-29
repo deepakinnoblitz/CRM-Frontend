@@ -3,9 +3,7 @@ import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -33,11 +31,17 @@ type Props = {
   selectedAssignment?: any | null;
 };
 
-export function BadgeAssignmentFormDialog({ open, onClose, onSuccess, onError, selectedAssignment }: Props) {
+export function BadgeAssignmentFormDialog({
+  open,
+  onClose,
+  onSuccess,
+  onError,
+  selectedAssignment,
+}: Props) {
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [badges, setBadges] = useState<any[]>([]);
-  
+
   const [formData, setFormData] = useState({
     employee: '',
     badge: '',
@@ -121,7 +125,9 @@ export function BadgeAssignmentFormDialog({ open, onClose, onSuccess, onError, s
               options={employees}
               getOptionLabel={(option) => {
                 if (typeof option === 'string') return option;
-                return option.employee_name ? `${option.employee_name} (${option.name})` : option.name;
+                return option.employee_name
+                  ? `${option.employee_name} (${option.name})`
+                  : option.name;
               }}
               value={employees.find((e) => e.name === formData.employee) || null}
               onChange={(_, newValue) => {
@@ -179,7 +185,11 @@ export function BadgeAssignmentFormDialog({ open, onClose, onSuccess, onError, s
                   <li key={key} {...optionProps}>
                     <Stack spacing={0.5} direction="row" alignItems="center">
                       {option.icon && (
-                         <Box component="img" src={option.icon} sx={{ width: 24, height: 24, mr: 1, borderRadius: 0.5 }} />
+                        <Box
+                          component="img"
+                          src={option.icon}
+                          sx={{ width: 24, height: 24, mr: 1, borderRadius: 0.5 }}
+                        />
                       )}
                       <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                         {option.badge_name || option.name}
@@ -210,7 +220,9 @@ export function BadgeAssignmentFormDialog({ open, onClose, onSuccess, onError, s
               label="Awarded On"
               format="DD-MM-YYYY"
               value={dayjs(formData.awarded_on)}
-              onChange={(newValue: any) => setFormData({ ...formData, awarded_on: newValue?.format('YYYY-MM-DD') || '' })}
+              onChange={(newValue: any) =>
+                setFormData({ ...formData, awarded_on: newValue?.format('YYYY-MM-DD') || '' })
+              }
               slotProps={{
                 textField: {
                   fullWidth: true,
@@ -255,4 +267,3 @@ export function BadgeAssignmentFormDialog({ open, onClose, onSuccess, onError, s
     </Dialog>
   );
 }
-

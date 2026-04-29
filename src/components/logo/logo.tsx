@@ -10,8 +10,6 @@ import { RouterLink } from 'src/routes/components';
 
 import { useHRMSSettings } from 'src/hooks/use-hrms-settings';
 
-import { CONFIG } from 'src/config-global';
-
 import { logoClasses } from './classes';
 
 // ----------------------------------------------------------------------

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 
-import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
@@ -32,7 +31,7 @@ export function ReferralTableToolbar({
   onOpenFilter,
   numSelected,
   activeFiltersCount,
-  placeholder = "Search...",
+  placeholder = 'Search...',
   sortBy,
   onSortChange,
   sortOptions,
@@ -110,7 +109,7 @@ export function ReferralTableToolbar({
           disableRipple
           color="inherit"
           onClick={handleSortClick}
-          startIcon={<Iconify icon={"solar:sort-bold" as any} />}
+          startIcon={<Iconify icon={'solar:sort-bold' as any} />}
           sx={{
             fontWeight: 600,
             height: 40,

@@ -5,10 +5,10 @@ import { JobOpeningsView } from 'src/sections/job-openings/view/job-openings-vie
 // ----------------------------------------------------------------------
 
 export default function JobOpeningsPage() {
-    return (
-        <>
-        <title>{`Job Openings - ${CONFIG.appName}`}</title>
-        <JobOpeningsView />
-        </>
-    );
+  return (
+    <>
+      <title>{`Job Openings - ${CONFIG.appName}`}</title>
+      <JobOpeningsView />
+    </>
+  );
 }

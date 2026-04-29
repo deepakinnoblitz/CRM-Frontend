@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
-import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
@@ -28,12 +27,36 @@ import { SettingsNotifications } from '../settings-notifications';
 // ----------------------------------------------------------------------
 
 const TABS = [
-  { value: 'logo', label: 'Logo', icon: <Iconify icon={"solar:gallery-bold-duotone" as any} width={24} /> },
-  { value: 'currency', label: 'Currency & Locale', icon: <Iconify icon={"solar:globus-bold-duotone" as any} width={24} /> },
-  { value: 'dashboard', label: 'Dashboard', icon: <Iconify icon={"solar:chart-bold-duotone" as any} width={24} /> },
-  { value: 'notifications', label: 'Notifications', icon: <Iconify icon={"solar:bell-bold-duotone" as any} width={24} /> },
-  { value: 'salary', label: 'Salary Slip', icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} width={24} /> },
-  { value: 'api', label: 'API', icon: <Iconify icon={"solar:key-minimalistic-bold-duotone" as any} width={24} /> },
+  {
+    value: 'logo',
+    label: 'Logo',
+    icon: <Iconify icon={'solar:gallery-bold-duotone' as any} width={24} />,
+  },
+  {
+    value: 'currency',
+    label: 'Currency & Locale',
+    icon: <Iconify icon={'solar:globus-bold-duotone' as any} width={24} />,
+  },
+  {
+    value: 'dashboard',
+    label: 'Dashboard',
+    icon: <Iconify icon={'solar:chart-bold-duotone' as any} width={24} />,
+  },
+  {
+    value: 'notifications',
+    label: 'Notifications',
+    icon: <Iconify icon={'solar:bell-bold-duotone' as any} width={24} />,
+  },
+  {
+    value: 'salary',
+    label: 'Salary Slip',
+    icon: <Iconify icon={'solar:bill-list-bold-duotone' as any} width={24} />,
+  },
+  {
+    value: 'api',
+    label: 'API',
+    icon: <Iconify icon={'solar:key-minimalistic-bold-duotone' as any} width={24} />,
+  },
 ];
 
 export function SettingsView() {
@@ -41,7 +64,11 @@ export function SettingsView() {
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({
     open: false,
     message: '',
     severity: 'success',
@@ -84,7 +111,11 @@ export function SettingsView() {
       await fetchSettings();
     } catch (error: any) {
       console.error('Failed to update settings:', error);
-      setSnackbar({ open: true, message: error.message || 'Failed to update settings', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to update settings',
+        severity: 'error',
+      });
     } finally {
       setSaving(false);
     }
@@ -96,7 +127,9 @@ export function SettingsView() {
 
   if (loading) {
     return (
-      <DashboardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+      <DashboardContent
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}
+      >
         <CircularProgress />
       </DashboardContent>
     );
@@ -105,7 +138,9 @@ export function SettingsView() {
   if (!isAuthorized) {
     return (
       <DashboardContent sx={{ textAlign: 'center', py: 20 }}>
-        <Typography variant="h3" sx={{ mb: 2 }}>Permission Denied</Typography>
+        <Typography variant="h3" sx={{ mb: 2 }}>
+          Permission Denied
+        </Typography>
         <Typography variant="body1" sx={{ color: 'text.secondary' }}>
           You do not have the required permissions to access the HRMS Settings.
         </Typography>
@@ -163,7 +198,13 @@ export function SettingsView() {
 
         <Button
           variant="contained"
-          startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <Iconify icon={"solar:check-circle-bold" as any} />}
+          startIcon={
+            saving ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <Iconify icon={'solar:check-circle-bold' as any} />
+            )
+          }
           onClick={handleSave}
           disabled={saving}
           sx={{
@@ -188,39 +229,22 @@ export function SettingsView() {
         )}
 
         {currentTab === 'currency' && (
-          <SettingsCurrency
-            data={settings}
-            onChange={handleUpdateField}
-          />
+          <SettingsCurrency data={settings} onChange={handleUpdateField} />
         )}
 
         {currentTab === 'dashboard' && (
-          <SettingsDashboard
-            data={settings}
-            onChange={handleUpdateField}
-          />
+          <SettingsDashboard data={settings} onChange={handleUpdateField} />
         )}
 
         {currentTab === 'notifications' && (
-          <SettingsNotifications
-            data={settings}
-            onChange={handleUpdateField}
-          />
+          <SettingsNotifications data={settings} onChange={handleUpdateField} />
         )}
 
         {currentTab === 'salary' && (
-          <SettingsSalarySlip
-            data={settings}
-            onChange={handleUpdateField}
-          />
+          <SettingsSalarySlip data={settings} onChange={handleUpdateField} />
         )}
 
-        {currentTab === 'api' && (
-          <SettingsLiveKit
-            data={settings}
-            onChange={handleUpdateField}
-          />
-        )}
+        {currentTab === 'api' && <SettingsLiveKit data={settings} onChange={handleUpdateField} />}
       </Box>
 
       <Snackbar

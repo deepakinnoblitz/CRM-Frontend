@@ -5,10 +5,10 @@ import { EstimationReportView } from '../../sections/report/estimation/view/esti
 // ----------------------------------------------------------------------
 
 export default function EstimationReportPage() {
-    return (
-        <>
-            <title>{`Estimation Report - ${CONFIG.appName}`}</title>
-            <EstimationReportView />
-        </>
-    );
+  return (
+    <>
+      <title>{`Estimation Report - ${CONFIG.appName}`}</title>
+      <EstimationReportView />
+    </>
+  );
 }

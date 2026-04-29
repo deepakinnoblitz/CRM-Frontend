@@ -11,240 +11,404 @@ import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 type Props = {
-    open: boolean;
-    onClose: () => void;
-    holidayList: any;
+  open: boolean;
+  onClose: () => void;
+  holidayList: any;
 };
 
 export function HolidayDetailsDialog({ open, onClose, holidayList }: Props) {
-    return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>Holiday List Details</Typography>
-                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500], bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows?.z1 }}>
-                    <Iconify icon="mingcute:close-line" />
-                </IconButton>
-            </DialogTitle>
-
-            <DialogContent sx={{ p: 4, m: 2, mt: 4 }}>
-                {holidayList ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                        {/* Header Section */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                            <Box
-                                sx={{
-                                    width: 80,
-                                    height: 80,
-                                    borderRadius: 3,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    bgcolor: '#ffebd8', // Peach background
-                                }}
-                            >
-                                <Iconify icon={"solar:calendar-mark-bold" as any} width={40} sx={{ color: '#ff5630' }} />
-                            </Box>
-
-                            <Box sx={{ flexGrow: 1 }}>
-                                <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                                    {holidayList.holiday_list_name}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                    {holidayList.year} – {holidayList.month_year || 'All Months'}
-                                </Typography>
-                            </Box>
-
-                            <Box sx={{ textAlign: 'center' }}>
-                                <Typography variant="h4" sx={{ fontWeight: 800, color: '#1877f2' }}>
-                                    {holidayList.working_days || 0}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
-                                    Working Days
-                                </Typography>
-                            </Box>
-                        </Box>
-
-                        <Divider sx={{ borderStyle: 'dashed' }} />
-
-                        {/* Holiday List Information */}
-                        <Box>
-                            <SectionHeader title="HOLIDAY LIST INFORMATION" icon="solar:list-bold" isPremium />
-                            <Box
-                                sx={{
-                                    display: 'grid',
-                                    gap: 2,
-                                    mt: 3,
-                                    gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
-                                }}
-                            >
-                                <InfoCard label="LIST NAME" value={holidayList.holiday_list_name} icon="solar:list-bold" />
-                                <InfoCard label="YEAR" value={holidayList.year?.toString()} icon="solar:calendar-bold" />
-                                <InfoCard label="MONTH" value={holidayList.month_year || 'All Months'} icon="solar:calendar-minimalistic-bold" />
-                                <InfoCard
-                                    label="WORKING DAYS"
-                                    value={`${holidayList.working_days || 0} days`}
-                                    icon="solar:clock-circle-bold"
-                                    variant="info"
-                                />
-                            </Box>
-                        </Box>
-
-                        {/* Holidays */}
-                        {holidayList.holidays && holidayList.holidays.length > 0 && (
-                            <Box>
-                                <SectionHeader title="Holidays" icon="solar:calendar-mark-bold" />
-                                <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
-                                    <Box sx={{ overflowX: 'auto' }}>
-                                        <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
-                                            <Box component="thead" sx={{ bgcolor: 'background.neutral' }}>
-                                                <Box component="tr">
-                                                    <Box component="th" sx={{ p: 2, textAlign: 'left', fontWeight: 700, borderBottom: '1px solid', borderColor: 'divider' }}>
-                                                        Date
-                                                    </Box>
-                                                    <Box component="th" sx={{ p: 2, textAlign: 'left', fontWeight: 700, borderBottom: '1px solid', borderColor: 'divider' }}>
-                                                        Description
-                                                    </Box>
-                                                    <Box component="th" sx={{ p: 2, textAlign: 'center', fontWeight: 700, borderBottom: '1px solid', borderColor: 'divider' }}>
-                                                        Working Day
-                                                    </Box>
-                                                </Box>
-                                            </Box>
-                                            <Box component="tbody">
-                                                {holidayList.holidays.map((holiday: any, index: number) => (
-                                                    <Box component="tr" key={index} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
-                                                        <Box component="td" sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-                                                            <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                                                                {new Date(holiday.holiday_date).toLocaleDateString('en-US', {
-                                                                    weekday: 'short',
-                                                                    year: 'numeric',
-                                                                    month: 'short',
-                                                                    day: 'numeric'
-                                                                })}
-                                                            </Typography>
-                                                        </Box>
-                                                        <Box component="td" sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-                                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                                                {holiday.description}
-                                                            </Typography>
-                                                        </Box>
-                                                        <Box component="td" sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
-                                                            {holiday.is_working_day ? (
-                                                                <Iconify icon={"solar:check-circle-bold" as any} width={24} sx={{ color: 'success.main' }} />
-                                                            ) : (
-                                                                <Typography variant="body2" sx={{ color: 'error.main', fontWeight: 700, fontSize: '1.2rem' }}>✗</Typography>
-                                                            )}
-                                                        </Box>
-                                                    </Box>
-                                                ))}
-                                            </Box>
-                                        </Box>
-                                    </Box>
-                                </Box>
-                            </Box>
-                        )}
-
-                        {/* Metadata */}
-                        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                            <SectionHeader title="Record Information" icon="solar:info-circle-bold" noMargin />
-                            <Box sx={{ mt: 3, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                                <DetailItem
-                                    label="Created On"
-                                    value={holidayList.creation ? new Date(holidayList.creation).toLocaleString() : '-'}
-                                    icon="solar:calendar-bold"
-                                />
-                                <DetailItem
-                                    label="Last Modified"
-                                    value={holidayList.modified ? new Date(holidayList.modified).toLocaleString() : '-'}
-                                    icon="solar:calendar-bold"
-                                />
-                            </Box>
-                        </Box>
-                    </Box>
-                ) : (
-                    <Box sx={{ py: 10, textAlign: 'center' }}>
-                        <Iconify icon={"solar:ghost-bold" as any} width={64} sx={{ color: 'text.disabled', mb: 2 }} />
-                        <Typography variant="h6" sx={{ color: 'text.secondary' }}>No Holiday List Found</Typography>
-                    </Box>
-                )}
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-function SectionHeader({ title, icon, noMargin = false, isPremium = false }: { title: string; icon: string, noMargin?: boolean, isPremium?: boolean }) {
-    if (isPremium) {
-        return (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: noMargin ? 0 : 3 }}>
-                <Box
-                    sx={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 1.25,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: '#1c75ff',
-                        boxShadow: '0 4px 8px -2px rgba(28, 117, 255, 0.24)',
-                    }}
-                >
-                    <Iconify icon={icon as any} width={18} sx={{ color: 'common.white' }} />
-                </Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1c355e', letterSpacing: 0.5 }}>
-                    {title}
-                </Typography>
-            </Box>
-        );
-    }
-
-    return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
-            <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                {title}
-            </Typography>
-        </Box>
-    );
-}
-
-function InfoCard({ label, value, icon, variant = 'neutral' }: { label: string; value?: string | null; icon: string, variant?: 'neutral' | 'info' }) {
-    const isInfo = variant === 'info';
-    return (
-        <Box
-            sx={{
-                p: 2,
-                borderRadius: 2,
-                bgcolor: isInfo ? '#f0f7ff' : '#f4f6f8',
-                border: isInfo ? '1.5px solid #d0e9ff' : '1px solid transparent',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1.5,
-            }}
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+      <DialogTitle
+        sx={{
+          m: 0,
+          p: 2.5,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          bgcolor: 'background.neutral',
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 800 }}>
+          Holiday List Details
+        </Typography>
+        <IconButton
+          onClick={onClose}
+          sx={{
+            color: (theme) => theme.palette.grey[500],
+            bgcolor: 'background.paper',
+            boxShadow: (theme) => theme.customShadows?.z1,
+          }}
         >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={18} sx={{ color: isInfo ? '#1877f2' : '#919eab' }} />
-                <Typography variant="caption" sx={{ color: isInfo ? '#1877f2' : '#919eab', fontWeight: 700, letterSpacing: 0.5 }}>
-                    {label}
+          <Iconify icon="mingcute:close-line" />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent sx={{ p: 4, m: 2, mt: 4 }}>
+        {holidayList ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {/* Header Section */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Box
+                sx={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: '#ffebd8', // Peach background
+                }}
+              >
+                <Iconify
+                  icon={'solar:calendar-mark-bold' as any}
+                  width={40}
+                  sx={{ color: '#ff5630' }}
+                />
+              </Box>
+
+              <Box sx={{ flexGrow: 1 }}>
+                <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                  {holidayList.holiday_list_name}
                 </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                  {holidayList.year} – {holidayList.month_year || 'All Months'}
+                </Typography>
+              </Box>
+
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: '#1877f2' }}>
+                  {holidayList.working_days || 0}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
+                  Working Days
+                </Typography>
+              </Box>
             </Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: isInfo ? '#1877f2' : '#1c355e', lineHeight: 1 }}>
-                {value || '-'}
+
+            <Divider sx={{ borderStyle: 'dashed' }} />
+
+            {/* Holiday List Information */}
+            <Box>
+              <SectionHeader title="HOLIDAY LIST INFORMATION" icon="solar:list-bold" isPremium />
+              <Box
+                sx={{
+                  display: 'grid',
+                  gap: 2,
+                  mt: 3,
+                  gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
+                }}
+              >
+                <InfoCard
+                  label="LIST NAME"
+                  value={holidayList.holiday_list_name}
+                  icon="solar:list-bold"
+                />
+                <InfoCard
+                  label="YEAR"
+                  value={holidayList.year?.toString()}
+                  icon="solar:calendar-bold"
+                />
+                <InfoCard
+                  label="MONTH"
+                  value={holidayList.month_year || 'All Months'}
+                  icon="solar:calendar-minimalistic-bold"
+                />
+                <InfoCard
+                  label="WORKING DAYS"
+                  value={`${holidayList.working_days || 0} days`}
+                  icon="solar:clock-circle-bold"
+                  variant="info"
+                />
+              </Box>
+            </Box>
+
+            {/* Holidays */}
+            {holidayList.holidays && holidayList.holidays.length > 0 && (
+              <Box>
+                <SectionHeader title="Holidays" icon="solar:calendar-mark-bold" />
+                <Box
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Box sx={{ overflowX: 'auto' }}>
+                    <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <Box component="thead" sx={{ bgcolor: 'background.neutral' }}>
+                        <Box component="tr">
+                          <Box
+                            component="th"
+                            sx={{
+                              p: 2,
+                              textAlign: 'left',
+                              fontWeight: 700,
+                              borderBottom: '1px solid',
+                              borderColor: 'divider',
+                            }}
+                          >
+                            Date
+                          </Box>
+                          <Box
+                            component="th"
+                            sx={{
+                              p: 2,
+                              textAlign: 'left',
+                              fontWeight: 700,
+                              borderBottom: '1px solid',
+                              borderColor: 'divider',
+                            }}
+                          >
+                            Description
+                          </Box>
+                          <Box
+                            component="th"
+                            sx={{
+                              p: 2,
+                              textAlign: 'center',
+                              fontWeight: 700,
+                              borderBottom: '1px solid',
+                              borderColor: 'divider',
+                            }}
+                          >
+                            Working Day
+                          </Box>
+                        </Box>
+                      </Box>
+                      <Box component="tbody">
+                        {holidayList.holidays.map((holiday: any, index: number) => (
+                          <Box
+                            component="tr"
+                            key={index}
+                            sx={{ '&:hover': { bgcolor: 'action.hover' } }}
+                          >
+                            <Box
+                              component="td"
+                              sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}
+                            >
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 700, color: 'primary.main' }}
+                              >
+                                {new Date(holiday.holiday_date).toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                })}
+                              </Typography>
+                            </Box>
+                            <Box
+                              component="td"
+                              sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}
+                            >
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                {holiday.description}
+                              </Typography>
+                            </Box>
+                            <Box
+                              component="td"
+                              sx={{
+                                p: 2,
+                                borderBottom: '1px solid',
+                                borderColor: 'divider',
+                                textAlign: 'center',
+                              }}
+                            >
+                              {holiday.is_working_day ? (
+                                <Iconify
+                                  icon={'solar:check-circle-bold' as any}
+                                  width={24}
+                                  sx={{ color: 'success.main' }}
+                                />
+                              ) : (
+                                <Typography
+                                  variant="body2"
+                                  sx={{ color: 'error.main', fontWeight: 700, fontSize: '1.2rem' }}
+                                >
+                                  ✗
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            )}
+
+            {/* Metadata */}
+            <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+              <SectionHeader title="Record Information" icon="solar:info-circle-bold" noMargin />
+              <Box
+                sx={{
+                  mt: 3,
+                  display: 'grid',
+                  gap: 3,
+                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                }}
+              >
+                <DetailItem
+                  label="Created On"
+                  value={
+                    holidayList.creation ? new Date(holidayList.creation).toLocaleString() : '-'
+                  }
+                  icon="solar:calendar-bold"
+                />
+                <DetailItem
+                  label="Last Modified"
+                  value={
+                    holidayList.modified ? new Date(holidayList.modified).toLocaleString() : '-'
+                  }
+                  icon="solar:calendar-bold"
+                />
+              </Box>
+            </Box>
+          </Box>
+        ) : (
+          <Box sx={{ py: 10, textAlign: 'center' }}>
+            <Iconify
+              icon={'solar:ghost-bold' as any}
+              width={64}
+              sx={{ color: 'text.disabled', mb: 2 }}
+            />
+            <Typography variant="h6" sx={{ color: 'text.secondary' }}>
+              No Holiday List Found
             </Typography>
-        </Box>
-    );
+          </Box>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
 }
 
-function DetailItem({ label, value, icon }: { label: string; value?: string | null; icon: string }) {
+function SectionHeader({
+  title,
+  icon,
+  noMargin = false,
+  isPremium = false,
+}: {
+  title: string;
+  icon: string;
+  noMargin?: boolean;
+  isPremium?: boolean;
+}) {
+  if (isPremium) {
     return (
-        <Box>
-            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
-                {label}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                    {value || '-'}
-                </Typography>
-            </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: noMargin ? 0 : 3 }}>
+        <Box
+          sx={{
+            width: 32,
+            height: 32,
+            borderRadius: 1.25,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: '#1c75ff',
+            boxShadow: '0 4px 8px -2px rgba(28, 117, 255, 0.24)',
+          }}
+        >
+          <Iconify icon={icon as any} width={18} sx={{ color: 'common.white' }} />
         </Box>
+        <Typography
+          variant="subtitle2"
+          sx={{ fontWeight: 800, color: '#1c355e', letterSpacing: 0.5 }}
+        >
+          {title}
+        </Typography>
+      </Box>
     );
+  }
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
+      <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
+      <Typography
+        variant="subtitle1"
+        sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}
+      >
+        {title}
+      </Typography>
+    </Box>
+  );
+}
+
+function InfoCard({
+  label,
+  value,
+  icon,
+  variant = 'neutral',
+}: {
+  label: string;
+  value?: string | null;
+  icon: string;
+  variant?: 'neutral' | 'info';
+}) {
+  const isInfo = variant === 'info';
+  return (
+    <Box
+      sx={{
+        p: 2,
+        borderRadius: 2,
+        bgcolor: isInfo ? '#f0f7ff' : '#f4f6f8',
+        border: isInfo ? '1.5px solid #d0e9ff' : '1px solid transparent',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1.5,
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Iconify icon={icon as any} width={18} sx={{ color: isInfo ? '#1877f2' : '#919eab' }} />
+        <Typography
+          variant="caption"
+          sx={{ color: isInfo ? '#1877f2' : '#919eab', fontWeight: 700, letterSpacing: 0.5 }}
+        >
+          {label}
+        </Typography>
+      </Box>
+      <Typography
+        variant="h6"
+        sx={{ fontWeight: 800, color: isInfo ? '#1877f2' : '#1c355e', lineHeight: 1 }}
+      >
+        {value || '-'}
+      </Typography>
+    </Box>
+  );
+}
+
+function DetailItem({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value?: string | null;
+  icon: string;
+}) {
+  return (
+    <Box>
+      <Typography
+        variant="caption"
+        sx={{
+          color: 'text.disabled',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          mb: 0.5,
+          display: 'block',
+        }}
+      >
+        {label}
+      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
+        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+          {value || '-'}
+        </Typography>
+      </Box>
+    </Box>
+  );
 }

@@ -5,7 +5,6 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
-import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
@@ -97,7 +96,7 @@ export function BadgeTableFiltersDrawer({
       onClose={onClose}
       slotProps={{
         paper: {
-          sx: { 
+          sx: {
             width: 320,
             boxShadow: (theme: any) => theme.customShadows.z24,
           },
@@ -151,7 +150,9 @@ export function BadgeTableFiltersDrawer({
                     options={employeeOptions || []}
                     getOptionLabel={(option) => {
                       if (typeof option === 'string') return option;
-                      return option.employee_name ? `${option.employee_name} (${option.name})` : option.name || '';
+                      return option.employee_name
+                        ? `${option.employee_name} (${option.name})`
+                        : option.name || '';
                     }}
                     value={employeeOptions?.find((emp) => emp.name === filters.employee) || null}
                     onChange={(event, newValue) => onFilters({ employee: newValue?.name || null })}
@@ -171,9 +172,9 @@ export function BadgeTableFiltersDrawer({
                       );
                     }}
                     renderInput={(params) => (
-                      <TextField 
-                        {...params} 
-                        placeholder="Select Employee" 
+                      <TextField
+                        {...params}
+                        placeholder="Select Employee"
                         size="small"
                         sx={{
                           '& .MuiOutlinedInput-root': {
@@ -208,7 +209,11 @@ export function BadgeTableFiltersDrawer({
                         <li key={key} {...optionProps}>
                           <Stack spacing={0.5} direction="row" alignItems="center">
                             {option.icon && (
-                               <Box component="img" src={option.icon} sx={{ width: 24, height: 24, mr: 1, borderRadius: 0.5 }} />
+                              <Box
+                                component="img"
+                                src={option.icon}
+                                sx={{ width: 24, height: 24, mr: 1, borderRadius: 0.5 }}
+                              />
                             )}
                             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                               {option.badge_name || option.name}
@@ -218,9 +223,9 @@ export function BadgeTableFiltersDrawer({
                       );
                     }}
                     renderInput={(params) => (
-                      <TextField 
-                        {...params} 
-                        placeholder="Select Badge" 
+                      <TextField
+                        {...params}
+                        placeholder="Select Badge"
                         size="small"
                         sx={{
                           '& .MuiOutlinedInput-root': {
@@ -245,10 +250,14 @@ export function BadgeTableFiltersDrawer({
                     options={userOptions || []}
                     getOptionLabel={(option) => {
                       if (typeof option === 'string') return option;
-                      return option.full_name ? `${option.full_name} (${option.name})` : option.name || '';
+                      return option.full_name
+                        ? `${option.full_name} (${option.name})`
+                        : option.name || '';
                     }}
                     value={userOptions?.find((user) => user.name === filters.awarded_by) || null}
-                    onChange={(event, newValue) => onFilters({ awarded_by: newValue?.name || null })}
+                    onChange={(event, newValue) =>
+                      onFilters({ awarded_by: newValue?.name || null })
+                    }
                     renderOption={(props, option) => {
                       const { key, ...optionProps } = props as any;
                       return (
@@ -265,9 +274,9 @@ export function BadgeTableFiltersDrawer({
                       );
                     }}
                     renderInput={(params) => (
-                      <TextField 
-                        {...params} 
-                        placeholder="Select User" 
+                      <TextField
+                        {...params}
+                        placeholder="Select User"
                         size="small"
                         sx={{
                           '& .MuiOutlinedInput-root': {
@@ -294,7 +303,9 @@ export function BadgeTableFiltersDrawer({
                   label="Start Date"
                   format="DD-MM-YYYY"
                   value={filters.startDate ? dayjs(filters.startDate) : null}
-                  onChange={(newValue) => onFilters({ startDate: newValue ? newValue.format('YYYY-MM-DD') : null })}
+                  onChange={(newValue) =>
+                    onFilters({ startDate: newValue ? newValue.format('YYYY-MM-DD') : null })
+                  }
                   slotProps={{
                     textField: {
                       fullWidth: true,
@@ -307,15 +318,17 @@ export function BadgeTableFiltersDrawer({
                             bgcolor: 'action.hover',
                           },
                         },
-                      }
-                    }
+                      },
+                    },
                   }}
                 />
                 <DatePicker
                   label="End Date"
                   format="DD-MM-YYYY"
                   value={filters.endDate ? dayjs(filters.endDate) : null}
-                  onChange={(newValue) => onFilters({ endDate: newValue ? newValue.format('YYYY-MM-DD') : null })}
+                  onChange={(newValue) =>
+                    onFilters({ endDate: newValue ? newValue.format('YYYY-MM-DD') : null })
+                  }
                   slotProps={{
                     textField: {
                       fullWidth: true,
@@ -328,8 +341,8 @@ export function BadgeTableFiltersDrawer({
                             bgcolor: 'action.hover',
                           },
                         },
-                      }
-                    }
+                      },
+                    },
                   }}
                 />
               </Stack>
@@ -338,7 +351,14 @@ export function BadgeTableFiltersDrawer({
         </LocalizationProvider>
       </Scrollbar>
 
-      <Box sx={{ p: 2.5, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.neutral' }}>
+      <Box
+        sx={{
+          p: 2.5,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.neutral',
+        }}
+      >
         <Button
           fullWidth
           size="large"

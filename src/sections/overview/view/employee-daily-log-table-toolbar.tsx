@@ -5,7 +5,6 @@ import Menu from '@mui/material/Menu';
 import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
-import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import OutlinedInput from '@mui/material/OutlinedInput';
@@ -57,7 +56,9 @@ export function EmployeeDailyLogTableToolbar({
     handleSortClose();
   };
 
-  const currentSortLabel = sortOptions.find((opt: { value: string; label: string }) => opt.value === sortBy)?.label || 'Sort';
+  const currentSortLabel =
+    sortOptions.find((opt: { value: string; label: string }) => opt.value === sortBy)?.label ||
+    'Sort';
 
   return (
     <Toolbar
@@ -70,19 +71,21 @@ export function EmployeeDailyLogTableToolbar({
         py: { xs: 2, md: 0 },
         p: (theme) => ({
           xs: theme.spacing(2, 2),
-          md: theme.spacing(0, 1, 0, 3)
+          md: theme.spacing(0, 1, 0, 3),
         }),
         justifyContent: 'space-between',
       }}
     >
-      <Box sx={{
-        display: 'flex',
-        gap: 2,
-        alignItems: 'center',
-        flexGrow: 1,
-        flexDirection: { xs: 'column', sm: 'row' },
-        width: '100%'
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 2,
+          alignItems: 'center',
+          flexGrow: 1,
+          flexDirection: { xs: 'column', sm: 'row' },
+          width: '100%',
+        }}
+      >
         <OutlinedInput
           fullWidth
           value={filterName}
@@ -97,13 +100,15 @@ export function EmployeeDailyLogTableToolbar({
         />
       </Box>
 
-      <Box sx={{
-        display: 'flex',
-        gap: 1,
-        alignItems: 'center',
-        justifyContent: { xs: 'flex-start', md: 'flex-end' },
-        width: { xs: '100%', md: 'auto' }
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          alignItems: 'center',
+          justifyContent: { xs: 'flex-start', md: 'flex-end' },
+          width: { xs: '100%', md: 'auto' },
+        }}
+      >
         {onOpenFilter && (
           <Button
             disableRipple
@@ -134,7 +139,7 @@ export function EmployeeDailyLogTableToolbar({
             <Button
               variant="text"
               color="inherit"
-              startIcon={<Iconify icon={"solar:sort-bold" as any} />}
+              startIcon={<Iconify icon={'solar:sort-bold' as any} />}
               onClick={handleSortClick}
               sx={{
                 flexGrow: { xs: 1, md: 0 },
@@ -196,7 +201,9 @@ export function EmployeeDailyLogTableToolbar({
           <Button
             disableRipple
             color="inherit"
-            startIcon={<Iconify icon={"solar:settings-bold-duotone" as any} sx={{ color: 'dark.main' }} />}
+            startIcon={
+              <Iconify icon={'solar:settings-bold-duotone' as any} sx={{ color: 'dark.main' }} />
+            }
             onClick={onOpenSettings}
             sx={{
               height: 40,

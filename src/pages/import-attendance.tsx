@@ -5,10 +5,10 @@ import { UploadAttendanceView } from 'src/sections/upload-attendance/view/upload
 // ----------------------------------------------------------------------
 
 export default function ImportAttendancePage() {
-    return (
-        <>
-            <title>{`Import Attendance - ${CONFIG.appName}`}</title>
-            <UploadAttendanceView />
-        </>
-    );
+  return (
+    <>
+      <title>{`Import Attendance - ${CONFIG.appName}`}</title>
+      <UploadAttendanceView />
+    </>
+  );
 }

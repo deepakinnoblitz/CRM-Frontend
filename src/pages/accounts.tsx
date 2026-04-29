@@ -5,11 +5,11 @@ import { AccountView } from 'src/sections/account/view/account-view';
 // ----------------------------------------------------------------------
 
 export default function Page() {
-    return (
-        <>
-            <title>{`Accounts - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Accounts - ${CONFIG.appName}`}</title>
 
-            <AccountView />
-        </>
-    );
+      <AccountView />
+    </>
+  );
 }

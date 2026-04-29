@@ -5,11 +5,11 @@ import { InvoiceCollectionListView } from 'src/sections/invoice-collection/view/
 // ----------------------------------------------------------------------
 
 export default function InvoiceCollectionListPage() {
-    return (
-        <>
-            <title>{`Invoice Collections - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Invoice Collections - ${CONFIG.appName}`}</title>
 
-            <InvoiceCollectionListView />
-        </>
-    );
+      <InvoiceCollectionListView />
+    </>
+  );
 }

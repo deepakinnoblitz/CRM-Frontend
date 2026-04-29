@@ -5,10 +5,10 @@ import { MeetingReportView } from 'src/sections/report/meeting/view/meeting-repo
 // ----------------------------------------------------------------------
 
 export default function MeetingReportPage() {
-    return (
-        <>
-            <title>{`Meeting Report - ${CONFIG.appName}`}</title>
-            <MeetingReportView />
-        </>
-    );
+  return (
+    <>
+      <title>{`Meeting Report - ${CONFIG.appName}`}</title>
+      <MeetingReportView />
+    </>
+  );
 }

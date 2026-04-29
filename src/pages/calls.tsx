@@ -5,11 +5,11 @@ import { CallsView } from 'src/sections/calls/view/calls-view';
 // ----------------------------------------------------------------------
 
 export default function Page() {
-    return (
-        <>
-            <title>{`Calls - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Calls - ${CONFIG.appName}`}</title>
 
-            <CallsView />
-        </>
-    );
+      <CallsView />
+    </>
+  );
 }

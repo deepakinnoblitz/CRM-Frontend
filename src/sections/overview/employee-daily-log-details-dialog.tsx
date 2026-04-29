@@ -7,7 +7,6 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -22,579 +21,659 @@ import { Scrollbar } from 'src/components/scrollbar';
 // ----------------------------------------------------------------------
 
 const STATUS_DISPLAY_MAP: Record<string, string> = {
-    Available: 'Active',
-    Busy: 'In client meeting',
-    'Do Not Disturb': 'Team discussion',
-    Break: 'Lunch Break',
-    Away: 'Break',
-    Offline: 'Offline - Logout',
+  Available: 'Active',
+  Busy: 'In client meeting',
+  'Do Not Disturb': 'Team discussion',
+  Break: 'Lunch Break',
+  Away: 'Break',
+  Offline: 'Offline - Logout',
 };
 
 const SessionTimelineBar = ({ session }: { session: any }) => {
-    const theme = useTheme();
-    if (!session || !session.login_time) return null;
+  const theme = useTheme();
+  if (!session || !session.login_time) return null;
 
-    const parseTime = (dateStr: string) => {
-        if (!dateStr) return 0;
-        let d = dayjs(dateStr);
-        if (!d.isValid() && typeof dateStr === 'string' && dateStr.includes(':')) {
-            d = dayjs(`2000-01-01 ${dateStr}`);
-        }
-        return d.hour() * 3600 + d.minute() * 60 + d.second();
-    };
-
-    const formatShortDuration = (seconds: number) => {
-        const hrs = Math.floor(seconds / 3600);
-        const mins = Math.round((seconds % 3600) / 60);
-        if (hrs > 0) return `${hrs}h ${mins > 0 ? `${mins}m` : ''}`;
-        return `${mins}m`;
-    };
-
-    const formattedTimeFromSec = (sec: number) => {
-        const hrs = Math.floor(sec / 3600);
-        const mins = Math.floor((sec % 3600) / 60);
-        return dayjs().hour(hrs).minute(mins).format('h:mm a');
-    };
-
-    const startSec = parseTime(session.login_time);
-
-    let endSec = session.logout_time ? parseTime(session.logout_time) : 0;
-    if (!endSec && session.intervals && session.intervals.length > 0) {
-        const lastInterval = session.intervals[session.intervals.length - 1];
-        if (lastInterval.to_time) endSec = parseTime(lastInterval.to_time);
+  const parseTime = (dateStr: string) => {
+    if (!dateStr) return 0;
+    let d = dayjs(dateStr);
+    if (!d.isValid() && typeof dateStr === 'string' && dateStr.includes(':')) {
+      d = dayjs(`2000-01-01 ${dateStr}`);
     }
-    if (!endSec) endSec = parseTime(new Date().toISOString());
-    if (endSec <= startSec) endSec = startSec + 3600;
+    return d.hour() * 3600 + d.minute() * 60 + d.second();
+  };
 
-    const totalDuration = Math.max(endSec - startSec, 1);
+  const formatShortDuration = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.round((seconds % 3600) / 60);
+    if (hrs > 0) return `${hrs}h ${mins > 0 ? `${mins}m` : ''}`;
+    return `${mins}m`;
+  };
 
-    // Split and merge logic
-    const timePointsSet = new Set<number>();
-    timePointsSet.add(startSec);
-    timePointsSet.add(endSec);
-    (session.intervals || []).forEach((int: any) => {
-        timePointsSet.add(parseTime(int.from_time));
-        if (int.to_time) timePointsSet.add(parseTime(int.to_time));
+  const formattedTimeFromSec = (sec: number) => {
+    const hrs = Math.floor(sec / 3600);
+    const mins = Math.floor((sec % 3600) / 60);
+    return dayjs().hour(hrs).minute(mins).format('h:mm a');
+  };
+
+  const startSec = parseTime(session.login_time);
+
+  let endSec = session.logout_time ? parseTime(session.logout_time) : 0;
+  if (!endSec && session.intervals && session.intervals.length > 0) {
+    const lastInterval = session.intervals[session.intervals.length - 1];
+    if (lastInterval.to_time) endSec = parseTime(lastInterval.to_time);
+  }
+  if (!endSec) endSec = parseTime(new Date().toISOString());
+  if (endSec <= startSec) endSec = startSec + 3600;
+
+  const totalDuration = Math.max(endSec - startSec, 1);
+
+  // Split and merge logic
+  const timePointsSet = new Set<number>();
+  timePointsSet.add(startSec);
+  timePointsSet.add(endSec);
+  (session.intervals || []).forEach((int: any) => {
+    timePointsSet.add(parseTime(int.from_time));
+    if (int.to_time) timePointsSet.add(parseTime(int.to_time));
+  });
+  (session.breaks || []).forEach((brk: any) => {
+    timePointsSet.add(parseTime(brk.break_start));
+    if (brk.break_end) timePointsSet.add(parseTime(brk.break_end));
+  });
+
+  const sortedTimePoints = Array.from(timePointsSet)
+    .filter((t) => t >= startSec && t <= endSec)
+    .sort((a, b) => a - b);
+
+  const rawSegments: any[] = [];
+  for (let i = 0; i < sortedTimePoints.length - 1; i++) {
+    const from = sortedTimePoints[i];
+    const to = sortedTimePoints[i + 1];
+    if (from === to) continue;
+
+    const mid = (from + to) / 2;
+
+    const midBreak = (session.breaks || []).find((brk: any) => {
+      const bStart = parseTime(brk.break_start);
+      const bEnd = brk.break_end ? parseTime(brk.break_end) : endSec;
+      return mid >= bStart && mid <= bEnd;
     });
-    (session.breaks || []).forEach((brk: any) => {
-        timePointsSet.add(parseTime(brk.break_start));
-        if (brk.break_end) timePointsSet.add(parseTime(brk.break_end));
-    });
 
-    const sortedTimePoints = Array.from(timePointsSet)
-        .filter(t => t >= startSec && t <= endSec)
-        .sort((a, b) => a - b);
-
-    const rawSegments: any[] = [];
-    for (let i = 0; i < sortedTimePoints.length - 1; i++) {
-        const from = sortedTimePoints[i];
-        const to = sortedTimePoints[i + 1];
-        if (from === to) continue;
-
-        const mid = (from + to) / 2;
-
-        const midBreak = (session.breaks || []).find((brk: any) => {
-            const bStart = parseTime(brk.break_start);
-            const bEnd = brk.break_end ? parseTime(brk.break_end) : endSec;
-            return mid >= bStart && mid <= bEnd;
-        });
-
-        if (midBreak) {
-            rawSegments.push({ from, to, type: 'Break', status: midBreak.source === 'Away' ? 'Away' : 'Break' });
-            continue;
-        }
-
-        const isInActive = (session.intervals || []).find((int: any) => {
-            const iStart = parseTime(int.from_time);
-            const iEnd = int.to_time ? parseTime(int.to_time) : endSec;
-            return mid >= iStart && mid <= iEnd;
-        });
-
-        if (isInActive) {
-            rawSegments.push({ from, to, type: 'Active', status: isInActive.status });
-        } else {
-            rawSegments.push({ from, to, type: 'Offline' });
-        }
+    if (midBreak) {
+      rawSegments.push({
+        from,
+        to,
+        type: 'Break',
+        status: midBreak.source === 'Away' ? 'Away' : 'Break',
+      });
+      continue;
     }
 
-    const mergedSegments: any[] = [];
-    if (rawSegments.length > 0) {
-        let current = { ...rawSegments[0] };
-        for (let i = 1; i < rawSegments.length; i++) {
-            if (rawSegments[i].type === current.type && rawSegments[i].status === current.status) {
-                current.to = rawSegments[i].to;
-            } else {
-                mergedSegments.push(current);
-                current = { ...rawSegments[i] };
-            }
-        }
+    const isInActive = (session.intervals || []).find((int: any) => {
+      const iStart = parseTime(int.from_time);
+      const iEnd = int.to_time ? parseTime(int.to_time) : endSec;
+      return mid >= iStart && mid <= iEnd;
+    });
+
+    if (isInActive) {
+      rawSegments.push({ from, to, type: 'Active', status: isInActive.status });
+    } else {
+      rawSegments.push({ from, to, type: 'Offline' });
+    }
+  }
+
+  const mergedSegments: any[] = [];
+  if (rawSegments.length > 0) {
+    let current = { ...rawSegments[0] };
+    for (let i = 1; i < rawSegments.length; i++) {
+      if (rawSegments[i].type === current.type && rawSegments[i].status === current.status) {
+        current.to = rawSegments[i].to;
+      } else {
         mergedSegments.push(current);
+        current = { ...rawSegments[i] };
+      }
+    }
+    mergedSegments.push(current);
+  }
+
+  const getStatusColor = (status?: string, type?: string) => {
+    if (type === 'Offline' || status === 'Offline') return alpha(theme.palette.grey[500], 0.16);
+    if (type === 'Break') return alpha('#f59e0b', 0.8);
+
+    const s = status || 'Available';
+    if (s === 'Available') return alpha(theme.palette.success.main, 0.8);
+    if (s === 'Busy') return alpha('#ef4444', 0.8);
+    if (s === 'Do Not Disturb') return alpha('#b91c1c', 0.8);
+    if (s === 'Away') return alpha('#d97706', 0.8);
+    return alpha(theme.palette.success.main, 0.8);
+  };
+
+  const segments = mergedSegments.map((seg) => {
+    const duration = seg.to - seg.from;
+    const width = (duration / totalDuration) * 100;
+    const left = ((seg.from - startSec) / totalDuration) * 100;
+
+    const isBreak = seg.type === 'Break';
+    const isOffline = seg.type === 'Offline';
+    const isShortActive = seg.type === 'Active' && duration < 60; // Less than 1 minute
+
+    const color = getStatusColor(seg.status, seg.type);
+    let textColor = '#FFFFFF';
+
+    if (isBreak) {
+      textColor = '#FFFFFF';
+    } else if (isOffline || isShortActive) {
+      textColor = theme.palette.text.disabled;
     }
 
-    const getStatusColor = (status?: string, type?: string) => {
-        if (type === 'Offline' || status === 'Offline') return alpha(theme.palette.grey[500], 0.16);
-        if (type === 'Break') return alpha('#f59e0b', 0.8);
+    const displayLabel = STATUS_DISPLAY_MAP[seg.status] || seg.type;
 
-        const s = status || 'Available';
-        if (s === 'Available') return alpha(theme.palette.success.main, 0.8);
-        if (s === 'Busy') return alpha('#ef4444', 0.8);
-        if (s === 'Do Not Disturb') return alpha('#b91c1c', 0.8);
-        if (s === 'Away') return alpha('#d97706', 0.8);
-        return alpha(theme.palette.success.main, 0.8);
+    return {
+      left,
+      width,
+      color,
+      textColor,
+      label: formatShortDuration(duration),
+      tooltip: `${displayLabel}: ${formattedTimeFromSec(seg.from)} - ${formattedTimeFromSec(seg.to)} (${fDecimalHours(duration / 3600)})`,
+      showLabel: width > 8 && !isOffline && !isShortActive,
     };
+  });
 
-    const segments = mergedSegments.map((seg) => {
-        const duration = seg.to - seg.from;
-        const width = (duration / totalDuration) * 100;
-        const left = ((seg.from - startSec) / totalDuration) * 100;
-
-        const isBreak = seg.type === 'Break';
-        const isOffline = seg.type === 'Offline';
-        const isShortActive = seg.type === 'Active' && duration < 60; // Less than 1 minute
-
-        const color = getStatusColor(seg.status, seg.type);
-        let textColor = '#FFFFFF';
-
-        if (isBreak) {
-            textColor = '#FFFFFF';
-        } else if (isOffline || isShortActive) {
-            textColor = theme.palette.text.disabled;
-        }
-
-        const displayLabel = STATUS_DISPLAY_MAP[seg.status] || seg.type;
-
-        return {
-            left,
-            width,
-            color,
-            textColor,
-            label: formatShortDuration(duration),
-            tooltip: `${displayLabel}: ${formattedTimeFromSec(seg.from)} - ${formattedTimeFromSec(seg.to)} (${fDecimalHours(duration / 3600)})`,
-            showLabel: width > 8 && !isOffline && !isShortActive
-        };
-    });
-
-    return (
-        <Box sx={{ width: '100%', mb: 5 }}>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-                <Box
-                    sx={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: alpha(theme.palette.success.main, 0.12),
-                        color: 'success.main',
-                    }}
-                >
-                    <Iconify icon="solar:chart-square-bold" width={20} />
-                </Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                    Timeline Overview
-                </Typography>
-            </Stack>
-            <Box sx={{ width: '100%', height: 32, bgcolor: alpha(theme.palette.grey[500], 0.12), borderRadius: 1.5, position: 'relative', overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
-                {segments.map((seg, i) => (
-                    <Tooltip key={i} title={seg.tooltip} arrow>
-                        <Box
-                            sx={{
-                                position: 'absolute',
-                                left: `${Math.max(0, Math.min(100, seg.left))}%`,
-                                width: `${Math.max(0, Math.min(100 - seg.left, seg.width))}%`,
-                                height: '100%',
-                                bgcolor: seg.color,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRight: `1px solid ${alpha(theme.palette.common.black, 0.05)}`,
-                                transition: theme.transitions.create('background-color'),
-                                '&:hover': {
-                                    bgcolor: alpha(seg.color, 0.9),
-                                }
-                            }}
-                        >
-                            {seg.showLabel && (
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        color: seg.textColor,
-                                        fontWeight: 800,
-                                        fontSize: 10,
-                                        whiteSpace: 'nowrap',
-                                        pointerEvents: 'none',
-                                        textShadow: '0 0 4px rgba(255,255,255,0.5)'
-                                    }}
-                                >
-                                    {seg.label}
-                                </Typography>
-                            )}
-                        </Box>
-                    </Tooltip>
-                ))}
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1.5, px: 0.5 }}>
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
-                    {fTime(session.login_time)}
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
-                    {session.logout_time ? fTime(session.logout_time) : 'Active Now'}
-                </Typography>
-            </Box>
-
-            {/* Legend */}
-            <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 2.5, px: 0.5 }}>
-                {[
-                    { label: 'Active', color: theme.palette.success.main },
-                    { label: 'In client meeting', color: '#ef4444' },
-                    { label: 'Team discussion', color: '#b91c1c' },
-                    { label: 'Break', color: '#d97706' },
-                    { label: 'Lunch Break', color: '#f59e0b' },
-                    { label: 'Offline - Logout', color: theme.palette.grey[500] },
-                ].map((item) => (
-                    <Stack key={item.label} direction="row" alignItems="center" spacing={0.75}>
-                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: item.color }} />
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                            {item.label}
-                        </Typography>
-                    </Stack>
-                ))}
-            </Stack>
+  return (
+    <Box sx={{ width: '100%', mb: 5 }}>
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+        <Box
+          sx={{
+            width: 32,
+            height: 32,
+            borderRadius: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: alpha(theme.palette.success.main, 0.12),
+            color: 'success.main',
+          }}
+        >
+          <Iconify icon="solar:chart-square-bold" width={20} />
         </Box>
-    );
+        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+          Timeline Overview
+        </Typography>
+      </Stack>
+      <Box
+        sx={{
+          width: '100%',
+          height: 32,
+          bgcolor: alpha(theme.palette.grey[500], 0.12),
+          borderRadius: 1.5,
+          position: 'relative',
+          overflow: 'hidden',
+          border: `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        {segments.map((seg, i) => (
+          <Tooltip key={i} title={seg.tooltip} arrow>
+            <Box
+              sx={{
+                position: 'absolute',
+                left: `${Math.max(0, Math.min(100, seg.left))}%`,
+                width: `${Math.max(0, Math.min(100 - seg.left, seg.width))}%`,
+                height: '100%',
+                bgcolor: seg.color,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRight: `1px solid ${alpha(theme.palette.common.black, 0.05)}`,
+                transition: theme.transitions.create('background-color'),
+                '&:hover': {
+                  bgcolor: alpha(seg.color, 0.9),
+                },
+              }}
+            >
+              {seg.showLabel && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: seg.textColor,
+                    fontWeight: 800,
+                    fontSize: 10,
+                    whiteSpace: 'nowrap',
+                    pointerEvents: 'none',
+                    textShadow: '0 0 4px rgba(255,255,255,0.5)',
+                  }}
+                >
+                  {seg.label}
+                </Typography>
+              )}
+            </Box>
+          </Tooltip>
+        ))}
+      </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1.5, px: 0.5 }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
+          {fTime(session.login_time)}
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
+          {session.logout_time ? fTime(session.logout_time) : 'Active Now'}
+        </Typography>
+      </Box>
+
+      {/* Legend */}
+      <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 2.5, px: 0.5 }}>
+        {[
+          { label: 'Active', color: theme.palette.success.main },
+          { label: 'In client meeting', color: '#ef4444' },
+          { label: 'Team discussion', color: '#b91c1c' },
+          { label: 'Break', color: '#d97706' },
+          { label: 'Lunch Break', color: '#f59e0b' },
+          { label: 'Offline - Logout', color: theme.palette.grey[500] },
+        ].map((item) => (
+          <Stack key={item.label} direction="row" alignItems="center" spacing={0.75}>
+            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: item.color }} />
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+              {item.label}
+            </Typography>
+          </Stack>
+        ))}
+      </Stack>
+    </Box>
+  );
 };
 
 type Props = {
-    open: boolean;
-    onClose: VoidFunction;
-    session: any;
+  open: boolean;
+  onClose: VoidFunction;
+  session: any;
 };
 
 export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props) {
-    const theme = useTheme();
-    const [limit, setLimit] = useState(5);
+  const theme = useTheme();
+  const [limit, setLimit] = useState(5);
 
-    if (!session) return null;
+  if (!session) return null;
 
-    const { employee_name, login_date, login_time, logout_time, total_work_hours, total_break_hours, status, intervals = [], breaks = [] } = session;
+  const {
+    employee_name,
+    login_date,
+    login_time,
+    logout_time,
+    total_work_hours,
+    total_break_hours,
+    status,
+    intervals = [],
+    breaks = [],
+  } = session;
 
-    const renderDetailItem = (label: string, value: string) => (
-        <Box>
-            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
-                {label}
-            </Typography>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 16 }}>
-                {value}
-            </Typography>
-        </Box>
-    );
+  const renderDetailItem = (label: string, value: string) => (
+    <Box>
+      <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
+        {label}
+      </Typography>
+      <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 16 }}>
+        {value}
+      </Typography>
+    </Box>
+  );
 
-    const formatDuration = (seconds: number) => fDecimalHours(seconds / 3600);
+  const formatDuration = (seconds: number) => fDecimalHours(seconds / 3600);
 
-    const formatDetailedDuration = (minutes: number) => {
-        if (!minutes && minutes !== 0) return 'Active';
-        const totalSeconds = Math.round(minutes * 60);
-        const mins = Math.floor(totalSeconds / 60);
-        const secs = totalSeconds % 60;
-        return `${mins} mins ${secs} Sec`;
-    };
+  const formatDetailedDuration = (minutes: number) => {
+    if (!minutes && minutes !== 0) return 'Active';
+    const totalSeconds = Math.round(minutes * 60);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins} mins ${secs} Sec`;
+  };
 
-    const formatSecondsToDetailed = (seconds: number) => {
-        if (!seconds && seconds !== 0) return 'Tracking...';
-        const s = Math.round(seconds);
-        const mins = Math.floor(s / 60);
-        const secs = s % 60;
-        if (mins > 0) return `${mins} MINS ${secs} SECS`;
-        return `${secs} SECS`;
-    };
+  const formatSecondsToDetailed = (seconds: number) => {
+    if (!seconds && seconds !== 0) return 'Tracking...';
+    const s = Math.round(seconds);
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    if (mins > 0) return `${mins} MINS ${secs} SECS`;
+    return `${secs} SECS`;
+  };
 
-    return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6" component="span" sx={{ fontWeight: 900 }}>
-                    Details for {employee_name || 'Employee'} - {fDate(login_date, 'DD MMM YYYY')}
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+      <DialogTitle
+        sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+      >
+        <Typography variant="h6" component="span" sx={{ fontWeight: 900 }}>
+          Details for {employee_name || 'Employee'} - {fDate(login_date, 'DD MMM YYYY')}
+        </Typography>
+        <IconButton onClick={onClose}>
+          <Iconify icon="mingcute:close-line" />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent dividers sx={{ p: 0 }}>
+        <Scrollbar sx={{ p: 4, maxHeight: '72vh' }}>
+          {/* Summary Section */}
+          <Box sx={{ mb: 5 }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: alpha(theme.palette.info.main, 0.12),
+                  color: 'info.main',
+                }}
+              >
+                <Iconify icon={'solar:user-id-bold' as any} width={20} />
+              </Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                Session Summary
+              </Typography>
+            </Stack>
+
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: 1.5,
+                bgcolor: alpha(theme.palette.grey[500], 0.04),
+                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              }}
+            >
+              <Box
+                display="grid"
+                gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(4, 1fr)' }}
+                gap={2}
+                sx={{ mb: 5 }}
+              >
+                {renderDetailItem(
+                  'Login Date',
+                  login_date ? fDate(login_date, 'DD MMM YYYY') : '-'
+                )}
+                {renderDetailItem(
+                  'Login Time',
+                  login_time ? fDateTime(login_time, 'h:mm:ss a') : '-'
+                )}
+                {renderDetailItem(
+                  'Logout Time',
+                  logout_time ? fDateTime(logout_time, 'h:mm:ss a') : 'Active'
+                )}
+                {renderDetailItem(
+                  'Status',
+                  status
+                    ? STATUS_DISPLAY_MAP[status as keyof typeof STATUS_DISPLAY_MAP] || status
+                    : 'Unknown'
+                )}
+              </Box>
+
+              <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
+
+              <Box
+                display="grid"
+                gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
+                gap={2}
+                sx={{ mt: 3 }}
+              >
+                {renderDetailItem(
+                  'Total Work Hours',
+                  total_work_hours ? fDecimalHours(total_work_hours) : '0 secs'
+                )}
+                {renderDetailItem(
+                  'Total Break Hours',
+                  total_break_hours ? fDecimalHours(total_break_hours) : '0 secs'
+                )}
+              </Box>
+            </Box>
+          </Box>
+
+          <Divider sx={{ borderStyle: 'dashed', mb: 5 }} />
+
+          <SessionTimelineBar session={session} />
+
+          <Stack spacing={5} direction={{ xs: 'column', md: 'row' }}>
+            {/* Activity Timeline */}
+            <Box sx={{ flex: 1 }}>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+                <Box
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: alpha(theme.palette.primary.main, 0.12),
+                    color: 'primary.main',
+                  }}
+                >
+                  <Iconify icon={'solar:history-bold' as any} width={20} />
+                </Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                  Activity Timeline
                 </Typography>
-                <IconButton onClick={onClose}>
-                    <Iconify icon="mingcute:close-line" />
-                </IconButton>
-            </DialogTitle>
+              </Stack>
 
-            <DialogContent dividers sx={{ p: 0 }}>
-                <Scrollbar sx={{ p: 4, maxHeight: '72vh' }}>
+              <Stack spacing={3}>
+                {intervals.slice(0, limit).map((interval: any, index: number) => {
+                  const intervalStatus = interval.status || 'Available';
+                  const isAvailable = intervalStatus === 'Available';
+                  const isBusy = intervalStatus === 'Busy';
+                  const isDnd = intervalStatus === 'Do Not Disturb';
+                  const isAway = intervalStatus === 'Away';
+                  const isOffline = intervalStatus === 'Offline';
 
-                    {/* Summary Section */}
-                    <Box sx={{ mb: 5 }}>
-                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-                            <Box
-                                sx={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: 1,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    bgcolor: alpha(theme.palette.info.main, 0.12),
-                                    color: 'info.main',
-                                }}
-                            >
-                                <Iconify icon={"solar:user-id-bold" as any} width={20} />
-                            </Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                Session Summary
-                            </Typography>
-                        </Stack>
+                  let statusColor = theme.palette.success.main;
+                  if (isBusy) statusColor = '#ef4444';
+                  if (isDnd) statusColor = '#b91c1c';
+                  if (isAway) statusColor = theme.palette.warning.main;
+                  if (isOffline) statusColor = theme.palette.text.disabled;
 
+                  return (
+                    <Stack key={index} direction="row" spacing={2.5}>
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                        }}
+                      >
                         <Box
+                          sx={{
+                            width: 14,
+                            height: 14,
+                            borderRadius: '50%',
+                            border: `3px solid ${statusColor}`,
+                            bgcolor: 'background.paper',
+                            zIndex: 1,
+                          }}
+                        />
+                        {index < Math.min(limit, intervals.length) - 1 && (
+                          <Box
                             sx={{
-                                p: 1.5,
-                                borderRadius: 1.5,
-                                bgcolor: alpha(theme.palette.grey[500], 0.04),
-                                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                              width: 2,
+                              flexGrow: 1,
+                              bgcolor: alpha(statusColor, 0.2),
+                              my: 0.5,
+                              minHeight: 24,
                             }}
+                          />
+                        )}
+                      </Box>
+                      <Box>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {fTime(interval.from_time)} —{' '}
+                            {interval.to_time
+                              ? fTime(interval.to_time)
+                              : intervalStatus === 'Offline'
+                                ? 'Logout'
+                                : 'Active'}
+                          </Typography>
+
+                          <Box
+                            sx={{
+                              px: 0.75,
+                              py: 0.15,
+                              borderRadius: 0.5,
+                              fontSize: 10,
+                              fontWeight: 900,
+                              textTransform: 'uppercase',
+                              bgcolor: alpha(statusColor, 0.1),
+                              color: statusColor,
+                              border: `1px solid ${alpha(statusColor, 0.2)}`,
+                            }}
+                          >
+                            {STATUS_DISPLAY_MAP[
+                              intervalStatus as keyof typeof STATUS_DISPLAY_MAP
+                            ] || intervalStatus}
+                          </Box>
+                        </Stack>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: 'text.disabled',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                          }}
                         >
-                            <Box
-                                display="grid"
-                                gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(4, 1fr)' }}
-                                gap={2}
-                                sx={{ mb: 5 }}
-                            >
-                                {renderDetailItem(
-                                    "Login Date",
-                                    login_date ? fDate(login_date, 'DD MMM YYYY') : '-'
-                                )}
-                                {renderDetailItem(
-                                    "Login Time",
-                                    login_time ? fDateTime(login_time, 'h:mm:ss a') : '-'
-                                )}
-                                {renderDetailItem(
-                                    "Logout Time",
-                                    logout_time ? fDateTime(logout_time, 'h:mm:ss a') : 'Active'
-                                )}
-                                {renderDetailItem(
-                                    "Status",
-                                    status ? (STATUS_DISPLAY_MAP[status as keyof typeof STATUS_DISPLAY_MAP] || status) : 'Unknown'
-                                )}
-                            </Box>
-
-                            <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
-
-                            <Box
-                                display="grid"
-                                gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
-                                gap={2}
-                                sx={{ mt: 3 }}
-                            >
-                                {renderDetailItem(
-                                    "Total Work Hours",
-                                    total_work_hours ? fDecimalHours(total_work_hours) : '0 secs'
-                                )}
-                                {renderDetailItem(
-                                    "Total Break Hours",
-                                    total_break_hours ? fDecimalHours(total_break_hours) : '0 secs'
-                                )}
-                            </Box>
-                        </Box>
-                    </Box>
-
-                    <Divider sx={{ borderStyle: 'dashed', mb: 5 }} />
-
-                    <SessionTimelineBar session={session} />
-
-                    <Stack spacing={5} direction={{ xs: 'column', md: 'row' }}>
-
-                        {/* Activity Timeline */}
-                        <Box sx={{ flex: 1 }}>
-                            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-                                <Box
-                                    sx={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: 1,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        bgcolor: alpha(theme.palette.primary.main, 0.12),
-                                        color: 'primary.main',
-                                    }}
-                                >
-                                    <Iconify icon={"solar:history-bold" as any} width={20} />
-                                </Box>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                    Activity Timeline
-                                </Typography>
-                            </Stack>
-
-                            <Stack spacing={3}>
-                                {intervals.slice(0, limit).map((interval: any, index: number) => {
-                                    const intervalStatus = interval.status || 'Available';
-                                    const isAvailable = intervalStatus === 'Available';
-                                    const isBusy = intervalStatus === 'Busy';
-                                    const isDnd = intervalStatus === 'Do Not Disturb';
-                                    const isAway = intervalStatus === 'Away';
-                                    const isOffline = intervalStatus === 'Offline';
-
-                                    let statusColor = theme.palette.success.main;
-                                    if (isBusy) statusColor = '#ef4444';
-                                    if (isDnd) statusColor = '#b91c1c';
-                                    if (isAway) statusColor = theme.palette.warning.main;
-                                    if (isOffline) statusColor = theme.palette.text.disabled;
-
-                                    return (
-                                        <Stack key={index} direction="row" spacing={2.5}>
-                                            <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                                <Box
-                                                    sx={{
-                                                        width: 14,
-                                                        height: 14,
-                                                        borderRadius: '50%',
-                                                        border: `3px solid ${statusColor}`,
-                                                        bgcolor: 'background.paper',
-                                                        zIndex: 1
-                                                    }}
-                                                />
-                                                {index < Math.min(limit, intervals.length) - 1 && (
-                                                    <Box
-                                                        sx={{
-                                                            width: 2,
-                                                            flexGrow: 1,
-                                                            bgcolor: alpha(statusColor, 0.2),
-                                                            my: 0.5,
-                                                            minHeight: 24
-                                                        }}
-                                                    />
-                                                )}
-                                            </Box>
-                                            <Box>
-                                                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
-                                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                                        {fTime(interval.from_time)} — {interval.to_time ? fTime(interval.to_time) : (intervalStatus === 'Offline' ? 'Logout' : 'Active')}
-                                                    </Typography>
-
-                                                    <Box
-                                                        sx={{
-                                                            px: 0.75,
-                                                            py: 0.15,
-                                                            borderRadius: 0.5,
-                                                            fontSize: 10,
-                                                            fontWeight: 900,
-                                                            textTransform: 'uppercase',
-                                                            bgcolor: alpha(statusColor, 0.1),
-                                                            color: statusColor,
-                                                            border: `1px solid ${alpha(statusColor, 0.2)}`
-                                                        }}
-                                                    >
-                                                        {STATUS_DISPLAY_MAP[intervalStatus as keyof typeof STATUS_DISPLAY_MAP] || intervalStatus}
-                                                    </Box>
-                                                </Stack>
-                                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase' }}>
-                                                    Duration: {formatSecondsToDetailed(interval.duration_seconds)}
-                                                </Typography>
-                                            </Box>
-                                        </Stack>
-                                    );
-                                })}
-
-                                {intervals.length > limit && (
-                                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 1 }}>
-                                        <Button
-                                            size="small"
-                                            color="primary"
-                                            onClick={() => setLimit(limit + 5)}
-                                            startIcon={<Iconify icon="eva:arrow-ios-downward-fill" width={18} />}
-                                            sx={{
-                                                fontWeight: 800,
-                                                borderRadius: 1.5,
-                                                px: 2,
-                                                bgcolor: alpha(theme.palette.primary.main, 0.08),
-                                                '&:hover': {
-                                                    bgcolor: alpha(theme.palette.primary.main, 0.16),
-                                                }
-                                            }}
-                                        >
-                                            Load More ({intervals.length - limit} remaining)
-                                        </Button>
-                                    </Box>
-                                )}
-                            </Stack>
-                        </Box>
-
-                        <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed', display: { xs: 'none', md: 'block' } }} />
-
-                        {/* Breaks Section */}
-                        <Box sx={{ flex: 1 }}>
-                            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-                                <Box
-                                    sx={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: 1,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        bgcolor: alpha(theme.palette.warning.main, 0.12),
-                                        color: 'warning.main',
-                                    }}
-                                >
-                                    <Iconify icon={"ph:coffee-fill" as any} width={20} />
-                                </Box>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                    Lunch Break Intervals
-                                </Typography>
-                            </Stack>
-
-                            {breaks.length === 0 ? (
-                                <Box sx={{ textAlign: 'center', py: 5, bgcolor: alpha(theme.palette.grey[500], 0.04), borderRadius: 2 }}>
-                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
-                                        No breaks recorded for this session.
-                                    </Typography>
-                                </Box>
-                            ) : (
-                                <Stack spacing={2.5}>
-                                    {breaks.map((brk: any, index: number) => {
-                                        const isAway = brk.source === 'Away';
-                                        const color = isAway ? theme.palette.warning.main : theme.palette.warning.main; // Both use amber/orange but different icons
-                                        const bgColor = isAway ? alpha('#d97706', 0.04) : alpha(theme.palette.warning.main, 0.04);
-                                        const borderColor = isAway ? alpha('#d97706', 0.1) : alpha(theme.palette.warning.main, 0.1);
-
-                                        return (
-                                            <Stack
-                                                key={index}
-                                                direction="row"
-                                                alignItems="center"
-                                                spacing={2}
-                                                sx={{
-                                                    p: 2,
-                                                    borderRadius: 1.5,
-                                                    bgcolor: bgColor,
-                                                    border: `1px solid ${borderColor}`
-                                                }}
-                                            >
-                                                <Iconify
-                                                    icon={(isAway ? "ph:moon-fill" : "ph:coffee-fill") as any}
-                                                    sx={{ color: isAway ? '#d97706' : 'warning.main' }}
-                                                />
-                                                <Box>
-                                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                                        {fTime(brk.break_start)} — {brk.break_end ? fTime(brk.break_end) : 'Current'}
-                                                    </Typography>
-                                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25, fontWeight: 600 }}>
-                                                        {isAway ? 'Break (Inactivity)' : ((brk.reason || 'Manual Break').replace('Away to Break', ' Break to Lunch Break'))}
-                                                    </Typography>
-                                                    <Typography variant="caption" sx={{ color: isAway ? '#d97706' : 'warning.main', fontWeight: 900 }}>
-                                                        {formatDetailedDuration(brk.break_duration)}
-                                                        {` • Source: ${brk.source || 'Manual'}`}
-                                                    </Typography>
-                                                </Box>
-                                            </Stack>
-                                        );
-                                    })}
-                                </Stack>
-                            )}
-                        </Box>
+                          Duration: {formatSecondsToDetailed(interval.duration_seconds)}
+                        </Typography>
+                      </Box>
                     </Stack>
-                </Scrollbar>
-            </DialogContent>
-        </Dialog>
-    );
+                  );
+                })}
+
+                {intervals.length > limit && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 1 }}>
+                    <Button
+                      size="small"
+                      color="primary"
+                      onClick={() => setLimit(limit + 5)}
+                      startIcon={<Iconify icon="eva:arrow-ios-downward-fill" width={18} />}
+                      sx={{
+                        fontWeight: 800,
+                        borderRadius: 1.5,
+                        px: 2,
+                        bgcolor: alpha(theme.palette.primary.main, 0.08),
+                        '&:hover': {
+                          bgcolor: alpha(theme.palette.primary.main, 0.16),
+                        },
+                      }}
+                    >
+                      Load More ({intervals.length - limit} remaining)
+                    </Button>
+                  </Box>
+                )}
+              </Stack>
+            </Box>
+
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ borderStyle: 'dashed', display: { xs: 'none', md: 'block' } }}
+            />
+
+            {/* Breaks Section */}
+            <Box sx={{ flex: 1 }}>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+                <Box
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: alpha(theme.palette.warning.main, 0.12),
+                    color: 'warning.main',
+                  }}
+                >
+                  <Iconify icon={'ph:coffee-fill' as any} width={20} />
+                </Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                  Lunch Break Intervals
+                </Typography>
+              </Stack>
+
+              {breaks.length === 0 ? (
+                <Box
+                  sx={{
+                    textAlign: 'center',
+                    py: 5,
+                    bgcolor: alpha(theme.palette.grey[500], 0.04),
+                    borderRadius: 2,
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+                    No breaks recorded for this session.
+                  </Typography>
+                </Box>
+              ) : (
+                <Stack spacing={2.5}>
+                  {breaks.map((brk: any, index: number) => {
+                    const isAway = brk.source === 'Away';
+                    const color = isAway ? theme.palette.warning.main : theme.palette.warning.main; // Both use amber/orange but different icons
+                    const bgColor = isAway
+                      ? alpha('#d97706', 0.04)
+                      : alpha(theme.palette.warning.main, 0.04);
+                    const borderColor = isAway
+                      ? alpha('#d97706', 0.1)
+                      : alpha(theme.palette.warning.main, 0.1);
+
+                    return (
+                      <Stack
+                        key={index}
+                        direction="row"
+                        alignItems="center"
+                        spacing={2}
+                        sx={{
+                          p: 2,
+                          borderRadius: 1.5,
+                          bgcolor: bgColor,
+                          border: `1px solid ${borderColor}`,
+                        }}
+                      >
+                        <Iconify
+                          icon={(isAway ? 'ph:moon-fill' : 'ph:coffee-fill') as any}
+                          sx={{ color: isAway ? '#d97706' : 'warning.main' }}
+                        />
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {fTime(brk.break_start)} —{' '}
+                            {brk.break_end ? fTime(brk.break_end) : 'Current'}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: 'text.secondary',
+                              display: 'block',
+                              mt: 0.25,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {isAway
+                              ? 'Break (Inactivity)'
+                              : (brk.reason || 'Manual Break').replace(
+                                  'Away to Break',
+                                  ' Break to Lunch Break'
+                                )}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: isAway ? '#d97706' : 'warning.main', fontWeight: 900 }}
+                          >
+                            {formatDetailedDuration(brk.break_duration)}
+                            {` • Source: ${brk.source || 'Manual'}`}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    );
+                  })}
+                </Stack>
+              )}
+            </Box>
+          </Stack>
+        </Scrollbar>
+      </DialogContent>
+    </Dialog>
+  );
 }

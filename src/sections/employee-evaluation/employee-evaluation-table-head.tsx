@@ -9,10 +9,7 @@ type Props = {
   hideCheckbox?: boolean;
 };
 
-export function EmployeeEvaluationTableHead({
-  headLabel,
-  hideCheckbox = false,
-}: Props) {
+export function EmployeeEvaluationTableHead({ headLabel, hideCheckbox = false }: Props) {
   return (
     <TableHead>
       <TableRow sx={{ bgcolor: 'background.neutral' }}>

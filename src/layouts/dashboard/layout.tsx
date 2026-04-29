@@ -5,9 +5,7 @@ import { useBoolean } from 'minimal-shared/hooks';
 
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import { useTheme, alpha } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 
 import { RouterLink } from 'src/routes/components';
 
@@ -74,10 +72,7 @@ export function DashboardLayout({
   navData.forEach((item: any) => {
     item.info = undefined;
     // Check main items
-    if (
-      (item.title === 'Leave Application') &&
-      unreadCounts.counts['Leave Application'] > 0
-    ) {
+    if (item.title === 'Leave Application' && unreadCounts.counts['Leave Application'] > 0) {
       item.info = (
         <Label
           color="error"
@@ -95,7 +90,7 @@ export function DashboardLayout({
         </Label>
       );
     }
-    if ((item.title === 'Request List') && unreadCounts.counts.Request > 0) {
+    if (item.title === 'Request List' && unreadCounts.counts.Request > 0) {
       item.info = (
         <Label
           color="error"
@@ -113,10 +108,7 @@ export function DashboardLayout({
         </Label>
       );
     }
-    if (
-      (item.title === 'WFH Attendance') &&
-      unreadCounts.counts['WFH Attendance'] > 0
-    ) {
+    if (item.title === 'WFH Attendance' && unreadCounts.counts['WFH Attendance'] > 0) {
       item.info = (
         <Label
           color="error"
@@ -197,6 +189,28 @@ export function DashboardLayout({
           );
           groupCount += unreadCounts.counts.Request;
         }
+        if (
+          child.title === 'Reimbursement Claim List' &&
+          unreadCounts.counts['Reimbursement Claim'] > 0
+        ) {
+          child.info = (
+            <Label
+              color="error"
+              variant="filled"
+              sx={{
+                height: 18,
+                minWidth: 18,
+                fontSize: '0.7rem',
+                px: 0.5,
+                borderRadius: 0.5,
+                fontWeight: 'bold',
+              }}
+            >
+              {unreadCounts.counts['Reimbursement Claim']}
+            </Label>
+          );
+          groupCount += unreadCounts.counts['Reimbursement Claim'];
+        }
       });
 
       // If any children had unread counts, show the total on the parent item
@@ -221,7 +235,6 @@ export function DashboardLayout({
     }
   });
 
-
   const renderHeader = () => {
     const headerSlotProps: HeaderSectionProps['slotProps'] = {
       container: {
@@ -243,7 +256,6 @@ export function DashboardLayout({
             sx={{ mr: 1, ml: -1, [theme.breakpoints.up(layoutQuery)]: { display: 'none' } }}
           />
           <NavMobile data={navData} open={open} onClose={onClose} />
-
         </>
       ),
       rightArea: (
@@ -281,7 +293,6 @@ export function DashboardLayout({
               />
             </Box>
           </ChatNotifications>
-
 
           {/** @slot Account drawer */}
           <AccountPopover
@@ -324,10 +335,7 @@ export function DashboardLayout({
         /** **************************************
          * @Sidebar
          *************************************** */
-        sidebarSection={
-          <NavDesktop data={navData} layoutQuery={layoutQuery} />
-        }
-
+        sidebarSection={<NavDesktop data={navData} layoutQuery={layoutQuery} />}
         /** **************************************
          * @Footer
          *************************************** */

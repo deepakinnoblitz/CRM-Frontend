@@ -84,7 +84,8 @@ export function SettingsNotifications({ data, onChange }: Props) {
                 borderRadius: 1.5,
                 alignItems: 'center',
                 justifyContent: 'center',
-                bgcolor: (theme) => (theme.palette.mode === 'light' ? `${item.color}14` : `${item.color}29`),
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'light' ? `${item.color}14` : `${item.color}29`,
                 color: item.color,
               }}
             >
@@ -103,12 +104,12 @@ export function SettingsNotifications({ data, onChange }: Props) {
               checked={Boolean(data?.[item.fieldname])}
               onChange={(event) => onChange(item.fieldname, event.target.checked ? 1 : 0)}
               sx={{
-                  '& .MuiSwitch-switchBase.Mui-checked': {
-                      color: '#08a3cd',
-                  },
-                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                      backgroundColor: '#08a3cd',
-                  },
+                '& .MuiSwitch-switchBase.Mui-checked': {
+                  color: '#08a3cd',
+                },
+                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                  backgroundColor: '#08a3cd',
+                },
               }}
             />
           </Stack>

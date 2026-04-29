@@ -5,11 +5,11 @@ import { InvoiceCreateView } from 'src/sections/invoice/view';
 // ----------------------------------------------------------------------
 
 export default function InvoiceCreatePage() {
-    return (
-        <>
-            <title>{`New Invoice - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`New Invoice - ${CONFIG.appName}`}</title>
 
-            <InvoiceCreateView />
-        </>
-    );
+      <InvoiceCreateView />
+    </>
+  );
 }

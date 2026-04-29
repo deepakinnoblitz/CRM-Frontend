@@ -5,11 +5,11 @@ import { JobApplicantsView } from 'src/sections/job-applicants/view/job-applican
 // ----------------------------------------------------------------------
 
 export default function JobApplicantsPage() {
-    return (
-        <>
-            <title>{`Job Applicants - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`Job Applicants - ${CONFIG.appName}`}</title>
 
-            <JobApplicantsView />
-        </>
-    );
+      <JobApplicantsView />
+    </>
+  );
 }

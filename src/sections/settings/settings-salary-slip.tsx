@@ -6,7 +6,7 @@ import TextField from '@mui/material/TextField';
 import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
-import { Box, Stack, Divider, InputAdornment, alpha } from '@mui/material';
+import { Box, Stack, alpha, Divider, InputAdornment } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -26,7 +26,7 @@ export function SettingsSalarySlip({ data, onChange }: Props) {
           <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
             <Typography variant="h6">Salary Calculation Rules</Typography>
           </Stack>
-          
+
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth>
@@ -39,15 +39,27 @@ export function SettingsSalarySlip({ data, onChange }: Props) {
                   onChange={(e) => onChange('salary_calculation_source', e.target.value)}
                   startAdornment={
                     <InputAdornment position="start">
-                      <Iconify icon={"solar:calendar-search-bold" as any} sx={{ color: 'text.disabled', ml: 1 }} />
+                      <Iconify
+                        icon={'solar:calendar-search-bold' as any}
+                        sx={{ color: 'text.disabled', ml: 1 }}
+                      />
                     </InputAdornment>
                   }
                 >
                   <MenuItem value="Attendance">Attendance (Standard Records)</MenuItem>
                   <MenuItem value="Daily Log">Daily Log (Dynamic Sessions)</MenuItem>
                 </Select>
-                <Typography variant="caption" sx={{ mt: 1.5, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Iconify icon={"solar:info-circle-bold" as any} width={16} />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    mt: 1.5,
+                    color: 'text.secondary',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                  }}
+                >
+                  <Iconify icon={'solar:info-circle-bold' as any} width={16} />
                   Source data for calculating present/absent days.
                 </Typography>
               </FormControl>
@@ -64,28 +76,50 @@ export function SettingsSalarySlip({ data, onChange }: Props) {
                   onChange={(e) => onChange('salary_holiday_handling', e.target.value)}
                   startAdornment={
                     <InputAdornment position="start">
-                      <Iconify icon={"solar:map-arrow-square-bold" as any} sx={{ color: 'text.disabled', ml: 1 }} />
+                      <Iconify
+                        icon={'solar:map-arrow-square-bold' as any}
+                        sx={{ color: 'text.disabled', ml: 1 }}
+                      />
                     </InputAdornment>
                   }
                 >
-                  <MenuItem value="Include in Working Days">Include in Working Days (Paid)</MenuItem>
-                  <MenuItem value="Exclude from Working Days">Exclude from Working Days (Unpaid)</MenuItem>
+                  <MenuItem value="Include in Working Days">
+                    Include in Working Days (Paid)
+                  </MenuItem>
+                  <MenuItem value="Exclude from Working Days">
+                    Exclude from Working Days (Unpaid)
+                  </MenuItem>
                 </Select>
-                <Typography variant="caption" sx={{ mt: 1.5, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Iconify icon={"solar:info-circle-bold" as any} width={16} />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    mt: 1.5,
+                    color: 'text.secondary',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                  }}
+                >
+                  <Iconify icon={'solar:info-circle-bold' as any} width={16} />
                   Determines if holidays count towards the monthly working days.
                 </Typography>
               </FormControl>
             </Grid>
           </Grid>
-          
+
           {data.salary_calculation_source === 'Daily Log' && (
             <Box sx={{ mt: 4 }}>
               <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 1 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Daily Log Thresholds</Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Daily Log Thresholds
+                </Typography>
               </Stack>
-              <Typography variant="caption" sx={{ color: 'text.secondary', mb: 3, display: 'block' }}>
-                Define the minimum working hours required to categorize employee daily logs for salary calculation.
+              <Typography
+                variant="caption"
+                sx={{ color: 'text.secondary', mb: 3, display: 'block' }}
+              >
+                Define the minimum working hours required to categorize employee daily logs for
+                salary calculation.
               </Typography>
 
               <Grid container spacing={3}>
@@ -141,21 +175,32 @@ export function SettingsSalarySlip({ data, onChange }: Props) {
                 </Grid>
               </Grid>
 
-              <Box sx={{ 
-                mt: 3, 
-                p: 2, 
-                borderRadius: 1.5, 
-                bgcolor: (theme) => alpha(theme.palette.info.main, 0.05),
-                border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.1)}`
-              }}>
-                <Typography variant="subtitle2" sx={{ color: 'info.main', mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                  mt: 3,
+                  p: 2,
+                  borderRadius: 1.5,
+                  bgcolor: (theme) => alpha(theme.palette.info.main, 0.05),
+                  border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.1)}`,
+                }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  sx={{ color: 'info.main', mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}
+                >
                   <Iconify icon="solar:info-circle-bold" width={18} />
                   Calculation Logic
                 </Typography>
                 <Stack spacing={0.5}>
-                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>• Hours ≥ Present Threshold → 1.0 Present</Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>• Hours ≥ Half Day Threshold → 0.5 Present / 0.5 Absent</Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>• Hours {'<'} Absent Threshold → 1.0 Absent</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    • Hours ≥ Present Threshold → 1.0 Present
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    • Hours ≥ Half Day Threshold → 0.5 Present / 0.5 Absent
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    • Hours {'<'} Absent Threshold → 1.0 Absent
+                  </Typography>
                 </Stack>
               </Box>
             </Box>
@@ -165,18 +210,27 @@ export function SettingsSalarySlip({ data, onChange }: Props) {
         <Divider sx={{ borderStyle: 'dashed' }} />
 
         {/* Section 2: Info */}
-        <Box sx={{ 
-          p: 2, 
-          borderRadius: 1.5, 
-          bgcolor: (theme) => theme.palette.mode === 'light' ? 'grey.50' : 'grey.900',
-          border: (theme) => `1px dashed ${theme.palette.divider}`
-        }}>
+        <Box
+          sx={{
+            p: 2,
+            borderRadius: 1.5,
+            bgcolor: (theme) => (theme.palette.mode === 'light' ? 'grey.50' : 'grey.900'),
+            border: (theme) => `1px dashed ${theme.palette.divider}`,
+          }}
+        >
           <Stack direction="row" spacing={2} sx={{ color: 'text.secondary' }}>
-            <Iconify icon={"solar:shield-warning-bold" as any} sx={{ color: 'warning.main', mt: 0.5 }} />
+            <Iconify
+              icon={'solar:shield-warning-bold' as any}
+              sx={{ color: 'warning.main', mt: 0.5 }}
+            />
             <Box>
-              <Typography variant="subtitle1" sx={{ mb: 0.5, color: 'text.primary' }}>Important Note</Typography>
+              <Typography variant="subtitle1" sx={{ mb: 0.5, color: 'text.primary' }}>
+                Important Note
+              </Typography>
               <Typography variant="body2">
-                Changing these settings will affect how the system automatically calculates Loss of Pay (LOP) and Gross Pay for all new salary slips. Existing slips will not be modified.
+                Changing these settings will affect how the system automatically calculates Loss of
+                Pay (LOP) and Gross Pay for all new salary slips. Existing slips will not be
+                modified.
               </Typography>
             </Box>
           </Stack>

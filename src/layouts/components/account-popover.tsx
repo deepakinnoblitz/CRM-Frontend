@@ -3,7 +3,6 @@ import type { IconButtonProps } from '@mui/material/IconButton';
 import { useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Switch from '@mui/material/Switch';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Portal from '@mui/material/Portal';
@@ -13,7 +12,6 @@ import MenuList from '@mui/material/MenuList';
 import Backdrop from '@mui/material/Backdrop';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import { useColorScheme } from '@mui/material/styles';
 import CircularProgress from '@mui/material/CircularProgress';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
@@ -47,12 +45,9 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleOpenPopover = useCallback(
-    (event: React.MouseEvent<HTMLButtonElement>) => {
-      setOpenPopover(event.currentTarget);
-    },
-    []
-  );
+  const handleOpenPopover = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    setOpenPopover(event.currentTarget);
+  }, []);
 
   const handleClosePopover = useCallback(() => {
     setOpenPopover(null);
@@ -94,11 +89,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
         }}
         {...other}
       >
-        <Avatar
-          src={photoURL}
-          alt={displayName}
-          sx={{ width: 1, height: 1 }}
-        >
+        <Avatar src={photoURL} alt={displayName} sx={{ width: 1, height: 1 }}>
           {displayName.charAt(0).toUpperCase()}
         </Avatar>
       </IconButton>
@@ -158,13 +149,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
         <Divider sx={{ borderStyle: 'dashed' }} />
 
         <Box sx={{ p: 1 }}>
-          <Button
-            fullWidth
-            color="error"
-            size="medium"
-            variant="text"
-            onClick={handleLogout}
-          >
+          <Button fullWidth color="error" size="medium" variant="text" onClick={handleLogout}>
             Logout
           </Button>
         </Box>

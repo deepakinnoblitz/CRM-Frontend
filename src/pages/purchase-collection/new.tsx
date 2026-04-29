@@ -5,11 +5,11 @@ import { PurchaseCollectionCreateView } from 'src/sections/purchase-collection/v
 // ----------------------------------------------------------------------
 
 export default function PurchaseCollectionCreatePage() {
-    return (
-        <>
-            <title>{`New Purchase Collection - ${CONFIG.appName}`}</title>
+  return (
+    <>
+      <title>{`New Purchase Collection - ${CONFIG.appName}`}</title>
 
-            <PurchaseCollectionCreateView />
-        </>
-    );
+      <PurchaseCollectionCreateView />
+    </>
+  );
 }

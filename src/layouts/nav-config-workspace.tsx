@@ -10,5 +10,5 @@ export const _workspaces: WorkspacesPopoverProps['data'] = [
     name: 'Team 1',
     plan: 'Free',
     logo: `${CONFIG.assetsDir}/icons/workspaces/logo-1.webp`,
-  }
+  },
 ];

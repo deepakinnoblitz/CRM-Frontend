@@ -12,7 +12,7 @@ import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
-import { useTheme, alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -55,7 +55,11 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
   const [unit, setUnit] = useState<'sec' | 'min'>('sec');
 
   // UI state
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({
     open: false,
     message: '',
     severity: 'success',
@@ -142,7 +146,9 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
 
           {loading ? (
             <Box sx={{ py: 10, textAlign: 'center' }}>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>Loading settings...</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Loading settings...
+              </Typography>
             </Box>
           ) : (
             <Stack spacing={3.5}>
@@ -163,7 +169,8 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                     Enable Auto Status
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                    Automatically switch users to &apos;Break&apos; or &apos;Lunch Break&apos; after inactivity.
+                    Automatically switch users to &apos;Break&apos; or &apos;Lunch Break&apos; after
+                    inactivity.
                   </Typography>
                 </Stack>
                 <Switch
@@ -175,7 +182,12 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
 
               {/* Threshold Fields Grid */}
               <Box>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ mb: 2 }}
+                >
                   <Typography variant="subtitle2" sx={{ color: 'text.primary' }}>
                     Inactivity Thresholds
                   </Typography>
@@ -205,15 +217,26 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                             fullWidth
                             label="Idle Threshold"
                             type="number"
-                            value={idleThreshold === 0 ? '' : parseFloat((idleThreshold / multiplier).toFixed(2))}
-                            onChange={(e) => setIdleThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
+                            value={
+                              idleThreshold === 0
+                                ? ''
+                                : parseFloat((idleThreshold / multiplier).toFixed(2))
+                            }
+                            onChange={(e) =>
+                              setIdleThreshold(
+                                e.target.value === '' ? 0 : Number(e.target.value) * multiplier
+                              )
+                            }
                             onFocus={(event) => event.target.select()}
                             helperText="System detects inactivity"
                             disabled={!enableAutoStatus || loading}
                             InputProps={{
                               endAdornment: (
                                 <InputAdornment position="end">
-                                  <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ color: 'text.disabled', fontWeight: 700 }}
+                                  >
                                     {unit === 'min' ? 'mins' : 'secs'}
                                   </Typography>
                                 </InputAdornment>
@@ -224,15 +247,26 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                             fullWidth
                             label="Break Threshold"
                             type="number"
-                            value={awayThreshold === 0 ? '' : parseFloat((awayThreshold / multiplier).toFixed(2))}
-                            onChange={(e) => setAwayThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
+                            value={
+                              awayThreshold === 0
+                                ? ''
+                                : parseFloat((awayThreshold / multiplier).toFixed(2))
+                            }
+                            onChange={(e) =>
+                              setAwayThreshold(
+                                e.target.value === '' ? 0 : Number(e.target.value) * multiplier
+                              )
+                            }
                             onFocus={(event) => event.target.select()}
                             helperText="Transitions to Break status"
                             disabled={!enableAutoStatus || loading}
                             InputProps={{
                               endAdornment: (
                                 <InputAdornment position="end">
-                                  <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ color: 'text.disabled', fontWeight: 700 }}
+                                  >
                                     {unit === 'min' ? 'mins' : 'secs'}
                                   </Typography>
                                 </InputAdornment>
@@ -244,15 +278,26 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                           fullWidth
                           label="Lunch Break Threshold"
                           type="number"
-                          value={breakThreshold === 0 ? '' : parseFloat((breakThreshold / multiplier).toFixed(2))}
-                          onChange={(e) => setBreakThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
+                          value={
+                            breakThreshold === 0
+                              ? ''
+                              : parseFloat((breakThreshold / multiplier).toFixed(2))
+                          }
+                          onChange={(e) =>
+                            setBreakThreshold(
+                              e.target.value === '' ? 0 : Number(e.target.value) * multiplier
+                            )
+                          }
                           onFocus={(event) => event.target.select()}
                           helperText="Transitions to Lunch Break status"
                           disabled={!enableAutoStatus || loading}
                           InputProps={{
                             endAdornment: (
                               <InputAdornment position="end">
-                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                                <Typography
+                                  variant="caption"
+                                  sx={{ color: 'text.disabled', fontWeight: 700 }}
+                                >
                                   {unit === 'min' ? 'mins' : 'secs'}
                                 </Typography>
                               </InputAdornment>
@@ -263,16 +308,31 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                           fullWidth
                           label="Auto-Offline Threshold"
                           type="number"
-                          value={offlineThreshold === 0 ? '' : parseFloat((offlineThreshold / multiplier).toFixed(2))}
-                          onChange={(e) => setOfflineThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
+                          value={
+                            offlineThreshold === 0
+                              ? ''
+                              : parseFloat((offlineThreshold / multiplier).toFixed(2))
+                          }
+                          onChange={(e) =>
+                            setOfflineThreshold(
+                              e.target.value === '' ? 0 : Number(e.target.value) * multiplier
+                            )
+                          }
                           onFocus={(event) => event.target.select()}
                           error={offlineThreshold <= breakThreshold}
-                          helperText={offlineThreshold <= breakThreshold ? "Offline time must be greater than Break time" : "Automatically log out inactive users"}
+                          helperText={
+                            offlineThreshold <= breakThreshold
+                              ? 'Offline time must be greater than Break time'
+                              : 'Automatically log out inactive users'
+                          }
                           disabled={!enableAutoStatus || loading}
                           InputProps={{
                             endAdornment: (
                               <InputAdornment position="end">
-                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                                <Typography
+                                  variant="caption"
+                                  sx={{ color: 'text.disabled', fontWeight: 700 }}
+                                >
                                   {unit === 'min' ? 'mins' : 'secs'}
                                 </Typography>
                               </InputAdornment>
@@ -334,7 +394,7 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                     color: 'info.main',
                   }}
                 >
-                  <Iconify icon={"solar:monitor-bold-duotone" as any} width={28} />
+                  <Iconify icon={'solar:monitor-bold-duotone' as any} width={28} />
                 </Box>
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography variant="subtitle2">System-wide Monitoring</Typography>
@@ -400,18 +460,27 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                             cursor: loading ? 'default' : 'pointer',
                             border: '1px solid',
                             borderColor: isActive ? 'primary.main' : 'divider',
-                            bgcolor: isActive ? alpha(theme.palette.primary.main, 0.04) : 'background.neutral',
+                            bgcolor: isActive
+                              ? alpha(theme.palette.primary.main, 0.04)
+                              : 'background.neutral',
                             display: 'flex',
                             flexDirection: 'column',
                             gap: 1.5,
                             transition: theme.transitions.create(['all']),
                             '&:hover': {
                               borderColor: isActive ? 'primary.main' : 'text.disabled',
-                              bgcolor: isActive ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.grey[500], 0.04),
-                            }
+                              bgcolor: isActive
+                                ? alpha(theme.palette.primary.main, 0.08)
+                                : alpha(theme.palette.grey[500], 0.04),
+                            },
                           }}
                         >
-                          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ pointerEvents: 'none' }}>
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            justifyContent="space-between"
+                            sx={{ pointerEvents: 'none' }}
+                          >
                             <Box
                               sx={{
                                 width: 36,
@@ -427,13 +496,12 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                             >
                               <Iconify icon={item.icon as any} width={20} />
                             </Box>
-                            <Switch
-                              size="small"
-                              checked={isActive}
-                              disabled={loading}
-                            />
+                            <Switch size="small" checked={isActive} disabled={loading} />
                           </Stack>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                          <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 700, color: 'text.primary' }}
+                          >
                             {item.label}
                           </Typography>
                         </Box>
@@ -454,7 +522,12 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
             variant="contained"
             onClick={handleSave}
             loading={saving}
-            disabled={loading || offlineThreshold <= breakThreshold || breakThreshold <= awayThreshold || awayThreshold <= idleThreshold}
+            disabled={
+              loading ||
+              offlineThreshold <= breakThreshold ||
+              breakThreshold <= awayThreshold ||
+              awayThreshold <= idleThreshold
+            }
             sx={{ fontWeight: 700 }}
           >
             Save Changes

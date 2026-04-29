@@ -1,4 +1,3 @@
-
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
@@ -16,65 +15,67 @@ const getStatusStyle = (status: string) => {
     'New Lead': {
       bgcolor: 'rgba(234, 179, 8, 0.22)',
       border: '1px solid rgba(234, 179, 8, 0.45)',
-      color: '#92400e'
+      color: '#92400e',
     },
-    'Contacted': {
+    Contacted: {
       bgcolor: 'rgba(251, 146, 60, 0.24)',
       border: '1px solid rgba(251, 146, 60, 0.45)',
-      color: '#9a3412'
+      color: '#9a3412',
     },
-    'Qualified': {
+    Qualified: {
       bgcolor: 'rgba(34, 197, 94, 0.25)',
       border: '1px solid rgba(34, 197, 94, 0.45)',
-      color: '#15803d'
+      color: '#15803d',
     },
     'Proposal Sent': {
       bgcolor: 'rgba(99, 102, 241, 0.25)',
       border: '1px solid rgba(99, 102, 241, 0.45)',
-      color: '#4338ca'
+      color: '#4338ca',
     },
     'In Negotiation': {
       bgcolor: 'rgba(249, 115, 22, 0.25)',
       border: '1px solid rgba(249, 115, 22, 0.45)',
-      color: '#c2410c'
+      color: '#c2410c',
     },
     'Follow-up Scheduled': {
       bgcolor: 'rgba(245, 158, 11, 0.25)',
       border: '1px solid rgba(245, 158, 11, 0.45)',
-      color: '#92400e'
+      color: '#92400e',
     },
     'On Hold': {
       bgcolor: 'rgba(156, 163, 175, 0.25)',
       border: '1px solid rgba(156, 163, 175, 0.45)',
-      color: '#374151'
+      color: '#374151',
     },
     'Not Interested': {
       bgcolor: 'rgba(239, 68, 68, 0.25)',
       border: '1px solid rgba(239, 68, 68, 0.45)',
-      color: '#991b1b'
+      color: '#991b1b',
     },
     'In Active': {
       bgcolor: 'rgba(139, 92, 246, 0.22)',
       border: '1px solid rgba(139, 92, 246, 0.45)',
-      color: '#4c1d95'
+      color: '#4c1d95',
     },
-    'Closed': {
-      bgcolor: 'rgba(220, 38, 38, 0.25)',   // red background
+    Closed: {
+      bgcolor: 'rgba(220, 38, 38, 0.25)', // red background
       border: '1px solid rgba(220, 38, 38, 0.45)',
-      color: '#7f1d1d'                     // dark red text
+      color: '#7f1d1d', // dark red text
     },
-    'Pending': {
+    Pending: {
       bgcolor: 'rgba(249, 115, 22, 0.25)',
       border: '1px solid rgba(249, 115, 22, 0.45)',
-      color: '#c2410c'
-    }
+      color: '#c2410c',
+    },
   };
 
-  return styles[status] || {
-    bgcolor: 'rgba(156, 163, 175, 0.25)',
-    border: '1px solid rgba(156, 163, 175, 0.45)',
-    color: '#374151'
-  };
+  return (
+    styles[status] || {
+      bgcolor: 'rgba(156, 163, 175, 0.25)',
+      border: '1px solid rgba(156, 163, 175, 0.45)',
+      color: '#374151',
+    }
+  );
 };
 
 // ----------------------------------------------------------------------
@@ -150,7 +151,8 @@ export function LeadTableRow({
               fontWeight: 800,
               border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
               mx: 'auto',
-              transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+              transition: (theme) =>
+                theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
               '&:hover': {
                 bgcolor: 'primary.main',
                 color: 'primary.contrastText',
@@ -171,7 +173,6 @@ export function LeadTableRow({
             alignItems: 'center',
           }}
         >
-
           {row.name}
         </Box>
       </TableCell>
@@ -190,7 +191,7 @@ export function LeadTableRow({
             ...getStatusStyle(row.workflow_state || row.status),
             fontWeight: 500,
             borderRadius: '6px',
-            padding: '4px 12px'
+            padding: '4px 12px',
           }}
         >
           {row.workflow_state || row.status}
