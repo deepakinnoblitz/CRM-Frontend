@@ -54,8 +54,8 @@ import { LeadTableToolbar as LeavesTableToolbar } from '../../lead/lead-table-to
 // ----------------------------------------------------------------------
 
 const SORT_OPTIONS = [
-    { value: 'creation_desc', label: 'Newest First' },
-    { value: 'creation_asc', label: 'Oldest First' },
+    { value: 'modified_desc', label: 'Newest First' },
+    { value: 'modified_asc', label: 'Oldest First' },
     { value: 'employee_name_asc', label: 'Employee: A to Z' },
     { value: 'employee_name_desc', label: 'Employee: Z to A' },
 ];
@@ -72,7 +72,7 @@ export function LeaveAllocationView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('creation');
+    const [orderBy, setOrderBy] = useState('modified');
     const [openFilters, setOpenFilters] = useState(false);
     const [filters, setFilters] = useState<{
         status: string;

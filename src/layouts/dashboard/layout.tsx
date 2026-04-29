@@ -205,7 +205,27 @@ export function DashboardLayout({
             );
             groupCount += unreadCounts.counts.Request;
           }
+          if (child.title === 'Reimbursement Claim List' && unreadCounts.counts['Reimbursement Claim'] > 0) {
+            child.info = (
+              <Label
+                color="error"
+                variant="filled"
+                sx={{
+                  height: 18,
+                  minWidth: 18,
+                  fontSize: '0.7rem',
+                  px: 0.5,
+                  borderRadius: 0.5,
+                  fontWeight: 'bold',
+                }}
+              >
+                {unreadCounts.counts['Reimbursement Claim']}
+              </Label>
+            );
+            groupCount += unreadCounts.counts['Reimbursement Claim'];
+          }
         });
+
 
         // If any children had unread counts, show the total on the parent item
         if (groupCount > 0) {
