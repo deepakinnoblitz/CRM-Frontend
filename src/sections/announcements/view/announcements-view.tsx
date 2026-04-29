@@ -118,6 +118,7 @@ export function AnnouncementsView() {
     const [announcementName, setAnnouncementName] = useState('');
     const [announcement, setAnnouncement] = useState('');
     const [isActive, setIsActive] = useState(true);
+    const [errors, setErrors] = useState<{ announcementName?: string; announcement?: string }>({});
 
     // View dialog state
     const [openView, setOpenView] = useState(false);
@@ -192,6 +193,7 @@ export function AnnouncementsView() {
         setAnnouncementName('');
         setAnnouncement('');
         setIsActive(true);
+        setErrors({});
         setOpenCreate(true);
     };
 
@@ -202,6 +204,7 @@ export function AnnouncementsView() {
         setAnnouncementName('');
         setAnnouncement('');
         setIsActive(true);
+        setErrors({});
     };
 
     const handleEditRow = useCallback((row: any) => {
@@ -237,6 +240,23 @@ export function AnnouncementsView() {
 
     const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+
+        const newErrors: { announcementName?: string; announcement?: string } = {};
+
+        if (!announcementName.trim()) {
+            newErrors.announcementName = 'Title is required';
+        }
+        if (!announcement.trim()) {
+            newErrors.announcement = 'Announcement details are required';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            setSnackbar({ open: true, message: 'Please fill out all required fields', severity: 'error' });
+            return;
+        }
+
+        setErrors({});
 
         const announcementData: Partial<Announcement> = {
             announcement_name: announcementName.trim(),
@@ -393,7 +413,7 @@ export function AnnouncementsView() {
 
             {/* Create/Edit Dialog */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
-                <form onSubmit={handleCreate}>
+                <form onSubmit={handleCreate} noValidate>
                     <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         {isEdit ? 'Edit Announcement' : 'New Announcement'}
                         <IconButton onClick={handleCloseCreate}>
@@ -420,7 +440,14 @@ export function AnnouncementsView() {
                                 fullWidth
                                 label="Title"
                                 value={announcementName}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAnnouncementName(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                    setAnnouncementName(e.target.value);
+                                    if (errors.announcementName) {
+                                        setErrors((prev) => ({ ...prev, announcementName: undefined }));
+                                    }
+                                }}
+                                error={!!errors.announcementName}
+                                helperText={errors.announcementName}
                                 required
                                 placeholder="Enter announcement title"
                             />
@@ -429,7 +456,14 @@ export function AnnouncementsView() {
                                 fullWidth
                                 label="Announcement"
                                 value={announcement}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAnnouncement(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                    setAnnouncement(e.target.value);
+                                    if (errors.announcement) {
+                                        setErrors((prev) => ({ ...prev, announcement: undefined }));
+                                    }
+                                }}
+                                error={!!errors.announcement}
+                                helperText={errors.announcement}
                                 multiline
                                 rows={6}
                                 placeholder="Enter announcement details"
