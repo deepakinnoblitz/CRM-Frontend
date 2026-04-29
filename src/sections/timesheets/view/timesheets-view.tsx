@@ -88,7 +88,7 @@ export function TimesheetsView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('timesheet_date');
+    const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
 
     const [filters, setFilters] = useState({
@@ -217,10 +217,10 @@ export function TimesheetsView() {
 
     const handleSort = (value: string) => {
         if (value === 'timesheet_date_desc') {
-            setOrderBy('timesheet_date');
+            setOrderBy('modified');
             setOrder('desc');
         } else if (value === 'timesheet_date_asc') {
-            setOrderBy('timesheet_date');
+            setOrderBy('modified');
             setOrder('asc');
         } else if (value === 'employee_name_asc') {
             setOrderBy('employee_name');
@@ -238,8 +238,8 @@ export function TimesheetsView() {
     };
 
     const getCurrentSortValue = () => {
-        if (orderBy === 'timesheet_date' && order === 'desc') return 'timesheet_date_desc';
-        if (orderBy === 'timesheet_date' && order === 'asc') return 'timesheet_date_asc';
+        if (orderBy === 'modified' && order === 'desc') return 'timesheet_date_desc';
+        if (orderBy === 'modified' && order === 'asc') return 'timesheet_date_asc';
         if (orderBy === 'employee_name' && order === 'asc') return 'employee_name_asc';
         if (orderBy === 'employee_name' && order === 'desc') return 'employee_name_desc';
         if (orderBy === 'total_hours' && order === 'desc') return 'total_hours_desc';
