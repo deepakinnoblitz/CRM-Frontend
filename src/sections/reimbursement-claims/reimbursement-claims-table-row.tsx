@@ -6,6 +6,7 @@ import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Popover from '@mui/material/Popover';
 import { alpha } from '@mui/material/styles';
+import Badge from '@mui/material/Badge';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
@@ -13,7 +14,10 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
+import { useUnreadCountsContext } from 'src/hooks/unread-counts-context';
+
 import { Label } from 'src/components/label';
+
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -55,7 +59,11 @@ export function ReimbursementClaimTableRow({
     hideCheckbox = false,
     index,
 }: Props) {
+    const { unreadCounts } = useUnreadCountsContext();
+    const isUnread = unreadCounts.unread_ids['Reimbursement Claim']?.includes(row.id);
+
     const [openMenu, setOpenMenu] = useState<HTMLElement | null>(null);
+
 
     const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
         setOpenMenu(event.currentTarget);
@@ -161,8 +169,22 @@ export function ReimbursementClaimTableRow({
                         )}
 
                         <IconButton onClick={(e) => handleClick(e, onView)} color="info">
-                            <Iconify icon="solar:eye-bold" />
+                            <Badge
+                                color="error"
+                                variant="dot"
+                                invisible={!isUnread}
+                                sx={{
+                                    '& .MuiBadge-badge': {
+                                        width: 6,
+                                        height: 6,
+                                        minWidth: 6,
+                                    },
+                                }}
+                            >
+                                <Iconify icon="solar:eye-bold" />
+                            </Badge>
                         </IconButton>
+
 
                         {/* {canDelete && (
                             <IconButton onClick={(e) => handleClick(e, onDelete)} color="error">
