@@ -334,7 +334,7 @@ export async function fetchEmployeeDashboardData(
 // Get total employee count
 export async function fetchTotalEmployeeCount(): Promise<number> {
     const res = await frappeRequest(
-        `/api/method/frappe.client.get_count?doctype=Employee&filters=${encodeURIComponent(JSON.stringify([]))}`
+        `/api/method/company.company.frontend_api.get_permitted_count?doctype=Employee&filters=${encodeURIComponent(JSON.stringify([]))}`
     );
     if (!res.ok) {
         const error = await res.json();
@@ -348,7 +348,7 @@ export async function fetchTotalEmployeeCount(): Promise<number> {
 export async function fetchPendingLeaveCount(): Promise<number> {
     const filters = [['Leave Application', 'workflow_state', '=', 'Pending']];
     const res = await frappeRequest(
-        `/api/method/frappe.client.get_count?doctype=Leave Application&filters=${encodeURIComponent(JSON.stringify(filters))}`
+        `/api/method/company.company.frontend_api.get_permitted_count?doctype=Leave Application&filters=${encodeURIComponent(JSON.stringify(filters))}`
     );
     if (!res.ok) {
         const error = await res.json();
@@ -362,7 +362,7 @@ export async function fetchPendingLeaveCount(): Promise<number> {
 export async function fetchPendingRequestCount(): Promise<number> {
     const filters = [['Request', 'workflow_state', '=', 'Pending']];
     const res = await frappeRequest(
-        `/api/method/frappe.client.get_count?doctype=Request&filters=${encodeURIComponent(JSON.stringify(filters))}`
+        `/api/method/company.company.frontend_api.get_permitted_count?doctype=Request&filters=${encodeURIComponent(JSON.stringify(filters))}`
     );
     if (!res.ok) {
         const error = await res.json();

@@ -49,7 +49,7 @@ export async function fetchFrappeList(doctype: string, params: {
     // Fetch data and count in parallel
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=${doctype}&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${params.or_filters ? encodeURIComponent(JSON.stringify(params.or_filters)) : "[]"}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=${doctype}&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${params.or_filters ? encodeURIComponent(JSON.stringify(params.or_filters)) : "[]"}`)
     ]);
 
     if (!res.ok) {

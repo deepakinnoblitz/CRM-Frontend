@@ -149,10 +149,10 @@ export function LeavesTableFiltersDrawer({
                     return (
                         <li key={key} {...optionProps}>
                             <Stack spacing={0.5}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                                     {employee?.employee_name}
                                 </Typography>
-                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                     ID: {employee?.name}
                                 </Typography>
                             </Stack>
@@ -200,30 +200,29 @@ export function LeavesTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Leave Type
             </Typography>
-            <TextField
-                select
+            <Autocomplete
                 fullWidth
-                value={filters.leave_type}
-                onChange={(e) => handleFilterChange('leave_type', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">All Types</option>
-                {options.leaveTypes.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
+                options={['all', ...options.leaveTypes]}
+                getOptionLabel={(option) => (option === 'all' ? 'All Types' : option)}
+                value={filters.leave_type || 'all'}
+                onChange={(event, newValue) => handleFilterChange('leave_type', newValue || 'all')}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Select Leave Type"
+                        size="small"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+            />
         </Stack>
     );
 

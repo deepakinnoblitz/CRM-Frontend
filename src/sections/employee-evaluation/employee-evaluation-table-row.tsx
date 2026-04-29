@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
@@ -105,27 +106,29 @@ export function EmployeeEvaluationEventTableRow({
         </Label>
       </TableCell>
       <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
-        {docstatus === 0 && (
-          <>
-            <IconButton onClick={onSubmit} sx={{ color: 'success.main' }}>
-              <Iconify icon="solar:check-circle-bold" />
+        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+          {docstatus === 0 && (
+            <>
+              <IconButton size="small" onClick={onSubmit} sx={{ color: 'success.main' }}>
+                <Iconify icon="solar:check-circle-bold" />
+              </IconButton>
+              <IconButton size="small" onClick={onEdit} sx={{ color: 'primary.main' }}>
+                <Iconify icon="solar:pen-bold" />
+              </IconButton>
+            </>
+          )}
+          {docstatus === 1 && (
+            <IconButton size="small" onClick={onCancel} sx={{ color: 'error.main' }}>
+              <Iconify icon="solar:close-circle-bold" />
             </IconButton>
-            <IconButton onClick={onEdit} sx={{ color: 'warning.main' }}>
-              <Iconify icon="solar:pen-bold" />
-            </IconButton>
-          </>
-        )}
-        {docstatus === 1 && (
-          <IconButton onClick={onCancel} sx={{ color: 'error.main' }}>
-            <Iconify icon="solar:close-circle-bold" />
+          )}
+          <IconButton size="small" onClick={onView} sx={{ color: 'info.main' }}>
+            <Iconify icon="solar:eye-bold" />
           </IconButton>
-        )}
-        <IconButton onClick={onView} sx={{ color: 'primary.main' }}>
-          <Iconify icon="solar:eye-bold" />
-        </IconButton>
-        <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
-          <Iconify icon="solar:trash-bin-trash-bold" />
-        </IconButton>
+          <IconButton size="small" onClick={onDelete} sx={{ color: 'error.main' }}>
+            <Iconify icon="solar:trash-bin-trash-bold" />
+          </IconButton>
+        </Stack>
       </TableCell>
     </TableRow>
   );
