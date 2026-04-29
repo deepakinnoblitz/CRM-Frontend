@@ -37,6 +37,7 @@ export default function TaskKanbanColumn({
         switch (status) {
             case 'Open': return theme.palette.info.main;
             case 'In Progress': return theme.palette.warning.main;
+            case 'On Hold': return '#f59e0b';
             case 'Completed': return theme.palette.success.main;
             case 'Reopened': return theme.palette.error.main;
             default: return theme.palette.text.primary;
