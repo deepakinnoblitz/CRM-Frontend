@@ -63,13 +63,13 @@ import { LeadTableToolbar as EmployeeTableToolbar } from '../../lead/lead-table-
 
 // ----------------------------------------------------------------------
 
-const SalaryRow = memo(({ 
-    index, 
-    type, 
-    row, 
-    componentOptions, 
-    hrSettings, 
-    onRowChange, 
+const SalaryRow = memo(({
+    index,
+    type,
+    row,
+    componentOptions,
+    hrSettings,
+    onRowChange,
     onRowRemove,
     hasError
 }: {
@@ -101,14 +101,14 @@ const SalaryRow = memo(({
                         variant="standard"
                         placeholder="Select Component"
                         error={!row.component_name && hasError}
-                        InputProps={{ 
-                            ...params.InputProps, 
-                            disableUnderline: true, 
-                            sx: { 
-                                typography: 'body2', 
+                        InputProps={{
+                            ...params.InputProps,
+                            disableUnderline: true,
+                            sx: {
+                                typography: 'body2',
                                 fontWeight: 500,
                                 color: !row.component_name ? 'error.main' : 'inherit'
-                            } 
+                            }
                         }}
                     />
                 )}
@@ -117,10 +117,10 @@ const SalaryRow = memo(({
         <TableCell align="right" sx={{ py: 1, px: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: 140 }}>
-                    <Typography 
-                        variant="body2" 
-                        sx={{ 
-                            color: 'text.primary', 
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: 'text.primary',
                             fontWeight: 600,
                             fontFamily: "Arial, 'sans-serif'",
                             mr: 0.5
@@ -162,7 +162,7 @@ export function EmployeeView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('creation');
+    const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
 
     // Department Create Dialog State
@@ -293,13 +293,13 @@ export function EmployeeView() {
     }, []);
 
     // Memoized component lists to avoid filtering during render
-    const earningComponents = useMemo(() => 
+    const earningComponents = useMemo(() =>
         salaryComponents.filter(c => c.type === 'Earning').map(c => c.component_name),
-    [salaryComponents]);
+        [salaryComponents]);
 
-    const deductionComponents = useMemo(() => 
+    const deductionComponents = useMemo(() =>
         salaryComponents.filter(c => c.type === 'Deduction').map(c => c.component_name),
-    [salaryComponents]);
+        [salaryComponents]);
 
     // Memoized totals calculation
     const totals = useMemo(() => {
@@ -308,7 +308,7 @@ export function EmployeeView() {
 
         const total_earnings = earnings.reduce((sum: number, item: any) => sum + (parseFloat(item.amount) || 0), 0);
         const total_deductions = deductions.reduce((sum: number, item: any) => sum + (parseFloat(item.amount) || 0), 0);
-        
+
         return {
             total_earnings,
             total_deductions,
@@ -483,10 +483,10 @@ export function EmployeeView() {
                 .reduce((sum, comp) => sum + (parseFloat(comp.percentage) || 0), 0);
 
             if (totalEarningPercent !== 100) {
-                setSnackbar({ 
-                    open: true, 
-                    message: `Invalid configuration: Total Default Earning percentage must be exactly 100%. (Current total: ${totalEarningPercent.toFixed(2)}%)`, 
-                    severity: 'error' 
+                setSnackbar({
+                    open: true,
+                    message: `Invalid configuration: Total Default Earning percentage must be exactly 100%. (Current total: ${totalEarningPercent.toFixed(2)}%)`,
+                    severity: 'error'
                 });
                 return;
             }
@@ -1148,7 +1148,7 @@ export function EmployeeView() {
     ];
 
     const getSortByValue = () => {
-        if (orderBy === 'creation') {
+        if (orderBy === 'modified') {
             return order === 'desc' ? 'newest' : 'oldest';
         }
         if (orderBy === 'employee_name') {
@@ -1159,10 +1159,10 @@ export function EmployeeView() {
 
     const handleSortChange = (value: string) => {
         if (value === 'newest') {
-            setOrderBy('creation');
+            setOrderBy('modified');
             setOrder('desc');
         } else if (value === 'oldest') {
-            setOrderBy('creation');
+            setOrderBy('modified');
             setOrder('asc');
         } else if (value === 'name_asc') {
             setOrderBy('employee_name');
@@ -1174,7 +1174,7 @@ export function EmployeeView() {
     };
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Employees
@@ -1323,8 +1323,8 @@ export function EmployeeView() {
                                     </Box>
                                 </>
                             ), [
-                                formData.employee_id, formData.employee_name, formData.email, formData.personal_email, 
-                                formData.phone, formData.office_phone_number, formData.dob, formData.country, 
+                                formData.employee_id, formData.employee_name, formData.email, formData.personal_email,
+                                formData.phone, formData.office_phone_number, formData.dob, formData.country,
                                 formData.state, formData.city, formData.profile_picture,
                                 formErrors, fieldOptions, stateOptions, cityOptions, uploading
                             ])}
@@ -1343,7 +1343,7 @@ export function EmployeeView() {
                                     </Box>
                                 </>
                             ), [
-                                formData.department, formData.designation, formData.date_of_joining, 
+                                formData.department, formData.designation, formData.date_of_joining,
                                 formData.user, formData.status, formData.skip_probation,
                                 formErrors, fieldOptions
                             ])}
@@ -1370,7 +1370,7 @@ export function EmployeeView() {
 
                             {/* CTC Field - Full Width */}
                             <Box sx={{ mb: 3 }}>
-                                {renderField('ctc', 'CTC (Monthly)', 'number', [], { 
+                                {renderField('ctc', 'CTC (Monthly)', 'number', [], {
                                     onBlur: handleCTCOnBlur,
                                     InputProps: {
                                         endAdornment: (
@@ -1378,7 +1378,7 @@ export function EmployeeView() {
                                                 size="small"
                                                 variant="contained"
                                                 onClick={handleDefaultSplitting}
-                                                sx={{ 
+                                                sx={{
                                                     whiteSpace: 'nowrap',
                                                     mx: 1,
                                                     py: 1.5,
@@ -1389,7 +1389,7 @@ export function EmployeeView() {
                                                     bgcolor: (theme) => alpha(theme.palette.primary.main, 1),
                                                     color: 'common.white',
                                                     boxShadow: (theme) => theme.customShadows.z8,
-                                                    '&:hover': { 
+                                                    '&:hover': {
                                                         bgcolor: (theme) => theme.palette.primary.dark,
                                                         boxShadow: (theme) => theme.customShadows.z16,
                                                     }
