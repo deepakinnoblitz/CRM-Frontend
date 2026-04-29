@@ -1,6 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
-import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Card from '@mui/material/Card';
@@ -19,7 +18,7 @@ import TablePagination from '@mui/material/TablePagination';
 import { fetchEmployees } from 'src/api/employees';
 import { fetchFrappeList } from 'src/api/hr-management';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { deleteBadge, deleteBadgeAssignment, fetchAllBadges } from 'src/api/badges';
+import { deleteBadge, fetchAllBadges, deleteBadgeAssignment } from 'src/api/badges';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -39,8 +38,16 @@ import { BadgeAssignmentDetailDialog } from '../badge-assignment-detail-dialog';
 // ----------------------------------------------------------------------
 
 const TABS = [
-  { value: 'badges', label: 'Badges', icon: <Iconify icon={"solar:medal-star-bold-duotone" as any} width={20} /> },
-  { value: 'assignments', label: 'Badge Assignments', icon: <Iconify icon={"solar:user-id-bold-duotone" as any} width={20} /> },
+  {
+    value: 'badges',
+    label: 'Badges',
+    icon: <Iconify icon={'solar:medal-star-bold-duotone' as any} width={20} />,
+  },
+  {
+    value: 'assignments',
+    label: 'Badge Assignments',
+    icon: <Iconify icon={'solar:user-id-bold-duotone' as any} width={20} />,
+  },
 ];
 
 export function BadgesView() {
@@ -49,7 +56,7 @@ export function BadgesView() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
   const [sortBy, setSortBy] = useState('modified_desc');
-  
+
   const [filters, setFilters] = useState<any>({
     badge_type: 'all',
     employee: null,
@@ -93,7 +100,11 @@ export function BadgesView() {
     name: null,
   });
 
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({
     open: false,
     message: '',
     severity: 'success',
@@ -107,7 +118,7 @@ export function BadgesView() {
         const [badgeRes, empRes, userRes] = await Promise.all([
           fetchAllBadges(),
           fetchEmployees({ page_size: 1000, page: 1, fields: ['name', 'employee_name'] }),
-          fetchFrappeList('User', { page_size: 1000, page: 1, fields: ['name', 'full_name'] })
+          fetchFrappeList('User', { page_size: 1000, page: 1, fields: ['name', 'full_name'] }),
         ]);
         setAllBadges(badgeRes);
         setAllEmployees(empRes.data);
@@ -161,8 +172,22 @@ export function BadgesView() {
         search: filterName,
         searchField: 'employee_name',
         filters: activeFilters.length ? activeFilters : undefined,
-        fields: ['name', 'employee', 'employee_name', 'badge', 'awarded_on', 'awarded_by', 'reason', 'badge.icon'],
-        orderBy: sortBy.includes('modified') ? `\`tabEmployee Badge Assignment\`.modified` : sortBy.includes('creation') ? `\`tabEmployee Badge Assignment\`.creation` : sortBy,
+        fields: [
+          'name',
+          'employee',
+          'employee_name',
+          'badge',
+          'awarded_on',
+          'awarded_by',
+          'reason',
+          'badge.icon',
+        ],
+        orderBy: sortBy.includes('modified')
+          ? `\`tabEmployee Badge Assignment\`.modified`
+          : sortBy.includes('creation')
+            ? `\`tabEmployee Badge Assignment\`.creation`
+            : sortBy.replace(/_(desc|asc)$/, ''),
+        order: sortBy.includes('desc') ? 'desc' : 'asc',
       });
       setAssignments(response.data);
       setTotalAssignments(response.total);
@@ -217,7 +242,11 @@ export function BadgesView() {
       } else if (confirmDelete.type === 'assignment' && confirmDelete.name) {
         await deleteBadgeAssignment(confirmDelete.name);
         fetchAssignmentsList();
-        setSnackbar({ open: true, message: 'Assignment deleted successfully', severity: 'success' });
+        setSnackbar({
+          open: true,
+          message: 'Assignment deleted successfully',
+          severity: 'success',
+        });
       }
     } catch (error: any) {
       console.error(error);
@@ -228,7 +257,14 @@ export function BadgesView() {
     }
   };
 
-  const canReset = !!filterName || filters.badge_type !== 'all' || !!filters.employee || !!filters.badge || !!filters.startDate || !!filters.endDate || !!filters.awarded_by;
+  const canReset =
+    !!filterName ||
+    filters.badge_type !== 'all' ||
+    !!filters.employee ||
+    !!filters.badge ||
+    !!filters.startDate ||
+    !!filters.endDate ||
+    !!filters.awarded_by;
 
   const handleResetFilters = useCallback(() => {
     setFilterName('');
@@ -243,7 +279,12 @@ export function BadgesView() {
   }, []);
 
   const renderTabs = (
-    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
+    <Stack
+      direction="row"
+      alignItems="center"
+      justifyContent="space-between"
+      sx={{ px: 3, borderBottom: (t) => `1px solid ${t.palette.divider}` }}
+    >
       <Tabs
         value={currentTab}
         onChange={handleChangeTab}
@@ -253,7 +294,13 @@ export function BadgesView() {
         }}
       >
         {TABS.map((tab) => (
-          <Tab key={tab.value} label={tab.label} icon={tab.icon} value={tab.value} iconPosition="start" />
+          <Tab
+            key={tab.value}
+            label={tab.label}
+            icon={tab.icon}
+            value={tab.value}
+            iconPosition="start"
+          />
         ))}
       </Tabs>
 
@@ -276,11 +323,17 @@ export function BadgesView() {
     </Stack>
   );
 
-  const notFound = ((currentTab === 'badges' && !badges.length) || (currentTab === 'assignments' && !assignments.length)) && !!filterName;
-  const isEmpty = ((currentTab === 'badges' && !badges.length) || (currentTab === 'assignments' && !assignments.length)) && !filterName;
+  const notFound =
+    ((currentTab === 'badges' && !badges.length) ||
+      (currentTab === 'assignments' && !assignments.length)) &&
+    !!filterName;
+  const isEmpty =
+    ((currentTab === 'badges' && !badges.length) ||
+      (currentTab === 'assignments' && !assignments.length)) &&
+    !filterName;
 
   return (
-    <DashboardContent maxWidth={false}  sx={{mt: 2}}>
+    <DashboardContent maxWidth={false}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
         <Typography variant="h4">Badges Management</Typography>
       </Stack>
@@ -294,7 +347,7 @@ export function BadgesView() {
             setFilterName(event.target.value);
             setPage(0);
           }}
-          placeholder={currentTab === 'badges' ? "Search badge..." : "Search employee..."}
+          placeholder={currentTab === 'badges' ? 'Search badge...' : 'Search employee...'}
           sortBy={sortBy}
           onSortChange={(value) => {
             setSortBy(value);
@@ -372,24 +425,36 @@ export function BadgesView() {
                   <TableRow>
                     <TableCell colSpan={8}>
                       <EmptyContent
-                        title={currentTab === 'badges' ? "No Badges Found" : "No Badge Assignments Found"}
-                        description={currentTab === 'badges' ? "Add your first badge to get started." : "Assign badges to employees to see them here."}
-                        icon={currentTab === 'badges' ? "solar:medal-ribbon-bold-duotone" : "solar:user-id-bold-duotone"}
+                        title={
+                          currentTab === 'badges' ? 'No Badges Found' : 'No Badge Assignments Found'
+                        }
+                        description={
+                          currentTab === 'badges'
+                            ? 'Add your first badge to get started.'
+                            : 'Assign badges to employees to see them here.'
+                        }
+                        icon={
+                          currentTab === 'badges'
+                            ? 'solar:medal-ribbon-bold-duotone'
+                            : 'solar:user-id-bold-duotone'
+                        }
                       />
                     </TableCell>
                   </TableRow>
                 )}
 
                 {!isEmpty && !notFound && (
-                   <TableEmptyRows 
-                     height={77} 
-                     emptyRows={(currentTab === 'badges' ? badges.length : assignments.length) < 5 ? 5 - (currentTab === 'badges' ? badges.length : assignments.length) : 0} 
-                   />
+                  <TableEmptyRows
+                    height={77}
+                    emptyRows={
+                      (currentTab === 'badges' ? badges.length : assignments.length) < 5
+                        ? 5 - (currentTab === 'badges' ? badges.length : assignments.length)
+                        : 0
+                    }
+                  />
                 )}
-                
-                {notFound && (
-                  <TableNoData colSpan={8} searchQuery={filterName} />
-                )}
+
+                {notFound && <TableNoData colSpan={8} searchQuery={filterName} />}
               </TableBody>
             </Table>
           </TableContainer>
@@ -469,7 +534,11 @@ export function BadgesView() {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%', borderRadius: 1.5, fontWeight: 600 }}>
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: '100%', borderRadius: 1.5, fontWeight: 600 }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
