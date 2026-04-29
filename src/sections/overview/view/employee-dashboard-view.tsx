@@ -36,21 +36,30 @@ export function EmployeeDashboardView() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<EmployeeDashboardData | null>(null);
 
-    useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            try {
-                const dashboardData = await fetchEmployeeDashboardData();
-                setData(dashboardData);
-            } catch (error) {
-                console.error('Failed to load employee dashboard data:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const dashboardData = await fetchEmployeeDashboardData();
+            setData(dashboardData);
+        } catch (error) {
+            console.error('Failed to load employee dashboard data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         loadData();
     }, []);
+
+    const handleRefresh = async () => {
+        try {
+            const dashboardData = await fetchEmployeeDashboardData(data?.attendance_range);
+            setData(dashboardData);
+        } catch (error) {
+            console.error('Failed to refresh dashboard data:', error);
+        }
+    };
 
     const handleAttendanceRangeChange = async (range: string) => {
         try {
@@ -86,7 +95,7 @@ export function EmployeeDashboardView() {
         return (
             <DashboardContent maxWidth="xl">
                 <Skeleton variant="text" sx={{ width: 300, height: 40, mb: 5 }} />
-                
+
                 <Skeleton variant="rectangular" sx={{ width: 1, height: 160, borderRadius: 2, mb: 3 }} />
 
                 <Grid container spacing={3}>
@@ -142,6 +151,7 @@ export function EmployeeDashboardView() {
                         data={(data.weekly_attendance || []).slice(0, 7)}
                         weeklyTarget={45}
                         source={data.weekly_chart_source}
+                        onRefreshData={handleRefresh}
                     />
                 </Grid>
 

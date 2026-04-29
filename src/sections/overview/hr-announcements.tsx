@@ -227,22 +227,26 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                                 }}
                             >
                                 {[0, 1].map((copy) => (
-                                    <Typography
-                                        key={copy}
-                                        variant="body1"
-                                        sx={{
-                                            color: '#1f2937',
-                                            fontWeight: 600,
-                                            lineHeight: 1.45,
-                                            whiteSpace: 'nowrap',
-                                            pr: 6,
-                                        }}
-                                    >
-                                        <Box component="span" sx={{ fontWeight: 800, color: '#0f172a' }}>
-                                            {featuredItem.title}:
-                                        </Box>{' '}
-                                        {featuredItem.message}
-                                    </Typography>
+                                    <Stack key={copy} direction="row" alignItems="center">
+                                        {list.map((item, index) => (
+                                            <Typography
+                                                key={index}
+                                                variant="body1"
+                                                sx={{
+                                                    color: '#1f2937',
+                                                    fontWeight: 600,
+                                                    lineHeight: 1.45,
+                                                    whiteSpace: 'nowrap',
+                                                    pr: 8,
+                                                }}
+                                            >
+                                                <Box component="span" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                                                    {item.title}:
+                                                </Box>{' '}
+                                                {item.message}
+                                            </Typography>
+                                        ))}
+                                    </Stack>
                                 ))}
                             </Box>
                         </Box>
