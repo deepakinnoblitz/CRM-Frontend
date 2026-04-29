@@ -49,8 +49,8 @@ type UsageBarProps = {
 const cardBaseSx = {
     position: 'relative',
     height: '100%',
-    minHeight: { xs: 244, md: 260 },
-    p: { xs: 2.5, md: 3 },
+    minHeight: { xs: 220, md: 240 },
+    p: { xs: 2, md: 2.5 },
     display: 'flex',
     flexDirection: 'column',
     borderRadius: 2,
@@ -93,8 +93,8 @@ function LeaveIconBadge({ color, icon, hoverIcon, badgeIcon, bgColor }: LeaveIco
         <Box
             sx={{
                 position: 'relative',
-                width: 58,
-                height: 58,
+                width: 52,
+                height: 52,
                 flexShrink: 0,
                 borderRadius: 2,
                 display: 'grid',
@@ -379,7 +379,7 @@ export function LeaveStatusCards({ data, inProbation, sx, ...other }: Props) {
                 <Card
                     sx={{
                         ...cardBaseSx,
-                        minHeight: { xs: 264, md: 284 },
+                        minHeight: { xs: 240, md: 260 },
                         display: 'flex',
                         flexDirection: 'column',
                         background: '#ffffff',
@@ -426,7 +426,7 @@ export function LeaveStatusCards({ data, inProbation, sx, ...other }: Props) {
                         <Typography
                             sx={{
                                 color: '#0f172a',
-                                fontSize: { xs: '4.25rem', md: '5rem' },
+                                fontSize: { xs: '3.5rem', md: '4rem' },
                                 fontWeight: 900,
                                 lineHeight: 0.92,
                             }}
