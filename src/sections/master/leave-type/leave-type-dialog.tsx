@@ -246,4 +246,3 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
         </Dialog>
     );
 }
-// forced update for TS server
