@@ -1,6 +1,6 @@
-import type dayjs from 'dayjs';
-
-import * as XLSX from 'xlsx';
+import dayjs from 'dayjs';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -204,12 +204,116 @@ export function TimesheetsReportView() {
         getDoctypeList('Activity Type', ['name', 'activity_type']).then(setActivityTypeOptions);
     }, []);
 
-    const handleExport = () => {
+    const handleExport = async () => {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Timesheet Report');
+
         const dataToExport = reportData.filter(d => d.timesheet_date !== 'TOTAL');
-        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Timesheet Report");
-        XLSX.writeFile(workbook, "Timesheet_Report.xlsx");
+
+        // Selection Logic
+        const exportData = selected.length > 0
+            ? dataToExport.filter((row, index) => selected.includes(`${row.employee}-${index}`))
+            : dataToExport;
+
+        sheet.columns = [
+            { header: 'Date', key: 'date', width: 15 },
+            { header: 'Employee', key: 'employee_name', width: 25 },
+            { header: 'Employee ID', key: 'employee', width: 15 },
+            { header: 'Project', key: 'project', width: 20 },
+            { header: 'Activity Type', key: 'activity', width: 25 },
+            { header: 'Hours', key: 'hours', width: 12 },
+            { header: 'Description', key: 'description', width: 50 },
+        ];
+
+        const columnCount = sheet.columns.length;
+
+        // Header Styling (Limited to data columns only)
+        for (let i = 1; i <= columnCount; i++) {
+            const cell = sheet.getRow(1).getCell(i);
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        }
+        sheet.getRow(1).height = 25;
+
+        exportData.forEach((row) => {
+            sheet.addRow({
+                date: fDate(row.timesheet_date, 'DD-MM-YYYY'),
+                employee_name: row.employee_name,
+                employee: row.employee,
+                project: row.project || '---',
+                activity: row.activity_type || '---',
+                hours: row.hours || 0,
+                description: row.description || ''
+            });
+        });
+
+        // Merging logic for Date, Employee, and Employee ID (to group entries)
+        let mergeStart = 2;
+        const totalRows = sheet.rowCount;
+        for (let i = 2; i <= totalRows; i++) {
+            const current = sheet.getRow(i);
+            const next = i < totalRows ? sheet.getRow(i + 1) : null;
+
+            const isLast = i === totalRows;
+            const sameAsNext = !isLast && next &&
+                current.getCell(1).value === next.getCell(1).value &&
+                current.getCell(2).value === next.getCell(2).value &&
+                current.getCell(3).value === next.getCell(3).value;
+
+            if (!sameAsNext) {
+                if (i > mergeStart) {
+                    sheet.mergeCells(`A${mergeStart}:A${i}`);
+                    sheet.mergeCells(`B${mergeStart}:B${i}`);
+                    sheet.mergeCells(`C${mergeStart}:C${i}`);
+
+                    // Align merged cells to middle
+                    ['A', 'B', 'C'].forEach(col => {
+                        sheet.getCell(`${col}${mergeStart}`).alignment = { vertical: 'middle', horizontal: 'center' };
+                    });
+                }
+                mergeStart = i + 1;
+            }
+        }
+
+        // Alternating row colors and black borders (Limited to data columns only)
+        sheet.eachRow((row, rowNumber) => {
+            if (rowNumber > 1 && rowNumber <= sheet.rowCount - 1) { // Apply to data rows only (excluding TOTAL)
+                for (let i = 1; i <= columnCount; i++) {
+                    const cell = row.getCell(i);
+                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                    // Alternate shading
+                    if (rowNumber % 2 === 0) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                    }
+                    // Borders
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FF000000' } },
+                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                        left: { style: 'thin', color: { argb: 'FF000000' } },
+                        right: { style: 'thin', color: { argb: 'FF000000' } }
+                    };
+                }
+            }
+        });
+
+        // Add Total row
+        const totalHoursVal = exportData.reduce((acc, curr) => acc + (curr.hours || 0), 0);
+        const totalRow = sheet.addRow(['TOTAL', '', '', '', '', totalHoursVal, '']);
+        totalRow.font = { bold: true };
+        totalRow.getCell(6).numFmt = '0.00 "hrs"';
+
+        for (let i = 1; i <= columnCount; i++) {
+            totalRow.getCell(i).border = {
+                top: { style: 'thin', color: { argb: 'FF000000' } },
+                bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                left: { style: 'thin', color: { argb: 'FF000000' } },
+                right: { style: 'thin', color: { argb: 'FF000000' } }
+            };
+        }
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), `Timesheet_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
     };
 
     const onChangePage = useCallback((event: unknown, newPage: number) => {
@@ -380,6 +484,7 @@ export function TimesheetsReportView() {
                             variant="contained"
                             startIcon={<Iconify icon={"solar:export-bold" as any} />}
                             onClick={handleExport}
+                            disabled={reportData.length === 0}
                             sx={{
                                 bgcolor: '#08a3cd',
                                 color: 'common.white',
@@ -442,7 +547,8 @@ export function TimesheetsReportView() {
                                         .filter(d => d.timesheet_date !== 'TOTAL')
                                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                         .map((row, index) => {
-                                            const rowId = `${row.employee}-${index}`;
+                                            const absoluteIndex = page * rowsPerPage + index;
+                                            const rowId = `${row.employee}-${absoluteIndex}`;
                                             const isSelected = selected.indexOf(rowId) !== -1;
                                             return (
                                                 <TableRow

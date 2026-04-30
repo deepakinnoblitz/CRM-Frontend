@@ -215,11 +215,15 @@ export function TaskManagerReportView() {
             { header: 'Variance', key: 'variance', width: 20 },
         ];
 
-        const headerRow = mainSheet.getRow(1);
-        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
-        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1877F2' } };
-        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
-        headerRow.height = 30;
+        // Header Styling (Limited to data columns only)
+        const mainColCountForHeader = mainSheet.columns.length;
+        for (let i = 1; i <= mainColCountForHeader; i++) {
+            const cell = mainSheet.getRow(1).getCell(i);
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        }
+        mainSheet.getRow(1).height = 30;
 
         // Base URL for hyperlinks (assuming the app is hosted)
         const baseUrl = window.location.origin;
@@ -266,20 +270,22 @@ export function TaskManagerReportView() {
             row.alignment = { vertical: 'middle' };
         });
 
-        // Alternate row colors and borders
+        // Alternate row colors and borders (Limited to data columns only)
+        const mainColCount = mainSheet.columns.length;
         mainSheet.eachRow((row, rowNumber) => {
             if (rowNumber > 1) {
-                if (rowNumber % 2 === 0) {
-                    row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
-                }
-                row.eachCell((cell) => {
+                for (let i = 1; i <= mainColCount; i++) {
+                    const cell = row.getCell(i);
+                    if (rowNumber % 2 === 0) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                    }
                     cell.border = {
                         top: { style: 'thin', color: { argb: 'FF000000' } },
                         bottom: { style: 'thin', color: { argb: 'FF000000' } },
                         left: { style: 'thin', color: { argb: 'FF000000' } },
                         right: { style: 'thin', color: { argb: 'FF000000' } }
                     };
-                });
+                }
             }
         });
 
@@ -304,9 +310,12 @@ export function TaskManagerReportView() {
             { header: 'Closed On', key: 'closed_on', width: 20 },
         ];
 
-        const detailHeader = detailSheet.getRow(1);
-        detailHeader.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-        detailHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+        const detailColCountForHeader = detailSheet.columns.length;
+        for (let i = 1; i <= detailColCountForHeader; i++) {
+            const cell = detailSheet.getRow(1).getCell(i);
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+        }
 
         exportData.forEach(task => {
             const row = detailSheet.addRow({
@@ -331,19 +340,23 @@ export function TaskManagerReportView() {
             row.alignment = { vertical: 'middle', wrapText: true };
         });
 
-        // Apply Borders and Alternate Shading to Detail Sheet
+        // Apply Borders and Alternate Shading to Detail Sheet (Limited to data columns only)
+        const detailColCount = detailSheet.columns.length;
         detailSheet.eachRow((row, rowNumber) => {
-            if (rowNumber > 1 && rowNumber % 2 === 0) {
-                row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+            if (rowNumber > 1) {
+                for (let i = 1; i <= detailColCount; i++) {
+                    const cell = row.getCell(i);
+                    if (rowNumber % 2 === 0) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                    }
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FF000000' } },
+                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                        left: { style: 'thin', color: { argb: 'FF000000' } },
+                        right: { style: 'thin', color: { argb: 'FF000000' } }
+                    };
+                }
             }
-            row.eachCell((cell) => {
-                cell.border = {
-                    top: { style: 'thin', color: { argb: 'FF000000' } },
-                    bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                    left: { style: 'thin', color: { argb: 'FF000000' } },
-                    right: { style: 'thin', color: { argb: 'FF000000' } }
-                };
-            });
         });
 
         // --- HISTORY SHEET SETUP ---
@@ -356,9 +369,12 @@ export function TaskManagerReportView() {
             { header: 'Remarks', key: 'remarks', width: 50 },
         ];
 
-        const histHeader = historySheet.getRow(1);
-        histHeader.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-        histHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6366F1' } };
+        const histColCountForHeader = historySheet.columns.length;
+        for (let i = 1; i <= histColCountForHeader; i++) {
+            const cell = historySheet.getRow(1).getCell(i);
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+        }
 
         exportData.forEach(task => {
             if (task.history) {
@@ -375,19 +391,23 @@ export function TaskManagerReportView() {
             }
         });
 
-        // Apply Borders and Alternate Shading to History Sheet
+        // Apply Borders and Alternate Shading to History Sheet (Limited to data columns only)
+        const histColCount = historySheet.columns.length;
         historySheet.eachRow((row, rowNumber) => {
-            if (rowNumber > 1 && rowNumber % 2 === 0) {
-                row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+            if (rowNumber > 1) {
+                for (let i = 1; i <= histColCount; i++) {
+                    const cell = row.getCell(i);
+                    if (rowNumber % 2 === 0) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                    }
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FF000000' } },
+                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                        left: { style: 'thin', color: { argb: 'FF000000' } },
+                        right: { style: 'thin', color: { argb: 'FF000000' } }
+                    };
+                }
             }
-            row.eachCell((cell) => {
-                cell.border = {
-                    top: { style: 'thin', color: { argb: 'FF000000' } },
-                    bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                    left: { style: 'thin', color: { argb: 'FF000000' } },
-                    right: { style: 'thin', color: { argb: 'FF000000' } }
-                };
-            });
         });
 
         // --- GLOBAL SUMMARY AT BOTTOM OF MAIN SHEET ---
@@ -624,6 +644,7 @@ export function TaskManagerReportView() {
                             variant="contained"
                             startIcon={<Iconify icon={"solar:export-bold" as any} />}
                             onClick={handleExport}
+                            disabled={reportData.length === 0}
                             sx={{
                                 bgcolor: '#08a3cd',
                                 color: 'common.white',
