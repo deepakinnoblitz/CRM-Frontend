@@ -8,6 +8,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { usePathname } from 'src/routes/hooks';
 
+import { SettingsProvider } from 'src/hooks/settings-context';
 import { DashboardViewProvider } from 'src/hooks/dashboard-view-context';
 
 import { ThemeProvider } from 'src/theme/theme-provider';
@@ -27,13 +28,15 @@ export default function App({ children }: AppProps) {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} dateFormats={{ normalDate: 'DD-MM-YYYY', keyboardDate: 'DD-MM-YYYY' }}>
       <AuthProvider>
-        <DashboardViewProvider>
-          <ThemeProvider>
-            <SnackbarProvider anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-              {children}
-            </SnackbarProvider>
-          </ThemeProvider>
-        </DashboardViewProvider>
+        <SettingsProvider>
+          <DashboardViewProvider>
+            <ThemeProvider>
+              <SnackbarProvider anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+                {children}
+              </SnackbarProvider>
+            </ThemeProvider>
+          </DashboardViewProvider>
+        </SettingsProvider>
       </AuthProvider>
     </LocalizationProvider>
   );

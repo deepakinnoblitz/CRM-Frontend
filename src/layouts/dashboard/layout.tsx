@@ -1,8 +1,8 @@
 import type { Breakpoint } from '@mui/material/styles';
 
-import { useMemo } from 'react';
 import { merge } from 'es-toolkit';
 import { useBoolean } from 'minimal-shared/hooks';
+import { useMemo, useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Fade from '@mui/material/Fade';
@@ -14,6 +14,7 @@ import { useTheme, alpha } from '@mui/material/styles';
 import { RouterLink } from 'src/routes/components';
 
 import { useSocket } from 'src/hooks/use-socket';
+import { useSettingsContext } from 'src/hooks/settings-context';
 import { useDashboardView } from 'src/hooks/dashboard-view-context';
 import { useUnreadCountsContext } from 'src/hooks/unread-counts-context';
 
@@ -63,7 +64,7 @@ export function DashboardLayout({
   layoutQuery = 'lg',
 }: DashboardLayoutProps) {
   const theme = useTheme();
-
+  const { settings } = useSettingsContext();
   const { user } = useAuth();
 
   const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
@@ -76,7 +77,7 @@ export function DashboardLayout({
 
   const { navData } = useMemo(() => {
     console.log('Recalculating navData for view:', view);
-    const result = getNavData(user?.roles, view);
+    const result = getNavData(user?.roles, view, settings);
 
     // Inject unread counts into navData
     result.navData.forEach((item: any) => {
@@ -250,7 +251,7 @@ export function DashboardLayout({
     });
 
     return result;
-  }, [user?.roles, view, unreadCounts]);
+  }, [user?.roles, view, unreadCounts, settings]);
 
 
   const renderHeader = () => {

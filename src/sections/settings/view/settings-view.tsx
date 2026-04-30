@@ -11,8 +11,10 @@ import Snackbar from '@mui/material/Snackbar';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { useSettingsContext } from 'src/hooks/settings-context';
+
+import { updateHRMSSettings } from 'src/api/settings';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getHRMSSettings, updateHRMSSettings } from 'src/api/settings';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -20,6 +22,7 @@ import { useAuth } from 'src/auth/auth-context';
 
 import { SettingsLogo } from '../settings-logo';
 import { SettingsLiveKit } from '../settings-livekit';
+import { SettingsSidebar } from '../settings-sidebar';
 import { SettingsCurrency } from '../settings-currency';
 import { SettingsDashboard } from '../settings-dashboard';
 import { SettingsSalarySlip } from '../settings-salary-slip';
@@ -29,8 +32,9 @@ import { SettingsNotifications } from '../settings-notifications';
 
 const TABS = [
   { value: 'logo', label: 'Logo', icon: <Iconify icon={"solar:gallery-bold-duotone" as any} width={24} /> },
-  { value: 'currency', label: 'Currency & Locale', icon: <Iconify icon={"solar:globus-bold-duotone" as any} width={24} /> },
+  { value: 'sidebar', label: 'Sidebar', icon: <Iconify icon={"solar:widget-bold-duotone" as any} width={24} /> },
   { value: 'dashboard', label: 'Dashboard', icon: <Iconify icon={"solar:chart-bold-duotone" as any} width={24} /> },
+  { value: 'currency', label: 'Currency & Locale', icon: <Iconify icon={"solar:globus-bold-duotone" as any} width={24} /> },
   { value: 'notifications', label: 'Notifications', icon: <Iconify icon={"solar:bell-bold-duotone" as any} width={24} /> },
   { value: 'salary', label: 'Salary Slip', icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} width={24} /> },
   { value: 'api', label: 'API', icon: <Iconify icon={"solar:key-minimalistic-bold-duotone" as any} width={24} /> },
@@ -38,8 +42,8 @@ const TABS = [
 
 export function SettingsView() {
   const [currentTab, setCurrentTab] = useState('logo');
-  const [settings, setSettings] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { settings, refetch, loading: settingsLoading } = useSettingsContext();
+  const [formData, setFormData] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
@@ -52,36 +56,29 @@ export function SettingsView() {
     ['HR', 'Administrator', 'System Manager'].includes(role)
   );
 
-  const fetchSettings = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await getHRMSSettings();
-      setSettings(data);
-    } catch (error) {
-      console.error('Failed to fetch settings:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+    if (settings && (!formData || formData.modified !== settings.modified)) {
+      setFormData(settings);
+    }
+  }, [settings, formData]);
 
   const handleChangeTab = useCallback((event: React.SyntheticEvent, newValue: string) => {
     setCurrentTab(newValue);
   }, []);
 
   const handleUpdateField = useCallback((fieldname: string, value: any) => {
-    setSettings((prev: any) => ({ ...prev, [fieldname]: value }));
+    setFormData((prev: any) => ({ ...prev, [fieldname]: value }));
   }, []);
 
   const handleSave = async () => {
     try {
       setSaving(true);
-      await updateHRMSSettings(settings);
+      await updateHRMSSettings(formData);
       setSnackbar({ open: true, message: 'Settings updated successfully', severity: 'success' });
-      await fetchSettings();
+      const freshSettings = await refetch();
+      if (freshSettings) {
+        setFormData(freshSettings);
+      }
     } catch (error: any) {
       console.error('Failed to update settings:', error);
       setSnackbar({ open: true, message: error.message || 'Failed to update settings', severity: 'error' });
@@ -94,7 +91,7 @@ export function SettingsView() {
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
-  if (loading) {
+  if (settingsLoading && !formData) {
     return (
       <DashboardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
         <CircularProgress />
@@ -147,11 +144,14 @@ export function SettingsView() {
               value={tab.value}
               iconPosition="start"
               sx={{
-                minWidth: 160,
+                minWidth: 'auto',
+                px: 3,
                 minHeight: 40,
                 fontSize: 14,
                 textTransform: 'none',
                 fontWeight: 'fontWeightMedium',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
                 '&.Mui-selected': {
                   color: 'primary.main',
                   fontWeight: 'fontWeightBold',
@@ -182,42 +182,50 @@ export function SettingsView() {
       <Box sx={{ width: 1 }}>
         {currentTab === 'logo' && (
           <SettingsLogo
-            value={settings?.app_logo}
+            value={formData?.app_logo}
             onUpload={(url) => handleUpdateField('app_logo', url)}
           />
         )}
 
-        {currentTab === 'currency' && (
-          <SettingsCurrency
-            data={settings}
+        {currentTab === 'sidebar' && (
+          <SettingsSidebar
+            data={formData}
             onChange={handleUpdateField}
           />
         )}
 
         {currentTab === 'dashboard' && (
           <SettingsDashboard
-            data={settings}
+            data={formData}
+            onChange={handleUpdateField}
+          />
+        )}
+
+        {currentTab === 'currency' && (
+          <SettingsCurrency
+            data={formData}
             onChange={handleUpdateField}
           />
         )}
 
         {currentTab === 'notifications' && (
           <SettingsNotifications
-            data={settings}
+            data={formData}
             onChange={handleUpdateField}
           />
         )}
 
         {currentTab === 'salary' && (
           <SettingsSalarySlip
-            data={settings}
+            data={formData}
             onChange={handleUpdateField}
           />
         )}
 
+
         {currentTab === 'api' && (
           <SettingsLiveKit
-            data={settings}
+            data={formData}
             onChange={handleUpdateField}
           />
         )}
