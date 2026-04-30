@@ -133,6 +133,7 @@ export const PerformanceCriteriaCategoryPage = lazy(() => import('src/pages/perf
 export const DesignationPage = lazy(() => import('src/pages/designation'));
 export const SalaryStructureComponentPage = lazy(() => import('src/pages/salary-structure-component'));
 export const LeaveTypePage = lazy(() => import('src/pages/leave-type'));
+export const EmployeeOverallReportPage = lazy(() => import('src/pages/employee-overall-report'));
 
 
 const renderFallback = () => (
@@ -225,6 +226,7 @@ export const routesSection: RouteObject[] = [
       { path: 'designation', element: <DesignationPage /> },
       { path: 'salary-structure-component', element: <SalaryStructureComponentPage /> },
       { path: 'leave-type', element: <LeaveTypePage /> },
+      { path: 'employee-overall-report', element: <EmployeeOverallReportPage /> },
       { path: 'timesheet-reports', element: <TimesheetReportPage /> },
       {
         path: 'expenses',

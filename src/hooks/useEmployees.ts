@@ -13,7 +13,9 @@ export function useEmployees(
     filterStatus?: string,
     filterCountry?: string,
     filterState?: string,
-    filterCity?: string
+    filterCity?: string,
+    joiningDateFrom?: string | null,
+    joiningDateTo?: string | null
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
@@ -37,6 +39,14 @@ export function useEmployees(
             // Add status filter
             if (filterStatus && filterStatus !== 'all') {
                 filters.push(['Employee', 'status', '=', filterStatus]);
+            }
+
+            // Add joining date filters
+            if (joiningDateFrom) {
+                filters.push(['Employee', 'date_of_joining', '>=', joiningDateFrom]);
+            }
+            if (joiningDateTo) {
+                filters.push(['Employee', 'date_of_joining', '<=', joiningDateTo]);
             }
 
             // Add country filter (text search)
@@ -69,7 +79,7 @@ export function useEmployees(
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, search, orderBy, order, filterDepartment, filterDesignation, filterStatus, filterCountry, filterState, filterCity]);
+    }, [page, pageSize, search, orderBy, order, filterDepartment, filterDesignation, filterStatus, filterCountry, filterState, filterCity, joiningDateFrom, joiningDateTo]);
 
     useEffect(() => {
         refetch();
