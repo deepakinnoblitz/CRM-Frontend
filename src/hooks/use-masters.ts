@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { fetchDepartments, fetchProjects, fetchActivityTypes, fetchBankAccounts, fetchClaimTypes, fetchAssetCategories, fetchEvaluationTraitCategories, fetchDesignations, fetchSalaryStructureComponents } from 'src/api/masters';
+import { fetchDepartments, fetchProjects, fetchActivityTypes, fetchBankAccounts, fetchClaimTypes, fetchAssetCategories, fetchEvaluationTraitCategories, fetchDesignations, fetchSalaryStructureComponents, fetchLeaveTypes } from 'src/api/masters';
 
 export function useDepartments(
   page: number = 1,
@@ -368,6 +368,53 @@ export function useSalaryStructureComponents(
       setLoading(false);
     }
   }, [page, pageSize, search, orderBy, order]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  return { data, total, loading, error, refetch };
+}
+
+export function useLeaveTypes(
+  page: number = 1,
+  pageSize: number = 10,
+  search: string = '',
+  orderBy: string = 'creation',
+  order: 'asc' | 'desc' = 'desc',
+  status: string = 'all'
+) {
+  const [data, setData] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const filters: any[] = [];
+      if (status !== 'all') {
+        filters.push(['Leave Type', 'status', '=', status]);
+      }
+
+      const result = await fetchLeaveTypes({
+        page,
+        page_size: pageSize,
+        search,
+        orderBy,
+        order,
+        filters
+      });
+      setData(result.data || []);
+      setTotal(result.total || 0);
+    } catch (err: any) {
+      console.error('Failed to fetch leave types:', err);
+      setError(err.message || 'Failed to fetch leave types');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, search, orderBy, order, status]);
 
   useEffect(() => {
     refetch();

@@ -746,3 +746,89 @@ export async function getSalaryStructureComponent(name: string) {
     if (!res.ok) throw new Error("Failed to fetch salary structure component details");
     return (await res.json()).message;
 }
+
+export interface LeaveType {
+    name: string;
+    leave_type_name: string;
+    is_paid?: number;
+    max_leaves?: number;
+    status?: 'Active' | 'Inactive';
+    carry_forward?: number;
+    reset_frequency?: 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly';
+    creation?: string;
+    modified?: string;
+}
+
+// Leave Type APIs
+export const fetchLeaveTypes = (params: any) => {
+    const { search, ...restParams } = params;
+
+    const or_filters = search ? [
+        ["Leave Type", "leave_type_name", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("Leave Type", {
+        ...restParams,
+        search: undefined,
+        or_filters
+    });
+};
+
+export async function createLeaveType(data: Partial<LeaveType>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "Leave Type", ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create leave type"));
+    return json.message;
+}
+
+export async function updateLeaveType(name: string, data: Partial<LeaveType>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Leave Type", name, fieldname: data })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update leave type"));
+    return json.message;
+}
+
+export async function deleteLeaveType(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Leave Type", name })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete leave type"));
+    return true;
+}
+
+export async function renameLeaveType(oldName: string, newName: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.rename_doc", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype: "Leave Type",
+            old_name: oldName,
+            new_name: newName,
+            merge: false
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to rename leave type"));
+    return json.message;
+}
+
+export async function getLeaveType(name: string) {
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Leave Type&name=${encodeURIComponent(name)}`);
+    if (!res.ok) throw new Error("Failed to fetch leave type details");
+    return (await res.json()).message;
+}

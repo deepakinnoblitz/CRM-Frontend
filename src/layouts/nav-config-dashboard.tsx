@@ -156,6 +156,7 @@ export const hrNavData = [
       { title: 'Criteria Category', path: '/performance-criteria-category' },
       { title: 'Designation', path: '/designation' },
       { title: 'Salary Component', path: '/salary-structure-component' },
+      { title: 'Leave Type', path: '/leave-type' },
     ],
   },
 ];
