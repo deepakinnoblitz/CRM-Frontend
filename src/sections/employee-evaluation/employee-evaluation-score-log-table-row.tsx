@@ -69,7 +69,7 @@ export function EmployeeEvaluationScoreLogTableRow({
         {change > 0 ? `+${change}` : change}
       </TableCell>
       <TableCell sx={{ fontWeight: 'bold' }}>{new_score}</TableCell>
-      <TableCell>{reason}</TableCell>
+      <TableCell sx={{ maxWidth: 400 }}>{reason}</TableCell>
       <TableCell>{fDate(date, 'DD-MM-YYYY')}</TableCell>
     </TableRow>
   );

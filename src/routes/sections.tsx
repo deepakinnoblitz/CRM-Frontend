@@ -71,6 +71,8 @@ export const InvoiceCollectionReportPage = lazy(() => import('src/pages/reports/
 export const PurchaseCollectionReportPage = lazy(() => import('src/pages/reports/purchase-settlement-report'));
 export const TimesheetReportPage = lazy(() => import('src/pages/reports/timesheet'));
 export const AttendanceReportPage = lazy(() => import('src/pages/reports/attendance'));
+export const DailyLogReportPage = lazy(() => import('src/pages/reports/daily-log'));
+export const TaskReportPage = lazy(() => import('src/pages/reports/task-manager'));
 export const EmployeePage = lazy(() => import('src/pages/employee'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
 export const LeavesPage = lazy(() => import('src/pages/leaves'));
@@ -80,6 +82,7 @@ export const RequestsPage = lazy(() => import('src/pages/requests'));
 export const AnnouncementsPage = lazy(() => import('src/pages/announcements'));
 export const AssetsPage = lazy(() => import('src/pages/assets'));
 export const AssetAssignmentsPage = lazy(() => import('src/pages/asset-assignments'));
+export const AssetRequestsPage = lazy(() => import('src/pages/asset-requests'));
 export const TimesheetsPage = lazy(() => import('src/pages/timesheets'));
 export const ExpensesListPage = lazy(() => import('src/pages/expenses/list'));
 export const ExpensesNewPage = lazy(() => import('src/pages/expenses/new'));
@@ -103,6 +106,7 @@ export const AccessDeniedPage = lazy(() => import('src/pages/access-denied'));
 export const EmployeeEvaluationPage = lazy(() => import('src/pages/employee-evaluation'));
 export const BadgesPage = lazy(() => import('src/pages/badges'));
 export const EmployeeMonthlyAwardPage = lazy(() => import('src/pages/employee-monthly-award'));
+export const EmployeeReferralsPage = lazy(() => import('src/pages/employee-referrals'));
 
 export const PurchaseListPage = lazy(() => import('src/pages/purchase/list'));
 export const PurchaseNewPage = lazy(() => import('src/pages/purchase/new'));
@@ -139,16 +143,7 @@ const renderFallback = () => (
       alignItems: 'center',
       justifyContent: 'center',
     }}
-  >
-    <LinearProgress
-      sx={{
-        width: 1,
-        maxWidth: 320,
-        bgcolor: (theme) => varAlpha(theme.vars.palette.text.primaryChannel, 0.16),
-        [`& .${linearProgressClasses.bar}`]: { bgcolor: 'text.primary' },
-      }}
-    />
-  </Box>
+  />
 );
 
 export const routesSection: RouteObject[] = [
@@ -207,8 +202,15 @@ export const routesSection: RouteObject[] = [
       { path: 'payroll', element: <PayrollPage /> },
       { path: 'requests', element: <RequestsPage /> },
       { path: 'announcements', element: <AnnouncementsPage /> },
-      { path: 'assets', element: <AssetsPage /> },
-      { path: 'asset-assignments', element: <AssetAssignmentsPage /> },
+      {
+        path: 'assets',
+        children: [
+          { index: true, element: <AssetsPage /> },
+          { path: 'list', element: <AssetsPage /> },
+          { path: 'assignments', element: <AssetAssignmentsPage /> },
+          { path: 'requests', element: <AssetRequestsPage /> },
+        ],
+      },
       { path: 'timesheets', element: <TimesheetsPage /> },
       { path: 'wfh-attendance', element: <WFHAttendancePage /> },
       { path: 'daily-log', element: <DailyLogPage /> },
@@ -241,6 +243,7 @@ export const routesSection: RouteObject[] = [
       { path: 'job-openings', element: <JobOpeningsPage /> },
       { path: 'job-applicants', element: <JobApplicantsPage /> },
       { path: 'interviews', element: <InterviewPage /> },
+      { path: 'employee-referrals', element: <EmployeeReferralsPage /> },
       {
         path: 'purchase',
         children: [
@@ -287,6 +290,8 @@ export const routesSection: RouteObject[] = [
           { path: 'purchase-settlement', element: <PurchaseCollectionReportPage /> },
           { path: 'timesheet', element: <TimesheetReportPage /> },
           { path: 'attendance', element: <AttendanceReportPage /> },
+          { path: 'daily-log', element: <DailyLogReportPage /> },
+          { path: 'task-manager', element: <TaskReportPage /> },
         ],
       },
       { path: 'employee-evaluation', element: <EmployeeEvaluationPage /> },

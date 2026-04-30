@@ -1,6 +1,6 @@
-import type dayjs from 'dayjs';
-
-import * as XLSX from 'xlsx';
+import dayjs from 'dayjs';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -155,10 +155,10 @@ export function TimesheetsReportView() {
 
                 switch (sortBy) {
                     case 'date_asc':
-                        if (dateA !== dateB) return dateA.localeCompare(dateB);
+                        if (dateB !== dateA) return dateB.localeCompare(dateA);
                         return nameA.localeCompare(nameB);
                     case 'date_desc':
-                        if (dateB !== dateA) return dateB.localeCompare(dateA);
+                        if (dateA !== dateB) return dateA.localeCompare(dateB);
                         return nameA.localeCompare(nameB);
                     case 'name_asc':
                         if (nameA !== nameB) return nameA.localeCompare(nameB);
@@ -204,12 +204,116 @@ export function TimesheetsReportView() {
         getDoctypeList('Activity Type', ['name', 'activity_type']).then(setActivityTypeOptions);
     }, []);
 
-    const handleExport = () => {
+    const handleExport = async () => {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Timesheet Report');
+
         const dataToExport = reportData.filter(d => d.timesheet_date !== 'TOTAL');
-        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Timesheet Report");
-        XLSX.writeFile(workbook, "Timesheet_Report.xlsx");
+
+        // Selection Logic
+        const exportData = selected.length > 0
+            ? dataToExport.filter((row, index) => selected.includes(`${row.employee}-${index}`))
+            : dataToExport;
+
+        sheet.columns = [
+            { header: 'Date', key: 'date', width: 15 },
+            { header: 'Employee', key: 'employee_name', width: 25 },
+            { header: 'Employee ID', key: 'employee', width: 15 },
+            { header: 'Project', key: 'project', width: 20 },
+            { header: 'Activity Type', key: 'activity', width: 25 },
+            { header: 'Hours', key: 'hours', width: 12 },
+            { header: 'Description', key: 'description', width: 50 },
+        ];
+
+        const columnCount = sheet.columns.length;
+
+        // Header Styling (Limited to data columns only)
+        for (let i = 1; i <= columnCount; i++) {
+            const cell = sheet.getRow(1).getCell(i);
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        }
+        sheet.getRow(1).height = 25;
+
+        exportData.forEach((row) => {
+            sheet.addRow({
+                date: fDate(row.timesheet_date, 'DD-MM-YYYY'),
+                employee_name: row.employee_name,
+                employee: row.employee,
+                project: row.project || '---',
+                activity: row.activity_type || '---',
+                hours: row.hours || 0,
+                description: row.description || ''
+            });
+        });
+
+        // Merging logic for Date, Employee, and Employee ID (to group entries)
+        let mergeStart = 2;
+        const totalRows = sheet.rowCount;
+        for (let i = 2; i <= totalRows; i++) {
+            const current = sheet.getRow(i);
+            const next = i < totalRows ? sheet.getRow(i + 1) : null;
+
+            const isLast = i === totalRows;
+            const sameAsNext = !isLast && next &&
+                current.getCell(1).value === next.getCell(1).value &&
+                current.getCell(2).value === next.getCell(2).value &&
+                current.getCell(3).value === next.getCell(3).value;
+
+            if (!sameAsNext) {
+                if (i > mergeStart) {
+                    sheet.mergeCells(`A${mergeStart}:A${i}`);
+                    sheet.mergeCells(`B${mergeStart}:B${i}`);
+                    sheet.mergeCells(`C${mergeStart}:C${i}`);
+
+                    // Align merged cells to middle
+                    ['A', 'B', 'C'].forEach(col => {
+                        sheet.getCell(`${col}${mergeStart}`).alignment = { vertical: 'middle', horizontal: 'center' };
+                    });
+                }
+                mergeStart = i + 1;
+            }
+        }
+
+        // Alternating row colors and black borders (Limited to data columns only)
+        sheet.eachRow((row, rowNumber) => {
+            if (rowNumber > 1 && rowNumber <= sheet.rowCount - 1) { // Apply to data rows only (excluding TOTAL)
+                for (let i = 1; i <= columnCount; i++) {
+                    const cell = row.getCell(i);
+                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                    // Alternate shading
+                    if (rowNumber % 2 === 0) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                    }
+                    // Borders
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FF000000' } },
+                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                        left: { style: 'thin', color: { argb: 'FF000000' } },
+                        right: { style: 'thin', color: { argb: 'FF000000' } }
+                    };
+                }
+            }
+        });
+
+        // Add Total row
+        const totalHoursVal = exportData.reduce((acc, curr) => acc + (curr.hours || 0), 0);
+        const totalRow = sheet.addRow(['TOTAL', '', '', '', '', totalHoursVal, '']);
+        totalRow.font = { bold: true };
+        totalRow.getCell(6).numFmt = '0.00 "hrs"';
+
+        for (let i = 1; i <= columnCount; i++) {
+            totalRow.getCell(i).border = {
+                top: { style: 'thin', color: { argb: 'FF000000' } },
+                bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                left: { style: 'thin', color: { argb: 'FF000000' } },
+                right: { style: 'thin', color: { argb: 'FF000000' } }
+            };
+        }
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), `Timesheet_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
     };
 
     const onChangePage = useCallback((event: unknown, newPage: number) => {
@@ -221,11 +325,13 @@ export function TimesheetsReportView() {
         setPage(0);
     }, []);
 
-    const totalHours = reportData.find(d => d.timesheet_date === 'TOTAL')?.hours || 0;
+    const totalHours = reportData
+        .filter(d => d.timesheet_date !== 'TOTAL')
+        .reduce((acc, curr) => acc + (curr.hours || 0), 0);
     const totalEntries = reportData.filter(d => d.timesheet_date !== 'TOTAL').length;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
                     <Typography variant="h4">Timesheet Report</Typography>
@@ -269,21 +375,21 @@ export function TimesheetsReportView() {
                                 format="DD-MM-YYYY"
                                 value={fromDate}
                                 onChange={(newValue) => setFromDate(newValue)}
-                                slotProps={{ textField: { size: 'small', sx: { width: 170 } } }}
+                                slotProps={{ textField: { size: 'small', sx: { flexGrow: 1, maxWidth: 170 } } }}
                             />
                             <DatePicker
                                 label="To Date"
                                 format="DD-MM-YYYY"
                                 value={toDate}
                                 onChange={(newValue) => setToDate(newValue)}
-                                slotProps={{ textField: { size: 'small', sx: { width: 170 } } }}
+                                slotProps={{ textField: { size: 'small', sx: { flexGrow: 1, maxWidth: 170 } } }}
                             />
                         </LocalizationProvider>
 
                         {/* Employee */}
                         <Autocomplete
                             size="small"
-                            sx={{ minWidth: 180 }}
+                            sx={{ flexGrow: 1, minWidth: 200 }}
                             options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
                             getOptionLabel={(option) =>
                                 option.name === 'all'
@@ -323,7 +429,7 @@ export function TimesheetsReportView() {
                         {/* Project */}
                         <Autocomplete
                             size="small"
-                            sx={{ minWidth: 180 }}
+                            sx={{ flexGrow: 1, minWidth: 180 }}
                             options={[{ name: 'all', project: 'All Projects' }, ...projectOptions]}
                             getOptionLabel={(option) => option.project || ''}
                             value={
@@ -345,7 +451,7 @@ export function TimesheetsReportView() {
                         {/* Activity */}
                         <Autocomplete
                             size="small"
-                            sx={{ minWidth: 170 }}
+                            sx={{ flexGrow: 1, minWidth: 180 }}
                             options={[{ name: 'all', activity_type: 'All Activities' }, ...activityTypeOptions]}
                             getOptionLabel={(option) => option.activity_type || ''}
                             value={
@@ -365,31 +471,32 @@ export function TimesheetsReportView() {
                         />
 
                         {/* Sort */}
-                        <FormControl size="small" sx={{ minWidth: 140 }}>
+                        <FormControl size="small" sx={{ flexGrow: 1, minWidth: 140 }}>
                             <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                                <MenuItem value="date_asc" sx={{ fontSize: '0.85rem' }}>Date ↓ (Asc)</MenuItem>
-                                <MenuItem value="date_desc" sx={{ fontSize: '0.85rem' }}>Date ↑ (Desc)</MenuItem>
+                                <MenuItem value="date_asc" sx={{ fontSize: '0.85rem' }}>Date ↓ (Latest)</MenuItem>
+                                <MenuItem value="date_desc" sx={{ fontSize: '0.85rem' }}>Date ↑ (Oldest)</MenuItem>
                                 <MenuItem value="name_asc" sx={{ fontSize: '0.85rem' }}>Name: A to Z</MenuItem>
                                 <MenuItem value="name_desc" sx={{ fontSize: '0.85rem' }}>Name: Z to A</MenuItem>
                             </Select>
                         </FormControl>
 
-                    </Stack>
-
-                    {/* 🔹 Bottom Row – Export Button */}
-                    <Stack direction="row" justifyContent="flex-end">
                         <Button
                             variant="contained"
                             startIcon={<Iconify icon={"solar:export-bold" as any} />}
                             onClick={handleExport}
+                            disabled={reportData.length === 0}
                             sx={{
                                 bgcolor: '#08a3cd',
                                 color: 'common.white',
-                                '&:hover': { bgcolor: '#068fb3' }, marginRight: 2, marginTop: 2
+                                '&:hover': { bgcolor: '#068fb3' },
+                                height: 40,
+                                px: 3,
+                                ml: { md: 'auto' }
                             }}
                         >
                             Export
                         </Button>
+
                     </Stack>
 
                 </Card>
@@ -440,7 +547,8 @@ export function TimesheetsReportView() {
                                         .filter(d => d.timesheet_date !== 'TOTAL')
                                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                         .map((row, index) => {
-                                            const rowId = `${row.employee}-${index}`;
+                                            const absoluteIndex = page * rowsPerPage + index;
+                                            const rowId = `${row.employee}-${absoluteIndex}`;
                                             const isSelected = selected.indexOf(rowId) !== -1;
                                             return (
                                                 <TableRow
@@ -463,7 +571,7 @@ export function TimesheetsReportView() {
                                                         <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
                                                     </TableCell>
                                                     <TableCell>{row.project}</TableCell>
-                                                    <TableCell>{row.activity_type}</TableCell>
+                                                    <TableCell sx={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.activity_type}</TableCell>
                                                     <TableCell sx={{ fontWeight: 'bold' }}>{row.hours} hrs</TableCell>
                                                     <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                         {row.description}
@@ -478,11 +586,11 @@ export function TimesheetsReportView() {
                                         })}
 
                                     {/* Total Row */}
-                                    {reportData.find(d => d.timesheet_date === 'TOTAL') && (
+                                    {reportData.length > 0 && (
                                         <TableRow sx={{ bgcolor: alpha(theme.palette.success.main, 0.08) }}>
                                             <TableCell padding="checkbox" />
                                             <TableCell colSpan={4} sx={{ fontWeight: 'bold', color: 'success.main' }}>TOTAL</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: 'success.main' }}>{totalHours} hrs</TableCell>
+                                            <TableCell sx={{ fontWeight: 'bold', color: 'success.main' }}>{totalHours.toFixed(2)} hrs</TableCell>
                                             <TableCell colSpan={2} />
                                         </TableRow>
                                     )}

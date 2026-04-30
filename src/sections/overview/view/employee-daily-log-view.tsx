@@ -191,7 +191,7 @@ export function EmployeeDailyLogView() {
     const emptyRows = (!loading && sessions.length > 0) ? (sessions.length < 5 ? 5 - sessions.length : 0) : 0;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Employee Daily Log

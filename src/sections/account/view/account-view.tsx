@@ -447,7 +447,7 @@ export function AccountView() {
     const empty = !loading && !accounts.length && !filterName && !canReset;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box display="flex" alignItems="center" mb={5}>
                 <Typography variant="h4" flexGrow={1}>
                     Accounts

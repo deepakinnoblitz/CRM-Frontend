@@ -11,7 +11,7 @@ import TaskKanbanColumn from './task-kanban-column';
 
 // ----------------------------------------------------------------------
 
-const STATUS_OPTIONS = ['Open', 'In Progress', 'Completed', 'Reopened'];
+const STATUS_OPTIONS = ['Open', 'In Progress', 'On Hold', 'Completed', 'Reopened'];
 
 interface Props {
     tasks: TaskManager[];

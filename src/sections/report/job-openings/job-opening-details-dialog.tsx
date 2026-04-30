@@ -1,10 +1,12 @@
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
+import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
 import { Label } from 'src/components/label';
@@ -16,10 +18,11 @@ import { Scrollbar } from 'src/components/scrollbar';
 type Props = {
     open: boolean;
     onClose: () => void;
+    onRefer?: (jobName: string) => void;
     job: any;
 };
 
-export function JobOpeningDetailsDialog({ open, onClose, job }: Props) {
+export function JobOpeningDetailsDialog({ open, onClose, onRefer, job }: Props) {
     if (!job) return null;
 
     const formatDate = (date: string) => {
@@ -45,7 +48,7 @@ export function JobOpeningDetailsDialog({ open, onClose, job }: Props) {
                     </Stack>
                 </Box>
                 <Label
-                    variant="filled"
+                    variant="soft"
                     color={(job.status === 'Open' && 'success') || (job.status === 'Closed' && 'error') || 'default'}
                     sx={{ height: 32, px: 2, borderRadius: 1 }}
                 >
@@ -117,6 +120,24 @@ export function JobOpeningDetailsDialog({ open, onClose, job }: Props) {
                     {renderDescription}
                 </DialogContent>
             </Scrollbar>
+
+            {onRefer && (
+                <DialogActions sx={{ p: 3, pt: 1 }}>
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        size="large"
+                        startIcon={<Iconify icon={"solar:user-plus-bold" as any} />}
+                        onClick={() => {
+                            onRefer(job.name);
+                            onClose();
+                        }}
+                        sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}
+                    >
+                        Refer a Friend for this Position
+                    </Button>
+                </DialogActions>
+            )}
         </Dialog>
     );
 }

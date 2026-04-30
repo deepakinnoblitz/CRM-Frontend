@@ -38,6 +38,7 @@ import { useSocket } from 'src/hooks/use-socket';
 import { useReimbursementClaims } from 'src/hooks/useReimbursementClaims';
 
 import { fetchEmployees } from 'src/api/employees';
+import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
     applyReimbursementClaimWorkflowAction,
@@ -288,6 +289,11 @@ export function ReimbursementClaimsView() {
             const fullData = await getReimbursementClaim(row.name);
             setViewClaim(fullData);
             setOpenView(true);
+            
+            // Mark as read for HR
+            markAsRead('Reimbursement Claim', row.name).then(() => {
+                window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+            });
         } catch (error: any) {
             setSnackbar({
                 open: true,
@@ -296,6 +302,7 @@ export function ReimbursementClaimsView() {
             });
         }
     }, []);
+
 
     const handleDeleteRow = useCallback(
         async (name: string) => {
@@ -322,11 +329,18 @@ export function ReimbursementClaimsView() {
         try {
             await applyReimbursementClaimWorkflowAction(id, action);
             setSnackbar({ open: true, message: `Claim ${action}ed successfully`, severity: 'success' });
+            
+            // Mark as read for HR
+            markAsRead('Reimbursement Claim', id).then(() => {
+                window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+            });
+
             await refetch();
         } catch (error: any) {
             setSnackbar({ open: true, message: error.message || `Failed to ${action} claim`, severity: 'error' });
         }
     };
+
 
     const isApprovedOrPaid = isEdit && currentClaim && (currentClaim.workflow_state === 'Approved' || currentClaim.workflow_state === 'Paid');
 
@@ -679,7 +693,7 @@ export function ReimbursementClaimsView() {
     };
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Reimbursement Claims

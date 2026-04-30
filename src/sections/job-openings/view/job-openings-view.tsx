@@ -62,7 +62,7 @@ export function JobOpeningsView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('posted_on');
+    const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
     const [openFilters, setOpenFilters] = useState(false);
     const [locations, setLocations] = useState<string[]>([]);
@@ -283,8 +283,8 @@ export function JobOpeningsView() {
     const canReset = filters.status !== 'all' || filters.location !== 'all' || filters.startDate !== null || filters.endDate !== null;
 
     const handleSortChange = (value: string) => {
-        if (value === 'date_desc') { setOrderBy('posted_on'); setOrder('desc'); }
-        else if (value === 'date_asc') { setOrderBy('posted_on'); setOrder('asc'); }
+        if (value === 'date_desc') { setOrderBy('modified'); setOrder('desc'); }
+        else if (value === 'date_asc') { setOrderBy('modified'); setOrder('asc'); }
         else if (value === 'title_asc') { setOrderBy('job_title'); setOrder('asc'); }
         else if (value === 'title_desc') { setOrderBy('job_title'); setOrder('desc'); }
         else if (value === 'location_asc') { setOrderBy('location'); setOrder('asc'); }
@@ -293,7 +293,7 @@ export function JobOpeningsView() {
     };
 
     const getCurrentSortValue = () => {
-        if (orderBy === 'posted_on') return order === 'desc' ? 'date_desc' : 'date_asc';
+        if (orderBy === 'modified') return order === 'desc' ? 'date_desc' : 'date_asc';
         if (orderBy === 'job_title') return order === 'desc' ? 'title_desc' : 'title_asc';
         if (orderBy === 'location') return order === 'desc' ? 'location_desc' : 'location_asc';
         return 'date_desc';
@@ -306,7 +306,7 @@ export function JobOpeningsView() {
     const notFound = !data.length && !!filterName;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5 }}>
                 <Typography variant="h4">Job Openings</Typography>
                 {permissions.write && (

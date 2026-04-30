@@ -52,7 +52,7 @@ export function UploadAttendanceView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
-    const [sortBy, setSortBy] = useState('upload_date_desc');
+    const [sortBy, setSortBy] = useState('modified_desc');
     const [filters, setFilters] = useState<any>({
         startDate: null,
         endDate: null,
@@ -180,7 +180,7 @@ export function UploadAttendanceView() {
     const notFound = !loading && data.length === 0;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box display="flex" alignItems="center" mb={5}>
                 <Typography variant="h4" flexGrow={1}>
                     Import Attendance
@@ -209,8 +209,8 @@ export function UploadAttendanceView() {
                     onSortChange={setSortBy}
                     searchPlaceholder="Search attendance..."
                     sortOptions={[
-                        { value: 'upload_date_desc', label: 'Newest Upload' },
-                        { value: 'upload_date_asc', label: 'Oldest Upload' },
+                        { value: 'modified_desc', label: 'Newest First' },
+                        { value: 'modified_asc', label: 'Oldest First' },
                         { value: 'att_fr_date_desc', label: 'Latest From Date' },
                         { value: 'att_fr_date_asc', label: 'Earliest From Date' },
                     ]}

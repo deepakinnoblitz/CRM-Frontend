@@ -27,6 +27,7 @@ import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { frappeRequest } from 'src/utils/csrf';
+import { floatToHHMM, hhmmToFloat } from 'src/utils/format-time';
 
 import { getUsers } from 'src/api/user-permissions';
 import {
@@ -62,6 +63,7 @@ const INITIAL_TASK_STATE: Partial<TaskManager> = {
     priority: 'Medium',
     due_date: dayjs().format('YYYY-MM-DD'),
     due_time: '10:00:00',
+    estimated_time: 0,
     assignees: [],
     tag_member: '',
     attachment_required: 0,
@@ -87,6 +89,7 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
     const [departments, setDepartments] = useState<any[]>([]);
     const [employees, setEmployees] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
+    const [estimatedTimeStr, setEstimatedTimeStr] = useState('');
 
     // Create Project state
     const [openProjectCreate, setOpenProjectCreate] = useState(false);
@@ -119,8 +122,10 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
             // Clean description of HTML tags if it's being edited in a simple TextField
             const cleanDescription = currentTask.description?.replace(/<[^>]*>?/gm, '') || '';
             setTaskData({ ...currentTask, description: cleanDescription });
+            setEstimatedTimeStr(floatToHHMM(currentTask.estimated_time || 0));
         } else {
             setTaskData(INITIAL_TASK_STATE);
+            setEstimatedTimeStr('');
         }
     }, [currentTask, open]);
 
@@ -188,6 +193,10 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
             newErrors.due_date = 'Due Date cannot be in the past';
         }
         if (taskData.recurring_task && !taskData.recurring_frequency) newErrors.recurring_frequency = 'Frequency is required for recurring tasks';
+        
+        if (estimatedTimeStr && !/^([0-9]{1,5}):([0-5][0-9])$/.test(estimatedTimeStr)) {
+            newErrors.estimated_time = 'Invalid format (HH:MM). Example: 08:30';
+        }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -200,11 +209,15 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
         }
         try {
             setLoading(true);
+            const finalData = {
+                ...taskData,
+                estimated_time: hhmmToFloat(estimatedTimeStr)
+            };
             if (currentTask) {
-                await updateTaskManager(currentTask.name, taskData);
+                await updateTaskManager(currentTask.name, finalData);
                 setSnackbar({ open: true, message: 'Task updated successfully!', severity: 'success' });
             } else {
-                await createTaskManager(taskData);
+                await createTaskManager(finalData);
                 setSnackbar({ open: true, message: 'Task created successfully!', severity: 'success' });
             }
             onClose();
@@ -592,6 +605,20 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
                                             InputLabelProps: { shrink: true }
                                         }
                                     }}
+                                />
+
+                                <TextField
+                                    fullWidth
+                                    label="Estimated Time (HH:MM)"
+                                    placeholder="Ex: 08:30"
+                                    error={!!errors.estimated_time}
+                                    helperText={errors.estimated_time}
+                                    value={estimatedTimeStr}
+                                    onChange={(e) => {
+                                        setEstimatedTimeStr(e.target.value);
+                                        if (errors.estimated_time) setErrors(prev => ({ ...prev, estimated_time: '' }));
+                                    }}
+                                    InputLabelProps={{ shrink: true }}
                                 />
                             </Stack>
 

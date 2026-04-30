@@ -43,7 +43,10 @@ import {
   fetchEmployeeEvaluationTrait,
   submitEmployeeEvaluationEvent,
   cancelEmployeeEvaluationEvent,
-  resetEmployeeScores
+  resetEmployeeScores,
+  fetchEvaluationAutomationRules,
+  updateEvaluationAutomationRule,
+  deleteEvaluationAutomationRule,
 } from 'src/api/employee-evaluation';
 
 import { Iconify } from 'src/components/iconify';
@@ -60,8 +63,11 @@ import { EmployeeEvaluationEventTableRow } from '../employee-evaluation-table-ro
 import { EmployeeEvaluationTraitFormDialog } from '../evaluation-trait-form-dialog';
 import { EmployeeEvaluationTableToolbar } from '../employee-evaluation-table-toolbar';
 import { EmployeeEvaluationEventFormDialog } from '../employee-evaluation-form-dialog';
+import { EvaluationAutomationRuleTableRow } from '../evaluation-automation-rule-table-row';
 import { EmployeeEvaluationEventDetailsDialog } from '../employee-evaluation-details-dialog';
+import { EvaluationAutomationRuleFormDialog } from '../evaluation-automation-rule-form-dialog';
 import { EmployeeEvaluationScoreLogTableRow } from '../employee-evaluation-score-log-table-row';
+
 
 // ----------------------------------------------------------------------
 
@@ -69,6 +75,7 @@ const TABS = [
   { value: 'events', label: 'Employee Evaluations', icon: <Iconify icon={"solar:clipboard-check-bold-duotone" as any} width={20} /> },
   { value: 'traits', label: 'Performance Criteria', icon: <Iconify icon={"solar:user-speak-bold-duotone" as any} width={20} /> },
   { value: 'logs', label: 'Score Logs', icon: <Iconify icon={"solar:history-bold-duotone" as any} width={20} /> },
+  { value: 'automation', label: 'Automation Rules', icon: <Iconify icon={"solar:robot-bold-duotone" as any} width={20} /> },
 ];
 
 export function EmployeeEvaluationView() {
@@ -100,7 +107,7 @@ export function EmployeeEvaluationView() {
 
   const [confirmDelete, setConfirmDelete] = useState<{
     open: boolean;
-    type: 'event' | 'trait' | null;
+    type: 'event' | 'trait' | 'automation' | null;
     name: string | null;
     isSubmitted?: boolean;
   }>({
@@ -118,6 +125,8 @@ export function EmployeeEvaluationView() {
     category: '',
     startDate: null,
     endDate: null,
+    event_type: 'all',
+    rule_enabled: 'all',
   });
 
   useEffect(() => {
@@ -180,7 +189,39 @@ export function EmployeeEvaluationView() {
   const { data: logs, total: totalLogs, loading: loadingLogs, refetch: refetchLogs } = useEmployeeEvaluationScoreLogs(page + 1, rowsPerPage, filterName, sortBy, filters);
   const { data: traits, total: totalTraits, loading: loadingTraits, refetch: refetchTraits } = useEmployeeEvaluationTraits(page + 1, rowsPerPage, filterName, sortBy, filters);
 
-  const canReset = !!filterName || (filters.employee && !hideTabs) || !!filters.trait || (filters.evaluation_type !== 'all') || (filters.docstatus !== null) || !!filters.category || !!filters.startDate || !!filters.endDate;
+  // Automation Rules state
+  const [automationRules, setAutomationRules] = useState<any[]>([]);
+  const [totalAutomation, setTotalAutomation] = useState(0);
+  const [loadingAutomation, setLoadingAutomation] = useState(false);
+  const [openAutomationForm, setOpenAutomationForm] = useState(false);
+  const [selectedRule, setSelectedRule] = useState<any>(null);
+
+  const refetchAutomation = useCallback(async () => {
+    if (!isAdminOrManager) return;
+    setLoadingAutomation(true);
+    try {
+      const result = await fetchEvaluationAutomationRules({ 
+        page: page + 1, 
+        page_size: rowsPerPage, 
+        search: filterName,
+        sort_by: sortBy,
+        event_type: filters.event_type,
+        enabled: filters.rule_enabled === 'all' ? undefined : Number(filters.rule_enabled)
+      });
+      setAutomationRules(result.data);
+      setTotalAutomation(result.total);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingAutomation(false);
+    }
+  }, [page, rowsPerPage, filterName, sortBy, filters.event_type, filters.rule_enabled, isAdminOrManager]);
+
+  useEffect(() => {
+    if (currentTab === 'automation') refetchAutomation();
+  }, [currentTab, refetchAutomation]);
+
+  const canReset = !!filterName || (filters.employee && !hideTabs) || !!filters.trait || (filters.evaluation_type !== 'all') || (filters.docstatus !== null) || !!filters.category || !!filters.startDate || !!filters.endDate || (filters.event_type !== 'all') || (filters.rule_enabled !== 'all');
 
   const notFoundEvents = !events.length && !!filterName && !loadingEvents;
   const emptyEvents = !events.length && !filterName && !loadingEvents;
@@ -217,15 +258,17 @@ export function EmployeeEvaluationView() {
 
       {!hideTabs && currentTab !== 'logs' && (
         <Stack direction="row" spacing={1}>
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<Iconify icon="solar:restart-bold" />}
-            onClick={() => setOpenResetDialog(true)}
-            sx={{ height: 40 }}
-          >
-            Reset Scores
-          </Button>
+          {currentTab !== 'automation' && (
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<Iconify icon="solar:restart-bold" />}
+              onClick={() => setOpenResetDialog(true)}
+              sx={{ height: 40 }}
+            >
+              Reset Scores
+            </Button>
+          )}
           <Button
             variant="contained"
             startIcon={<Iconify icon="mingcute:add-line" />}
@@ -236,9 +279,13 @@ export function EmployeeEvaluationView() {
                 setSelectedTrait(null);
                 setOpenTraitForm(true);
               }
+              if (currentTab === 'automation') {
+                setSelectedRule(null);
+                setOpenAutomationForm(true);
+              }
             }}
           >
-            {currentTab === 'events' ? 'New Event' : 'New Criteria'}
+            {currentTab === 'events' ? 'New Event' : currentTab === 'traits' ? 'New Criteria' : 'New Rule'}
           </Button>
         </Stack>
       )}
@@ -246,7 +293,7 @@ export function EmployeeEvaluationView() {
   );
 
   return (
-    <DashboardContent maxWidth={false}>
+    <DashboardContent maxWidth={false} sx={{mt: 2}}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
         <Typography variant="h4">Employee Evaluation</Typography>
       </Stack>
@@ -285,6 +332,8 @@ export function EmployeeEvaluationView() {
               category: '',
               startDate: null,
               endDate: null,
+              event_type: 'all',
+              rule_enabled: 'all',
             });
           }}
           currentTab={currentTab}
@@ -491,6 +540,59 @@ export function EmployeeEvaluationView() {
                   </TableBody>
                 </>
               )}
+              {currentTab === 'automation' && (
+                <>
+                  <EmployeeEvaluationTableHead
+                    headLabel={[
+                      { id: 'sno', label: 'Sno', align: 'center' },
+                      { id: 'rule_name', label: 'Rule Name' },
+                      { id: 'event_type', label: 'Event Type' },
+                      { id: 'trait', label: 'Trait' },
+                      { id: 'evaluation_point', label: 'Point' },
+                      { id: 'threshold', label: 'Threshold' },
+                      { id: 'status', label: 'Status' },
+                      { id: '' },
+                    ]}
+                  />
+                  <TableBody>
+                    {automationRules.map((row, index) => (
+                      <EvaluationAutomationRuleTableRow
+                        key={row.name}
+                        row={row}
+                        index={page * rowsPerPage + index}
+                        onEdit={() => {
+                          setSelectedRule(row);
+                          setOpenAutomationForm(true);
+                        }}
+                        onDelete={() => setConfirmDelete({ open: true, type: 'automation', name: row.name })}
+                        onToggleEnabled={async (enabled) => {
+                          try {
+                            await updateEvaluationAutomationRule(row.name, { enabled: enabled ? 1 : 0 });
+                            refetchAutomation();
+                          } catch (err: any) {
+                            setSnackbar({ open: true, message: err.message || 'Update failed', severity: 'error' });
+                          }
+                        }}
+                      />
+                    ))}
+                    {!loadingAutomation && automationRules.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={8}>
+                          <EmptyContent
+                            title="No Automation Rules"
+                            description="Create rules to auto-generate evaluations from system events."
+                            icon="solar:layers-minimalistic-bold-duotone"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {!loadingAutomation && automationRules.length > 0 && automationRules.length < 5 && (
+                      <TableEmptyRows height={77} emptyRows={5 - automationRules.length} />
+                    )}
+                  </TableBody>
+                </>
+              )}
+
             </Table>
           </TableContainer>
         </Scrollbar>
@@ -502,6 +604,7 @@ export function EmployeeEvaluationView() {
             (currentTab === 'events' && totalEvents) ||
             (currentTab === 'logs' && totalLogs) ||
             (currentTab === 'traits' && totalTraits) ||
+            (currentTab === 'automation' && totalAutomation) ||
             0
           }
           rowsPerPage={rowsPerPage}
@@ -546,6 +649,18 @@ export function EmployeeEvaluationView() {
         selectedTrait={selectedTrait}
       />
 
+      <EvaluationAutomationRuleFormDialog
+        open={openAutomationForm}
+        onClose={() => {
+          setOpenAutomationForm(false);
+          setSelectedRule(null);
+        }}
+        onSuccess={() => refetchAutomation()}
+        selectedRule={selectedRule}
+        traits={traits}
+        setSnackbar={setSnackbar}
+      />
+
       <ConfirmDialog
         open={confirmDelete.open}
         onClose={() => setConfirmDelete((prev) => ({ ...prev, open: false }))}
@@ -577,6 +692,10 @@ export function EmployeeEvaluationView() {
                       await deleteEmployeeEvaluationTrait(confirmDelete.name);
                       setSnackbar({ open: true, message: 'Deleted successfully', severity: 'success' });
                       refetchTraits();
+                    } else if (confirmDelete.type === 'automation' && confirmDelete.name) {
+                      await deleteEvaluationAutomationRule(confirmDelete.name);
+                      setSnackbar({ open: true, message: 'Automation rule deleted', severity: 'success' });
+                      refetchAutomation();
                     }
                     setConfirmDelete((prev) => ({ ...prev, open: false }));
                   } catch (error: any) {

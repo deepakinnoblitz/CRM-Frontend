@@ -55,7 +55,7 @@ async function fetchFrappeList(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Timesheet&filters=${encodeURIComponent(JSON.stringify(filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Timesheet&filters=${encodeURIComponent(JSON.stringify(filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch timesheets");

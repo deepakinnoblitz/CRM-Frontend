@@ -54,7 +54,7 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
             open={open}
             onClose={onClose}
             fullWidth
-            maxWidth="sm"
+            maxWidth="md"
             TransitionProps={{ onExited: () => setAttendance(null) }}
         >
             <DialogTitle sx={{ m: 0, p: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -166,13 +166,15 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
                             <Box
                                 sx={{
                                     display: 'grid',
-                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(3, 1fr)' },
-                                    gap: 2
+                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(4, 1fr)' },
+                                    gap: 2,
+                                    p: 3
                                 }}
                             >
                                 <DetailRow label="In Time" value={attendance.in_time} icon="solar:clock-circle-bold" />
                                 <DetailRow label="Out Time" value={attendance.out_time} icon="solar:clock-circle-bold" />
                                 <DetailRow label="Overtime" value={attendance.overtime_display || '00:00'} icon="solar:stopwatch-bold" />
+                                <DetailRow label="Manual Entry" value={attendance.manual ? 'Yes' : 'No'} icon="solar:pen-new-square-bold" />
                             </Box>
 
                             {attendance.leave_type && (

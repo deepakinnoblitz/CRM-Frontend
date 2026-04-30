@@ -92,8 +92,9 @@ export const hrNavData = [
     path: '/assets',
     icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
     children: [
-      { title: 'Asset List', path: '/assets' },
-      { title: 'Assets Assignment', path: '/asset-assignments' },
+      { title: 'Asset List', path: '/assets/list' },
+      { title: 'Asset Assignments', path: '/assets/assignments' },
+      { title: 'Asset Requests', path: '/assets/requests' },
     ],
   },
   {
@@ -128,6 +129,7 @@ export const hrNavData = [
       { title: 'Job Opening List', path: '/job-openings' },
       { title: 'Job Applicant List', path: '/job-applicants' },
       { title: 'Interview List', path: '/interviews' },
+      { title: 'Employee Referral List', path: '/employee-referrals?view=hr' },
     ],
   },
   {
@@ -136,6 +138,8 @@ export const hrNavData = [
     icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
     children: [
       { title: 'Attendance Report', path: '/reports/attendance' },
+      { title: 'Daily Log Report', path: '/reports/daily-log' },
+      { title: 'Task Report', path: '/reports/task-manager' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
     ],
   },
@@ -170,7 +174,11 @@ export const employeeNavData = [
     path: '/my-profile',
     icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
   },
-
+  {
+    title: 'My Tasks',
+    path: '/task-manager?view=mine',
+    icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
+  },
   {
     title: 'My Attendance',
     path: '/attendance',
@@ -202,11 +210,6 @@ export const employeeNavData = [
     icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
   },
   {
-    title: 'My Tasks',
-    path: '/task-manager?view=mine',
-    icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
-  },
-  {
     title: 'My Salary Slip',
     path: '/salary-slips',
     icon: <Iconify icon={"solar:bill-bold-duotone" as any} />,
@@ -217,9 +220,18 @@ export const employeeNavData = [
     icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
   },
   {
-    title: 'My Asset List',
-    path: '/asset-assignments',
-    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
+    title: 'My Assets',
+    path: '/assets',
+    icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
+    children: [
+      { title: 'My Asset List', path: '/assets/assignments' },
+      { title: 'My Asset Requests', path: '/assets/requests' },
+    ],
+  },
+  {
+    title: 'Refer a Friend',
+    path: '/employee-referrals',
+    icon: <Iconify icon={"solar:user-plus-bold-duotone" as any} />,
   },
   {
     title: 'Timesheet Report',
@@ -229,6 +241,11 @@ export const employeeNavData = [
   {
     title: 'Attendance Report',
     path: '/reports/attendance',
+    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+  },
+  {
+    title: 'Daily Log Report',
+    path: '/reports/daily-log',
     icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
   }
 ];
@@ -264,9 +281,7 @@ export const salesNavData = [
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
-      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' },
-      { title: 'Timesheet Report', path: '/timesheet-reports' },
-      { title: 'Attendance Report', path: '/reports/attendance' }
+      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
     ]
   }
 ];
@@ -333,7 +348,7 @@ export const crmNavData = [
       { title: 'Contact Report', path: '/reports/contact' },
       { title: 'Accounts Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
-      { title: 'Meeting Report', path: '/reports/meeting' },
+      { title: 'Meeting Report', path: '/reports/meeting' }
     ]
   },
   {
@@ -399,9 +414,7 @@ export const crmAndSalesNavData = [
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
-      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' },
-      { title: 'Timesheet Report', path: '/timesheet-reports' },
-      { title: 'Attendance Report', path: '/reports/attendance' }
+      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
     ]
   }
 ];
@@ -429,26 +442,56 @@ export function hasValidRole(roles: string[] = []): boolean {
   return hasValid;
 }
 
-export function getNavData(roles: string[] = []) {
+export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM', settings?: any) {
+  console.log('getNavData called with view:', view, 'roles:', roles);
   const mergedNav: NavItem[] = [];
   const seenPaths = new Set<string>();
 
   const addItems = (data: NavItem[]) => {
     data.forEach((item) => {
-      if (!seenPaths.has(item.path)) {
-        const newItem = {
-          ...item,
-          ...(item.children && {
-            children: item.children.map((child) => ({ ...child })),
-          }),
-        };
-        mergedNav.push(newItem);
-        seenPaths.add(item.path);
+      // Clone the item to avoid mutating the original data
+      const itemClone = {
+        ...item,
+        ...(item.children && {
+          children: item.children.map((child) => ({ ...child })),
+        }),
+      };
+
+      // Sidebar visibility filtering
+      if ((itemClone.title === 'Attendance Records' || itemClone.title === 'Attendance Report' || itemClone.title === 'Daily Log Report') && itemClone.children) {
+        itemClone.children = itemClone.children.filter(child => {
+          if ((child.title === 'Attendance List' || child.title === 'My Attendance') && settings?.show_attendance_list === 0) return false;
+          if ((child.title === 'Daily Log' || child.title === 'My Activity Log') && settings?.show_daily_log === 0) return false;
+          return true;
+        });
+        if (itemClone.children.length === 0) return;
+      }
+
+      // Handle top-level items for Employee View
+      if ((itemClone.title === 'My Attendance' || itemClone.title === 'Attendance List') && settings?.show_attendance_list === 0) return;
+      if ((itemClone.title === 'My Activity Log' || itemClone.title === 'Daily Log') && settings?.show_daily_log === 0) return;
+
+      if (itemClone.title === 'Report' && itemClone.children) {
+        itemClone.children = itemClone.children.filter(child => {
+          if (child.title === 'Attendance Report' && settings?.show_attendance_report === 0) return false;
+          if (child.title === 'Daily Log Report' && settings?.show_daily_log_report === 0) return false;
+          return true;
+        });
+        if (itemClone.children.length === 0) return;
+      }
+
+      // Handle top-level report items if any
+      if (itemClone.title === 'Attendance Report' && settings?.show_attendance_report === 0) return;
+      if (itemClone.title === 'Daily Log Report' && settings?.show_daily_log_report === 0) return;
+
+      if (!seenPaths.has(itemClone.path)) {
+        mergedNav.push(itemClone);
+        seenPaths.add(itemClone.path);
       } else {
-        const existingItem = mergedNav.find((i) => i.path === item.path);
-        if (existingItem && item.children && existingItem.children) {
+        const existingItem = mergedNav.find((i) => i.path === itemClone.path);
+        if (existingItem && itemClone.children && existingItem.children) {
           const childPaths = new Set(existingItem.children.map((c) => c.path));
-          item.children.forEach((child) => {
+          itemClone.children.forEach((child) => {
             if (!childPaths.has(child.path)) {
               existingItem.children!.push({ ...child });
             }
@@ -466,11 +509,19 @@ export function getNavData(roles: string[] = []) {
     return { hasAccess: false, navData: [] };
   }
 
-  // If Administrator, show EVERYTHING
-  if (roles.includes('Administrator')) {
-    addItems(hrNavData);
-    addItems(employeeNavData);
-    addItems(crmAndSalesNavData);
+  // If Administrator, show view-specific navigation or EVERYTHING
+  const isAdmin = roles.some(role => ['administrator', 'system manager'].includes(role.toLowerCase()));
+
+  if (isAdmin) {
+    if (view === 'HR') {
+      addItems(hrNavData);
+    } else if (view === 'CRM') {
+      addItems(crmAndSalesNavData);
+    } else {
+      addItems(hrNavData);
+      addItems(employeeNavData);
+      addItems(crmAndSalesNavData);
+    }
     addItems([
       {
         title: 'User Management',
@@ -482,9 +533,12 @@ export function getNavData(roles: string[] = []) {
   }
 
   let hasCustomRole = false;
-  const hasRole = (pattern: string) => roles.includes(pattern);
+  const hasRole = (pattern: string) => roles.some(role => role.toLowerCase() === pattern.toLowerCase());
 
-  if (hasRole('HR')) {
+  const hasHR = hasRole('HR');
+  const hasSalesOrCRM = hasRole('Sales') || hasRole('CRM User') || hasRole('CRM And Sales');
+
+  if (view === 'HR' && hasHR) {
     let filteredHrNav = hrNavData;
     if (!hasRole('Task Manager')) {
       filteredHrNav = hrNavData.filter(
@@ -493,35 +547,48 @@ export function getNavData(roles: string[] = []) {
     }
     addItems(filteredHrNav);
     hasCustomRole = true;
-  }
-
-  if (hasRole('Employee')) {
-    const processedEmployeeNav = [...employeeNavData];
-    if (hasRole('Task Manager')) {
-      const taskManagerItem = hrNavData.find((item) => item.title === 'Task Manager');
-      if (taskManagerItem) {
-        // Find if it's already there to avoid duplicates, though addItems handles it.
-        // We insert at index 1 (Second position)
-        processedEmployeeNav.splice(1, 0, taskManagerItem);
-      }
-    }
-    addItems(processedEmployeeNav);
-    hasCustomRole = true;
-  }
-
-  if (hasRole('Sales')) {
-    addItems(salesNavData);
-    hasCustomRole = true;
-  }
-
-  if (hasRole('CRM User')) {
-    addItems(crmNavData);
-    hasCustomRole = true;
-  }
-
-  if (hasRole('CRM And Sales')) {
+  } else if (view === 'CRM' && hasSalesOrCRM) {
     addItems(crmAndSalesNavData);
     hasCustomRole = true;
+  } else {
+    // Default logic (merged or first available)
+    if (hasHR) {
+      let filteredHrNav = hrNavData;
+      if (!hasRole('Task Manager')) {
+        filteredHrNav = hrNavData.filter(
+          (item) => item.title !== 'Task Manager' && item.title !== 'Employee Evaluation'
+        );
+      }
+      addItems(filteredHrNav);
+      hasCustomRole = true;
+    }
+
+    if (hasRole('Employee')) {
+      const processedEmployeeNav = [...employeeNavData];
+      if (hasRole('Task Manager')) {
+        const taskManagerItem = hrNavData.find((item) => item.title === 'Task Manager');
+        if (taskManagerItem) {
+          processedEmployeeNav.splice(1, 0, taskManagerItem);
+        }
+      }
+      addItems(processedEmployeeNav);
+      hasCustomRole = true;
+    }
+
+    if (hasRole('Sales')) {
+      addItems(salesNavData);
+      hasCustomRole = true;
+    }
+
+    if (hasRole('CRM User')) {
+      addItems(crmNavData);
+      hasCustomRole = true;
+    }
+
+    if (hasRole('CRM And Sales')) {
+      addItems(crmAndSalesNavData);
+      hasCustomRole = true;
+    }
   }
 
   if (!hasCustomRole) {

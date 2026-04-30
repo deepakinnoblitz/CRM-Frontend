@@ -13,7 +13,7 @@ export interface TaskAssignee {
 
 export interface TaskHistory {
     name: string;
-    event: 'Closed' | 'Reopened' | 'Accepted' | 'Submitted for Review';
+    event: 'Closed' | 'Reopened' | 'Accepted' | 'Submitted for Review' | 'On Hold' | 'Resumed';
     done_by: string;
     done_on: string;
     hours_spent?: string;
@@ -29,8 +29,9 @@ export interface TaskManager {
     fetch_from_department?: number;
     due_date?: string;
     due_time?: string;
+    estimated_time?: number;
     priority: 'Low' | 'Medium' | 'High';
-    status: 'Open' | 'In Progress' | 'Completed' | 'Reopened';
+    status: 'Open' | 'In Progress' | 'Completed' | 'Reopened' | 'On Hold';
     tag_member?: string;
     attachment_required?: number;
     recurring_task?: number;
@@ -83,8 +84,27 @@ export async function fetchTaskManagerList(filters: any[] = []): Promise<TaskMan
             tasks.forEach(task => {
                 task.assignees = assigneesByTask[task.name] || [];
             });
+
+            // Fetch histories for tasks
+            const historyRes = await frappeRequest(`/api/method/company.company.doctype.task_manager.task_manager.get_task_histories?task_names=${JSON.stringify(taskNames)}`);
+            const historyData = await handleResponse(historyRes);
+            const allHistories = historyData.message || [];
+
+            // Group histories by parent task
+            const historiesByTask: Record<string, TaskHistory[]> = {};
+            allHistories.forEach((h: any) => {
+                if (!historiesByTask[h.parent]) {
+                    historiesByTask[h.parent] = [];
+                }
+                historiesByTask[h.parent].push(h);
+            });
+
+            // Attach histories to tasks
+            tasks.forEach(task => {
+                task.history = historiesByTask[task.name] || [];
+            });
         } catch (error) {
-            console.error("Failed to fetch assignees for task list:", error);
+            console.error("Failed to fetch related data for task list:", error);
         }
     }
 
@@ -192,6 +212,33 @@ export async function reopenTaskManager(name: string, remarks: string): Promise<
     }
 }
 
+export async function putOnHoldTaskManager(name: string, remarks: string): Promise<void> {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/method/company.company.doctype.task_manager.task_manager.put_on_hold_task`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ task_name: name, remarks })
+    });
+
+    if (!res.ok) {
+        const json = await res.json();
+        throw new Error(handleFrappeError(json, "Failed to put task on hold"));
+    }
+}
+
+export async function resumeTaskManager(name: string, remarks: string): Promise<void> {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/method/company.company.doctype.task_manager.task_manager.resume_task`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ task_name: name, remarks })
+    });
+
+    if (!res.ok) {
+        const json = await res.json();
+        throw new Error(handleFrappeError(json, "Failed to resume task"));
+    }
+}
 
 export async function acceptTaskManager(name: string): Promise<void> {
     const headers = await getAuthHeaders();

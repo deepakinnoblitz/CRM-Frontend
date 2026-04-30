@@ -57,7 +57,7 @@ export function BankAccountDialog({ open, onClose, onSuccess, id }: Props) {
                     try {
                         setLoading(true);
                         const data = await getBankAccount(id);
-                        setBankAccountName(data.name || data.bank_account_name || '');
+                        setBankAccountName(data.bank_account_name || '');
                         setAccountNumber(data.account_number || '');
                         setBankName(data.bank_name || '');
                         setBranch(data.branch || '');
@@ -115,12 +115,7 @@ export function BankAccountDialog({ open, onClose, onSuccess, id }: Props) {
             };
 
             if (id) {
-                let currentId = id;
-                if (bankAccountName !== id) {
-                    await renameBankAccount(id, bankAccountName);
-                    currentId = bankAccountName;
-                }
-                await updateBankAccount(currentId, data);
+                await updateBankAccount(id, data);
             } else {
                 await createBankAccount(data);
             }

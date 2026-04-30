@@ -102,7 +102,10 @@ export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, se
             if (selectedEvent) {
                 await updateEmployeeEvaluationEvent(selectedEvent.name, formData);
             } else {
-                await createEmployeeEvaluationEvent(formData);
+                await createEmployeeEvaluationEvent({
+                    ...formData,
+                    auto_submit: 1,
+                });
             }
             onSuccess();
             onClose();

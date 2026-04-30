@@ -432,7 +432,7 @@ export function LeavesView() {
     };
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Leave Applications
@@ -693,10 +693,10 @@ export function LeavesView() {
                                     return (
                                         <li key={key} {...optionProps}>
                                             <Stack spacing={0.5}>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                                                     {option.employee_name}
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                                     ID: {option.name}
                                                 </Typography>
                                             </Stack>
@@ -720,35 +720,42 @@ export function LeavesView() {
                             />
                         )}
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="Leave Type"
-                            value={leaveType}
-                            onChange={(e) => {
-                                setLeaveType(e.target.value);
+                            options={leaveTypeOptions}
+                            getOptionLabel={(option) => (typeof option === 'string' ? option : option.name)}
+                            value={leaveTypeOptions.find((o) => o.name === leaveType) || null}
+                            onChange={(event, newValue) => {
+                                setLeaveType(newValue ? newValue.name : '');
                                 if (formErrors.leaveType) setFormErrors(prev => ({ ...prev, leaveType: '' }));
                             }}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            required
-                            error={!!formErrors.leaveType}
-                            helperText={formErrors.leaveType}
-                            sx={{
-                                '& .MuiFormLabel-asterisk': { color: 'red' },
+                            getOptionDisabled={(option) => !!(probationInfo?.is_probation && probationInfo.restricted_types.includes(option.name))}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Leave Type"
+                                    required
+                                    error={!!formErrors.leaveType}
+                                    helperText={formErrors.leaveType}
+                                    InputLabelProps={{ shrink: true }}
+                                    placeholder="Select Leave Type"
+                                    sx={{
+                                        '& .MuiFormLabel-asterisk': { color: 'red' },
+                                    }}
+                                />
+                            )}
+                            renderOption={(props, option) => {
+                                const { key, ...optionProps } = props as any;
+                                const isDisabled = probationInfo?.is_probation && probationInfo.restricted_types.includes(option.name);
+                                return (
+                                    <li key={key} {...optionProps}>
+                                        <Typography variant="body1">
+                                            {option.name} {isDisabled ? '(Restricted during probation)' : ''}
+                                        </Typography>
+                                    </li>
+                                );
                             }}
-                        >
-                            <option value="">Select Leave Type</option>
-                            {leaveTypeOptions.map((option) => (
-                                <option
-                                    key={option.name}
-                                    value={option.name}
-                                    disabled={probationInfo?.is_probation && probationInfo.restricted_types.includes(option.name)}
-                                >
-                                    {option.name} {probationInfo?.is_probation && probationInfo.restricted_types.includes(option.name) ? '(Restricted during probation)' : ''}
-                                </option>
-                            ))}
-                        </TextField>
+                        />
 
                         {/* Show other fields only if Employee and Leave Type are selected */}
                         {employee && leaveType && (

@@ -55,7 +55,7 @@ async function fetchFrappeList(params: {
         ['Asset Assignment', 'employee_name', 'like', `%${params.search}%`]
     ] : [];
 
-    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "assigned_on desc";
+    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "modified desc";
 
     const query = new URLSearchParams({
         doctype: 'Asset Assignment',
@@ -69,7 +69,7 @@ async function fetchFrappeList(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Asset Assignment&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Asset Assignment&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch asset assignments");
@@ -184,7 +184,7 @@ export async function getEmployees(): Promise<Array<{ name: string; employee_nam
 
 export async function getAvailableAssets(): Promise<Array<{ name: string; asset_name: string }>> {
     try {
-        const res = await frappeRequest("/api/method/frappe.client.get_list?doctype=Asset&fields=[\"name\",\"asset_name\"]&limit_page_length=999");
+        const res = await frappeRequest("/api/method/company.company.frontend_api.get_available_assets_list");
 
         if (!res.ok) {
             return [];
@@ -197,3 +197,21 @@ export async function getAvailableAssets(): Promise<Array<{ name: string; asset_
         return [];
     }
 }
+
+export async function getMyAssignedAssets(employee?: string): Promise<Array<{ asset: string; asset_name: string }>> {
+    try {
+        const query = employee ? `?employee=${employee}` : '';
+        const res = await frappeRequest(`/api/method/company.company.frontend_api.get_my_assigned_assets${query}`);
+
+        if (!res.ok) {
+            return [];
+        }
+
+        const data = await res.json();
+        return data.message || [];
+    } catch (error) {
+        console.error('Failed to fetch assigned assets:', error);
+        return [];
+    }
+}
+

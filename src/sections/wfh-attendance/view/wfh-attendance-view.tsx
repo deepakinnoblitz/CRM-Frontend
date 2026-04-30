@@ -35,7 +35,7 @@ import { getCurrentUserInfo } from 'src/api/auth';
 import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getHRPermissions } from 'src/api/hr-management';
-import { getWFHAttendance, createWFHAttendance, updateWFHAttendance, applyWorkflowAction } from 'src/api/wfh-attendance';
+import { getWFHAttendance, createWFHAttendance, updateWFHAttendance, applyWorkflowAction, handleWFHAction } from 'src/api/wfh-attendance';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -346,7 +346,11 @@ export function WFHAttendanceView() {
 
     const handleApplyAction = async (id: string, action: string) => {
         try {
-            await applyWorkflowAction(id, action);
+            if (action === 'Approve' || action === 'Reject') {
+                await handleWFHAction(id, action);
+            } else {
+                await applyWorkflowAction(id, action);
+            }
             setSnackbar({ open: true, message: `Record ${action}ed successfully`, severity: 'success' });
             await refetch();
         } catch (error: any) {
@@ -399,7 +403,20 @@ export function WFHAttendanceView() {
                             helperText={formErrors[fieldname]}
                             InputLabelProps={{ shrink: true }}
                             sx={commonProps.sx}
+                            disabled={!!currentId} // Locked in edit mode
                         />
+                    )}
+                    renderOption={(props, option) => (
+                        <li {...props} key={option.name}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                    {option.employee_name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    ID: {option.name}
+                                </Typography>
+                            </Box>
+                        </li>
                     )}
                 />
             );
@@ -407,7 +424,12 @@ export function WFHAttendanceView() {
 
         if (type === 'select' || type === 'link') {
             return (
-                <TextField {...commonProps} select SelectProps={{ native: true }}>
+                <TextField
+                    {...commonProps}
+                    select
+                    SelectProps={{ native: true }}
+                    disabled={!!currentId} // Locked in edit mode
+                >
                     <option value="">Select {label}</option>
                     {options.map((opt: any) => (
                         <option key={opt.name || opt} value={opt.name || opt}>
@@ -422,6 +444,7 @@ export function WFHAttendanceView() {
             return (
                 <DatePicker
                     label={label}
+                    format="DD-MM-YYYY"
                     value={formData[fieldname] ? dayjs(formData[fieldname]) : null}
                     onChange={(newValue) => handleInputChange(fieldname, newValue?.format('YYYY-MM-DD') || '')}
                     slotProps={{
@@ -434,6 +457,7 @@ export function WFHAttendanceView() {
                             sx: commonProps.sx
                         }
                     }}
+                    disabled={!!currentId}
                 />
             );
         }
@@ -454,15 +478,21 @@ export function WFHAttendanceView() {
                             sx: commonProps.sx
                         }
                     }}
+                    disabled={!!currentId && fieldname !== 'to_time'}
                 />
             );
         }
 
-        return <TextField {...commonProps} />;
+        return (
+            <TextField
+                {...commonProps}
+                disabled={!!currentId} // Locked in edit mode (Task Description)
+            />
+        );
     };
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     WFH Attendance List

@@ -10,6 +10,7 @@ export interface Asset {
     purchase_cost: number;
     current_status: string;
     description: string;
+    asset_attachment?: string;
     creation?: string;
     modified?: string;
 }
@@ -52,7 +53,7 @@ async function fetchFrappeList(params: {
         ['Asset', 'category', 'like', `%${params.search}%`]
     ] : [];
 
-    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "creation desc";
+    const orderByParam = params.orderBy && params.order ? `${params.orderBy} ${params.order}` : "modified desc";
 
     const query = new URLSearchParams({
         doctype: 'Asset',
@@ -66,7 +67,7 @@ async function fetchFrappeList(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Asset&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Asset&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch assets");

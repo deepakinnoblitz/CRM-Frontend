@@ -170,7 +170,7 @@ export default function TaskManagerView() {
 
     const sortTasks = useCallback((data: TaskManager[]) => [...data].sort((a, b) => {
         if (sortBy === 'latest') return new Date(b.modified).getTime() - new Date(a.modified).getTime();
-        if (sortBy === 'oldest') return new Date(a.creation).getTime() - new Date(b.creation).getTime();
+        if (sortBy === 'oldest') return new Date(a.modified).getTime() - new Date(b.modified).getTime();
 
         if (sortBy === 'due_date_asc') {
             if (!a.due_date && !b.due_date) return 0;
@@ -230,7 +230,7 @@ export default function TaskManagerView() {
     const listTasks = sortTasks(baseTasks);
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Container maxWidth="xl" sx={{ height: 1, display: 'flex', flexDirection: 'column', px: { xs: 2, md: 1 } }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                     <Box>

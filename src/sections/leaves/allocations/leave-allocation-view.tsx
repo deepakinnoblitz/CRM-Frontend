@@ -54,8 +54,8 @@ import { LeadTableToolbar as LeavesTableToolbar } from '../../lead/lead-table-to
 // ----------------------------------------------------------------------
 
 const SORT_OPTIONS = [
-    { value: 'creation_desc', label: 'Newest First' },
-    { value: 'creation_asc', label: 'Oldest First' },
+    { value: 'modified_desc', label: 'Newest First' },
+    { value: 'modified_asc', label: 'Oldest First' },
     { value: 'employee_name_asc', label: 'Employee: A to Z' },
     { value: 'employee_name_desc', label: 'Employee: Z to A' },
 ];
@@ -72,7 +72,7 @@ export function LeaveAllocationView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('creation');
+    const [orderBy, setOrderBy] = useState('modified');
     const [openFilters, setOpenFilters] = useState(false);
     const [filters, setFilters] = useState<{
         status: string;
@@ -99,6 +99,7 @@ export function LeaveAllocationView() {
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
     const [totalLeaves, setTotalLeaves] = useState('');
+    const [leavesTaken, setLeavesTaken] = useState('');
     const [status, setStatus] = useState('Approved');
 
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
@@ -175,6 +176,7 @@ export function LeaveAllocationView() {
                 from_date: fromDate,
                 to_date: toDate,
                 total_leaves_allocated: Number(totalLeaves),
+                total_leaves_taken: Number(leavesTaken || 0),
                 status,
             };
 
@@ -201,6 +203,7 @@ export function LeaveAllocationView() {
         setFromDate(row.from_date);
         setToDate(row.to_date);
         setTotalLeaves(String(row.total_leaves_allocated));
+        setLeavesTaken(String(row.total_leaves_taken || 0));
         setStatus(row.status || 'Approved');
         setIsEdit(true);
         setOpenCreate(true);
@@ -226,6 +229,7 @@ export function LeaveAllocationView() {
         setFromDate('');
         setToDate('');
         setTotalLeaves('');
+        setLeavesTaken('');
         setStatus('Approved');
         setFormErrors({});
         setIsEdit(false);
@@ -233,7 +237,7 @@ export function LeaveAllocationView() {
     };
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: { xs: 3, md: 5 } }}>
                 <Stack spacing={1}>
                     <Typography variant="h4" sx={{ fontWeight: 800 }}>
@@ -464,20 +468,32 @@ export function LeaveAllocationView() {
                             </Box>
                         </LocalizationProvider>
 
-                        <TextField
-                            fullWidth
-                            label="Total Leaves Allocated"
-                            type="number"
-                            value={totalLeaves}
-                            onChange={(e) => {
-                                setTotalLeaves(e.target.value);
-                                if (formErrors.totalLeaves) setFormErrors(prev => ({ ...prev, totalLeaves: '' }));
-                            }}
-                            required
-                            error={!!formErrors.totalLeaves}
-                            helperText={formErrors.totalLeaves}
-                            sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
-                        />
+                        <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                            <TextField
+                                fullWidth
+                                label="Total Leaves Allocated"
+                                type="number"
+                                value={totalLeaves}
+                                onChange={(e) => {
+                                    setTotalLeaves(e.target.value);
+                                    if (formErrors.totalLeaves) setFormErrors(prev => ({ ...prev, totalLeaves: '' }));
+                                }}
+                                required
+                                error={!!formErrors.totalLeaves}
+                                helperText={formErrors.totalLeaves}
+                                sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
+                            />
+                            
+                            <TextField
+                                fullWidth
+                                label="Total Leaves Taken"
+                                type="number"
+                                value={leavesTaken}
+                                onChange={(e) => {
+                                    setLeavesTaken(e.target.value);
+                                }}
+                            />
+                        </Box>
 
                         <TextField
                             select

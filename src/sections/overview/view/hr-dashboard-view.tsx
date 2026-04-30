@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 
+import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
+import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
 
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -36,6 +38,7 @@ import { WeeklyPresentAbsentChart } from '../weekly-present-absent-chart';
 
 export function HRDashboardView() {
     const { user } = useAuth();
+    const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>({
         announcements: [],
         total_employees: 0,
@@ -59,6 +62,7 @@ export function HRDashboardView() {
 
     useEffect(() => {
         const loadData = async () => {
+            setLoading(true);
             try {
                 const [
                     announcements,
@@ -106,6 +110,8 @@ export function HRDashboardView() {
                 });
             } catch (error) {
                 console.error('Failed to load HR dashboard data:', error);
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -117,7 +123,7 @@ export function HRDashboardView() {
         if (from && to) {
             setAttendanceDates({ from, to });
         }
-        
+
         try {
             const weeklyPresentAbsent = await fetchWeeklyPresentAbsentChartData({
                 filter_type: filter,
@@ -139,15 +145,47 @@ export function HRDashboardView() {
         }
     };
 
+    if (loading) {
+        return (
+            <DashboardContent maxWidth="xl">
+                <Skeleton variant="text" sx={{ width: 300, height: 40, mb: 2, mt: 5 }} />
+
+                <Skeleton variant="rectangular" sx={{ width: 1, height: 160, borderRadius: 2, mb: 3 }} />
+
+                <Grid container spacing={3}>
+                    <Grid size={{ xs: 12 }}>
+                        <Skeleton variant="rectangular" sx={{ width: 1, height: 100, borderRadius: 2 }} />
+                    </Grid>
+
+                    {[...Array(3)].map((_, i) => (
+                        <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
+                            <Skeleton variant="rectangular" sx={{ width: 1, height: 120, borderRadius: 2 }} />
+                        </Grid>
+                    ))}
+
+                    <Grid size={{ xs: 12 }}>
+                        <Skeleton variant="rectangular" sx={{ width: 1, height: 400, borderRadius: 2 }} />
+                    </Grid>
+
+                    {[...Array(2)].map((_, i) => (
+                        <Grid key={i} size={{ xs: 12, md: 6 }}>
+                            <Skeleton variant="rectangular" sx={{ width: 1, height: 300, borderRadius: 2 }} />
+                        </Grid>
+                    ))}
+                </Grid>
+            </DashboardContent>
+        );
+    }
+
     return (
         <DashboardContent maxWidth="xl">
-            <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
+            <Typography variant="h4" sx={{ mb: { xs: 3, md: 2 }, mt: 5 }}>
                 Hi, {user?.full_name || 'HR User'}, Welcome back 👋
             </Typography>
 
             <DashboardEomCard />
 
-            <Grid container spacing={3} sx={{ mt: 3 }}>
+            <Grid container spacing={3} sx={{ mt: 2 }}>
                 {/* Announcements */}
                 <Grid size={{ xs: 12 }}>
                     <HRAnnouncements

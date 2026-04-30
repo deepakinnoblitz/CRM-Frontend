@@ -8,13 +8,16 @@ import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
+import { Button, Stack, DialogActions } from '@mui/material';
 
 import { fTime } from 'src/utils/format-time';
 
-import { getWFHAttendance } from 'src/api/wfh-attendance';
+import { handleWFHAction, getWFHAttendance } from 'src/api/wfh-attendance';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+
+import { useAuth } from 'src/auth/auth-context';
 
 // ----------------------------------------------------------------------
 
@@ -28,6 +31,12 @@ type Props = {
 export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Props) {
     const [wfh, setWfh] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+
+    const { user } = useAuth();
+    const [actionLoading, setActionLoading] = useState(false);
+
+    const hrRoles = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
+    const isHR = user?.roles?.some((role: string) => hrRoles.includes(role));
 
     useEffect(() => {
         if (open && wfhId) {
@@ -141,8 +150,14 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
                                     label="Total Hours"
                                     value={wfh.total_hours}
                                     icon="solar:history-bold-duotone"
-                                    highlight
                                 />
+                                {wfh.approved_by && (
+                                    <DetailCard
+                                        label={wfh.workflow_state === 'Rejected' ? 'Rejected By' : 'Approved By'}
+                                        value={wfh.approved_by}
+                                        icon={wfh.workflow_state === 'Rejected' ? 'solar:user-block-rounded-bold-duotone' : 'solar:user-check-rounded-bold-duotone'}
+                                    />
+                                )}
                             </Box>
                         </Box>
 
@@ -170,8 +185,58 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
                     </Box>
                 )}
             </DialogContent>
+
+            {isHR && wfh?.workflow_state === 'Pending' && (
+                <DialogActions sx={{ px: 4, py: 3, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04) }}>
+                    <Stack direction="row" spacing={1.5} sx={{ width: 1 }}>
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            color="error"
+                            size="large"
+                            startIcon={<Iconify icon="mingcute:close-line" />}
+                            onClick={() => onAction('Reject')}
+                            disabled={actionLoading}
+                            sx={{ fontWeight: 800 }}
+                        >
+                            Reject
+                        </Button>
+                        <Button
+                            fullWidth
+                            variant="contained"
+                            color="success"
+                            size="large"
+                            startIcon={<Iconify icon="solar:check-circle-bold" />}
+                            onClick={() => onAction('Approve')}
+                            disabled={actionLoading}
+                            sx={{
+                                fontWeight: 800,
+                                bgcolor: 'success.main',
+                                '&:hover': { bgcolor: 'success.dark' },
+                                boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.success.main, 0.24)}`,
+                            }}
+                        >
+                            Approve Request
+                        </Button>
+                    </Stack>
+                </DialogActions>
+            )}
         </Dialog>
     );
+
+    async function onAction(action: 'Approve' | 'Reject') {
+        if (!wfhId) return;
+        try {
+            setActionLoading(true);
+            await handleWFHAction(wfhId, action);
+            const updatedWfh = await getWFHAttendance(wfhId);
+            setWfh(updatedWfh);
+        } catch (error) {
+            console.error(`Failed to ${action} WFH:`, error);
+        } finally {
+            setActionLoading(false);
+        }
+    }
 }
 
 // ----------------------------------------------------------------------

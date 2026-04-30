@@ -70,7 +70,7 @@ async function fetchFrappeList(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}&_t=${Date.now()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Salary Slip&filters=${encodeURIComponent(JSON.stringify(filters))}&_t=${Date.now()}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Salary Slip&filters=${encodeURIComponent(JSON.stringify(filters))}&_t=${Date.now()}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch salary slips");

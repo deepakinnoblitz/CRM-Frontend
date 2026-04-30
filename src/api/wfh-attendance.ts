@@ -149,3 +149,19 @@ export async function getWorkflowInfo(current_state?: string) {
     const data = await res.json();
     return data.message;
 }
+
+export async function handleWFHAction(docname: string, action: 'Approve' | 'Reject') {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest('/api/method/company.company.doctype.wfh_attendance.wfh_attendance.handle_workflow_action', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ docname, action }),
+    });
+
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(handleFrappeError(errorData, `Failed to ${action} WFH Attendance`));
+    }
+
+    return await res.json();
+}
