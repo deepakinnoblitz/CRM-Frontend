@@ -61,8 +61,8 @@ export function TaskCloseDialog({ open, onClose, onConfirmed, loading: externalL
             return;
         }
 
-        // Regex for HH:MM format (HH: 1-3 digits, MM: 00-59)
-        const hoursRegex = /^([0-9]{1,3}):([0-5][0-9])$/;
+        // Regex for HH:MM format (HH: 1-5 digits, MM: 00-59)
+        const hoursRegex = /^([0-9]{1,5}):([0-5][0-9])$/;
         if (!hoursRegex.test(hours)) {
             setError('Please use HH:MM format (e.g., 02:30). Minutes must be between 00 and 59.');
             return;

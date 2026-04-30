@@ -72,6 +72,7 @@ export const PurchaseCollectionReportPage = lazy(() => import('src/pages/reports
 export const TimesheetReportPage = lazy(() => import('src/pages/reports/timesheet'));
 export const AttendanceReportPage = lazy(() => import('src/pages/reports/attendance'));
 export const DailyLogReportPage = lazy(() => import('src/pages/reports/daily-log'));
+export const TaskReportPage = lazy(() => import('src/pages/reports/task-manager'));
 export const EmployeePage = lazy(() => import('src/pages/employee'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
 export const LeavesPage = lazy(() => import('src/pages/leaves'));
@@ -290,6 +291,7 @@ export const routesSection: RouteObject[] = [
           { path: 'timesheet', element: <TimesheetReportPage /> },
           { path: 'attendance', element: <AttendanceReportPage /> },
           { path: 'daily-log', element: <DailyLogReportPage /> },
+          { path: 'task-manager', element: <TaskReportPage /> },
         ],
       },
       { path: 'employee-evaluation', element: <EmployeeEvaluationPage /> },

@@ -77,7 +77,7 @@ export function DashboardLayout({
   const { navData } = useMemo(() => {
     console.log('Recalculating navData for view:', view);
     const result = getNavData(user?.roles, view);
-    
+
     // Inject unread counts into navData
     result.navData.forEach((item: any) => {
       item.info = undefined;

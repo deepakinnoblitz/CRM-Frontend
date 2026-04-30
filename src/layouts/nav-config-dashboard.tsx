@@ -139,6 +139,7 @@ export const hrNavData = [
     children: [
       { title: 'Attendance Report', path: '/reports/attendance' },
       { title: 'Daily Log Report', path: '/reports/daily-log' },
+      { title: 'Task Report', path: '/reports/task-manager' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
     ],
   },
@@ -280,10 +281,7 @@ export const salesNavData = [
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
-      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' },
-      { title: 'Timesheet Report', path: '/timesheet-reports' },
-      { title: 'Attendance Report', path: '/reports/attendance' },
-      { title: 'Daily Log Report', path: '/reports/daily-log' }
+      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
     ]
   }
 ];
@@ -350,8 +348,7 @@ export const crmNavData = [
       { title: 'Contact Report', path: '/reports/contact' },
       { title: 'Accounts Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
-      { title: 'Meeting Report', path: '/reports/meeting' },
-      { title: 'Daily Log Report', path: '/reports/daily-log' }
+      { title: 'Meeting Report', path: '/reports/meeting' }
     ]
   },
   {
@@ -417,10 +414,7 @@ export const crmAndSalesNavData = [
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
-      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' },
-      { title: 'Timesheet Report', path: '/timesheet-reports' },
-      { title: 'Attendance Report', path: '/reports/attendance' },
-      { title: 'Daily Log Report', path: '/reports/daily-log' }
+      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
     ]
   }
 ];

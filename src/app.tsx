@@ -3,6 +3,9 @@ import 'src/global.css';
 import { useEffect } from 'react';
 import { SnackbarProvider } from 'notistack';
 
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+
 import { usePathname } from 'src/routes/hooks';
 
 import { DashboardViewProvider } from 'src/hooks/dashboard-view-context';
@@ -22,15 +25,17 @@ export default function App({ children }: AppProps) {
 
 
   return (
-    <AuthProvider>
-      <DashboardViewProvider>
-        <ThemeProvider>
-          <SnackbarProvider anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-            {children}
-          </SnackbarProvider>
-        </ThemeProvider>
-      </DashboardViewProvider>
-    </AuthProvider>
+    <LocalizationProvider dateAdapter={AdapterDayjs} dateFormats={{ normalDate: 'DD-MM-YYYY', keyboardDate: 'DD-MM-YYYY' }}>
+      <AuthProvider>
+        <DashboardViewProvider>
+          <ThemeProvider>
+            <SnackbarProvider anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+              {children}
+            </SnackbarProvider>
+          </ThemeProvider>
+        </DashboardViewProvider>
+      </AuthProvider>
+    </LocalizationProvider>
   );
 }
 

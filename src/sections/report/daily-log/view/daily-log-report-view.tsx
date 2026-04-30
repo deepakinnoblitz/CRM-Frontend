@@ -250,6 +250,24 @@ export function DailyLogReportView() {
                             setEmployee(newValue?.name || 'all');
                         }}
                         disabled={!isHR}
+                        renderOption={(props, option) => (
+                            <li {...props} key={option.name}>
+                                {option.name === 'all' ? (
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                                        {option.employee_name}
+                                    </Typography>
+                                ) : (
+                                    <Box>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                                            {option.employee_name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </li>
+                        )}
                         renderInput={(params) => (
                             <TextField
                                 {...params}
