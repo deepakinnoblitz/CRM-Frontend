@@ -139,6 +139,7 @@ export const hrNavData = [
     children: [
       { title: 'Attendance Report', path: '/reports/attendance' },
       { title: 'Daily Log Report', path: '/reports/daily-log' },
+      { title: 'Task Report', path: '/reports/task-manager' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
     ],
   },
@@ -280,10 +281,7 @@ export const salesNavData = [
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
-      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' },
-      { title: 'Timesheet Report', path: '/timesheet-reports' },
-      { title: 'Attendance Report', path: '/reports/attendance' },
-      { title: 'Daily Log Report', path: '/reports/daily-log' }
+      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
     ]
   }
 ];
@@ -350,8 +348,7 @@ export const crmNavData = [
       { title: 'Contact Report', path: '/reports/contact' },
       { title: 'Accounts Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
-      { title: 'Meeting Report', path: '/reports/meeting' },
-      { title: 'Daily Log Report', path: '/reports/daily-log' }
+      { title: 'Meeting Report', path: '/reports/meeting' }
     ]
   },
   {
@@ -417,10 +414,7 @@ export const crmAndSalesNavData = [
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
-      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' },
-      { title: 'Timesheet Report', path: '/timesheet-reports' },
-      { title: 'Attendance Report', path: '/reports/attendance' },
-      { title: 'Daily Log Report', path: '/reports/daily-log' }
+      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
     ]
   }
 ];
@@ -448,27 +442,56 @@ export function hasValidRole(roles: string[] = []): boolean {
   return hasValid;
 }
 
-export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM') {
+export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM', settings?: any) {
   console.log('getNavData called with view:', view, 'roles:', roles);
   const mergedNav: NavItem[] = [];
   const seenPaths = new Set<string>();
 
   const addItems = (data: NavItem[]) => {
     data.forEach((item) => {
-      if (!seenPaths.has(item.path)) {
-        const newItem = {
-          ...item,
-          ...(item.children && {
-            children: item.children.map((child) => ({ ...child })),
-          }),
-        };
-        mergedNav.push(newItem);
-        seenPaths.add(item.path);
+      // Clone the item to avoid mutating the original data
+      const itemClone = {
+        ...item,
+        ...(item.children && {
+          children: item.children.map((child) => ({ ...child })),
+        }),
+      };
+
+      // Sidebar visibility filtering
+      if ((itemClone.title === 'Attendance Records' || itemClone.title === 'Attendance Report' || itemClone.title === 'Daily Log Report') && itemClone.children) {
+        itemClone.children = itemClone.children.filter(child => {
+          if ((child.title === 'Attendance List' || child.title === 'My Attendance') && settings?.show_attendance_list === 0) return false;
+          if ((child.title === 'Daily Log' || child.title === 'My Activity Log') && settings?.show_daily_log === 0) return false;
+          return true;
+        });
+        if (itemClone.children.length === 0) return;
+      }
+
+      // Handle top-level items for Employee View
+      if ((itemClone.title === 'My Attendance' || itemClone.title === 'Attendance List') && settings?.show_attendance_list === 0) return;
+      if ((itemClone.title === 'My Activity Log' || itemClone.title === 'Daily Log') && settings?.show_daily_log === 0) return;
+
+      if (itemClone.title === 'Report' && itemClone.children) {
+        itemClone.children = itemClone.children.filter(child => {
+          if (child.title === 'Attendance Report' && settings?.show_attendance_report === 0) return false;
+          if (child.title === 'Daily Log Report' && settings?.show_daily_log_report === 0) return false;
+          return true;
+        });
+        if (itemClone.children.length === 0) return;
+      }
+
+      // Handle top-level report items if any
+      if (itemClone.title === 'Attendance Report' && settings?.show_attendance_report === 0) return;
+      if (itemClone.title === 'Daily Log Report' && settings?.show_daily_log_report === 0) return;
+
+      if (!seenPaths.has(itemClone.path)) {
+        mergedNav.push(itemClone);
+        seenPaths.add(itemClone.path);
       } else {
-        const existingItem = mergedNav.find((i) => i.path === item.path);
-        if (existingItem && item.children && existingItem.children) {
+        const existingItem = mergedNav.find((i) => i.path === itemClone.path);
+        if (existingItem && itemClone.children && existingItem.children) {
           const childPaths = new Set(existingItem.children.map((c) => c.path));
-          item.children.forEach((child) => {
+          itemClone.children.forEach((child) => {
             if (!childPaths.has(child.path)) {
               existingItem.children!.push({ ...child });
             }

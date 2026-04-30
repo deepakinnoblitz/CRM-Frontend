@@ -38,6 +38,7 @@ import { useSocket } from 'src/hooks/use-socket';
 import { useReimbursementClaims } from 'src/hooks/useReimbursementClaims';
 
 import { fetchEmployees } from 'src/api/employees';
+import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
     applyReimbursementClaimWorkflowAction,
@@ -49,10 +50,7 @@ import {
     getClaimTypes
 } from 'src/api/reimbursement-claims';
 
-import { markAsRead } from 'src/api/unread-counts';
-
 import { Iconify } from 'src/components/iconify';
-
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
