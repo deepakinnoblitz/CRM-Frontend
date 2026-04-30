@@ -401,103 +401,103 @@ export function DailyLogReportView() {
                             />
                         </LocalizationProvider>
 
-                    <Autocomplete
-                        size="small"
-                        sx={{ flexGrow: 1, minWidth: 200 }}
-                        options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
-                        getOptionLabel={(option) => option.name === 'all' ? option.employee_name : `${option.employee_name} (${option.name})`}
-                        value={employee === 'all' ? { name: 'all', employee_name: 'All Employees' } : (employeeOptions.find((opt) => opt.name === employee) || null)}
-                        onChange={(event, newValue) => {
-                            setEmployee(newValue?.name || 'all');
-                        }}
-                        disabled={!isHR}
-                        renderOption={(props, option) => (
-                            <li {...props} key={option.name}>
-                                {option.name === 'all' ? (
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                                        {option.employee_name}
-                                    </Typography>
-                                ) : (
-                                    <Box>
+                        <Autocomplete
+                            size="small"
+                            sx={{ flexGrow: 1, minWidth: 200 }}
+                            options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
+                            getOptionLabel={(option) => option.name === 'all' ? option.employee_name : `${option.employee_name} (${option.name})`}
+                            value={employee === 'all' ? { name: 'all', employee_name: 'All Employees' } : (employeeOptions.find((opt) => opt.name === employee) || null)}
+                            onChange={(event, newValue) => {
+                                setEmployee(newValue?.name || 'all');
+                            }}
+                            disabled={!isHR}
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.name}>
+                                    {option.name === 'all' ? (
                                         <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
                                             {option.employee_name}
                                         </Typography>
-                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
-                                            ID: {option.name}
-                                        </Typography>
-                                    </Box>
-                                )}
-                            </li>
-                        )}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Employee"
-                                placeholder="Select Employee"
-                            />
-                        )}
-                    />
+                                    ) : (
+                                        <Box>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                                                {option.employee_name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                                ID: {option.name}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </li>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Employee"
+                                    placeholder="Select Employee"
+                                />
+                            )}
+                        />
 
-                    <FormControl size="small" sx={{ flexGrow: 1, minWidth: 140 }}>
-                        <Select
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                            displayEmpty
+                        <FormControl size="small" sx={{ flexGrow: 1, minWidth: 140 }}>
+                            <Select
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value)}
+                                displayEmpty
+                            >
+                                <MenuItem value="all">All Status</MenuItem>
+                                <MenuItem value="Active">Active</MenuItem>
+                                <MenuItem value="Inactive">Inactive</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <FormControl size="small" sx={{ flexGrow: 1, minWidth: 140 }}>
+                            <Select
+                                value={day}
+                                onChange={(e) => setDay(e.target.value)}
+                                displayEmpty
+                            >
+                                <MenuItem value="all">All Days</MenuItem>
+                                <MenuItem value="Monday">Monday</MenuItem>
+                                <MenuItem value="Tuesday">Tuesday</MenuItem>
+                                <MenuItem value="Wednesday">Wednesday</MenuItem>
+                                <MenuItem value="Thursday">Thursday</MenuItem>
+                                <MenuItem value="Friday">Friday</MenuItem>
+                                <MenuItem value="Saturday">Saturday</MenuItem>
+                                <MenuItem value="Sunday">Sunday</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <FormControl size="small" sx={{ flexGrow: 1, minWidth: 180 }}>
+                            <Select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                            >
+                                <MenuItem value="login_date_desc">Date ↓ (Latest)</MenuItem>
+                                <MenuItem value="login_date_asc">Date ↑ (Oldest)</MenuItem>
+                                <MenuItem value="working_hours_desc">Working Hrs: High to Low</MenuItem>
+                                <MenuItem value="working_hours_asc">Working Hrs: Low to High</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <Box sx={{ flexGrow: 1 }} />
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                            onClick={handleExport}
+                            disabled={reportData.length === 0}
+                            sx={{
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#068fb3' },
+                                height: 40,
+                                px: 3,
+                                ml: { md: 'auto' }
+                            }}
                         >
-                            <MenuItem value="all">All Status</MenuItem>
-                            <MenuItem value="Active">Active</MenuItem>
-                            <MenuItem value="Inactive">Inactive</MenuItem>
-                        </Select>
-                    </FormControl>
-
-                    <FormControl size="small" sx={{ flexGrow: 1, minWidth: 140 }}>
-                        <Select
-                            value={day}
-                            onChange={(e) => setDay(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">All Days</MenuItem>
-                            <MenuItem value="Monday">Monday</MenuItem>
-                            <MenuItem value="Tuesday">Tuesday</MenuItem>
-                            <MenuItem value="Wednesday">Wednesday</MenuItem>
-                            <MenuItem value="Thursday">Thursday</MenuItem>
-                            <MenuItem value="Friday">Friday</MenuItem>
-                            <MenuItem value="Saturday">Saturday</MenuItem>
-                            <MenuItem value="Sunday">Sunday</MenuItem>
-                        </Select>
-                    </FormControl>
-
-                    <FormControl size="small" sx={{ flexGrow: 1, minWidth: 180 }}>
-                        <Select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                        >
-                            <MenuItem value="login_date_desc">Date ↓ (Latest)</MenuItem>
-                            <MenuItem value="login_date_asc">Date ↑ (Oldest)</MenuItem>
-                            <MenuItem value="working_hours_desc">Working Hrs: High to Low</MenuItem>
-                            <MenuItem value="working_hours_asc">Working Hrs: Low to High</MenuItem>
-                        </Select>
-                    </FormControl>
-
-                    <Box sx={{ flexGrow: 1 }} />
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={handleExport}
-                        disabled={reportData.length === 0}
-                        sx={{
-                            bgcolor: '#08a3cd',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#068fb3' },
-                            height: 40,
-                            px: 3,
-                            ml: { md: 'auto' }
-                        }}
-                    >
-                        Export
-                    </Button>
-                </Stack>
-            </Card>
+                            Export
+                        </Button>
+                    </Stack>
+                </Card>
 
                 <Box
                     sx={{

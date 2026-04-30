@@ -44,6 +44,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 
 import { useAuth } from 'src/auth/auth-context';
 
+import { TaskNewEditForm } from '../../../task-manager/task-new-edit-form';
 import TaskDetailsDialog from '../../../task-manager/kanban/task-details-dialog';
 
 // ----------------------------------------------------------------------
@@ -732,11 +733,23 @@ export function TaskManagerReportView() {
                                                         <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.name}</Typography>
                                                     </TableCell>
                                                     <TableCell sx={{ maxWidth: 200 }}>
-                                                        {row.assignees?.map(a => (
-                                                            <Typography key={a.employee} variant="body2" noWrap>
-                                                                {a.employee_name}
-                                                            </Typography>
-                                                        ))}
+                                                        {row.assignees && row.assignees.length > 0 ? (
+                                                            <>
+                                                                {row.assignees.slice(0, 2).map((a, index) => (
+                                                                    <Typography key={a.employee} variant="body2" noWrap>
+                                                                        {a.employee_name}
+                                                                        {index === 0 && row.assignees!.length > 1 && ","}
+                                                                    </Typography>
+                                                                ))}
+                                                                {row.assignees.length > 2 && (
+                                                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                        + {row.assignees.length - 2} more...
+                                                                    </Typography>
+                                                                )}
+                                                            </>
+                                                        ) : (
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled' }}>---</Typography>
+                                                        )}
                                                     </TableCell>
                                                     <TableCell>{row.project}</TableCell>
                                                     <TableCell>
@@ -836,6 +849,16 @@ export function TaskManagerReportView() {
                     }}
                 />
             )}
+
+            <TaskNewEditForm
+                open={openEdit}
+                onClose={() => {
+                    setOpenEdit(false);
+                    setSelectedTask(null);
+                }}
+                currentTask={selectedTask}
+                onSuccess={fetchReport}
+            />
 
         </DashboardContent>
     );
