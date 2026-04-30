@@ -1,6 +1,6 @@
-import type dayjs from 'dayjs';
-
-import * as XLSX from 'xlsx';
+import dayjs from 'dayjs';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -186,12 +186,113 @@ export function AttendanceReportView() {
         getDoctypeList('Employee', ['name', 'employee_name']).then(setEmployeeOptions);
     }, []);
 
-    const handleExport = () => {
-        const exportData = reportData.map(({ docstatus, ...rest }) => rest);
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
-        XLSX.writeFile(workbook, "Attendance_Report.xlsx");
+    const handleExport = async () => {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Attendance Report');
+
+        // Selection Logic
+        const exportData = selected.length > 0
+            ? reportData.filter(row => selected.includes(row.name))
+            : reportData;
+
+        sheet.columns = [
+            { header: 'Date', key: 'date', width: 15 },
+            { header: 'Employee', key: 'employee_name', width: 25 },
+            { header: 'Employee ID', key: 'employee', width: 15 },
+            { header: 'Status', key: 'status', width: 15 },
+            { header: 'In Time', key: 'in_time', width: 15 },
+            { header: 'Out Time', key: 'out_time', width: 15 },
+            { header: 'Working Hours', key: 'working_hours', width: 15 },
+        ];
+
+        const columnCount = sheet.columns.length;
+
+        // Header Styling (Limited to data columns only)
+        for (let i = 1; i <= columnCount; i++) {
+            const cell = sheet.getRow(1).getCell(i);
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        }
+        sheet.getRow(1).height = 25;
+
+        exportData.forEach((row) => {
+            const excelRow = sheet.addRow({
+                date: fDate(row.attendance_date, 'DD-MM-YYYY'),
+                employee_name: row.employee_name,
+                employee: row.employee,
+                status: row.status,
+                in_time: row.in_time || '---',
+                out_time: row.out_time || '---',
+                working_hours: row.working_hours_display || '---'
+            });
+
+            // Status coloring
+            const statusCell = excelRow.getCell('status');
+            const statusColors: any = {
+                'Present': 'FF22C55E',
+                'Absent': 'FFEF4444',
+                'Half Day': 'FFF59E0B',
+                'On Leave': 'FF0EA5E9',
+                'Holiday': 'FF1877F2'
+            };
+            if (statusColors[row.status]) {
+                statusCell.font = { color: { argb: statusColors[row.status] }, bold: true };
+            }
+        });
+
+        // Merging logic for Date, Employee, and Employee ID
+        let mergeStart = 2;
+        const totalRows = sheet.rowCount;
+        for (let i = 2; i <= totalRows; i++) {
+            const current = sheet.getRow(i);
+            const next = i < totalRows ? sheet.getRow(i + 1) : null;
+
+            const isLast = i === totalRows;
+            const sameAsNext = !isLast && next &&
+                current.getCell(1).value === next.getCell(1).value &&
+                current.getCell(2).value === next.getCell(2).value &&
+                current.getCell(3).value === next.getCell(3).value;
+
+            if (!sameAsNext) {
+                if (i > mergeStart) {
+                    sheet.mergeCells(`A${mergeStart}:A${i}`);
+                    sheet.mergeCells(`B${mergeStart}:B${i}`);
+                    sheet.mergeCells(`C${mergeStart}:C${i}`);
+
+                    ['A', 'B', 'C'].forEach(col => {
+                        sheet.getCell(`${col}${mergeStart}`).alignment = { vertical: 'middle', horizontal: 'center' };
+                    });
+                }
+                mergeStart = i + 1;
+            }
+        }
+
+        // Alternating row colors and black borders (Limited to data columns only)
+        sheet.eachRow((row, rowNumber) => {
+            if (rowNumber > 1) {
+                for (let i = 1; i <= columnCount; i++) {
+                    const cell = row.getCell(i);
+                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+                    // Alternate shading
+                    if (rowNumber % 2 === 0) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                    }
+
+                    // Borders
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FF000000' } },
+                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                        left: { style: 'thin', color: { argb: 'FF000000' } },
+                        right: { style: 'thin', color: { argb: 'FF000000' } }
+                    };
+                }
+            }
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), `Attendance_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
     };
 
     const onChangePage = useCallback((event: unknown, newPage: number) => {
@@ -269,89 +370,90 @@ export function AttendanceReportView() {
                             />
                         </LocalizationProvider>
 
-                    <Autocomplete
-                        size="small"
-                        sx={{ flexGrow: 1, minWidth: 200 }}
-                        options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
-                        getOptionLabel={(option) => option.name === 'all' ? option.employee_name : `${option.employee_name} (${option.name})`}
-                        value={employee === 'all' ? { name: 'all', employee_name: 'All Employees' } : (employeeOptions.find((opt) => opt.name === employee) || null)}
-                        onChange={(event, newValue) => {
-                            setEmployee(newValue?.name || 'all');
-                        }}
-                        disabled={!isHR}
-                        renderOption={(props, option) => (
-                            <Box component="li" {...props} sx={{ fontSize: '0.85rem' }}>
-                                {option.name === 'all' ? (
-                                    option.employee_name
-                                ) : (
-                                    <Stack spacing={0.5}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                            {option.employee_name}
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                            ID: {option.name}
-                                        </Typography>
-                                    </Stack>
-                                )}
-                            </Box>
-                        )}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Employee"
-                                placeholder="Select Employee"
-                            />
-                        )}
-                    />
+                        <Autocomplete
+                            size="small"
+                            sx={{ flexGrow: 1, minWidth: 200 }}
+                            options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
+                            getOptionLabel={(option) => option.name === 'all' ? option.employee_name : `${option.employee_name} (${option.name})`}
+                            value={employee === 'all' ? { name: 'all', employee_name: 'All Employees' } : (employeeOptions.find((opt) => opt.name === employee) || null)}
+                            onChange={(event, newValue) => {
+                                setEmployee(newValue?.name || 'all');
+                            }}
+                            disabled={!isHR}
+                            renderOption={(props, option) => (
+                                <Box component="li" {...props} sx={{ fontSize: '0.85rem' }}>
+                                    {option.name === 'all' ? (
+                                        option.employee_name
+                                    ) : (
+                                        <Stack spacing={0.5}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                {option.employee_name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                ID: {option.name}
+                                            </Typography>
+                                        </Stack>
+                                    )}
+                                </Box>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Employee"
+                                    placeholder="Select Employee"
+                                />
+                            )}
+                        />
 
 
 
-                    <FormControl size="small" sx={{ flexGrow: 1, minWidth: 140 }}>
-                        <Select
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                            displayEmpty
+                        <FormControl size="small" sx={{ flexGrow: 1, minWidth: 140 }}>
+                            <Select
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value)}
+                                displayEmpty
+                            >
+                                <MenuItem value="all">All Status</MenuItem>
+                                <MenuItem value="Present">Present</MenuItem>
+                                <MenuItem value="Absent">Absent</MenuItem>
+                                <MenuItem value="On Leave">On Leave</MenuItem>
+                                <MenuItem value="Half Day">Half Day</MenuItem>
+                                <MenuItem value="Holiday">Holiday</MenuItem>
+                                <MenuItem value="Missing">Missing</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <FormControl size="small" sx={{ flexGrow: 1, minWidth: 180 }}>
+                            <Select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                            >
+                                <MenuItem value="date_asc">Date ↓ (Latest)</MenuItem>
+                                <MenuItem value="date_desc">Date ↑ (Oldest)</MenuItem>
+                                <MenuItem value="name_asc">Name: A to Z</MenuItem>
+                                <MenuItem value="name_desc">Name: Z to A</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <Box sx={{ flexGrow: 1 }} />
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                            onClick={handleExport}
+                            disabled={reportData.length === 0}
+                            sx={{
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#068fb3' },
+                                height: 40,
+                                px: 3,
+                                ml: { md: 'auto' }
+                            }}
                         >
-                            <MenuItem value="all">All Status</MenuItem>
-                            <MenuItem value="Present">Present</MenuItem>
-                            <MenuItem value="Absent">Absent</MenuItem>
-                            <MenuItem value="On Leave">On Leave</MenuItem>
-                            <MenuItem value="Half Day">Half Day</MenuItem>
-                            <MenuItem value="Holiday">Holiday</MenuItem>
-                            <MenuItem value="Missing">Missing</MenuItem>
-                        </Select>
-                    </FormControl>
-
-                    <FormControl size="small" sx={{ flexGrow: 1, minWidth: 180 }}>
-                        <Select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                        >
-                            <MenuItem value="date_asc">Date ↓ (Latest)</MenuItem>
-                            <MenuItem value="date_desc">Date ↑ (Oldest)</MenuItem>
-                            <MenuItem value="name_asc">Name: A to Z</MenuItem>
-                            <MenuItem value="name_desc">Name: Z to A</MenuItem>
-                        </Select>
-                    </FormControl>
-
-                    <Box sx={{ flexGrow: 1 }} />
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={handleExport}
-                        sx={{
-                            bgcolor: '#08a3cd',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#068fb3' },
-                            height: 40,
-                            px: 3,
-                            ml: { md: 'auto' }
-                        }}
-                    >
-                        Export
-                    </Button>
-                </Stack>
-            </Card>
+                            Export
+                        </Button>
+                    </Stack>
+                </Card>
 
                 <Box
                     sx={{

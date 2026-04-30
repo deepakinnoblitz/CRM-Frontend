@@ -133,6 +133,7 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
             await action();
             setSnackbar({ open: true, message: successMessage || 'Action completed successfully', severity: 'success' });
             if (onSuccess) onSuccess();
+            setTimeout(() => onClose(), 1000); // Small delay to show snackbar before closing
         } catch (error: any) {
             console.error(error);
             setSnackbar({ open: true, message: error?.message || 'Failed to complete action', severity: 'error' });
@@ -148,6 +149,7 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
             setCloseTaskOpen(false);
             setSnackbar({ open: true, message: 'Task closed successfully', severity: 'success' });
             if (onSuccess) onSuccess();
+            setTimeout(() => onClose(), 1000);
         } catch (error: any) {
             console.error(error);
             setSnackbar({ open: true, message: error?.message || 'Failed to close task', severity: 'error' });
@@ -163,6 +165,7 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
             setReopenTaskOpen(false);
             setSnackbar({ open: true, message: 'Task reopened successfully', severity: 'success' });
             if (onSuccess) onSuccess();
+            setTimeout(() => onClose(), 1000);
         } catch (error: any) {
             console.error(error);
             setSnackbar({ open: true, message: error?.message || 'Failed to reopen task', severity: 'error' });
@@ -178,6 +181,7 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
             setOnHoldOpen(false);
             setSnackbar({ open: true, message: 'Task put on hold', severity: 'success' });
             if (onSuccess) onSuccess();
+            setTimeout(() => onClose(), 1000);
         } catch (error: any) {
             console.error(error);
             setSnackbar({ open: true, message: error?.message || 'Failed to put task on hold', severity: 'error' });
@@ -193,6 +197,7 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
             setResumeOpen(false);
             setSnackbar({ open: true, message: 'Task resumed successfully', severity: 'success' });
             if (onSuccess) onSuccess();
+            setTimeout(() => onClose(), 1000);
         } catch (error: any) {
             console.error(error);
             setSnackbar({ open: true, message: error?.message || 'Failed to resume task', severity: 'error' });

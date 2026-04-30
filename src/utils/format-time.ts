@@ -208,3 +208,38 @@ export function fDecimalHours(decimalHours: number): string {
 
   return parts.join(' ');
 }
+
+// ----------------------------------------------------------------------
+
+/**
+ * @output 02:30 -> 2.5
+ */
+export function hhmmToFloat(hhmm: string): number {
+  if (!hhmm) return 0;
+  const parts = hhmm.split(':');
+  if (parts.length !== 2) return 0;
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  if (isNaN(h) || isNaN(m)) return 0;
+  return h + m / 60;
+}
+
+/**
+ * @output 2.5 -> 02:30
+ */
+export function floatToHHMM(decimal: number): string {
+  if (!decimal) return '00:00';
+  const hours = Math.floor(decimal);
+  const minutes = Math.round((decimal - hours) * 60);
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+/**
+ * @output 2.5 -> 2 hrs 30 Mins
+ */
+export function formatDurationDescriptive(decimal: number): string {
+  if (!decimal) return '0 hrs 0 Mins';
+  const hours = Math.floor(decimal);
+  const minutes = Math.round((decimal - hours) * 60);
+  const hLabel = hours === 1 ? 'hr' : 'hrs';
+  return `${hours} ${hLabel} ${minutes} Mins`;
+}
