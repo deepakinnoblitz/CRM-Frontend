@@ -24,10 +24,10 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { TableNoData } from '../../../lead/table-no-data';
 import { LeaveTypeDialog } from '../leave-type-dialog';
-import { LeadTableHead } from '../../../lead/lead-table-head';
+import { TableNoData } from '../../../lead/table-no-data';
 import { LeaveTypeTableRow } from '../leave-type-table-row';
+import { LeadTableHead } from '../../../lead/lead-table-head';
 import { TableEmptyRows } from '../../../lead/table-empty-rows';
 import { LeadTableToolbar } from '../../../lead/lead-table-toolbar';
 import LeaveTypeTableFiltersDrawer from '../leave-type-table-filters-drawer';
