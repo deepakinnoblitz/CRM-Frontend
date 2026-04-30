@@ -14,9 +14,9 @@ import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 
-import { useDepartments } from 'src/hooks/use-masters';
+import { useLeaveTypes } from 'src/hooks/use-masters';
 
-import { deleteDepartment } from 'src/api/masters';
+import { deleteLeaveType } from 'src/api/masters';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -24,20 +24,22 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { DepartmentDialog } from '../department-dialog';
+import { LeaveTypeDialog } from '../leave-type-dialog';
 import { TableNoData } from '../../../lead/table-no-data';
-import { DepartmentTableRow } from '../department-table-row';
+import { LeaveTypeTableRow } from '../leave-type-table-row';
 import { LeadTableHead } from '../../../lead/lead-table-head';
 import { TableEmptyRows } from '../../../lead/table-empty-rows';
 import { LeadTableToolbar } from '../../../lead/lead-table-toolbar';
-import { DepartmentDetailsDialog } from '../department-details-dialog';
-import DepartmentTableFiltersDrawer from '../department-table-filters-drawer';
+import LeaveTypeTableFiltersDrawer from '../leave-type-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
-  { id: 'department_name', label: 'Department' },
-  { id: 'department_head', label: 'Head' },
+  { id: 'leave_type_name', label: 'Leave Type' },
+  { id: 'is_paid', label: 'Is Paid' },
+  { id: 'max_leaves', label: 'Max Leaves' },
+  { id: 'carry_forward', label: 'Carry Forward' },
+  { id: 'reset_frequency', label: 'Reset Frequency' },
   { id: 'status', label: 'Status' },
   { id: 'actions', label: 'Actions', align: 'right' },
 ];
@@ -49,18 +51,16 @@ const SORT_OPTIONS = [
 
 // ----------------------------------------------------------------------
 
-export function DepartmentView() {
+export function LeaveTypeView() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [orderBy, setOrderBy] = useState('modified');
-  const [selected, setSelected] = useState<string[]>([]);
   
   const [filters, setFilters] = useState({ status: 'all' });
   const [openFilters, setOpenFilters] = useState(false);
-  const [openDetails, setOpenDetails] = useState(false);
-  const [detailsId, setDetailsId] = useState<string | null>(null);
+  
   const [openForm, setOpenForm] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   
@@ -75,12 +75,7 @@ export function DepartmentView() {
     severity: 'success',
   });
 
-  const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') return;
-    setSnackbar({ ...snackbar, open: false });
-  };
-
-  const { data, total, loading, refetch } = useDepartments(
+  const { data, total, loading, refetch } = useLeaveTypes(
     page + 1,
     rowsPerPage,
     filterName,
@@ -104,50 +99,10 @@ export function DepartmentView() {
     setFilters({ status: 'all' });
   };
 
-  const handleSort = (id: string) => {
-    const isAsc = orderBy === id && order === 'asc';
-    setOrder(isAsc ? 'desc' : 'asc');
-    setOrderBy(id);
-  };
-
   const handleSortChange = (value: string) => {
-    if (value === 'modified_desc') {
-      setOrderBy('modified');
-      setOrder('desc');
-    } else if (value === 'modified_asc') {
-      setOrderBy('modified');
-      setOrder('asc');
-    }
-  };
-
-  const getSortByValue = () => `${orderBy}_${order}`;
-
-  const handleSelectAllRows = (checked: boolean) => {
-    if (checked) {
-      const newSelected = data.map((n) => n.name);
-      setSelected(newSelected);
-      return;
-    }
-    setSelected([]);
-  };
-
-  const handleSelectRow = (id: string) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected: string[] = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1)
-      );
-    }
-    setSelected(newSelected);
+    const [id, ord] = value.split('_');
+    setOrderBy(id);
+    setOrder(ord as 'asc' | 'desc');
   };
 
   const handleOpenCreate = () => {
@@ -160,11 +115,6 @@ export function DepartmentView() {
     setOpenForm(true);
   };
 
-  const handleViewRow = (id: string) => {
-    setDetailsId(id);
-    setOpenDetails(true);
-  };
-
   const handleDeleteRow = (id: string) => {
     setConfirmDelete({ open: true, id });
   };
@@ -172,57 +122,45 @@ export function DepartmentView() {
   const handleConfirmDelete = async () => {
     if (confirmDelete.id) {
       try {
-        await deleteDepartment(confirmDelete.id);
-        setSnackbar({ open: true, message: 'Department deleted successfully', severity: 'success' });
+        await deleteLeaveType(confirmDelete.id);
+        setSnackbar({ open: true, message: 'Leave Type deleted successfully', severity: 'success' });
         refetch();
       } catch (error: any) {
-        setSnackbar({ open: true, message: error.message || 'Failed to delete department', severity: 'error' });
-        console.error(error);
+        setSnackbar({ open: true, message: error.message || 'Failed to delete', severity: 'error' });
       } finally {
         setConfirmDelete({ open: false, id: null });
       }
     }
   };
 
-  const onChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const onChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const canReset = filters.status !== 'all';
-
   return (
     <DashboardContent maxWidth={false} sx={{mt: 2}}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
-        <Typography variant="h4">Department List</Typography>
+        <Typography variant="h4">Leave Type List</Typography>
         <Button
           variant="contained"
           startIcon={<Iconify icon="mingcute:add-line" />}
           onClick={handleOpenCreate}
           sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
         >
-          New Department
+          New Leave Type
         </Button>
       </Stack>
 
       <Card>
         <LeadTableToolbar
-          numSelected={selected.length}
+          numSelected={0}
           filterName={filterName}
-          onFilterName={(event) => {
+          onFilterName={(event: React.ChangeEvent<HTMLInputElement>) => {
             setFilterName(event.target.value);
             setPage(0);
           }}
           onOpenFilter={handleOpenFilters}
-          searchPlaceholder="Search departments..."
+          searchPlaceholder="Search leave types..."
           sortOptions={SORT_OPTIONS}
-          sortBy={getSortByValue()}
+          sortBy={`${orderBy}_${order}`}
           onSortChange={handleSortChange}
-          canReset={canReset}
+          canReset={filters.status !== 'all'}
         />
 
         <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
@@ -233,33 +171,32 @@ export function DepartmentView() {
                 orderBy={orderBy}
                 headLabel={TABLE_HEAD}
                 rowCount={total}
-                numSelected={selected.length}
-                onSelectAllRows={handleSelectAllRows}
+                numSelected={0}
+                onSelectAllRows={() => {}}
                 showIndex
                 hideCheckbox
               />
 
               <TableBody>
                 {data.map((row, index) => (
-                  <DepartmentTableRow
+                  <LeaveTypeTableRow
                     key={row.name}
                     index={page * rowsPerPage + index}
                     row={row}
-                    selected={selected.includes(row.name)}
-                    onSelectRow={() => handleSelectRow(row.name)}
+                    selected={false}
                     onEditRow={() => handleEditRow(row.name)}
-                    onViewRow={() => handleViewRow(row.name)}
                     onDeleteRow={() => handleDeleteRow(row.name)}
+                    onSelectRow={() => {}}
                   />
                 ))}
 
                 {empty && (
                     <TableRow>
-                        <TableCell colSpan={6} sx={{ height: 68 * 5, verticalAlign: 'middle' }}>
+                        <TableCell colSpan={7} sx={{ height: 68 * 5, verticalAlign: 'middle' }}>
                             <EmptyContent
-                                title="No Departments Found"
-                                description="It looks like there are no departments yet."
-                                icon="solar:buildings-bold-duotone"
+                                title="No Leave Types Found"
+                                description="It looks like there are no leave types yet."
+                                icon="solar:bill-list-bold-duotone"
                                 sx={{ py: 0 }}
                             />
                         </TableCell>
@@ -284,23 +221,26 @@ export function DepartmentView() {
           page={page}
           count={total}
           rowsPerPage={rowsPerPage}
-          onPageChange={onChangePage}
-          onRowsPerPageChange={onChangeRowsPerPage}
+          onPageChange={(e, newPage) => setPage(newPage)}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value, 10));
+            setPage(0);
+          }}
           rowsPerPageOptions={[5, 10, 25]}
         />
       </Card>
 
-      <DepartmentTableFiltersDrawer
+      <LeaveTypeTableFiltersDrawer
         open={openFilters}
         onOpen={handleOpenFilters}
         onClose={handleCloseFilters}
-        canReset={canReset}
+        canReset={filters.status !== 'all'}
         filters={filters}
         onFilters={handleFilters}
         onResetFilters={handleResetFilters}
       />
 
-      <DepartmentDialog
+      <LeaveTypeDialog
         open={openForm}
         onClose={() => {
           setOpenForm(false);
@@ -310,29 +250,20 @@ export function DepartmentView() {
         onSuccess={() => {
           setSnackbar({
             open: true,
-            message: `Department ${selectedId ? 'updated' : 'created'} successfully`,
+            message: `Leave Type ${selectedId ? 'updated' : 'created'} successfully`,
             severity: 'success',
           });
           refetch();
         }}
       />
 
-      <DepartmentDetailsDialog
-        open={openDetails}
-        onClose={() => {
-          setOpenDetails(false);
-          setDetailsId(null);
-        }}
-        departmentId={detailsId}
-      />
-
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%', whiteSpace: 'pre-line' }}>
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%', whiteSpace: 'pre-line' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>
@@ -341,7 +272,7 @@ export function DepartmentView() {
         open={confirmDelete.open}
         onClose={() => setConfirmDelete({ open: false, id: null })}
         title="Delete"
-        content="Are you sure you want to delete this department?"
+        content="Are you sure you want to delete this leave type?"
         action={
           <Button variant="contained" color="error" onClick={handleConfirmDelete}>
             Delete

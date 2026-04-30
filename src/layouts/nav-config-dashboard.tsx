@@ -141,6 +141,7 @@ export const hrNavData = [
       { title: 'Daily Log Report', path: '/reports/daily-log' },
       { title: 'Task Report', path: '/reports/task-manager' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
+      { title: 'Employee Overall Report', path: '/employee-overall-report' },
     ],
   },
   {
@@ -157,6 +158,7 @@ export const hrNavData = [
       { title: 'Criteria Category', path: '/performance-criteria-category' },
       { title: 'Designation', path: '/designation' },
       { title: 'Salary Component', path: '/salary-structure-component' },
+      { title: 'Leave Type', path: '/leave-type' },
     ],
   },
 ];
@@ -232,21 +234,6 @@ export const employeeNavData = [
     title: 'Refer a Friend',
     path: '/employee-referrals',
     icon: <Iconify icon={"solar:user-plus-bold-duotone" as any} />,
-  },
-  {
-    title: 'Timesheet Report',
-    path: '/timesheet-reports',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
-  },
-  {
-    title: 'Attendance Report',
-    path: '/reports/attendance',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
-  },
-  {
-    title: 'Daily Log Report',
-    path: '/reports/daily-log',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
   }
 ];
 
