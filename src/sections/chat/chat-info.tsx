@@ -30,6 +30,8 @@ import { chatApi } from 'src/api/chat';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
+
 // ----------------------------------------------------------------------
 
 type Props = {
@@ -51,7 +53,9 @@ export default function ChatInfo({ user, channel, messages, onClose, onCloseChan
     const [members, setMembers] = useState<any[]>([]);
     const [isAdmin, setIsAdmin] = useState(false);
     const [editNameOpen, setEditNameOpen] = useState(false);
+    const [confirmClose, setConfirmClose] = useState(false);
     const [newGroupName, setNewGroupName] = useState(channel.displayName || '');
+
 
     const isClosed = channel.chat_status === 'Closed';
     const isGroup = channel.type === 'Group';
@@ -312,9 +316,9 @@ export default function ChatInfo({ user, channel, messages, onClose, onCloseChan
                                 bgcolor: (channel.avatar_url || channel.channel_info?.avatar) ? 'common.white' : stringToColor(channel.displayName || ''),
                                 border: (t) => (channel.avatar_url || channel.channel_info?.avatar) ? `solid 1px ${t.palette.divider}` : 'none',
                                 '& img': {
-                                    objectFit: 'contain',
-                                    padding: 1,
+                                    objectFit: 'cover',
                                 },
+
                                 '&:hover': isAdmin ? {
                                     opacity: 0.8,
                                     '& .camera-icon': { opacity: 1 }
@@ -398,8 +402,9 @@ export default function ChatInfo({ user, channel, messages, onClose, onCloseChan
                                     variant={"soft" as any}
                                     color="error"
                                     size="small"
-                                    onClick={onCloseChannel}
+                                    onClick={() => setConfirmClose(true)}
                                     startIcon={<Iconify icon={"solar:logout-bold" as any} width={14} />}
+
                                     sx={{
                                         borderRadius: 1,
                                         px: 2,
@@ -465,9 +470,9 @@ export default function ChatInfo({ user, channel, messages, onClose, onCloseChan
                                                     height: 44,
                                                     border: (t) => member.profile_image ? `solid 1px ${t.palette.divider}` : 'none',
                                                     '& img': {
-                                                        objectFit: 'contain',
-                                                        padding: 0.5,
+                                                        objectFit: 'cover',
                                                     }
+
                                                 }}
                                             >
                                                 {member.name?.charAt(0).toUpperCase()}
@@ -522,6 +527,27 @@ export default function ChatInfo({ user, channel, messages, onClose, onCloseChan
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <ConfirmDialog
+                open={confirmClose}
+                onClose={() => setConfirmClose(false)}
+                title="Close Channel"
+                content={`Are you sure you want to close this ${isGroup ? 'group' : 'chat'}?`}
+                action={
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => {
+                            onCloseChannel();
+                            setConfirmClose(false);
+                        }}
+                        sx={{ borderRadius: 1.5, minWidth: 100 }}
+                    >
+                        Close
+                    </Button>
+                }
+            />
         </Stack>
+
     );
 }
