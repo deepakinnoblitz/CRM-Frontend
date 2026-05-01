@@ -3,6 +3,7 @@ import type { Breakpoint } from '@mui/material/styles';
 import { merge } from 'es-toolkit';
 import { useBoolean } from 'minimal-shared/hooks';
 import { useMemo, useState, useEffect } from 'react';
+import { IoChatbubblesOutline } from "react-icons/io5";
 
 import Box from '@mui/material/Box';
 import Fade from '@mui/material/Fade';
@@ -290,30 +291,65 @@ export function DashboardLayout({
               component={RouterLink as any}
               href="/chat"
               sx={{
-                lineHeight: 0,
                 display: 'inline-flex',
-                mr: 3,
-                transition: theme.transitions.create(['all'], {
-                  duration: theme.transitions.duration.shorter,
-                }),
-                '&:hover': {
-                  transform: 'translateY(-1px)',
-                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))',
+                alignItems: 'center',
+                gap: 0.8,
+                px: 2,
+                py: 0.7,
+                borderRadius: '999px',
+                textDecoration:"none",
+
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                letterSpacing: '0.2px',
+
+                color: '#2563eb',
+                background: 'linear-gradient(135deg, #e0ecff 0%, #c7dbff 100%)',
+
+                transition: 'all 0.25s ease',
+                position: 'relative',
+                overflow: 'hidden',
+
+                '& svg': {
+                  fontSize: '1.2rem',
+                  transition: 'transform 0.25s ease',
                 },
+
+                '&:hover': {
+                  color: '#ffffff',
+                  background: '#08a3cd',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 6px 16px rgba(37, 99, 235, 0.35)',
+
+                  '& svg': {
+                    transform: 'scale(1.15)',
+                  },
+                },
+
                 '&:active': {
-                  transform: 'translateY(0) scale(0.98)',
+                  transform: 'scale(0.96)',
+                },
+
+                // shine effect
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: '-75%',
+                  width: '50%',
+                  height: '100%',
+                  background: 'rgba(255,255,255,0.3)',
+                  transform: 'skewX(-20deg)',
+                  transition: '0.5s',
+                },
+
+                '&:hover::after': {
+                  left: '130%',
                 },
               }}
             >
-              <Box
-                component="img"
-                src={`${CONFIG.assetsDir}/icons/Innochat_button.png`}
-                sx={{
-                  width: 140, // Increased size as requested by intent
-                  height: 'auto',
-                  display: 'block',
-                }}
-              />
+              <IoChatbubblesOutline />
+             InnoChat
             </Box>
           </ChatNotifications>
 

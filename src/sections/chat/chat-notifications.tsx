@@ -82,8 +82,6 @@ export default function ChatNotifications({ children }: Props) {
             max={99}
             sx={{
                 '& .MuiBadge-badge': {
-                    right: 35,
-                    top: 15,
                     border: `2px solid ${theme.palette.background.paper}`,
                     padding: '0 4px',
                 },

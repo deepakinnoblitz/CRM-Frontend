@@ -11,9 +11,14 @@ import { PiMoneyWavy } from "react-icons/pi";
 import { LuUsersRound } from "react-icons/lu";
 import { IoHomeOutline } from "react-icons/io5";
 import { TbReportSearch } from "react-icons/tb";
+import { IoMdFolderOpen } from "react-icons/io";
+import { RiSettings3Line } from "react-icons/ri";
 import { LuCalendarCheck2 } from "react-icons/lu";
 import { TbReportAnalytics } from "react-icons/tb";
 import { LuFileSpreadsheet } from "react-icons/lu";
+import { LuUserRoundSearch } from "react-icons/lu";
+import { HiOutlineCreditCard } from "react-icons/hi2";
+import { HiOutlineSpeakerphone } from "react-icons/hi";
 import { RiCalendarScheduleLine } from "react-icons/ri";
 import { MdOutlineLaptopWindows } from "react-icons/md";
 
@@ -39,7 +44,7 @@ export const hrNavData = [
   {
     title: 'HR Dashboard',
     path: '/',
-    icon: <IoHomeOutline />,
+    icon: <IoHomeOutline size={18} />,
   },
   {
     title: 'Task Manager',
@@ -49,7 +54,7 @@ export const hrNavData = [
   {
     title: 'Employee Records',
     path: '/employee',
-    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
+    icon: <RxCalendar size={18} />,
     children: [
       { title: 'Employee List', path: '/employee' },
       { title: 'Users List', path: '/users' },
@@ -58,7 +63,7 @@ export const hrNavData = [
   {
     title: 'Attendance Records',
     path: '/attendance',
-    icon: <Iconify icon={"solar:calendar-mark-bold-duotone" as any} />,
+    icon: <RiCalendarScheduleLine size={18} />,
     children: [
       { title: 'Attendance List', path: '/attendance' },
       { title: 'WFH Attendance', path: '/wfh-attendance' },
@@ -69,7 +74,7 @@ export const hrNavData = [
   {
     title: 'Leaves Records',
     path: '/leaves',
-    icon: <Iconify icon={"solar:calendar-date-bold-duotone" as any} />,
+    icon: <RiAppsLine size={18} />,
     children: [
       { title: 'Leave Application', path: '/leaves' },
       { title: 'Leave Allocate', path: '/leave-allocations' },
@@ -78,37 +83,37 @@ export const hrNavData = [
   {
     title: 'Request List',
     path: '/requests',
-    icon: <Iconify icon={"solar:document-text-bold-duotone" as any} />,
+    icon: <FiList   size={18} />,
   },
   {
     title: 'Timesheets',
     path: '/timesheets',
-    icon: <Iconify icon={"solar:clock-circle-bold-duotone" as any} />,
+    icon: <LuFileSpreadsheet size={18} />,
   },
   {
     title: 'Salary Slips',
     path: '/salary-slips',
-    icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} />,
+    icon: <PiMoneyWavy size={18} />,
   },
   {
     title: 'Timesheets',
     path: '/timesheets',
-    icon: <Iconify icon={"solar:clock-circle-bold-duotone" as any} />,
+    icon: <TbReport  size={18} />,
   },
   {
     title: 'Holidays List',
     path: '/holidays',
-    icon: <Iconify icon={"solar:list-bold-duotone" as any} />,
+    icon: <GoTasklist size={22} />,
   },
   {
     title: 'Announcements',
     path: '/announcements',
-    icon: <Iconify icon={"solar:bell-bold-duotone" as any} />,
+    icon: <HiOutlineSpeakerphone size={18} />,
   },
   {
     title: 'Asset Records',
     path: '/assets',
-    icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
+    icon: <MdOutlineLaptopWindows size={18} />,
     children: [
       { title: 'Asset List', path: '/assets/list' },
       { title: 'Asset Assignments', path: '/assets/assignments' },
@@ -123,7 +128,7 @@ export const hrNavData = [
   {
     title: 'Expenses',
     path: '/expenses',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+    icon: <HiOutlineCreditCard size={18} />,
     children: [
       { title: 'Company Expenses', path: '/expense-tracker' },
       { title: 'Reimbursement Claim List', path: '/reimbursement-claims' },
@@ -132,7 +137,7 @@ export const hrNavData = [
   {
     title: 'Employee Performance',
     path: '/employee-evaluation',
-    icon: <Iconify icon={"solar:user-speak-bold-duotone" as any} />,
+    icon: <LuUsersRound size={18} />,
     children: [
       { title: 'Employee Evaluation', path: '/employee-evaluation' },
       { title: 'Badges', path: '/badges' },
@@ -142,7 +147,7 @@ export const hrNavData = [
   {
     title: 'Recruitment',
     path: '/job-openings',
-    icon: <Iconify icon={"solar:buildings-bold-duotone" as any} />,
+    icon: <LuUserRoundSearch size={18} />,
     children: [
       { title: 'Job Opening List', path: '/job-openings' },
       { title: 'Job Applicant List', path: '/job-applicants' },
@@ -153,7 +158,7 @@ export const hrNavData = [
   {
     title: 'Report',
     path: '/reports',
-    icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
+    icon: <CgNotes size={18} />,
     children: [
       { title: 'Attendance Report', path: '/reports/attendance' },
       { title: 'Daily Log Report', path: '/reports/daily-log' },
@@ -164,7 +169,7 @@ export const hrNavData = [
   {
     title: 'Masters',
     path: '/department',
-    icon: <Iconify icon={"solar:folder-bold-duotone" as any} />,
+    icon: <IoMdFolderOpen size={18} />,
     children: [
       { title: 'Department', path: '/department' },
       { title: 'Project', path: '/project' },
@@ -544,7 +549,7 @@ export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM', settings?:
       {
         title: 'User Management',
         path: '/users',
-        icon: <Iconify icon={"solar:settings-bold-duotone" as any} />,
+        icon: <RiSettings3Line size={18} />,
       }
     ]);
     return { hasAccess: true, navData: mergedNav };
