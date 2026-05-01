@@ -1,5 +1,23 @@
-import { Iconify } from 'src/components/iconify';
 
+import { FiList } from "react-icons/fi";
+import { FaTasks } from "react-icons/fa";
+import { CgNotes } from "react-icons/cg";
+import { TbReport } from "react-icons/tb";
+import { FiUserPlus } from "react-icons/fi";
+import { GoTasklist } from "react-icons/go";
+import { RiAppsLine } from "react-icons/ri";
+import { RxCalendar } from "react-icons/rx";
+import { PiMoneyWavy } from "react-icons/pi";
+import { LuUsersRound } from "react-icons/lu";
+import { IoHomeOutline } from "react-icons/io5";
+import { TbReportSearch } from "react-icons/tb";
+import { LuCalendarCheck2 } from "react-icons/lu";
+import { TbReportAnalytics } from "react-icons/tb";
+import { LuFileSpreadsheet } from "react-icons/lu";
+import { RiCalendarScheduleLine } from "react-icons/ri";
+import { MdOutlineLaptopWindows } from "react-icons/md";
+
+import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 
@@ -21,12 +39,12 @@ export const hrNavData = [
   {
     title: 'HR Dashboard',
     path: '/',
-    icon: <Iconify icon={"solar:home-2-bold-duotone" as any} />,
+    icon: <IoHomeOutline />,
   },
   {
     title: 'Task Manager',
     path: '/task-manager?view=all',
-    icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
+    icon: <FaTasks size={18} />,
   },
   {
     title: 'Employee Records',
@@ -167,62 +185,62 @@ export const employeeNavData = [
   {
     title: 'Employee Dashboard',
     path: '/',
-    icon: <Iconify icon={"solar:home-2-bold-duotone" as any} />,
+    icon: <IoHomeOutline size={18} />,
   },
   {
     title: 'My Profile',
     path: '/my-profile',
-    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
+    icon: <LuUsersRound size={18} />,
   },
   {
     title: 'My Tasks',
     path: '/task-manager?view=mine',
-    icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
+    icon: <GoTasklist size={22} />,
   },
   {
     title: 'My Attendance',
     path: '/attendance',
-    icon: <Iconify icon={"solar:clock-circle-bold-duotone" as any} />,
+    icon: <RiCalendarScheduleLine size={18} />,
   },
   {
     title: 'My Activity Log',
     path: '/daily-log',
-    icon: <Iconify icon={"solar:calendar-bold-duotone" as any} />,
+    icon: <RxCalendar size={18} />,
   },
   {
     title: 'My Leave Application',
     path: '/leaves',
-    icon: <Iconify icon={"solar:notes-bold-duotone" as any} />,
+    icon: <RiAppsLine size={18} />,
   },
   {
     title: 'My Request List',
     path: '/requests',
-    icon: <Iconify icon={"solar:list-bold-duotone" as any} />,
+    icon: <FiList   size={18} />,
   },
   {
     title: 'My Timesheet',
     path: '/timesheets',
-    icon: <Iconify icon={"solar:folder-bold-duotone" as any} />,
+    icon: <LuFileSpreadsheet size={18} />,
   },
   {
     title: 'My WFH Attendance',
     path: '/wfh-attendance',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+    icon: <LuCalendarCheck2 size={18} />,
   },
   {
     title: 'My Salary Slip',
     path: '/salary-slips',
-    icon: <Iconify icon={"solar:bill-bold-duotone" as any} />,
+    icon: <PiMoneyWavy size={18} />,
   },
   {
     title: 'My Reimbursement Claim',
     path: '/reimbursement-claims',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+    icon: <CgNotes size={18} />,
   },
   {
     title: 'My Assets',
     path: '/assets',
-    icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
+    icon: <MdOutlineLaptopWindows size={18} />,
     children: [
       { title: 'My Asset List', path: '/assets/assignments' },
       { title: 'My Asset Requests', path: '/assets/requests' },
@@ -231,22 +249,22 @@ export const employeeNavData = [
   {
     title: 'Refer a Friend',
     path: '/employee-referrals',
-    icon: <Iconify icon={"solar:user-plus-bold-duotone" as any} />,
+    icon: <FiUserPlus size={18} />,
   },
   {
     title: 'Timesheet Report',
     path: '/timesheet-reports',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+    icon: <TbReport  size={18} />,
   },
   {
     title: 'Attendance Report',
     path: '/reports/attendance',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+    icon: <TbReportSearch size={18} />,
   },
   {
     title: 'Daily Log Report',
     path: '/reports/daily-log',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+    icon: <TbReportAnalytics size={18} />,
   }
 ];
 

@@ -53,7 +53,7 @@ export function NavDesktop({
         flexDirection: 'column',
         zIndex: 'var(--layout-nav-zIndex)',
         width: 'var(--layout-nav-vertical-width)',
-        bgcolor: theme.vars.palette.grey[200],
+        bgcolor: theme.vars.palette.grey[900],
         borderRight: `1px solid ${varAlpha(theme.vars.palette.grey['500Channel'], 0.12)}`,
         [theme.breakpoints.up(layoutQuery)]: {
           display: 'flex',
@@ -172,7 +172,7 @@ function NavListItem({ item, fullPath }: { item: NavItem; fullPath: string }) {
           borderRadius: 1.25,
           typography: 'body2',
           fontWeight: 'fontWeightMedium',
-          color: theme.vars.palette.text.secondary,
+          color: "#ffffffff",
           minHeight: 48,
           position: 'relative',
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -185,32 +185,32 @@ function NavListItem({ item, fullPath }: { item: NavItem; fullPath: string }) {
             width: 3,
             height: 0,
             borderRadius: '0 4px 4px 0',
-            bgcolor: '#08a3cd',
+            bgcolor: '#ffffffff',
             transition: 'height 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
           },
           '&:hover': {
             bgcolor: varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
-            color: theme.vars.palette.text.primary,
+            color: '#ffffff',
             transform: 'translateX(4px)',
           },
           ...(isActived && {
             fontWeight: 'fontWeightSemiBold',
-            color: '#08a3cd',
-            bgcolor: varAlpha('8 163 205', 0.12),
+            color: '#ffffffff',
+            bgcolor: varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
             boxShadow: 'none',
             '&::before': {
               display: 'block',
               height: '70%',
             },
             '&:hover': {
-              bgcolor: varAlpha('8 163 205', 0.16),
+              bgcolor: varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
               transform: 'translateX(4px)',
             },
           }),
         }),
       ]}
     >
-      <Box component="span" sx={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'inherit' }}>
+      <Box component="span" sx={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: "#ffffffff" }}>
         {item.icon}
       </Box>
 
@@ -278,17 +278,17 @@ function NavListItem({ item, fullPath }: { item: NavItem; fullPath: string }) {
                       borderRadius: 1,
                       typography: 'body2',
                       fontSize: '0.875rem',
-                      color: theme.vars.palette.text.secondary,
+                      color: "#ffffffff",
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       '&:hover': {
                         bgcolor: varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
-                        color: theme.vars.palette.text.primary,
+                        color: "#ffffffff",
                         transform: 'translateX(4px)',
                       },
                       ...(isChildActived && {
                         fontWeight: 'fontWeightSemiBold',
-                        color: '#08a3cd',
-                        bgcolor: varAlpha('8 163 205', 0.08),
+                        color: "#ffffffff",
+                        bgcolor: varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
                       }),
                     }),
                   ]}
