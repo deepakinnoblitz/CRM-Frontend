@@ -120,6 +120,8 @@ export interface HRDashboardData {
     todays_leaves: Array<{ employee_name: string; employee: string }>;
     todays_birthdays: Array<{ employee_name: string; employee: string }>;
     holidays: Array<{ date: string; description: string }>;
+    pending_leaves_list: Array<{ name: string; employee_name: string; leave_type: string; from_date: string; to_date: string; total_days: number }>;
+    pending_requests_list: Array<{ name: string; employee_name: string; subject: string; creation: string }>;
 }
 
 export interface EmployeeDashboardData {

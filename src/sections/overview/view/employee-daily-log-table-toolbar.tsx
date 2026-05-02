@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { IoMdSettings } from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
@@ -196,7 +197,7 @@ export function EmployeeDailyLogTableToolbar({
           <Button
             disableRipple
             color="inherit"
-            startIcon={<Iconify icon={"solar:settings-bold-duotone" as any} sx={{ color: 'dark.main' }} />}
+            startIcon={<IoMdSettings />}
             onClick={onOpenSettings}
             sx={{
               height: 40,

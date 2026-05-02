@@ -7,18 +7,13 @@ import Typography from '@mui/material/Typography';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
-    fetchMonthHolidays,
-    fetchTodayBirthdays,
     fetchAttendanceStats,
     fetchUpcomingRenewals,
-    fetchPendingLeaveCount,
-    fetchPendingRequestCount,
-    fetchTotalEmployeeCount,
-    fetchRecentAnnouncements,
-    fetchTodayLeaveEmployees,
+    fetchHRDashboardData,
     fetchMissingAttendanceChartData,
     fetchWeeklyPresentChartData,
-    fetchWeeklyPresentAbsentChartData
+    fetchWeeklyPresentAbsentChartData,
+    fetchMonthHolidays
 } from 'src/api/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -49,6 +44,8 @@ export function HRDashboardView() {
         todays_leaves: [],
         todays_birthdays: [],
         holidays: [],
+        pending_leaves_list: [],
+        pending_requests_list: [],
         missing_attendance_chart: [],
         weekly_present_chart: [],
         weekly_present_absent: []
@@ -65,45 +62,31 @@ export function HRDashboardView() {
             setLoading(true);
             try {
                 const [
-                    announcements,
-                    birthdays,
-                    leaves,
-                    holidays,
+                    hrData,
                     stats,
+                    holidays,
                     renewals,
-                    totalEmployees,
-                    pendingLeaves,
-                    pendingRequest,
                     missingAttendanceChart,
                     weeklyPresentChart,
                     weeklyPresentAbsent
                 ] = await Promise.all([
-                    fetchRecentAnnouncements(),
-                    fetchTodayBirthdays(),
-                    fetchTodayLeaveEmployees(),
-                    fetchMonthHolidays(),
+                    fetchHRDashboardData(),
                     fetchAttendanceStats('today'),
+                    fetchMonthHolidays(),
                     fetchUpcomingRenewals(),
-                    fetchTotalEmployeeCount(),
-                    fetchPendingLeaveCount(),
-                    fetchPendingRequestCount(),
                     fetchMissingAttendanceChartData(),
                     fetchWeeklyPresentChartData(),
                     fetchWeeklyPresentAbsentChartData()
                 ]);
 
                 console.log('Holidays data received:', holidays);
+
                 setData({
-                    announcements,
-                    todays_birthdays: birthdays,
-                    todays_leaves: leaves,
+                    ...hrData,
                     holidays,
                     renewals,
                     present_today: stats?.present || 0,
                     missing_attendance: stats?.missing || 0,
-                    pending_leaves: pendingLeaves,
-                    total_employees: totalEmployees,
-                    pending_request: pendingRequest,
                     missing_attendance_chart: missingAttendanceChart,
                     weekly_present_chart: weeklyPresentChart,
                     weekly_present_absent: weeklyPresentAbsent
@@ -190,11 +173,7 @@ export function HRDashboardView() {
                 <Grid size={{ xs: 12 }}>
                     <HRAnnouncements
                         title="Latest Announcements"
-                        list={data.announcements.map((a: any) => ({
-                            title: a.announcement_name,
-                            message: a.announcement,
-                            posting_date: a.creation
-                        }))}
+                        list={data.announcements}
                     />
                 </Grid>
 
@@ -290,6 +269,39 @@ export function HRDashboardView() {
                     />
                 </Grid>
 
+                {/* Pending Leave Applications */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <HRDashboardTable
+                        title="Pending Leave Applications"
+                        tableData={data.pending_leaves_list}
+                        totalCount={data.pending_leaves}
+                        viewAllPath="/leaves"
+                        headLabel={[
+                            { id: 'index', label: 'S.No' },
+                            { id: 'employee_name', label: 'Employee Name' },
+                            { id: 'leave_type', label: 'Type' },
+                            { id: 'total_days', label: 'Days' },
+                        ]}
+                        emptyMessage="No pending leaves"
+                    />
+                </Grid>
+
+                {/* Pending Request Applications */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <HRDashboardTable
+                        title="Pending Request Applications"
+                        tableData={data.pending_requests_list}
+                        totalCount={data.pending_request}
+                        viewAllPath="/requests"
+                        headLabel={[
+                            { id: 'index', label: 'S.No' },
+                            { id: 'employee_name', label: 'Employee Name' },
+                            { id: 'subject', label: 'Subject' },
+                        ]}
+                        emptyMessage="No pending requests"
+                    />
+                </Grid>
+
                 {/* Upcoming Renewals */}
                 {/* <Grid size={{ xs: 12 }}>
                     <HRDashboardTable
@@ -314,9 +326,9 @@ export function HRDashboardView() {
                         subheader="Upcoming holidays for this month"
                         onDateChange={handleMonthChange}
                         events={(() => {
-                            const mappedEvents = data.holidays.map((h: any) => ({
+                            const mappedEvents = (data.holidays || []).map((h: any) => ({
                                 title: h.description,
-                                start: h.holiday_date,
+                                start: h.date || h.holiday_date,
                                 color: '#FF4842'
                             }));
                             console.log('Mapped holiday events:', mappedEvents);

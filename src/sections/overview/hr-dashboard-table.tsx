@@ -1,7 +1,10 @@
 import type { CardProps } from '@mui/material/Card';
 
 import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
+import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import Button from '@mui/material/Button';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -10,6 +13,9 @@ import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 
+import { RouterLink } from 'src/routes/components';
+
+import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
 // ----------------------------------------------------------------------
@@ -20,12 +26,38 @@ type Props = CardProps & {
     tableData: any[];
     headLabel: { id: string; label: string }[];
     emptyMessage?: string;
+    totalCount?: number;
+    viewAllPath?: string;
 };
 
-export function HRDashboardTable({ title, subheader, tableData, headLabel, emptyMessage, ...other }: Props) {
+export function HRDashboardTable({ title, subheader, tableData, headLabel, emptyMessage, totalCount, viewAllPath, ...other }: Props) {
     return (
         <Card {...other}>
-            <CardHeader title={title} subheader={subheader} sx={{ mb: 3 }} />
+            <CardHeader 
+                title={
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                        <Typography variant="h6">{title}</Typography>
+                        {totalCount !== undefined && (
+                            <Chip label={totalCount} size="small" color="error" />
+                        )}
+                    </Stack>
+                } 
+                subheader={subheader} 
+                action={
+                    viewAllPath && (
+                        <Button
+                            component={RouterLink}
+                            href={viewAllPath}
+                            size="small"
+                            color="inherit"
+                            endIcon={<Iconify icon="eva:arrow-ios-forward-fill" width={18} sx={{ ml: -0.5 }} />}
+                        >
+                            View all
+                        </Button>
+                    )
+                }
+                sx={{ mb: 3 }} 
+            />
 
             <TableContainer sx={{ overflow: 'unset' }}>
                 <Scrollbar>
@@ -51,8 +83,17 @@ export function HRDashboardTable({ title, subheader, tableData, headLabel, empty
                                 tableData.map((row: any, index) => (
                                     <TableRow key={index}>
                                         {headLabel.map((headCell) => (
-                                            <TableCell key={headCell.id}>
-                                                {headCell.id === 'index' ? index + 1 : row[headCell.id]}
+                                            <TableCell key={headCell.id} sx={{ whiteSpace: 'nowrap' }}>
+                                                <Typography 
+                                                    variant="body2" 
+                                                    noWrap 
+                                                    sx={{ 
+                                                        maxWidth: headCell.id === 'subject' ? 250 : 150,
+                                                        display: 'block'
+                                                    }}
+                                                >
+                                                    {headCell.id === 'index' ? index + 1 : row[headCell.id]}
+                                                </Typography>
                                             </TableCell>
                                         ))}
                                     </TableRow>
