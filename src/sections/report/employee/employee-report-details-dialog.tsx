@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import dayjs from 'dayjs';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -21,12 +22,14 @@ import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { frappeRequest } from 'src/utils/csrf';
 import { fDate } from 'src/utils/format-time';
 import { fNumber } from 'src/utils/format-number';
 
 import { getEmployee } from 'src/api/employees';
-import { getHRSettings } from 'src/api/hr-management';
-import { fetchFrappeList } from 'src/api/hr-management';
+import { runReport } from 'src/api/reports';
+import { getHRSettings, fetchFrappeList } from 'src/api/hr-management';
+import { fetchDetailedSessions } from 'src/api/presence-log';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -42,7 +45,7 @@ type Props = {
 
 export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props) {
   const theme = useTheme();
-  const [currentTab, setCurrentTab] = useState('details');
+  const [currentTab, setCurrentTab] = useState<string>('details');
 
   const [loading, setLoading] = useState(false);
   const [employee, setEmployee] = useState<any>(null);
@@ -51,11 +54,15 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
     leaves: any[];
     assets: any[];
     attendance: any[];
+    salaries: any[];
+    dailylogs: any[];
   }>({
     timesheets: [],
     leaves: [],
     assets: [],
     attendance: [],
+    salaries: [],
+    dailylogs: [],
   });
 
   const [hrSettings, setHRSettings] = useState<any>({
@@ -65,114 +72,255 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
   });
 
   const [stats, setStats] = useState({
-    attendance: { total: 0, present: 0, absent: 0, leaves: 0, late: 0, workingHours: 0 },
+    attendance: { total: 0, present: 0, absent: 0, leaves: 0, workingHours: 0 },
     timesheets: { total: 0, hours: 0, projects: 0, activities: 0 },
     leaves: { total: 0, approved: 0, pending: 0, rejected: 0 },
-    assets: { total: 0, active: 0, returned: 0 }
+    assets: { total: 0, active: 0, returned: 0 },
+    salaries: { total: 0, totalNet: 0 },
+    dailylogs: { total: 0, totalHours: 0 }
   });
 
-  const fetchData = async () => {
-    if (!employeeId) return;
-    setLoading(true);
+  const isMounted = useRef(false);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []); const [leaveMeta, setLeaveMeta] = useState<any[]>([]);
+  const [attMeta, setAttMeta] = useState<any[]>([]);
+
+  useEffect(() => {
+    import('src/api/hr-management').then(m => {
+      // Fetch Leave Metadata
+      m.getDocTypeMetadata('Leave Application').then(meta => {
+        if (isMounted.current) {
+          setLeaveMeta(meta.fields || []);
+          console.log('Leave Application Metadata Fields:', (meta.fields || []).map((f: any) => f.fieldname));
+        }
+      }).catch(console.error);
+
+      // Fetch Attendance Metadata
+      m.getDocTypeMetadata('Attendance').then(meta => {
+        if (isMounted.current) {
+          setAttMeta(meta.fields || []);
+          console.log('Attendance Metadata Fields:', (meta.fields || []).map((f: any) => f.fieldname));
+        }
+      }).catch(console.error);
+    });
+  }, []);
+
+  const fetchData = useCallback(async () => {
+    console.log('>>> [FETCH_DATA_START] Component State:', { employeeId, open });
+    if (!employeeId) {
+      console.warn('>>> [FETCH_DATA_ABORT] No Employee ID provided');
+      return;
+    }
+
+    if (isMounted.current) setLoading(true);
+
+    console.log('--- STARTING COMPREHENSIVE DATA FETCH ---');
+    console.log('Employee ID (Prop):', employeeId);
+
     try {
       // Tab 1: Details
       const empData = await getEmployee(employeeId);
-      setEmployee(empData);
-      
-      console.log(`Fetching Attendance for ${employeeId}`, { filters: [['employee', '=', employeeId]] });
-      const attendanceData = await fetchFrappeList('Attendance', {
-        page: 1,
-        page_size: 1000,
-        filters: [['employee', '=', employeeId]],
-      });
-      console.log('Attendance Response:', attendanceData);
+      console.log('Employee Object:', empData);
+      if (isMounted.current) setEmployee(empData);
 
-      // Tab 3: Work & Records
-      console.log(`Fetching Records for ${employeeId}`);
-      const [timesheets, leaves, assets] = await Promise.all([
-        fetchFrappeList('Timesheet', {
+      // Try to determine the best ID to use for filters
+      const filterId = empData?.name || employeeId;
+      console.log('Using Filter ID:', filterId);
+
+      // Construct Leave fields dynamically
+      let leaveFields = ['name', 'employee', 'leave_type', 'from_date', 'to_date', 'total_days', 'docstatus', 'workflow_state'];
+
+      // Construct Attendance fields dynamically
+      let attFields = ['name', 'employee', 'attendance_date'];
+      if (attMeta.length > 0) {
+        const fieldnames = attMeta.map(f => f.fieldname);
+        if (fieldnames.includes('status')) attFields.push('status');
+        if (fieldnames.includes('working_hours_display')) attFields.push('working_hours_display');
+        if (fieldnames.includes('in_time')) attFields.push('in_time');
+        if (fieldnames.includes('out_time')) attFields.push('out_time');
+      }
+
+      // Parallel Fetch for all modules
+      console.log('Executing Parallel Requests...');
+      const [attendanceData, timesheetReport, leaves, assets, checkinsData, salariesData, dailylogsData] = await Promise.all([
+        fetchFrappeList('Attendance', {
           page: 1,
           page_size: 1000,
-          filters: [['employee', '=', employeeId]],
+          filters: [['employee', '=', filterId]],
+          fields: attFields,
         }),
+        runReport('Timesheet Report', { employee: filterId }),
         fetchFrappeList('Leave Application', {
           page: 1,
           page_size: 1000,
-          filters: [['employee', '=', employeeId]],
+          filters: [['employee', '=', filterId]],
+          fields: leaveFields,
         }),
         fetchFrappeList('Asset Assignment', {
           page: 1,
           page_size: 1000,
-          filters: [['assigned_to', '=', employeeId]], // Using assigned_to for Assets
+          filters: [['assigned_to', '=', filterId]],
+          fields: ['name', 'asset_name', 'assigned_on', 'returned_on'],
         }),
+        fetchFrappeList('Employee Checkin', {
+          page: 1,
+          page_size: 2000,
+          filters: [['employee', '=', filterId]],
+          fields: ['name', 'employee', 'time', 'log_type', 'attendance'],
+        }).catch(() => ({ data: [], total: 0 })),
+        fetchFrappeList('Salary Slip', {
+          page: 1,
+          page_size: 1000,
+          filters: [['employee', '=', filterId]],
+          fields: ['name', 'pay_period_start', 'pay_period_end', 'grand_gross_pay', 'grand_net_pay', 'docstatus'],
+        }),
+        fetchDetailedSessions(0, 1000, '', 'all', 'login_date_desc', filterId),
       ]);
-      console.log('Timesheets Response:', timesheets);
-      console.log('Leaves Response:', leaves);
-      console.log('Assets Response:', assets);
 
-      setRecords({
-        timesheets: timesheets.data,
-        leaves: leaves.data,
-        assets: assets.data,
-        attendance: attendanceData.data,
-      });
+      console.log('--- API RESPONSES ---');
+      console.log('Attendance Records Count:', attendanceData.data.length);
+      console.log('Timesheet Records Count (Result):', timesheetReport?.result?.length || 0);
+      console.log('Leave Records Count (Initial):', leaves.data.length);
+      console.log('Asset Records Count:', assets.data.length);
 
-      // Calculate Stats
-      const attStats = {
-        total: attendanceData.data.length,
-        present: attendanceData.data.filter((a: any) => a.status === 'Present').length,
-        absent: attendanceData.data.filter((a: any) => a.status === 'Absent').length,
-        leaves: attendanceData.data.filter((a: any) => ['On Leave', 'Half Day'].includes(a.status)).length,
-        late: attendanceData.data.filter((a: any) => a.late_entry).length,
-        workingHours: attendanceData.data.reduce((acc: number, cur: any) => acc + (parseFloat(cur.working_hours) || 0), 0)
-      };
+      // Deep fetch for Leave Applications to get restricted 'reason' fields
+      let enrichedLeaves = leaves.data;
+      if (leaves.data.length > 0) {
+        console.log('--- STARTING DEEP FETCH FOR LEAVES ---', leaves.data.length, 'records');
+        enrichedLeaves = await Promise.all(
+          leaves.data.map(async (l: any) => {
+            console.log('FETCHING FULL LEAVE:', l.name);
+            try {
+              const url = `/api/method/frappe.client.get?doctype=Leave Application&name=${encodeURIComponent(l.name)}`;
+              console.log('Deep Fetch URL:', url);
+              const res = await frappeRequest(url);
+              if (res.ok) {
+                const doc = (await res.json()).message;
+                console.log('FULL LEAVE DOC:', doc);
+                return {
+                  ...l,
+                  ...doc,
+                  mappedStatus: doc.workflow_state || l.workflow_state || "-",
+                  mappedReason: doc.reson || l.reason || "-"
+                };
+              } else {
+                console.error('Deep Fetch Failed for:', l.name, 'Status:', res.status);
+              }
+            } catch (e) {
+              console.error('Deep Fetch Error for:', l.name, e);
+            }
+            return l;
+          })
+        );
+        console.log('Leave Records After Deep Fetch:', enrichedLeaves.length);
+      }
 
-      const tsStats = {
-        total: timesheets.data.length,
-        hours: timesheets.data.reduce((acc: number, cur: any) => acc + (parseFloat(cur.total_hours) || 0), 0),
-        projects: new Set(timesheets.data.map((t: any) => t.parent_project).filter(Boolean)).size,
-        activities: timesheets.data.length 
-      };
+      const tsData = (timesheetReport?.result || [])
+        .filter((t: any) => t.timesheet_date && t.timesheet_date !== 'TOTAL')
+        .sort((a: any, b: any) => (b.timesheet_date || '').localeCompare(a.timesheet_date || ''));
 
-      const leaveStats = {
-        total: leaves.data.length,
-        approved: leaves.data.filter((l: any) => l.status === 'Approved').length,
-        pending: leaves.data.filter((l: any) => l.status === 'Open' || l.status === 'Pending').length,
-        rejected: leaves.data.filter((l: any) => l.status === 'Rejected').length
-      };
+      if (isMounted.current) {
+        const enrichedAttendance = attendanceData.data.map((att: any) => {
+          const attCheckins = (checkinsData?.data || []).filter((c: any) => c.attendance === att.name || (c.employee === att.employee && dayjs(c.time).format('YYYY-MM-DD') === att.attendance_date));
+          const inCheckins = attCheckins.filter((c: any) => c.log_type === 'IN').sort((a: any, b: any) => dayjs(a.time).diff(dayjs(b.time)));
+          const outCheckins = attCheckins.filter((c: any) => c.log_type === 'OUT').sort((a: any, b: any) => dayjs(a.time).diff(dayjs(b.time)));
 
-      const assetStats = {
-        total: assets.data.length,
-        active: assets.data.filter((a: any) => !a.returned_on).length,
-        returned: assets.data.filter((a: any) => a.returned_on).length
-      };
+          return {
+            ...att,
+            in_time: att.in_time || (inCheckins.length > 0 ? inCheckins[0].time : '-'),
+            out_time: att.out_time || (outCheckins.length > 0 ? outCheckins[outCheckins.length - 1].time : '-'),
+            working_hours_display: att.working_hours_display || '-',
+          };
+        });
 
-      setStats({
-        attendance: attStats,
-        timesheets: tsStats,
-        leaves: leaveStats,
-        assets: assetStats
-      });
+        setRecords({
+          timesheets: tsData,
+          leaves: enrichedLeaves,
+          assets: assets.data,
+          attendance: enrichedAttendance,
+          salaries: salariesData.data,
+          dailylogs: dailylogsData.data || [],
+        });
+
+        // Calculate Stats
+        const attStats = {
+          total: attendanceData.data.length,
+          present: attendanceData.data.filter((a: any) => a.status === 'Present').length,
+          absent: attendanceData.data.filter((a: any) => a.status === 'Absent').length,
+          leaves: attendanceData.data.filter((a: any) => ['On Leave', 'Half Day'].includes(a.status)).length,
+          workingHours: attendanceData.data.reduce((acc: number, cur: any) => acc + (parseFloat(cur.working_hours_display?.split(':')[0] || '0') + (parseFloat(cur.working_hours_display?.split(':')[1] || '0') / 60)), 0)
+        };
+
+        const tsStats = {
+          total: tsData.length,
+          hours: tsData.reduce((acc: number, cur: any) => acc + (parseFloat(cur.hours) || 0), 0),
+          projects: new Set(tsData.map((t: any) => t.project).filter(Boolean)).size,
+          activities: tsData.length
+        };
+
+        const leaveStats = {
+          total: enrichedLeaves.length,
+          approved: enrichedLeaves.filter((l: any) => l.mappedStatus === 'Approved' || l.docstatus === 1).length,
+          pending: enrichedLeaves.filter((l: any) => l.mappedStatus === 'Pending' || (l.mappedStatus !== 'Rejected' && l.docstatus === 0)).length,
+          rejected: enrichedLeaves.filter((l: any) => l.mappedStatus === 'Rejected' || l.docstatus === 2).length
+        };
+
+        const assetStats = {
+          total: assets.data.length,
+          active: assets.data.filter((ass: any) => !ass.returned_on).length,
+          returned: assets.data.filter((ass: any) => ass.returned_on).length
+        };
+
+        const salaryStats = {
+          total: salariesData.data.length,
+          totalNet: salariesData.data.reduce((acc: number, cur: any) => acc + (parseFloat(cur.grand_net_pay) || 0), 0)
+        };
+
+        const dailyLogStats = {
+          total: (dailylogsData.data || []).length,
+          totalHours: (dailylogsData.data || []).reduce((acc: number, cur: any) => acc + (parseFloat(cur.total_work_hours) || 0), 0)
+        };
+
+        setStats({
+          attendance: attStats,
+          timesheets: tsStats,
+          leaves: leaveStats,
+          assets: assetStats,
+          salaries: salaryStats,
+          dailylogs: dailyLogStats
+        });
+
+        console.log('--- STATS SUMMARY ---', { attendance: attStats, timesheets: tsStats, leaves: leaveStats, assets: assetStats });
+      }
 
     } catch (error) {
       console.error('Failed to fetch employee report details:', error);
     } finally {
-      setLoading(false);
+      if (isMounted.current) setLoading(false);
     }
-  };
+  }, [employeeId, attMeta, leaveMeta]);
 
   useEffect(() => {
-    getHRSettings().then(setHRSettings).catch(console.error);
+    getHRSettings().then(res => {
+      if (isMounted.current) setHRSettings(res);
+    }).catch(console.error);
   }, []);
 
   useEffect(() => {
     if (open && employeeId) {
       fetchData();
     } else {
+      if (isMounted.current) {
         setEmployee(null);
         setCurrentTab('details');
+      }
     }
-  }, [open, employeeId]);
+  }, [open, employeeId, fetchData]);
 
   const handleChangeTab = (event: React.SyntheticEvent, newValue: string) => {
     setCurrentTab(newValue);
@@ -194,7 +342,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
         },
       }}
     >
-      <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+      <DialogTitle component="div" sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
         <Typography variant="h6">Employee Overall Report - {employee?.employee_name || 'Loading...'}</Typography>
         <IconButton onClick={onClose}>
           <Iconify icon="mingcute:close-line" />
@@ -212,9 +360,11 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
       >
         <Tab label="Employee Details" value="details" />
         <Tab label="Attendance" value="attendance" />
+        <Tab label="Daily Log" value="dailylog" />
         <Tab label="Timesheets" value="timesheets" />
         <Tab label="Leave Applications" value="leaves" />
         <Tab label="Assigned Assets" value="assets" />
+        <Tab label="Salary Slips" value="salaries" />
       </Tabs>
 
       <DialogContent sx={{ p: 3, minHeight: 400 }}>
@@ -318,7 +468,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                 {/* Financial Summary */}
                 <Box>
                   <SectionHeader title="Financial Summary" icon="solar:wallet-money-bold" />
-                  
+
                   {/* CTC Card */}
                   <Box sx={{ p: 3, mb: 3, borderRadius: 2, bgcolor: (t: any) => t.palette.mode === 'light' ? 'grey.50' : 'grey.900', border: (t: any) => `1px solid ${t.palette.divider}` }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -402,14 +552,13 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
 
             {currentTab === 'attendance' && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(6, 1fr)' } }}>
-                  <SummaryCard label="Total Days" value={stats.attendance.total} icon="solar:calendar-bold" color="info" />
-                  <SummaryCard label="Present" value={stats.attendance.present} icon="solar:check-circle-bold" color="success" />
-                  <SummaryCard label="Absent" value={stats.attendance.absent} icon="solar:close-circle-bold" color="error" />
-                  <SummaryCard label="Leaves" value={stats.attendance.leaves} icon="solar:palm-tree-bold" color="warning" />
-                  <SummaryCard label="Late Entries" value={stats.attendance.late} icon="solar:clock-circle-bold" color="error" />
-                  <SummaryCard label="Working Hours" value={`${stats.attendance.workingHours.toFixed(1)}h`} icon="solar:stopwatch-bold" color="secondary" />
-                </Box>
+                  <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(5, 1fr)' } }}>
+                    <SummaryCard label="Total Days" value={stats.attendance.total} icon="solar:calendar-bold" color="info" />
+                    <SummaryCard label="Present" value={stats.attendance.present} icon="solar:check-circle-bold" color="success" />
+                    <SummaryCard label="Absent" value={stats.attendance.absent} icon="solar:close-circle-bold" color="error" />
+                    <SummaryCard label="Leaves" value={stats.attendance.leaves} icon="solar:palm-tree-bold" color="warning" />
+                    <SummaryCard label="Working Hours" value={`${stats.attendance.workingHours.toFixed(1)}h`} icon="solar:stopwatch-bold" color="secondary" />
+                  </Box>
 
                 <Card sx={{ p: 2, border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>Attendance Records</Typography>
@@ -421,10 +570,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                           <TableCell>Status</TableCell>
                           <TableCell>In Time</TableCell>
                           <TableCell>Out Time</TableCell>
-                          <TableCell>Late Entry</TableCell>
-                          <TableCell>Early Exit</TableCell>
                           <TableCell>Working Hours</TableCell>
-                          <TableCell>Shift</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -437,12 +583,9 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                                   {att.status}
                                 </Label>
                               </TableCell>
-                              <TableCell>{att.in_time ? att.in_time.split(' ')[1] : '-'}</TableCell>
-                              <TableCell>{att.out_time ? att.out_time.split(' ')[1] : '-'}</TableCell>
-                              <TableCell>{att.late_entry ? <Label color="error" variant="soft">Yes</Label> : '-'}</TableCell>
-                              <TableCell>{att.early_exit ? <Label color="error" variant="soft">Yes</Label> : '-'}</TableCell>
-                              <TableCell>{att.working_hours ? `${att.working_hours} hrs` : '-'}</TableCell>
-                              <TableCell>{att.shift || '-'}</TableCell>
+                              <TableCell>{att.in_time || '-'}</TableCell>
+                              <TableCell>{att.out_time || '-'}</TableCell>
+                              <TableCell>{att.working_hours_display || '-'}</TableCell>
                             </TableRow>
                           ))
                         ) : (
@@ -470,24 +613,29 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                     <Table size="small" stickyHeader>
                       <TableHead sx={{ bgcolor: 'background.neutral' }}>
                         <TableRow>
-                          <TableCell>Date</TableCell>
-                          <TableCell>Total Hours</TableCell>
-                          <TableCell>Status</TableCell>
-                          <TableCell>Parent Project</TableCell>
-                          <TableCell>Notes</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Project</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Activity Type</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Hours</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {records.timesheets.length > 0 ? (
-                          records.timesheets.map((ts: any) => (
-                            <TableRow key={ts.name}>
-                              <TableCell>{fDate(ts.timesheet_date)}</TableCell>
-                              <TableCell>{ts.total_hours} hrs</TableCell>
-                              <TableCell><Label color={ts.status === 'Submitted' ? 'success' : 'warning'}>{ts.status}</Label></TableCell>
-                              <TableCell>{ts.parent_project || '-'}</TableCell>
-                              <TableCell sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ts.notes || '-'}</TableCell>
-                            </TableRow>
-                          ))
+                          records.timesheets.map((ts: any, index: number) => {
+                            const showDate = index === 0 || fDate(ts.timesheet_date) !== fDate(records.timesheets[index - 1].timesheet_date);
+                            return (
+                              <TableRow key={index}>
+                                <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                  {showDate ? fDate(ts.timesheet_date) : ''}
+                                </TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>{ts.project || '-'}</TableCell>
+                                <TableCell>{ts.activity_type || '-'}</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: 'primary.main' }}>{ts.hours} hrs</TableCell>
+                                <TableCell sx={{ maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ts.description || '-'}</TableCell>
+                              </TableRow>
+                            );
+                          })
                         ) : (
                           <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}>No timesheets found</TableCell></TableRow>
                         )}
@@ -523,16 +671,33 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                       </TableHead>
                       <TableBody>
                         {records.leaves.length > 0 ? (
-                          records.leaves.map((l: any) => (
-                            <TableRow key={l.name}>
-                              <TableCell>{l.leave_type}</TableCell>
-                              <TableCell>{fDate(l.from_date)}</TableCell>
-                              <TableCell>{fDate(l.to_date)}</TableCell>
-                              <TableCell>{l.total_leave_days} days</TableCell>
-                              <TableCell><Label variant="soft" color={(l.status === 'Approved' && 'success') || (l.status === 'Rejected' && 'error') || 'warning'}>{l.status}</Label></TableCell>
-                              <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.reason || '-'}</TableCell>
-                            </TableRow>
-                          ))
+                          records.leaves.map((l: any) => {
+                            console.log('TABLE LEAVE ROW:', l);
+
+                            const totalDays = l.total_days || l.total_leave_days || (l.from_date && l.to_date ? dayjs(l.to_date).diff(dayjs(l.from_date), 'day') + 1 : 0);
+                            const status = l.mappedStatus || '-';
+                            const reason = l.mappedReason || '-';
+
+                            return (
+                              <TableRow key={l.name}>
+                                <TableCell>{l.leave_type}</TableCell>
+                                <TableCell>{fDate(l.from_date)}</TableCell>
+                                <TableCell>{fDate(l.to_date)}</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold' }}>{totalDays}</TableCell>
+                                <TableCell>
+                                  <Label
+                                    variant="soft"
+                                    color={(status === 'Approved' && 'success') || (status === 'Rejected' && 'error') || (['Pending', 'Open'].includes(status) && 'warning') || 'default'}
+                                  >
+                                    {status}
+                                  </Label>
+                                </TableCell>
+                                <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {reason}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
                         ) : (
                           <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>No leave applications found</TableCell></TableRow>
                         )}
@@ -584,6 +749,103 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                 </Card>
               </Box>
             )}
+
+            {currentTab === 'salaries' && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(2, 1fr)' } }}>
+                  <SummaryCard label="Total Slips" value={stats.salaries.total} icon="solar:file-text-bold" color="info" />
+                  <SummaryCard 
+                    label="Total Net Paid" 
+                    value={`${hrSettings.currency_symbol}${fNumber(stats.salaries.totalNet, { locale: hrSettings.default_locale })}`} 
+                    icon="solar:wallet-money-bold" 
+                    color="success" 
+                  />
+                </Box>
+
+                <Card sx={{ p: 2, border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>Salary Slips History</Typography>
+                  <TableContainer sx={{ maxHeight: 500 }}>
+                    <Table size="small" stickyHeader>
+                      <TableHead sx={{ bgcolor: 'background.neutral' }}>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700 }}>Slip ID</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Period</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Gross Pay</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Net Pay</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {records.salaries.length > 0 ? (
+                          records.salaries.map((s: any) => (
+                            <TableRow key={s.name}>
+                              <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{s.name}</TableCell>
+                              <TableCell>{fDate(s.pay_period_start)} - {fDate(s.pay_period_end)}</TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>{hrSettings.currency_symbol}{fNumber(s.grand_gross_pay, { locale: hrSettings.default_locale })}</TableCell>
+                              <TableCell sx={{ fontWeight: 800, color: 'success.main' }}>{hrSettings.currency_symbol}{fNumber(s.grand_net_pay, { locale: hrSettings.default_locale })}</TableCell>
+                              <TableCell>
+                                <Label color={s.docstatus === 1 ? 'success' : 'warning'}>
+                                  {s.docstatus === 1 ? 'Submitted' : 'Draft'}
+                                </Label>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}>No salary slips found</TableCell></TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Card>
+              </Box>
+            )}
+
+            {currentTab === 'dailylog' && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(2, 1fr)' } }}>
+                  <SummaryCard label="Total Logs" value={stats.dailylogs.total} icon="solar:clipboard-list-bold" color="info" />
+                  <SummaryCard label="Total Work Hours" value={`${stats.dailylogs.totalHours.toFixed(1)}h`} icon="solar:clock-circle-bold" color="warning" />
+                </Box>
+
+                <Card sx={{ p: 2, border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>Daily Activity Logs</Typography>
+                  <TableContainer sx={{ maxHeight: 500 }}>
+                    <Table size="small" stickyHeader>
+                      <TableHead sx={{ bgcolor: 'background.neutral' }}>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Login</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Logout</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Work Hours</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Break Hours</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {records.dailylogs.length > 0 ? (
+                          records.dailylogs.map((log: any) => (
+                            <TableRow key={log.name}>
+                              <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{fDate(log.login_date)}</TableCell>
+                              <TableCell>{log.login_time ? dayjs(log.login_time).format('HH:mm:ss') : '--:--'}</TableCell>
+                              <TableCell>{log.logout_time ? dayjs(log.logout_time).format('HH:mm:ss') : '--:--'}</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{log.total_work_hours?.toFixed(2) || '0.00'}h</TableCell>
+                              <TableCell>{log.total_break_hours?.toFixed(2) || '0.00'}h</TableCell>
+                              <TableCell>
+                                <Label color={log.status === 'Active' ? 'success' : 'error'} variant="soft">
+                                  {log.status}
+                                </Label>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>No daily logs found</TableCell></TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Card>
+              </Box>
+            )}
           </>
         )}
       </DialogContent>
@@ -593,42 +855,42 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
 
 function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: string, noMargin?: boolean }) {
   return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
-          <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              {title}
-          </Typography>
-      </Box>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
+      <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
+      <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        {title}
+      </Typography>
+    </Box>
   );
 }
 
 function ProfileDetailItem({ label, value, icon, color = 'text.primary' }: { label: string; value?: string | null; icon: string; color?: string }) {
   return (
-      <Box>
-          <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
-              {label}
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
-              <Typography variant="body2" sx={{ fontWeight: 700, color }}>
-                  {value || '-'}
-              </Typography>
-          </Box>
+    <Box>
+      <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
+        {label}
+      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
+        <Typography variant="body2" sx={{ fontWeight: 700, color }}>
+          {value || '-'}
+        </Typography>
       </Box>
+    </Box>
   );
 }
 
 function SalaryItem({ label, value, hrSettings }: { label: string; value?: string | number | null, hrSettings: any }) {
   return (
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-              {label}
-          </Typography>
-          <Typography variant="body2" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center' }}>
-              <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mr: 0.5, fontSize: '0.9em', color: 'text.primary' }}>{hrSettings.currency_symbol}</Box>
-              {value ? fNumber(parseFloat(value.toString()), { locale: hrSettings.default_locale }) : '-'}
-          </Typography>
-      </Box>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+        {label}
+      </Typography>
+      <Typography variant="body2" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center' }}>
+        <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mr: 0.5, fontSize: '0.9em', color: 'text.primary' }}>{hrSettings.currency_symbol}</Box>
+        {value ? fNumber(parseFloat(value.toString()), { locale: hrSettings.default_locale }) : '-'}
+      </Typography>
+    </Box>
   );
 }
 
@@ -637,24 +899,24 @@ function SummaryCard({ label, value, icon, color }: { label: string; value: stri
   const mainColor = (theme.palette as any)[color]?.main || theme.palette.primary.main;
 
   return (
-    <Card sx={{ 
-      p: 2, 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: 2, 
-      boxShadow: 'none', 
+    <Card sx={{
+      p: 2,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 2,
+      boxShadow: 'none',
       border: `1px solid ${alpha(mainColor, 0.2)}`,
       bgcolor: alpha(mainColor, 0.05)
     }}>
-      <Box sx={{ 
-        width: 48, 
-        height: 48, 
-        borderRadius: 1.5, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        bgcolor: mainColor, 
-        color: 'white' 
+      <Box sx={{
+        width: 48,
+        height: 48,
+        borderRadius: 1.5,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: mainColor,
+        color: 'white'
       }}>
         <Iconify icon={icon as any} width={24} />
       </Box>

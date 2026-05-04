@@ -30,10 +30,16 @@ export const fetchEmployees = (params: any) => {
         ["Employee", "status", "like", `%${search}%`],
     ] : undefined;
 
+    // Merge search-based or_filters with any existing or_filters from params
+    const combined_or_filters = [
+        ...(params.or_filters || []),
+        ...(or_filters || [])
+    ];
+
     return fetchFrappeList("Employee", {
         ...restParams,
-        search: undefined, // Remove search param since we're using or_filters
-        or_filters
+        search: undefined,
+        or_filters: combined_or_filters.length > 0 ? combined_or_filters : undefined
     });
 };
 

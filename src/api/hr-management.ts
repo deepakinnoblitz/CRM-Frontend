@@ -46,9 +46,12 @@ export async function fetchFrappeList(doctype: string, params: {
         order_by: orderByParam
     });
 
+    const fullUrl = `/api/method/frappe.client.get_list?${query.toString()}`;
+    console.log(`[API] Fetching ${doctype}: ${fullUrl}`);
+
     // Fetch data and count in parallel
     const [res, countRes] = await Promise.all([
-        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(fullUrl),
         frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=${doctype}&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${params.or_filters ? encodeURIComponent(JSON.stringify(params.or_filters)) : "[]"}`)
     ]);
 
