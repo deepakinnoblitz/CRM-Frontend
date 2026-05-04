@@ -22,14 +22,14 @@ import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { frappeRequest } from 'src/utils/csrf';
 import { fDate } from 'src/utils/format-time';
+import { frappeRequest } from 'src/utils/csrf';
 import { fNumber } from 'src/utils/format-number';
 
-import { getEmployee } from 'src/api/employees';
 import { runReport } from 'src/api/reports';
-import { getHRSettings, fetchFrappeList } from 'src/api/hr-management';
+import { getEmployee } from 'src/api/employees';
 import { fetchDetailedSessions } from 'src/api/presence-log';
+import { getHRSettings, fetchFrappeList } from 'src/api/hr-management';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -133,10 +133,10 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
       console.log('Using Filter ID:', filterId);
 
       // Construct Leave fields dynamically
-      let leaveFields = ['name', 'employee', 'leave_type', 'from_date', 'to_date', 'total_days', 'docstatus', 'workflow_state'];
+      const leaveFields = ['name', 'employee', 'leave_type', 'from_date', 'to_date', 'total_days', 'docstatus', 'workflow_state'];
 
       // Construct Attendance fields dynamically
-      let attFields = ['name', 'employee', 'attendance_date'];
+      const attFields = ['name', 'employee', 'attendance_date'];
       if (attMeta.length > 0) {
         const fieldnames = attMeta.map(f => f.fieldname);
         if (fieldnames.includes('status')) attFields.push('status');
