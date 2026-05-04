@@ -20,6 +20,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
+import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { fDate } from 'src/utils/format-time';
@@ -79,6 +80,13 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
     salaries: { total: 0, totalNet: 0 },
     dailylogs: { total: 0, totalHours: 0 }
   });
+
+  const [pgAttendance, setPgAttendance] = useState({ page: 0, rowsPerPage: 10 });
+  const [pgDailyLogs, setPgDailyLogs] = useState({ page: 0, rowsPerPage: 10 });
+  const [pgTimesheets, setPgTimesheets] = useState({ page: 0, rowsPerPage: 10 });
+  const [pgLeaves, setPgLeaves] = useState({ page: 0, rowsPerPage: 10 });
+  const [pgAssets, setPgAssets] = useState({ page: 0, rowsPerPage: 10 });
+  const [pgSalaries, setPgSalaries] = useState({ page: 0, rowsPerPage: 10 });
 
   const isMounted = useRef(false);
 
@@ -147,7 +155,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
 
       // Parallel Fetch for all modules
       console.log('Executing Parallel Requests...');
-      const [attendanceData, timesheetReport, leaves, assets, checkinsData, salariesData, dailylogsData] = await Promise.all([
+      const [attendanceData, timesheetReport, leaves, assets, salariesData, dailylogsData] = await Promise.all([
         fetchFrappeList('Attendance', {
           page: 1,
           page_size: 1000,
@@ -167,12 +175,6 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
           filters: [['assigned_to', '=', filterId]],
           fields: ['name', 'asset_name', 'assigned_on', 'returned_on'],
         }),
-        fetchFrappeList('Employee Checkin', {
-          page: 1,
-          page_size: 2000,
-          filters: [['employee', '=', filterId]],
-          fields: ['name', 'employee', 'time', 'log_type', 'attendance'],
-        }).catch(() => ({ data: [], total: 0 })),
         fetchFrappeList('Salary Slip', {
           page: 1,
           page_size: 1000,
@@ -225,18 +227,12 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
         .sort((a: any, b: any) => (b.timesheet_date || '').localeCompare(a.timesheet_date || ''));
 
       if (isMounted.current) {
-        const enrichedAttendance = attendanceData.data.map((att: any) => {
-          const attCheckins = (checkinsData?.data || []).filter((c: any) => c.attendance === att.name || (c.employee === att.employee && dayjs(c.time).format('YYYY-MM-DD') === att.attendance_date));
-          const inCheckins = attCheckins.filter((c: any) => c.log_type === 'IN').sort((a: any, b: any) => dayjs(a.time).diff(dayjs(b.time)));
-          const outCheckins = attCheckins.filter((c: any) => c.log_type === 'OUT').sort((a: any, b: any) => dayjs(a.time).diff(dayjs(b.time)));
-
-          return {
-            ...att,
-            in_time: att.in_time || (inCheckins.length > 0 ? inCheckins[0].time : '-'),
-            out_time: att.out_time || (outCheckins.length > 0 ? outCheckins[outCheckins.length - 1].time : '-'),
-            working_hours_display: att.working_hours_display || '-',
-          };
-        });
+        const enrichedAttendance = attendanceData.data.map((att: any) => ({
+          ...att,
+          in_time: att.in_time || '-',
+          out_time: att.out_time || '-',
+          working_hours_display: att.working_hours_display || '-',
+        }));
 
         setRecords({
           timesheets: tsData,
@@ -312,12 +308,24 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
   }, []);
 
   useEffect(() => {
+    const resetPagination = () => {
+      const defaultState = { page: 0, rowsPerPage: 10 };
+      setPgAttendance(defaultState);
+      setPgDailyLogs(defaultState);
+      setPgTimesheets(defaultState);
+      setPgLeaves(defaultState);
+      setPgAssets(defaultState);
+      setPgSalaries(defaultState);
+    };
+
     if (open && employeeId) {
+      resetPagination();
       fetchData();
     } else {
       if (isMounted.current) {
         setEmployee(null);
         setCurrentTab('details');
+        resetPagination();
       }
     }
   }, [open, employeeId, fetchData]);
@@ -335,8 +343,8 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
       PaperProps={{
         sx: {
           width: '90vw',
-          maxWidth: '1200px',
-          height: '85vh',
+          maxWidth: '1500px',
+          height: '95vh',
           display: 'flex',
           flexDirection: 'column',
         },
@@ -375,9 +383,9 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
         ) : (
           <>
             {currentTab === 'details' && employee && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {/* Header Info */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                <Box sx={{ p: 3, borderRadius: 2, bgcolor: (t: any) => alpha(t.palette.primary.main, 0.03), display: 'flex', alignItems: 'center', gap: 3 }}>
                   <Avatar
                     src={employee.profile_picture || ''}
                     alt={employee.employee_name}
@@ -410,7 +418,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                 <Divider sx={{ borderStyle: 'dashed' }} />
 
                 {/* Contact Information */}
-                <Box>
+                <Box sx={{ p: 3, borderRadius: 2, border: (t: any) => `1px solid ${t.palette.divider}` }}>
                   <SectionHeader title="Contact Information" icon="solar:phone-calling-bold" />
                   <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' } }}>
                     <ProfileDetailItem label="Official Email" value={employee.email} icon="solar:letter-bold" />
@@ -424,7 +432,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                 <Divider sx={{ borderStyle: 'dashed' }} />
 
                 {/* Employment Details */}
-                <Box>
+                <Box sx={{ p: 3, borderRadius: 2, border: (t: any) => `1px solid ${t.palette.divider}` }}>
                   <SectionHeader title="Employment Details" icon="solar:case-bold" />
                   <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' } }}>
                     <ProfileDetailItem label="Department" value={employee.department} icon="solar:buildings-bold" />
@@ -439,7 +447,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                 <Divider sx={{ borderStyle: 'dashed' }} />
 
                 {/* Location Details */}
-                <Box>
+                <Box sx={{ p: 3, borderRadius: 2, border: (t: any) => `1px solid ${t.palette.divider}` }}>
                   <SectionHeader title="Location Details" icon="solar:earth-bold" />
                   <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' } }}>
                     <ProfileDetailItem label="Country" value={employee.country} icon="solar:earth-bold" />
@@ -453,7 +461,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                 <Divider sx={{ borderStyle: 'dashed' }} />
 
                 {/* Bank & Identification */}
-                <Box>
+                <Box sx={{ p: 3, borderRadius: 2, border: (t: any) => `1px solid ${t.palette.divider}` }}>
                   <SectionHeader title="Bank & Identification" icon="solar:card-bold" />
                   <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' } }}>
                     <ProfileDetailItem label="Bank Name" value={employee.bank_name} icon="solar:buildings-bold" />
@@ -466,7 +474,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                 <Divider sx={{ borderStyle: 'dashed' }} />
 
                 {/* Financial Summary */}
-                <Box>
+                <Box sx={{ p: 3, borderRadius: 2, border: (t: any) => `1px solid ${t.palette.divider}` }}>
                   <SectionHeader title="Financial Summary" icon="solar:wallet-money-bold" />
 
                   {/* CTC Card */}
@@ -552,48 +560,57 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
 
             {currentTab === 'attendance' && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(5, 1fr)' } }}>
+                  <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' } }}>
                     <SummaryCard label="Total Days" value={stats.attendance.total} icon="solar:calendar-bold" color="info" />
                     <SummaryCard label="Present" value={stats.attendance.present} icon="solar:check-circle-bold" color="success" />
                     <SummaryCard label="Absent" value={stats.attendance.absent} icon="solar:close-circle-bold" color="error" />
-                    <SummaryCard label="Leaves" value={stats.attendance.leaves} icon="solar:palm-tree-bold" color="warning" />
                     <SummaryCard label="Working Hours" value={`${stats.attendance.workingHours.toFixed(1)}h`} icon="solar:stopwatch-bold" color="secondary" />
                   </Box>
 
-                <Card sx={{ p: 2, border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>Attendance Records</Typography>
-                  <TableContainer sx={{ maxHeight: 500 }}>
-                    <Table size="small" stickyHeader>
-                      <TableHead sx={{ bgcolor: 'background.neutral' }}>
-                        <TableRow>
-                          <TableCell>Date</TableCell>
-                          <TableCell>Status</TableCell>
-                          <TableCell>In Time</TableCell>
-                          <TableCell>Out Time</TableCell>
-                          <TableCell>Working Hours</TableCell>
+                <Card sx={{ border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
+                  <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                    <Table size="medium" stickyHeader sx={{ borderCollapse: 'collapse' }}>
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: '#f4f6f8' }}>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>In Time</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Out Time</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Working Hours</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {records.attendance.length > 0 ? (
-                          records.attendance.map((att: any) => (
-                            <TableRow key={att.name}>
-                              <TableCell>{fDate(att.attendance_date)}</TableCell>
-                              <TableCell>
-                                <Label color={(att.status === 'Present' && 'success') || (att.status === 'Absent' && 'error') || 'warning'}>
-                                  {att.status}
-                                </Label>
-                              </TableCell>
-                              <TableCell>{att.in_time || '-'}</TableCell>
-                              <TableCell>{att.out_time || '-'}</TableCell>
-                              <TableCell>{att.working_hours_display || '-'}</TableCell>
-                            </TableRow>
-                          ))
+                          records.attendance
+                            .slice(pgAttendance.page * pgAttendance.rowsPerPage, pgAttendance.page * pgAttendance.rowsPerPage + pgAttendance.rowsPerPage)
+                            .map((att: any) => (
+                              <TableRow key={att.name}>
+                                <TableCell>{fDate(att.attendance_date)}</TableCell>
+                                <TableCell>
+                                  <Label color={(att.status === 'Present' && 'success') || (att.status === 'Absent' && 'error') || 'warning'}>
+                                    {att.status}
+                                  </Label>
+                                </TableCell>
+                                <TableCell>{att.in_time || '-'}</TableCell>
+                                <TableCell>{att.out_time || '-'}</TableCell>
+                                <TableCell>{att.working_hours_display || '-'}</TableCell>
+                              </TableRow>
+                            ))
                         ) : (
-                          <TableRow><TableCell colSpan={8} align="center" sx={{ py: 3 }}>No attendance records found</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}>No attendance records found</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
                   </TableContainer>
+                  <TablePagination
+                    rowsPerPageOptions={[5, 10, 25]}
+                    component="div"
+                    count={records.attendance.length}
+                    rowsPerPage={pgAttendance.rowsPerPage}
+                    page={pgAttendance.page}
+                    onPageChange={(e, newPage) => setPgAttendance({ ...pgAttendance, page: newPage })}
+                    onRowsPerPageChange={(e) => setPgAttendance({ page: 0, rowsPerPage: parseInt(e.target.value, 10) })}
+                  />
                 </Card>
               </Box>
             )}
@@ -607,41 +624,52 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                   <SummaryCard label="Activities" value={stats.timesheets.activities} icon="solar:running-bold" color="secondary" />
                 </Box>
 
-                <Card sx={{ p: 2, border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>Timesheets</Typography>
-                  <TableContainer sx={{ maxHeight: 500 }}>
-                    <Table size="small" stickyHeader>
-                      <TableHead sx={{ bgcolor: 'background.neutral' }}>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Project</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Activity Type</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Hours</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
+                <Card sx={{ border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
+                  <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                    <Table size="medium" stickyHeader sx={{ borderCollapse: 'collapse' }}>
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: '#f4f6f8' }}>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Project</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Activity Type</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Hours</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Description</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {records.timesheets.length > 0 ? (
-                          records.timesheets.map((ts: any, index: number) => {
-                            const showDate = index === 0 || fDate(ts.timesheet_date) !== fDate(records.timesheets[index - 1].timesheet_date);
-                            return (
-                              <TableRow key={index}>
-                                <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                                  {showDate ? fDate(ts.timesheet_date) : ''}
-                                </TableCell>
-                                <TableCell sx={{ fontWeight: 600 }}>{ts.project || '-'}</TableCell>
-                                <TableCell>{ts.activity_type || '-'}</TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: 'primary.main' }}>{ts.hours} hrs</TableCell>
-                                <TableCell sx={{ maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ts.description || '-'}</TableCell>
-                              </TableRow>
-                            );
-                          })
+                          records.timesheets
+                            .slice(pgTimesheets.page * pgTimesheets.rowsPerPage, pgTimesheets.page * pgTimesheets.rowsPerPage + pgTimesheets.rowsPerPage)
+                            .map((ts: any, index: number) => {
+                              const globalIndex = pgTimesheets.page * pgTimesheets.rowsPerPage + index;
+                              const showDate = index === 0 || fDate(ts.timesheet_date) !== fDate(records.timesheets[globalIndex - 1].timesheet_date);
+                              return (
+                                <TableRow key={index}>
+                                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                    {showDate ? fDate(ts.timesheet_date) : ''}
+                                  </TableCell>
+                                  <TableCell sx={{ fontWeight: 600 }}>{ts.project || '-'}</TableCell>
+                                  <TableCell>{ts.activity_type || '-'}</TableCell>
+                                  <TableCell sx={{ fontWeight: 800, color: 'primary.main' }}>{ts.hours} hrs</TableCell>
+                                  <TableCell sx={{ maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ts.description || '-'}</TableCell>
+                                </TableRow>
+                              );
+                            })
                         ) : (
                           <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}>No timesheets found</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
                   </TableContainer>
+                  <TablePagination
+                    rowsPerPageOptions={[5, 10, 25]}
+                    component="div"
+                    count={records.timesheets.length}
+                    rowsPerPage={pgTimesheets.rowsPerPage}
+                    page={pgTimesheets.page}
+                    onPageChange={(e, newPage) => setPgTimesheets({ ...pgTimesheets, page: newPage })}
+                    onRowsPerPageChange={(e) => setPgTimesheets({ page: 0, rowsPerPage: parseInt(e.target.value, 10) })}
+                  />
                 </Card>
               </Box>
             )}
@@ -655,55 +683,63 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                   <SummaryCard label="Rejected" value={stats.leaves.rejected} icon="solar:close-circle-bold" color="error" />
                 </Box>
 
-                <Card sx={{ p: 2, border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>Leave Applications</Typography>
-                  <TableContainer sx={{ maxHeight: 500 }}>
-                    <Table size="small" stickyHeader>
-                      <TableHead sx={{ bgcolor: 'background.neutral' }}>
-                        <TableRow>
-                          <TableCell>Leave Type</TableCell>
-                          <TableCell>From Date</TableCell>
-                          <TableCell>To Date</TableCell>
-                          <TableCell>Total Days</TableCell>
-                          <TableCell>Status</TableCell>
-                          <TableCell>Reason</TableCell>
+                <Card sx={{ border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
+                  <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                    <Table size="medium" stickyHeader sx={{ borderCollapse: 'collapse' }}>
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: '#f4f6f8' }}>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Leave Type</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>From Date</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>To Date</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Total Days</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Reason</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {records.leaves.length > 0 ? (
-                          records.leaves.map((l: any) => {
-                            console.log('TABLE LEAVE ROW:', l);
+                          records.leaves
+                            .slice(pgLeaves.page * pgLeaves.rowsPerPage, pgLeaves.page * pgLeaves.rowsPerPage + pgLeaves.rowsPerPage)
+                            .map((l: any) => {
+                              const totalDays = l.total_days || l.total_leave_days || (l.from_date && l.to_date ? dayjs(l.to_date).diff(dayjs(l.from_date), 'day') + 1 : 0);
+                              const status = l.mappedStatus || '-';
+                              const reason = l.mappedReason || '-';
 
-                            const totalDays = l.total_days || l.total_leave_days || (l.from_date && l.to_date ? dayjs(l.to_date).diff(dayjs(l.from_date), 'day') + 1 : 0);
-                            const status = l.mappedStatus || '-';
-                            const reason = l.mappedReason || '-';
-
-                            return (
-                              <TableRow key={l.name}>
-                                <TableCell>{l.leave_type}</TableCell>
-                                <TableCell>{fDate(l.from_date)}</TableCell>
-                                <TableCell>{fDate(l.to_date)}</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>{totalDays}</TableCell>
-                                <TableCell>
-                                  <Label
-                                    variant="soft"
-                                    color={(status === 'Approved' && 'success') || (status === 'Rejected' && 'error') || (['Pending', 'Open'].includes(status) && 'warning') || 'default'}
-                                  >
-                                    {status}
-                                  </Label>
-                                </TableCell>
-                                <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {reason}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })
+                              return (
+                                <TableRow key={l.name}>
+                                  <TableCell>{l.leave_type}</TableCell>
+                                  <TableCell>{fDate(l.from_date)}</TableCell>
+                                  <TableCell>{fDate(l.to_date)}</TableCell>
+                                  <TableCell sx={{ fontWeight: 'bold' }}>{totalDays}</TableCell>
+                                  <TableCell>
+                                    <Label
+                                      variant="soft"
+                                      color={(status === 'Approved' && 'success') || (status === 'Rejected' && 'error') || (['Pending', 'Open'].includes(status) && 'warning') || 'default'}
+                                    >
+                                      {status}
+                                    </Label>
+                                  </TableCell>
+                                  <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {reason}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })
                         ) : (
                           <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>No leave applications found</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
                   </TableContainer>
+                  <TablePagination
+                    rowsPerPageOptions={[5, 10, 25]}
+                    component="div"
+                    count={records.leaves.length}
+                    rowsPerPage={pgLeaves.rowsPerPage}
+                    page={pgLeaves.page}
+                    onPageChange={(e, newPage) => setPgLeaves({ ...pgLeaves, page: newPage })}
+                    onRowsPerPageChange={(e) => setPgLeaves({ page: 0, rowsPerPage: parseInt(e.target.value, 10) })}
+                  />
                 </Card>
               </Box>
             )}
@@ -716,36 +752,46 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                   <SummaryCard label="Returned Assets" value={stats.assets.returned} icon="solar:backspace-bold" color="warning" />
                 </Box>
 
-                <Card sx={{ p: 2, border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>Assigned Assets</Typography>
-                  <TableContainer sx={{ maxHeight: 500 }}>
-                    <Table size="small" stickyHeader>
-                      <TableHead sx={{ bgcolor: 'background.neutral' }}>
-                        <TableRow>
-                          <TableCell>Asset Name</TableCell>
-                          <TableCell>Asset Category</TableCell>
-                          <TableCell>Serial Number</TableCell>
-                          <TableCell>Assigned On</TableCell>
-                          <TableCell>Status</TableCell>
+                <Card sx={{ border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
+                  <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                    <Table size="medium" stickyHeader sx={{ borderCollapse: 'collapse' }}>
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: '#f4f6f8' }}>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Asset Name</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Asset Category</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Serial Number</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Assigned On</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {records.assets.length > 0 ? (
-                          records.assets.map((a: any) => (
-                            <TableRow key={a.name}>
-                              <TableCell>{a.asset_name}</TableCell>
-                              <TableCell>{a.asset_category || '-'}</TableCell>
-                              <TableCell>{a.serial_no || '-'}</TableCell>
-                              <TableCell>{fDate(a.assigned_on)}</TableCell>
-                              <TableCell><Label color={a.returned_on ? 'warning' : 'info'}>{a.returned_on ? 'Returned' : 'Active'}</Label></TableCell>
-                            </TableRow>
-                          ))
+                          records.assets
+                            .slice(pgAssets.page * pgAssets.rowsPerPage, pgAssets.page * pgAssets.rowsPerPage + pgAssets.rowsPerPage)
+                            .map((a: any) => (
+                              <TableRow key={a.name}>
+                                <TableCell>{a.asset_name}</TableCell>
+                                <TableCell>{a.asset_category || '-'}</TableCell>
+                                <TableCell>{a.serial_no || '-'}</TableCell>
+                                <TableCell>{fDate(a.assigned_on)}</TableCell>
+                                <TableCell><Label color={a.returned_on ? 'warning' : 'info'}>{a.returned_on ? 'Returned' : 'Active'}</Label></TableCell>
+                              </TableRow>
+                            ))
                         ) : (
                           <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}>No assets assigned</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
                   </TableContainer>
+                  <TablePagination
+                    rowsPerPageOptions={[5, 10, 25]}
+                    component="div"
+                    count={records.assets.length}
+                    rowsPerPage={pgAssets.rowsPerPage}
+                    page={pgAssets.page}
+                    onPageChange={(e, newPage) => setPgAssets({ ...pgAssets, page: newPage })}
+                    onRowsPerPageChange={(e) => setPgAssets({ page: 0, rowsPerPage: parseInt(e.target.value, 10) })}
+                  />
                 </Card>
               </Box>
             )}
@@ -762,40 +808,50 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                   />
                 </Box>
 
-                <Card sx={{ p: 2, border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>Salary Slips History</Typography>
-                  <TableContainer sx={{ maxHeight: 500 }}>
-                    <Table size="small" stickyHeader>
-                      <TableHead sx={{ bgcolor: 'background.neutral' }}>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 700 }}>Slip ID</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Period</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Gross Pay</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Net Pay</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                <Card sx={{ border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
+                  <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                    <Table size="medium" stickyHeader sx={{ borderCollapse: 'collapse' }}>
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: '#f4f6f8' }}>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Slip ID</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Period</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Gross Pay</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Net Pay</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {records.salaries.length > 0 ? (
-                          records.salaries.map((s: any) => (
-                            <TableRow key={s.name}>
-                              <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{s.name}</TableCell>
-                              <TableCell>{fDate(s.pay_period_start)} - {fDate(s.pay_period_end)}</TableCell>
-                              <TableCell sx={{ fontWeight: 600 }}>{hrSettings.currency_symbol}{fNumber(s.grand_gross_pay, { locale: hrSettings.default_locale })}</TableCell>
-                              <TableCell sx={{ fontWeight: 800, color: 'success.main' }}>{hrSettings.currency_symbol}{fNumber(s.grand_net_pay, { locale: hrSettings.default_locale })}</TableCell>
-                              <TableCell>
-                                <Label color={s.docstatus === 1 ? 'success' : 'warning'}>
-                                  {s.docstatus === 1 ? 'Submitted' : 'Draft'}
-                                </Label>
-                              </TableCell>
-                            </TableRow>
-                          ))
+                          records.salaries
+                            .slice(pgSalaries.page * pgSalaries.rowsPerPage, pgSalaries.page * pgSalaries.rowsPerPage + pgSalaries.rowsPerPage)
+                            .map((s: any) => (
+                              <TableRow key={s.name}>
+                                <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{s.name}</TableCell>
+                                <TableCell>{fDate(s.pay_period_start)} - {fDate(s.pay_period_end)}</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>{hrSettings.currency_symbol}{fNumber(s.grand_gross_pay, { locale: hrSettings.default_locale })}</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: 'success.main' }}>{hrSettings.currency_symbol}{fNumber(s.grand_net_pay, { locale: hrSettings.default_locale })}</TableCell>
+                                <TableCell>
+                                  <Label color={s.docstatus === 1 ? 'success' : 'warning'}>
+                                    {s.docstatus === 1 ? 'Submitted' : 'Draft'}
+                                  </Label>
+                                </TableCell>
+                              </TableRow>
+                            ))
                         ) : (
                           <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}>No salary slips found</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
                   </TableContainer>
+                  <TablePagination
+                    rowsPerPageOptions={[5, 10, 25]}
+                    component="div"
+                    count={records.salaries.length}
+                    rowsPerPage={pgSalaries.rowsPerPage}
+                    page={pgSalaries.page}
+                    onPageChange={(e, newPage) => setPgSalaries({ ...pgSalaries, page: newPage })}
+                    onRowsPerPageChange={(e) => setPgSalaries({ page: 0, rowsPerPage: parseInt(e.target.value, 10) })}
+                  />
                 </Card>
               </Box>
             )}
@@ -807,42 +863,52 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                   <SummaryCard label="Total Work Hours" value={`${stats.dailylogs.totalHours.toFixed(1)}h`} icon="solar:clock-circle-bold" color="warning" />
                 </Box>
 
-                <Card sx={{ p: 2, border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>Daily Activity Logs</Typography>
-                  <TableContainer sx={{ maxHeight: 500 }}>
-                    <Table size="small" stickyHeader>
-                      <TableHead sx={{ bgcolor: 'background.neutral' }}>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Login</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Logout</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Work Hours</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Break Hours</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                <Card sx={{ border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
+                  <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                    <Table size="medium" stickyHeader sx={{ borderCollapse: 'collapse' }}>
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: '#f4f6f8' }}>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Login</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Logout</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Work Hours</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Break Hours</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {records.dailylogs.length > 0 ? (
-                          records.dailylogs.map((log: any) => (
-                            <TableRow key={log.name}>
-                              <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{fDate(log.login_date)}</TableCell>
-                              <TableCell>{log.login_time ? dayjs(log.login_time).format('HH:mm:ss') : '--:--'}</TableCell>
-                              <TableCell>{log.logout_time ? dayjs(log.logout_time).format('HH:mm:ss') : '--:--'}</TableCell>
-                              <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{log.total_work_hours?.toFixed(2) || '0.00'}h</TableCell>
-                              <TableCell>{log.total_break_hours?.toFixed(2) || '0.00'}h</TableCell>
-                              <TableCell>
-                                <Label color={log.status === 'Active' ? 'success' : 'error'} variant="soft">
-                                  {log.status}
-                                </Label>
-                              </TableCell>
-                            </TableRow>
-                          ))
+                          records.dailylogs
+                            .slice(pgDailyLogs.page * pgDailyLogs.rowsPerPage, pgDailyLogs.page * pgDailyLogs.rowsPerPage + pgDailyLogs.rowsPerPage)
+                            .map((log: any) => (
+                              <TableRow key={log.name}>
+                                <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{fDate(log.login_date)}</TableCell>
+                                <TableCell>{log.login_time ? dayjs(log.login_time).format('HH:mm:ss') : '--:--'}</TableCell>
+                                <TableCell>{log.logout_time ? dayjs(log.logout_time).format('HH:mm:ss') : '--:--'}</TableCell>
+                                <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{log.total_work_hours?.toFixed(2) || '0.00'}h</TableCell>
+                                <TableCell>{log.total_break_hours?.toFixed(2) || '0.00'}h</TableCell>
+                                <TableCell>
+                                  <Label color={log.status === 'Active' ? 'success' : 'error'} variant="soft">
+                                    {log.status}
+                                  </Label>
+                                </TableCell>
+                              </TableRow>
+                            ))
                         ) : (
                           <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>No daily logs found</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
                   </TableContainer>
+                  <TablePagination
+                    rowsPerPageOptions={[5, 10, 25]}
+                    component="div"
+                    count={records.dailylogs.length}
+                    rowsPerPage={pgDailyLogs.rowsPerPage}
+                    page={pgDailyLogs.page}
+                    onPageChange={(e, newPage) => setPgDailyLogs({ ...pgDailyLogs, page: newPage })}
+                    onRowsPerPageChange={(e) => setPgDailyLogs({ page: 0, rowsPerPage: parseInt(e.target.value, 10) })}
+                  />
                 </Card>
               </Box>
             )}
@@ -896,34 +962,74 @@ function SalaryItem({ label, value, hrSettings }: { label: string; value?: strin
 
 function SummaryCard({ label, value, icon, color }: { label: string; value: string | number; icon: string; color: string }) {
   const theme = useTheme();
-  const mainColor = (theme.palette as any)[color]?.main || theme.palette.primary.main;
+
+  const getIndicatorColor = (col: string) => {
+    if (col === 'primary') return theme.palette.primary.main;
+    if (col === 'secondary') return theme.palette.secondary.main;
+    if (col === 'info') return theme.palette.info.main;
+    if (col === 'success') return theme.palette.success.main;
+    if (col === 'warning') return theme.palette.warning.main;
+    if (col === 'error') return theme.palette.error.main;
+    return theme.palette.primary.main;
+  };
+
+  const mainColor = getIndicatorColor(color);
 
   return (
-    <Card sx={{
-      p: 2,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 2,
-      boxShadow: 'none',
-      border: `1px solid ${alpha(mainColor, 0.2)}`,
-      bgcolor: alpha(mainColor, 0.05)
-    }}>
-      <Box sx={{
-        width: 48,
-        height: 48,
-        borderRadius: 1.5,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: mainColor,
-        color: 'white'
-      }}>
-        <Iconify icon={icon as any} width={24} />
-      </Box>
-      <Box>
-        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'text.primary' }}>{value}</Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 'bold', textTransform: 'uppercase' }}>{label}</Typography>
-      </Box>
+    <Card
+      sx={{
+        p: 3,
+        boxShadow: 'none',
+        position: 'relative',
+        overflow: 'hidden',
+        bgcolor: alpha(mainColor, 0.04),
+        border: `1px solid ${alpha(mainColor, 0.1)}`,
+        transition: theme.transitions.create(['transform', 'box-shadow']),
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: `0 12px 24px -4px ${alpha(mainColor, 0.12)}`,
+        },
+      }}
+    >
+      <Stack direction="row" alignItems="center" spacing={2.5}>
+        <Box
+          sx={{
+            width: 48,
+            height: 48,
+            flexShrink: 0,
+            display: 'flex',
+            borderRadius: 1.5,
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: mainColor,
+            bgcolor: alpha(mainColor, 0.1),
+          }}
+        >
+          <Iconify icon={icon as any} width={28} />
+        </Box>
+
+        <Box sx={{ flexGrow: 1 }}>
+          <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, mb: 0.5 }}>
+            {label}
+          </Typography>
+          <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800 }}>
+            {value}
+          </Typography>
+        </Box>
+      </Stack>
+
+      <Box
+        sx={{
+          top: -16,
+          right: -16,
+          width: 80,
+          height: 80,
+          opacity: 0.08,
+          position: 'absolute',
+          borderRadius: '50%',
+          bgcolor: mainColor,
+        }}
+      />
     </Card>
   );
 }

@@ -1,7 +1,9 @@
 import dayjs from 'dayjs';
+import jsPDF from 'jspdf';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { useSnackbar } from 'notistack';
+import autoTable from 'jspdf-autotable';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -192,6 +194,7 @@ export function EmployeeOverallReportView() {
 
   const { enqueueSnackbar } = useSnackbar();
   const [exporting, setExporting] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   const handleExport = async () => {
     const employeesToExport = selected.length > 0
@@ -390,22 +393,23 @@ export function EmployeeOverallReportView() {
           const cell1 = row.getCell(1);
           const cell2 = row.getCell(2);
 
-          cell1.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-          cell1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+          cell1.font = { bold: true, color: { argb: 'FF1C252E' } };
+          cell1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
           cell1.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
           cell1.border = {
-            top: { style: 'thin', color: { argb: 'FF000000' } },
-            left: { style: 'thin', color: { argb: 'FF000000' } },
-            bottom: { style: 'thin', color: { argb: 'FF000000' } },
-            right: { style: 'thin', color: { argb: 'FF000000' } }
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
           };
 
+          cell2.font = { color: { argb: 'FF1C252E' } };
           cell2.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
           cell2.border = {
-            top: { style: 'thin', color: { argb: 'FF000000' } },
-            left: { style: 'thin', color: { argb: 'FF000000' } },
-            bottom: { style: 'thin', color: { argb: 'FF000000' } },
-            right: { style: 'thin', color: { argb: 'FF000000' } }
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
           };
         });
 
@@ -414,20 +418,30 @@ export function EmployeeOverallReportView() {
         const earningsTitleRow = detailsSheet.addRow(['EARNINGS TABLE']);
         earningsTitleRow.height = 25;
         earningsTitleRow.eachCell(cell => {
-          cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+          cell.font = { bold: true, color: { argb: 'FF1C252E' } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
-          cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+          cell.border = { 
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+            left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+          };
         });
         detailsSheet.mergeCells(`A${earningsTitleRow.number}:B${earningsTitleRow.number}`);
 
         const earningsHeaderRow = detailsSheet.addRow(['Component Name', 'Amount']);
         earningsHeaderRow.height = 25;
         earningsHeaderRow.eachCell(cell => {
-          cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+          cell.font = { bold: true, color: { argb: 'FF1C252E' } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }; // Slightly darker gray for headers
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
-          cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+          cell.border = { 
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+            left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+          };
         });
 
         const earningsData = emp.earnings || [];
@@ -435,14 +449,26 @@ export function EmployeeOverallReportView() {
           earningsData.forEach((row: any) => {
             const r = detailsSheet.addRow([row.component_name || row.component || '-', row.amount || 0]);
             r.eachCell(cell => {
-              cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+              cell.font = { color: { argb: 'FF1C252E' } };
+              cell.border = { 
+                top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+                left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+                bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+                right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+              };
               cell.alignment = { vertical: 'middle', horizontal: 'center' };
             });
           });
         } else {
           const r = detailsSheet.addRow(['-', '-']);
           r.eachCell(cell => {
-            cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            cell.font = { color: { argb: 'FF1C252E' } };
+            cell.border = { 
+              top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+              left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+              bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+              right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+            };
             cell.alignment = { vertical: 'middle', horizontal: 'center' };
           });
         }
@@ -452,20 +478,30 @@ export function EmployeeOverallReportView() {
         const deductionsTitleRow = detailsSheet.addRow(['DEDUCTIONS TABLE']);
         deductionsTitleRow.height = 25;
         deductionsTitleRow.eachCell(cell => {
-          cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+          cell.font = { bold: true, color: { argb: 'FF1C252E' } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
-          cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+          cell.border = { 
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+            left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+          };
         });
         detailsSheet.mergeCells(`A${deductionsTitleRow.number}:B${deductionsTitleRow.number}`);
 
         const deductionsHeaderRow = detailsSheet.addRow(['Component Name', 'Amount']);
         deductionsHeaderRow.height = 25;
         deductionsHeaderRow.eachCell(cell => {
-          cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+          cell.font = { bold: true, color: { argb: 'FF1C252E' } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
-          cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+          cell.border = { 
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+            left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+          };
         });
 
         const deductionsData = emp.deductions || [];
@@ -473,14 +509,26 @@ export function EmployeeOverallReportView() {
           deductionsData.forEach((row: any) => {
             const r = detailsSheet.addRow([row.component_name || row.component || '-', row.amount || 0]);
             r.eachCell(cell => {
-              cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+              cell.font = { color: { argb: 'FF1C252E' } };
+              cell.border = { 
+                top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+                left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+                bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+                right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+              };
               cell.alignment = { vertical: 'middle', horizontal: 'center' };
             });
           });
         } else {
           const r = detailsSheet.addRow(['-', '-']);
           r.eachCell(cell => {
-            cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            cell.font = { color: { argb: 'FF1C252E' } };
+            cell.border = { 
+              top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+              left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+              bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
+              right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+            };
             cell.alignment = { vertical: 'middle', horizontal: 'center' };
           });
         }
@@ -873,6 +921,372 @@ export function EmployeeOverallReportView() {
     }
   };
 
+  const handleExportPdf = async () => {
+    const employeesToExport = selected.length > 0
+      ? data.filter(emp => selected.includes(emp.name))
+      : data;
+
+    if (employeesToExport.length === 0) return;
+
+    setExportingPdf(true);
+
+    try {
+      const employeeIds = employeesToExport.map(e => e.name);
+
+      // 1. Fetch ALL data in parallel (Same as Excel)
+      const [attendance, leaves, assets, checkins, salaries, sessions] = await Promise.all([
+        fetchFrappeList('Attendance', {
+          page: 1,
+          page_size: 10000,
+          filters: [['employee', 'in', employeeIds]],
+          fields: ['name', 'employee', 'attendance_date', 'status', 'in_time', 'out_time', 'working_hours_display'],
+        }),
+        fetchFrappeList('Leave Application', {
+          page: 1,
+          page_size: 5000,
+          filters: [['employee', 'in', employeeIds]],
+          fields: ['name', 'employee', 'leave_type', 'from_date', 'to_date', 'total_days', 'docstatus', 'workflow_state'],
+        }),
+        fetchFrappeList('Asset Assignment', {
+          page: 1,
+          page_size: 5000,
+          filters: [['assigned_to', 'in', employeeIds]],
+          fields: ['name', 'asset_name', 'assigned_on', 'returned_on', 'assigned_to'],
+        }),
+        fetchFrappeList('Employee Checkin', {
+          page: 1,
+          page_size: 20000,
+          filters: [['employee', 'in', employeeIds]],
+          fields: ['name', 'employee', 'time', 'log_type', 'attendance'],
+        }).catch(() => ({ data: [], total: 0 })),
+        fetchFrappeList('Salary Slip', {
+          page: 1,
+          page_size: 5000,
+          filters: [['employee', 'in', employeeIds]],
+          fields: ['name', 'employee', 'pay_period_start', 'pay_period_end', 'grand_gross_pay', 'grand_net_pay', 'docstatus'],
+        }),
+        fetchFrappeList('Employee Session', {
+          page: 1,
+          page_size: 10000,
+          filters: [['employee', 'in', employeeIds]],
+          fields: ['name', 'employee', 'login_date', 'login_time', 'logout_time', 'total_work_hours', 'total_break_hours', 'status'],
+        }),
+      ]);
+
+      const timesheetResults = await Promise.all(
+        employeeIds.map(id => runReport('Timesheet Report', { employee: id }))
+      );
+      const timesheetData = timesheetResults.flatMap(res => res.result || []).filter(t => t.timesheet_date !== 'TOTAL');
+
+      const doc = new jsPDF('landscape');
+
+      // Helper for adding section titles
+      const addPageHeader = (title: string) => {
+        doc.setFontSize(18);
+        doc.setTextColor(14, 165, 233);
+        doc.text(title, 14, 15);
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, HH:mm')}`, 14, 21);
+      };
+
+      const tableStyles: any = {
+        theme: 'grid',
+        headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+        styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200] },
+      };
+
+      const formatValue = (emp: any, key: string, isDate?: boolean, isCheck?: boolean) => {
+        const val = emp[key];
+        if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '') || (Array.isArray(val) && val.length === 0)) return '-';
+        if (isDate) return fDate(val, 'DD-MM-YYYY');
+        if (isCheck) return val ? 'Yes' : 'No';
+        return val;
+      };
+
+      const isSingleEmployee = employeesToExport.length === 1;
+
+      // --- PAGE 1: BASIC INFORMATION ---
+      addPageHeader('Employee Basic Information');
+      if (isSingleEmployee) {
+        const emp = employeesToExport[0];
+        const verticalBasic = [
+          ['Employee Name', emp.employee_name || '-'],
+          ['Employee ID', emp.name || '-'],
+          ['Date of Birth', formatValue(emp, 'dob', true)],
+          ['Country', emp.country || '-'],
+          ['State', emp.state || '-'],
+          ['City', emp.city || '-'],
+          ['Status', emp.status || '-']
+        ];
+        autoTable(doc, {
+          startY: 30,
+          body: verticalBasic,
+          ...tableStyles,
+          alternateRowStyles: { fillColor: [252, 253, 255] },
+          columnStyles: { 
+            0: { fontStyle: 'bold', width: 60, fillColor: [244, 246, 248], textColor: [28, 37, 46], fontSize: 8 }, 
+            1: { halign: 'left', textColor: [28, 37, 46], fontSize: 9 } 
+          }
+        });
+      } else {
+        const basicData = employeesToExport.map(emp => [
+          emp.employee_name || '-',
+          emp.name || '-',
+          formatValue(emp, 'dob', true),
+          emp.country || '-',
+          emp.state || '-',
+          emp.city || '-',
+          emp.status || '-'
+        ]);
+        autoTable(doc, {
+          startY: 30,
+          head: [['Employee Name', 'Employee ID', 'Date of Birth', 'Country', 'State', 'City', 'Status']],
+          body: basicData,
+          ...tableStyles
+        });
+      }
+
+      // --- PAGE 2: CONTACT INFORMATION ---
+      doc.addPage();
+      addPageHeader('Contact Information');
+      if (isSingleEmployee) {
+        const emp = employeesToExport[0];
+        const verticalContact = [
+          ['Official Email', emp.email || '-'],
+          ['Personal Email', emp.personal_email || '-'],
+          ['Phone', emp.phone || '-'],
+          ['Office Phone', emp.office_phone_number || '-'],
+          ['User Login', emp.user || '-']
+        ];
+        autoTable(doc, {
+          startY: 30,
+          body: verticalContact,
+          ...tableStyles,
+          alternateRowStyles: { fillColor: [252, 253, 255] },
+          columnStyles: { 
+            0: { fontStyle: 'bold', width: 60, fillColor: [244, 246, 248], textColor: [28, 37, 46], fontSize: 8 }, 
+            1: { halign: 'left', textColor: [28, 37, 46], fontSize: 9 } 
+          }
+        });
+      } else {
+        const contactData = employeesToExport.map(emp => [
+          emp.employee_name || '-',
+          emp.name || '-',
+          emp.email || '-',
+          emp.personal_email || '-',
+          emp.phone || '-',
+          emp.office_phone_number || '-',
+          emp.user || '-'
+        ]);
+        autoTable(doc, {
+          startY: 30,
+          head: [['Employee Name', 'Employee ID', 'Official Email', 'Personal Email', 'Phone', 'Office Phone', 'User Login']],
+          body: contactData,
+          ...tableStyles
+        });
+      }
+
+      // --- PAGE 3: EMPLOYMENT DETAILS ---
+      doc.addPage();
+      addPageHeader('Employment Details');
+      if (isSingleEmployee) {
+        const emp = employeesToExport[0];
+        const verticalEmployment = [
+          ['Department', emp.department || '-'],
+          ['Designation', emp.designation || '-'],
+          ['Joining Date', formatValue(emp, 'date_of_joining', true)],
+          ['Skip Probation', formatValue(emp, 'skip_probation', false, true)],
+        ];
+        autoTable(doc, {
+          startY: 30,
+          body: verticalEmployment,
+          ...tableStyles,
+          alternateRowStyles: { fillColor: [252, 253, 255] },
+          columnStyles: { 
+            0: { fontStyle: 'bold', width: 60, fillColor: [244, 246, 248], textColor: [28, 37, 46], fontSize: 8 }, 
+            1: { halign: 'left', textColor: [28, 37, 46], fontSize: 9 } 
+          }
+        });
+      } else {
+        const employmentData = employeesToExport.map(emp => [
+          emp.employee_name || '-',
+          emp.name || '-',
+          emp.department || '-',
+          emp.designation || '-',
+          formatValue(emp, 'date_of_joining', true),
+          formatValue(emp, 'skip_probation', false, true),
+        ]);
+        autoTable(doc, {
+          startY: 30,
+          head: [['Employee Name', 'Employee ID', 'Department', 'Designation', 'Joining Date', 'Skip Probation']],
+          body: employmentData,
+          ...tableStyles
+        });
+      }
+
+      // --- PAGE 4: SALARY & BANK DETAILS ---
+      doc.addPage();
+      addPageHeader('Salary & Identification Details');
+      if (isSingleEmployee) {
+        const emp = employeesToExport[0];
+        const verticalSalary = [
+          ['Bank Account', emp.bank_account || '-'],
+          ['PF Number', emp.pf_number || '-'],
+          ['ESI No', emp.esi_no || '-'],
+          ['CTC', emp.ctc || '0'],
+          ['Earnings', emp.total_earnings || '0'],
+          ['Deductions', emp.total_deductions || '0'],
+          ['Net Salary', emp.net_salary || '0']
+        ];
+        autoTable(doc, {
+          startY: 30,
+          body: verticalSalary,
+          ...tableStyles,
+          alternateRowStyles: { fillColor: [252, 253, 255] },
+          columnStyles: { 
+            0: { fontStyle: 'bold', width: 60, fillColor: [244, 246, 248], textColor: [28, 37, 46], fontSize: 8 }, 
+            1: { halign: 'left', textColor: [28, 37, 46], fontSize: 9 } 
+          }
+        });
+      } else {
+        const salaryDataPdf = employeesToExport.map(emp => [
+          emp.name || '-',
+          emp.bank_account || '-',
+          emp.pf_number || '-',
+          emp.esi_no || '-',
+          emp.ctc || '0',
+          emp.total_earnings || '0',
+          emp.total_deductions || '0',
+          emp.net_salary || '0'
+        ]);
+        autoTable(doc, {
+          startY: 30,
+          head: [['Employee ID', 'Bank Account', 'PF Number', 'ESI No', 'CTC', 'Earnings', 'Deductions', 'Net Salary']],
+          body: salaryDataPdf,
+          ...tableStyles
+        });
+      }
+
+      // --- PAGE 5: ATTENDANCE RECORDS ---
+      doc.addPage();
+      addPageHeader('Attendance Records');
+      const attendanceTable = (attendance.data || []).map((a: any) => [
+        a.employee,
+        dayjs(a.attendance_date).format('DD MMM YYYY'),
+        a.status,
+        a.in_time || '-',
+        a.out_time || '-',
+        a.working_hours_display || '-',
+      ]);
+      autoTable(doc, {
+        startY: 30,
+        head: [['Employee ID', 'Date', 'Status', 'In Time', 'Out Time', 'Hours']],
+        body: attendanceTable.length > 0 ? attendanceTable : [['No records found', '', '', '', '', '']],
+        ...tableStyles
+      });
+
+      // --- PAGE 6: DAILY ACTIVITY LOGS ---
+      doc.addPage();
+      addPageHeader('Daily Activity Logs');
+      const sessionTable = (sessions.data || []).map((s: any) => [
+        s.employee,
+        dayjs(s.login_date).format('DD MMM YYYY'),
+        s.login_time || '-',
+        s.logout_time || '-',
+        s.total_work_hours || '0',
+        s.total_break_hours || '0',
+        s.status || '-',
+      ]);
+      autoTable(doc, {
+        startY: 30,
+        head: [['Employee ID', 'Date', 'Login', 'Logout', 'Work Hrs', 'Break Hrs', 'Status']],
+        body: sessionTable.length > 0 ? sessionTable : [['No records found', '', '', '', '', '', '']],
+        ...tableStyles
+      });
+
+      // --- PAGE 7: TIMESHEETS ---
+      doc.addPage();
+      addPageHeader('Timesheet Reports');
+      const tsTable = timesheetData.map((t: any) => [
+        t.employee,
+        dayjs(t.timesheet_date).format('DD MMM YYYY'),
+        t.activity_type || '-',
+        t.project || '-',
+        t.hours || '0',
+        t.description || '-',
+      ]);
+      autoTable(doc, {
+        startY: 30,
+        head: [['Employee ID', 'Date', 'Activity', 'Project', 'Hours', 'Description']],
+        body: tsTable.length > 0 ? tsTable : [['No records found', '', '', '', '', '']],
+        ...tableStyles
+      });
+
+      // --- PAGE 8: LEAVE APPLICATIONS ---
+      doc.addPage();
+      addPageHeader('Leave Applications');
+      const leaveTable = (leaves.data || []).map((l: any) => [
+        l.employee,
+        l.leave_type || '-',
+        dayjs(l.from_date).format('DD MMM YYYY'),
+        dayjs(l.to_date).format('DD MMM YYYY'),
+        l.total_days || '0',
+        l.workflow_state || l.status || '-',
+      ]);
+      autoTable(doc, {
+        startY: 30,
+        head: [['Employee ID', 'Type', 'From', 'To', 'Days', 'Status']],
+        body: leaveTable.length > 0 ? leaveTable : [['No records found', '', '', '', '', '']],
+        ...tableStyles
+      });
+
+      // --- PAGE 9: ASSIGNED ASSETS ---
+      doc.addPage();
+      addPageHeader('Assigned Assets');
+      const assetTable = (assets.data || []).map((a: any) => [
+        a.assigned_to,
+        a.asset_name || '-',
+        a.assigned_on ? dayjs(a.assigned_on).format('DD MMM YYYY') : '-',
+        a.returned_on ? dayjs(a.returned_on).format('DD MMM YYYY') : '-',
+      ]);
+      autoTable(doc, {
+        startY: 30,
+        head: [['Employee ID', 'Asset Name', 'Assigned On', 'Returned On']],
+        body: assetTable.length > 0 ? assetTable : [['No records found', '', '', '']],
+        ...tableStyles
+      });
+
+      // --- PAGE 10: SALARY SLIPS ---
+      doc.addPage();
+      addPageHeader('Salary Slips');
+      const salaryTable = (salaries.data || []).map((s: any) => [
+        s.name,
+        s.employee,
+        dayjs(s.pay_period_start).format('DD MMM YYYY'),
+        dayjs(s.pay_period_end).format('DD MMM YYYY'),
+        fNumber(s.grand_gross_pay),
+        fNumber(s.grand_net_pay),
+        s.docstatus === 1 ? 'Submitted' : 'Draft',
+      ]);
+      autoTable(doc, {
+        startY: 30,
+        head: [['Slip ID', 'Employee ID', 'Start', 'End', 'Gross', 'Net', 'Status']],
+        body: salaryTable.length > 0 ? salaryTable : [['No records found', '', '', '', '', '', '']],
+        ...tableStyles
+      });
+
+      doc.save(`Employee_Overall_Report_Structured_${dayjs().format('YYYY-MM-DD')}.pdf`);
+      enqueueSnackbar('Structured PDF exported successfully!', { variant: 'success' });
+
+    } catch (error) {
+      console.error('PDF Export failed:', error);
+      enqueueSnackbar('Failed to export detailed PDF. Please try again.', { variant: 'error' });
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   const handleReset = () => {
     setJoiningDateFrom(null);
     setJoiningDateTo(null);
@@ -1082,21 +1496,39 @@ export function EmployeeOverallReportView() {
               </Select>
             </FormControl>
 
-            <Button
-              variant="contained"
-              startIcon={exporting ? undefined : <Iconify icon="solar:export-bold" />}
-              onClick={handleExport}
-              disabled={exporting}
-              sx={{
-                bgcolor: '#0ea5e9',
-                color: 'common.white',
-                '&:hover': { bgcolor: '#0284c7' },
-                height: 40,
-                px: 3,
-              }}
-            >
-              {exporting ? 'Exporting...' : 'Export'}
-            </Button>
+            <Stack direction="row" spacing={1}>
+              <Button
+                variant="contained"
+                startIcon={exporting ? undefined : <Iconify icon="solar:export-bold" />}
+                onClick={handleExport}
+                disabled={exporting}
+                sx={{
+                  bgcolor: '#0ea5e9',
+                  color: 'common.white',
+                  '&:hover': { bgcolor: '#0284c7' },
+                  height: 40,
+                  px: 3,
+                }}
+              >
+                {exporting ? 'Exporting...' : 'Export'}
+              </Button>
+
+              <Button
+                variant="contained"
+                startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                onClick={handleExportPdf}
+                disabled={exportingPdf}
+                sx={{
+                  bgcolor: '#f43f5e',
+                  color: 'common.white',
+                  '&:hover': { bgcolor: '#e11d48' },
+                  height: 40,
+                  px: 3,
+                }}
+              >
+                {exportingPdf ? 'Exporting PDF...' : 'PDF Export'}
+              </Button>
+            </Stack>
           </Stack>
         </Card>
 
