@@ -912,7 +912,7 @@ export function EmployeeOverallReportView() {
 
       const buffer = await workbook.xlsx.writeBuffer();
       saveAs(new Blob([buffer]), `Employee_Overall_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
-      enqueueSnackbar('Report exported successfully!', { variant: 'success' });
+      enqueueSnackbar('Excel exported successfully!', { variant: 'success' });
     } catch (error) {
       console.error('Export failed:', error);
       enqueueSnackbar('Failed to export report. Please try again.', { variant: 'error' });
@@ -1277,7 +1277,7 @@ export function EmployeeOverallReportView() {
       });
 
       doc.save(`Employee_Overall_Report_Structured_${dayjs().format('YYYY-MM-DD')}.pdf`);
-      enqueueSnackbar('Structured PDF exported successfully!', { variant: 'success' });
+      enqueueSnackbar('PDF exported successfully!', { variant: 'success' });
 
     } catch (error) {
       console.error('PDF Export failed:', error);
@@ -1501,7 +1501,7 @@ export function EmployeeOverallReportView() {
                 variant="contained"
                 startIcon={exporting ? undefined : <Iconify icon="solar:export-bold" />}
                 onClick={handleExport}
-                disabled={exporting}
+                disabled={exporting || data.length === 0}
                 sx={{
                   bgcolor: '#0ea5e9',
                   color: 'common.white',
@@ -1510,14 +1510,14 @@ export function EmployeeOverallReportView() {
                   px: 3,
                 }}
               >
-                {exporting ? 'Exporting...' : 'Export'}
+                {exporting ? 'Exporting Excel...' : 'Export Excel'}
               </Button>
 
               <Button
                 variant="contained"
                 startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
                 onClick={handleExportPdf}
-                disabled={exportingPdf}
+                disabled={exportingPdf || data.length === 0}
                 sx={{
                   bgcolor: '#f43f5e',
                   color: 'common.white',
@@ -1526,7 +1526,7 @@ export function EmployeeOverallReportView() {
                   px: 3,
                 }}
               >
-                {exportingPdf ? 'Exporting PDF...' : 'PDF Export'}
+                {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
               </Button>
             </Stack>
           </Stack>
@@ -1641,12 +1641,11 @@ export function EmployeeOverallReportView() {
 
                   {data.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={8} sx={{ py: 10 }}>
-                        <EmptyContent
-                          title="No Employees Found"
-                          description="Try adjusting your filters to find what you're looking for."
-                          sx={{ py: 0 }}
-                        />
+                      <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                        <Stack spacing={1} alignItems="center">
+                          <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                          <Typography variant="body2" sx={{ color: 'text.disabled' }}>No Employees found</Typography>
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   )}

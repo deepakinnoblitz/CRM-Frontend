@@ -1,6 +1,9 @@
 import dayjs from 'dayjs';
+import jsPDF from 'jspdf';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import autoTable from 'jspdf-autotable';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -49,6 +52,10 @@ export function TimesheetsReportView() {
     const { user } = useAuth();
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [exportingExcel, setExportingExcel] = useState(false);
+    const [exportingPdf, setExportingPdf] = useState(false);
+
+    const { enqueueSnackbar } = useSnackbar();
 
     const [isHR, setIsHR] = useState(false);
 
@@ -203,117 +210,256 @@ export function TimesheetsReportView() {
         getDoctypeList('Project', ['name', 'project']).then(setProjectOptions);
         getDoctypeList('Activity Type', ['name', 'activity_type']).then(setActivityTypeOptions);
     }, []);
-
     const handleExport = async () => {
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet('Timesheet Report');
+        setExportingExcel(true);
+        try {
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Timesheet Report');
 
-        const dataToExport = reportData.filter(d => d.timesheet_date !== 'TOTAL');
+            const dataToExport = reportData.filter(d => d.timesheet_date !== 'TOTAL');
 
-        // Selection Logic
-        const exportData = selected.length > 0
-            ? dataToExport.filter((row, index) => selected.includes(`${row.employee}-${index}`))
-            : dataToExport;
+            // Selection Logic
+            const exportData = selected.length > 0
+                ? dataToExport.filter((row, index) => selected.includes(`${row.employee}-${index}`))
+                : dataToExport;
 
-        sheet.columns = [
-            { header: 'Date', key: 'date', width: 15 },
-            { header: 'Employee', key: 'employee_name', width: 25 },
-            { header: 'Employee ID', key: 'employee', width: 15 },
-            { header: 'Project', key: 'project', width: 20 },
-            { header: 'Activity Type', key: 'activity', width: 25 },
-            { header: 'Hours', key: 'hours', width: 12 },
-            { header: 'Description', key: 'description', width: 50 },
-        ];
+            sheet.columns = [
+                { header: 'Date', key: 'date', width: 15 },
+                { header: 'Employee', key: 'employee_name', width: 25 },
+                { header: 'Employee ID', key: 'employee', width: 15 },
+                { header: 'Project', key: 'project', width: 20 },
+                { header: 'Activity Type', key: 'activity', width: 25 },
+                { header: 'Hours', key: 'hours', width: 12 },
+                { header: 'Description', key: 'description', width: 50 },
+            ];
 
-        const columnCount = sheet.columns.length;
+            const columnCount = sheet.columns.length;
 
-        // Header Styling (Limited to data columns only)
-        for (let i = 1; i <= columnCount; i++) {
-            const cell = sheet.getRow(1).getCell(i);
-            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
-            cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        }
-        sheet.getRow(1).height = 25;
+            // Header Styling (Limited to data columns only)
+            for (let i = 1; i <= columnCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            }
+            sheet.getRow(1).height = 25;
 
-        exportData.forEach((row) => {
-            sheet.addRow({
-                date: fDate(row.timesheet_date, 'DD-MM-YYYY'),
-                employee_name: row.employee_name,
-                employee: row.employee,
-                project: row.project || '---',
-                activity: row.activity_type || '---',
-                hours: row.hours || 0,
-                description: row.description || ''
+            exportData.forEach((row) => {
+                sheet.addRow({
+                    date: fDate(row.timesheet_date, 'DD-MM-YYYY'),
+                    employee_name: row.employee_name,
+                    employee: row.employee,
+                    project: row.project || '---',
+                    activity: row.activity_type || '---',
+                    hours: row.hours || 0,
+                    description: row.description || ''
+                });
             });
-        });
 
-        // Merging logic for Date, Employee, and Employee ID (to group entries)
-        let mergeStart = 2;
-        const totalRows = sheet.rowCount;
-        for (let i = 2; i <= totalRows; i++) {
-            const current = sheet.getRow(i);
-            const next = i < totalRows ? sheet.getRow(i + 1) : null;
+            // Merging logic for Date, Employee, and Employee ID (to group entries)
+            let mergeStart = 2;
+            const totalRows = sheet.rowCount;
+            for (let i = 2; i <= totalRows; i++) {
+                const current = sheet.getRow(i);
+                const next = i < totalRows ? sheet.getRow(i + 1) : null;
 
-            const isLast = i === totalRows;
-            const sameAsNext = !isLast && next &&
-                current.getCell(1).value === next.getCell(1).value &&
-                current.getCell(2).value === next.getCell(2).value &&
-                current.getCell(3).value === next.getCell(3).value;
+                const isLast = i === totalRows;
+                const sameAsNext = !isLast && next &&
+                    current.getCell(1).value === next.getCell(1).value &&
+                    current.getCell(2).value === next.getCell(2).value &&
+                    current.getCell(3).value === next.getCell(3).value;
 
-            if (!sameAsNext) {
-                if (i > mergeStart) {
-                    sheet.mergeCells(`A${mergeStart}:A${i}`);
-                    sheet.mergeCells(`B${mergeStart}:B${i}`);
-                    sheet.mergeCells(`C${mergeStart}:C${i}`);
+                if (!sameAsNext) {
+                    if (i > mergeStart) {
+                        sheet.mergeCells(`A${mergeStart}:A${i}`);
+                        sheet.mergeCells(`B${mergeStart}:B${i}`);
+                        sheet.mergeCells(`C${mergeStart}:C${i}`);
 
-                    // Align merged cells to middle
-                    ['A', 'B', 'C'].forEach(col => {
-                        sheet.getCell(`${col}${mergeStart}`).alignment = { vertical: 'middle', horizontal: 'center' };
+                        // Align merged cells to middle
+                        ['A', 'B', 'C'].forEach(col => {
+                            sheet.getCell(`${col}${mergeStart}`).alignment = { vertical: 'middle', horizontal: 'center' };
+                        });
+                    }
+                    mergeStart = i + 1;
+                }
+            }
+
+            // Alternating row colors and black borders (Limited to data columns only)
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1 && rowNumber <= sheet.rowCount - 1) { // Apply to data rows only (excluding TOTAL)
+                    for (let i = 1; i <= columnCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        // Alternate shading
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        // Borders
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            // Add Total row
+            const totalHoursVal = exportData.reduce((acc, curr) => acc + (curr.hours || 0), 0);
+            const totalRow = sheet.addRow(['TOTAL', '', '', '', '', totalHoursVal, '']);
+            totalRow.font = { bold: true };
+            totalRow.getCell(6).numFmt = '0.00 "hrs"';
+
+            for (let i = 1; i <= columnCount; i++) {
+                totalRow.getCell(i).border = {
+                    top: { style: 'thin', color: { argb: 'FF000000' } },
+                    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                    left: { style: 'thin', color: { argb: 'FF000000' } },
+                    right: { style: 'thin', color: { argb: 'FF000000' } }
+                };
+            }
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Timesheet_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+            enqueueSnackbar('Excel exported successfully!', { variant: 'success' });
+        } catch (error) {
+            console.error('Excel Export failed:', error);
+            enqueueSnackbar('Failed to export Excel. Please try again.', { variant: 'error' });
+        } finally {
+            setExportingExcel(false);
+        }
+    };
+
+    const handleExportPdf = async () => {
+        setExportingPdf(true);
+        try {
+            const doc = new jsPDF('landscape');
+            const dataToExport = reportData.filter(d => d.timesheet_date !== 'TOTAL');
+
+            // Selection Logic
+            const exportData = selected.length > 0
+                ? dataToExport.filter((row, index) => selected.includes(`${row.employee}-${index}`))
+                : dataToExport;
+
+            if (exportData.length === 0) {
+                enqueueSnackbar('No data to export', { variant: 'warning' });
+                setExportingPdf(false);
+                return;
+            }
+
+            // Header
+            doc.setFontSize(18);
+            doc.setTextColor(14, 165, 233);
+            doc.text('Timesheet Report', 14, 15);
+            doc.setFontSize(9);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, HH:mm')}`, 14, 21);
+
+            const tableDataObjects: any[] = [];
+            for (let i = 0; i < exportData.length; i++) {
+                const row = exportData[i];
+                const currentDate = fDate(row.timesheet_date, 'DD-MM-YYYY');
+                const currentEmployee = row.employee_name;
+                const currentEmployeeId = row.employee;
+
+                // Check if this is the start of a group
+                let isStart = true;
+                if (i > 0) {
+                    const prevRow = exportData[i - 1];
+                    if (fDate(prevRow.timesheet_date, 'DD-MM-YYYY') === currentDate &&
+                        prevRow.employee_name === currentEmployee &&
+                        prevRow.employee === currentEmployeeId) {
+                        isStart = false;
+                    }
+                }
+
+                if (isStart) {
+                    // Calculate span
+                    let span = 1;
+                    while (i + span < exportData.length) {
+                        const nextRow = exportData[i + span];
+                        if (fDate(nextRow.timesheet_date, 'DD-MM-YYYY') === currentDate &&
+                            nextRow.employee_name === currentEmployee &&
+                            nextRow.employee === currentEmployeeId) {
+                            span++;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    tableDataObjects.push({
+                        date: { content: currentDate, rowSpan: span, styles: { valign: 'middle', halign: 'center' } },
+                        employee: { content: currentEmployee, rowSpan: span, styles: { valign: 'middle', halign: 'center' } },
+                        employeeId: { content: currentEmployeeId, rowSpan: span, styles: { valign: 'middle', halign: 'center' } },
+                        project: row.project || '---',
+                        activity: row.activity_type || '---',
+                        hours: `${(row.hours || 0).toFixed(2)} hrs`,
+                        description: row.description || ''
+                    });
+                } else {
+                    tableDataObjects.push({
+                        // date, employee, employeeId are covered by rowSpan
+                        project: row.project || '---',
+                        activity: row.activity_type || '---',
+                        hours: `${(row.hours || 0).toFixed(2)} hrs`,
+                        description: row.description || ''
                     });
                 }
-                mergeStart = i + 1;
             }
-        }
 
-        // Alternating row colors and black borders (Limited to data columns only)
-        sheet.eachRow((row, rowNumber) => {
-            if (rowNumber > 1 && rowNumber <= sheet.rowCount - 1) { // Apply to data rows only (excluding TOTAL)
-                for (let i = 1; i <= columnCount; i++) {
-                    const cell = row.getCell(i);
-                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                    // Alternate shading
-                    if (rowNumber % 2 === 0) {
-                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+            // Add Total Row
+            const totalHoursVal = exportData.reduce((acc, curr) => acc + (curr.hours || 0), 0);
+            tableDataObjects.push({
+                date: 'TOTAL',
+                employee: '',
+                employeeId: '',
+                project: '',
+                activity: '',
+                hours: `${totalHoursVal.toFixed(2)} hrs`,
+                description: ''
+            });
+
+            autoTable(doc, {
+                startY: 30,
+                columns: [
+                    { header: 'Date', dataKey: 'date' },
+                    { header: 'Employee', dataKey: 'employee' },
+                    { header: 'Employee ID', dataKey: 'employeeId' },
+                    { header: 'Project', dataKey: 'project' },
+                    { header: 'Activity Type', dataKey: 'activity' },
+                    { header: 'Hours', dataKey: 'hours' },
+                    { header: 'Description', dataKey: 'description' },
+                ],
+                body: tableDataObjects,
+                theme: 'grid',
+                headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+                styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200], valign: 'middle' },
+                columnStyles: {
+                    date: { cellWidth: 25 },
+                    employee: { cellWidth: 40 },
+                    employeeId: { cellWidth: 25 },
+                    activity: { cellWidth: 35 }, // Reduced Activity Type
+                    hours: { cellWidth: 25, halign: 'right', fontStyle: 'bold' }, // Increased Hours
+                },
+                didParseCell: (data) => {
+                    if (data.row.index === tableDataObjects.length - 1) {
+                        data.cell.styles.fontStyle = 'bold';
+                        if (data.column.dataKey === 'date') {
+                            data.cell.styles.halign = 'left';
+                        }
                     }
-                    // Borders
-                    cell.border = {
-                        top: { style: 'thin', color: { argb: 'FF000000' } },
-                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                        left: { style: 'thin', color: { argb: 'FF000000' } },
-                        right: { style: 'thin', color: { argb: 'FF000000' } }
-                    };
                 }
-            }
-        });
+            });
 
-        // Add Total row
-        const totalHoursVal = exportData.reduce((acc, curr) => acc + (curr.hours || 0), 0);
-        const totalRow = sheet.addRow(['TOTAL', '', '', '', '', totalHoursVal, '']);
-        totalRow.font = { bold: true };
-        totalRow.getCell(6).numFmt = '0.00 "hrs"';
-
-        for (let i = 1; i <= columnCount; i++) {
-            totalRow.getCell(i).border = {
-                top: { style: 'thin', color: { argb: 'FF000000' } },
-                bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                left: { style: 'thin', color: { argb: 'FF000000' } },
-                right: { style: 'thin', color: { argb: 'FF000000' } }
-            };
+            doc.save(`Timesheet_Report_${dayjs().format('YYYY-MM-DD')}.pdf`);
+            enqueueSnackbar('PDF exported successfully!', { variant: 'success' });
+        } catch (error) {
+            console.error('PDF Export failed:', error);
+            enqueueSnackbar('Failed to export PDF. Please try again.', { variant: 'error' });
+        } finally {
+            setExportingPdf(false);
         }
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        saveAs(new Blob([buffer]), `Timesheet_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
     };
 
     const onChangePage = useCallback((event: unknown, newPage: number) => {
@@ -480,22 +626,39 @@ export function TimesheetsReportView() {
                             </Select>
                         </FormControl>
 
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={handleExport}
-                            disabled={reportData.length === 0}
-                            sx={{
-                                bgcolor: '#08a3cd',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: '#068fb3' },
-                                height: 40,
-                                px: 3,
-                                ml: { md: 'auto' }
-                            }}
-                        >
-                            Export
-                        </Button>
+                        <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
+                            <Button
+                                variant="contained"
+                                startIcon={exportingExcel ? undefined : <Iconify icon={"solar:export-bold" as any} />}
+                                onClick={handleExport}
+                                disabled={reportData.length === 0 || exportingExcel}
+                                sx={{
+                                    bgcolor: '#0ea5e9',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#0284c7' },
+                                    height: 40,
+                                    px: 3,
+                                }}
+                            >
+                                {exportingExcel ? 'Exporting Excel...' : 'Export Excel'}
+                            </Button>
+
+                            <Button
+                                variant="contained"
+                                startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                onClick={handleExportPdf}
+                                disabled={reportData.length === 0 || exportingPdf}
+                                sx={{
+                                    bgcolor: '#f43f5e',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#e11d48' },
+                                    height: 40,
+                                    px: 3,
+                                }}
+                            >
+                                {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                            </Button>
+                        </Stack>
 
                     </Stack>
 

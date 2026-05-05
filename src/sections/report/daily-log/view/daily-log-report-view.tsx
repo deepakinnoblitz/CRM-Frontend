@@ -1,6 +1,9 @@
+import jsPDF from 'jspdf';
 import dayjs from 'dayjs';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import autoTable from 'jspdf-autotable';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -49,7 +52,11 @@ export function DailyLogReportView() {
 
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [exportingExcel, setExportingExcel] = useState(false);
+    const [exportingPdf, setExportingPdf] = useState(false);
     const [isHR, setIsHR] = useState(false);
+
+    const { enqueueSnackbar } = useSnackbar();
 
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
@@ -132,180 +139,316 @@ export function DailyLogReportView() {
     };
 
     const handleExport = async () => {
-        const workbook = new ExcelJS.Workbook();
-        const mainSheet = workbook.addWorksheet('Daily Log Report');
-        const detailSheet = workbook.addWorksheet('Detailed Timing');
+        setExportingExcel(true);
+        try {
+            const workbook = new ExcelJS.Workbook();
+            const mainSheet = workbook.addWorksheet('Daily Log Report');
+            const detailSheet = workbook.addWorksheet('Detailed Timing');
 
-        // Selection Logic
-        const exportData = selected.length > 0
-            ? reportData.filter(row => selected.includes(row.name))
-            : reportData;
+            // Selection Logic
+            const exportData = selected.length > 0
+                ? reportData.filter(d => selected.includes(d.name))
+                : reportData;
 
-        // --- MAIN SHEET SETUP ---
-        mainSheet.columns = [
-            { header: 'Employee', key: 'employee_name', width: 25 },
-            { header: 'Employee ID', key: 'employee', width: 15 },
-            { header: 'Date', key: 'date', width: 15 },
-            { header: 'Login Time', key: 'login', width: 15 },
-            { header: 'Logout Time', key: 'logout', width: 15 },
-            { header: 'Work Hours', key: 'work_hours', width: 15 },
-            { header: 'Break Hours', key: 'break_hours', width: 15 },
-            { header: 'Status', key: 'status', width: 15 },
-        ];
+            // --- MAIN SHEET SETUP ---
+            mainSheet.columns = [
+                { header: 'Employee', key: 'employee_name', width: 25 },
+                { header: 'Employee ID', key: 'employee', width: 15 },
+                { header: 'Date', key: 'date', width: 15 },
+                { header: 'Login Time', key: 'login', width: 15 },
+                { header: 'Logout Time', key: 'logout', width: 15 },
+                { header: 'Work Hours', key: 'work_hours', width: 15 },
+                { header: 'Break Hours', key: 'break_hours', width: 15 },
+                { header: 'Status', key: 'status', width: 15 },
+            ];
 
-        const mainColCount = mainSheet.columns.length;
-        for (let i = 1; i <= mainColCount; i++) {
-            const cell = mainSheet.getRow(1).getCell(i);
-            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
-            cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        }
-        mainSheet.getRow(1).height = 25;
-
-        exportData.forEach((row) => {
-            const excelRow = mainSheet.addRow({
-                employee_name: row.employee_name,
-                employee: row.employee,
-                date: fDate(row.login_date, 'DD-MM-YYYY'),
-                login: row.login_time ? dayjs(row.login_time).format('HH:mm:ss') : '---',
-                logout: row.logout_time ? dayjs(row.logout_time).format('HH:mm:ss') : '---',
-                work_hours: row.total_work_hours?.toFixed(2) || '0.00',
-                break_hours: row.total_break_hours?.toFixed(2) || '0.00',
-                status: row.status
-            });
-
-            const statusCell = excelRow.getCell('status');
-            if (row.status === 'Active') {
-                statusCell.font = { color: { argb: 'FF22C55E' }, bold: true };
-            } else {
-                statusCell.font = { color: { argb: 'FFEF4444' }, bold: true };
+            const mainColCount = mainSheet.columns.length;
+            for (let i = 1; i <= mainColCount; i++) {
+                const cell = mainSheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
-        });
+            mainSheet.getRow(1).height = 25;
 
-        // Merging logic for Employee and Date
-        let mergeStart = 2;
-        const totalRows = mainSheet.rowCount;
-        for (let i = 2; i <= totalRows; i++) {
-            const current = mainSheet.getRow(i);
-            const next = i < totalRows ? mainSheet.getRow(i + 1) : null;
-
-            const isLast = i === totalRows;
-            const sameAsNext = !isLast && next &&
-                current.getCell(1).value === next.getCell(1).value &&
-                current.getCell(2).value === next.getCell(2).value &&
-                current.getCell(3).value === next.getCell(3).value;
-
-            if (!sameAsNext) {
-                if (i > mergeStart) {
-                    mainSheet.mergeCells(`A${mergeStart}:A${i}`);
-                    mainSheet.mergeCells(`B${mergeStart}:B${i}`);
-                    mainSheet.mergeCells(`C${mergeStart}:C${i}`);
-
-                    ['A', 'B', 'C'].forEach(col => {
-                        mainSheet.getCell(`${col}${mergeStart}`).alignment = { vertical: 'middle', horizontal: 'center' };
-                    });
-                }
-                mergeStart = i + 1;
-            }
-        }
-
-        mainSheet.eachRow((row, rowNumber) => {
-            if (rowNumber > 1) {
-                for (let i = 1; i <= mainColCount; i++) {
-                    const cell = row.getCell(i);
-                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                    if (rowNumber % 2 === 0) {
-                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
-                    }
-                    cell.border = {
-                        top: { style: 'thin', color: { argb: 'FF000000' } },
-                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                        left: { style: 'thin', color: { argb: 'FF000000' } },
-                        right: { style: 'thin', color: { argb: 'FF000000' } }
-                    };
-                }
-            }
-        });
-
-        // --- DETAIL SHEET SETUP ---
-        detailSheet.columns = [
-            { header: 'Employee', key: 'employee', width: 25 },
-            { header: 'Date', key: 'date', width: 15 },
-            { header: 'Type', key: 'type', width: 15 },
-            { header: 'Start Time', key: 'start', width: 15 },
-            { header: 'End Time', key: 'end', width: 15 },
-            { header: 'Duration', key: 'duration', width: 15 },
-            { header: 'Details / Reason', key: 'details', width: 30 },
-        ];
-
-        const detailColCount = detailSheet.columns.length;
-        for (let i = 1; i <= detailColCount; i++) {
-            const cell = detailSheet.getRow(1).getCell(i);
-            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
-            cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        }
-        detailSheet.getRow(1).height = 25;
-
-        exportData.forEach((session) => {
-            // 1. Add Session Summary Header for this employee
-            detailSheet.addRow({
-                employee: session.employee_name,
-                date: fDate(session.login_date, 'DD-MM-YYYY'),
-                type: 'SESSION',
-                start: session.login_time ? dayjs(session.login_time).format('HH:mm:ss') : '---',
-                end: session.logout_time ? dayjs(session.logout_time).format('HH:mm:ss') : 'Active',
-                duration: `${session.total_work_hours?.toFixed(2) || '0.00'} Hrs`,
-                details: `Total Break: ${session.total_break_hours?.toFixed(2) || '0.00'} Hrs`
-            }).font = { bold: true };
-
-            // 2. Add Intervals
-            (session.intervals || []).forEach((int: any) => {
-                detailSheet.addRow({
-                    employee: '',
-                    date: '',
-                    type: 'Activity',
-                    start: int.from_time ? dayjs(int.from_time).format('HH:mm:ss') : '---',
-                    end: int.to_time ? dayjs(int.to_time).format('HH:mm:ss') : 'Current',
-                    duration: int.duration_seconds ? `${Math.floor(int.duration_seconds / 60)}m ${int.duration_seconds % 60}s` : '---',
-                    details: int.status || 'Available'
+            exportData.forEach((row) => {
+                const excelRow = mainSheet.addRow({
+                    employee_name: row.employee_name,
+                    employee: row.employee,
+                    date: fDate(row.login_date, 'DD-MM-YYYY'),
+                    login: row.login_time ? dayjs(row.login_time).format('HH:mm:ss') : '---',
+                    logout: row.logout_time ? dayjs(row.logout_time).format('HH:mm:ss') : '---',
+                    work_hours: row.total_work_hours?.toFixed(2) || '0.00',
+                    break_hours: row.total_break_hours?.toFixed(2) || '0.00',
+                    status: row.status
                 });
+
+                const statusCell = excelRow.getCell('status');
+                if (row.status === 'Active') {
+                    statusCell.font = { color: { argb: 'FF22C55E' }, bold: true };
+                } else {
+                    statusCell.font = { color: { argb: 'FFEF4444' }, bold: true };
+                }
             });
 
-            // 3. Add Breaks
-            (session.breaks || []).forEach((brk: any) => {
-                detailSheet.addRow({
-                    employee: '',
-                    date: '',
-                    type: 'BREAK',
-                    start: brk.break_start ? dayjs(brk.break_start).format('HH:mm:ss') : '---',
-                    end: brk.break_end ? dayjs(brk.break_end).format('HH:mm:ss') : 'Current',
-                    duration: `${brk.break_duration?.toFixed(1) || '0'} mins`,
-                    details: brk.reason || brk.source || 'Manual Break'
-                }).font = { italic: true, color: { argb: 'FFD97706' } };
-            });
+            // Merging logic for Employee and Date
+            let mergeStart = 2;
+            const totalRows = mainSheet.rowCount;
+            for (let i = 2; i <= totalRows; i++) {
+                const current = mainSheet.getRow(i);
+                const next = i < totalRows ? mainSheet.getRow(i + 1) : null;
 
-            // Add an empty row for spacing between sessions
-            detailSheet.addRow([]);
-        });
+                const isLast = i === totalRows;
+                const sameAsNext = !isLast && next &&
+                    current.getCell(1).value === next.getCell(1).value &&
+                    current.getCell(2).value === next.getCell(2).value &&
+                    current.getCell(3).value === next.getCell(3).value;
 
-        // Styling for detail sheet
-        detailSheet.eachRow((row, rowNumber) => {
-            if (rowNumber > 1 && row.getCell(3).value) { // only for rows with data
-                for (let i = 1; i <= detailColCount; i++) {
-                    const cell = row.getCell(i);
-                    cell.border = {
-                        top: { style: 'thin', color: { argb: 'FF000000' } },
-                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                        left: { style: 'thin', color: { argb: 'FF000000' } },
-                        right: { style: 'thin', color: { argb: 'FF000000' } }
-                    };
+                if (!sameAsNext) {
+                    if (i > mergeStart) {
+                        mainSheet.mergeCells(`A${mergeStart}:A${i}`);
+                        mainSheet.mergeCells(`B${mergeStart}:B${i}`);
+                        mainSheet.mergeCells(`C${mergeStart}:C${i}`);
+
+                        ['A', 'B', 'C'].forEach(col => {
+                            mainSheet.getCell(`${col}${mergeStart}`).alignment = { vertical: 'middle', horizontal: 'center' };
+                        });
+                    }
+                    mergeStart = i + 1;
                 }
             }
-        });
 
-        const buffer = await workbook.xlsx.writeBuffer();
-        saveAs(new Blob([buffer]), `Daily_Log_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+            mainSheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= mainColCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            // --- DETAIL SHEET SETUP ---
+            detailSheet.columns = [
+                { header: 'Employee', key: 'employee', width: 25 },
+                { header: 'Date', key: 'date', width: 15 },
+                { header: 'Type', key: 'type', width: 15 },
+                { header: 'Start Time', key: 'start', width: 15 },
+                { header: 'End Time', key: 'end', width: 15 },
+                { header: 'Duration', key: 'duration', width: 15 },
+                { header: 'Details / Reason', key: 'details', width: 30 },
+            ];
+
+            const detailColCount = detailSheet.columns.length;
+            for (let i = 1; i <= detailColCount; i++) {
+                const cell = detailSheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            }
+            detailSheet.getRow(1).height = 25;
+
+            exportData.forEach((session) => {
+                // 1. Add Session Summary Header for this employee
+                detailSheet.addRow({
+                    employee: session.employee_name,
+                    date: fDate(session.login_date, 'DD-MM-YYYY'),
+                    type: 'SESSION',
+                    start: session.login_time ? dayjs(session.login_time).format('HH:mm:ss') : '---',
+                    end: session.logout_time ? dayjs(session.logout_time).format('HH:mm:ss') : 'Active',
+                    duration: `${session.total_work_hours?.toFixed(2) || '0.00'} Hrs`,
+                    details: `Total Break: ${session.total_break_hours?.toFixed(2) || '0.00'} Hrs`
+                }).font = { bold: true };
+
+                // 2. Add Intervals
+                (session.intervals || []).forEach((int: any) => {
+                    detailSheet.addRow({
+                        employee: '',
+                        date: '',
+                        type: 'Activity',
+                        start: int.from_time ? dayjs(int.from_time).format('HH:mm:ss') : '---',
+                        end: int.to_time ? dayjs(int.to_time).format('HH:mm:ss') : 'Current',
+                        duration: int.duration_seconds ? `${Math.floor(int.duration_seconds / 60)}m ${int.duration_seconds % 60}s` : '---',
+                        details: int.status || 'Available'
+                    });
+                });
+
+                // 3. Add Breaks
+                (session.breaks || []).forEach((brk: any) => {
+                    detailSheet.addRow({
+                        employee: '',
+                        date: '',
+                        type: 'BREAK',
+                        start: brk.break_start ? dayjs(brk.break_start).format('HH:mm:ss') : '---',
+                        end: brk.break_end ? dayjs(brk.break_end).format('HH:mm:ss') : 'Current',
+                        duration: `${brk.break_duration?.toFixed(1) || '0'} mins`,
+                        details: brk.reason || brk.source || 'Manual Break'
+                    }).font = { italic: true, color: { argb: 'FFD97706' } };
+                });
+
+                // Add an empty row for spacing between sessions
+                detailSheet.addRow([]);
+            });
+
+            // Styling for detail sheet
+            detailSheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1 && row.getCell(3).value) { // only for rows with data
+                    for (let i = 1; i <= detailColCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Daily_Log_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+            enqueueSnackbar('Excel exported successfully!', { variant: 'success' });
+        } catch (error) {
+            console.error('Excel export failed:', error);
+            enqueueSnackbar('Excel export failed!', { variant: 'error' });
+        } finally {
+            setExportingExcel(false);
+        }
+    };
+
+    const handleExportPdf = async () => {
+        setExportingPdf(true);
+        try {
+            const doc = new jsPDF('landscape');
+
+            // Selection Logic
+            const exportData = selected.length > 0
+                ? reportData.filter(d => selected.includes(d.name))
+                : reportData;
+
+            if (exportData.length === 0) {
+                enqueueSnackbar('No data to export', { variant: 'warning' });
+                setExportingPdf(false);
+                return;
+            }
+
+            // --- PAGE 1: DAILY LOG REPORT ---
+            doc.setFontSize(18);
+            doc.setTextColor(14, 165, 233);
+            doc.text('Daily Log Report', 14, 15);
+            doc.setFontSize(9);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, HH:mm')}`, 14, 21);
+
+            const mainBody = exportData.map(row => [
+                row.employee_name,
+                row.employee,
+                fDate(row.login_date, 'DD-MM-YYYY'),
+                row.login_time ? dayjs(row.login_time).format('HH:mm:ss') : '---',
+                row.logout_time ? dayjs(row.logout_time).format('HH:mm:ss') : '---',
+                row.total_work_hours?.toFixed(2) || '0.00',
+                row.total_break_hours?.toFixed(2) || '0.00',
+                row.status
+            ]);
+
+            autoTable(doc, {
+                startY: 28,
+                head: [['Employee', 'Employee ID', 'Date', 'Login', 'Logout', 'Work (h)', 'Break (h)', 'Status']],
+                body: mainBody,
+                theme: 'grid',
+                headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+                styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200] },
+                columnStyles: {
+                    0: { cellWidth: 45 },
+                    1: { cellWidth: 25 },
+                }
+            });
+
+            // --- PAGE 2: DETAILED TIMING ---
+            doc.addPage();
+            doc.setFontSize(18);
+            doc.setTextColor(14, 165, 233);
+            doc.text('Detailed Timing', 14, 15);
+
+            const detailBody: any[] = [];
+            exportData.forEach((session) => {
+                // Session Header Row
+                detailBody.push([
+                    { content: session.employee_name, styles: { fontStyle: 'bold' } },
+                    { content: fDate(session.login_date, 'DD-MM-YYYY'), styles: { fontStyle: 'bold' } },
+                    { content: 'SESSION', styles: { fontStyle: 'bold' } },
+                    { content: session.login_time ? dayjs(session.login_time).format('HH:mm:ss') : '---', styles: { fontStyle: 'bold' } },
+                    { content: session.logout_time ? dayjs(session.logout_time).format('HH:mm:ss') : 'Active', styles: { fontStyle: 'bold' } },
+                    { content: `${session.total_work_hours?.toFixed(2) || '0.00'} Hrs`, styles: { fontStyle: 'bold' } },
+                    { content: `Total Break: ${session.total_break_hours?.toFixed(2) || '0.00'} Hrs`, styles: { fontStyle: 'bold' } }
+                ]);
+
+                // Intervals
+                (session.intervals || []).forEach((int: any) => {
+                    detailBody.push([
+                        '',
+                        '',
+                        'Activity',
+                        int.from_time ? dayjs(int.from_time).format('HH:mm:ss') : '---',
+                        int.to_time ? dayjs(int.to_time).format('HH:mm:ss') : 'Current',
+                        int.duration_seconds ? `${Math.floor(int.duration_seconds / 60)}m ${int.duration_seconds % 60}s` : '---',
+                        int.status || 'Available'
+                    ]);
+                });
+
+                // Breaks
+                (session.breaks || []).forEach((brk: any) => {
+                    detailBody.push([
+                        '',
+                        '',
+                        'BREAK',
+                        brk.break_start ? dayjs(brk.break_start).format('HH:mm:ss') : '---',
+                        brk.break_end ? dayjs(brk.break_end).format('HH:mm:ss') : 'Current',
+                        { content: `${brk.break_duration?.toFixed(1) || '0'} mins`, styles: { textColor: [217, 119, 6] } },
+                        { content: brk.reason || brk.source || 'Manual Break', styles: { textColor: [217, 119, 6] } }
+                    ]);
+                });
+
+                // Empty row for spacing
+                detailBody.push(['', '', '', '', '', '', '']);
+            });
+
+            autoTable(doc, {
+                startY: 25,
+                head: [['Employee', 'Date', 'Type', 'Start Time', 'End Time', 'Duration', 'Details / Reason']],
+                body: detailBody,
+                theme: 'grid',
+                headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+                styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200] },
+                columnStyles: {
+                    0: { cellWidth: 40 },
+                    6: { cellWidth: 60 }
+                },
+                didParseCell: (data) => {
+                    // Highlight BREAK rows type column
+                    if (data.column.index === 2 && data.cell.text[0] === 'BREAK') {
+                        data.cell.styles.textColor = [217, 119, 6];
+                        data.cell.styles.fontStyle = 'italic';
+                    }
+                }
+            });
+
+            doc.save(`Daily_Log_Report_${dayjs().format('YYYY-MM-DD')}.pdf`);
+            enqueueSnackbar('PDF exported successfully!', { variant: 'success' });
+        } catch (error) {
+            console.error('PDF export failed:', error);
+            enqueueSnackbar('PDF export failed!', { variant: 'error' });
+        } finally {
+            setExportingPdf(false);
+        }
     };
 
     const handleViewDetails = (session: any) => {
@@ -480,22 +623,39 @@ export function DailyLogReportView() {
                         </FormControl>
 
                         <Box sx={{ flexGrow: 1 }} />
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={handleExport}
-                            disabled={reportData.length === 0}
-                            sx={{
-                                bgcolor: '#08a3cd',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: '#068fb3' },
-                                height: 40,
-                                px: 3,
-                                ml: { md: 'auto' }
-                            }}
-                        >
-                            Export
-                        </Button>
+                        <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
+                            <Button
+                                variant="contained"
+                                startIcon={exportingExcel ? undefined : <Iconify icon={"solar:export-bold" as any} />}
+                                onClick={handleExport}
+                                disabled={reportData.length === 0 || exportingExcel}
+                                sx={{
+                                    bgcolor: '#0ea5e9',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#0284c7' },
+                                    height: 40,
+                                    px: 3,
+                                }}
+                            >
+                                {exportingExcel ? 'Exporting Excel...' : 'Export Excel'}
+                            </Button>
+
+                            <Button
+                                variant="contained"
+                                startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                onClick={handleExportPdf}
+                                disabled={reportData.length === 0 || exportingPdf}
+                                sx={{
+                                    bgcolor: '#f43f5e',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#e11d48' },
+                                    height: 40,
+                                    px: 3,
+                                }}
+                            >
+                                {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                            </Button>
+                        </Stack>
                     </Stack>
                 </Card>
 

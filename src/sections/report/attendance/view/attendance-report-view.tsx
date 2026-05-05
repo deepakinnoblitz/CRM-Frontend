@@ -1,6 +1,9 @@
+import jsPDF from 'jspdf';
 import dayjs from 'dayjs';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import autoTable from 'jspdf-autotable';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -46,8 +49,11 @@ export function AttendanceReportView() {
     const { user } = useAuth();
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
-
+    const [exportingExcel, setExportingExcel] = useState(false);
+    const [exportingPdf, setExportingPdf] = useState(false);
     const [isHR, setIsHR] = useState(false);
+
+    const { enqueueSnackbar } = useSnackbar();
 
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
@@ -187,112 +193,225 @@ export function AttendanceReportView() {
     }, []);
 
     const handleExport = async () => {
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet('Attendance Report');
+        setExportingExcel(true);
+        try {
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Attendance Report');
 
-        // Selection Logic
-        const exportData = selected.length > 0
-            ? reportData.filter(row => selected.includes(row.name))
-            : reportData;
+            // Use all filtered data for export
+            const exportData = reportData;
 
-        sheet.columns = [
-            { header: 'Date', key: 'date', width: 15 },
-            { header: 'Employee', key: 'employee_name', width: 25 },
-            { header: 'Employee ID', key: 'employee', width: 15 },
-            { header: 'Status', key: 'status', width: 15 },
-            { header: 'In Time', key: 'in_time', width: 15 },
-            { header: 'Out Time', key: 'out_time', width: 15 },
-            { header: 'Working Hours', key: 'working_hours', width: 15 },
-        ];
+            sheet.columns = [
+                { header: 'Date', key: 'date', width: 15 },
+                { header: 'Employee', key: 'employee_name', width: 25 },
+                { header: 'Employee ID', key: 'employee', width: 15 },
+                { header: 'Status', key: 'status', width: 15 },
+                { header: 'In Time', key: 'in_time', width: 15 },
+                { header: 'Out Time', key: 'out_time', width: 15 },
+                { header: 'Working Hours', key: 'working_hours', width: 15 },
+            ];
 
-        const columnCount = sheet.columns.length;
+            const columnCount = sheet.columns.length;
 
-        // Header Styling (Limited to data columns only)
-        for (let i = 1; i <= columnCount; i++) {
-            const cell = sheet.getRow(1).getCell(i);
-            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
-            cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        }
-        sheet.getRow(1).height = 25;
+            // Header Styling (Limited to data columns only)
+            for (let i = 1; i <= columnCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            }
+            sheet.getRow(1).height = 25;
 
-        exportData.forEach((row) => {
-            const excelRow = sheet.addRow({
-                date: fDate(row.attendance_date, 'DD-MM-YYYY'),
-                employee_name: row.employee_name,
-                employee: row.employee,
-                status: row.status,
-                in_time: row.in_time || '---',
-                out_time: row.out_time || '---',
-                working_hours: row.working_hours_display || '---'
+            exportData.forEach((row) => {
+                const excelRow = sheet.addRow({
+                    date: fDate(row.attendance_date, 'DD-MM-YYYY'),
+                    employee_name: row.employee_name,
+                    employee: row.employee,
+                    status: row.status,
+                    in_time: row.in_time || '---',
+                    out_time: row.out_time || '---',
+                    working_hours: row.working_hours_display || '---'
+                });
+
+                // Status coloring
+                const statusCell = excelRow.getCell('status');
+                const statusColors: any = {
+                    'Present': 'FF22C55E',
+                    'Absent': 'FFEF4444',
+                    'Half Day': 'FFF59E0B',
+                    'On Leave': 'FF0EA5E9',
+                    'Holiday': 'FF1877F2'
+                };
+                if (statusColors[row.status]) {
+                    statusCell.font = { color: { argb: statusColors[row.status] }, bold: true };
+                }
             });
 
-            // Status coloring
-            const statusCell = excelRow.getCell('status');
-            const statusColors: any = {
-                'Present': 'FF22C55E',
-                'Absent': 'FFEF4444',
-                'Half Day': 'FFF59E0B',
-                'On Leave': 'FF0EA5E9',
-                'Holiday': 'FF1877F2'
-            };
-            if (statusColors[row.status]) {
-                statusCell.font = { color: { argb: statusColors[row.status] }, bold: true };
-            }
-        });
+            // Merging logic for Date, Employee, and Employee ID
+            let mergeStart = 2;
+            const totalRows = sheet.rowCount;
+            for (let i = 2; i <= totalRows; i++) {
+                const current = sheet.getRow(i);
+                const next = i < totalRows ? sheet.getRow(i + 1) : null;
 
-        // Merging logic for Date, Employee, and Employee ID
-        let mergeStart = 2;
-        const totalRows = sheet.rowCount;
-        for (let i = 2; i <= totalRows; i++) {
-            const current = sheet.getRow(i);
-            const next = i < totalRows ? sheet.getRow(i + 1) : null;
+                const isLast = i === totalRows;
+                const sameAsNext = !isLast && next &&
+                    current.getCell(1).value === next.getCell(1).value &&
+                    current.getCell(2).value === next.getCell(2).value &&
+                    current.getCell(3).value === next.getCell(3).value;
 
-            const isLast = i === totalRows;
-            const sameAsNext = !isLast && next &&
-                current.getCell(1).value === next.getCell(1).value &&
-                current.getCell(2).value === next.getCell(2).value &&
-                current.getCell(3).value === next.getCell(3).value;
+                if (!sameAsNext) {
+                    if (i > mergeStart) {
+                        sheet.mergeCells(`A${mergeStart}:A${i}`);
+                        sheet.mergeCells(`B${mergeStart}:B${i}`);
+                        sheet.mergeCells(`C${mergeStart}:C${i}`);
 
-            if (!sameAsNext) {
-                if (i > mergeStart) {
-                    sheet.mergeCells(`A${mergeStart}:A${i}`);
-                    sheet.mergeCells(`B${mergeStart}:B${i}`);
-                    sheet.mergeCells(`C${mergeStart}:C${i}`);
-
-                    ['A', 'B', 'C'].forEach(col => {
-                        sheet.getCell(`${col}${mergeStart}`).alignment = { vertical: 'middle', horizontal: 'center' };
-                    });
+                        ['A', 'B', 'C'].forEach(col => {
+                            sheet.getCell(`${col}${mergeStart}`).alignment = { vertical: 'middle', horizontal: 'center' };
+                        });
+                    }
+                    mergeStart = i + 1;
                 }
-                mergeStart = i + 1;
             }
+
+            // Alternating row colors and black borders (Limited to data columns only)
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= columnCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+                        // Alternate shading
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+
+                        // Borders
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Attendance_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+            enqueueSnackbar('Excel exported successfully!', { variant: 'success' });
+        } catch (error) {
+            console.error('Excel export failed:', error);
+            enqueueSnackbar('Excel export failed!', { variant: 'error' });
+        } finally {
+            setExportingExcel(false);
         }
+    };
 
-        // Alternating row colors and black borders (Limited to data columns only)
-        sheet.eachRow((row, rowNumber) => {
-            if (rowNumber > 1) {
-                for (let i = 1; i <= columnCount; i++) {
-                    const cell = row.getCell(i);
-                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    const handleExportPdf = async () => {
+        setExportingPdf(true);
+        try {
+            const doc = new jsPDF('landscape');
 
-                    // Alternate shading
-                    if (rowNumber % 2 === 0) {
-                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+            // Use all filtered data for export
+            const exportData = reportData;
+
+            // Header
+            doc.setFontSize(18);
+            doc.setTextColor(14, 165, 233);
+            doc.text('Attendance Report', 14, 15);
+            doc.setFontSize(9);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, HH:mm')}`, 14, 21);
+
+            const tableData: any[] = [];
+            for (let i = 0; i < exportData.length; i++) {
+                const row = exportData[i];
+                const currentDate = fDate(row.attendance_date, 'DD-MM-YYYY');
+                const currentEmployee = row.employee_name;
+                const currentEmployeeId = row.employee;
+
+                // Grouping check (mirroring Excel merge)
+                let isStart = true;
+                if (i > 0) {
+                    const prevRow = exportData[i - 1];
+                    if (fDate(prevRow.attendance_date, 'DD-MM-YYYY') === currentDate &&
+                        prevRow.employee_name === currentEmployee &&
+                        prevRow.employee === currentEmployeeId) {
+                        isStart = false;
+                    }
+                }
+
+                if (isStart) {
+                    // Calculate span
+                    let span = 1;
+                    while (i + span < exportData.length) {
+                        const nextRow = exportData[i + span];
+                        if (fDate(nextRow.attendance_date, 'DD-MM-YYYY') === currentDate &&
+                            nextRow.employee_name === currentEmployee &&
+                            nextRow.employee === currentEmployeeId) {
+                            span++;
+                        } else {
+                            break;
+                        }
                     }
 
-                    // Borders
-                    cell.border = {
-                        top: { style: 'thin', color: { argb: 'FF000000' } },
-                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                        left: { style: 'thin', color: { argb: 'FF000000' } },
-                        right: { style: 'thin', color: { argb: 'FF000000' } }
-                    };
+                    tableData.push([
+                        { content: currentDate, rowSpan: span, styles: { valign: 'middle', halign: 'center' } },
+                        { content: currentEmployee, rowSpan: span, styles: { valign: 'middle', halign: 'center' } },
+                        { content: currentEmployeeId, rowSpan: span, styles: { valign: 'middle', halign: 'center' } },
+                        row.status,
+                        row.in_time || '---',
+                        row.out_time || '---',
+                        row.working_hours_display || '---'
+                    ]);
+                } else {
+                    tableData.push([
+                        // Spanned columns omitted
+                        row.status,
+                        row.in_time || '---',
+                        row.out_time || '---',
+                        row.working_hours_display || '---'
+                    ]);
                 }
             }
-        });
 
-        const buffer = await workbook.xlsx.writeBuffer();
-        saveAs(new Blob([buffer]), `Attendance_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+            autoTable(doc, {
+                startY: 30,
+                head: [['Date', 'Employee', 'Employee ID', 'Status', 'In Time', 'Out Time', 'Working Hours']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+                styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200], valign: 'middle' },
+                columnStyles: {
+                    0: { cellWidth: 30 },
+                    1: { cellWidth: 50 },
+                    2: { cellWidth: 30 },
+                },
+                didParseCell: (data) => {
+                    const statusVal = data.cell.text[0];
+                    const statusColors: any = {
+                        'Present': [34, 197, 94],
+                        'Absent': [239, 68, 68],
+                        'Half Day': [245, 158, 11],
+                        'On Leave': [14, 165, 233],
+                        'Holiday': [24, 119, 242]
+                    };
+                    if (data.column.index === 3 && statusColors[statusVal]) {
+                        data.cell.styles.textColor = statusColors[statusVal];
+                        data.cell.styles.fontStyle = 'bold';
+                    }
+                }
+            });
+
+            doc.save(`Attendance_Report_${dayjs().format('YYYY-MM-DD')}.pdf`);
+            enqueueSnackbar('PDF exported successfully!', { variant: 'success' });
+        } catch (error) {
+            console.error('PDF export failed:', error);
+            enqueueSnackbar('PDF export failed!', { variant: 'error' });
+        } finally {
+            setExportingPdf(false);
+        }
     };
 
     const onChangePage = useCallback((event: unknown, newPage: number) => {
@@ -436,22 +555,39 @@ export function AttendanceReportView() {
                         </FormControl>
 
                         <Box sx={{ flexGrow: 1 }} />
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={handleExport}
-                            disabled={reportData.length === 0}
-                            sx={{
-                                bgcolor: '#08a3cd',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: '#068fb3' },
-                                height: 40,
-                                px: 3,
-                                ml: { md: 'auto' }
-                            }}
-                        >
-                            Export
-                        </Button>
+                        <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
+                            <Button
+                                variant="contained"
+                                startIcon={exportingExcel ? undefined : <Iconify icon={"solar:export-bold" as any} />}
+                                onClick={handleExport}
+                                disabled={reportData.length === 0 || exportingExcel}
+                                sx={{
+                                    bgcolor: '#0ea5e9',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#0284c7' },
+                                    height: 40,
+                                    px: 3,
+                                }}
+                            >
+                                {exportingExcel ? 'Exporting Excel...' : 'Export Excel'}
+                            </Button>
+
+                            <Button
+                                variant="contained"
+                                startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                onClick={handleExportPdf}
+                                disabled={reportData.length === 0 || exportingPdf}
+                                sx={{
+                                    bgcolor: '#f43f5e',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#e11d48' },
+                                    height: 40,
+                                    px: 3,
+                                }}
+                            >
+                                {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                            </Button>
+                        </Stack>
                     </Stack>
                 </Card>
 
