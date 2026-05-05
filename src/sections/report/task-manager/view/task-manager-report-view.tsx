@@ -1,6 +1,9 @@
+import jsPDF from 'jspdf';
 import dayjs from 'dayjs';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import autoTable from 'jspdf-autotable';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -55,7 +58,11 @@ export function TaskManagerReportView() {
 
     const [reportData, setReportData] = useState<TaskManager[]>([]);
     const [loading, setLoading] = useState(false);
+    const [exportingExcel, setExportingExcel] = useState(false);
+    const [exportingPdf, setExportingPdf] = useState(false);
     const [isHR, setIsHR] = useState(false);
+
+    const { enqueueSnackbar } = useSnackbar();
 
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
@@ -192,245 +199,409 @@ export function TaskManagerReportView() {
     };
 
     const handleExport = async () => {
-        const workbook = new ExcelJS.Workbook();
-        const mainSheet = workbook.addWorksheet('Task Summary');
-        const detailSheet = workbook.addWorksheet('Full Task Details');
-        const historySheet = workbook.addWorksheet('Detailed History');
+        setExportingExcel(true);
+        try {
+            const workbook = new ExcelJS.Workbook();
+            const mainSheet = workbook.addWorksheet('Task Summary');
+            const detailSheet = workbook.addWorksheet('Full Task Details');
+            const historySheet = workbook.addWorksheet('Detailed History');
 
-        // If items are selected, only export those. Otherwise export everything in the current report.
-        const exportData = selected.length > 0
-            ? reportData.filter(task => selected.includes(task.name))
-            : reportData;
+            // If items are selected, only export those. Otherwise export everything in the current report.
+            const exportData = selected.length > 0
+                ? reportData.filter(task => selected.includes(task.name))
+                : reportData;
 
-        // --- MAIN SHEET SETUP ---
-        mainSheet.columns = [
-            { header: 'Task ID', key: 'name', width: 18 },
-            { header: 'Task Title', key: 'title', width: 40 },
-            { header: 'Creation Date', key: 'date', width: 18 },
-            { header: 'Assignees', key: 'employee', width: 35 },
-            { header: 'Project / Module', key: 'project', width: 25 },
-            { header: 'Status', key: 'status', width: 15 },
-            { header: 'Priority', key: 'priority', width: 12 },
-            { header: 'Time Spent', key: 'time_spent', width: 20 },
-            { header: 'Estimated Time', key: 'est_time', width: 20 },
-            { header: 'Variance', key: 'variance', width: 20 },
-        ];
+            // --- MAIN SHEET SETUP ---
+            mainSheet.columns = [
+                { header: 'Task ID', key: 'name', width: 18 },
+                { header: 'Task Title', key: 'title', width: 40 },
+                { header: 'Creation Date', key: 'date', width: 18 },
+                { header: 'Assignees', key: 'employee', width: 35 },
+                { header: 'Project / Module', key: 'project', width: 25 },
+                { header: 'Status', key: 'status', width: 15 },
+                { header: 'Priority', key: 'priority', width: 12 },
+                { header: 'Time Spent', key: 'time_spent', width: 20 },
+                { header: 'Estimated Time', key: 'est_time', width: 20 },
+                { header: 'Variance', key: 'variance', width: 20 },
+            ];
 
-        // Header Styling (Limited to data columns only)
-        const mainColCountForHeader = mainSheet.columns.length;
-        for (let i = 1; i <= mainColCountForHeader; i++) {
-            const cell = mainSheet.getRow(1).getCell(i);
-            cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
-            cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        }
-        mainSheet.getRow(1).height = 30;
-
-        // Base URL for hyperlinks (assuming the app is hosted)
-        const baseUrl = window.location.origin;
-
-        exportData.forEach((task) => {
-            const actual = getTimeLogged(task);
-            const estimated = task.estimated_time || 0;
-            const variance = estimated - actual;
-
-            const row = mainSheet.addRow({
-                name: task.name,
-                title: task.title,
-                date: fDate(task.creation, 'DD MMM YYYY'),
-                employee: task.assignees?.map(a => a.employee_name).join(', ') || '',
-                project: task.project || '',
-                status: task.status,
-                priority: task.priority || '',
-                time_spent: formatDurationDescriptive(actual),
-                est_time: formatDurationDescriptive(estimated),
-                variance: formatDurationDescriptive(variance)
-            });
-
-            // Add Hyperlink to Task ID
-            const idCell = row.getCell('name');
-            idCell.value = task.name;
-
-            // Conditional styling for Status
-            const statusCell = row.getCell('status');
-            const statusColors: any = {
-                'Completed': 'FF22C55E',
-                'In Progress': 'FFF97316',
-                'Overdue': 'FFEF4444',
-                'On Hold': 'FFF59E0B'
-            };
-            if (statusColors[task.status]) {
-                statusCell.font = { color: { argb: statusColors[task.status] }, bold: true };
+            // Header Styling (Limited to data columns only)
+            const mainColCountForHeader = mainSheet.columns.length;
+            for (let i = 1; i <= mainColCountForHeader; i++) {
+                const cell = mainSheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
+            mainSheet.getRow(1).height = 30;
 
-            // Variance styling
-            if (variance < 0) {
-                row.getCell('variance').font = { color: { argb: 'FFEF4444' } };
-            }
+            exportData.forEach((task) => {
+                const actual = getTimeLogged(task);
+                const estimated = task.estimated_time || 0;
+                const variance = estimated - actual;
 
-            row.alignment = { vertical: 'middle' };
-        });
-
-        // Alternate row colors and borders (Limited to data columns only)
-        const mainColCount = mainSheet.columns.length;
-        mainSheet.eachRow((row, rowNumber) => {
-            if (rowNumber > 1) {
-                for (let i = 1; i <= mainColCount; i++) {
-                    const cell = row.getCell(i);
-                    if (rowNumber % 2 === 0) {
-                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
-                    }
-                    cell.border = {
-                        top: { style: 'thin', color: { argb: 'FF000000' } },
-                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                        left: { style: 'thin', color: { argb: 'FF000000' } },
-                        right: { style: 'thin', color: { argb: 'FF000000' } }
-                    };
-                }
-            }
-        });
-
-        // --- FULL DETAILS SHEET ---
-        detailSheet.columns = [
-            { header: 'Task ID', key: 'name', width: 18 },
-            { header: 'Title', key: 'title', width: 40 },
-            { header: 'Status', key: 'status', width: 15 },
-            { header: 'Priority', key: 'priority', width: 12 },
-            { header: 'Project', key: 'project', width: 25 },
-            { header: 'Department', key: 'department', width: 25 },
-            { header: 'Assignees', key: 'assignees', width: 45 },
-            { header: 'Estimated Time', key: 'est_time', width: 18 },
-            { header: 'Due Date', key: 'due_date', width: 20 },
-            { header: 'Description', key: 'description', width: 80 },
-            { header: 'Attachment Req.', key: 'attach_req', width: 15 },
-            { header: 'Recurring', key: 'recurring', width: 12 },
-            { header: 'Frequency', key: 'frequency', width: 15 },
-            { header: 'Created On', key: 'creation', width: 20 },
-            { header: 'Modified On', key: 'modified', width: 20 },
-            { header: 'Closed By', key: 'closed_by', width: 25 },
-            { header: 'Closed On', key: 'closed_on', width: 20 },
-        ];
-
-        const detailColCountForHeader = detailSheet.columns.length;
-        for (let i = 1; i <= detailColCountForHeader; i++) {
-            const cell = detailSheet.getRow(1).getCell(i);
-            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
-        }
-
-        exportData.forEach(task => {
-            const row = detailSheet.addRow({
-                name: task.name,
-                title: task.title,
-                status: task.status,
-                priority: task.priority,
-                project: task.project || '-',
-                department: task.department || '-',
-                assignees: task.assignees?.map(a => `${a.employee_name} (${a.employee})`).join(', ') || '-',
-                est_time: task.estimated_time ? formatDurationDescriptive(task.estimated_time) : '-',
-                due_date: task.due_date ? `${fDate(task.due_date, 'DD MMM YYYY')} ${task.due_time || ''}` : '-',
-                description: task.description ? task.description.replace(/<[^>]*>?/gm, '') : '-',
-                attach_req: task.attachment_required ? 'Yes' : 'No',
-                recurring: task.recurring_task ? 'Yes' : 'No',
-                frequency: task.recurring_frequency || '-',
-                creation: dayjs(task.creation).format('DD MMM YYYY HH:mm'),
-                modified: dayjs(task.modified).format('DD MMM YYYY HH:mm'),
-                closed_by: task.closed_by || '-',
-                closed_on: task.closed_on ? dayjs(task.closed_on).format('DD MMM YYYY HH:mm') : '-'
-            });
-            row.alignment = { vertical: 'middle', wrapText: true };
-        });
-
-        // Apply Borders and Alternate Shading to Detail Sheet (Limited to data columns only)
-        const detailColCount = detailSheet.columns.length;
-        detailSheet.eachRow((row, rowNumber) => {
-            if (rowNumber > 1) {
-                for (let i = 1; i <= detailColCount; i++) {
-                    const cell = row.getCell(i);
-                    if (rowNumber % 2 === 0) {
-                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
-                    }
-                    cell.border = {
-                        top: { style: 'thin', color: { argb: 'FF000000' } },
-                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                        left: { style: 'thin', color: { argb: 'FF000000' } },
-                        right: { style: 'thin', color: { argb: 'FF000000' } }
-                    };
-                }
-            }
-        });
-
-        // --- HISTORY SHEET SETUP ---
-        historySheet.columns = [
-            { header: 'Task ID', key: 'parent', width: 18 },
-            { header: 'Event', key: 'event', width: 15 },
-            { header: 'Performed By', key: 'done_by', width: 25 },
-            { header: 'Timestamp', key: 'done_on', width: 20 },
-            { header: 'Logged Time', key: 'hours', width: 15 },
-            { header: 'Remarks', key: 'remarks', width: 50 },
-        ];
-
-        const histColCountForHeader = historySheet.columns.length;
-        for (let i = 1; i <= histColCountForHeader; i++) {
-            const cell = historySheet.getRow(1).getCell(i);
-            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
-        }
-
-        exportData.forEach(task => {
-            if (task.history) {
-                task.history.forEach(log => {
-                    historySheet.addRow({
-                        parent: task.name,
-                        event: log.event,
-                        done_by: log.done_by,
-                        done_on: fDate(log.done_on, 'DD MMM YYYY HH:mm'),
-                        hours: log.hours_spent || '-',
-                        remarks: log.remarks ? log.remarks.replace(/<[^>]*>?/gm, '') : '-'
-                    });
+                const row = mainSheet.addRow({
+                    name: task.name,
+                    title: task.title,
+                    date: fDate(task.creation, 'DD MMM YYYY'),
+                    employee: task.assignees?.map(a => a.employee_name).join(', ') || '',
+                    project: task.project || '',
+                    status: task.status,
+                    priority: task.priority || '',
+                    time_spent: formatDurationDescriptive(actual),
+                    est_time: formatDurationDescriptive(estimated),
+                    variance: formatDurationDescriptive(variance)
                 });
-            }
-        });
 
-        // Apply Borders and Alternate Shading to History Sheet (Limited to data columns only)
-        const histColCount = historySheet.columns.length;
-        historySheet.eachRow((row, rowNumber) => {
-            if (rowNumber > 1) {
-                for (let i = 1; i <= histColCount; i++) {
-                    const cell = row.getCell(i);
-                    if (rowNumber % 2 === 0) {
-                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
-                    }
-                    cell.border = {
-                        top: { style: 'thin', color: { argb: 'FF000000' } },
-                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                        left: { style: 'thin', color: { argb: 'FF000000' } },
-                        right: { style: 'thin', color: { argb: 'FF000000' } }
-                    };
+                // Conditional styling for Status
+                const statusCell = row.getCell('status');
+                const statusColors: any = {
+                    'Completed': 'FF22C55E',
+                    'In Progress': 'FFF97316',
+                    'Overdue': 'FFEF4444',
+                    'On Hold': 'FFF59E0B'
+                };
+                if (statusColors[task.status]) {
+                    statusCell.font = { color: { argb: statusColors[task.status] }, bold: true };
                 }
+
+                // Variance styling
+                if (variance < 0) {
+                    row.getCell('variance').font = { color: { argb: 'FFEF4444' } };
+                }
+
+                row.alignment = { vertical: 'middle' };
+            });
+
+            // Alternate row colors and borders (Limited to data columns only)
+            const mainColCount = mainSheet.columns.length;
+            mainSheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= mainColCount; i++) {
+                        const cell = row.getCell(i);
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            // --- FULL DETAILS SHEET ---
+            detailSheet.columns = [
+                { header: 'Task ID', key: 'name', width: 18 },
+                { header: 'Title', key: 'title', width: 40 },
+                { header: 'Status', key: 'status', width: 15 },
+                { header: 'Priority', key: 'priority', width: 12 },
+                { header: 'Project', key: 'project', width: 25 },
+                { header: 'Department', key: 'department', width: 25 },
+                { header: 'Assignees', key: 'assignees', width: 45 },
+                { header: 'Estimated Time', key: 'est_time', width: 18 },
+                { header: 'Due Date', key: 'due_date', width: 20 },
+                { header: 'Description', key: 'description', width: 80 },
+                { header: 'Attachment Req.', key: 'attach_req', width: 15 },
+                { header: 'Recurring', key: 'recurring', width: 12 },
+                { header: 'Frequency', key: 'frequency', width: 15 },
+                { header: 'Created On', key: 'creation', width: 20 },
+                { header: 'Modified On', key: 'modified', width: 20 },
+                { header: 'Closed By', key: 'closed_by', width: 25 },
+                { header: 'Closed On', key: 'closed_on', width: 20 },
+            ];
+
+            const detailColCountForHeader = detailSheet.columns.length;
+            for (let i = 1; i <= detailColCountForHeader; i++) {
+                const cell = detailSheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
             }
-        });
 
-        // --- GLOBAL SUMMARY AT BOTTOM OF MAIN SHEET ---
-        mainSheet.addRow([]);
-        mainSheet.addRow([]);
-        const summaryStartRow = mainSheet.lastRow!.number + 1;
-        const summaryTitle = mainSheet.addRow(['📈 REPORT ANALYTICS']);
-        summaryTitle.font = { bold: true, size: 14, color: { argb: 'FF1877F2' } };
+            exportData.forEach(task => {
+                const row = detailSheet.addRow({
+                    name: task.name,
+                    title: task.title,
+                    status: task.status,
+                    priority: task.priority,
+                    project: task.project || '-',
+                    department: task.department || '-',
+                    assignees: task.assignees?.map(a => `${a.employee_name} (${a.employee})`).join(', ') || '-',
+                    est_time: task.estimated_time ? formatDurationDescriptive(task.estimated_time) : '-',
+                    due_date: task.due_date ? `${fDate(task.due_date, 'DD MMM YYYY')} ${task.due_time || ''}` : '-',
+                    description: task.description ? task.description.replace(/<[^>]*>?/gm, '') : '-',
+                    attach_req: task.attachment_required ? 'Yes' : 'No',
+                    recurring: task.recurring_task ? 'Yes' : 'No',
+                    frequency: task.recurring_frequency || '-',
+                    creation: dayjs(task.creation).format('DD MMM YYYY HH:mm'),
+                    modified: dayjs(task.modified).format('DD MMM YYYY HH:mm'),
+                    closed_by: task.closed_by || '-',
+                    closed_on: task.closed_on ? dayjs(task.closed_on).format('DD MMM YYYY HH:mm') : '-'
+                });
+                row.alignment = { vertical: 'middle', wrapText: true };
+            });
 
-        mainSheet.addRow(['Generated On', dayjs().format('DD MMM YYYY HH:mm')]);
-        mainSheet.addRow(['Total Tasks Managed', exportData.length]);
-        mainSheet.addRow(['Tasks Completed', exportData.filter(t => t.status === 'Completed').length]);
-        mainSheet.addRow(['Tasks Overdue', exportData.filter(t => t.status !== 'Completed' && t.due_date && dayjs(t.due_date).isBefore(dayjs())).length]);
-        mainSheet.addRow(['Cumulative Time Logged', formatDurationDescriptive(exportData.reduce((acc, curr) => acc + getTimeLogged(curr), 0))]);
+            // Apply Borders and Alternate Shading to Detail Sheet (Limited to data columns only)
+            const detailColCount = detailSheet.columns.length;
+            detailSheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= detailColCount; i++) {
+                        const cell = row.getCell(i);
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
 
-        for (let i = summaryStartRow; i <= mainSheet.lastRow!.number; i++) {
-            mainSheet.getRow(i).getCell(1).font = { bold: true };
+            // --- HISTORY SHEET SETUP ---
+            historySheet.columns = [
+                { header: 'Task ID', key: 'parent', width: 18 },
+                { header: 'Event', key: 'event', width: 15 },
+                { header: 'Performed By', key: 'done_by', width: 25 },
+                { header: 'Timestamp', key: 'done_on', width: 20 },
+                { header: 'Logged Time', key: 'hours', width: 15 },
+                { header: 'Remarks', key: 'remarks', width: 50 },
+            ];
+
+            const histColCountForHeader = historySheet.columns.length;
+            for (let i = 1; i <= histColCountForHeader; i++) {
+                const cell = historySheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+            }
+
+            exportData.forEach(task => {
+                if (task.history) {
+                    task.history.forEach(log => {
+                        historySheet.addRow({
+                            parent: task.name,
+                            event: log.event,
+                            done_by: log.done_by,
+                            done_on: fDate(log.done_on, 'DD MMM YYYY HH:mm'),
+                            hours: log.hours_spent || '-',
+                            remarks: log.remarks ? log.remarks.replace(/<[^>]*>?/gm, '') : '-'
+                        });
+                    });
+                }
+            });
+
+            // Apply Borders and Alternate Shading to History Sheet (Limited to data columns only)
+            const histColCount = historySheet.columns.length;
+            historySheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= histColCount; i++) {
+                        const cell = row.getCell(i);
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            // --- GLOBAL SUMMARY AT BOTTOM OF MAIN SHEET ---
+            mainSheet.addRow([]);
+            mainSheet.addRow([]);
+            const summaryStartRow = mainSheet.lastRow!.number + 1;
+            const summaryTitle = mainSheet.addRow(['REPORT ANALYTICS']);
+            summaryTitle.font = { bold: true, size: 14, color: { argb: 'FF1877F2' } };
+
+            mainSheet.addRow(['Generated On', dayjs().format('DD MMM YYYY HH:mm')]);
+            mainSheet.addRow(['Total Tasks Managed', exportData.length]);
+            mainSheet.addRow(['Tasks Completed', exportData.filter(t => t.status === 'Completed').length]);
+            mainSheet.addRow(['Tasks Overdue', exportData.filter(t => t.status !== 'Completed' && t.due_date && dayjs(t.due_date).isBefore(dayjs())).length]);
+            mainSheet.addRow(['Cumulative Time Logged', formatDurationDescriptive(exportData.reduce((acc, curr) => acc + getTimeLogged(curr), 0))]);
+
+            for (let i = summaryStartRow; i <= mainSheet.lastRow!.number; i++) {
+                mainSheet.getRow(i).getCell(1).font = { bold: true };
+            }
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Task_Manager_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+            enqueueSnackbar('Excel exported successfully!', { variant: 'success' });
+        } catch (error) {
+            console.error('Excel export failed:', error);
+            enqueueSnackbar('Excel export failed!', { variant: 'error' });
+        } finally {
+            setExportingExcel(false);
         }
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        saveAs(new Blob([buffer]), `Task_Manager_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
     };
+
+    const handleExportPdf = async () => {
+        setExportingPdf(true);
+        try {
+            const doc = new jsPDF('landscape');
+            const exportData = selected.length > 0
+                ? reportData.filter(task => selected.includes(task.name))
+                : reportData;
+
+            if (exportData.length === 0) {
+                enqueueSnackbar('No data to export', { variant: 'warning' });
+                setExportingPdf(false);
+                return;
+            }
+
+            // --- PAGE 1: TASK SUMMARY ---
+            doc.setFontSize(18);
+            doc.setTextColor(14, 165, 233);
+            doc.text('Task Summary', 14, 15);
+            doc.setFontSize(9);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, HH:mm')}`, 14, 21);
+
+            const summaryBody = exportData.map(task => {
+                const actual = getTimeLogged(task);
+                const estimated = task.estimated_time || 0;
+                const variance = estimated - actual;
+                return [
+                    task.name,
+                    task.title,
+                    fDate(task.creation, 'DD MMM YYYY'),
+                    task.assignees?.map(a => a.employee_name).join(', ') || '',
+                    task.project || '',
+                    task.status,
+                    task.priority || '',
+                    formatDurationDescriptive(actual),
+                    formatDurationDescriptive(estimated),
+                    formatDurationDescriptive(variance)
+                ];
+            });
+
+            autoTable(doc, {
+                startY: 28,
+                head: [['Task ID', 'Title', 'Creation', 'Assignees', 'Project', 'Status', 'Priority', 'Spent', 'Est.', 'Var.']],
+                body: summaryBody,
+                theme: 'grid',
+                headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+                styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200] },
+                columnStyles: {
+                    0: { cellWidth: 20 },
+                    1: { cellWidth: 45 },
+                }
+            });
+
+            // --- REPORT ANALYTICS ON PAGE 1 ---
+            const finalY = (doc as any).lastAutoTable.finalY || 30;
+            doc.setFontSize(12);
+            doc.setTextColor(24, 119, 242);
+            doc.text('REPORT ANALYTICS', 14, finalY + 10);
+
+            const analyticsData = [
+                ['Generated On', dayjs().format('DD MMM YYYY HH:mm')],
+                ['Total Tasks Managed', exportData.length.toString()],
+                ['Tasks Completed', exportData.filter(t => t.status === 'Completed').length.toString()],
+                ['Tasks Overdue', exportData.filter(t => t.status !== 'Completed' && t.due_date && dayjs(t.due_date).isBefore(dayjs())).length.toString()],
+                ['Cumulative Time Logged', formatDurationDescriptive(exportData.reduce((acc, curr) => acc + getTimeLogged(curr), 0))]
+            ];
+
+            autoTable(doc, {
+                startY: finalY + 15,
+                body: analyticsData,
+                theme: 'plain',
+                styles: { fontSize: 8, cellPadding: 2 },
+                columnStyles: {
+                    0: { fontStyle: 'bold', cellWidth: 50 }
+                }
+            });
+
+            // --- PAGE 2: FULL TASK DETAILS ---
+            doc.addPage();
+            doc.setFontSize(18);
+            doc.setTextColor(14, 165, 233);
+            doc.text('Full Task Details', 14, 15);
+
+            const detailBody = exportData.map(task => [
+                task.name,
+                task.title,
+                task.status,
+                task.priority || '-',
+                task.project || '-',
+                task.department || '-',
+                task.assignees?.map(a => `${a.employee_name} (${a.employee})`).join(', ') || '-',
+                task.estimated_time ? formatDurationDescriptive(task.estimated_time) : '-',
+                task.due_date ? fDate(task.due_date, 'DD MMM YYYY') : '-',
+                task.description ? task.description.replace(/<[^>]*>?/gm, '') : '-',
+                task.attachment_required ? 'Yes' : 'No',
+                task.recurring_task ? 'Yes' : 'No',
+                task.recurring_frequency || '-',
+                dayjs(task.creation).format('DD MMM YYYY'),
+                dayjs(task.modified).format('DD MMM YYYY'),
+                task.closed_by || '-',
+                task.closed_on ? dayjs(task.closed_on).format('DD MMM YYYY') : '-'
+            ]);
+
+            autoTable(doc, {
+                startY: 25,
+                head: [['ID', 'Title', 'Status', 'Pri.', 'Project', 'Dept.', 'Assignees', 'Est.', 'Due', 'Description', 'Attach', 'Recur', 'Freq', 'Created', 'Modified', 'Closed By', 'Closed On']],
+                body: detailBody,
+                theme: 'grid',
+                headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+                styles: { fontSize: 6, cellPadding: 1, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200] },
+                columnStyles: {
+                    0: { cellWidth: 15 },
+                    1: { cellWidth: 30 },
+                    9: { cellWidth: 35 } // Description
+                }
+            });
+
+            // --- PAGE 3: DETAILED HISTORY ---
+            doc.addPage();
+            doc.setFontSize(18);
+            doc.setTextColor(14, 165, 233);
+            doc.text('Detailed History', 14, 15);
+
+            const historyBody: any[] = [];
+            exportData.forEach(task => {
+                if (task.history) {
+                    task.history.forEach(log => {
+                        historyBody.push([
+                            task.name,
+                            log.event,
+                            log.done_by,
+                            fDate(log.done_on, 'DD MMM YYYY HH:mm'),
+                            log.hours_spent || '-',
+                            log.remarks ? log.remarks.replace(/<[^>]*>?/gm, '') : '-'
+                        ]);
+                    });
+                }
+            });
+
+            autoTable(doc, {
+                startY: 25,
+                head: [['Task ID', 'Event', 'Done By', 'Timestamp', 'Hours', 'Remarks']],
+                body: historyBody,
+                theme: 'grid',
+                headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+                styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200] },
+                columnStyles: {
+                    5: { cellWidth: 70 }
+                }
+            });
+
+            doc.save(`Task_Manager_Report_${dayjs().format('YYYY-MM-DD')}.pdf`);
+            enqueueSnackbar('PDF exported successfully!', { variant: 'success' });
+        } catch (error) {
+            console.error('PDF export failed:', error);
+            enqueueSnackbar('PDF export failed!', { variant: 'error' });
+        } finally {
+            setExportingPdf(false);
+        }
+    };
+
 
     const handleViewDetails = (task: TaskManager) => {
         setSelectedTask(task);
@@ -641,22 +812,39 @@ export function TaskManagerReportView() {
                         />
 
                         <Box sx={{ flexGrow: 1 }} />
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={handleExport}
-                            disabled={reportData.length === 0}
-                            sx={{
-                                bgcolor: '#08a3cd',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: '#068fb3' },
-                                height: 40,
-                                px: 3,
-                                ml: { md: 'auto' }
-                            }}
-                        >
-                            Export
-                        </Button>
+                        <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
+                            <Button
+                                variant="contained"
+                                startIcon={exportingExcel ? undefined : <Iconify icon={"solar:export-bold" as any} />}
+                                onClick={handleExport}
+                                disabled={reportData.length === 0 || exportingExcel}
+                                sx={{
+                                    bgcolor: '#0ea5e9',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#0284c7' },
+                                    height: 40,
+                                    px: 3,
+                                }}
+                            >
+                                {exportingExcel ? 'Exporting Excel...' : 'Export Excel'}
+                            </Button>
+
+                            <Button
+                                variant="contained"
+                                startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                onClick={handleExportPdf}
+                                disabled={reportData.length === 0 || exportingPdf}
+                                sx={{
+                                    bgcolor: '#f43f5e',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#e11d48' },
+                                    height: 40,
+                                    px: 3,
+                                }}
+                            >
+                                {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                            </Button>
+                        </Stack>
                     </Stack>
                 </Card>
 

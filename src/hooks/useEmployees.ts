@@ -15,7 +15,8 @@ export function useEmployees(
     filterState?: string,
     filterCity?: string,
     joiningDateFrom?: string | null,
-    joiningDateTo?: string | null
+    joiningDateTo?: string | null,
+    filterEmployee?: string
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
@@ -25,15 +26,26 @@ export function useEmployees(
         setLoading(true);
         try {
             const filters: any[] = [];
+            const or_filters: any[] = [];
 
             // Add department filter
             if (filterDepartment && filterDepartment !== 'all') {
                 filters.push(['Employee', 'department', '=', filterDepartment]);
             }
+ 
+            // Add employee filter
+            if (filterEmployee && filterEmployee !== 'all') {
+                or_filters.push(['Employee', 'name', '=', filterEmployee]);
+                or_filters.push(['Employee', 'employee_id', '=', filterEmployee]);
+            }
 
             // Add designation filter
             if (filterDesignation && filterDesignation !== 'all') {
-                filters.push(['Employee', 'designation', '=', filterDesignation]);
+                if (filterDesignation.length >= 2) {
+                    filters.push(['Employee', 'designation', 'like', `%${filterDesignation}%`]);
+                } else {
+                    filters.push(['Employee', 'designation', '=', filterDesignation]);
+                }
             }
 
             // Add status filter
@@ -70,7 +82,8 @@ export function useEmployees(
                 search,
                 orderBy,
                 order,
-                filters: filters.length > 0 ? filters : undefined
+                filters: filters.length > 0 ? filters : undefined,
+                or_filters: or_filters.length > 0 ? or_filters : undefined
             });
             setData(result.data);
             setTotal(result.total);
@@ -79,7 +92,7 @@ export function useEmployees(
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, search, orderBy, order, filterDepartment, filterDesignation, filterStatus, filterCountry, filterState, filterCity, joiningDateFrom, joiningDateTo]);
+    }, [page, pageSize, search, orderBy, order, filterDepartment, filterDesignation, filterStatus, filterCountry, filterState, filterCity, joiningDateFrom, joiningDateTo, filterEmployee]);
 
     useEffect(() => {
         refetch();
