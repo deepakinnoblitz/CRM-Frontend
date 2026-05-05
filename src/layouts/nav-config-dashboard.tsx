@@ -133,11 +133,6 @@ export const hrNavData = [
     ],
   },
   {
-    title: 'Reminders',
-    path: '/reminders',
-    icon: <Iconify icon={"solar:bell-bing-bold-duotone" as any} />,
-  },
-  {
     title: 'Report',
     path: '/reports',
     icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
@@ -166,6 +161,11 @@ export const hrNavData = [
       { title: 'Leave Type', path: '/leave-type' },
     ],
   },
+  {
+    title: 'Reminders',
+    path: '/reminders',
+    icon: <Iconify icon={"solar:bell-bing-bold-duotone" as any} />,
+  }
 ];
 
 

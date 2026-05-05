@@ -1,4 +1,7 @@
+import { MdSaveAs } from "react-icons/md";
+import { TbSettings } from "react-icons/tb";
 import { useState, useCallback } from 'react';
+import { MdNotificationsActive } from "react-icons/md";
 
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -128,8 +131,8 @@ export function RemindersView() {
               '& .MuiTab-root.Mui-selected': { color: '#00A5D1' },
             }}
           >
-            <Tab label="Remainders" value="reminders" icon={<Iconify icon={"solar:notification-lines-remove-bold-duotone" as any} width={20} />} iconPosition="start" />
-            <Tab label="Settings" value="settings" icon={<Iconify icon={"solar:settings-bold-duotone" as any} width={20} />} iconPosition="start" />
+            <Tab label="Remainders" value="reminders" icon={<MdNotificationsActive size={20}/>} iconPosition="start" />
+            <Tab label="Settings" value="settings" icon={<TbSettings size={22}/>} iconPosition="start" />
           </Tabs>
 
           {currentTab === 'reminders' ? (
@@ -149,7 +152,7 @@ export function RemindersView() {
               variant="contained"
               loading={saving}
               onClick={handleSaveSettings}
-              startIcon={<Iconify icon={"solar:diskette-bold" as any} />}
+              startIcon={<MdSaveAs size={20} />}
               sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}
             >
               Save Settings

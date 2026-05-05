@@ -109,7 +109,7 @@ export function RemindersSettingsView({ settings, setSettings }: Props) {
         <Card sx={{ p: 3, border: (t) => `1px solid ${alpha(t.palette.grey[500], 0.12)}` }}>
           <Stack spacing={3}>
             <Stack direction="row" alignItems="center" spacing={2}>
-              {renderIcon('solar:cup-hot-bold', 'warning')}
+              {renderIcon('solar:tea-cup-bold-duotone', 'warning')}
 
               <Box sx={{ flexGrow: 1 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Break Reminders</Typography>
@@ -181,7 +181,7 @@ export function RemindersSettingsView({ settings, setSettings }: Props) {
         <Card sx={{ p: 3, border: (t) => `1px solid ${alpha(t.palette.grey[500], 0.12)}` }}>
           <Stack spacing={3}>
             <Stack direction="row" alignItems="center" spacing={2}>
-              {renderIcon('solar:chef-hat-bold', 'info')}
+              {renderIcon('solar:chef-hat-bold-duotone', 'info')}
 
               <Box sx={{ flexGrow: 1 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Lunch Reminders</Typography>
