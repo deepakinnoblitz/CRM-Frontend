@@ -1,3 +1,4 @@
+import { TbSettings } from "react-icons/tb";
 import { useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -38,7 +39,7 @@ import { EmployeeMonthlyAwardTableToolbar as TableToolbar } from '../employee-mo
 
 const TABS = [
   { value: 'awards', label: 'Employee Monthly Award', icon: <Iconify icon="solar:cup-star-bold-duotone" width={20} /> },
-  { value: 'settings', label: 'Employee Award Settings', icon: <Iconify icon="solar:settings-bold-duotone" width={20} /> },
+  { value: 'settings', label: 'Employee Award Settings', icon: <TbSettings size={22}/> },
 ];
 
 const defaultFilters = {

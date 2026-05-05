@@ -1,14 +1,18 @@
+import { GiAlarmClock } from "react-icons/gi";
+import { IoCalendarNumberOutline } from "react-icons/io5";
 import { useRef, useEffect, useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
+import Snackbar from '@mui/material/Snackbar';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -33,6 +37,8 @@ import { Iconify } from 'src/components/iconify';
 
 import { useAuth } from 'src/auth/auth-context';
 
+import { ReminderDialog } from './reminder-dialog';
+
 // ----------------------------------------------------------------------
 
 export function UserStatusBar() {
@@ -53,6 +59,10 @@ export function UserStatusBar() {
     } = usePresence();
     const router = useRouter();
 
+    const isHR = user?.roles.some((role: string) =>
+        ['HR', 'System Manager', 'Administrator'].includes(role)
+    );
+
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [infoDialogOpen, setInfoDialogOpen] = useState(false);
     const [isLogoutDialog, setIsLogoutDialog] = useState(false);
@@ -65,6 +75,12 @@ export function UserStatusBar() {
     const [isCheckingTimesheet, setIsCheckingTimesheet] = useState(false);
     const [idlePermissionDialogOpen, setIdlePermissionDialogOpen] = useState(false);
     const [idleSupportError, setIdleSupportError] = useState<string | null>(null);
+    const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
 
     const hasAutoChecked = useRef(false);
 
@@ -313,6 +329,10 @@ export function UserStatusBar() {
     };
 
     const currentStatus = statusOptions.find(opt => opt.value === statusName) || statusOptions[5];
+
+    if (isHR) {
+        return null;
+    }
 
     return (
         <>
@@ -603,7 +623,7 @@ export function UserStatusBar() {
                     }}
                 >
                     <Stack direction="row" alignItems="center" spacing={1}>
-                        <Iconify icon="solar:calendar-bold" width={20} sx={{ color: 'text.secondary' }} />
+                        <IoCalendarNumberOutline size={20} color="#656565" />
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
                             My Timesheet
                         </Typography>
@@ -611,8 +631,36 @@ export function UserStatusBar() {
                     <Iconify icon="eva:chevron-right-fill" width={20} sx={{ color: 'text.secondary' }} />
                 </MenuItem>
 
+                {/* Set Reminder */}
+                <MenuItem
+                    onClick={() => {
+                        handleClose();
+                        setReminderDialogOpen(true);
+                    }}
+                    sx={{
+                        mx: 1,
+                        mb: 1,
+                        borderRadius: 1,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        '&:hover': {
+                            backgroundColor: alpha(theme.palette.grey[500], 0.08),
+                        },
+                    }}
+                >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                        <GiAlarmClock size={22} color="#262626" />
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            Set Reminder
+                        </Typography>
+                    </Stack>
+                    <Iconify icon="eva:chevron-right-fill" width={20} sx={{ color: 'text.secondary' }} />
+                </MenuItem>
+
                 <Divider />
             </Menu>
+
+
 
             {/* ── Check-In Dialog (Redesigned) ── */}
             <Dialog
@@ -1152,6 +1200,28 @@ export function UserStatusBar() {
                     </Box>
                 </Box>
             </Dialog>
+
+            <ReminderDialog
+                open={reminderDialogOpen}
+                onClose={() => setReminderDialogOpen(false)}
+                onSuccess={(msg) => setSnackbar({ open: true, message: msg, severity: 'success' })}
+                onError={(msg) => setSnackbar({ open: true, message: msg, severity: 'error' })}
+            />
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert
+                    onClose={() => setSnackbar({ ...snackbar, open: false })}
+                    severity={snackbar.severity}
+                    sx={{ width: '100%', borderRadius: 1.5 }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </>
     );
 }

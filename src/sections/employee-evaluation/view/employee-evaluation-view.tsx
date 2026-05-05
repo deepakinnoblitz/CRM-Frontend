@@ -1,4 +1,7 @@
+import { MdOutlineAccountTree } from "react-icons/md";
 import { useState, useCallback, useEffect } from 'react';
+import { FaClipboardList, FaTasks } from "react-icons/fa";
+import { BsFillClipboard2CheckFill } from "react-icons/bs";
 
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -72,10 +75,10 @@ import { EmployeeEvaluationScoreLogTableRow } from '../employee-evaluation-score
 // ----------------------------------------------------------------------
 
 const TABS = [
-  { value: 'events', label: 'Employee Evaluations', icon: <Iconify icon={"solar:clipboard-check-bold-duotone" as any} width={20} /> },
-  { value: 'traits', label: 'Performance Criteria', icon: <Iconify icon={"solar:user-speak-bold-duotone" as any} width={20} /> },
-  { value: 'logs', label: 'Score Logs', icon: <Iconify icon={"solar:history-bold-duotone" as any} width={20} /> },
-  { value: 'automation', label: 'Automation Rules', icon: <Iconify icon={"solar:robot-bold-duotone" as any} width={20} /> },
+  { value: 'events', label: 'Employee Evaluations', icon: <BsFillClipboard2CheckFill size={18} />},
+  { value: 'traits', label: 'Performance Criteria', icon:  <FaTasks size={18} />},
+  { value: 'logs', label: 'Score Logs', icon: <FaClipboardList size={18} /> },
+  { value: 'automation', label: 'Automation Rules', icon: <MdOutlineAccountTree size={20} /> },
 ];
 
 export function EmployeeEvaluationView() {
