@@ -133,6 +133,11 @@ export const hrNavData = [
     ],
   },
   {
+    title: 'Reminders',
+    path: '/reminders',
+    icon: <Iconify icon={"solar:bell-bing-bold-duotone" as any} />,
+  },
+  {
     title: 'Report',
     path: '/reports',
     icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
@@ -430,7 +435,6 @@ export function hasValidRole(roles: string[] = []): boolean {
 }
 
 export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM', settings?: any) {
-  console.log('getNavData called with view:', view, 'roles:', roles);
   const mergedNav: NavItem[] = [];
   const seenPaths = new Set<string>();
 

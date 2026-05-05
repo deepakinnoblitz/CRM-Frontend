@@ -223,11 +223,11 @@ export function usePresence() {
 
       if (statusRef.current === 'Away') {
         console.log('[Presence] Activity detected: Resuming from Away');
-        changeStatusRef.current('Available', 'Auto-resumed from Away', 'Manual');
+        changeStatusRef.current('Available', 'Auto-resumed from Away', 'Idle');
         idleAtRef.current = null;
       } else if (statusRef.current === 'Break' && enableAutoResumeBreak) {
         console.log('[Presence] Activity detected: Resuming from Break');
-        changeStatusRef.current('Available', 'Auto-resumed from Break', 'Manual');
+        changeStatusRef.current('Available', 'Auto-resumed from Break', 'Idle');
         idleAtRef.current = null;
       }
     },
@@ -244,10 +244,10 @@ export function usePresence() {
         if (isAutoStatusEnabled) {
           if (statusRef.current === 'Away') {
               console.log('[Presence] Tab became visible: Resuming from Away');
-              changeStatus('Available', 'Auto-resumed upon returning to tab', 'Manual');
+              changeStatus('Available', 'Auto-resumed upon returning to tab', 'Idle');
           } else if (statusRef.current === 'Break' && enableAutoResumeBreak) {
               console.log('[Presence] Tab became visible: Resuming from Break');
-              changeStatus('Available', 'Auto-resumed upon returning to tab', 'Manual');
+              changeStatus('Available', 'Auto-resumed upon returning to tab', 'Idle');
           }
         }
       }
