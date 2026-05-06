@@ -289,7 +289,11 @@ export function TimesheetsReportView() {
                 if (rowNumber > 1 && rowNumber <= sheet.rowCount - 1) { // Apply to data rows only (excluding TOTAL)
                     for (let i = 1; i <= columnCount; i++) {
                         const cell = row.getCell(i);
-                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        // Description (column 7) should be left aligned
+                        cell.alignment = { 
+                            vertical: 'middle', 
+                            horizontal: i === 7 ? 'left' : 'center' 
+                        };
                         // Alternate shading
                         if (rowNumber % 2 === 0) {
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
@@ -349,59 +353,72 @@ export function TimesheetsReportView() {
             }
 
             // Header
-            doc.setFontSize(18);
+            doc.setFontSize(22);
             doc.setTextColor(14, 165, 233);
-            doc.text('Timesheet Report', 14, 15);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Timesheet Report', 14, 20);
+
             doc.setFontSize(9);
-            doc.setTextColor(100);
-            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, HH:mm')}`, 14, 21);
+            doc.setTextColor(120);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, h:mm A')}`, 14, 27);
+
+            // Accent line
+            doc.setDrawColor(14, 165, 233);
+            doc.setLineWidth(0.5);
+            doc.line(14, 32, 196, 32);
 
             const tableDataObjects: any[] = [];
             for (let i = 0; i < exportData.length; i++) {
                 const row = exportData[i];
-                const currentDate = fDate(row.timesheet_date, 'DD-MM-YYYY');
-                const currentEmployee = row.employee_name;
-                const currentEmployeeId = row.employee;
+                const currentDate = fDate(row.timesheet_date, 'DD-MM-YYYY') || '-';
+                const currentEmployee = row.employee_name || '-';
+                const currentEmployeeId = row.employee || '-';
 
-                // Check if this is the start of a group
-                let isStart = true;
+                // Check if this row is the start of a new group (Date + Employee + Employee ID)
+                let isFirstInGroup = true;
                 if (i > 0) {
                     const prevRow = exportData[i - 1];
-                    if (fDate(prevRow.timesheet_date, 'DD-MM-YYYY') === currentDate &&
+                    const prevDate = fDate(prevRow.timesheet_date, 'DD-MM-YYYY') || '-';
+                    if (prevDate === currentDate &&
                         prevRow.employee_name === currentEmployee &&
                         prevRow.employee === currentEmployeeId) {
-                        isStart = false;
+                        isFirstInGroup = false;
                     }
                 }
 
-                if (isStart) {
-                    // Calculate span
-                    let span = 1;
-                    while (i + span < exportData.length) {
-                        const nextRow = exportData[i + span];
-                        if (fDate(nextRow.timesheet_date, 'DD-MM-YYYY') === currentDate &&
+                if (isFirstInGroup) {
+                    // Calculate rowSpan for the group
+                    let rowSpanCount = 1;
+                    for (let j = i + 1; j < exportData.length; j++) {
+                        const nextRow = exportData[j];
+                        const nextDate = fDate(nextRow.timesheet_date, 'DD-MM-YYYY') || '-';
+                        if (nextDate === currentDate &&
                             nextRow.employee_name === currentEmployee &&
                             nextRow.employee === currentEmployeeId) {
-                            span++;
+                            rowSpanCount++;
                         } else {
                             break;
                         }
                     }
 
                     tableDataObjects.push({
-                        date: { content: currentDate, rowSpan: span, styles: { valign: 'middle', halign: 'center' } },
-                        employee: { content: currentEmployee, rowSpan: span, styles: { valign: 'middle', halign: 'center' } },
-                        employeeId: { content: currentEmployeeId, rowSpan: span, styles: { valign: 'middle', halign: 'center' } },
-                        project: row.project || '---',
-                        activity: row.activity_type || '---',
+                        date: rowSpanCount > 1 ? { content: currentDate, rowSpan: rowSpanCount } : currentDate,
+                        employee: rowSpanCount > 1 ? { content: currentEmployee, rowSpan: rowSpanCount } : currentEmployee,
+                        employeeId: rowSpanCount > 1 ? { content: currentEmployeeId, rowSpan: rowSpanCount } : currentEmployeeId,
+                        project: row.project || '-',
+                        activity: row.activity_type || '-',
                         hours: `${(row.hours || 0).toFixed(2)} hrs`,
                         description: row.description || ''
                     });
                 } else {
+                    // Omit grouped columns as they are covered by rowSpan from the first row
                     tableDataObjects.push({
-                        // date, employee, employeeId are covered by rowSpan
-                        project: row.project || '---',
-                        activity: row.activity_type || '---',
+                        date: null,
+                        employee: null,
+                        employeeId: null,
+                        project: row.project || '-',
+                        activity: row.activity_type || '-',
                         hours: `${(row.hours || 0).toFixed(2)} hrs`,
                         description: row.description || ''
                     });
@@ -421,7 +438,10 @@ export function TimesheetsReportView() {
             });
 
             autoTable(doc, {
-                startY: 30,
+                startY: 35,
+                margin: { top: 15, bottom: 10, left: 14, right: 14 },
+                showHead: 'everyPage',
+                rowPageBreak: 'auto',
                 columns: [
                     { header: 'Date', dataKey: 'date' },
                     { header: 'Employee', dataKey: 'employee' },
@@ -433,18 +453,35 @@ export function TimesheetsReportView() {
                 ],
                 body: tableDataObjects,
                 theme: 'grid',
-                headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-                styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200], valign: 'middle' },
+                headStyles: { 
+                    fillColor: [14, 165, 233], 
+                    textColor: [255, 255, 255], 
+                    fontStyle: 'bold', 
+                    halign: 'center',
+                    fontSize: 9
+                },
+                styles: { 
+                    fontSize: 8, 
+                    cellPadding: 2, 
+                    overflow: 'linebreak', 
+                    lineWidth: 0.1, 
+                    lineColor: [100, 100, 100], 
+                    valign: 'middle' 
+                },
                 columnStyles: {
-                    date: { cellWidth: 25 },
-                    employee: { cellWidth: 40 },
-                    employeeId: { cellWidth: 25 },
-                    activity: { cellWidth: 35 }, // Reduced Activity Type
-                    hours: { cellWidth: 25, halign: 'right', fontStyle: 'bold' }, // Increased Hours
+                    date: { cellWidth: 22, halign: 'center' },
+                    employee: { cellWidth: 45, halign: 'center' },
+                    employeeId: { cellWidth: 22, halign: 'center' },
+                    project: { cellWidth: 35 },
+                    activity: { cellWidth: 28 },
+                    hours: { cellWidth: 32, halign: 'right', fontStyle: 'bold' },
+                    description: { cellWidth: 'auto' }
                 },
                 didParseCell: (data) => {
+                    // Style the TOTAL row
                     if (data.row.index === tableDataObjects.length - 1) {
                         data.cell.styles.fontStyle = 'bold';
+                        data.cell.styles.fillColor = [244, 246, 248];
                         if (data.column.dataKey === 'date') {
                             data.cell.styles.halign = 'left';
                         }
