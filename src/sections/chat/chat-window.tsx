@@ -1,3 +1,5 @@
+import { TbVideoFilled } from "react-icons/tb";
+import { BsTelephoneForwardFill } from "react-icons/bs";
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
 
 import Box from '@mui/material/Box';
@@ -354,9 +356,9 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                             bgcolor: (channel.avatar_url || channel.channel_image || channel.channel_info?.avatar) ? 'common.white' : stringToColor(channel.displayName || ''),
                             border: (t) => (channel.avatar_url || channel.channel_image || channel.channel_info?.avatar) ? `solid 1px ${t.palette.divider}` : 'none',
                             '& img': {
-                                objectFit: 'contain',
-                                padding: 0.5,
+                                objectFit: 'cover',
                             }
+
                         }}
                     >
                         {channel.displayName?.charAt(0).toUpperCase()}
@@ -381,7 +383,7 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                                 e.stopPropagation();
                                 if (onStartCall) onStartCall('audio');
                             }}
-                            startIcon={<Iconify icon={"solar:phone-bold" as any} width={18} />}
+                            startIcon={<BsTelephoneForwardFill size={14} />}
                             sx={{
                                 borderRadius: 5,
                                 px: 2,
@@ -407,7 +409,7 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                                 e.stopPropagation();
                                 if (onStartCall) onStartCall('video');
                             }}
-                            startIcon={<Iconify icon={"solar:videocamera-record-bold" as any} width={18} />}
+                            startIcon={<TbVideoFilled size={18} />}
                             sx={{
                                 borderRadius: 5,
                                 px: 2,

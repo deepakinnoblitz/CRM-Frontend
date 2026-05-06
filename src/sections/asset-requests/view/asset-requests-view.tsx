@@ -1,4 +1,6 @@
 import dayjs from 'dayjs';
+import { GoFileSymlinkFile } from "react-icons/go";
+import { MdOutlinePendingActions } from "react-icons/md";
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -443,7 +445,7 @@ export function AssetRequestsView() {
     );
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Asset Requests
@@ -468,7 +470,7 @@ export function AssetRequestsView() {
                     onChange={(_, val) => setActiveTab(val)}
                     sx={{ mb: 3, borderBottom: '1px solid', borderColor: 'divider' }}
                 >
-                    <Tab value="my-requests" label="Employee Requests" />
+                    <Tab value="my-requests" label="Employee Requests" icon={<GoFileSymlinkFile size={18}/>} iconPosition="start"/>
                     <Tab
                         value="hr-dashboard"
                         label={
@@ -495,6 +497,8 @@ export function AssetRequestsView() {
                                 )}
                             </Stack>
                         }
+                        icon={<MdOutlinePendingActions size={20}/>} 
+                        iconPosition="start"
                     />
                 </Tabs>
             )}

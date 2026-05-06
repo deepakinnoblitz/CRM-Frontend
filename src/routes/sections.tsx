@@ -107,6 +107,7 @@ export const EmployeeEvaluationPage = lazy(() => import('src/pages/employee-eval
 export const BadgesPage = lazy(() => import('src/pages/badges'));
 export const EmployeeMonthlyAwardPage = lazy(() => import('src/pages/employee-monthly-award'));
 export const EmployeeReferralsPage = lazy(() => import('src/pages/employee-referrals'));
+export const RemindersPage = lazy(() => import('src/pages/reminders'));
 
 export const PurchaseListPage = lazy(() => import('src/pages/purchase/list'));
 export const PurchaseNewPage = lazy(() => import('src/pages/purchase/new'));
@@ -301,6 +302,7 @@ export const routesSection: RouteObject[] = [
       { path: 'employee-evaluation', element: <EmployeeEvaluationPage /> },
       { path: 'badges', element: <BadgesPage /> },
       { path: 'employee-monthly-award', element: <EmployeeMonthlyAwardPage /> },
+      { path: 'reminders', element: <RemindersPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
   },

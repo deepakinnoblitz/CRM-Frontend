@@ -1,12 +1,18 @@
 import dayjs from 'dayjs';
 import { MuiTelInput } from 'mui-tel-input';
+import { LuUserCheck } from 'react-icons/lu';
+import { TbMoneybagPlus } from "react-icons/tb";
+import { GrDocumentLocked } from "react-icons/gr";
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 
+import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
+import Tabs from '@mui/material/Tabs';
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
@@ -219,6 +225,7 @@ export function EmployeeView() {
     });
     const [uploading, setUploading] = useState(false);
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+    const [currentTab, setCurrentTab] = useState(0);
 
     // Permissions State
     const [permissions, setPermissions] = useState<{ read: boolean; write: boolean; delete: boolean }>({
@@ -280,6 +287,13 @@ export function EmployeeView() {
                         .catch(console.error);
                 }
             });
+
+            // Explicitly fetch rich options for bank_account
+            getDoctypeList('Bank Account', ['name', 'bank_account_name', 'account_number'])
+                .then((options) => {
+                    setFieldOptions(prev => ({ ...prev, 'bank_account': options }));
+                })
+                .catch(console.error);
 
             // Fallback for designation if metadata hasn't synced yet
             if (!meta.fields.find((f: any) => f.fieldname === 'designation' && f.fieldtype === 'Link')) {
@@ -548,11 +562,11 @@ export function EmployeeView() {
             setUploading(false);
         }
     };
-
     const handleOpenCreate = async () => {
-        setFormData({ status: 'Active', ctc: 0, skip_probation: 0, country: 'India' });
+        setFormData({ status: 'Active', ctc: 0, skip_probation: 0, country: 'India', documents: [] });
         setFormErrors({});
         setOpenCreate(true);
+        setCurrentTab(0);
 
         // Load states for India by default
         const states = await getStates('India');
@@ -563,10 +577,11 @@ export function EmployeeView() {
         setOpenCreate(false);
         setFormErrors({});
         setCurrentEmployeeId(null);
-        setFormData({ status: 'Active', ctc: 0, skip_probation: 0, country: 'India' });
+        setFormData({ status: 'Active', ctc: 0, skip_probation: 0, country: 'India', documents: [] });
         setServerAlert({ message: '', severity: 'info' });
         setStateOptions([]);
         setCityOptions([]);
+        setCurrentTab(0);
     };
 
 
@@ -661,10 +676,11 @@ export function EmployeeView() {
         }
     };
 
-    const validateForm = (): { isValid: boolean; firstErrorField?: string; firstErrorMessage?: string } => {
+    const validateForm = (): { isValid: boolean; firstErrorField?: string; firstErrorMessage?: string; errorTab?: number } => {
         const errors: Record<string, string> = {};
+        let errorTab = 0;
+
         const requiredFields = [
-            // { name: 'employee_id', label: 'Employee ID' },
             { name: 'employee_name', label: 'Employee Name' },
             { name: 'email', label: 'Email' },
             { name: 'date_of_joining', label: 'Joining Date' },
@@ -687,12 +703,29 @@ export function EmployeeView() {
             errors.personal_email = 'Invalid email format';
         }
 
-        // Salary Table Validation
+        // Check if any error in Tab 0
+        if (Object.keys(errors).length > 0) {
+            errorTab = 0;
+        }
+
+        // Salary Table Validation (Tab 1)
         const incompleteEarnings = (formData.earnings || []).some((row: any) => !row.component_name);
         const incompleteDeductions = (formData.deductions || []).some((row: any) => !row.component_name);
 
         if (incompleteEarnings || incompleteDeductions) {
+            if (Object.keys(errors).length === 0) errorTab = 1;
             errors.salary_components = 'Please select a Component Name for all salary rows';
+        }
+
+        // Document Table Validation (Tab 2)
+        const documents = formData.documents || [];
+        for (let i = 0; i < documents.length; i++) {
+            const doc = documents[i];
+            if (!doc.title || (!doc.attachment && !doc.pendingFile)) {
+                if (Object.keys(errors).length === 0) errorTab = 2;
+                errors.documents = `Please complete Title and Attachment for all document rows (Row ${i + 1})`;
+                break;
+            }
         }
 
         setFormErrors(errors);
@@ -701,25 +734,28 @@ export function EmployeeView() {
         const firstErrorField = Object.keys(errors)[0];
         const firstErrorMessage = errors[firstErrorField];
 
-        return { isValid, firstErrorField, firstErrorMessage };
+        return { isValid, firstErrorField, firstErrorMessage, errorTab };
     };
 
     const handleCreate = async () => {
         const validationResult = validateForm();
         if (!validationResult.isValid) {
-            // Scroll to the first error field
-            if (validationResult.firstErrorField) {
-                const errorElement = document.querySelector(`[name="${validationResult.firstErrorField}"]`);
-                if (errorElement) {
-                    errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    // Focus the field after scrolling
-                    setTimeout(() => {
-                        (errorElement as HTMLElement).focus();
-                    }, 500);
-                }
+            // Switch to the tab containing the error
+            if (validationResult.errorTab !== undefined) {
+                setCurrentTab(validationResult.errorTab);
             }
 
-            // Show specific error message
+            // Scroll to the first error field (if on current tab)
+            setTimeout(() => {
+                if (validationResult.firstErrorField) {
+                    const errorElement = document.querySelector(`[name="${validationResult.firstErrorField}"]`);
+                    if (errorElement) {
+                        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        (errorElement as HTMLElement).focus();
+                    }
+                }
+            }, 300);
+
             const errorMessage = validationResult.firstErrorMessage || 'Please correct the errors in the form';
             setSnackbar({ open: true, message: errorMessage, severity: 'error' });
             return;
@@ -734,19 +770,43 @@ export function EmployeeView() {
             if (dataToSave.employee_id) dataToSave.employee_id = dataToSave.employee_id.trim();
             if (dataToSave.email) dataToSave.email = dataToSave.email.trim();
 
+            // Handle pending document uploads
+            const documents = [...(dataToSave.documents || [])];
+            let hasNewUploads = false;
+
+            for (let i = 0; i < documents.length; i++) {
+                if (documents[i].pendingFile) {
+                    hasNewUploads = true;
+                    try {
+                        const uploaded = await uploadFile(
+                            documents[i].pendingFile,
+                            'Employee',
+                            currentEmployeeId || 'new',
+                            'documents'
+                        );
+                        documents[i].attachment = uploaded.file_url;
+                        delete documents[i].pendingFile;
+                    } catch (uploadErr: any) {
+                        console.error('File upload failed for row', i, uploadErr);
+                        throw new Error(`Failed to upload ${documents[i].title || 'document'}: ${uploadErr.message}`);
+                    }
+                }
+            }
+
+            if (hasNewUploads) {
+                dataToSave.documents = documents;
+            }
+
             if (currentEmployeeId) {
                 await updateEmployee(currentEmployeeId, dataToSave as any);
-                setServerAlert({ message: 'Employee updated successfully', severity: 'success' });
+                handleCloseCreate();
+                setSnackbar({ open: true, message: 'Employee updated successfully', severity: 'success' });
             } else {
                 await createEmployee(dataToSave as any);
-                setServerAlert({ message: 'Employee created successfully', severity: 'success' });
+                handleCloseCreate();
+                setSnackbar({ open: true, message: 'Employee created successfully', severity: 'success' });
             }
             await refetch();
-
-            // Keep the alert visible for a moment before closing, or just close if user prefers
-            setTimeout(() => {
-                handleCloseCreate();
-            }, 1500);
 
         } catch (err: any) {
             console.error(err);
@@ -841,6 +901,70 @@ export function EmployeeView() {
         }
 
 
+
+        if (fieldname === 'bank_account') {
+            return (
+                <Autocomplete
+                    fullWidth
+                    options={options}
+                    value={formData[fieldname] || ''}
+                    onChange={(event, newValue) => {
+                        const value = typeof newValue === 'object' && newValue?.name ? newValue.name : newValue;
+                        handleInputChange(fieldname, value || '');
+                    }}
+                    getOptionLabel={(option) => {
+                        if (typeof option === 'string') return option;
+                        if (option?.name) return option.name;
+                        return '';
+                    }}
+                    filterOptions={(listOptions, params) => {
+                        const { inputValue } = params;
+                        return listOptions.filter((option: any) => {
+                            const searchStr = (typeof option === 'string'
+                                ? option
+                                : `${option.bank_account_name} ${option.account_number} ${option.name}`
+                            ).toLowerCase();
+                            return searchStr.includes(inputValue.toLowerCase());
+                        });
+                    }}
+                    renderOption={(props, option: any) => (
+                        <Box component="li" {...props} sx={{ py: '6px !important' }}>
+                            <Stack spacing={0.5}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                    {typeof option === 'string' ? option : (option.bank_account_name || option.name)}
+                                </Typography>
+                                {typeof option === 'object' && option.account_number && (
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                        Account: {option.account_number}
+                                    </Typography>
+                                )}
+                            </Stack>
+                        </Box>
+                    )}
+                    isOptionEqualToValue={(option, value) => {
+                        const optionValue = typeof option === 'string' ? option : option?.name;
+                        return optionValue === value;
+                    }}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label={label}
+                            placeholder={`Select ${label}`}
+                            required={required}
+                            error={!!formErrors[fieldname]}
+                            helperText={formErrors[fieldname]}
+                            InputLabelProps={{ shrink: true }}
+                            sx={{
+                                '& .MuiFormLabel-asterisk': {
+                                    color: 'red',
+                                },
+                                ...extraProps.sx
+                            }}
+                        />
+                    )}
+                />
+            );
+        }
 
         if (type === 'autocomplete') {
             // Determine if field should be disabled based on dependencies
@@ -1072,15 +1196,26 @@ export function EmployeeView() {
 
         return (
             <Box sx={{ mt: 3 }}>
-                <Typography variant="subtitle2" sx={{
-                    mb: 1.5,
-                    fontWeight: 700,
-                    color: type === 'Earning' ? 'success.main' : 'error.main',
-                    textTransform: 'uppercase',
-                    letterSpacing: 1
-                }}>
-                    {type === 'Earning' ? 'Earnings' : 'Deductions'}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{
+                        fontWeight: 700,
+                        color: type === 'Earning' ? 'success.main' : 'error.main',
+                        textTransform: 'uppercase',
+                        letterSpacing: 1
+                    }}>
+                        {type === 'Earning' ? 'Earnings' : 'Deductions'}
+                    </Typography>
+                    <Button
+                        size="small"
+                        color="info"
+                        variant="text"
+                        startIcon={<Iconify icon="solar:add-circle-bold" />}
+                        onClick={() => handleAddSalaryRow(type)}
+                        sx={{ fontWeight: 700 }}
+                    >
+                        Add Row
+                    </Button>
+                </Box>
                 <TableContainer sx={{
                     border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.2)}`,
                     borderRadius: 1.25,
@@ -1124,18 +1259,193 @@ export function EmployeeView() {
                         </TableBody>
                     </Table>
                 </TableContainer>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+            </Box>
+        );
+    };
+
+    const handleAddDocumentRow = () => {
+        setFormData(prev => {
+            const currentRows = prev.documents || [];
+            return {
+                ...prev,
+                documents: [...currentRows, { title: '', attachment: '', description: '' }]
+            };
+        });
+    };
+
+    const handleRemoveDocumentRow = (index: number) => {
+        setFormData(prev => {
+            const currentRows = [...(prev.documents || [])];
+            currentRows.splice(index, 1);
+            return {
+                ...prev,
+                documents: currentRows
+            };
+        });
+    };
+
+    const handleDocumentRowChange = (index: number, field: string, value: any) => {
+        setFormData(prev => {
+            const currentRows = [...(prev.documents || [])];
+            currentRows[index] = { ...currentRows[index], [field]: value };
+            return {
+                ...prev,
+                documents: currentRows
+            };
+        });
+    };
+
+    const renderDocumentsTable = () => {
+        const rows = formData.documents || [];
+
+        return (
+            <Box sx={{ mt: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                    <Typography variant="h6" sx={{ color: 'primary.main' }}>Documents</Typography>
                     <Button
                         size="small"
                         color="info"
                         variant="text"
                         startIcon={<Iconify icon="solar:add-circle-bold" />}
-                        onClick={() => handleAddSalaryRow(type)}
+                        onClick={handleAddDocumentRow}
                         sx={{ fontWeight: 700 }}
                     >
-                        Add Row
+                        Add Document
                     </Button>
                 </Box>
+                <TableContainer sx={{
+                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.2)}`,
+                    borderRadius: 1.25,
+                    overflow: 'hidden',
+                    bgcolor: 'background.paper',
+                    boxShadow: (theme) => theme.customShadows.z1
+                }}>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ py: 1.5, bgcolor: '#08a3cd', color: 'common.white', fontWeight: 700, width: '30%' }}>
+                                    Title *
+                                </TableCell>
+                                <TableCell sx={{ py: 1.5, bgcolor: '#08a3cd', color: 'common.white', fontWeight: 700, width: '30%' }}>
+                                    Attachment *
+                                </TableCell>
+                                <TableCell sx={{ py: 1.5, bgcolor: '#08a3cd', color: 'common.white', fontWeight: 700, width: '35%' }}>
+                                    Description
+                                </TableCell>
+                                <TableCell width={48} sx={{ py: 1.5, bgcolor: '#08a3cd' }} />
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {rows.map((row: any, index: number) => (
+                                <TableRow key={index} sx={{ borderBottom: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.1)}` }}>
+                                    <TableCell sx={{ py: 1 }}>
+                                        <TextField
+                                            fullWidth
+                                            size="small"
+                                            variant="standard"
+                                            placeholder="Enter title"
+                                            value={row.title || ''}
+                                            onChange={(e) => handleDocumentRowChange(index, 'title', e.target.value)}
+                                            InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
+                                        />
+                                    </TableCell>
+                                    <TableCell
+                                        sx={{
+                                            py: 1,
+                                            cursor: 'pointer',
+                                            transition: (theme) => theme.transitions.create('background-color'),
+                                            '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) }
+                                        }}
+                                    >
+                                        <Box component="label" sx={{ display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer' }}>
+                                            <input
+                                                type="file"
+                                                hidden
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        handleDocumentRowChange(index, 'pendingFile', file);
+                                                        if (!row.title) {
+                                                            handleDocumentRowChange(index, 'title', file.name.split('.')[0]);
+                                                        }
+                                                    }
+                                                }}
+                                            />
+                                            <Stack direction="row" spacing={1} alignItems="center" sx={{ flexGrow: 1, minWidth: 0 }}>
+                                                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                                    {row.attachment || row.pendingFile ? (
+                                                        <Typography
+                                                            variant="body2"
+                                                            noWrap
+                                                            sx={{
+                                                                color: 'primary.main',
+                                                                fontWeight: 600,
+                                                                textDecoration: 'underline'
+                                                            }}
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                if (row.attachment) {
+                                                                    window.open(row.attachment);
+                                                                } else if (row.pendingFile) {
+                                                                    const url = URL.createObjectURL(row.pendingFile);
+                                                                    window.open(url);
+                                                                }
+                                                            }}
+                                                        >
+                                                            {row.attachment ? row.attachment.split('/').pop() : row.pendingFile.name}
+                                                        </Typography>
+                                                    ) : (
+                                                        <Typography variant="body2" color="text.disabled">Click to select file</Typography>
+                                                    )}
+                                                </Box>
+                                                {(row.attachment || row.pendingFile) ? (
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            handleDocumentRowChange(index, 'attachment', '');
+                                                            handleDocumentRowChange(index, 'pendingFile', null);
+                                                        }}
+                                                        sx={{ color: 'error.main', p: 0.5 }}
+                                                    >
+                                                        <Iconify icon="solar:close-circle-bold" width={16} />
+                                                    </IconButton>
+                                                ) : (
+                                                    <Iconify icon="solar:upload-minimalistic-bold" width={18} sx={{ color: 'text.disabled' }} />
+                                                )}
+                                            </Stack>
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell sx={{ py: 1 }}>
+                                        <TextField
+                                            fullWidth
+                                            size="small"
+                                            variant="standard"
+                                            placeholder="Enter description"
+                                            value={row.description || ''}
+                                            onChange={(e) => handleDocumentRowChange(index, 'description', e.target.value)}
+                                            InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        <IconButton size="small" onClick={() => handleRemoveDocumentRow(index)} sx={{ color: 'text.disabled', '&:hover': { color: 'error.main' } }}>
+                                            <Iconify icon="solar:trash-bin-trash-bold" width={18} />
+                                        </IconButton>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                            {rows.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={4} align="center" sx={{ py: 3, typography: 'body2', color: 'text.disabled' }}>
+                                        No documents added
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
             </Box>
         );
     };
@@ -1294,165 +1604,207 @@ export function EmployeeView() {
 
             {/* CREATE/EDIT DIALOG */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg">
-                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <DialogTitle sx={{ m: 0, p: 2, px: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {currentEmployeeId ? 'Edit Employee' : 'New Employee'}
                     <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent dividers>
+                <DialogContent dividers sx={{ p: 0 }}>
+                    <Tabs
+                        value={currentTab}
+                        onChange={(e, newValue) => setCurrentTab(newValue)}
+                        sx={{
+                            px: 4,
+                            bgcolor: 'transparent',
+                            borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                            '& .MuiTabs-indicator': {
+                                height: 3,
+                                borderRadius: '3px 3px 0 0',
+                            },
+                            '& .MuiTab-root': {
+                                py: 2,
+                                minHeight: 48,
+                                fontWeight: 700,
+                                fontSize: '0.875rem',
+                                color: 'text.secondary',
+                                '&.Mui-selected': {
+                                    color: 'primary.main',
+                                },
+                                '& .MuiTab-iconWrapper': {
+                                    mr: '10px !important',
+                                }
+                            }
+                        }}
+                    >
+                        <Tab
+                            label="Employee Info"
+                            icon={<LuUserCheck  size={20} />}
+                            iconPosition="start"
+                        />
+                        <Tab
+                            label="Salary Info"
+                            icon={<TbMoneybagPlus size={20} />}
+                            iconPosition="start"
+                        />
+                        <Tab
+                            label="Documents"
+                            icon={<GrDocumentLocked  size={20} />}
+                            iconPosition="start"
+                        />
+                    </Tabs>
+
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <Box sx={{ p: 2 }}>
-                            {/* Section 1: Personal Information */}
-                            {useMemo(() => (
-                                <>
-                                    <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Personal Information</Typography>
-                                    <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
-                                        {renderField('employee_id', 'Employee ID', 'text', [], {}, false)}
-                                        {renderField('employee_name', 'Employee Name', 'text', [], {}, true)}
-                                        {renderField('email', 'Email', 'text', [], {}, true)}
-                                        {renderField('personal_email', 'Personal Email')}
-                                        {renderField('phone', 'Personal Phone Number', 'phone')}
-                                        {renderField('office_phone_number', 'Office Phone', 'phone')}
-                                        {renderField('dob', 'Date of Birth', 'date')}
-                                        {renderField('country', 'Country', 'autocomplete', fieldOptions['country'] || [])}
-                                        {renderField('state', 'State', 'autocomplete', stateOptions)}
-                                        {renderField('city', 'City', 'autocomplete', cityOptions)}
-                                        {renderField('profile_picture', 'Profile Picture', 'file')}
-                                    </Box>
-                                </>
-                            ), [
-                                formData.employee_id, formData.employee_name, formData.email, formData.personal_email,
-                                formData.phone, formData.office_phone_number, formData.dob, formData.country,
-                                formData.state, formData.city, formData.profile_picture,
-                                formErrors, fieldOptions, stateOptions, cityOptions, uploading
-                            ])}
-
-                            {/* Section 2: Employment Details */}
-                            {useMemo(() => (
-                                <>
-                                    <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Employment Details</Typography>
-                                    <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
-                                        {renderField('department', 'Department', 'link', fieldOptions['department'] || [])}
-                                        {renderField('designation', 'Designation', 'text')}
-                                        {renderField('date_of_joining', 'Joining Date', 'date', [], {}, true)}
-                                        {renderField('user', 'User Login (Email)', 'autocomplete', fieldOptions['user'] || [], {}, true)}
-                                        {renderField('status', 'Status', 'select', ['Active', 'Inactive'], {}, true)}
-                                        {renderField('skip_probation', 'Skip Probation', 'checkbox')}
-                                    </Box>
-                                </>
-                            ), [
-                                formData.department, formData.designation, formData.date_of_joining,
-                                formData.user, formData.status, formData.skip_probation,
-                                formErrors, fieldOptions
-                            ])}
-
-                            {/* Section 3: Financial & Bank Details */}
-                            {useMemo(() => (
-                                <>
-                                    <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Financial & Bank Details</Typography>
-                                    <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
-                                        {renderField('bank_name', 'Bank Name')}
-                                        {renderField('bank_account', 'Bank Account', 'autocomplete', fieldOptions['bank_account'] || [])}
-                                        {renderField('pf_number', 'PF Number')}
-                                        {renderField('esi_no', 'ESI No')}
-                                    </Box>
-                                </>
-                            ), [
-                                formData.bank_name, formData.bank_account, formData.pf_number, formData.esi_no,
-                                formErrors, fieldOptions
-                            ])}
-
-
-                            {/* Section 4: Salary & breakdown */}
-                            <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Salary Details</Typography>
-
-                            {/* CTC Field - Full Width */}
-                            <Box sx={{ mb: 3 }}>
-                                {renderField('ctc', 'CTC (Monthly)', 'number', [], {
-                                    onBlur: handleCTCOnBlur,
-                                    InputProps: {
-                                        endAdornment: (
-                                            <Button
-                                                size="small"
-                                                variant="contained"
-                                                onClick={handleDefaultSplitting}
-                                                sx={{
-                                                    whiteSpace: 'nowrap',
-                                                    mx: 1,
-                                                    py: 1.5,
-                                                    px: 3,
-                                                    height: 32,
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 700,
-                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 1),
-                                                    color: 'common.white',
-                                                    boxShadow: (theme) => theme.customShadows.z8,
-                                                    '&:hover': {
-                                                        bgcolor: (theme) => theme.palette.primary.dark,
-                                                        boxShadow: (theme) => theme.customShadows.z16,
-                                                    }
-                                                }}
-                                                startIcon={<Iconify icon={"solar:magic-stick-bold" as any} width={16} />}
-                                            >
-                                                Default Splitting
-                                            </Button>
-                                        )
-                                    }
-                                }, false)}
-                            </Box>
-
-                            {/* Two Column Layout: Earnings and Deductions */}
-                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3}>
-                                {/* Left Column - Earnings */}
+                        <Box sx={{ p: 4, pt: 3 }}>
+                            {currentTab === 0 && (
                                 <Box>
-                                    {renderSalaryTable('Earning')}
-                                </Box>
+                                    {/* Section 1: Personal Information */}
+                                    <>
+                                        <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Personal Information</Typography>
+                                        <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
+                                            {renderField('employee_id', 'Employee ID', 'text', [], {}, false)}
+                                            {renderField('employee_name', 'Employee Name', 'text', [], {}, true)}
+                                            {renderField('email', 'Email', 'text', [], {}, true)}
+                                            {renderField('personal_email', 'Personal Email')}
+                                            {renderField('phone', 'Personal Phone Number', 'phone')}
+                                            {renderField('office_phone_number', 'Office Phone', 'phone')}
+                                            {renderField('dob', 'Date of Birth', 'date')}
+                                            {renderField('country', 'Country', 'autocomplete', fieldOptions['country'] || [])}
+                                            {renderField('state', 'State', 'autocomplete', stateOptions)}
+                                            {renderField('city', 'City', 'autocomplete', cityOptions)}
+                                            {renderField('profile_picture', 'Profile Picture', 'file')}
+                                        </Box>
+                                    </>
 
-                                {/* Right Column - Deductions */}
+                                    {/* Section 2: Employment Details */}
+                                    <>
+                                        <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Employment Details</Typography>
+                                        <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
+                                            {renderField('department', 'Department', 'link', fieldOptions['department'] || [])}
+                                            {renderField('designation', 'Designation', 'text')}
+                                            {renderField('date_of_joining', 'Joining Date', 'date', [], {}, true)}
+                                            {renderField('user', 'User Login (Email)', 'autocomplete', fieldOptions['user'] || [], {}, true)}
+                                            {renderField('status', 'Status', 'select', ['Active', 'Inactive'], {}, true)}
+                                            {renderField('skip_probation', 'Skip Probation', 'checkbox')}
+                                        </Box>
+                                    </>
+
+                                    {/* Section 3: Financial & Bank Details */}
+                                    <>
+                                        <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Financial & Bank Details</Typography>
+                                        <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
+                                            {renderField('bank_account', 'Bank Account', 'autocomplete', fieldOptions['bank_account'] || [])}
+                                            {renderField('pf_number', 'PF Number')}
+                                            {renderField('esi_no', 'ESI No')}
+                                        </Box>
+                                    </>
+                                </Box>
+                            )}
+
+                            {currentTab === 1 && (
                                 <Box>
-                                    {renderSalaryTable('Deduction')}
-                                </Box>
-                            </Box>
+                                    {/* Section 4: Salary & breakdown */}
+                                    <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Salary Details</Typography>
 
-                            {/* Net Salary Summary */}
-                            <Box sx={{ mt: 4, p: 3, borderRadius: 2, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05), border: (theme) => `1px dashed ${alpha(theme.palette.primary.main, 0.3)}` }}>
-                                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Box>
-                                        <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>Net Salary (Monthly)</Typography>
-                                        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 800, display: 'flex', alignItems: 'center' }}>
-                                            <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mr: 1, fontSize: '0.8em' }}>{hrSettings.currency_symbol}</Box>
-                                            {fNumber(totals.net_salary || 0, { locale: hrSettings.default_locale })}
-                                        </Typography>
+                                    {/* CTC Field - Full Width */}
+                                    <Box sx={{ mb: 3 }}>
+                                        {renderField('ctc', 'CTC (Monthly)', 'number', [], {
+                                            onBlur: handleCTCOnBlur,
+                                            InputProps: {
+                                                endAdornment: (
+                                                    <Button
+                                                        size="small"
+                                                        variant="contained"
+                                                        onClick={handleDefaultSplitting}
+                                                        sx={{
+                                                            whiteSpace: 'nowrap',
+                                                            mx: 1,
+                                                            py: 1.5,
+                                                            px: 3,
+                                                            height: 32,
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 700,
+                                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 1),
+                                                            color: 'common.white',
+                                                            boxShadow: (theme) => theme.customShadows.z8,
+                                                            '&:hover': {
+                                                                bgcolor: (theme) => theme.palette.primary.dark,
+                                                                boxShadow: (theme) => theme.customShadows.z16,
+                                                            }
+                                                        }}
+                                                        startIcon={<Iconify icon={"solar:magic-stick-bold" as any} width={16} />}
+                                                    >
+                                                        Default Splitting
+                                                    </Button>
+                                                )
+                                            }
+                                        }, false)}
                                     </Box>
-                                    <Stack direction="row" spacing={4}>
-                                        <Box sx={{ textAlign: 'right' }}>
-                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Earnings</Typography>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'success.main', display: 'flex', alignItems: 'center' }}>
-                                                + <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mx: 0.5 }}>{hrSettings.currency_symbol}</Box>
-                                                {fNumber(totals.total_earnings || 0, { locale: hrSettings.default_locale })}
-                                            </Typography>
+
+                                    {/* Two Column Layout: Earnings and Deductions */}
+                                    <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3}>
+                                        {/* Left Column - Earnings */}
+                                        <Box>
+                                            {renderSalaryTable('Earning')}
                                         </Box>
-                                        <Box sx={{ textAlign: 'right' }}>
-                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Deductions</Typography>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'error.main', display: 'flex', alignItems: 'center' }}>
-                                                - <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mx: 0.5 }}>{hrSettings.currency_symbol}</Box>
-                                                {fNumber(totals.total_deductions || 0, { locale: hrSettings.default_locale })}
-                                            </Typography>
+
+                                        {/* Right Column - Deductions */}
+                                        <Box>
+                                            {renderSalaryTable('Deduction')}
                                         </Box>
-                                    </Stack>
-                                </Stack>
-                            </Box>
+                                    </Box>
+
+                                    {/* Net Salary Summary */}
+                                    <Box sx={{ mt: 4, p: 3, borderRadius: 2, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05), border: (theme) => `1px dashed ${alpha(theme.palette.primary.main, 0.3)}` }}>
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                            <Box>
+                                                <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>Net Salary (Monthly)</Typography>
+                                                <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 800, display: 'flex', alignItems: 'center' }}>
+                                                    <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mr: 1, fontSize: '0.8em' }}>{hrSettings.currency_symbol}</Box>
+                                                    {fNumber(totals.net_salary || 0, { locale: hrSettings.default_locale })}
+                                                </Typography>
+                                            </Box>
+                                            <Stack direction="row" spacing={4}>
+                                                <Box sx={{ textAlign: 'right' }}>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Earnings</Typography>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'success.main', display: 'flex', alignItems: 'center' }}>
+                                                        + <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mx: 0.5 }}>{hrSettings.currency_symbol}</Box>
+                                                        {fNumber(totals.total_earnings || 0, { locale: hrSettings.default_locale })}
+                                                    </Typography>
+                                                </Box>
+                                                <Box sx={{ textAlign: 'right' }}>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Deductions</Typography>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'error.main', display: 'flex', alignItems: 'center' }}>
+                                                        - <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mx: 0.5 }}>{hrSettings.currency_symbol}</Box>
+                                                        {fNumber(totals.total_deductions || 0, { locale: hrSettings.default_locale })}
+                                                    </Typography>
+                                                </Box>
+                                            </Stack>
+                                        </Stack>
+                                    </Box>
+                                </Box>
+                            )}
+
+                            {currentTab === 2 && (
+                                <Box>
+                                    {renderDocumentsTable()}
+                                </Box>
+                            )}
                         </Box>
                     </LocalizationProvider>
                 </DialogContent>
 
 
-                <DialogActions>
-                    <Button variant="contained" onClick={handleCreate} disabled={creating} sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}>
-                        {creating ? 'Saving...' : (currentEmployeeId ? 'Update Employee' : 'Create Employee')}
-                    </Button>
+                <DialogActions sx={{ px: 4, py: 2 }}>
+                    <LoadingButton
+                        variant="contained"
+                        onClick={handleCreate}
+                        loading={creating}
+                        sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
+                        {currentEmployeeId ? 'Update Employee' : 'Create Employee'}
+                    </LoadingButton>
                 </DialogActions>
             </Dialog>
 

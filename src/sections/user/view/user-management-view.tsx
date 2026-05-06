@@ -1,3 +1,5 @@
+import { FaUsersCog } from 'react-icons/fa';
+import { FaUserPen } from "react-icons/fa6";
 import { useRef, useState, useCallback } from 'react';
 
 import Tab from '@mui/material/Tab';
@@ -21,12 +23,12 @@ const TABS = [
   {
     value: 'users',
     label: 'Users List',
-    icon: <Iconify icon={'solar:users-group-rounded-bold-duotone' as any} width={20} />,
+    icon: <FaUserPen size={24} />,
   },
   {
     value: 'permissions',
     label: 'User Permissions',
-    icon: <Iconify icon={'solar:shield-keyhole-bold-duotone' as any} width={20} />,
+    icon: <FaUsersCog size={24} />,
   },
 ];
 

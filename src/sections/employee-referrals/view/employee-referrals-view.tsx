@@ -1,5 +1,7 @@
+import { CgWorkAlt } from "react-icons/cg";
 import { useLocation } from 'react-router-dom';
 import { useState, useCallback, useEffect } from 'react';
+import { MdOutlineRoomPreferences } from "react-icons/md";
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -34,8 +36,8 @@ import { JobOpeningDetailsDialog } from '../../report/job-openings/job-opening-d
 // ----------------------------------------------------------------------
 
 const TABS = [
-  { value: 'jobs', label: 'Job Openings', icon: <Iconify icon={"solar:case-minimalistic-bold-duotone" as any} width={20} /> },
-  { value: 'my-referrals', label: 'My Referrals', icon: <Iconify icon={"solar:user-id-bold-duotone" as any} width={20} /> },
+  { value: 'jobs', label: 'Job Openings', icon: <CgWorkAlt size={22}/> },
+  { value: 'my-referrals', label: 'My Referrals', icon: <MdOutlineRoomPreferences size={22}/>},
 ];
 
 export function EmployeeReferralsView() {
