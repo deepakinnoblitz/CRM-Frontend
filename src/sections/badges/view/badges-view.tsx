@@ -1,3 +1,5 @@
+import { LuFileBadge } from "react-icons/lu";
+import { MdAssignmentAdd } from "react-icons/md";
 import { useState, useEffect, useCallback } from 'react';
 
 import Tab from '@mui/material/Tab';
@@ -41,12 +43,12 @@ const TABS = [
   {
     value: 'badges',
     label: 'Badges',
-    icon: <Iconify icon={'solar:medal-star-bold-duotone' as any} width={20} />,
+    icon: <LuFileBadge size={20} />
   },
   {
     value: 'assignments',
     label: 'Badge Assignments',
-    icon: <Iconify icon={'solar:user-id-bold-duotone' as any} width={20} />,
+    icon: <MdAssignmentAdd size={20} />,
   },
 ];
 

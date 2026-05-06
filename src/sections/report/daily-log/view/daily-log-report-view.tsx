@@ -341,12 +341,20 @@ export function DailyLogReportView() {
             }
 
             // --- PAGE 1: DAILY LOG REPORT ---
-            doc.setFontSize(18);
+            doc.setFontSize(22);
             doc.setTextColor(14, 165, 233);
-            doc.text('Daily Log Report', 14, 15);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Daily Log Report', 14, 20);
+
             doc.setFontSize(9);
-            doc.setTextColor(100);
-            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, HH:mm')}`, 14, 21);
+            doc.setTextColor(120);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, h:mm A')}`, 14, 27);
+
+            // Accent line
+            doc.setDrawColor(14, 165, 233);
+            doc.setLineWidth(0.5);
+            doc.line(14, 32, 196, 32);
 
             const mainBody = exportData.map(row => [
                 row.employee_name,
@@ -360,23 +368,40 @@ export function DailyLogReportView() {
             ]);
 
             autoTable(doc, {
-                startY: 28,
+                startY: 40,
                 head: [['Employee', 'Employee ID', 'Date', 'Login', 'Logout', 'Work (h)', 'Break (h)', 'Status']],
                 body: mainBody,
                 theme: 'grid',
                 headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-                styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200] },
+                styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', lineWidth: 0.15, lineColor: [60, 60, 60], valign: 'middle' },
                 columnStyles: {
                     0: { cellWidth: 45 },
-                    1: { cellWidth: 25 },
+                    1: { cellWidth: 25, halign: 'center' },
+                    2: { halign: 'center' },
+                    3: { halign: 'center' },
+                    4: { halign: 'center' },
+                    5: { halign: 'center' },
+                    6: { halign: 'center' },
+                    7: { halign: 'center' },
                 }
             });
 
             // --- PAGE 2: DETAILED TIMING ---
             doc.addPage();
-            doc.setFontSize(18);
+            doc.setFontSize(22);
             doc.setTextColor(14, 165, 233);
-            doc.text('Detailed Timing', 14, 15);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Detailed Timing', 14, 20);
+
+            doc.setFontSize(9);
+            doc.setTextColor(120);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, h:mm A')}`, 14, 27);
+
+            // Accent line
+            doc.setDrawColor(14, 165, 233);
+            doc.setLineWidth(0.5);
+            doc.line(14, 32, 196, 32);
 
             const detailBody: any[] = [];
             exportData.forEach((session) => {
@@ -422,14 +447,19 @@ export function DailyLogReportView() {
             });
 
             autoTable(doc, {
-                startY: 25,
+                startY: 40,
                 head: [['Employee', 'Date', 'Type', 'Start Time', 'End Time', 'Duration', 'Details / Reason']],
                 body: detailBody,
                 theme: 'grid',
                 headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-                styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200] },
+                styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak', lineWidth: 0.15, lineColor: [60, 60, 60], valign: 'middle' },
                 columnStyles: {
                     0: { cellWidth: 40 },
+                    1: { halign: 'center' },
+                    2: { halign: 'center' },
+                    3: { halign: 'center' },
+                    4: { halign: 'center' },
+                    5: { halign: 'center' },
                     6: { cellWidth: 60 }
                 },
                 didParseCell: (data) => {

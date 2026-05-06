@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
+import { LuShieldCheck } from 'react-icons/lu';
 import { useBoolean } from 'minimal-shared/hooks';
-import { useRef, useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -211,8 +212,32 @@ export function ProfileView() {
                                             height: 120,
                                             border: (theme) => `solid 4px ${theme.palette.background.paper}`,
                                             boxShadow: (theme) => theme.customShadows.z12,
+                                            bgcolor: (theme) => {
+                                                if (user.user_image) return 'transparent';
+                                                const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                                let hash = 0;
+                                                const name = user.full_name || '';
+                                                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                                return colors[Math.abs(hash) % colors.length];
+                                            }
                                         }}
-                                    />
+                                    >
+                                        {!user.user_image && (
+                                            <Typography variant="h3" sx={{
+                                                fontWeight: 800,
+                                                color: (theme) => {
+                                                    const name = user.full_name || '';
+                                                    let hash = 0;
+                                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
+                                                    return textColors[Math.abs(hash) % textColors.length];
+                                                }
+                                            }}>
+                                                {(user.full_name || '?').charAt(0).toUpperCase()}
+                                            </Typography>
+                                        )}
+                                    </Avatar>
+
                                     <Stack spacing={0.5}>
                                         <Typography variant="h4" sx={{ fontWeight: 800 }}>
                                             {user.full_name}
@@ -236,7 +261,8 @@ export function ProfileView() {
                                         variant="outlined"
                                         color="inherit"
                                         onClick={changePassword.onTrue}
-                                        startIcon={<Iconify icon="solar:shield-keyhole-bold-duotone" />}
+                                        startIcon={<LuShieldCheck size={20} />}
+
                                         sx={{
                                             borderRadius: 1,
                                             textTransform: 'none',

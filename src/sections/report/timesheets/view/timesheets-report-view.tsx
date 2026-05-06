@@ -438,10 +438,7 @@ export function TimesheetsReportView() {
             });
 
             autoTable(doc, {
-                startY: 35,
-                margin: { top: 15, bottom: 10, left: 14, right: 14 },
-                showHead: 'everyPage',
-                rowPageBreak: 'auto',
+                startY: 40,
                 columns: [
                     { header: 'Date', dataKey: 'date' },
                     { header: 'Employee', dataKey: 'employee' },
@@ -453,21 +450,8 @@ export function TimesheetsReportView() {
                 ],
                 body: tableDataObjects,
                 theme: 'grid',
-                headStyles: { 
-                    fillColor: [14, 165, 233], 
-                    textColor: [255, 255, 255], 
-                    fontStyle: 'bold', 
-                    halign: 'center',
-                    fontSize: 9
-                },
-                styles: { 
-                    fontSize: 8, 
-                    cellPadding: 2, 
-                    overflow: 'linebreak', 
-                    lineWidth: 0.1, 
-                    lineColor: [100, 100, 100], 
-                    valign: 'middle' 
-                },
+                headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+                styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.15, lineColor: [60, 60, 60], valign: 'middle' },
                 columnStyles: {
                     date: { cellWidth: 22, halign: 'center' },
                     employee: { cellWidth: 45, halign: 'center' },

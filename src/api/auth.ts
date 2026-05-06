@@ -44,6 +44,12 @@ export async function getCurrentUserInfo() {
     return null;
   }
 
-  const data = await res.json();
-  return data.message ?? null;
+  const json = await res.json();
+  const result = json.message;
+
+  if (result?.status === 'success') {
+    return result.data;
+  }
+
+  return null;
 }

@@ -122,7 +122,7 @@ export function MyProfileView() {
 
     return (
         <DashboardContent maxWidth={false}>
-            <Container maxWidth="lg">
+            <Container maxWidth="xl">
                 <Typography variant="h4" sx={{ mb: 5 }}>
                     My Profile
                 </Typography>
@@ -159,10 +159,14 @@ export function MyProfileView() {
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            background: (theme) => employee.profile_picture
-                                                ? 'transparent'
-                                                : `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
-                                            color: 'white',
+                                            bgcolor: (theme) => {
+                                                if (employee.profile_picture) return 'transparent';
+                                                const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                                let hash = 0;
+                                                const name = employee.employee_name || '';
+                                                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                                return colors[Math.abs(hash) % colors.length];
+                                            },
                                             overflow: 'hidden',
                                             border: (theme) => `4px solid ${theme.palette.background.paper}`,
                                             boxShadow: (theme) => `0 8px 32px ${theme.palette.mode === 'light' ? 'rgba(0,0,0,0.12)' : 'rgba(0,0,0,0.4)'}`,
@@ -172,8 +176,20 @@ export function MyProfileView() {
                                         {employee.profile_picture ? (
                                             <Box component="img" src={employee.profile_picture} sx={{ width: 1, height: 1, objectFit: 'cover' }} />
                                         ) : (
-                                            <Iconify icon={"solar:user-bold" as any} width={60} />
+                                            <Typography variant="h2" sx={{
+                                                fontWeight: 800,
+                                                color: (theme) => {
+                                                    const name = employee.employee_name || '';
+                                                    let hash = 0;
+                                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
+                                                    return textColors[Math.abs(hash) % textColors.length];
+                                                }
+                                            }}>
+                                                {(employee.employee_name || '?').charAt(0).toUpperCase()}
+                                            </Typography>
                                         )}
+
 
                                         {uploading && (
                                             <Box
@@ -485,7 +501,7 @@ function SectionHeader({ title, icon, noMargin = false }: { title: string; icon:
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
             <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '14px' }}>
                 {title}
             </Typography>
         </Box>

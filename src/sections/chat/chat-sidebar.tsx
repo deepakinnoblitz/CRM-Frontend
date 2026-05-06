@@ -178,9 +178,9 @@ export default function ChatSidebar({ user, channels, presences, selectedChannel
                                                     bgcolor: channel.avatar_url ? 'common.white' : stringToColor(channel.displayName || ''),
                                                     border: (t) => channel.avatar_url ? `solid 1px ${t.palette.divider}` : 'none',
                                                     '& img': {
-                                                        objectFit: 'contain',
-                                                        padding: 0.5,
+                                                        objectFit: 'cover',
                                                     }
+
                                                 }}
                                             >
                                                 {channel.displayName?.charAt(0).toUpperCase()}
