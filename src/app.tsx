@@ -35,6 +35,7 @@ export default function App({ children }: AppProps) {
             <ThemeProvider>
               <SnackbarProvider
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                autoHideDuration={3000}
                 Components={{
                   success: forwardRef<HTMLDivElement, any>((props, ref) => (
                     <Alert
