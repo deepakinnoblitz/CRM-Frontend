@@ -456,12 +456,20 @@ export function TaskManagerReportView() {
             }
 
             // --- PAGE 1: TASK SUMMARY ---
-            doc.setFontSize(18);
+            doc.setFontSize(22);
             doc.setTextColor(14, 165, 233);
-            doc.text('Task Summary', 14, 15);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Task Summary', 14, 20);
+
             doc.setFontSize(9);
-            doc.setTextColor(100);
-            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, HH:mm')}`, 14, 21);
+            doc.setTextColor(120);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, h:mm A')}`, 14, 27);
+
+            // Accent line
+            doc.setDrawColor(14, 165, 233);
+            doc.setLineWidth(0.5);
+            doc.line(14, 32, 196, 32);
 
             const summaryBody = exportData.map(task => {
                 const actual = getTimeLogged(task);
@@ -482,47 +490,42 @@ export function TaskManagerReportView() {
             });
 
             autoTable(doc, {
-                startY: 28,
+                startY: 40,
                 head: [['Task ID', 'Title', 'Creation', 'Assignees', 'Project', 'Status', 'Priority', 'Spent', 'Est.', 'Var.']],
                 body: summaryBody,
                 theme: 'grid',
                 headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-                styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200] },
+                styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak', lineWidth: 0.15, lineColor: [60, 60, 60], valign: 'middle' },
                 columnStyles: {
-                    0: { cellWidth: 20 },
-                    1: { cellWidth: 45 },
-                }
-            });
-
-            // --- REPORT ANALYTICS ON PAGE 1 ---
-            const finalY = (doc as any).lastAutoTable.finalY || 30;
-            doc.setFontSize(12);
-            doc.setTextColor(24, 119, 242);
-            doc.text('REPORT ANALYTICS', 14, finalY + 10);
-
-            const analyticsData = [
-                ['Generated On', dayjs().format('DD MMM YYYY HH:mm')],
-                ['Total Tasks Managed', exportData.length.toString()],
-                ['Tasks Completed', exportData.filter(t => t.status === 'Completed').length.toString()],
-                ['Tasks Overdue', exportData.filter(t => t.status !== 'Completed' && t.due_date && dayjs(t.due_date).isBefore(dayjs())).length.toString()],
-                ['Cumulative Time Logged', formatDurationDescriptive(exportData.reduce((acc, curr) => acc + getTimeLogged(curr), 0))]
-            ];
-
-            autoTable(doc, {
-                startY: finalY + 15,
-                body: analyticsData,
-                theme: 'plain',
-                styles: { fontSize: 8, cellPadding: 2 },
-                columnStyles: {
-                    0: { fontStyle: 'bold', cellWidth: 50 }
+                    0: { cellWidth: 20, halign: 'center' },
+                    1: { cellWidth: 55 },
+                    2: { cellWidth: 20, halign: 'center' },
+                    3: { cellWidth: 40, halign: 'center' },
+                    4: { cellWidth: 30, halign: 'center' },
+                    5: { cellWidth: 25, halign: 'center' },
+                    6: { halign: 'center' },
+                    7: { halign: 'center' },
+                    8: { halign: 'center' },
+                    9: { halign: 'center' },
                 }
             });
 
             // --- PAGE 2: FULL TASK DETAILS ---
             doc.addPage();
-            doc.setFontSize(18);
+            doc.setFontSize(22);
             doc.setTextColor(14, 165, 233);
-            doc.text('Full Task Details', 14, 15);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Full Task Details', 14, 20);
+
+            doc.setFontSize(9);
+            doc.setTextColor(120);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, h:mm A')}`, 14, 27);
+
+            // Accent line
+            doc.setDrawColor(14, 165, 233);
+            doc.setLineWidth(0.5);
+            doc.line(14, 32, 196, 32);
 
             const detailBody = exportData.map(task => [
                 task.name,
@@ -545,24 +548,47 @@ export function TaskManagerReportView() {
             ]);
 
             autoTable(doc, {
-                startY: 25,
+                startY: 40,
                 head: [['ID', 'Title', 'Status', 'Pri.', 'Project', 'Dept.', 'Assignees', 'Est.', 'Due', 'Description', 'Attach', 'Recur', 'Freq', 'Created', 'Modified', 'Closed By', 'Closed On']],
                 body: detailBody,
                 theme: 'grid',
                 headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-                styles: { fontSize: 6, cellPadding: 1, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200] },
+                styles: { fontSize: 6, cellPadding: 1, overflow: 'linebreak', lineWidth: 0.1, lineColor: [180, 180, 180], valign: 'middle' },
                 columnStyles: {
-                    0: { cellWidth: 15 },
+                    0: { cellWidth: 15, halign: 'center' },
                     1: { cellWidth: 30 },
-                    9: { cellWidth: 35 } // Description
+                    2: { halign: 'center' },
+                    3: { halign: 'center' },
+                    4: { halign: 'center' },
+                    5: { halign: 'center' },
+                    7: { halign: 'center' },
+                    8: { halign: 'center' },
+                    9: { cellWidth: 35 }, // Description
+                    10: { halign: 'center' },
+                    11: { halign: 'center' },
+                    12: { halign: 'center' },
+                    13: { halign: 'center' },
+                    14: { halign: 'center' },
+                    16: { halign: 'center' },
                 }
             });
 
             // --- PAGE 3: DETAILED HISTORY ---
             doc.addPage();
-            doc.setFontSize(18);
+            doc.setFontSize(22);
             doc.setTextColor(14, 165, 233);
-            doc.text('Detailed History', 14, 15);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Detailed History', 14, 20);
+
+            doc.setFontSize(9);
+            doc.setTextColor(120);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, h:mm A')}`, 14, 27);
+
+            // Accent line
+            doc.setDrawColor(14, 165, 233);
+            doc.setLineWidth(0.5);
+            doc.line(14, 32, 196, 32);
 
             const historyBody: any[] = [];
             exportData.forEach(task => {
@@ -581,13 +607,18 @@ export function TaskManagerReportView() {
             });
 
             autoTable(doc, {
-                startY: 25,
+                startY: 40,
                 head: [['Task ID', 'Event', 'Done By', 'Timestamp', 'Hours', 'Remarks']],
                 body: historyBody,
                 theme: 'grid',
                 headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-                styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200] },
+                styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak', lineWidth: 0.15, lineColor: [60, 60, 60], valign: 'middle' },
                 columnStyles: {
+                    0: { halign: 'center' },
+                    1: { halign: 'center' },
+                    2: { halign: 'center' },
+                    3: { halign: 'center' },
+                    4: { halign: 'center' },
                     5: { cellWidth: 70 }
                 }
             });

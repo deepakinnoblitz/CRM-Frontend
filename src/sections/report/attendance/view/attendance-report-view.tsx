@@ -317,12 +317,20 @@ export function AttendanceReportView() {
             const exportData = reportData;
 
             // Header
-            doc.setFontSize(18);
+            doc.setFontSize(22);
             doc.setTextColor(14, 165, 233);
-            doc.text('Attendance Report', 14, 15);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Attendance Report', 14, 20);
+
             doc.setFontSize(9);
-            doc.setTextColor(100);
-            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, HH:mm')}`, 14, 21);
+            doc.setTextColor(120);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, h:mm A')}`, 14, 27);
+
+            // Accent line
+            doc.setDrawColor(14, 165, 233);
+            doc.setLineWidth(0.5);
+            doc.line(14, 32, 196, 32);
 
             const tableData: any[] = [];
             for (let i = 0; i < exportData.length; i++) {
@@ -377,16 +385,20 @@ export function AttendanceReportView() {
             }
 
             autoTable(doc, {
-                startY: 30,
+                startY: 40,
                 head: [['Date', 'Employee', 'Employee ID', 'Status', 'In Time', 'Out Time', 'Working Hours']],
                 body: tableData,
                 theme: 'grid',
                 headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-                styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200], valign: 'middle' },
+                styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.15, lineColor: [60, 60, 60], valign: 'middle' },
                 columnStyles: {
                     0: { cellWidth: 30 },
                     1: { cellWidth: 50 },
                     2: { cellWidth: 30 },
+                    3: { halign: 'center' },
+                    4: { halign: 'center' },
+                    5: { halign: 'center' },
+                    6: { halign: 'center' },
                 },
                 didParseCell: (data) => {
                     const statusVal = data.cell.text[0];
@@ -440,7 +452,9 @@ export function AttendanceReportView() {
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Typography variant="h4">Attendance Report</Typography>
+                    <Stack spacing={0.5}>
+                        <Typography variant="h4">Attendance Report</Typography>
+                    </Stack>
                     <Stack direction="row" spacing={1}>
                         <Button
                             variant="outlined"

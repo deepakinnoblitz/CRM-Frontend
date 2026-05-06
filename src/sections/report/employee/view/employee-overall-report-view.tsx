@@ -38,6 +38,7 @@ import { useDepartments, useDesignations } from 'src/hooks/use-masters';
 import { fDate } from 'src/utils/format-time';
 import { frappeRequest } from 'src/utils/csrf';
 import { fNumber } from 'src/utils/format-number';
+import { stringToColor, stringToDarkColor } from 'src/utils/color-utils';
 
 import { runReport } from 'src/api/reports';
 import { getDoctypeList } from 'src/api/leads';
@@ -982,18 +983,26 @@ export function EmployeeOverallReportView() {
 
       // Helper for adding section titles
       const addPageHeader = (title: string) => {
-        doc.setFontSize(18);
+        doc.setFontSize(20);
         doc.setTextColor(14, 165, 233);
-        doc.text(title, 14, 15);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title, 14, 20);
+
         doc.setFontSize(9);
-        doc.setTextColor(100);
-        doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, HH:mm')}`, 14, 21);
+        doc.setTextColor(120);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, h:mm A')}`, 14, 27);
+
+        // Accent line
+        doc.setDrawColor(14, 165, 233);
+        doc.setLineWidth(0.5);
+        doc.line(14, 32, 196, 32);
       };
 
       const tableStyles: any = {
         theme: 'grid',
         headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-        styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200] },
+        styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1, lineColor: [60, 60, 60] },
       };
 
       const formatValue = (emp: any, key: string, isDate?: boolean, isCheck?: boolean) => {
@@ -1020,7 +1029,7 @@ export function EmployeeOverallReportView() {
           ['Status', emp.status || '-']
         ];
         autoTable(doc, {
-          startY: 30,
+          startY: 40,
           body: verticalBasic,
           ...tableStyles,
           alternateRowStyles: { fillColor: [252, 253, 255] },
@@ -1040,7 +1049,7 @@ export function EmployeeOverallReportView() {
           emp.status || '-'
         ]);
         autoTable(doc, {
-          startY: 30,
+          startY: 40,
           head: [['Employee Name', 'Employee ID', 'Date of Birth', 'Country', 'State', 'City', 'Status']],
           body: basicData,
           ...tableStyles
@@ -1060,7 +1069,7 @@ export function EmployeeOverallReportView() {
           ['User Login', emp.user || '-']
         ];
         autoTable(doc, {
-          startY: 30,
+          startY: 40,
           body: verticalContact,
           ...tableStyles,
           alternateRowStyles: { fillColor: [252, 253, 255] },
@@ -1080,7 +1089,7 @@ export function EmployeeOverallReportView() {
           emp.user || '-'
         ]);
         autoTable(doc, {
-          startY: 30,
+          startY: 40,
           head: [['Employee Name', 'Employee ID', 'Official Email', 'Personal Email', 'Phone', 'Office Phone', 'User Login']],
           body: contactData,
           ...tableStyles
@@ -1099,7 +1108,7 @@ export function EmployeeOverallReportView() {
           ['Skip Probation', formatValue(emp, 'skip_probation', false, true)],
         ];
         autoTable(doc, {
-          startY: 30,
+          startY: 40,
           body: verticalEmployment,
           ...tableStyles,
           alternateRowStyles: { fillColor: [252, 253, 255] },
@@ -1118,7 +1127,7 @@ export function EmployeeOverallReportView() {
           formatValue(emp, 'skip_probation', false, true),
         ]);
         autoTable(doc, {
-          startY: 30,
+          startY: 40,
           head: [['Employee Name', 'Employee ID', 'Department', 'Designation', 'Joining Date', 'Skip Probation']],
           body: employmentData,
           ...tableStyles
@@ -1140,7 +1149,7 @@ export function EmployeeOverallReportView() {
           ['Net Salary', emp.net_salary || '0']
         ];
         autoTable(doc, {
-          startY: 30,
+          startY: 40,
           body: verticalSalary,
           ...tableStyles,
           alternateRowStyles: { fillColor: [252, 253, 255] },
@@ -1161,7 +1170,7 @@ export function EmployeeOverallReportView() {
           emp.net_salary || '0'
         ]);
         autoTable(doc, {
-          startY: 30,
+          startY: 40,
           head: [['Employee ID', 'Bank Account', 'PF Number', 'ESI No', 'CTC', 'Earnings', 'Deductions', 'Net Salary']],
           body: salaryDataPdf,
           ...tableStyles
@@ -1180,7 +1189,7 @@ export function EmployeeOverallReportView() {
         a.working_hours_display || '-',
       ]);
       autoTable(doc, {
-        startY: 30,
+        startY: 40,
         head: [['Employee ID', 'Date', 'Status', 'In Time', 'Out Time', 'Hours']],
         body: attendanceTable.length > 0 ? attendanceTable : [['No records found', '', '', '', '', '']],
         ...tableStyles
@@ -1199,7 +1208,7 @@ export function EmployeeOverallReportView() {
         s.status || '-',
       ]);
       autoTable(doc, {
-        startY: 30,
+        startY: 40,
         head: [['Employee ID', 'Date', 'Login', 'Logout', 'Work Hrs', 'Break Hrs', 'Status']],
         body: sessionTable.length > 0 ? sessionTable : [['No records found', '', '', '', '', '', '']],
         ...tableStyles
@@ -1217,7 +1226,7 @@ export function EmployeeOverallReportView() {
         t.description || '-',
       ]);
       autoTable(doc, {
-        startY: 30,
+        startY: 40,
         head: [['Employee ID', 'Date', 'Activity', 'Project', 'Hours', 'Description']],
         body: tsTable.length > 0 ? tsTable : [['No records found', '', '', '', '', '']],
         ...tableStyles
@@ -1235,7 +1244,7 @@ export function EmployeeOverallReportView() {
         l.workflow_state || l.status || '-',
       ]);
       autoTable(doc, {
-        startY: 30,
+        startY: 40,
         head: [['Employee ID', 'Type', 'From', 'To', 'Days', 'Status']],
         body: leaveTable.length > 0 ? leaveTable : [['No records found', '', '', '', '', '']],
         ...tableStyles
@@ -1251,7 +1260,7 @@ export function EmployeeOverallReportView() {
         a.returned_on ? dayjs(a.returned_on).format('DD MMM YYYY') : '-',
       ]);
       autoTable(doc, {
-        startY: 30,
+        startY: 40,
         head: [['Employee ID', 'Asset Name', 'Assigned On', 'Returned On']],
         body: assetTable.length > 0 ? assetTable : [['No records found', '', '', '']],
         ...tableStyles
@@ -1270,7 +1279,7 @@ export function EmployeeOverallReportView() {
         s.docstatus === 1 ? 'Submitted' : 'Draft',
       ]);
       autoTable(doc, {
-        startY: 30,
+        startY: 40,
         head: [['Slip ID', 'Employee ID', 'Start', 'End', 'Gross', 'Net', 'Status']],
         body: salaryTable.length > 0 ? salaryTable : [['No records found', '', '', '', '', '', '']],
         ...tableStyles
@@ -1563,7 +1572,6 @@ export function EmployeeOverallReportView() {
                       />
                     </TableCell>
                     <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Employee</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Employee ID</TableCell>
                     <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Department</TableCell>
                     <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Designation</TableCell>
                     <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Joining Date</TableCell>
@@ -1595,8 +1603,8 @@ export function EmployeeOverallReportView() {
                                 height: 36,
                                 fontSize: 14,
                                 fontWeight: 'bold',
-                                bgcolor: 'primary.main',
-                                color: 'primary.contrastText',
+                                bgcolor: stringToColor(row.employee_name),
+                                color: stringToDarkColor(row.employee_name),
                               }}
                             >
                               {row.employee_name?.charAt(0).toUpperCase()}
@@ -1611,7 +1619,6 @@ export function EmployeeOverallReportView() {
                             </Stack>
                           </Stack>
                         </TableCell>
-                        <TableCell>{row.name}</TableCell>
                         <TableCell>{row.department}</TableCell>
                         <TableCell>{row.designation}</TableCell>
                         <TableCell>{fDate(row.date_of_joining, 'DD-MM-YYYY')}</TableCell>

@@ -349,12 +349,20 @@ export function TimesheetsReportView() {
             }
 
             // Header
-            doc.setFontSize(18);
+            doc.setFontSize(22);
             doc.setTextColor(14, 165, 233);
-            doc.text('Timesheet Report', 14, 15);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Timesheet Report', 14, 20);
+
             doc.setFontSize(9);
-            doc.setTextColor(100);
-            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, HH:mm')}`, 14, 21);
+            doc.setTextColor(120);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, h:mm A')}`, 14, 27);
+
+            // Accent line
+            doc.setDrawColor(14, 165, 233);
+            doc.setLineWidth(0.5);
+            doc.line(14, 32, 196, 32);
 
             const tableDataObjects: any[] = [];
             for (let i = 0; i < exportData.length; i++) {
@@ -421,7 +429,7 @@ export function TimesheetsReportView() {
             });
 
             autoTable(doc, {
-                startY: 30,
+                startY: 40,
                 columns: [
                     { header: 'Date', dataKey: 'date' },
                     { header: 'Employee', dataKey: 'employee' },
@@ -434,7 +442,7 @@ export function TimesheetsReportView() {
                 body: tableDataObjects,
                 theme: 'grid',
                 headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-                styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1, lineColor: [200, 200, 200], valign: 'middle' },
+                styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.15, lineColor: [60, 60, 60], valign: 'middle' },
                 columnStyles: {
                     date: { cellWidth: 25 },
                     employee: { cellWidth: 40 },
