@@ -96,20 +96,28 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                         borderRadius: '12px 12px 0 0',
                     },
                     '& .fc .fc-button': {
-                        bgcolor: 'background.neutral',
-                        border: 'none',
+                        bgcolor: alpha(theme.palette.grey[500], 0.08),
+                        border: `1px solid ${alpha(theme.palette.grey[500], 0.16)}`,
                         color: theme.palette.text.secondary,
                         fontWeight: 700,
                         textTransform: 'capitalize',
                         borderRadius: '10px',
                         px: 1.5,
-                        transition: theme.transitions.duration.shorter,
+                        transition: theme.transitions.create(['background-color', 'color', 'border-color'], {
+                            duration: theme.transitions.duration.shorter,
+                        }),
                         '&:hover': {
                             bgcolor: alpha(theme.palette.primary.main, 0.08),
+                            borderColor: alpha(theme.palette.primary.main, 0.32),
                             color: theme.palette.primary.main,
+                        },
+                        '&:active, &:focus, &:focus-visible': {
+                            boxShadow: 'none !important',
+                            outline: 'none !important',
                         },
                         '&:disabled': {
                             bgcolor: alpha(theme.palette.grey[500], 0.05),
+                            borderColor: alpha(theme.palette.grey[500], 0.08),
                             color: theme.palette.text.disabled,
                         },
                     },
@@ -117,6 +125,8 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                         bgcolor: alpha(theme.palette.primary.main, 0.1),
                         color: theme.palette.primary.main,
                         fontWeight: 800,
+                        boxShadow: 'none !important',
+                        border: 'none !important',
                     },
                     '& .fc .fc-daygrid-day-number': {
                         color: theme.palette.text.secondary,
@@ -126,7 +136,7 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                         zIndex: 1,
                     },
                     '& .fc .fc-col-header-cell': {
-                        bgcolor: alpha('#87CEEB', 0.2), // Sky blue background
+                        bgcolor: alpha('#87CEEB', 0.18), // Sky blue background
                         py: 1,
                         '&:first-of-type': {
                             borderTopLeftRadius: 12,
@@ -145,7 +155,12 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                         display: 'inline-block',
                     },
                     '& .fc .fc-scrollgrid': {
-                        border: 'none',
+                        border: `1px solid ${alpha(theme.palette.grey[500], 0.22)}`,
+                        borderRadius: 1.5,
+                        overflow: 'hidden',
+                    },
+                    '& .fc .fc-theme-standard td, & .fc .fc-theme-standard th': {
+                        borderColor: alpha(theme.palette.grey[500], 0.12),
                     },
                     '& .fc .fc-event': {
                         backgroundColor: 'transparent !important',

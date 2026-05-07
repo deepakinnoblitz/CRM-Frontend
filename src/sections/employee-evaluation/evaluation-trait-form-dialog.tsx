@@ -46,11 +46,13 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
         trait_name: string;
         category: string;
         description: string;
+        how_to_improve: string;
         evaluation_scores: { evaluation_point: string; score: number }[];
     }>({
         trait_name: '',
         category: 'Behavior',
         description: '',
+        how_to_improve: '',
         evaluation_scores: [],
     });
 
@@ -62,6 +64,7 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
                 trait_name: selectedTrait.trait_name || '',
                 category: selectedTrait.category || 'Behavior',
                 description: selectedTrait.description || '',
+                how_to_improve: selectedTrait.how_to_improve || '',
                 evaluation_scores: selectedTrait.evaluation_scores || [],
             });
         } else {
@@ -69,6 +72,7 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
                 trait_name: '',
                 category: 'Behavior',
                 description: '',
+                how_to_improve: '',
                 evaluation_scores: evaluationPoints.map(p => ({
                     evaluation_point: p.name,
                     score: p.default_score
@@ -258,6 +262,15 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
                             label="Description"
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        />
+
+                        <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            label="How to Improve"
+                            value={formData.how_to_improve}
+                            onChange={(e) => setFormData({ ...formData, how_to_improve: e.target.value })}
                         />
                     </Stack>
                 </DialogContent>

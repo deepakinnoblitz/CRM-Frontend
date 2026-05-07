@@ -286,7 +286,8 @@ export async function getRoleProfiles() {
 }
 
 export async function getRoles() {
-    const res = await frappeRequest('/api/method/frappe.client.get_list?doctype=Role&fields=["name"]&limit_page_length=999');
+    const filters = JSON.stringify([["Role", "display_in_frontend", "=", 1]]);
+    const res = await frappeRequest(`/api/method/frappe.client.get_list?doctype=Role&fields=["name"]&filters=${filters}&limit_page_length=999`);
     if (!res.ok) throw new Error("Failed to fetch roles");
     return (await res.json()).message;
 }

@@ -46,17 +46,17 @@ export function EmployeeEvaluationEventDetailsDialog({ open, onClose, event }: P
 
     if (!event) return null;
 
-    const { 
-        name, 
-        employee, 
+    const {
+        name,
+        employee,
         employee_name,
-        trait, 
-        evaluation_type, 
-        evaluation_date, 
-        score_change, 
-        hr_user, 
-        remarks, 
-        docstatus 
+        trait,
+        evaluation_type,
+        evaluation_date,
+        score_change,
+        hr_user,
+        remarks,
+        docstatus
     } = event;
 
     const statusConf = STATUS_CONFIG[docstatus.toString()] || { color: '#64748b', bg: '#f1f5f9', border: '#e2e8f0', icon: 'solar:info-circle-bold' };
@@ -81,12 +81,12 @@ export function EmployeeEvaluationEventDetailsDialog({ open, onClose, event }: P
                                         <Iconify icon="solar:clipboard-list-bold-duotone" width={24} sx={{ color: '#00A5D1' }} />
                                     </Box>
                                     <Box>
-                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block' }}>Event ID</Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block' }}>Event ID</Typography>
                                         <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>{name}</Typography>
                                     </Box>
                                 </Stack>
                                 <Box sx={{ textAlign: 'right' }}>
-                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
                                         Status
                                     </Typography>
                                     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.5, borderRadius: 0.75, bgcolor: statusConf.bg, border: `1px solid ${statusConf.border}` }}>
@@ -100,7 +100,7 @@ export function EmployeeEvaluationEventDetailsDialog({ open, onClose, event }: P
                         </Box>
 
                         {/* Info Grid */}
-                        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3, pl: 1}}>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3, pl: 1 }}>
                             <InfoRow icon="solar:user-id-bold" iconColor="#6366f1" label="Employee" value={`${employee_name} (${employee})`} />
                             <InfoRow icon="solar:shield-user-bold" iconColor="#8b5cf6" label="HR User" value={hr_user} />
                             <InfoRow icon="solar:user-speak-bold" iconColor="#f59e0b" label="Criteria" value={trait} />
@@ -112,25 +112,28 @@ export function EmployeeEvaluationEventDetailsDialog({ open, onClose, event }: P
                         {/* Evaluation Result */}
                         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2, pl: 1 }}>
                             <Box>
-                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
                                     Evaluation
                                 </Typography>
-                                <Label
-                                    variant="soft"
-                                    color={
-                                        (['Excellent', 'Good', 'Positive', 'Agree'].includes(evaluation_type) && 'success') ||
+                                {(() => {
+                                    const evalColor = (['Excellent', 'Good', 'Positive', 'Agree'].includes(evaluation_type) && 'success') ||
                                         (['Average', 'Neutral'].includes(evaluation_type) && 'warning') ||
                                         (['Bad', 'Very Bad', 'Negative', 'Disagree'].includes(evaluation_type) && 'error') ||
-                                        'default'
-                                    }
-                                    sx={{ height: 28, textTransform: 'capitalize', fontWeight: 700 }}
-                                >
-                                    {evaluation_type}
-                                </Label>
+                                        'default';
+
+                                    return (
+                                        <Label
+                                            variant="soft"
+                                            color={evalColor as any}
+                                        >
+                                            {evaluation_type}
+                                        </Label>
+                                    );
+                                })()}
                             </Box>
 
                             <Box>
-                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
                                     Score Change
                                 </Typography>
                                 <Typography variant="h6" sx={{ color: score_change > 0 ? 'success.main' : score_change < 0 ? 'error.main' : 'text.primary', fontWeight: 800 }}>
@@ -141,7 +144,7 @@ export function EmployeeEvaluationEventDetailsDialog({ open, onClose, event }: P
 
                         {/* Remarks */}
                         <Box sx={{ pl: 1, pr: 2 }}>
-                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
                                 Remarks
                             </Typography>
                             <Box sx={{ p: 2, bgcolor: '#f4f6f8', borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }}>
@@ -164,7 +167,7 @@ function InfoRow({ icon, iconColor, label, value }: { icon: string; iconColor: s
                 <Iconify icon={icon as any} width={20} sx={{ color: iconColor }} />
             </Box>
             <Box sx={{ minWidth: 0 }}>
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block' }}>
                     {label}
                 </Typography>
                 <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>

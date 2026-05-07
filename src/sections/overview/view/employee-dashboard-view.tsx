@@ -299,7 +299,7 @@ export function EmployeeDashboardView() {
                         title="Today's Birthdays"
                         tableData={data.todays_birthdays || []}
                         headLabel={[
-                            { id: 'index', label: '#' },
+                            { id: 'index', label: 'S.No' },
                             { id: 'employee_name', label: 'Employee Name' },
                         ]}
                         emptyMessage="No birthday today"
@@ -312,7 +312,7 @@ export function EmployeeDashboardView() {
                         title="Today's Leave"
                         tableData={data.todays_leaves || []}
                         headLabel={[
-                            { id: 'index', label: '#' },
+                            { id: 'index', label: 'S.No' },
                             { id: 'employee_name', label: 'Employee Name' },
                             { id: 'employee', label: 'Employee ID' },
                         ]}

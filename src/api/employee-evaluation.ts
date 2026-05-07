@@ -6,6 +6,7 @@ export interface EmployeeEvaluationTrait {
     trait_name: string;
     category?: string;
     description?: string;
+    how_to_improve?: string;
     evaluation_scores?: {
         evaluation_point: string;
         score: number;
@@ -23,6 +24,7 @@ export interface EmployeeEvaluationEvent {
     score_change: number;
     hr_user: string;
     remarks?: string;
+    how_to_improve?: string;
     docstatus: number;
     auto_submit?: number;
     modified_by: string;

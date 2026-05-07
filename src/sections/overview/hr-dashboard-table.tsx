@@ -1,10 +1,12 @@
 import type { CardProps } from '@mui/material/Card';
 
+import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
+import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -81,19 +83,45 @@ export function HRDashboardTable({ title, subheader, tableData, headLabel, empty
                                 </TableRow>
                             ) : (
                                 tableData.map((row: any, index) => (
-                                    <TableRow key={index}>
+                                    <TableRow key={index}  sx={{'& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },'&:last-child td, &:last-child th': { borderBottom: 0 }}}>
                                         {headLabel.map((headCell) => (
                                             <TableCell key={headCell.id} sx={{ whiteSpace: 'nowrap' }}>
-                                                <Typography 
-                                                    variant="body2" 
-                                                    noWrap 
-                                                    sx={{ 
-                                                        maxWidth: headCell.id === 'subject' ? 250 : 150,
-                                                        display: 'block'
-                                                    }}
-                                                >
-                                                    {headCell.id === 'index' ? index + 1 : row[headCell.id]}
-                                                </Typography>
+                                                {headCell.id === 'index' ? (
+                                                    <Box
+                                                        sx={{
+                                                            width: 28,
+                                                            height: 28,
+                                                            display: 'flex',
+                                                            borderRadius: '50%',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                            color: 'primary.main',
+                                                            typography: 'subtitle2',
+                                                            fontWeight: 800,
+                                                            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                                                            transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+                                                            '&:hover': {
+                                                                bgcolor: 'primary.main',
+                                                                color: 'primary.contrastText',
+                                                                transform: 'scale(1.1)',
+                                                            },
+                                                        }}
+                                                    >
+                                                        {index + 1}
+                                                    </Box>
+                                                ) : (
+                                                    <Typography 
+                                                        variant="body2" 
+                                                        noWrap 
+                                                        sx={{ 
+                                                            maxWidth: headCell.id === 'subject' ? 250 : 150,
+                                                            display: 'block'
+                                                        }}
+                                                    >
+                                                        {row[headCell.id]}
+                                                    </Typography>
+                                                )}
                                             </TableCell>
                                         ))}
                                     </TableRow>

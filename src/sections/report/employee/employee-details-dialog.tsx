@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LuUserCheck } from 'react-icons/lu';
+import { BsInfoCircle } from 'react-icons/bs';
 import { TbMoneybagPlus } from "react-icons/tb";
 import { GrDocumentLocked } from "react-icons/gr";
 
@@ -14,15 +15,27 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
+import { ClickAwayListener, Tooltip as MuiTooltip, keyframes } from '@mui/material';
 
 import { fNumber } from 'src/utils/format-number';
 
 import { getHRDoc, getHRSettings } from 'src/api/hr-management';
+import { fetchPersonalityDashboardData, type PersonalityDashboardData } from 'src/api/dashboard';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
+import PersonalityGauge from 'src/sections/employee-evaluation/component/personality-gauge';
+
+import { ProfileBadges } from '../../employee/profile-badges';
+
 // ----------------------------------------------------------------------
+
+const pulse = keyframes`
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+`;
 
 type Props = {
     open: boolean;
@@ -35,6 +48,10 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
     const [employee, setEmployee] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [bankDetails, setBankDetails] = useState<any>(null);
+
+    const [stats, setStats] = useState<PersonalityDashboardData | null>(null);
+    const [isHovered, setIsHovered] = useState(false);
+    const [isPinned, setIsPinned] = useState(false);
 
     const [hrSettings, setHRSettings] = useState<{ default_currency: string; currency_symbol: string; default_locale: string }>({
         default_currency: 'INR',
@@ -50,18 +67,23 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
     useEffect(() => {
         if (open && employeeId) {
             setLoading(true);
-            getHRDoc('Employee', employeeId)
-                .then((data) => {
-                    setEmployee(data);
-                    if (data.bank_account) {
-                        getHRDoc('Bank Account', data.bank_account)
+            Promise.all([
+                getHRDoc('Employee', employeeId),
+                fetchPersonalityDashboardData(employeeId)
+            ])
+                .then(([empData, statsData]) => {
+                    setEmployee(empData);
+                    setStats(statsData);
+
+                    if (empData.bank_account) {
+                        getHRDoc('Bank Account', empData.bank_account)
                             .then(setBankDetails)
                             .catch(console.error);
                     } else {
                         setBankDetails(null);
                     }
                 })
-                .catch((err) => console.error('Failed to fetch employee details:', err))
+                .catch((err) => console.error('Failed to fetch details:', err))
                 .finally(() => setLoading(false));
         }
 
@@ -95,7 +117,7 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 4, m: 1, mt: 4 }}>
+            <DialogContent sx={{ p: 4, m: 1, mt: 4, overflowX: 'hidden' }}>
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
                         <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
@@ -181,6 +203,7 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
                             }}
                         >
                             <Tab label="Employee Info" icon={<LuUserCheck size={20} />} iconPosition="start" />
+                            <Tab label="Performance" icon={<Iconify icon={"solar:chart-bold" as any} width={20} />} iconPosition="start" />
                             <Tab label="Salary Info" icon={<TbMoneybagPlus size={20} />} iconPosition="start" />
                             <Tab label="Documents" icon={<GrDocumentLocked size={20} />} iconPosition="start" />
                         </Tabs>
@@ -227,7 +250,192 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
                                 </Box>
                             )}
 
-                            {currentTab === 1 && (
+                             {currentTab === 1 && (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, overflowX: 'hidden' }}>
+                                    {/* Evaluation Dashboard */}
+                                    <Box>
+                                        <SectionHeader title="Evaluation Overview" icon="solar:ranking-bold" />
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                flexDirection: { xs: 'column', md: 'row' },
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                gap: 4,
+                                                p: 3,
+                                                borderRadius: 2,
+                                                bgcolor: (theme) => alpha(theme.palette.background.neutral, 0.5),
+                                                border: (theme) => `1px solid ${theme.palette.divider}`,
+                                            }}
+                                        >
+                                            {/* Gauge Section */}
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    flex: 1,
+                                                }}
+                                            >
+                                                <PersonalityGauge value={stats?.totalScore ?? 100} width={280} height={280} />
+
+                                                <Stack spacing={0.5} sx={{ mb: 2, textAlign: 'center', mt: -3 }}>
+                                                    <ClickAwayListener onClickAway={() => setIsPinned(false)}>
+                                                        <Box sx={{ display: 'inline-block' }}>
+                                                            <MuiTooltip
+                                                                title={
+                                                                    Array.isArray(stats?.howToImprove) && stats.howToImprove.length > 0 ? (
+                                                                        <Box sx={{ p: 0.5 }}>
+                                                                            <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 800, color: '#0e7490', borderBottom: '1px solid rgba(6, 182, 212, 0.3)', pb: 1, fontSize: '0.95rem' }}>
+                                                                                Recommended Improvements
+                                                                            </Typography>
+                                                                            <Stack spacing={2}>
+                                                                                {stats.howToImprove.map((item, i) => {
+                                                                                    const [advice, details] = item.split(' - ');
+                                                                                    return (
+                                                                                        <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                                                                            <Box sx={{ minWidth: 8, height: 8, borderRadius: '50%', bgcolor: '#06b6d4', mt: 0.7, boxShadow: '0 0 8px rgba(6, 182, 212, 0.4)' }} />
+                                                                                            <Stack spacing={0.3}>
+                                                                                                <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: '#117eb2', lineHeight: 1.4, textAlign: 'left' }}>
+                                                                                                    {advice}
+                                                                                                </Typography>
+                                                                                                {details && (
+                                                                                                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#0e7490', opacity: 0.8, textAlign: 'left', fontStyle: 'italic' }}>
+                                                                                                        {details}
+                                                                                                    </Typography>
+                                                                                                )}
+                                                                                            </Stack>
+                                                                                        </Box>
+                                                                                    );
+                                                                                })}
+                                                                            </Stack>
+                                                                        </Box>
+                                                                    ) : (
+                                                                        "Consistently good performance! Continue focusing on your core strengths to maintain this rating."
+                                                                    )
+                                                                }
+                                                                arrow
+                                                                placement="top"
+                                                                disableFocusListener
+                                                                disableTouchListener
+                                                                open={isHovered || isPinned}
+                                                                onOpen={() => setIsHovered(true)}
+                                                                onClose={() => setIsHovered(false)}
+                                                                slotProps={{
+                                                                    tooltip: {
+                                                                        sx: {
+                                                                            background: 'linear-gradient(135deg, #f0f9ff 0%, #ecfeff 50%, #f0fdf4 100%)',
+                                                                            color: '#117eb2',
+                                                                            fontSize: '0.875rem',
+                                                                            padding: '16px 24px',
+                                                                            borderRadius: '16px',
+                                                                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                                                                            maxWidth: 420,
+                                                                            fontWeight: 700,
+                                                                            lineHeight: 1.6,
+                                                                            textAlign: 'left',
+                                                                            border: '1px solid #06b6d4',
+                                                                            backdropFilter: 'blur(10px)',
+                                                                        },
+                                                                    },
+                                                                    arrow: {
+                                                                        sx: {
+                                                                            color: '#f0f9ff',
+                                                                        },
+                                                                    },
+                                                                }}
+                                                            >
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    onClick={() => setIsPinned(!isPinned)}
+                                                                    sx={{
+                                                                        color: 'info.main',
+                                                                        fontWeight: 700,
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        gap: 0.8,
+                                                                        animation: `${pulse} 3s infinite ease-in-out`,
+                                                                        pb: 2,
+                                                                        cursor: 'help'
+                                                                    }}
+                                                                >
+                                                                    <BsInfoCircle style={{ fontSize: '1.1rem' }} />
+                                                                    What Needs Improvement?
+                                                                </Typography>
+                                                            </MuiTooltip>
+                                                        </Box>
+                                                    </ClickAwayListener>
+                                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                                        Status:{' '}
+                                                        <Box
+                                                            component="span"
+                                                            sx={{
+                                                                fontWeight: 800,
+                                                                color: stats?.status === 'Excellent' ? 'success.main'
+                                                                    : stats?.status === 'Good' ? 'info.main'
+                                                                        : stats?.status === 'Average' ? 'warning.main'
+                                                                            : 'error.main',
+                                                            }}
+                                                        >
+                                                            {stats?.status || 'Excellent'}
+                                                        </Box>
+                                                    </Typography>
+                                                </Stack>
+                                            </Box>
+
+                                            {/* List Section */}
+                                            <Box sx={{ flex: 1, width: '100%' }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, textTransform: 'uppercase', color: 'text.disabled' }}>
+                                                    Recent Traits Impact
+                                                </Typography>
+
+                                                {(stats?.traits ?? []).length === 0 ? (
+                                                    <Box sx={{ py: 4, textAlign: 'center', color: 'text.disabled', bgcolor: 'background.neutral', borderRadius: 1.5 }}>
+                                                        <Typography variant="caption" sx={{ fontWeight: 700 }}>No recent evaluations</Typography>
+                                                    </Box>
+                                                ) : (
+                                                    <Stack spacing={1.5}>
+                                                        {stats?.traits.map((item, index) => (
+                                                            <Box
+                                                                key={`${item.trait}-${index}`}
+                                                                sx={{
+                                                                    display: 'flex',
+                                                                    justifyContent: 'space-between',
+                                                                    alignItems: 'center',
+                                                                    p: 1.5,
+                                                                    borderRadius: 1.5,
+                                                                    bgcolor: item.score > 0 ? alpha('#22c55e', 0.08) : item.score < 0 ? alpha('#ef4444', 0.08) : 'background.neutral',
+                                                                    border: (theme) => `1px solid ${item.score > 0 ? alpha('#22c55e', 0.2) : item.score < 0 ? alpha('#ef4444', 0.2) : theme.palette.divider}`,
+                                                                }}
+                                                            >
+                                                                <Typography variant="body2" sx={{ fontWeight: 700 }}>{item.trait}</Typography>
+                                                                <Typography
+                                                                    variant="subtitle2"
+                                                                    fontWeight={900}
+                                                                    sx={{ color: item.score > 0 ? 'success.main' : item.score < 0 ? 'error.main' : 'text.secondary' }}
+                                                                >
+                                                                    {item.score > 0 ? `+${item.score}` : item.score}
+                                                                </Typography>
+                                                            </Box>
+                                                        ))}
+                                                    </Stack>
+                                                )}
+                                            </Box>
+                                        </Box>
+                                    </Box>
+
+                                    <Divider sx={{ borderStyle: 'dashed' }} />
+
+                                    {/* Badges Section */}
+                                    <Box>
+                                        <SectionHeader title="Badges & Achievements" icon="solar:medal-star-bold" />
+                                        <ProfileBadges employeeId={employeeId!} />
+                                    </Box>
+                                </Box>
+                            )}
+
+                            {currentTab === 2 && (
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                     {/* Bank & Identification */}
                                     <Box>
@@ -321,7 +529,7 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
                                 </Box>
                             )}
 
-                            {currentTab === 2 && (
+                            {currentTab === 3 && (
                                 <Box>
                                     <SectionHeader title="Documents" icon="solar:document-bold" />
                                     <Box display="grid" gap={2}>

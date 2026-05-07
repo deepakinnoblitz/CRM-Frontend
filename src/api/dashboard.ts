@@ -22,6 +22,7 @@ export interface DashboardStats {
 export interface PersonalityDashboardData {
     totalScore: number;
     status: string;
+    howToImprove?: string | string[] | null;
     lastUpdated?: string | null;
     traits: Array<{ trait: string; score: number }>;
 }
@@ -408,13 +409,13 @@ export async function fetchWeeklyPresentAbsentChartData(params?: {
     to_date?: string;
 }): Promise<Array<{ date: string; day: string; present: number; absent: number }>> {
     let url = '/api/method/company.company.frontend_api.get_weekly_present_absent_data';
-    
+
     if (params) {
         const queryParams = new URLSearchParams();
         if (params.filter_type) queryParams.append('filter_type', params.filter_type);
         if (params.from_date) queryParams.append('from_date', params.from_date);
         if (params.to_date) queryParams.append('to_date', params.to_date);
-        
+
         const queryString = queryParams.toString();
         if (queryString) {
             url += `?${queryString}`;
@@ -599,9 +600,13 @@ export async function fetchMonthlyEmployee(): Promise<any> {
     }
 }
 
-export async function fetchPersonalityDashboardData(): Promise<PersonalityDashboardData | null> {
+export async function fetchPersonalityDashboardData(employeeId?: string): Promise<PersonalityDashboardData | null> {
     try {
-        const res = await frappeRequest('/api/method/company.company.frontend_api.get_personality_dashboard_data');
+        let url = '/api/method/company.company.frontend_api.get_personality_dashboard_data';
+        if (employeeId) {
+            url += `?employee=${employeeId}`;
+        }
+        const res = await frappeRequest(url);
 
         if (!res.ok) {
             const error = await res.json();

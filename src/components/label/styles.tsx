@@ -37,6 +37,9 @@ export const LabelRoot = styled('span', {
       ...(variant === 'soft' && {
         color: theme.vars.palette.text.secondary,
         backgroundColor: varAlpha(theme.vars.palette.grey['500Channel'], 0.16),
+        border: `1px solid ${varAlpha(theme.vars.palette.grey['500Channel'], 0.12)}`,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
       }),
       /**
        * @variant inverted
@@ -72,6 +75,10 @@ export const LabelRoot = styled('span', {
         ...(variant === 'soft' && {
           color: theme.vars.palette[color].dark,
           backgroundColor: varAlpha(theme.vars.palette[color].mainChannel, 0.16),
+          border: `1px solid ${varAlpha(theme.vars.palette[color].mainChannel, 0.24)}`,
+          boxShadow: `0 2px 4px ${varAlpha(theme.vars.palette[color].mainChannel, 0.12)}`,
+          textTransform: 'uppercase',
+          letterSpacing: 0.3,
           ...theme.applyStyles('dark', {
             color: theme.vars.palette[color].light,
           }),
@@ -87,7 +94,7 @@ export const LabelRoot = styled('span', {
   };
 
   return {
-    height: 24,
+    height: 28,
     minWidth: 24,
     lineHeight: 0,
     flexShrink: 0,
@@ -97,8 +104,8 @@ export const LabelRoot = styled('span', {
     display: 'inline-flex',
     gap: theme.spacing(0.75),
     justifyContent: 'center',
-    padding: theme.spacing(0, 0.75),
-    fontSize: theme.typography.pxToRem(12),
+    padding: theme.spacing(0, 1),
+    fontSize: theme.typography.pxToRem(11),
     fontWeight: theme.typography.fontWeightBold,
     borderRadius: theme.shape.borderRadius * 0.75,
     transition: theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
