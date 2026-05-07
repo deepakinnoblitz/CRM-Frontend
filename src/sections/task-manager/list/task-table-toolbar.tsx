@@ -80,6 +80,9 @@ export function TaskTableToolbar({
                         '& .MuiOutlinedInput-root': {
                             borderRadius: 1.5,
                         },
+                        '& .MuiOutlinedInput-input': {
+                            padding: '12px 16px',
+                        },
                     }}
                 />
             </Stack>

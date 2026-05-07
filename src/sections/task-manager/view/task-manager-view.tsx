@@ -14,11 +14,17 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 import { useSocket } from 'src/hooks/use-socket';
 
-import { fDate } from 'src/utils/format-time';
-
 import { DashboardContent } from 'src/layouts/dashboard';
-import { deleteTaskManager } from 'src/api/task-manager';
-import { TaskManager, fetchTaskManagerList, updateTaskStatus, fetchProjects, fetchDepartments, fetchEmployees, getTaskManagerPermissions } from 'src/api/task-manager';
+import {
+    fetchProjects,
+    fetchEmployees,
+    updateTaskStatus,
+    deleteTaskManager,
+    fetchDepartments,
+    fetchTaskManagerList,
+    getTaskManagerPermissions,
+} from 'src/api/task-manager';
+import type { TaskManager } from 'src/api/task-manager';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -30,7 +36,8 @@ import { TaskNewEditForm } from '../task-new-edit-form';
 import TaskKanbanBoard from '../kanban/task-kanban-board';
 import TaskDetailsDialog from '../kanban/task-details-dialog';
 import { TaskTableToolbar } from '../list/task-table-toolbar';
-import { TaskTableFiltersDrawer, TaskFiltersProps } from '../list/task-table-filters-drawer';
+import { TaskTableFiltersDrawer } from '../list/task-table-filters-drawer';
+import type { TaskFiltersProps } from '../list/task-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
@@ -66,7 +73,7 @@ export default function TaskManagerView() {
     const [tasks, setTasks] = useState<TaskManager[]>([]);
     const [loading, setLoading] = useState(true);
     const [openForm, setOpenForm] = useState(false);
-    const [view, setView] = useState<'kanban' | 'list'>('list');
+    const [view, setView] = useState<'kanban' | 'list'>(viewMode === 'all' ? 'kanban' : 'list');
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [permissions, setPermissions] = useState({ read: false, write: false, create: false, delete: false });
@@ -85,7 +92,7 @@ export default function TaskManagerView() {
         employees: { name: string; employee_name: string }[];
         departments: { name: string; department_name: string }[];
     }>({
-        statuses: ['Open', 'In Progress', 'Completed', 'Reopened'],
+        statuses: ['Open', 'In Progress', 'On Hold', 'Completed', 'Reopened'],
         projects: [],
         priorities: ['Low', 'Medium', 'High'],
         employees: [],
@@ -230,9 +237,9 @@ export default function TaskManagerView() {
     const listTasks = sortTasks(baseTasks);
 
     return (
-        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
-            <Container maxWidth="xl" sx={{ height: 1, display: 'flex', flexDirection: 'column', px: { xs: 2, md: 1 } }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+        <DashboardContent maxWidth={false} sx={{ mt: 1 }}>
+            <Container maxWidth={false} sx={{ height: 1, display: 'flex', flexDirection: 'column', px: { xs: 1, md: 0.5 } }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={view === 'kanban' ? 1.5 : 3}>
                     <Box>
                         <Typography variant="h4" gutterBottom>{pageTitle}</Typography>
                     </Box>

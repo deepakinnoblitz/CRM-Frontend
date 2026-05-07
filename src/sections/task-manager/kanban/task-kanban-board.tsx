@@ -1,11 +1,9 @@
-import { useRef } from 'react';
-import { varAlpha } from 'minimal-shared/utils';
+import { useRef, useMemo } from 'react';
+
+import type { TaskManager } from 'src/api/task-manager';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import { useTheme } from '@mui/material/styles';
-
-import { TaskManager } from 'src/api/task-manager';
 
 import TaskKanbanColumn from './task-kanban-column';
 
@@ -32,11 +30,17 @@ export default function TaskKanbanBoard({
     loading,
     permissions
 }: Props) {
-    const theme = useTheme();
     const boardRef = useRef<HTMLDivElement>(null);
     const isDown = useRef(false);
     const startX = useRef(0);
     const scrollLeft = useRef(0);
+    const totalByStatus = useMemo(
+        () => STATUS_OPTIONS.reduce<Record<string, number>>((acc, status) => {
+            acc[status] = tasks.filter((task) => task.status === status).length;
+            return acc;
+        }, {}),
+        [tasks]
+    );
 
     const handleMouseDown = (e: React.MouseEvent) => {
         isDown.current = true;
@@ -64,15 +68,15 @@ export default function TaskKanbanBoard({
 
     if (loading) {
         return (
-            <Stack direction="row" spacing={3} sx={{ height: 1, overflow: 'hidden' }}>
-                {[...Array(4)].map((_, index) => (
+            <Stack direction="row" spacing={0.75} sx={{ height: 1, overflow: 'hidden' }}>
+                {[...Array(5)].map((_, index) => (
                     <Box
                         key={index}
                         sx={{
-                            width: 320,
-                            height: 1,
-                            borderRadius: 2,
-                            backgroundColor: varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
+                            width: 314,
+                            height: '70vh',
+                            borderRadius: 0.75,
+                            backgroundColor: '#f7f7f8',
                             flexShrink: 0,
                         }}
                     />
@@ -91,23 +95,28 @@ export default function TaskKanbanBoard({
             sx={{
                 flexGrow: 1,
                 display: 'flex',
-                gap: 3,
-                pb: 3,
+                gap: 0.75,
+                pb: 1.5,
                 overflowX: 'auto',
                 overflowY: 'hidden',
-                minHeight: '600px',
+                minHeight: { xs: 'calc(100vh - 280px)', md: 'calc(100vh - 248px)' },
+                height: { xs: 'calc(100vh - 280px)', md: 'calc(100vh - 248px)' },
+                bgcolor: '#ececef',
+                p: 0.75,
+                border: '1px solid #d8d8dd',
+                borderRadius: 0.75,
                 cursor: 'grab',
                 userSelect: 'none',
                 '&:active': { cursor: 'grabbing' },
                 '&::-webkit-scrollbar': {
-                    height: 8,
+                    height: 14,
                 },
                 '&::-webkit-scrollbar-thumb': {
-                    backgroundColor: varAlpha(theme.vars.palette.grey['500Channel'], 0.12),
-                    borderRadius: 4,
+                    backgroundColor: '#8c8c8c',
+                    borderRadius: 0,
                 },
                 '&::-webkit-scrollbar-track': {
-                    backgroundColor: 'transparent',
+                    backgroundColor: '#d5d5d8',
                 },
             }}
         >
@@ -116,6 +125,7 @@ export default function TaskKanbanBoard({
                     key={status}
                     status={status}
                     tasks={tasks.filter((task) => task.status === status)}
+                    total={totalByStatus[status] || 0}
                     onUpdateStatus={onUpdateStatus}
                     onViewDetails={onViewDetails}
                     onEditTask={onEditTask}

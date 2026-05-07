@@ -10,13 +10,12 @@ import MenuItem from '@mui/material/MenuItem';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import AvatarGroup from '@mui/material/AvatarGroup';
 
 import { fDate } from 'src/utils/format-time';
 import { getInitials } from 'src/utils/string';
 import { stringToColor, stringToDarkColor } from 'src/utils/color-utils';
 
-import { TaskManager } from 'src/api/task-manager';
+import type { TaskManager } from 'src/api/task-manager';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -65,61 +64,56 @@ export default function TaskKanbanCard({
     const priorityColor =
         task.priority === 'High' ? 'error' :
             task.priority === 'Medium' ? 'warning' : 'info';
+    const primaryAssignee = task.assignees?.[0];
+    const primaryAssigneeLabel = primaryAssignee?.employee_name || primaryAssignee?.user || primaryAssignee?.employee || 'Unassigned';
+    const extraAssignees = Math.max((task.assignees?.length || 0) - 1, 0);
+    const taskNumber = task.name?.replace(/^TASK-?/, '') || task.name;
+    const isHighPriority = task.priority === 'High';
 
     return (
         <Card
             onClick={() => onViewDetails(task)}
             sx={{
-                p: 2,
+                p: 0,
                 cursor: 'pointer',
                 boxShadow: 'none',
-                border: `1px solid ${varAlpha(theme.vars.palette.grey['500Channel'], 0.12)}`,
-                transition: theme.transitions.create(['box-shadow', 'transform'], {
+                border: '1px solid #b8b8c0',
+                borderRadius: 1,
+                bgcolor: '#fff',
+                color: '#6d6d80',
+                overflow: 'hidden',
+                transition: theme.transitions.create(['box-shadow', 'border-color'], {
                     duration: theme.transitions.duration.shorter,
                 }),
                 '&:hover': {
-                    boxShadow: theme.customShadows?.z12,
-                    transform: 'translateY(-2px)',
+                    boxShadow: '0 10px 24px rgba(20, 23, 42, 0.12)',
+                    borderColor: '#8f90a0',
                 },
             }}
         >
-            <Stack spacing={1.5}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Box
-                        sx={{
-                            py: 0.25,
-                            pl: 0.75,
-                            pr: 1,
-                            gap: 0.75,
-                            borderRadius: 0.75,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            color: `${priorityColor}.main`,
-                            bgcolor: varAlpha(theme.vars.palette[priorityColor].mainChannel, 0.08),
-                            border: `1px solid ${varAlpha(theme.vars.palette[priorityColor].mainChannel, 0.16)}`,
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                width: 6,
-                                height: 6,
-                                borderRadius: '50%',
-                                bgcolor: 'currentColor',
-                            }}
+            <Box sx={{ p: 1.25, pb: 1 }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                    <Stack direction="row" alignItems="center" spacing={0.55} sx={{ minWidth: 0 }}>
+                        <Iconify
+                            icon="solar:medal-star-bold"
+                            width={25}
+                            sx={{ color: isHighPriority ? '#f7c600' : '#77798c', flexShrink: 0 }}
                         />
                         <Typography
-                            variant="caption"
+                            title={task.name}
                             sx={{
+                                color: '#a4a5b1',
                                 fontWeight: 800,
-                                textTransform: 'uppercase',
-                                fontSize: 10,
-                                letterSpacing: 0.5,
-                                lineHeight: 1,
+                                fontSize: 16,
+                                lineHeight: 1.2,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
                             }}
                         >
-                            {task.priority}
+                            {taskNumber}
                         </Typography>
-                    </Box>
+                    </Stack>
 
                     <IconButton
                         size="small"
@@ -127,76 +121,129 @@ export default function TaskKanbanCard({
                             e.stopPropagation();
                             handleOpenMenu(e);
                         }}
-                        sx={{ color: 'text.disabled' }}
+                        sx={{
+                            width: 24,
+                            height: 24,
+                            color: '#8c8d9d',
+                            flexShrink: 0,
+                        }}
                     >
                         <Iconify icon="eva:more-vertical-fill" width={18} />
                     </IconButton>
                 </Stack>
 
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, lineHeight: 1.4 }}>
+                <Typography
+                    title={primaryAssigneeLabel}
+                    sx={{
+                        mt: 0.2,
+                        color: '#737486',
+                        fontWeight: 700,
+                        fontSize: 16,
+                        lineHeight: 1.25,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                    }}
+                >
+                    {primaryAssigneeLabel}
+                    {extraAssignees > 0 ? ` +${extraAssignees}` : ''}
+                </Typography>
+
+                <Typography
+                    title={task.title}
+                    sx={{
+                        mt: 0.55,
+                        color: '#686879',
+                        fontWeight: 900,
+                        fontSize: 16,
+                        lineHeight: 1.25,
+                        display: '-webkit-box',
+                        overflow: 'hidden',
+                        WebkitBoxOrient: 'vertical',
+                        WebkitLineClamp: 2,
+                    }}
+                >
                     {task.title}
                 </Typography>
 
-                <Stack spacing={1}>
-                    {task.project && (
-                        <Typography
-                            variant="caption"
+                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ mt: 1.05 }}>
+                    <Stack direction="row" alignItems="center" spacing={0.8} sx={{ minWidth: 0 }}>
+                        <Avatar
+                            alt={primaryAssigneeLabel}
+                            src={primaryAssignee?.profile_pic}
                             sx={{
-                                color: 'text.secondary',
-                                fontWeight: 500,
-                                fontSize: 11,
+                                width: 32,
+                                height: 32,
+                                bgcolor: primaryAssignee ? stringToColor(primaryAssigneeLabel) : '#ff5d8f',
+                                color: primaryAssignee ? stringToDarkColor(primaryAssigneeLabel) : '#fff',
+                                fontSize: 12,
+                                fontWeight: 900,
+                                border: '0',
+                                flexShrink: 0,
+                            }}
+                        >
+                            {getInitials(primaryAssigneeLabel)}
+                        </Avatar>
+                        <Box
+                            sx={{
+                                height: 26,
+                                px: 1,
                                 display: 'inline-flex',
                                 alignItems: 'center',
+                                borderRadius: 0.75,
+                                color: `${priorityColor}.main`,
+                                bgcolor: varAlpha(theme.vars.palette[priorityColor].mainChannel, 0.08),
+                                border: `1px solid ${varAlpha(theme.vars.palette[priorityColor].mainChannel, 0.14)}`,
+                                fontSize: 11,
+                                fontWeight: 900,
+                                textTransform: 'uppercase',
+                                lineHeight: 1,
                             }}
                         >
-                            <Box component="span" sx={{ color: 'primary.main', fontWeight: 700, mr: 0.5 }}>Project:</Box>
-                            {task.project}
-                        </Typography>
-                    )}
-
-                    <Stack
-                        direction="row"
-                        alignItems="center"
-                        justifyContent="space-between"
-                        sx={{ pt: 0.5 }}
-                    >
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                color: 'text.disabled',
-                                fontWeight: 600
-                            }}
-                        >
-                            {task.due_date ? fDate(task.due_date) : 'No due date'}
-                        </Typography>
-
-                        {task.status === 'Completed' ? (
-                            <Iconify icon="solar:check-circle-bold" width={18} sx={{ color: 'success.main' }} />
-                        ) : (
-                            <Box sx={{ flexGrow: 1 }} />
-                        )}
-
-                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}>
-                            <AvatarGroup max={3} sx={{ '& .MuiAvatar-root': { width: 24, height: 24, fontSize: 10 } }}>
-                                {(task.assignees || []).map((a) => (
-                                    <Avatar
-                                        key={a.employee}
-                                        alt={a.employee_name}
-                                        src={a.profile_pic}
-                                        sx={{
-                                            bgcolor: stringToColor(a.employee_name || a.user || a.employee),
-                                            color: stringToDarkColor(a.employee_name || a.user || a.employee),
-                                            fontWeight: 'bold',
-                                        }}
-                                    >
-                                        {getInitials(a.employee_name || a.user || a.employee)}
-                                    </Avatar>
-                                ))}
-                            </AvatarGroup>
+                            {task.priority}
                         </Box>
                     </Stack>
+
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: '#6f6f80',
+                            fontWeight: 700,
+                            fontSize: 17,
+                            lineHeight: 1,
+                            whiteSpace: 'nowrap',
+                        }}
+                    >
+                        {task.due_date ? fDate(task.due_date, 'MMM DD') : 'No date'}
+                    </Typography>
                 </Stack>
-            </Stack>
+            </Box>
+
+            {task.project && (
+                <Box
+                    sx={{
+                        px: 1.25,
+                        py: 0.75,
+                        borderTop: '1px solid #eeeeef',
+                        bgcolor: '#fbfbfc',
+                    }}
+                >
+                    <Typography
+                        title={task.project}
+                        sx={{
+                            color: '#8b8c99',
+                            fontWeight: 700,
+                            fontSize: 13,
+                            lineHeight: 1.2,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                        }}
+                    >
+                        {task.project}
+                    </Typography>
+                </Box>
+            )}
 
             <Menu
                 anchorEl={anchorEl}

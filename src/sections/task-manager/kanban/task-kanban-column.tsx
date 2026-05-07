@@ -1,12 +1,9 @@
-import { varAlpha } from 'minimal-shared/utils';
-
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 
-import { TaskManager } from 'src/api/task-manager';
+import type { TaskManager } from 'src/api/task-manager';
 
 import TaskKanbanCard from './task-kanban-card';
 
@@ -15,6 +12,7 @@ import TaskKanbanCard from './task-kanban-card';
 interface Props {
     status: string;
     tasks: TaskManager[];
+    total: number;
     onUpdateStatus: (taskId: string, newStatus: string) => void;
     onViewDetails: (task: TaskManager) => void;
     onEditTask: (task: TaskManager) => void;
@@ -25,74 +23,65 @@ interface Props {
 export default function TaskKanbanColumn({ 
     status, 
     tasks, 
+    total,
     onUpdateStatus,
     onViewDetails,
     onEditTask,
     onDeleteTask,
     permissions
 }: Props) {
-    const theme = useTheme();
-
-    const getStatusColor = () => {
-        switch (status) {
-            case 'Open': return theme.palette.info.main;
-            case 'In Progress': return theme.palette.warning.main;
-            case 'On Hold': return '#f59e0b';
-            case 'Completed': return theme.palette.success.main;
-            case 'Reopened': return theme.palette.error.main;
-            default: return theme.palette.text.primary;
-        }
-    };
-
     return (
         <Paper
             sx={{
-                width: 320,
+                width: 314,
                 height: 1,
                 display: 'flex',
                 boxShadow: 'none',
                 flexDirection: 'column',
-                backgroundColor: varAlpha(theme.vars.palette.grey['500Channel'], 0.04),
-                borderRadius: 2,
+                backgroundColor: '#fff',
+                borderRadius: 0.75,
                 flexShrink: 0,
-                border: `1px solid ${varAlpha(theme.vars.palette.grey['500Channel'], 0.12)}`,
+                border: '1px solid #e2e2e6',
+                overflow: 'hidden',
             }}
         >
             <Box 
                 sx={{ 
-                    p: 2, 
-                    pb: 1.5, 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    borderBottom: (prevTheme) => `2px solid ${getStatusColor()}`,
-                    bgcolor: varAlpha(theme.vars.palette.grey['500Channel'], 0.02),
-                    borderTopLeftRadius: 'inherit',
-                    borderTopRightRadius: 'inherit',
+                    height: 78,
+                    px: 1.5,
+                    py: 1.4,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    bgcolor: '#242746',
+                    color: '#f6f7fb',
                 }} 
             >
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, textTransform: 'capitalize' }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2, fontSize: 18 }}>
                     {status}
                 </Typography>
-                
-                <Box sx={{ width: 22, height: 22, borderRadius: '50%', bgcolor: 'text.primary', color: 'background.paper', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>
-                    {tasks.length}
-                </Box>
+                <Typography variant="body2" sx={{ mt: 0.7, color: '#b9bccb', fontWeight: 700, fontSize: 15 }}>
+                    {tasks.length} of {total} Tasks
+                </Typography>
             </Box>
 
             <Stack
-                spacing={2}
+                spacing={0.8}
                 sx={{
-                    p: 2,
+                    px: 0.7,
+                    py: 1,
                     flexGrow: 1,
                     overflowY: 'auto',
                     minHeight: 100,
                     '&::-webkit-scrollbar': {
-                        width: 6,
+                        width: 8,
                     },
                     '&::-webkit-scrollbar-thumb': {
-                        backgroundColor: varAlpha(theme.vars.palette.grey['500Channel'], 0.12),
-                        borderRadius: 3,
+                        backgroundColor: '#8c8c8c',
+                        borderRadius: 0,
+                    },
+                    '&::-webkit-scrollbar-track': {
+                        backgroundColor: '#eeeeef',
                     },
                 }}
             >
@@ -104,13 +93,13 @@ export default function TaskKanbanColumn({
                             flexGrow: 1, 
                             height: 1, 
                             py: 8,
-                            borderRadius: 1.5,
-                            border: (th) => `1px dashed ${varAlpha(th.vars.palette.grey['500Channel'], 0.16)}`,
-                            bgcolor: (th) => varAlpha(th.vars.palette.grey['500Channel'], 0.02),
+                            borderRadius: 0.75,
+                            border: '1px dashed #d9d9df',
+                            bgcolor: '#fafafa',
                         }}
                     >
                         <Stack spacing={1} alignItems="center">
-                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                            <Typography variant="caption" sx={{ color: '#9a9ba8', fontWeight: 700 }}>
                                 No {status}
                             </Typography>
                         </Stack>
