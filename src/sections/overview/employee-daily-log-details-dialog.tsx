@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -28,6 +28,7 @@ const STATUS_DISPLAY_MAP: Record<string, string> = {
     Break: 'Lunch Break',
     Away: 'Break',
     Offline: 'Offline - Logout',
+    Inactive: 'Offline - Logout',
 };
 
 const SessionTimelineBar = ({ session }: { session: any }) => {
@@ -46,8 +47,8 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
     const formatShortDuration = (seconds: number) => {
         const hrs = Math.floor(seconds / 3600);
         const mins = Math.round((seconds % 3600) / 60);
-        if (hrs > 0) return `${hrs}h ${mins > 0 ? `${mins}m` : ''}`;
-        return `${mins}m`;
+        if (hrs > 0) return `${hrs}h ${mins} mins`;
+        return `${mins} mins`;
     };
 
     const formattedTimeFromSec = (sec: number) => {
@@ -93,17 +94,6 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
 
         const mid = (from + to) / 2;
 
-        const midBreak = (session.breaks || []).find((brk: any) => {
-            const bStart = parseTime(brk.break_start);
-            const bEnd = brk.break_end ? parseTime(brk.break_end) : endSec;
-            return mid >= bStart && mid <= bEnd;
-        });
-
-        if (midBreak) {
-            rawSegments.push({ from, to, type: 'Break', status: midBreak.source === 'Away' ? 'Away' : 'Break' });
-            continue;
-        }
-
         const isInActive = (session.intervals || []).find((int: any) => {
             const iStart = parseTime(int.from_time);
             const iEnd = int.to_time ? parseTime(int.to_time) : endSec;
@@ -112,6 +102,17 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
 
         if (isInActive) {
             rawSegments.push({ from, to, type: 'Active', status: isInActive.status });
+            continue;
+        }
+
+        const midBreak = (session.breaks || []).find((brk: any) => {
+            const bStart = parseTime(brk.break_start);
+            const bEnd = brk.break_end ? parseTime(brk.break_end) : endSec;
+            return mid >= bStart && mid <= bEnd;
+        });
+
+        if (midBreak) {
+            rawSegments.push({ from, to, type: 'Break', status: midBreak.source === 'Away' ? 'Away' : 'Break' });
         } else {
             rawSegments.push({ from, to, type: 'Offline' });
         }
@@ -274,17 +275,47 @@ type Props = {
 export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props) {
     const theme = useTheme();
     const [limit, setLimit] = useState(5);
+    const [loading, setLoading] = useState(false);
+    const [detailedSession, setDetailedSession] = useState<any>(session);
 
-    if (!session) return null;
+    const fetchSession = async () => {
+        if (!session?.name) return;
+        try {
+            setLoading(true);
+            const response = await fetch(`/api/method/company.company.presence_api.get_session_detail?name=${session.name}`);
+            const result = await response.json();
+            if (result.message) {
+                setDetailedSession(result.message);
+            }
+        } catch (error) {
+            console.error("Error fetching session details:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    const { employee_name, login_date, login_time, logout_time, total_work_hours, total_break_hours, status, intervals = [], breaks = [] } = session;
+    useEffect(() => {
+        if (open && session) {
+            fetchSession();
+        }
+    }, [session?.name, open]);
+
+    useEffect(() => {
+        if (session) {
+            setDetailedSession(session);
+        }
+    }, [session]);
+
+    if (!detailedSession) return null;
+
+    const { employee_name, login_date, login_time, logout_time, total_work_hours, total_break_hours, status, intervals = [], breaks = [] } = detailedSession;
 
     const renderDetailItem = (label: string, value: string) => (
         <Box>
             <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
                 {label}
             </Typography>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 16 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: 15 }}>
                 {value}
             </Typography>
         </Box>
@@ -295,24 +326,31 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
     const formatDetailedDuration = (minutes: number) => {
         if (!minutes && minutes !== 0) return 'Active';
         const totalSeconds = Math.round(minutes * 60);
-        const mins = Math.floor(totalSeconds / 60);
+        const hrs = Math.floor(totalSeconds / 3600);
+        const mins = Math.floor((totalSeconds % 3600) / 60);
         const secs = totalSeconds % 60;
-        return `${mins} mins ${secs} Sec`;
+
+        if (hrs > 0) return `${hrs}h ${mins} mins ${secs} sec`;
+        if (mins > 0) return `${mins} mins ${secs} sec`;
+        return `${secs} sec`;
     };
 
     const formatSecondsToDetailed = (seconds: number) => {
         if (!seconds && seconds !== 0) return 'Tracking...';
         const s = Math.round(seconds);
-        const mins = Math.floor(s / 60);
+        const hrs = Math.floor(s / 3600);
+        const mins = Math.round((s % 3600) / 60);
         const secs = s % 60;
-        if (mins > 0) return `${mins} MINS ${secs} SECS`;
-        return `${secs} SECS`;
+
+        if (hrs > 0) return `${hrs}h ${mins} mins ${secs} sec`;
+        if (mins > 0) return `${mins} mins ${secs} sec`;
+        return `${secs} sec`;
     };
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6" component="span" sx={{ fontWeight: 900 }}>
+                <Typography variant="h6" component="span" sx={{ fontWeight: 800 }}>
                     Details for {employee_name || 'Employee'} - {fDate(login_date, 'DD MMM YYYY')}
                 </Typography>
                 <IconButton onClick={onClose}>
@@ -369,7 +407,10 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                                 )}
                                 {renderDetailItem(
                                     "Logout Time",
-                                    logout_time ? fDateTime(logout_time, 'h:mm:ss a') : 'Active'
+                                    (() => {
+                                        if (logout_time) return fDateTime(logout_time, 'h:mm:ss a');
+                                        return (['Offline', 'Inactive'].includes(status) ? 'Logout' : 'Active');
+                                    })()
                                 )}
                                 {renderDetailItem(
                                     "Status",
@@ -399,7 +440,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
 
                     <Divider sx={{ borderStyle: 'dashed', mb: 5 }} />
 
-                    <SessionTimelineBar session={session} />
+                    <SessionTimelineBar session={detailedSession} />
 
                     <Stack spacing={5} direction={{ xs: 'column', md: 'row' }}>
 

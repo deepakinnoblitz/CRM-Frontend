@@ -27,6 +27,7 @@ import { TableNoData } from '../../lead/table-no-data';
 import { LeadTableHead } from '../../lead/lead-table-head';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { EmployeeDailyLogTableRow } from '../employee-daily-log-table-row';
+import { EmployeeDailyLogEditDialog } from '../employee-daily-log-edit-dialog';
 import { EmployeeDailyLogTableToolbar } from './employee-daily-log-table-toolbar';
 import { EmployeeDailyLogDetailsDialog } from '../employee-daily-log-details-dialog';
 import { EmployeePresenceSettingsDialog } from '../employee-presence-settings-dialog';
@@ -127,6 +128,7 @@ export function EmployeeDailyLogView() {
     }, [socket, refetch]);
 
     const [openDetails, setOpenDetails] = useState(false);
+    const [openEdit, setOpenEdit] = useState(false);
     const [selectedSession, setSelectedSession] = useState<any>(null);
 
     const [openSettings, setOpenSettings] = useState(false);
@@ -137,8 +139,18 @@ export function EmployeeDailyLogView() {
         setOpenDetails(true);
     };
 
+    const handleOpenEdit = (session: any) => {
+        setSelectedSession(session);
+        setOpenEdit(true);
+    };
+
     const handleCloseDetails = () => {
         setOpenDetails(false);
+        setSelectedSession(null);
+    };
+
+    const handleCloseEdit = () => {
+        setOpenEdit(false);
         setSelectedSession(null);
     };
 
@@ -243,7 +255,7 @@ export function EmployeeDailyLogView() {
                                         <EmployeeDailyLogTableRow
                                             key={row.name}
                                             index={page * rowsPerPage + index}
-                                            row={row}
+                                            row={{ ...row, onEdit: () => handleOpenEdit(row) }}
                                             isHR={isHR}
                                             onView={() => handleOpenDetails(row)}
                                         />
@@ -284,6 +296,12 @@ export function EmployeeDailyLogView() {
             <EmployeeDailyLogDetailsDialog
                 open={openDetails}
                 onClose={handleCloseDetails}
+                session={selectedSession}
+            />
+
+            <EmployeeDailyLogEditDialog
+                open={openEdit}
+                onClose={handleCloseEdit}
                 session={selectedSession}
             />
 
