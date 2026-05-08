@@ -34,7 +34,6 @@ export default function TaskKanbanColumn({
         <Paper
             sx={{
                 width: 314,
-                height: 1,
                 display: 'flex',
                 boxShadow: 'none',
                 flexDirection: 'column',
@@ -43,11 +42,15 @@ export default function TaskKanbanColumn({
                 flexShrink: 0,
                 border: '1px solid #e2e2e6',
                 overflow: 'hidden',
+                // Match board height minus board padding (6px top + 12px bottom) and board border (2px)
+                height: { xs: 'calc(100vh - 300px)', md: 'calc(100vh - 268px)' },
             }}
         >
+            {/* ── Column Header ── */}
             <Box 
                 sx={{ 
                     height: 78,
+                    minHeight: 78,
                     px: 1.5,
                     py: 1.4,
                     display: 'flex',
@@ -55,6 +58,7 @@ export default function TaskKanbanColumn({
                     justifyContent: 'center',
                     bgcolor: '#242746',
                     color: '#f6f7fb',
+                    flexShrink: 0,
                 }} 
             >
                 <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2, fontSize: 18 }}>
@@ -65,14 +69,15 @@ export default function TaskKanbanColumn({
                 </Typography>
             </Box>
 
-            <Stack
-                spacing={0.8}
+            {/* ── Scrollable Card Area ── */}
+            <Box
+                component="div"
                 sx={{
                     px: 0.7,
                     py: 1,
-                    flexGrow: 1,
-                    overflowY: 'auto',
-                    minHeight: 100,
+                    overflowY: 'scroll',
+                    // Explicit max: column height - header(78px) - column border(2px)
+                    maxHeight: { xs: 'calc(100vh - 380px)', md: 'calc(100vh - 348px)' },
                     '&::-webkit-scrollbar': {
                         width: 8,
                     },
@@ -85,39 +90,40 @@ export default function TaskKanbanColumn({
                     },
                 }}
             >
-                {tasks.length === 0 ? (
-                    <Stack 
-                        alignItems="center" 
-                        justifyContent="center" 
-                        sx={{ 
-                            flexGrow: 1, 
-                            height: 1, 
-                            py: 8,
-                            borderRadius: 0.75,
-                            border: '1px dashed #d9d9df',
-                            bgcolor: '#fafafa',
-                        }}
-                    >
-                        <Stack spacing={1} alignItems="center">
-                            <Typography variant="caption" sx={{ color: '#9a9ba8', fontWeight: 700 }}>
-                                No {status}
-                            </Typography>
+                <Stack spacing={0.8}>
+                    {tasks.length === 0 ? (
+                        <Stack 
+                            alignItems="center" 
+                            justifyContent="center" 
+                            sx={{ 
+                                py: 8,
+                                borderRadius: 0.75,
+                                border: '1px dashed #d9d9df',
+                                bgcolor: '#fafafa',
+                            }}
+                        >
+                            <Stack spacing={1} alignItems="center">
+                                <Typography variant="caption" sx={{ color: '#9a9ba8', fontWeight: 700 }}>
+                                    No {status}
+                                </Typography>
+                            </Stack>
                         </Stack>
-                    </Stack>
-                ) : (
-                    tasks.map((task) => (
-                        <TaskKanbanCard 
-                            key={task.name} 
-                            task={task} 
-                            onUpdateStatus={onUpdateStatus} 
-                            onViewDetails={onViewDetails}
-                            onEditTask={onEditTask}
-                            onDeleteTask={onDeleteTask}
-                            permissions={permissions}
-                        />
-                    ))
-                )}
-            </Stack>
+                    ) : (
+                        tasks.map((task) => (
+                            <TaskKanbanCard 
+                                key={task.name} 
+                                task={task} 
+                                onUpdateStatus={onUpdateStatus} 
+                                onViewDetails={onViewDetails}
+                                onEditTask={onEditTask}
+                                onDeleteTask={onDeleteTask}
+                                permissions={permissions}
+                            />
+                        ))
+                    )}
+                </Stack>
+            </Box>
         </Paper>
     );
 }
+

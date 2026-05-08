@@ -74,228 +74,260 @@ export default function TaskKanbanCard({
         <Card
             onClick={() => onViewDetails(task)}
             sx={{
-                p: 0,
-                cursor: 'pointer',
-                boxShadow: 'none',
-                border: '1px solid #b8b8c0',
-                borderRadius: 1,
-                bgcolor: '#fff',
-                color: '#6d6d80',
-                overflow: 'hidden',
-                transition: theme.transitions.create(['box-shadow', 'border-color'], {
-                    duration: theme.transitions.duration.shorter,
-                }),
-                '&:hover': {
-                    boxShadow: '0 10px 24px rgba(20, 23, 42, 0.12)',
-                    borderColor: '#8f90a0',
+                p: 1.5,
+                borderRadius: 4,
+                bgcolor: "#fff",
+                border: "1px solid #ececf2",
+                boxShadow: "0 2px 10px rgba(15,23,42,0.04)",
+                cursor: "pointer",
+                transition: "all .25s ease",
+                "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 8px 20px rgba(15,23,42,0.08)",
                 },
             }}
         >
-            <Box sx={{ p: 1.25, pb: 1 }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-                    <Stack direction="row" alignItems="center" spacing={0.55} sx={{ minWidth: 0 }}>
-                        <Iconify
-                            icon="solar:medal-star-bold"
-                            width={25}
-                            sx={{ color: isHighPriority ? '#f7c600' : '#77798c', flexShrink: 0 }}
-                        />
-                        <Typography
-                            title={task.name}
-                            sx={{
-                                color: '#a4a5b1',
-                                fontWeight: 800,
-                                fontSize: 16,
-                                lineHeight: 1.2,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                            }}
-                        >
-                            {taskNumber}
-                        </Typography>
-                    </Stack>
-
-                    <IconButton
-                        size="small"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenMenu(e);
-                        }}
+            {/* Top */}
+            <Stack
+                direction="row"
+                alignItems="flex-start"
+                justifyContent="space-between"
+            >
+                <Stack direction="row" spacing={0.8}>
+                    {/* Priority */}
+                    <Box
                         sx={{
-                            width: 24,
-                            height: 24,
-                            color: '#8c8d9d',
-                            flexShrink: 0,
+                            px: 1.2,
+                            height: 34,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.7,
+                            borderRadius: 2,
+                            bgcolor: "#fff7eb",
+                            border: "1px solid #ffe1b2",
                         }}
                     >
-                        <Iconify icon="eva:more-vertical-fill" width={18} />
-                    </IconButton>
-                </Stack>
-
-                <Typography
-                    title={primaryAssigneeLabel}
-                    sx={{
-                        mt: 0.2,
-                        color: '#737486',
-                        fontWeight: 700,
-                        fontSize: 16,
-                        lineHeight: 1.25,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                    }}
-                >
-                    {primaryAssigneeLabel}
-                    {extraAssignees > 0 ? ` +${extraAssignees}` : ''}
-                </Typography>
-
-                <Typography
-                    title={task.title}
-                    sx={{
-                        mt: 0.55,
-                        color: '#686879',
-                        fontWeight: 900,
-                        fontSize: 16,
-                        lineHeight: 1.25,
-                        display: '-webkit-box',
-                        overflow: 'hidden',
-                        WebkitBoxOrient: 'vertical',
-                        WebkitLineClamp: 2,
-                    }}
-                >
-                    {task.title}
-                </Typography>
-
-                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ mt: 1.05 }}>
-                    <Stack direction="row" alignItems="center" spacing={0.8} sx={{ minWidth: 0 }}>
-                        <Avatar
-                            alt={primaryAssigneeLabel}
-                            src={primaryAssignee?.profile_pic}
-                            sx={{
-                                width: 32,
-                                height: 32,
-                                bgcolor: primaryAssignee ? stringToColor(primaryAssigneeLabel) : '#ff5d8f',
-                                color: primaryAssignee ? stringToDarkColor(primaryAssigneeLabel) : '#fff',
-                                fontSize: 12,
-                                fontWeight: 900,
-                                border: '0',
-                                flexShrink: 0,
-                            }}
-                        >
-                            {getInitials(primaryAssigneeLabel)}
-                        </Avatar>
                         <Box
                             sx={{
-                                height: 26,
-                                px: 1,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                borderRadius: 0.75,
-                                color: `${priorityColor}.main`,
-                                bgcolor: varAlpha(theme.vars.palette[priorityColor].mainChannel, 0.08),
-                                border: `1px solid ${varAlpha(theme.vars.palette[priorityColor].mainChannel, 0.14)}`,
-                                fontSize: 11,
-                                fontWeight: 900,
-                                textTransform: 'uppercase',
-                                lineHeight: 1,
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                bgcolor: "#f6a623",
+                            }}
+                        />
+
+                        <Typography
+                            sx={{
+                                fontSize: 13,
+                                fontWeight: 800,
+                                color: "#f6a623",
+                                textTransform: "capitalize",
                             }}
                         >
                             {task.priority}
-                        </Box>
-                    </Stack>
+                        </Typography>
+                    </Box>
 
-                    <Typography
-                        variant="body2"
+                    {/* Ticket */}
+                    <Box
                         sx={{
-                            color: '#6f6f80',
-                            fontWeight: 700,
-                            fontSize: 17,
-                            lineHeight: 1,
-                            whiteSpace: 'nowrap',
+                            px: 1.2,
+                            height: 34,
+                            display: "flex",
+                            alignItems: "center",
+                            borderRadius: 2,
+                            bgcolor: "#f7f7fa",
+                            border: "1px solid #e7e8ee",
+                            maxWidth: 130,
                         }}
                     >
-                        {task.due_date ? fDate(task.due_date, 'MMM DD') : 'No date'}
-                    </Typography>
+                        <Typography
+                            sx={{
+                                fontSize: 13,
+                                fontWeight: 800,
+                                color: "#4d5566",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                            }}
+                        >
+                            #{task.name}
+                        </Typography>
+                    </Box>
                 </Stack>
-            </Box>
 
-            {task.project && (
-                <Box
+                {/* Menu */}
+                <IconButton
+                    size="small"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenMenu(e);
+                    }}
                     sx={{
-                        px: 1.25,
-                        py: 0.75,
-                        borderTop: '1px solid #eeeeef',
-                        bgcolor: '#fbfbfc',
+                        color: "#7f8798",
+                        mt: -0.3,
                     }}
                 >
-                    <Typography
-                        title={task.project}
-                        sx={{
-                            color: '#8b8c99',
-                            fontWeight: 700,
-                            fontSize: 13,
-                            lineHeight: 1.2,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                        }}
-                    >
-                        {task.project}
-                    </Typography>
-                </Box>
-            )}
+                    <Iconify icon="eva:more-vertical-fill" width={18} />
+                </IconButton>
+            </Stack>
 
-            <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleCloseMenu}
-                onClick={(e) => e.stopPropagation()}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                slotProps={{
-                    paper: {
-                        sx: { width: 160 }
-                    }
+            {/* Title */}
+            <Typography
+                title={task.title}
+                sx={{
+                    mt: 2,
+                    fontSize: 20,
+                    lineHeight: 1.2,
+                    fontWeight: 900,
+                    color: "#0f172a",
+                    display: "-webkit-box",
+                    overflow: "hidden",
+                    WebkitBoxOrient: "vertical",
+                    WebkitLineClamp: 2,
+                    minHeight: 48,
                 }}
             >
-                {permissions.write && (
-                    <MenuItem
-                        onClick={handleEdit}
+                {task.title}
+            </Typography>
+
+            {/* Project */}
+            {task.project && (
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={1.2}
+                // sx={{
+                //     mt: 2,
+                // }}
+                >
+                    <Box
                         sx={{
-                            gap: 1.5,
-                            typography: 'body2',
-                            fontWeight: 600,
-                            color: 'primary.main',
-                            '& svg': { color: 'inherit' }
+                            width: 34,
+                            height: 34,
+                            borderRadius: 2,
+                            bgcolor: "#f4f1ff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#6c63ff",
+                            flexShrink: 0,
                         }}
                     >
-                        <Iconify icon="solar:pen-bold" width={18} />
-                        Edit
-                    </MenuItem>
-                )}
+                        <Iconify icon="solar:folder-bold" width={18} />
+                    </Box>
 
-                {permissions.delete && (
-                    <MenuItem
-                        onClick={handleDelete}
+                    <Typography
                         sx={{
-                            gap: 1.5,
-                            typography: 'body2',
-                            fontWeight: 600,
-                            color: 'error.main',
-                            '& svg': { color: 'inherit' }
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "#8b90a1",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                         }}
                     >
-                        <Iconify icon="solar:trash-bin-trash-bold" width={18} />
-                        Delete
-                    </MenuItem>
-                )}
+                        Project:
+                        <Box
+                            component="span"
+                            sx={{
+                                ml: 0.5,
+                                color: "#4c6fff",
+                                fontWeight: 800,
+                            }}
+                        >
+                            {task.project}
+                        </Box>
+                    </Typography>
+                </Stack>
+            )}
 
-                {!permissions.write && !permissions.delete && (
-                    <MenuItem disabled sx={{ typography: 'caption', color: 'text.disabled', textAlign: 'center', py: 2 }}>
-                        No Permissions
-                    </MenuItem>
-                )}
-            </Menu>
+            {/* Bottom */}
+            <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{
+                    mt: 2.2,
+                }}
+            >
+                {/* Date */}
+                <Stack direction="row" alignItems="center" spacing={1}>
+                    <Box
+                        sx={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: 2,
+                            bgcolor: "#f4f1ff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#4c6fff",
+                            flexShrink: 0,
+                        }}
+                    >
+                        <Iconify icon="solar:calendar-date-bold" width={18} />
+                    </Box>
+
+                    <Typography
+                        sx={{
+                            fontSize: 13,
+                            fontWeight: 800,
+                            color: "#111827",
+                            lineHeight: 1.2,
+                        }}
+                    >
+                        {task.due_date
+                            ? fDate(task.due_date, "DD MMM YYYY")
+                            : "No date"}
+                    </Typography>
+                </Stack>
+
+                {/* Assignees */}
+                <Stack direction="row" alignItems="center">
+                    {task.assignees?.slice(0, 3).map((assignee, index) => (
+                        <Avatar
+                            key={index}
+                            src={assignee.profile_pic}
+                            sx={{
+                                width: 32,
+                                height: 32,
+                                ml: index === 0 ? 0 : -0.8,
+                                border: "2px solid #fff",
+                                fontSize: 14,
+                                fontWeight: 800,
+                                bgcolor: stringToColor(
+                                    assignee.full_name || assignee.name
+                                ),
+                                color: stringToDarkColor(
+                                    assignee.full_name || assignee.name
+                                ),
+                            }}
+                        >
+                            {getInitials(
+                                assignee.full_name || assignee.name
+                            )}
+                        </Avatar>
+                    ))}
+
+                    {extraAssignees > 0 && (
+                        <Avatar
+                            sx={{
+                                width: 32,
+                                height: 32,
+                                ml: -0.8,
+                                border: "2px solid #fff",
+                                bgcolor: "#ede9fe",
+                                color: "#7c3aed",
+                                fontWeight: 900,
+                                fontSize: 14,
+                            }}
+                        >
+                            +{extraAssignees}
+                        </Avatar>
+                    )}
+                </Stack>
+            </Stack>
+            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleCloseMenu} onClick={(e) => e.stopPropagation()} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }} slotProps={{ paper: { sx: { width: 160 } } }} > {permissions.write && (<MenuItem onClick={handleEdit} sx={{ gap: 1.5, typography: 'body2', fontWeight: 600, color: 'primary.main', '& svg': { color: 'inherit' } }} > <Iconify icon="solar:pen-bold" width={18} /> Edit </MenuItem>)} {permissions.delete && (<MenuItem onClick={handleDelete} sx={{ gap: 1.5, typography: 'body2', fontWeight: 600, color: 'error.main', '& svg': { color: 'inherit' } }} > <Iconify icon="solar:trash-bin-trash-bold" width={18} /> Delete </MenuItem>)} {!permissions.write && !permissions.delete && (<MenuItem disabled sx={{ typography: 'caption', color: 'text.disabled', textAlign: 'center', py: 2 }}> No Permissions </MenuItem>)} </Menu>
         </Card>
     );
 }
