@@ -1,9 +1,9 @@
+import type { TaskManager } from 'src/api/task-manager';
+
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-
-import type { TaskManager } from 'src/api/task-manager';
 
 import TaskKanbanCard from './task-kanban-card';
 
@@ -20,9 +20,9 @@ interface Props {
     permissions: { read: boolean; write: boolean; create: boolean; delete: boolean };
 }
 
-export default function TaskKanbanColumn({ 
-    status, 
-    tasks, 
+export default function TaskKanbanColumn({
+    status,
+    tasks,
     total,
     onUpdateStatus,
     onViewDetails,
@@ -47,8 +47,8 @@ export default function TaskKanbanColumn({
             }}
         >
             {/* ── Column Header ── */}
-            <Box 
-                sx={{ 
+            <Box
+                sx={{
                     height: 78,
                     minHeight: 78,
                     px: 1.5,
@@ -59,7 +59,7 @@ export default function TaskKanbanColumn({
                     bgcolor: '#242746',
                     color: '#f6f7fb',
                     flexShrink: 0,
-                }} 
+                }}
             >
                 <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2, fontSize: 18 }}>
                     {status}
@@ -92,10 +92,10 @@ export default function TaskKanbanColumn({
             >
                 <Stack spacing={0.8}>
                     {tasks.length === 0 ? (
-                        <Stack 
-                            alignItems="center" 
-                            justifyContent="center" 
-                            sx={{ 
+                        <Stack
+                            alignItems="center"
+                            justifyContent="center"
+                            sx={{
                                 py: 8,
                                 borderRadius: 0.75,
                                 border: '1px dashed #d9d9df',
@@ -110,10 +110,10 @@ export default function TaskKanbanColumn({
                         </Stack>
                     ) : (
                         tasks.map((task) => (
-                            <TaskKanbanCard 
-                                key={task.name} 
-                                task={task} 
-                                onUpdateStatus={onUpdateStatus} 
+                            <TaskKanbanCard
+                                key={task.name}
+                                task={task}
+                                onUpdateStatus={onUpdateStatus}
                                 onViewDetails={onViewDetails}
                                 onEditTask={onEditTask}
                                 onDeleteTask={onDeleteTask}

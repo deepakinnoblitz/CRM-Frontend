@@ -1,6 +1,6 @@
-import { useRef, useMemo } from 'react';
-
 import type { TaskManager } from 'src/api/task-manager';
+
+import { useRef, useMemo } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -21,9 +21,9 @@ interface Props {
     permissions: { read: boolean; write: boolean; create: boolean; delete: boolean };
 }
 
-export default function TaskKanbanBoard({ 
-    tasks, 
-    onUpdateStatus, 
+export default function TaskKanbanBoard({
+    tasks,
+    onUpdateStatus,
     onViewDetails,
     onEditTask,
     onDeleteTask,

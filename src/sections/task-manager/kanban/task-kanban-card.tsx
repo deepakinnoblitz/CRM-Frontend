@@ -1,3 +1,5 @@
+import type { TaskManager } from 'src/api/task-manager';
+
 import { useState } from 'react';
 import { varAlpha } from 'minimal-shared/utils';
 
@@ -14,8 +16,6 @@ import IconButton from '@mui/material/IconButton';
 import { fDate } from 'src/utils/format-time';
 import { getInitials } from 'src/utils/string';
 import { stringToColor, stringToDarkColor } from 'src/utils/color-utils';
-
-import type { TaskManager } from 'src/api/task-manager';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -77,7 +77,7 @@ export default function TaskKanbanCard({
                 p: 1.5,
                 borderRadius: 4,
                 bgcolor: "#fff",
-                border: "1px solid #ececf2",
+                border: "2px solid #ececf2",
                 boxShadow: "0 2px 10px rgba(15,23,42,0.04)",
                 cursor: "pointer",
                 transition: "all .25s ease",
@@ -176,7 +176,8 @@ export default function TaskKanbanCard({
                 title={task.title}
                 sx={{
                     mt: 2,
-                    fontSize: 20,
+                    mb: 2,
+                    fontSize: 16,
                     lineHeight: 1.2,
                     fontWeight: 900,
                     color: "#0f172a",
@@ -184,7 +185,7 @@ export default function TaskKanbanCard({
                     overflow: "hidden",
                     WebkitBoxOrient: "vertical",
                     WebkitLineClamp: 2,
-                    minHeight: 48,
+                    // minHeight: 35,
                 }}
             >
                 {task.title}
@@ -296,15 +297,15 @@ export default function TaskKanbanCard({
                                 fontSize: 14,
                                 fontWeight: 800,
                                 bgcolor: stringToColor(
-                                    assignee.full_name || assignee.name
+                                    assignee.employee_name || assignee.name
                                 ),
                                 color: stringToDarkColor(
-                                    assignee.full_name || assignee.name
+                                    assignee.employee_name || assignee.name
                                 ),
                             }}
                         >
                             {getInitials(
-                                assignee.full_name || assignee.name
+                                assignee.employee_name || assignee.name
                             )}
                         </Avatar>
                     ))}

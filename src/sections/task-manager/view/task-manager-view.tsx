@@ -1,3 +1,5 @@
+import type { TaskManager } from 'src/api/task-manager';
+
 import { useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -24,7 +26,6 @@ import {
     fetchTaskManagerList,
     getTaskManagerPermissions,
 } from 'src/api/task-manager';
-import type { TaskManager } from 'src/api/task-manager';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -37,6 +38,7 @@ import TaskKanbanBoard from '../kanban/task-kanban-board';
 import TaskDetailsDialog from '../kanban/task-details-dialog';
 import { TaskTableToolbar } from '../list/task-table-toolbar';
 import { TaskTableFiltersDrawer } from '../list/task-table-filters-drawer';
+
 import type { TaskFiltersProps } from '../list/task-table-filters-drawer';
 
 // ----------------------------------------------------------------------
