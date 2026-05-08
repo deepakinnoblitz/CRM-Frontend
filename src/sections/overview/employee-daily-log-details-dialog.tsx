@@ -31,8 +31,19 @@ const STATUS_DISPLAY_MAP: Record<string, string> = {
     Inactive: 'Offline - Logout',
 };
 
+const LEGEND_ITEMS = [
+    { label: 'Active', status: 'Available', color: '#22c55e', desc: 'Regular working hours' },
+    { label: 'In client meeting', status: 'Busy', color: '#ef4444', desc: 'Client communication or meeting' },
+    { label: 'Team discussion', status: 'Do Not Disturb', color: '#b91c1c', desc: 'Internal team collaboration' },
+    { label: 'Break', status: 'Away', color: '#d97706', desc: 'Brief inactivity or break' },
+    { label: 'Lunch Break', status: 'Break', color: '#f59e0b', desc: 'Designated lunch period' },
+    { label: 'Offline - Logout', status: 'Offline', color: '#919eab', desc: 'User logged out or inactive' },
+];
+
 const SessionTimelineBar = ({ session }: { session: any }) => {
     const theme = useTheme();
+    const [hoveredLegend, setHoveredLegend] = useState<string | null>(null);
+
     if (!session || !session.login_time) return null;
 
     const parseTime = (dateStr: string) => {
@@ -47,14 +58,15 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
     const formatShortDuration = (seconds: number) => {
         const hrs = Math.floor(seconds / 3600);
         const mins = Math.round((seconds % 3600) / 60);
-        if (hrs > 0) return `${hrs}h ${mins} mins`;
-        return `${mins} mins`;
+        if (hrs > 0) return `${hrs}h ${mins}m`;
+        return `${mins}m`;
     };
 
     const formattedTimeFromSec = (sec: number) => {
         const hrs = Math.floor(sec / 3600);
         const mins = Math.floor((sec % 3600) / 60);
-        return dayjs().hour(hrs).minute(mins).format('h:mm a');
+        const secs = sec % 60;
+        return dayjs().hour(hrs).minute(mins).second(secs).format('h:mm:ss a');
     };
 
     const startSec = parseTime(session.login_time);
@@ -69,7 +81,6 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
 
     const totalDuration = Math.max(endSec - startSec, 1);
 
-    // Split and merge logic
     const timePointsSet = new Set<number>();
     timePointsSet.add(startSec);
     timePointsSet.add(endSec);
@@ -133,15 +144,15 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
     }
 
     const getStatusColor = (status?: string, type?: string) => {
-        if (type === 'Offline' || status === 'Offline') return alpha(theme.palette.grey[500], 0.16);
-        if (type === 'Break') return alpha('#f59e0b', 0.8);
+        if (type === 'Offline' || status === 'Offline') return theme.palette.grey[500];
+        if (type === 'Break') return '#f59e0b';
 
         const s = status || 'Available';
-        if (s === 'Available') return alpha(theme.palette.success.main, 0.8);
-        if (s === 'Busy') return alpha('#ef4444', 0.8);
-        if (s === 'Do Not Disturb') return alpha('#b91c1c', 0.8);
-        if (s === 'Away') return alpha('#d97706', 0.8);
-        return alpha(theme.palette.success.main, 0.8);
+        if (s === 'Available') return theme.palette.success.main;
+        if (s === 'Busy') return '#ef4444';
+        if (s === 'Do Not Disturb') return '#b91c1c';
+        if (s === 'Away') return '#d97706';
+        return theme.palette.success.main;
     };
 
     const segments = mergedSegments.map((seg) => {
@@ -151,7 +162,7 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
 
         const isBreak = seg.type === 'Break';
         const isOffline = seg.type === 'Offline';
-        const isShortActive = seg.type === 'Active' && duration < 60; // Less than 1 minute
+        const isShortActive = seg.type === 'Active' && duration < 60;
 
         const color = getStatusColor(seg.status, seg.type);
         let textColor = '#FFFFFF';
@@ -165,6 +176,7 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
         const displayLabel = STATUS_DISPLAY_MAP[seg.status] || seg.type;
 
         return {
+            status: seg.status || 'Offline',
             left,
             width,
             color,
@@ -176,8 +188,8 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
     });
 
     return (
-        <Box sx={{ width: '100%', mb: 5 }}>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+        <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2.5 }}>
                 <Box
                     sx={{
                         width: 32,
@@ -196,44 +208,67 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
                     Timeline Overview
                 </Typography>
             </Stack>
-            <Box sx={{ width: '100%', height: 32, bgcolor: alpha(theme.palette.grey[500], 0.12), borderRadius: 1.5, position: 'relative', overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
-                {segments.map((seg, i) => (
-                    <Tooltip key={i} title={seg.tooltip} arrow>
-                        <Box
-                            sx={{
-                                position: 'absolute',
-                                left: `${Math.max(0, Math.min(100, seg.left))}%`,
-                                width: `${Math.max(0, Math.min(100 - seg.left, seg.width))}%`,
-                                height: '100%',
-                                bgcolor: seg.color,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRight: `1px solid ${alpha(theme.palette.common.black, 0.05)}`,
-                                transition: theme.transitions.create('background-color'),
-                                '&:hover': {
-                                    bgcolor: alpha(seg.color, 0.9),
-                                }
+            <Box sx={{ width: '100%', height: 32, bgcolor: alpha(theme.palette.grey[500], 0.12), borderRadius: 2, position: 'relative', border: `1px solid ${theme.palette.divider}` }}>
+                {segments.map((seg: any, i) => {
+                    const isHoveredFromLegend = !!hoveredLegend && !!seg.status && hoveredLegend.toLowerCase() === seg.status.toLowerCase();
+                    
+                    return (
+                        <Tooltip 
+                            key={`${i}-${isHoveredFromLegend}`} 
+                            title={seg.tooltip || 'Interval'} 
+                            arrow 
+                            placement="top"
+                            {...(isHoveredFromLegend ? { open: true } : {})}
+                            disableInteractive
+                            PopperProps={{
+                                sx: { pointerEvents: 'none' }
                             }}
                         >
-                            {seg.showLabel && (
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        color: seg.textColor,
-                                        fontWeight: 800,
-                                        fontSize: 10,
-                                        whiteSpace: 'nowrap',
-                                        pointerEvents: 'none',
-                                        textShadow: '0 0 4px rgba(255,255,255,0.5)'
-                                    }}
-                                >
-                                    {seg.label}
-                                </Typography>
-                            )}
-                        </Box>
-                    </Tooltip>
-                ))}
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    left: `${Math.max(0, Math.min(100, seg.left))}%`,
+                                    width: `${Math.max(0, Math.min(100 - seg.left, seg.width))}%`,
+                                    height: '100%',
+                                    bgcolor: seg.color,
+                                    borderRadius: i === 0 ? '16px 0 0 16px' : (i === segments.length - 1 ? '0 16px 16px 0' : 0),
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRight: i < segments.length - 1 ? `1px solid ${alpha(theme.palette.common.black, 0.05)}` : 'none',
+                                    transition: theme.transitions.create(['background-color', 'opacity', 'transform', 'border']),
+                                    opacity: hoveredLegend && seg.status && hoveredLegend.toLowerCase() !== seg.status.toLowerCase() ? 0.3 : 1,
+                                    cursor: 'pointer',
+                                    transform: isHoveredFromLegend ? 'scaleY(1.1)' : 'scaleY(1)',
+                                    zIndex: isHoveredFromLegend ? 10 : 1,
+                                    border: isHoveredFromLegend ? '1.5px solid #FFFFFF' : 'none',
+                                    '&:hover': {
+                                        bgcolor: alpha(seg.color, 1),
+                                        zIndex: 11,
+                                        transform: 'scaleY(1.15)',
+                                    }
+                                }}
+                            >
+                                {seg.showLabel && (
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            color: seg.textColor,
+                                            fontWeight: 800,
+                                            fontSize: 10,
+                                            whiteSpace: 'nowrap',
+                                            pointerEvents: 'none',
+                                            textShadow: '0 0 4px rgba(0,0,0,0.3)',
+                                            opacity: isHoveredFromLegend ? 1 : 0.9,
+                                        }}
+                                    >
+                                        {seg.label}
+                                    </Typography>
+                                )}
+                            </Box>
+                        </Tooltip>
+                    );
+                })}
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1.5, px: 0.5 }}>
                 <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
@@ -244,17 +279,21 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
                 </Typography>
             </Box>
 
-            {/* Legend */}
-            <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 2.5, px: 0.5 }}>
-                {[
-                    { label: 'Active', color: theme.palette.success.main },
-                    { label: 'In client meeting', color: '#ef4444' },
-                    { label: 'Team discussion', color: '#b91c1c' },
-                    { label: 'Break', color: '#d97706' },
-                    { label: 'Lunch Break', color: '#f59e0b' },
-                    { label: 'Offline - Logout', color: theme.palette.grey[500] },
-                ].map((item) => (
-                    <Stack key={item.label} direction="row" alignItems="center" spacing={0.75}>
+            <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 2.5, px: 0.5, mb: 1 }}>
+                {LEGEND_ITEMS.map((item) => (
+                    <Stack 
+                        key={item.label}
+                        direction="row" 
+                        alignItems="center" 
+                        spacing={0.75}
+                        onMouseEnter={() => setHoveredLegend(item.status)}
+                        onMouseLeave={() => setHoveredLegend(null)}
+                        sx={{ 
+                            cursor: 'pointer',
+                            transition: 'opacity 0.2s',
+                            opacity: hoveredLegend && hoveredLegend !== item.status ? 0.5 : 1
+                        }}
+                    >
                         <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: item.color }} />
                         <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
                             {item.label}
@@ -442,7 +481,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
 
                     <SessionTimelineBar session={detailedSession} />
 
-                    <Stack spacing={5} direction={{ xs: 'column', md: 'row' }}>
+                    <Stack spacing={5} direction={{ xs: 'column', md: 'row' }} sx={{ mt: 5 }}>
 
                         {/* Activity Timeline */}
                         <Box sx={{ flex: 1 }}>

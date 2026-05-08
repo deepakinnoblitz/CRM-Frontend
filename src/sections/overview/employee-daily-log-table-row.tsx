@@ -135,7 +135,7 @@ export function EmployeeDailyLogTableRow({ row, index, isHR, onView }: Props) {
                     <Iconify icon="solar:eye-bold" />
                 </IconButton>
 
-                {isHR && (
+                {isHR && !isActive && (
                     <IconButton onClick={() => row.onEdit?.()} sx={{ color: 'info.main' }}>
                         <Iconify icon="solar:pen-bold" />
                     </IconButton>

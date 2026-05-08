@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { useSnackbar } from 'notistack';
 import { FiEdit3 } from "react-icons/fi";
+import { IoMdAdd } from "react-icons/io";
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
@@ -38,6 +39,8 @@ const STATUS_DISPLAY_MAP: Record<string, string> = {
 
 const SessionTimelineBar = ({ session, intervals = [], breaks = [], loginTime, logoutTime }: { session: any, intervals?: any[], breaks?: any[], loginTime?: string, logoutTime?: string }) => {
     const theme = useTheme();
+    const [hoveredLegend, setHoveredLegend] = useState<string | null>(null);
+
     if (!session || !session.login_time) return null;
 
     const parseTime = (dateStr: string) => {
@@ -144,7 +147,7 @@ const SessionTimelineBar = ({ session, intervals = [], breaks = [], loginTime, l
         return alpha(theme.palette.success.main, 0.8);
     };
 
-    const segments = mergedSegments.map((seg) => {
+    const segments = mergedSegments.map((seg: any) => {
         const duration = seg.to - seg.from;
         const width = (duration / totalDuration) * 100;
         const left = ((seg.from - startSec) / totalDuration) * 100;
@@ -164,15 +167,25 @@ const SessionTimelineBar = ({ session, intervals = [], breaks = [], loginTime, l
             width,
             color,
             textColor,
+            status: seg.status || 'Offline',
             label: formatShortDuration(duration),
             tooltip: `${displayLabel}: ${formattedTimeFromSec(seg.from)} - ${formattedTimeFromSec(seg.to)} (${fDecimalHours(duration / 3600)})`,
             showLabel: width > 8 && !isOffline && !isShortActive
         };
     });
 
+    const LEGEND_ITEMS = [
+        { label: 'Active', status: 'Available', color: theme.palette.success.main, desc: 'Regular working hours' },
+        { label: 'In client meeting', status: 'Busy', color: '#ef4444', desc: 'Engaged with clients' },
+        { label: 'Team discussion', status: 'Do Not Disturb', color: '#b91c1c', desc: 'Internal collaboration' },
+        { label: 'Break', status: 'Away', color: '#d97706', desc: 'Short personal break' },
+        { label: 'Lunch Break', status: 'Break', color: '#f59e0b', desc: 'Designated lunch period' },
+        { label: 'Offline - Logout', status: 'Offline', color: theme.palette.grey[500], desc: 'Session ended or inactive' },
+    ];
+
     return (
-        <Box sx={{ width: '100%', mb: 5 }}>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+        <Box sx={{ mt: 3, mb: 1 }}>
+            <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
                 <Box
                     sx={{
                         width: 32,
@@ -191,44 +204,67 @@ const SessionTimelineBar = ({ session, intervals = [], breaks = [], loginTime, l
                     Timeline Overview
                 </Typography>
             </Stack>
-            <Box sx={{ width: '100%', height: 32, bgcolor: alpha(theme.palette.grey[500], 0.12), borderRadius: 1.5, position: 'relative', overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
-                {segments.map((seg, i) => (
-                    <Tooltip key={i} title={seg.tooltip} arrow>
-                        <Box
-                            sx={{
-                                position: 'absolute',
-                                left: `${Math.max(0, Math.min(100, seg.left))}%`,
-                                width: `${Math.max(0, Math.min(100 - seg.left, seg.width))}%`,
-                                height: '100%',
-                                bgcolor: seg.color,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRight: `1px solid ${alpha(theme.palette.common.black, 0.05)}`,
-                                transition: theme.transitions.create('background-color'),
-                                '&:hover': {
-                                    bgcolor: alpha(seg.color, 0.9),
-                                }
+            <Box sx={{ width: '100%', height: 32, bgcolor: alpha(theme.palette.grey[500], 0.12), borderRadius: 2, position: 'relative', border: `1px solid ${theme.palette.divider}` }}>
+                {segments.map((seg: any, i) => {
+                    const isHoveredFromLegend = !!hoveredLegend && !!seg.status && hoveredLegend.toLowerCase() === seg.status.toLowerCase();
+
+                    return (
+                        <Tooltip
+                            key={`${i}-${isHoveredFromLegend}`}
+                            title={seg.tooltip || 'Interval'}
+                            arrow
+                            placement="top"
+                            {...(isHoveredFromLegend ? { open: true } : {})}
+                            disableInteractive
+                            PopperProps={{
+                                sx: { pointerEvents: 'none' }
                             }}
                         >
-                            {seg.showLabel && (
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        color: seg.textColor,
-                                        fontWeight: 800,
-                                        fontSize: 10,
-                                        whiteSpace: 'nowrap',
-                                        pointerEvents: 'none',
-                                        textShadow: '0 0 4px rgba(255,255,255,0.5)'
-                                    }}
-                                >
-                                    {seg.label}
-                                </Typography>
-                            )}
-                        </Box>
-                    </Tooltip>
-                ))}
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    left: `${Math.max(0, Math.min(100, seg.left))}%`,
+                                    width: `${Math.max(0, Math.min(100 - seg.left, seg.width))}%`,
+                                    height: '100%',
+                                    bgcolor: seg.color,
+                                    borderRadius: i === 0 ? '16px 0 0 16px' : (i === segments.length - 1 ? '0 16px 16px 0' : 0),
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRight: i < segments.length - 1 ? `1px solid ${alpha(theme.palette.common.black, 0.05)}` : 'none',
+                                    transition: theme.transitions.create(['background-color', 'opacity', 'transform', 'border']),
+                                    opacity: hoveredLegend && seg.status && hoveredLegend.toLowerCase() !== seg.status.toLowerCase() ? 0.3 : 1,
+                                    cursor: 'pointer',
+                                    transform: isHoveredFromLegend ? 'scaleY(1.1)' : 'scaleY(1)',
+                                    zIndex: isHoveredFromLegend ? 10 : 1,
+                                    border: isHoveredFromLegend ? '1.5px solid #FFFFFF' : 'none',
+                                    '&:hover': {
+                                        bgcolor: alpha(seg.color, 1),
+                                        zIndex: 11,
+                                        transform: 'scaleY(1.15)',
+                                    }
+                                }}
+                            >
+                                {seg.showLabel && (
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            color: seg.textColor,
+                                            fontWeight: 800,
+                                            fontSize: 10,
+                                            whiteSpace: 'nowrap',
+                                            pointerEvents: 'none',
+                                            textShadow: '0 0 4px rgba(0,0,0,0.3)',
+                                            opacity: isHoveredFromLegend ? 1 : 0.9,
+                                        }}
+                                    >
+                                        {seg.label}
+                                    </Typography>
+                                )}
+                            </Box>
+                        </Tooltip>
+                    );
+                })}
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1.5, px: 0.5 }}>
                 <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
@@ -239,15 +275,20 @@ const SessionTimelineBar = ({ session, intervals = [], breaks = [], loginTime, l
                 </Typography>
             </Box>
             <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 2.5, px: 0.5 }}>
-                {[
-                    { label: 'Active', color: theme.palette.success.main },
-                    { label: 'In client meeting', color: '#ef4444' },
-                    { label: 'Team discussion', color: '#b91c1c' },
-                    { label: 'Break', color: '#d97706' },
-                    { label: 'Lunch Break', color: '#f59e0b' },
-                    { label: 'Offline - Logout', color: theme.palette.grey[500] },
-                ].map((item) => (
-                    <Stack key={item.label} direction="row" alignItems="center" spacing={0.75}>
+                {LEGEND_ITEMS.map((item) => (
+                    <Stack
+                        key={item.label}
+                        direction="row"
+                        alignItems="center"
+                        spacing={0.75}
+                        onMouseEnter={() => setHoveredLegend(item.status)}
+                        onMouseLeave={() => setHoveredLegend(null)}
+                        sx={{
+                            cursor: 'pointer',
+                            transition: 'opacity 0.2s',
+                            opacity: hoveredLegend && hoveredLegend !== item.status ? 0.5 : 1
+                        }}
+                    >
                         <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: item.color }} />
                         <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
                             {item.label}
@@ -374,30 +415,51 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
 
     const applyIntervalChanges = (index: number, data: any, shouldSnap: boolean = false) => {
         const newIntervals = [...localIntervals];
-        newIntervals[index] = data;
+        let currentIndex = -1;
 
-        if (shouldSnap) {
-            if (index > 0) {
-                const prev = { ...newIntervals[index - 1] };
+        // Handle insertion
+        if (index === -1) {
+            const insertAfter = editingItem?.data?._insertAfter;
+            if (typeof insertAfter === 'number') {
+                newIntervals.splice(insertAfter + 1, 0, data);
+                currentIndex = insertAfter + 1;
+            } else {
+                newIntervals.push(data);
+                currentIndex = newIntervals.length - 1;
+            }
+        } else {
+            newIntervals[index] = data;
+            currentIndex = index;
+        }
+
+        if (shouldSnap && currentIndex !== -1) {
+            const idx = currentIndex;
+            if (idx > 0) {
+                const prev = { ...newIntervals[idx - 1] };
                 prev.to_time = data.from_time;
                 if (prev.from_time && prev.to_time) {
                     prev.duration_seconds = dayjs(prev.to_time).diff(dayjs(prev.from_time), 'second');
                 }
-                newIntervals[index - 1] = prev;
+                newIntervals[idx - 1] = prev;
             }
-            if (index < newIntervals.length - 1 && data.to_time) {
-                const next = { ...newIntervals[index + 1] };
+            if (idx < newIntervals.length - 1 && data.to_time) {
+                const next = { ...newIntervals[idx + 1] };
                 next.from_time = data.to_time;
                 if (next.from_time && next.to_time) {
                     next.duration_seconds = dayjs(next.to_time).diff(dayjs(next.from_time), 'second');
                 }
-                newIntervals[index + 1] = next;
+                newIntervals[idx + 1] = next;
             }
         }
 
         setIntervals(newIntervals);
-        if (index === 0) setLoginTime(data.from_time);
-        if (index === newIntervals.length - 1) setLogoutTime(data.to_time || data.from_time);
+
+        // Update summary times based on sorted array
+        if (newIntervals.length > 0) {
+            setLoginTime(newIntervals[0].from_time);
+            const last = newIntervals[newIntervals.length - 1];
+            setLogoutTime(last.to_time || last.from_time);
+        }
 
         setPopupOpen(false);
         setEditingItem(null);
@@ -406,7 +468,37 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
 
     const applyBreakChanges = (index: number, data: any, shouldSnap: boolean = false) => {
         const newBreaks = [...localBreaks];
-        newBreaks[index] = data;
+        let currentIndex = -1;
+
+        if (index === -1) {
+            const insertAfter = editingItem?.data?._insertAfter;
+            if (typeof insertAfter === 'number') {
+                newBreaks.splice(insertAfter + 1, 0, data);
+                currentIndex = insertAfter + 1;
+            } else {
+                newBreaks.push(data);
+                currentIndex = newBreaks.length - 1;
+            }
+        } else {
+            newBreaks[index] = data;
+            currentIndex = index;
+        }
+
+        if (shouldSnap && currentIndex !== -1) {
+            const idx = currentIndex;
+            const brk = newBreaks[idx];
+            const prev = idx > 0 ? newBreaks[idx - 1] : null;
+            const next = idx < newBreaks.length - 1 ? newBreaks[idx + 1] : null;
+
+            if (prev && brk.break_start) {
+                prev.break_end = brk.break_start;
+                prev.break_duration = dayjs(prev.break_end).diff(dayjs(prev.break_start), 'minute', true);
+            }
+            if (next && brk.break_end) {
+                next.break_start = brk.break_end;
+                next.break_duration = dayjs(next.break_end).diff(dayjs(next.break_start), 'minute', true);
+            }
+        }
         setBreaks(newBreaks);
 
         if (shouldSnap) {
@@ -434,9 +526,11 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
 
             if (intervalsChanged) {
                 setIntervals(newIntervals);
-                setLoginTime(newIntervals[0].from_time);
-                const last = newIntervals[newIntervals.length - 1];
-                setLogoutTime(last.to_time || last.from_time);
+                if (newIntervals.length > 0) {
+                    setLoginTime(newIntervals[0].from_time);
+                    const last = newIntervals[newIntervals.length - 1];
+                    setLogoutTime(last.to_time || last.from_time);
+                }
             }
         }
 
@@ -451,6 +545,17 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
         if (editingItem.type === 'interval') {
             const data = { ...popupData };
             const index = editingItem.index;
+            const isLast = index === localIntervals.length - 1 || index === -1;
+
+            if (!data.from_time) {
+                enqueueSnackbar('Please select Start time', { variant: 'error' });
+                return;
+            }
+
+            if (!data.to_time && !isLast) {
+                enqueueSnackbar('Please select End time for intermediate intervals', { variant: 'error' });
+                return;
+            }
 
             if (data.from_time && data.to_time) {
                 data.duration_seconds = dayjs(data.to_time).diff(dayjs(data.from_time), 'second');
@@ -484,6 +589,11 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
         } else {
             const data = { ...popupData };
             const index = editingItem.index;
+
+            if (!data.break_start || !data.break_end) {
+                enqueueSnackbar('Please select both Start and End time', { variant: 'error' });
+                return;
+            }
 
             if (data.break_start && data.break_end) {
                 const diffSeconds = dayjs(data.break_end).diff(dayjs(data.break_start), 'second');
@@ -601,7 +711,7 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
                                 sx={{ mb: 5 }}
                             >
                                 {renderDetailItem('Login Date', fDate(login_date, 'DD MMM YYYY'))}
-                                {renderDetailItem('Login Time', fTime(localLoginTime))}
+                                {renderDetailItem('Login Time', fDateTime(localLoginTime, 'h:mm:ss a'))}
                                 {renderDetailItem('Logout Time', (() => {
                                     if (localLogoutTime) return fDateTime(localLogoutTime, 'h:mm:ss a');
                                     if (['Offline', 'Inactive'].includes(status) && localIntervals.length > 0) {
@@ -646,7 +756,7 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
                         logoutTime={localLogoutTime}
                     />
 
-                    <Stack spacing={5} direction={{ xs: 'column', md: 'row' }}>
+                    <Stack spacing={5} direction={{ xs: 'column', md: 'row' }} sx={{ mt: 5 }}>
                         <Box sx={{ flex: 1 }}>
                             <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
                                 <Box
@@ -705,7 +815,7 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
                                             <Box sx={{ flexGrow: 1 }}>
                                                 <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
                                                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                                        {fTime(interval.from_time)} — {interval.to_time ? fTime(interval.to_time) : (intervalStatus === 'Offline' ? 'Logout' : 'Active')}
+                                                        {fDateTime(interval.from_time, 'h:mm:ss a')} — {interval.to_time ? fDateTime(interval.to_time, 'h:mm:ss a') : (intervalStatus === 'Offline' ? 'Logout' : 'Active')}
                                                     </Typography>
                                                     <Box
                                                         sx={{
@@ -722,34 +832,78 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
                                                     >
                                                         {STATUS_DISPLAY_MAP[intervalStatus] || intervalStatus}
                                                     </Box>
-
-                                                    <Stack
-                                                        direction="row"
-                                                        alignItems="center"
-                                                        spacing={0.5}
-                                                        onClick={() => handleOpenEditPopup('interval', index, interval)}
-                                                        sx={{
-                                                            ml: 'auto',
-                                                            pl: 1,
-                                                            cursor: 'pointer',
-                                                            color: '#1877f2',
-                                                            '&:hover': { color: '#f57c00' },
-                                                            transition: theme.transitions.create('color')
-                                                        }}
-                                                    >
-                                                        <FiEdit3 size={20} style={{ color: '#1877f2' }} />
-                                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1877f2', fontSize: 14 }}>
-                                                            Edit Timing
-                                                        </Typography>
-                                                    </Stack>
                                                 </Stack>
                                                 <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase' }}>
                                                     Duration: {formatSecondsToDetailed(interval.duration_seconds)}
                                                 </Typography>
                                             </Box>
+
+                                            <Stack direction="column" spacing={0.5} sx={{ alignItems: 'flex-start', minWidth: 110 }}>
+                                                <Stack
+                                                    direction="row"
+                                                    alignItems="center"
+                                                    spacing={0.75}
+                                                    onClick={() => handleOpenEditPopup('interval', -1, {
+                                                        from_time: null,
+                                                        to_time: null,
+                                                        status: 'Available',
+                                                        _insertAfter: index
+                                                    })}
+                                                    sx={{
+                                                        cursor: 'pointer',
+                                                        color: 'success.main',
+                                                        '&:hover': { color: 'success.dark' },
+                                                        transition: theme.transitions.create('color')
+                                                    }}
+                                                >
+                                                    <IoMdAdd size={18} />
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: 13 }}>
+                                                        Add Interval
+                                                    </Typography>
+                                                </Stack>
+
+                                                <Stack
+                                                    direction="row"
+                                                    alignItems="center"
+                                                    spacing={0.75}
+                                                    onClick={() => handleOpenEditPopup('interval', index, interval)}
+                                                    sx={{
+                                                        cursor: 'pointer',
+                                                        color: '#1877f2',
+                                                        '&:hover': { color: '#f57c00' },
+                                                        transition: theme.transitions.create('color')
+                                                    }}
+                                                >
+                                                    <FiEdit3 size={16} style={{ color: '#1877f2' }} />
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1877f2', fontSize: 13 }}>
+                                                        Edit Timing
+                                                    </Typography>
+                                                </Stack>
+                                            </Stack>
                                         </Stack>
                                     );
                                 })}
+
+                                {localIntervals.length === 0 && (
+                                    <Box sx={{ textAlign: 'center', py: 5, bgcolor: alpha(theme.palette.grey[500], 0.04), borderRadius: 2 }}>
+                                        <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic', mb: 2 }}>
+                                            No work intervals recorded.
+                                        </Typography>
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            color="primary"
+                                            startIcon={<Iconify icon="solar:add-circle-bold" />}
+                                            onClick={() => handleOpenEditPopup('interval', -1, {
+                                                from_time: null,
+                                                to_time: null,
+                                                status: 'Available'
+                                            })}
+                                        >
+                                            Add First Interval
+                                        </Button>
+                                    </Box>
+                                )}
 
                                 {localIntervals.length > limit && (
                                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 1 }}>
@@ -800,9 +954,23 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
 
                             {localBreaks.length === 0 ? (
                                 <Box sx={{ textAlign: 'center', py: 5, bgcolor: alpha(theme.palette.grey[500], 0.04), borderRadius: 2 }}>
-                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic', mb: 2 }}>
                                         No breaks recorded.
                                     </Typography>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        color="warning"
+                                        startIcon={<Iconify icon="solar:add-circle-bold" />}
+                                        onClick={() => handleOpenEditPopup('break', -1, {
+                                            break_start: null,
+                                            break_end: null,
+                                            source: 'Manual',
+                                            reason: 'Lunch Break'
+                                        })}
+                                    >
+                                        Add First Break
+                                    </Button>
                                 </Box>
                             ) : (
                                 <Stack spacing={2.5}>
@@ -828,7 +996,7 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
                                                 />
                                                 <Box sx={{ flexGrow: 1 }}>
                                                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                                        {fTime(brk.break_start)} — {brk.break_end ? fTime(brk.break_end) : 'Current'}
+                                                        {fDateTime(brk.break_start, 'h:mm:ss a')} — {brk.break_end ? fDateTime(brk.break_end, 'h:mm:ss a') : 'Current'}
                                                     </Typography>
                                                     <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25, fontWeight: 600 }}>
                                                         {isAway ? 'Break (Inactivity)' : (brk.reason || 'Manual Break')}
@@ -838,22 +1006,48 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
                                                     </Typography>
                                                 </Box>
 
-                                                <Stack
-                                                    direction="row"
-                                                    alignItems="center"
-                                                    spacing={0.5}
-                                                    onClick={() => handleOpenEditPopup('break', index, brk)}
-                                                    sx={{
-                                                        cursor: 'pointer',
-                                                        color: '#1877f2',
-                                                        '&:hover': { color: '#f57c00' },
-                                                        transition: theme.transitions.create('color')
-                                                    }}
-                                                >
-                                                    <FiEdit3 size={20} style={{ color: '#1877f2' }} />
-                                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1877f2', fontSize: 14 }}>
-                                                        Edit Timing
-                                                    </Typography>
+                                                <Stack direction="column" spacing={0.5} sx={{ alignItems: 'flex-start', minWidth: 100 }}>
+                                                    <Stack
+                                                        direction="row"
+                                                        alignItems="center"
+                                                        spacing={0.75}
+                                                        onClick={() => handleOpenEditPopup('break', -1, {
+                                                            break_start: null,
+                                                            break_end: null,
+                                                            source: 'Manual',
+                                                            reason: 'Lunch Break',
+                                                            _insertAfter: index
+                                                        })}
+                                                        sx={{
+                                                            cursor: 'pointer',
+                                                            color: 'success.main',
+                                                            '&:hover': { color: 'success.dark' },
+                                                            transition: theme.transitions.create('color')
+                                                        }}
+                                                    >
+                                                        <IoMdAdd size={18} />
+                                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: 13 }}>
+                                                            Add Break
+                                                        </Typography>
+                                                    </Stack>
+
+                                                    <Stack
+                                                        direction="row"
+                                                        alignItems="center"
+                                                        spacing={0.75}
+                                                        onClick={() => handleOpenEditPopup('break', index, brk)}
+                                                        sx={{
+                                                            cursor: 'pointer',
+                                                            color: '#1877f2',
+                                                            '&:hover': { color: '#f57c00' },
+                                                            transition: theme.transitions.create('color')
+                                                        }}
+                                                    >
+                                                        <FiEdit3 size={16} style={{ color: '#1877f2' }} />
+                                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1877f2', fontSize: 13 }}>
+                                                            Edit Timing
+                                                        </Typography>
+                                                    </Stack>
                                                 </Stack>
                                             </Stack>
                                         );
@@ -870,7 +1064,6 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
                     color="primary"
                     onClick={handleSave}
                     disabled={loading}
-                    startIcon={loading ? <Iconify icon={"line-md:loading-twotone-loop" as any} /> : <Iconify icon={"solar:diskette-bold" as any} />}
                 >
                     Save Changes
                 </Button>
@@ -879,7 +1072,7 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
             <Dialog open={popupOpen} onClose={() => setPopupOpen(false)} fullWidth maxWidth="xs">
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                        Edit {editingItem?.type === 'interval' ? 'Interval' : 'Break'} Timing
+                        {editingItem?.index === -1 ? 'Add' : 'Edit'} {editingItem?.type === 'interval' ? 'Interval' : 'Break'} Timing
                     </Typography>
                     <IconButton size="small" onClick={() => setPopupOpen(false)}>
                         <Iconify icon="mingcute:close-line" />
@@ -889,7 +1082,7 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
                     <Stack spacing={3} sx={{ mt: 1 }}>
                         <DateTimePicker
                             label="Start Time"
-                            value={popupData ? dayjs(editingItem?.type === 'interval' ? popupData.from_time : popupData.break_start) : null}
+                            value={(popupData && (editingItem?.type === 'interval' ? popupData.from_time : popupData.break_start)) ? dayjs(editingItem?.type === 'interval' ? popupData.from_time : popupData.break_start) : null}
                             onChange={(val) => {
                                 const field = editingItem?.type === 'interval' ? 'from_time' : 'break_start';
                                 setPopupData({ ...popupData, [field]: val?.format('YYYY-MM-DD HH:mm:ss') });
@@ -903,7 +1096,7 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
                         />
                         <DateTimePicker
                             label="End Time"
-                            value={popupData ? dayjs(editingItem?.type === 'interval' ? popupData.to_time : popupData.break_end) : null}
+                            value={(popupData && (editingItem?.type === 'interval' ? popupData.to_time : popupData.break_end)) ? dayjs(editingItem?.type === 'interval' ? popupData.to_time : popupData.break_end) : null}
                             onChange={(val) => {
                                 const field = editingItem?.type === 'interval' ? 'to_time' : 'break_end';
                                 setPopupData({ ...popupData, [field]: val?.format('YYYY-MM-DD HH:mm:ss') });
