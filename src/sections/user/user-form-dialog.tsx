@@ -111,16 +111,6 @@ const Android12LoadingButton = styled(LoadingButton)(({ theme }) => ({
 
 // ----------------------------------------------------------------------
 
-const ALLOWED_ROLES = [
-  'System Manager',
-  'Employee',
-  'Renewal User',
-  'CRM User',
-  'Task Manager',
-  'CRM And Sales',
-  'HR',
-  'Chat Bot',
-];
 
 type Props = {
   open: boolean;
@@ -462,7 +452,7 @@ export function UserFormDialog({
           />
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6 }}>
+        {/* <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             select
             fullWidth
@@ -474,7 +464,7 @@ export function UserFormDialog({
             <option value="System User">System User</option>
             <option value="Website User">Website User</option>
           </TextField>
-        </Grid>
+        </Grid> */}
 
         {!selectedUser && (
           <Grid size={{ xs: 12 }}>
@@ -508,9 +498,7 @@ export function UserFormDialog({
         </Stack>
 
         <Grid container spacing={3}>
-          {roles
-            .filter((role) => ALLOWED_ROLES.includes(role.name))
-            .map((role) => (
+          {roles.map((role) => (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={role.name}>
                 <FormControlLabel
                   control={

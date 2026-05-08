@@ -130,10 +130,16 @@ export function EmployeeDailyLogTableRow({ row, index, isHR, onView }: Props) {
                 </Typography>
             </TableCell>
 
-            <TableCell align="right">
-                <IconButton onClick={onView} sx={{ color: 'info.main' }}>
+            <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                <IconButton onClick={onView} sx={{ color: 'primary.main' }}>
                     <Iconify icon="solar:eye-bold" />
                 </IconButton>
+
+                {isHR && !isActive && (
+                    <IconButton onClick={() => row.onEdit?.()} sx={{ color: 'info.main' }}>
+                        <Iconify icon="solar:pen-bold" />
+                    </IconButton>
+                )}
             </TableCell>
         </TableRow>
     );

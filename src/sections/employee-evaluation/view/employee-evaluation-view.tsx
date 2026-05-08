@@ -85,16 +85,16 @@ export function EmployeeEvaluationView() {
   const { user } = useAuth();
 
   const isAdminOrManager = user?.roles.some(role => 
-    ['Administrator', 'HR Manager', 'System Manager', 'Task Manager'].includes(role)
+    ['Administrator', 'HR', 'System Manager'].includes(role)
   );
 
   const isEmployee = user?.roles.includes('Employee');
 
   const hideTabs = isEmployee && !isAdminOrManager;
 
-  const filteredTabs = hideTabs ? TABS.filter(tab => tab.value === 'logs') : TABS;
+  const filteredTabs = hideTabs ? TABS.filter(tab => tab.value === 'events') : TABS;
 
-  const [currentTab, setCurrentTab] = useState(hideTabs ? 'logs' : 'events');
+  const [currentTab, setCurrentTab] = useState('events');
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -408,6 +408,7 @@ export function EmployeeEvaluationView() {
                             isSubmitted: row.docstatus === 1,
                           });
                         }}
+                        hideActions={hideTabs}
                       />
                     ))}
 
@@ -636,6 +637,7 @@ export function EmployeeEvaluationView() {
           setSelectedEvent(null);
         }}
         onSuccess={() => {
+          setSnackbar({ open: true, message: selectedEvent ? 'Updated successfully' : 'Created successfully', severity: 'success' });
           refetchEvents();
           refetchLogs();
         }}
@@ -648,7 +650,10 @@ export function EmployeeEvaluationView() {
           setOpenTraitForm(false);
           setSelectedTrait(null);
         }}
-        onSuccess={() => refetchTraits()}
+        onSuccess={() => {
+          setSnackbar({ open: true, message: selectedTrait ? 'Criteria updated successfully' : 'Criteria created successfully', severity: 'success' });
+          refetchTraits();
+        }}
         selectedTrait={selectedTrait}
       />
 
@@ -658,7 +663,10 @@ export function EmployeeEvaluationView() {
           setOpenAutomationForm(false);
           setSelectedRule(null);
         }}
-        onSuccess={() => refetchAutomation()}
+        onSuccess={() => {
+          setSnackbar({ open: true, message: selectedRule ? 'Automation rule updated successfully' : 'Automation rule created successfully', severity: 'success' });
+          refetchAutomation();
+        }}
         selectedRule={selectedRule}
         traits={traits}
         setSnackbar={setSnackbar}
@@ -728,7 +736,7 @@ export function EmployeeEvaluationView() {
         </Snackbar>
 
       <Dialog open={openResetDialog} onClose={() => !resetLoading && setOpenResetDialog(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Reset Employee Evaluation Scores</DialogTitle>
+        <DialogTitle sx={{ pt: 3 }}>Reset Employee Evaluation Scores</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
             Toggle the employees whose scores you want to reset to 100.

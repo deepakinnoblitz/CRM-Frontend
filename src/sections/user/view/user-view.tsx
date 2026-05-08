@@ -319,7 +319,6 @@ export const UserView = forwardRef(
                     { id: 'full_name', label: 'Name' },
                     { id: 'email', label: 'Email' },
                     { id: 'enabled', label: 'Status' },
-                    { id: 'user_type', label: 'Type' },
                     { id: 'permission', label: 'Permission' },
                     { id: 'creation', label: 'Created' },
                     { id: '' },

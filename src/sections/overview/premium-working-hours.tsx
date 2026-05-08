@@ -257,10 +257,10 @@ export function PremiumWorkingHours({ title = 'Weekly Working Hours', data, sour
                     sx={{ mb: 2.5 }}
                 >
                     <Box>
-                        <Typography sx={{ fontSize: { xs: '1.2rem', md: '1.4rem' }, fontWeight: 800, color: '#1e293b', letterSpacing: '-0.04em' }}>
+                        <Typography sx={{ fontSize: { xs: '1.2rem', md: '1.3rem' }, fontWeight: 800, color: '#1e293b' }}>
                             {title}
                         </Typography>
-                        <Typography sx={{ mt: 0.6, color: '#64748b', fontSize: '0.88rem', fontWeight: 500 }}>
+                        <Typography sx={{ mt: 0.6, color: '#64748b', fontSize: '0.82rem', fontWeight: 500 }}>
                             {dateRange}
                         </Typography>
                     </Box>

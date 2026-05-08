@@ -74,7 +74,40 @@ export function UserTableRow({
       </TableCell>
       <TableCell component="th" scope="row">
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar alt={row.full_name} src={row.user_image} />
+          <Avatar
+            alt={row.full_name}
+            src={row.user_image}
+            sx={{
+              border: (theme) => {
+                if (row.user_image) return `1px solid ${theme.palette.info.main}`;
+                const name = row.full_name || '';
+                let hash = 0;
+                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
+                return `1px solid ${alpha(textColors[Math.abs(hash) % textColors.length], 0.5)}`;
+              },
+              bgcolor: (theme) => {
+                if (row.user_image) return 'transparent';
+                const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                let hash = 0;
+                const name = row.full_name || '';
+                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                return colors[Math.abs(hash) % colors.length];
+              },
+              color: (theme) => {
+                if (row.user_image) return 'transparent';
+                const name = row.full_name || '';
+                let hash = 0;
+                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
+                return textColors[Math.abs(hash) % textColors.length];
+              },
+              fontWeight: 800,
+              fontSize: '14px'
+            }}
+          >
+            {(row.full_name || '?').charAt(0).toUpperCase()}
+          </Avatar>
           <Typography variant="subtitle2" noWrap>
             {row.full_name}
           </Typography>
@@ -88,8 +121,6 @@ export function UserTableRow({
           {row.enabled ? 'Enabled' : 'Disabled'}
         </Label>
       </TableCell>
-
-      <TableCell>{row.user_type}</TableCell>
 
       <TableCell>
         <Label color={row.has_permission ? 'success' : 'default'}>

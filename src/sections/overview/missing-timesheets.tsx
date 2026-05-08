@@ -367,9 +367,16 @@ export function MissingTimesheets({ title, data, holidays, leave_dates = [], sx,
                                         fullWidth
                                         size="small"
                                         variant="contained"
-                                        color="primary"
                                         onClick={() => handleLogDate(item.date)}
-                                        sx={{ borderRadius: 1, fontWeight: 800 }}
+                                        sx={{
+                                            borderRadius: 1,
+                                            fontWeight: 800,
+                                            bgcolor: '#08a3cd',
+                                            color: 'common.white',
+                                            '&:hover': {
+                                                bgcolor: '#068fb3',
+                                            }
+                                        }}
                                     >
                                         Log Now
                                     </Button>

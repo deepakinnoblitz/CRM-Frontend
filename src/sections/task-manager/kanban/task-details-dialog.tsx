@@ -218,7 +218,6 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        bgcolor: 'background.neutral',
                         borderBottom: '1px solid',
                         borderColor: 'divider'
                     }}
@@ -388,7 +387,7 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                         </Box>
 
                         {/* Action Buttons Toolbar */}
-                        <Box sx={{ px: 3, pb: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.neutral' }}>
+                        <Box sx={{ px: 3, pb: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.neutral', borderRadius: 2, borderlefttopRadius: 0 }}>
                             <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
                                 {/* Accept — Open or Reopened */}
                                 {(task.status === 'Open' || task.status === 'Reopened') && (
@@ -397,7 +396,7 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                                         color="info"
                                         size="medium"
                                         disabled={loading}
-                                        startIcon={<Iconify icon="solar:play-bold" width={16}/>}
+                                        startIcon={<Iconify icon="solar:play-bold" width={16} />}
                                         onClick={() => handleAction(() => acceptTaskManager(task.name), 'Task Accepted')}
                                         sx={{ fontWeight: 800, px: 2, borderRadius: 1.25 }}
                                     >

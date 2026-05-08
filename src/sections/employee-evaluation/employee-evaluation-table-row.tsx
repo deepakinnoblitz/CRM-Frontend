@@ -23,6 +23,7 @@ type Props = {
   onSubmit: () => void;
   onCancel: () => void;
   index: number;
+  hideActions?: boolean;
 };
 
 export function EmployeeEvaluationEventTableRow({
@@ -35,6 +36,7 @@ export function EmployeeEvaluationEventTableRow({
   onSubmit,
   onCancel,
   index,
+  hideActions,
 }: Props) {
   const { name, employee, employee_name, trait, evaluation_type, score_change, evaluation_date, hr_user, docstatus } = row;
 
@@ -107,7 +109,7 @@ export function EmployeeEvaluationEventTableRow({
       </TableCell>
       <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
         <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-          {docstatus === 0 && (
+          {!hideActions && docstatus === 0 && (
             <>
               <IconButton size="small" onClick={onSubmit} sx={{ color: 'success.main' }}>
                 <Iconify icon="solar:check-circle-bold" />
@@ -117,7 +119,7 @@ export function EmployeeEvaluationEventTableRow({
               </IconButton>
             </>
           )}
-          {docstatus === 1 && (
+          {!hideActions && docstatus === 1 && (
             <IconButton size="small" onClick={onCancel} sx={{ color: 'error.main' }}>
               <Iconify icon="solar:close-circle-bold" />
             </IconButton>
@@ -125,9 +127,11 @@ export function EmployeeEvaluationEventTableRow({
           <IconButton size="small" onClick={onView} sx={{ color: 'info.main' }}>
             <Iconify icon="solar:eye-bold" />
           </IconButton>
-          <IconButton size="small" onClick={onDelete} sx={{ color: 'error.main' }}>
-            <Iconify icon="solar:trash-bin-trash-bold" />
-          </IconButton>
+          {!hideActions && (
+            <IconButton size="small" onClick={onDelete} sx={{ color: 'error.main' }}>
+              <Iconify icon="solar:trash-bin-trash-bold" />
+            </IconButton>
+          )}
         </Stack>
       </TableCell>
     </TableRow>

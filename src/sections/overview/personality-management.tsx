@@ -1,11 +1,15 @@
+import { BsInfoCircle } from "react-icons/bs";
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
 import { useTheme } from '@mui/material/styles';
+import { ClickAwayListener } from '@mui/material';
 import Typography from '@mui/material/Typography';
+import { alpha, keyframes } from '@mui/material/styles';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -18,6 +22,12 @@ import PersonalityGauge from 'src/sections/employee-evaluation/component/persona
 // ----------------------------------------------------------------------
 
 
+
+const pulse = keyframes`
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+`;
 
 export function PersonalityManagement() {
     const theme = useTheme();
@@ -41,11 +51,14 @@ export function PersonalityManagement() {
         getDashboardData();
     }, [getDashboardData]);
 
+    const [isHovered, setIsHovered] = useState(false);
+    const [isPinned, setIsPinned] = useState(false);
+
     const displayTraits = stats?.traits ?? [];
     const totalScore = stats?.totalScore ?? 100;
 
     return (
-       <Card
+        <Card
             sx={{
                 p: 2,
                 boxShadow: theme.palette.mode === 'light' ? theme.shadows[8] : theme.shadows[12],
@@ -83,7 +96,93 @@ export function PersonalityManagement() {
                     >
                         <PersonalityGauge value={totalScore} width={300} height={300} />
 
-                        <Stack spacing={0.5} sx={{ mb: 3, textAlign: 'center' }}>
+                        <Stack spacing={0.5} sx={{ mb: 3, textAlign: 'center', mt: -3 }}>
+                            <ClickAwayListener onClickAway={() => setIsPinned(false)}>
+                                <Box sx={{ display: 'inline-block' }}>
+                                    <Tooltip
+                                        title={
+                                            Array.isArray(stats?.howToImprove) && stats.howToImprove.length > 0 ? (
+                                                <Box sx={{ p: 0.5 }}>
+                                                    <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 800, color: '#0e7490', borderBottom: '1px solid rgba(6, 182, 212, 0.3)', pb: 1, fontSize: '0.95rem' }}>
+                                                        Recommended Improvements
+                                                    </Typography>
+                                                    <Stack spacing={2}>
+                                                        {stats.howToImprove.map((item, i) => {
+                                                            const [advice, details] = item.split(' - ');
+                                                            return (
+                                                                <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                                                    <Box sx={{ minWidth: 8, height: 8, borderRadius: '50%', bgcolor: '#06b6d4', mt: 0.7, boxShadow: '0 0 8px rgba(6, 182, 212, 0.4)' }} />
+                                                                    <Stack spacing={0.3}>
+                                                                        <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: '#117eb2', lineHeight: 1.4, textAlign: 'left' }}>
+                                                                            {advice}
+                                                                        </Typography>
+                                                                        {details && (
+                                                                            <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#0e7490', opacity: 0.8, textAlign: 'left', fontStyle: 'italic' }}>
+                                                                                {details}
+                                                                            </Typography>
+                                                                        )}
+                                                                    </Stack>
+                                                                </Box>
+                                                            );
+                                                        })}
+                                                    </Stack>
+                                                </Box>
+                                            ) : (
+                                                stats?.howToImprove || "Improve your evaluation score by focusing on attendance, punctuality, and meeting performance targets. Consistency is key!"
+                                            )
+                                        }
+                                        arrow
+                                        placement="top"
+                                        disableFocusListener
+                                        disableTouchListener
+                                        open={isHovered || isPinned}
+                                        onOpen={() => setIsHovered(true)}
+                                        onClose={() => setIsHovered(false)}
+                                        slotProps={{
+                                            tooltip: {
+                                                sx: {
+                                                    background: 'linear-gradient(135deg, #f0f9ff 0%, #ecfeff 50%, #f0fdf4 100%)',
+                                                    color: '#117eb2',
+                                                    fontSize: '0.875rem',
+                                                    padding: '16px 24px',
+                                                    borderRadius: '16px',
+                                                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                                                    maxWidth: 420,
+                                                    fontWeight: 700,
+                                                    lineHeight: 1.6,
+                                                    textAlign: 'left',
+                                                    border: '1px solid #06b6d4',
+                                                    backdropFilter: 'blur(10px)',
+                                                },
+                                            },
+                                            arrow: {
+                                                sx: {
+                                                    color: '#f0f9ff',
+                                                },
+                                            },
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="body2"
+                                            onClick={() => setIsPinned(!isPinned)}
+                                            sx={{
+                                                color: 'info.main',
+                                                fontWeight: 700,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: 0.8,
+                                                animation: `${pulse} 3s infinite ease-in-out`,
+                                                pb: 3,
+                                                cursor: 'help'
+                                            }}
+                                        >
+                                            <BsInfoCircle style={{ fontSize: '1.1rem' }} />
+                                            What Needs Improvement?
+                                        </Typography>
+                                    </Tooltip>
+                                </Box>
+                            </ClickAwayListener>
                             <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
                                 Last Updated:{' '}
                                 <Box component="span" sx={{ color: 'text.primary', fontWeight: 700 }}>
@@ -183,6 +282,6 @@ export function PersonalityManagement() {
                     </Box>
                 </Box>
             </Stack>
-        </Card> 
+        </Card>
     );
 }
