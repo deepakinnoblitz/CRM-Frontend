@@ -75,9 +75,13 @@ export function ReferralTableToolbar({
           ),
         }}
         sx={{
-          width: { xs: '100%', md: 480 },
+          maxWidth: 480,
+          width: 1,
           '& .MuiOutlinedInput-root': {
-            borderRadius: 1,
+            borderRadius: 1.5,
+          },
+          '& .MuiOutlinedInput-input': {
+            padding: '12px 16px',
           },
         }}
       />

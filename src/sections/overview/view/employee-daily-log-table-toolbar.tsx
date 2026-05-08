@@ -93,7 +93,17 @@ export function EmployeeDailyLogTableToolbar({
               <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
             </InputAdornment>
           }
-          sx={{ maxWidth: { xs: '100%', md: 480 } }}
+          sx={{
+            maxWidth: 480,
+            width: 1,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 1.5,
+            },
+            '& .MuiOutlinedInput-input': {
+              padding: '12px 16px',
+            },
+          }}
+        // sx={{ maxWidth: { xs: '100%', md: 480 } }}
         />
       </Box>
 
