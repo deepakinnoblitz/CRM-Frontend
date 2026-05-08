@@ -285,7 +285,6 @@ export function DashboardLayout({
       rightArea: (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 2 } }}>
           <UserStatusBar />
-
           <ChatNotifications>
             <Box
               component={RouterLink as any}
@@ -293,11 +292,14 @@ export function DashboardLayout({
               sx={{
                 display: 'inline-flex',
                 alignItems: 'center',
+                justifyContent: 'center',
+
                 gap: 0.8,
                 px: 2,
                 py: 0.7,
+
                 borderRadius: '999px',
-                textDecoration:"none",
+                textDecoration: 'none',
 
                 fontSize: '0.9rem',
                 fontWeight: 600,
@@ -307,14 +309,66 @@ export function DashboardLayout({
                 background: 'linear-gradient(135deg, #e0ecff 0%, #c7dbff 100%)',
 
                 transition: 'all 0.25s ease',
+
                 position: 'relative',
                 overflow: 'hidden',
+
+                // IMPORTANT
+                zIndex: 1,
+
+                // Default rotating border animation (Example 2 style)
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+
+                  width: '120px',
+                  height: '300%',
+
+                  background: `
+          linear-gradient(
+            90deg,
+            rgba(255,255,255,0) 0%,
+            rgba(37,99,235,0.85) 50%,
+            rgba(255,255,255,0) 100%
+          )
+        `,
+
+                  top: '50%',
+                  left: '50%',
+
+                  transformOrigin: 'top center',
+                  transform: 'translate(-50%, -50%) rotate(0deg)',
+
+                  animation: 'rotateBorder 5s linear infinite',
+
+                  zIndex: -2,
+                },
+
+                // Inner layer to keep button clean
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  inset: '2px',
+                  borderRadius: '999px',
+                  background: 'linear-gradient(135deg, #e0ecff 0%, #c7dbff 100%)',
+                  zIndex: -1,
+                },
+
+                '@keyframes rotateBorder': {
+                  from: {
+                    transform: 'translate(-50%, -50%) rotate(0deg)',
+                  },
+                  to: {
+                    transform: 'translate(-50%, -50%) rotate(360deg)',
+                  },
+                },
 
                 '& svg': {
                   fontSize: '1.2rem',
                   transition: 'transform 0.25s ease',
                 },
 
+                // YOUR EXISTING HOVER (unchanged)
                 '&:hover': {
                   color: '#ffffff',
                   background: '#08a3cd',
@@ -324,6 +378,10 @@ export function DashboardLayout({
                   '& svg': {
                     transform: 'scale(1.15)',
                   },
+
+                  '&::after': {
+                    background: '#08a3cd',
+                  },
                 },
 
                 '&:active': {
@@ -331,7 +389,7 @@ export function DashboardLayout({
                 },
 
                 // shine effect
-                '&::after': {
+                '& .shine': {
                   content: '""',
                   position: 'absolute',
                   top: 0,
@@ -343,13 +401,15 @@ export function DashboardLayout({
                   transition: '0.5s',
                 },
 
-                '&:hover::after': {
+                '&:hover .shine': {
                   left: '130%',
                 },
               }}
             >
+              <Box className="shine" />
+
               <IoChatbubblesOutline />
-             InnoChat
+              InnoChat
             </Box>
           </ChatNotifications>
 
