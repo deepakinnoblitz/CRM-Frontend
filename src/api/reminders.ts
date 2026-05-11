@@ -19,6 +19,15 @@ export async function saveRemainder(data: any) {
   return result.message;
 }
 
+export async function deleteRemainder(name: string) {
+  const res = await frappeRequest('/api/method/company.company.employee_remainder_api.delete_remainder', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  });
+  const result = await handleResponse(res);
+  return result.message;
+}
+
 export async function getHRReminders() {
   const res = await frappeRequest('/api/method/company.company.employee_remainder_api.get_hr_reminders', {
     method: 'GET',
