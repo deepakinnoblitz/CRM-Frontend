@@ -193,7 +193,7 @@ export function DepartmentView() {
     setPage(0);
   };
 
-  const canReset = filters.status !== 'all';
+  const canReset = filters.status !== 'all' || !!filterName;
 
   return (
     <DashboardContent maxWidth={false} sx={{mt: 2}}>

@@ -124,7 +124,7 @@ export function ProjectView() {
     }
   };
 
-  const canReset = filters.status !== 'all';
+  const canReset = filters.status !== 'all' || !!filterName;
 
   return (
     <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -183,10 +183,12 @@ export function ProjectView() {
                   />
                 ))}
 
-                <TableEmptyRows
-                    height={68}
-                    emptyRows={data.length < 5 ? 5 - data.length : 0}
-                />
+                {!empty && !notFound && (
+                    <TableEmptyRows
+                        height={68}
+                        emptyRows={data.length < 5 ? 5 - data.length : 0}
+                    />
+                )}
 
                 {notFound && <TableNoData searchQuery={filterName} />}
 

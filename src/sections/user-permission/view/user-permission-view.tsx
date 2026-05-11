@@ -19,8 +19,11 @@ import { fetchUserPermissions, createUserPermission, deleteUserPermission } from
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { TableNoData } from '../../user/table-no-data';
+import { TableEmptyRows } from '../../user/table-empty-rows';
 import { LeadTableToolbar } from '../../lead/lead-table-toolbar';
 import { UserPermissionTableRow } from '../user-permission-table-row';
 import { UserPermissionTableHead } from '../user-permission-table-head';
@@ -205,6 +208,9 @@ export const UserPermissionView = forwardRef(({ hideHeader = false, hideActionBu
 
     const canReset = !!filterName || !!filters.user || !!filters.allow || !!filters.for_value;
 
+    const notFound = !loading && data.length === 0 && (!!filterName || canReset);
+    const empty = !loading && data.length === 0 && !filterName && !canReset;
+
     const renderContent = (
         <>
             {!hideActionButton && (
@@ -268,14 +274,26 @@ export const UserPermissionView = forwardRef(({ hideHeader = false, hideActionBu
                                     />
                                 ))}
 
-                                {!loading && data.length === 0 && (
+                                {notFound && <TableNoData searchQuery={filterName} />}
+
+                                {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-                                            <Typography variant="body2" color="text.secondary">
-                                                No user permissions found
-                                            </Typography>
+                                        <TableCell colSpan={7}>
+                                            <EmptyContent
+                                                title="No user permissions found"
+                                                description="You haven't created any user permissions yet."
+                                                icon="solar:lock-password-bold-duotone"
+                                                sx={{ py: 5 }}
+                                            />
                                         </TableCell>
                                     </TableRow>
+                                )}
+
+                                {!empty && !notFound && (
+                                    <TableEmptyRows
+                                        height={68}
+                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                    />
                                 )}
                             </TableBody>
                         </Table>

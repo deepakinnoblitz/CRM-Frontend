@@ -328,7 +328,7 @@ export function WeeklyPresentAbsentChart({
                             : 'linear-gradient(135deg, #f8fafc 0%, #ffffff 60%)',
                     boxShadow: `0 2px 12px ${alpha(theme.palette.grey[500], 0.1)}, 0 1px 3px ${alpha(theme.palette.grey[500], 0.08)}`,
                     border: `1px solid ${alpha(theme.palette.grey[500], 0.1)}`,
-                    // borderTop: `3px solid ${theme.palette.success.main}`,
+                    borderTop: `3px solid ${theme.palette.success.main}`,
                     transition: 'box-shadow 0.3s ease, transform 0.3s ease',
                     '&:hover': {
                         boxShadow: `0 12px 32px ${alpha(theme.palette.grey[500], 0.18)}, 0 2px 8px ${alpha(theme.palette.grey[500], 0.1)}`,

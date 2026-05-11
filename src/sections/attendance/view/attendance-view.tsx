@@ -515,7 +515,7 @@ export function AttendanceView() {
     };
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Attendance
@@ -567,7 +567,7 @@ export function AttendanceView() {
                     onClose={handleCloseFilters}
                     filters={{ startDate, endDate, status: filterStatus, employee: filterEmployee }}
                     onFilters={handleFilters}
-                    canReset={!!startDate || !!endDate || filterStatus !== 'all' || !!filterEmployee}
+                    canReset={!!startDate || !!endDate || filterStatus !== 'all' || !!filterEmployee || !!filterName}
                     onResetFilters={handleResetFilters}
                     employeeOptions={employeeOptions}
                     isHR={isHR}
@@ -626,7 +626,7 @@ export function AttendanceView() {
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
+                                        <TableCell colSpan={8}>
                                             <EmptyContent
                                                 title="No attendance records"
                                                 description="You haven't marked any attendance yet."
@@ -636,7 +636,7 @@ export function AttendanceView() {
                                     </TableRow>
                                 )}
 
-                                {!empty && (
+                                {!empty && !notFound && (
                                     <TableEmptyRows
                                         height={68}
                                         emptyRows={data.length < 5 ? 5 - data.length : 0}

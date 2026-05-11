@@ -160,7 +160,8 @@ export function SalarySlipsView() {
         filters.department !== 'all' ||
         filters.designation !== 'all' ||
         filters.pay_period_start !== null ||
-        filters.pay_period_end !== null;
+        filters.pay_period_end !== null ||
+        !!filterName;
 
     const activeFiltersCount = Object.values(filters).filter(v => v !== 'all' && v !== null).length;
 
@@ -190,7 +191,7 @@ export function SalarySlipsView() {
     });
 
     const [deleting, setDeleting] = useState(false);
-    
+
     // Submit confirmation
     const [submitDialog, setSubmitDialog] = useState<{
         open: boolean;
@@ -333,7 +334,7 @@ export function SalarySlipsView() {
     const empty = !data.length && !filterName;
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
                 <Typography variant="h4">Salary Slips</Typography>
 
@@ -442,7 +443,7 @@ export function SalarySlipsView() {
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={5}>
+                                        <TableCell colSpan={8}>
                                             <EmptyContent
                                                 title="No salary slips"
                                                 description="You haven't received any salary slips yet."
@@ -452,11 +453,8 @@ export function SalarySlipsView() {
                                     </TableRow>
                                 )}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                {!empty && !notFound && (
+                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
                                 )}
                             </TableBody>
                         </Table>

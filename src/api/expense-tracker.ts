@@ -54,9 +54,6 @@ export async function fetchExpenseTrackerList(params: {
     sort_by?: string;
 }) {
     const filters: any[] = [];
-    if (params.search) {
-        filters.push(['Expense Tracker', 'titlenotes', 'like', `%${params.search}%`]);
-    }
     if (params.filters?.type && params.filters.type !== 'all') {
         filters.push(['Expense Tracker', 'type', '=', params.filters.type]);
     }
@@ -66,6 +63,12 @@ export async function fetchExpenseTrackerList(params: {
     if (params.filters?.end_date) {
         filters.push(['Expense Tracker', 'date_time', '<=', params.filters.end_date]);
     }
+
+    // Use or_filters for search across multiple fields
+    const or_filters: any[] = params.search ? [
+        ['Expense Tracker', 'titlenotes', 'like', `%${params.search}%`],
+        ['Expense Tracker', 'type', 'like', `%${params.search}%`]
+    ] : [];
 
     let orderBy = "creation desc";
     if (params.sort_by) {
@@ -79,6 +82,7 @@ export async function fetchExpenseTrackerList(params: {
         doctype: 'Expense Tracker',
         fields: JSON.stringify(['name', 'type', 'titlenotes', 'amount', 'date_time', 'creation']),
         filters: JSON.stringify(filters),
+        or_filters: JSON.stringify(or_filters),
         limit_start: String((params.page - 1) * params.page_size),
         limit_page_length: String(params.page_size),
         order_by: orderBy
@@ -86,7 +90,7 @@ export async function fetchExpenseTrackerList(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Expense Tracker&filters=${encodeURIComponent(JSON.stringify(filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Expense Tracker&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch records");

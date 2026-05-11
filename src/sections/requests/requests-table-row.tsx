@@ -227,7 +227,11 @@ export function RequestTableRow({
                 </Box>
             </TableCell>
 
-            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{row.subject || '-'}</TableCell>
+            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                <Typography variant="body2" noWrap sx={{ maxWidth: 500, display: 'block' }}>
+                    {row.subject || '-'}
+                </Typography>
+            </TableCell>
 
             <TableCell>
                 <Label color={getStatusColor(row.workflow_state || '')}>

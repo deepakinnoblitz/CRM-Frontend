@@ -8,6 +8,8 @@ import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
 import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
@@ -25,6 +27,7 @@ import {
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { TableNoData, TableEmptyRows, TableHeadCustom, TableSelectedAction } from 'src/components/table/index';
 
@@ -177,10 +180,11 @@ export function UploadAttendanceView() {
     }, [currentRecord, refetch]);
 
     const emptyRows = data.length < 5 ? 5 - data.length : 0;
-    const notFound = !loading && data.length === 0;
+    const notFound = !loading && data.length === 0 && !!filterName;
+    const empty = !loading && data.length === 0 && !filterName;
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box display="flex" alignItems="center" mb={5}>
                 <Typography variant="h4" flexGrow={1}>
                     Import Attendance
@@ -242,12 +246,25 @@ export function UploadAttendanceView() {
                                     />
                                 ))}
 
-                                <TableEmptyRows
-                                    height={52}
-                                    emptyRows={emptyRows}
-                                />
+                                {!empty && !notFound && (
+                                    <TableEmptyRows
+                                        height={52}
+                                        emptyRows={emptyRows}
+                                    />
+                                )}
 
-                                {notFound && <TableNoData />}
+                                {notFound && <TableNoData searchQuery={filterName} />}
+
+                                {empty && (
+                                    <TableRow>
+                                        <TableCell colSpan={12}>
+                                            <EmptyContent
+                                                title="No Attendance Uploaded"
+                                                description="You haven't uploaded any attendance records yet."
+                                            />
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>

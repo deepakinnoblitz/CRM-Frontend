@@ -37,9 +37,11 @@ async function fetchFrappeList(params: {
     order?: 'asc' | 'desc';
 }) {
     const filters: any[] = [];
+    const or_filters: any[] = [];
 
     if (params.search) {
-        filters.push(['Salary Slip', 'employee_name', 'like', `%${params.search}%`]);
+        or_filters.push(['Salary Slip', 'employee_name', 'like', `%${params.search}%`]);
+        or_filters.push(['Salary Slip', 'employee', 'like', `%${params.search}%`]);
     }
 
     if (params.filterValues) {
@@ -62,6 +64,7 @@ async function fetchFrappeList(params: {
         doctype: 'Salary Slip',
         fields: JSON.stringify(["*"]),
         filters: JSON.stringify(filters),
+        or_filters: JSON.stringify(or_filters),
         limit_start: String((params.page - 1) * params.page_size),
         limit_page_length: String(params.page_size),
         order_by: orderByParam
@@ -70,7 +73,7 @@ async function fetchFrappeList(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}&_t=${Date.now()}`),
-        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Salary Slip&filters=${encodeURIComponent(JSON.stringify(filters))}&_t=${Date.now()}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Salary Slip&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}&_t=${Date.now()}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch salary slips");

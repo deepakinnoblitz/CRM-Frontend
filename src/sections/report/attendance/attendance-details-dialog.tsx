@@ -2,14 +2,17 @@ import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
+import { Avatar } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
+import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 
+import { getEmployee } from 'src/api/employees';
 import { getHRDoc } from 'src/api/hr-management';
 
 import { Label } from 'src/components/label';
@@ -25,14 +28,28 @@ type Props = {
 
 export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) {
     const [attendance, setAttendance] = useState<any>(null);
+    const [employeeDetails, setEmployeeDetails] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(false);
 
     useEffect(() => {
         if (open && attendanceId) {
             setLoading(true);
+            setFetching(true);
             getHRDoc('Attendance', attendanceId)
-                .then(setAttendance)
-                .catch((err) => console.error('Failed to fetch attendance details:', err))
+                .then((data) => {
+                    setAttendance(data);
+                    const empId = data.employee || data.employee_id;
+                    if (empId) {
+                        getEmployee(empId).then(setEmployeeDetails).catch(console.error).finally(() => setFetching(false));
+                    } else {
+                        setFetching(false);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch attendance details:', err);
+                    setFetching(false);
+                })
                 .finally(() => setLoading(false));
         }
     }, [open, attendanceId]);
@@ -67,7 +84,7 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
             </DialogTitle>
 
             <DialogContent sx={{ p: 4, pt: 0 }}>
-                {loading ? (
+                {fetching || (loading && !attendance) ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
                         <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
                     </Box>
@@ -76,74 +93,91 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
                         {/* Header Summary Card */}
                         <Box
                             sx={{
-                                p: 3,
-                                borderRadius: 2,
-                                bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
-                                boxShadow: (theme) => theme.customShadows?.z12,
-                                border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.12)}`,
+                                p: 3.5,
+                                borderRadius: 3,
                                 position: 'relative',
                                 overflow: 'hidden',
+                                bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.03),
+                                border: (theme: any) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                                boxShadow: (theme: any) => `0 12px 24px -4px ${alpha(theme.palette.common.black, 0.04)}`,
                             }}
                         >
-                            <Stack direction="row" alignItems="center" spacing={2.5} sx={{ mb: 3 }}>
-                                <Box
+                            <Stack direction="row" alignItems="center" spacing={2.5} sx={{ mb: 3.5, position: 'relative', zIndex: 1 }}>
+                                <Avatar
+                                    src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || attendance?.profile_picture || attendance?.image}
                                     sx={{
-                                        width: 54,
-                                        height: 54,
-                                        borderRadius: 1.5,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: 'common.white',
-                                        background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.info.main} 100%)`,
-                                        boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.primary.main, 0.24)}`,
+                                        width: 72,
+                                        height: 72,
+                                        borderRadius: '50%',
+                                        border: (theme: any) => `2px solid ${theme.palette.common.white}`,
+                                        boxShadow: (theme: any) => `0 8px 24px -4px ${alpha(theme.palette.primary.main, 0.15)}`,
+                                        bgcolor: (theme: any) => {
+                                            const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || attendance?.profile_picture || attendance?.image;
+                                            if (img) return 'transparent';
+                                            const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                            let hash = 0;
+                                            const name = attendance?.employee_name || '';
+                                            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                            return colors[Math.abs(hash) % colors.length];
+                                        },
+                                        color: (theme: any) => {
+                                            const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || attendance?.profile_picture || attendance?.image;
+                                            return img ? 'inherit' : alpha(theme.palette.common.black, 0.6);
+                                        },
+                                        fontSize: '1.75rem',
+                                        fontWeight: 900,
                                     }}
                                 >
-                                    <Iconify icon={"solar:user-bold-duotone" as any} width={32} />
-                                </Box>
+                                    {attendance?.employee_name?.charAt(0) || 'U'}
+                                </Avatar>
                                 <Box>
-                                    <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+                                    <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.2, color: 'text.primary' }}>
                                         {attendance.employee_name}
                                     </Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                        {attendance.employee}
+                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, mt: 0.2, display: 'block', letterSpacing: 0.5 }}>
+                                        ID: {attendance.employee || attendance.employee_id || '-'}
                                     </Typography>
                                 </Box>
                             </Stack>
 
                             <Stack
-                                direction={{ xs: 'column', sm: 'row' }}
+                                direction="row"
                                 alignItems="center"
                                 justifyContent="space-between"
-                                spacing={2}
                                 sx={{
-                                    p: 2,
-                                    borderRadius: 1.5,
-                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                    p: 2.5,
+                                    borderRadius: 2,
+                                    bgcolor: 'background.paper',
+                                    boxShadow: (theme: any) => theme.customShadows?.z8,
+                                    position: 'relative',
+                                    zIndex: 1,
+                                    border: (theme: any) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
                                 }}
                             >
-                                <Stack spacing={0.5} sx={{ flex: 1, textAlign: 'center' }}>
-                                    <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, lineHeight: 1.5 }}>
+                                <Stack spacing={0.5} flex={1}>
+                                    <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, textTransform: 'uppercase', fontSize: '11px' }}>
                                         DATE
                                     </Typography>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                                        {dayjs(attendance.attendance_date).format('DD MMM')}
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 900, color: 'text.primary' }}>
+                                        {dayjs(attendance.attendance_date).format('DD MMM YYYY')}
                                     </Typography>
                                 </Stack>
 
-                                <Stack spacing={0.5} sx={{ flex: 1, textAlign: 'center' }}>
-                                    <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, lineHeight: 1.5 }}>
+                                <Divider orientation="vertical" flexItem sx={{ mx: 3, borderStyle: 'dashed' }} />
+
+                                <Stack spacing={0.5} flex={1}>
+                                    <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, textTransform: 'uppercase', fontSize: '11px' }}>
                                         STATUS
                                     </Typography>
-                                    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                         <Label
                                             color={getStatusColor(attendance.status)}
-                                            variant="filled"
+                                            variant="soft"
                                             sx={{
+                                                fontWeight: 900,
                                                 textTransform: 'uppercase',
-                                                height: 24,
-                                                px: 1.5,
-                                                ...(attendance.status === 'Missing' && { color: 'common.white' }),
+                                                letterSpacing: 0.5,
+                                                px: 1.5
                                             }}
                                         >
                                             {attendance.status}
@@ -151,11 +185,13 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
                                     </Box>
                                 </Stack>
 
-                                <Stack spacing={0.5} sx={{ flex: 1, textAlign: 'center' }}>
-                                    <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, lineHeight: 1.5 }}>
+                                <Divider orientation="vertical" flexItem sx={{ mx: 3, borderStyle: 'dashed' }} />
+
+                                <Stack spacing={0.5} flex={1}>
+                                    <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, textTransform: 'uppercase', fontSize: '11px' }}>
                                         WORKING HOURS
                                     </Typography>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 900, color: 'primary.main' }}>
                                         {attendance.working_hours_display || '00:00'}
                                     </Typography>
                                 </Stack>

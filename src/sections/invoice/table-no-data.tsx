@@ -13,7 +13,7 @@ export function TableNoData({ searchQuery }: TableNoDataProps) {
     return (
         <TableRow>
             <TableCell align="center" colSpan={8}>
-                <Box sx={{ py: 15, textAlign: 'center' }}>
+                <Box sx={{ py: 5, textAlign: 'center' }}>
                     <Typography variant="h6" sx={{ mb: 1 }}>
                         Not found
                     </Typography>

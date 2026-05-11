@@ -418,7 +418,7 @@ export function RequestsView() {
   const empty = !data.length && !filterName;
 
   return (
-    <DashboardContent maxWidth={false} sx={{mt: 2}}>
+    <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
       <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           Request List
@@ -471,13 +471,12 @@ export function RequestsView() {
 
 
                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
-                onSort={handleSort}
 
                 hideCheckbox
                 showIndex
                 headLabel={[
                   { id: 'employee_name', label: 'Employee Name' },
-                  { id: 'subject', label: 'Subject', sx: { display: { xs: 'none', md: 'table-cell' } } },
+                  { id: 'subject', label: 'Subject', width: 500, sx: { display: { xs: 'none', md: 'table-cell' } } },
                   { id: 'workflow_state', label: 'Status' },
                   { id: '', label: '' },
                 ]}
@@ -528,15 +527,16 @@ export function RequestsView() {
                   <TableRow>
                     <TableCell colSpan={5}>
                       <EmptyContent
-                        title="No requests found"
+                        title="No Request Found"
                         description="You haven't submitted any requests yet."
                         icon="solar:document-text-bold-duotone"
+                        sx={{ py: 16 }}
                       />
                     </TableCell>
                   </TableRow>
                 )}
 
-                {!empty && (
+                {!empty && !notFound && (
                   <TableEmptyRows
                     height={68}
                     emptyRows={data.length < 5 ? 5 - data.length : 0}

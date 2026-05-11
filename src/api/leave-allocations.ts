@@ -24,18 +24,31 @@ export interface LeaveAllocation {
 // Leave Allocation APIs
 export const fetchLeaveAllocations = (params: any) => {
     const filters: any[] = [];
+    const or_filters: any[] = [];
+
     if (params.filters) {
         Object.entries(params.filters).forEach(([key, value]) => {
             if (value && value !== 'all') {
                 if (Array.isArray(value)) {
-                    filters.push([key, value[0], value[1]]);
+                    filters.push(['Leave Allocation', key, value[0], value[1]]);
                 } else {
-                    filters.push([key, "=", value]);
+                    filters.push(['Leave Allocation', key, "=", value]);
                 }
             }
         });
     }
-    return fetchFrappeList("Leave Allocation", { ...params, filters, searchField: "employee_name" });
+
+    if (params.search) {
+        or_filters.push(['Leave Allocation', 'employee_name', 'like', `%${params.search}%`]);
+        or_filters.push(['Leave Allocation', 'employee', 'like', `%${params.search}%`]);
+        or_filters.push(['Leave Allocation', 'leave_type', 'like', `%${params.search}%`]);
+    }
+
+    return fetchFrappeList("Leave Allocation", {
+        ...params,
+        filters: filters.length > 0 ? filters : undefined,
+        or_filters: or_filters.length > 0 ? or_filters : undefined
+    });
 };
 
 export async function createLeaveAllocation(data: Partial<LeaveAllocation>) {

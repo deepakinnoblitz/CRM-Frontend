@@ -96,12 +96,12 @@ export function SettingsSidebar({ data, onChange }: Props) {
               checked={Boolean(data?.[item.fieldname] ?? 1)}
               onChange={(event) => onChange(item.fieldname, event.target.checked ? 1 : 0)}
               sx={{
-                  '& .MuiSwitch-switchBase.Mui-checked': {
-                      color: '#08a3cd',
-                  },
-                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                      backgroundColor: '#08a3cd',
-                  },
+                '& .MuiSwitch-switchBase.Mui-checked': {
+                  color: '#08a3cd',
+                },
+                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                  backgroundColor: '#08a3cd',
+                },
               }}
             />
           </Stack>

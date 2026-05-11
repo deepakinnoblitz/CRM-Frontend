@@ -393,7 +393,7 @@ export function HolidaysView() {
     const empty = !data.length && !filterName;
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Holidays
@@ -476,12 +476,13 @@ export function HolidaysView() {
                                                 title="No holiday lists found"
                                                 description="You haven't created any holiday lists yet."
                                                 icon="solar:calendar-mark-bold-duotone"
+                                                sx={{ py: 5 }}
                                             />
                                         </TableCell>
                                     </TableRow>
                                 )}
 
-                                {!empty && (
+                                {!empty && !notFound && (
                                     <TableEmptyRows
                                         height={68}
                                         emptyRows={filteredData.length < 5 ? 5 - filteredData.length : 0}

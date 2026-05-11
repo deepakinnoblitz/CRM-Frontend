@@ -24,6 +24,7 @@ export interface WorkflowAction {
 // Request APIs
 export const fetchRequests = (params: any) => {
     const filters: any[] = [];
+    const or_filters: any[] = [];
 
     if (params.employee && params.employee !== 'all') {
         filters.push(['Request', 'employee_id', '=', params.employee]);
@@ -42,15 +43,15 @@ export const fetchRequests = (params: any) => {
     }
 
     if (params.search) {
-        filters.push([
-            ['Request', 'subject', 'like', `%${params.search}%`],
-            ['or', ['Request', 'employee_name', 'like', `%${params.search}%`]]
-        ]);
+        or_filters.push(['Request', 'subject', 'like', `%${params.search}%`]);
+        or_filters.push(['Request', 'employee_name', 'like', `%${params.search}%`]);
+        or_filters.push(['Request', 'employee_id', 'like', `%${params.search}%`]);
     }
 
     return fetchFrappeList("Request", {
         ...params,
-        filters: filters.length > 0 ? filters : undefined
+        filters: filters.length > 0 ? filters : undefined,
+        or_filters: or_filters.length > 0 ? or_filters : undefined
     });
 };
 

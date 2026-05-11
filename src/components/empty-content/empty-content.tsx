@@ -17,7 +17,7 @@ export function EmptyContent({ title, description, icon, sx, ...other }: EmptyCo
     return (
         <Box
             sx={{
-                py: 10,
+                py: 5,
                 px: 3,
                 display: 'flex',
                 textAlign: 'center',

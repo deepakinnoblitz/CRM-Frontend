@@ -24,6 +24,7 @@ type Props = {
   sortBy: string;
   onSortChange: (value: string) => void;
   sortOptions: { value: string; label: string }[];
+  canReset?: boolean;
 };
 
 export function ReferralTableToolbar({
@@ -36,6 +37,7 @@ export function ReferralTableToolbar({
   sortBy,
   onSortChange,
   sortOptions,
+  canReset,
 }: Props) {
   const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -88,7 +90,7 @@ export function ReferralTableToolbar({
           color="inherit"
           onClick={onOpenFilter}
           startIcon={
-            <Badge color="error" variant="dot" invisible={activeFiltersCount === 0}>
+            <Badge color="error" variant="dot" invisible={!canReset}>
               <Iconify icon="ic:round-filter-list" />
             </Badge>
           }

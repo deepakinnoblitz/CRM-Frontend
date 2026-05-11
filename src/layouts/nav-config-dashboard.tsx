@@ -1,3 +1,28 @@
+import { FiList } from "react-icons/fi";
+import { FaTasks } from "react-icons/fa";
+import { CgNotes } from "react-icons/cg";
+import { TbReport } from "react-icons/tb";
+import { FiUserPlus } from "react-icons/fi";
+import { GoTasklist } from "react-icons/go";
+import { RiAppsLine } from "react-icons/ri";
+import { RxCalendar } from "react-icons/rx";
+import { FaUsersCog } from "react-icons/fa";
+import { PiMoneyWavy } from "react-icons/pi";
+import { LuUsersRound } from "react-icons/lu";
+import { BsFillBellFill } from "react-icons/bs";
+import { IoHomeOutline } from "react-icons/io5";
+import { TbReportSearch } from "react-icons/tb";
+import { IoMdFolderOpen } from "react-icons/io";
+import { RiSettings3Line } from "react-icons/ri";
+import { LuCalendarCheck2 } from "react-icons/lu";
+import { TbReportAnalytics } from "react-icons/tb";
+import { LuFileSpreadsheet } from "react-icons/lu";
+import { LuUserRoundSearch } from "react-icons/lu";
+import { HiOutlineCreditCard } from "react-icons/hi2";
+import { HiOutlineSpeakerphone } from "react-icons/hi";
+import { RiCalendarScheduleLine } from "react-icons/ri";
+import { MdOutlineLaptopWindows } from "react-icons/md";
+
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -21,17 +46,17 @@ export const hrNavData = [
   {
     title: 'HR Dashboard',
     path: '/',
-    icon: <Iconify icon={"solar:home-2-bold-duotone" as any} />,
+    icon: <IoHomeOutline size={18} />,
   },
   {
     title: 'Task Manager',
     path: '/task-manager?view=all',
-    icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
+    icon: <FaTasks size={18} />,
   },
   {
     title: 'Employee Records',
     path: '/employee',
-    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
+    icon: <LuUsersRound size={18} />,
     children: [
       { title: 'Employee List', path: '/employee' },
       { title: 'Users List', path: '/users' },
@@ -40,18 +65,18 @@ export const hrNavData = [
   {
     title: 'Attendance Records',
     path: '/attendance',
-    icon: <Iconify icon={"solar:calendar-mark-bold-duotone" as any} />,
+    icon: <RxCalendar size={18} />,
     children: [
       { title: 'Attendance List', path: '/attendance' },
-      { title: 'WFH Attendance', path: '/wfh-attendance' },
       { title: 'Daily Log', path: '/daily-log' },
+      { title: 'WFH Attendance', path: '/wfh-attendance' },
       { title: 'Import Attendance', path: '/import-attendance' },
     ],
   },
   {
     title: 'Leaves Records',
     path: '/leaves',
-    icon: <Iconify icon={"solar:calendar-date-bold-duotone" as any} />,
+    icon: <RiAppsLine size={18} />,
     children: [
       { title: 'Leave Application', path: '/leaves' },
       { title: 'Leave Allocate', path: '/leave-allocations' },
@@ -60,37 +85,37 @@ export const hrNavData = [
   {
     title: 'Request List',
     path: '/requests',
-    icon: <Iconify icon={"solar:document-text-bold-duotone" as any} />,
+    icon: <FiList size={18} />,
   },
   {
     title: 'Timesheets',
     path: '/timesheets',
-    icon: <Iconify icon={"solar:clock-circle-bold-duotone" as any} />,
+    icon: <LuFileSpreadsheet size={18} />,
   },
   {
     title: 'Salary Slips',
     path: '/salary-slips',
-    icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} />,
+    icon: <PiMoneyWavy size={18} />,
   },
   {
     title: 'Timesheets',
     path: '/timesheets',
-    icon: <Iconify icon={"solar:clock-circle-bold-duotone" as any} />,
+    icon: <TbReport size={18} />,
   },
   {
     title: 'Holidays List',
     path: '/holidays',
-    icon: <Iconify icon={"solar:list-bold-duotone" as any} />,
+    icon: <GoTasklist size={22} />,
   },
   {
     title: 'Announcements',
     path: '/announcements',
-    icon: <Iconify icon={"solar:bell-bold-duotone" as any} />,
+    icon: <HiOutlineSpeakerphone size={18} />,
   },
   {
     title: 'Asset Records',
     path: '/assets',
-    icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
+    icon: <MdOutlineLaptopWindows size={18} />,
     children: [
       { title: 'Asset List', path: '/assets/list' },
       { title: 'Asset Assignments', path: '/assets/assignments' },
@@ -98,14 +123,9 @@ export const hrNavData = [
     ],
   },
   {
-    title: 'Salary Slips',
-    path: '/salary-slips',
-    icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} />,
-  },
-  {
     title: 'Expenses',
     path: '/expenses',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+    icon: <HiOutlineCreditCard size={18} />,
     children: [
       { title: 'Company Expenses', path: '/expense-tracker' },
       { title: 'Reimbursement Claim List', path: '/reimbursement-claims' },
@@ -114,7 +134,7 @@ export const hrNavData = [
   {
     title: 'Employee Performance',
     path: '/employee-evaluation',
-    icon: <Iconify icon={"solar:user-speak-bold-duotone" as any} />,
+    icon: <LuUsersRound size={18} />,
     children: [
       { title: 'Employee Evaluation', path: '/employee-evaluation' },
       { title: 'Badges', path: '/badges' },
@@ -124,7 +144,7 @@ export const hrNavData = [
   {
     title: 'Recruitment',
     path: '/job-openings',
-    icon: <Iconify icon={"solar:buildings-bold-duotone" as any} />,
+    icon: <LuUserRoundSearch size={18} />,
     children: [
       { title: 'Job Opening List', path: '/job-openings' },
       { title: 'Job Applicant List', path: '/job-applicants' },
@@ -135,7 +155,7 @@ export const hrNavData = [
   {
     title: 'Report',
     path: '/reports',
-    icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
+    icon: <CgNotes size={20} />,
     children: [
       { title: 'Attendance Report', path: '/reports/attendance' },
       { title: 'Daily Log Report', path: '/reports/daily-log' },
@@ -147,7 +167,7 @@ export const hrNavData = [
   {
     title: 'Masters',
     path: '/department',
-    icon: <Iconify icon={"solar:folder-bold-duotone" as any} />,
+    icon: <IoMdFolderOpen size={22} />,
     children: [
       { title: 'Department', path: '/department' },
       { title: 'Project', path: '/project' },
@@ -164,7 +184,7 @@ export const hrNavData = [
   {
     title: 'Reminders',
     path: '/reminders',
-    icon: <Iconify icon={"solar:bell-bing-bold-duotone" as any} />,
+    icon: <BsFillBellFill size={18} />,
   }
 ];
 
@@ -174,62 +194,62 @@ export const employeeNavData = [
   {
     title: 'Employee Dashboard',
     path: '/',
-    icon: <Iconify icon={"solar:home-2-bold-duotone" as any} />,
+    icon: <IoHomeOutline size={18} />
   },
   {
     title: 'My Profile',
     path: '/my-profile',
-    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
+    icon: <LuUsersRound size={18} />,
   },
   {
     title: 'My Tasks',
     path: '/task-manager?view=mine',
-    icon: <Iconify icon={"solar:checklist-minimalistic-bold-duotone" as any} />,
+    icon: <GoTasklist size={22} />,
   },
   {
     title: 'My Attendance',
     path: '/attendance',
-    icon: <Iconify icon={"solar:clock-circle-bold-duotone" as any} />,
+    icon: <RiCalendarScheduleLine size={18} />,
   },
   {
-    title: 'My Activity Log',
+    title: 'My Daily Log',
     path: '/daily-log',
-    icon: <Iconify icon={"solar:calendar-bold-duotone" as any} />,
+    icon: <RxCalendar size={18} />
   },
   {
     title: 'My Leave Application',
     path: '/leaves',
-    icon: <Iconify icon={"solar:notes-bold-duotone" as any} />,
+    icon: <RiAppsLine size={18} />,
   },
   {
     title: 'My Request List',
     path: '/requests',
-    icon: <Iconify icon={"solar:list-bold-duotone" as any} />,
+    icon: <FiList   size={18} />,
   },
   {
     title: 'My Timesheet',
     path: '/timesheets',
-    icon: <Iconify icon={"solar:folder-bold-duotone" as any} />,
+    icon: <LuFileSpreadsheet size={18} />,
   },
   {
     title: 'My WFH Attendance',
     path: '/wfh-attendance',
-    icon: <Iconify icon={"solar:document-bold-duotone" as any} />,
+    icon: <LuCalendarCheck2 size={18} />,
   },
   {
     title: 'My Salary Slip',
     path: '/salary-slips',
-    icon: <Iconify icon={"solar:bill-bold-duotone" as any} />,
+    icon: <PiMoneyWavy size={18} />,
   },
   {
     title: 'My Reimbursement Claim',
     path: '/reimbursement-claims',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+    icon: <CgNotes size={18} />,
   },
   {
     title: 'My Assets',
     path: '/assets',
-    icon: <Iconify icon={"solar:laptop-bold-duotone" as any} />,
+    icon: <MdOutlineLaptopWindows size={18} />,
     children: [
       { title: 'My Asset List', path: '/assets/assignments' },
       { title: 'My Asset Requests', path: '/assets/requests' },
@@ -238,8 +258,18 @@ export const employeeNavData = [
   {
     title: 'Refer a Friend',
     path: '/employee-referrals',
-    icon: <Iconify icon={"solar:user-plus-bold-duotone" as any} />,
-  }
+    icon: <FiUserPlus size={18} />,
+  },
+  {
+    title: 'Report',
+    path: '/reports',
+    icon: <CgNotes size={20} />,
+    children: [
+      { title: 'My Attendance Report', path: '/reports/attendance' },
+      { title: 'My Daily Log Report', path: '/reports/daily-log' },
+      { title: 'My Timesheet Report', path: '/timesheet-reports' },
+    ],
+  },
 ];
 
 // ----------------------  Sales NavBar ---------------------------------------------------
@@ -449,31 +479,23 @@ export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM', settings?:
       };
 
       // Sidebar visibility filtering
-      if ((itemClone.title === 'Attendance Records' || itemClone.title === 'Attendance Report' || itemClone.title === 'Daily Log Report') && itemClone.children) {
+      if (itemClone.children) {
         itemClone.children = itemClone.children.filter(child => {
           if ((child.title === 'Attendance List' || child.title === 'My Attendance') && settings?.show_attendance_list === 0) return false;
-          if ((child.title === 'Daily Log' || child.title === 'My Activity Log') && settings?.show_daily_log === 0) return false;
+          if ((child.title === 'Daily Log' || child.title === 'My Daily Log' || child.title === 'My Activity Log') && settings?.show_daily_log === 0) return false;
+          if ((child.title === 'Attendance Report' || child.title === 'My Attendance Report') && settings?.show_attendance_report === 0) return false;
+          if ((child.title === 'Daily Log Report' || child.title === 'My Daily Log Report') && settings?.show_daily_log_report === 0) return false;
           return true;
         });
-        if (itemClone.children.length === 0) return;
+        // If a group item like 'Attendance Records' or 'Report' has no children left, hide it
+        if (['Attendance Records', 'Report'].includes(itemClone.title) && itemClone.children.length === 0) return;
       }
 
-      // Handle top-level items for Employee View
-      if ((itemClone.title === 'My Attendance' || itemClone.title === 'Attendance List') && settings?.show_attendance_list === 0) return;
-      if ((itemClone.title === 'My Activity Log' || itemClone.title === 'Daily Log') && settings?.show_daily_log === 0) return;
-
-      if (itemClone.title === 'Report' && itemClone.children) {
-        itemClone.children = itemClone.children.filter(child => {
-          if (child.title === 'Attendance Report' && settings?.show_attendance_report === 0) return false;
-          if (child.title === 'Daily Log Report' && settings?.show_daily_log_report === 0) return false;
-          return true;
-        });
-        if (itemClone.children.length === 0) return;
-      }
-
-      // Handle top-level report items if any
-      if (itemClone.title === 'Attendance Report' && settings?.show_attendance_report === 0) return;
-      if (itemClone.title === 'Daily Log Report' && settings?.show_daily_log_report === 0) return;
+      // Handle top-level items (mostly for Employee View)
+      if ((itemClone.title === 'Attendance List' || itemClone.title === 'My Attendance') && settings?.show_attendance_list === 0) return;
+      if ((itemClone.title === 'Daily Log' || itemClone.title === 'My Daily Log' || itemClone.title === 'My Activity Log') && settings?.show_daily_log === 0) return;
+      if ((itemClone.title === 'Attendance Report' || itemClone.title === 'My Attendance Report') && settings?.show_attendance_report === 0) return;
+      if ((itemClone.title === 'Daily Log Report' || itemClone.title === 'My Daily Log Report') && settings?.show_daily_log_report === 0) return;
 
       if (!seenPaths.has(itemClone.path)) {
         mergedNav.push(itemClone);
@@ -517,7 +539,7 @@ export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM', settings?:
       {
         title: 'User Management',
         path: '/users',
-        icon: <Iconify icon={"solar:settings-bold-duotone" as any} />,
+        icon: <FaUsersCog size={22} />,
       }
     ]);
     return { hasAccess: true, navData: mergedNav };

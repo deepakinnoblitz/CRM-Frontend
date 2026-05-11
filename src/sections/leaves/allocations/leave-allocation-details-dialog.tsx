@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
@@ -16,6 +17,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import LinearProgress from '@mui/material/LinearProgress';
 
+import { getEmployee } from 'src/api/employees';
 import { getHRDoc } from 'src/api/hr-management';
 import { type WorkflowAction, getLeaveAllocationWorkflowActions, applyLeaveAllocationWorkflowAction } from 'src/api/leave-allocations';
 
@@ -38,7 +40,9 @@ type Props = {
 
 export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRefresh, onEdit, onDelete, socket }: Props) {
     const [allocation, setAllocation] = useState<any>(null);
+    const [employeeDetails, setEmployeeDetails] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(false);
     const [actions, setActions] = useState<WorkflowAction[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [commentDialogOpen, setCommentDialogOpen] = useState(false);
@@ -55,6 +59,11 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
         try {
             const data = await getHRDoc('Leave Allocation', allocationId);
             setAllocation(data);
+            const empId = data.employee || data.employee_id;
+            if (empId) {
+                setFetching(true);
+                getEmployee(empId).then(setEmployeeDetails).catch(console.error).finally(() => setFetching(false));
+            }
             if (data?.workflow_state) {
                 const availableActions = await getLeaveAllocationWorkflowActions(data.workflow_state);
                 setActions(availableActions);
@@ -128,32 +137,49 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
     };
 
     const renderContent = allocation && (
-        <Stack spacing={3.5} sx={{ marginTop: 3 }}>
+        <Stack spacing={3.5} sx={{ marginTop: 3, marginBottom: 2 }}>
             {/* Profile Header */}
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                <Box
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
+                <Avatar
+                    src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || allocation?.profile_picture || allocation?.image}
                     sx={{
-                        width: 64,
-                        height: 64,
-                        borderRadius: 2,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: 'primary.lighter',
-                        color: 'primary.main',
+                        width: 72,
+                        height: 72,
+                        borderRadius: '50%',
+                        border: (theme: any) => `2px solid ${theme.palette.common.white}`,
+                        boxShadow: (theme: any) => `0 8px 24px -4px ${alpha(theme.palette.primary.main, 0.15)}`,
+                        bgcolor: (theme: any) => {
+                            const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || allocation?.profile_picture || allocation?.image;
+                            if (img) return 'transparent';
+                            const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                            let hash = 0;
+                            const name = allocation?.employee_name || '';
+                            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                            return colors[Math.abs(hash) % colors.length];
+                        },
+                        color: (theme: any) => {
+                            const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || allocation?.profile_picture || allocation?.image;
+                            return img ? 'inherit' : alpha(theme.palette.common.black, 0.6);
+                        },
+                        fontSize: '1.75rem',
+                        fontWeight: 900,
                     }}
                 >
-                    <Iconify icon={"solar:letter-bold" as any} width={32} />
-                </Box>
+                    {allocation?.employee_name?.charAt(0) || 'U'}
+                </Avatar>
                 <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 800 }}>{allocation.employee_name}</Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{allocation.employee}</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.2, color: 'text.primary' }}>
+                        {allocation.employee_name}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                        {allocation.employee}
+                    </Typography>
                 </Box>
                 <Box sx={{ textAlign: 'right' }}>
                     <Label
                         variant="soft"
                         color={getStatusColor(allocation.workflow_state || allocation.status)}
-                        sx={{ textTransform: 'uppercase', fontWeight: 800, height: 28 }}
+                        sx={{ textTransform: 'uppercase', fontWeight: 900, height: 28, px: 1.5 }}
                     >
                         {allocation.workflow_state || allocation.status}
                     </Label>
@@ -166,7 +192,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
             <Divider sx={{ borderStyle: 'dashed' }} />
 
             {/* Information Grid */}
-            <Box>
+            <Box sx={{px: 2}}>
                 <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, mb: 2, display: 'block' }}>
                     Allocation Details
                 </Typography>
@@ -214,7 +240,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
             </Box>
 
             {/* Actions */}
-            {(onEdit || onDelete) && allocation && (
+            {/* {(onEdit || onDelete) && allocation && (
                 <Stack direction="row" spacing={1.5} justifyContent="flex-end">
                     {onEdit && (
                         <Button
@@ -260,7 +286,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
                         </Button>
                     )}
                 </Stack>
-            )}
+            )} */}
 
             {/* Workflow Actions */}
             {actions.length > 0 && isHR && (
@@ -326,11 +352,10 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
                 </DialogTitle>
 
                 <DialogContent sx={{ p: 3 }}>
-                    {loading && !allocation ? (
+                    {fetching || (loading && !allocation) ? (
                         <Stack alignItems="center" justifyContent="center" sx={{ py: 10, minHeight: 200 }}>
                             <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Iconify icon={"svg-spinners:ring-resize" as any} width={40} sx={{ color: 'primary.main' }} />
-                                <Box sx={{ position: 'absolute', width: 20, height: 20, bgcolor: 'primary.main', borderRadius: '50%', opacity: 0.1, animation: 'pulse 2s infinite' }} />
+                                <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
                             </Box>
                         </Stack>
                     ) : (

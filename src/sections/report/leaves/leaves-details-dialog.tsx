@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
@@ -14,6 +15,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 
+import { getEmployee } from 'src/api/employees';
 import { getHRDoc } from 'src/api/hr-management';
 import { type WorkflowAction, getLeaveWorkflowActions, updateLeaveStatus, applyLeaveWorkflowAction } from 'src/api/leaves';
 
@@ -45,6 +47,8 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
 
     const [openClarification, setOpenClarification] = useState(false);
     const [clarificationType, setClarificationType] = useState<'HR' | 'Employee'>('HR');
+    const [employeeDetails, setEmployeeDetails] = useState<any>(null);
+    const [fetching, setFetching] = useState(false);
 
     const { user } = useAuth();
     const userRoles = user?.roles || [];
@@ -57,6 +61,10 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
         try {
             const data = await getHRDoc('Leave Application', leaveId);
             setLeave(data);
+            const empId = data.employee || data.employee_id;
+            if (empId) {
+                getEmployee(empId).then(setEmployeeDetails).catch(console.error);
+            }
             if (data?.workflow_state) {
                 const availableActions = await getLeaveWorkflowActions(data.workflow_state);
                 setActions(availableActions);
@@ -343,7 +351,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                 </DialogTitle>
 
                 <DialogContent sx={{ p: { xs: 2.5, sm: 4 }, pt: 0 }}>
-                    {loading && !leave ? (
+                    {fetching || (loading && !leave) ? (
                         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
                             <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
                         </Box>
@@ -361,83 +369,116 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                     {/* Header Summary Card */}
                                     <Box
                                         sx={{
-                                            p: 3,
-                                            borderRadius: 2,
-                                            bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
-                                            boxShadow: (theme) => theme.customShadows?.z12,
-                                            border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.12)}`,
+                                            p: 3.5,
+                                            borderRadius: 3,
                                             position: 'relative',
                                             overflow: 'hidden',
+                                            bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.03),
+                                            border: (theme: any) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                                            boxShadow: (theme: any) => `0 12px 24px -4px ${alpha(theme.palette.common.black, 0.04)}`,
                                         }}
                                     >
-                                        <Stack direction="row" alignItems="center" spacing={{ xs: 1.5, sm: 2.5 }} sx={{ mb: 3 }}>
-                                            <Box
+                                        <Stack direction="row" alignItems="center" spacing={2.5} sx={{ mb: 3.5, position: 'relative', zIndex: 1 }}>
+                                            <Avatar
+                                                src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || leave?.profile_picture || leave?.image}
                                                 sx={{
-                                                    width: 54,
-                                                    height: 54,
-                                                    borderRadius: 1.5,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: 'common.white',
-                                                    background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.info.main} 100%)`,
-                                                    boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.primary.main, 0.24)}`,
+                                                    width: 72,
+                                                    height: 72,
+                                                    borderRadius: '50%',
+                                                    border: (theme: any) => `2px solid ${theme.palette.common.white}`,
+                                                    boxShadow: (theme: any) => `0 8px 24px -4px ${alpha(theme.palette.primary.main, 0.15)}`,
+                                                    bgcolor: (theme: any) => {
+                                                        const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || leave?.profile_picture || leave?.image;
+                                                        if (img) return 'transparent';
+                                                        const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                                        let hash = 0;
+                                                        const name = leave?.employee_name || '';
+                                                        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                                        return colors[Math.abs(hash) % colors.length];
+                                                    },
+                                                    color: (theme: any) => {
+                                                        const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || leave?.profile_picture || leave?.image;
+                                                        return img ? 'inherit' : alpha(theme.palette.common.black, 0.6);
+                                                    },
+                                                    fontSize: '1.75rem',
+                                                    fontWeight: 900,
                                                 }}
                                             >
-                                                <Iconify icon={"solar:user-bold-duotone" as any} width={32} />
-                                            </Box>
+                                                {leave?.employee_name?.charAt(0) || 'U'}
+                                            </Avatar>
                                             <Box>
-                                                <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+                                                <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.2, color: 'text.primary' }}>
                                                     {leave?.employee_name}
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                                    {leave?.employee}
+                                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, mt: 0.2, display: 'block', letterSpacing: 0.5 }}>
+                                                    ID: {leave?.employee || leave?.employee_id || '-'}
                                                 </Typography>
                                             </Box>
                                         </Stack>
 
                                         <Stack
                                             direction="row"
-                                            spacing={{ xs: 1, sm: 4 }}
+                                            alignItems="center"
+                                            justifyContent="space-between"
                                             sx={{
-                                                p: { xs: 1.5, sm: 2 },
-                                                borderRadius: 1.5,
-                                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                                p: 2.5,
+                                                borderRadius: 2,
+                                                bgcolor: 'background.paper',
+                                                boxShadow: (theme) => theme.customShadows?.z8,
+                                                position: 'relative',
+                                                zIndex: 1,
+                                                border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
                                             }}
                                         >
-                                            <Stack spacing={0.5}>
-                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, fontSize: { xs: 8, sm: 10 }, lineHeight: 1.2 }}>TYPE</Typography>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: { xs: 11, sm: 14 } }}>{leave?.leave_type || 'N/A'}</Typography>
+                                            <Stack spacing={0.5} flex={1}>
+                                                <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, textTransform: 'uppercase', fontSize: '11px' }}>
+                                                    TYPE
+                                                </Typography>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 900, color: 'text.primary' }}>
+                                                    {leave?.leave_type || 'N/A'}
+                                                </Typography>
                                             </Stack>
-                                            <Stack spacing={0.5}>
-                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, fontSize: { xs: 8, sm: 10 }, lineHeight: 1.2 }}>DURATION</Typography>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main', fontSize: { xs: 11, sm: 14 } }}>
+
+                                            <Divider orientation="vertical" flexItem sx={{ mx: 3, borderStyle: 'dashed' }} />
+
+                                            <Stack spacing={0.5} flex={1}>
+                                                <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, textTransform: 'uppercase', fontSize: '11px' }}>
+                                                    DURATION
+                                                </Typography>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 900, color: 'primary.main' }}>
                                                     {leave?.leave_type?.toLowerCase() === 'permission'
                                                         ? `${leave?.permission_hours} mins`
                                                         : `${leave?.total_days} days`
                                                     }
                                                 </Typography>
                                             </Stack>
-                                            <Stack spacing={0.5}>
-                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, fontSize: { xs: 8, sm: 10 }, lineHeight: 1.2 }}>STATUS</Typography>
-                                                <Label
-                                                    color={getStatusColor(leave?.workflow_state)}
-                                                    variant="filled"
-                                                    sx={{
-                                                        textTransform: 'uppercase',
-                                                        height: { xs: 20, sm: 22 },
-                                                        px: { xs: 0.75, sm: 1 },
-                                                        fontSize: { xs: 8, sm: 10 }
-                                                    }}
-                                                >
-                                                    {leave?.workflow_state || 'Pending'}
-                                                </Label>
+
+                                            <Divider orientation="vertical" flexItem sx={{ mx: 3, borderStyle: 'dashed' }} />
+
+                                            <Stack spacing={0.5} flex={1}>
+                                                <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, textTransform: 'uppercase', fontSize: '11px' }}>
+                                                    STATUS
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                    <Label
+                                                        color={getStatusColor(leave?.workflow_state)}
+                                                        variant="soft"
+                                                        sx={{
+                                                            fontWeight: 900,
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: 0.5,
+                                                            px: 1.5
+                                                        }}
+                                                    >
+                                                        {leave?.workflow_state || 'Pending'}
+                                                    </Label>
+                                                </Box>
                                             </Stack>
                                         </Stack>
                                     </Box>
 
                                     {/* Date Details */}
-                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3 }}>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3, px: 2 }}>
                                         <DetailRow label="Applied On" value={dayjs(leave?.creation).format('DD MMM YYYY HH:mm')} icon="solar:calendar-bold" />
                                         <DetailRow label="Half Day" value={leave?.half_day === 1 ? `Yes (${dayjs(leave?.half_day_date).format('DD MMM YYYY')})` : 'No'} icon="solar:history-bold" />
                                         <DetailRow label="From Date" value={dayjs(leave?.from_date).format('DD MMM YYYY')} icon="solar:calendar-date-bold" />

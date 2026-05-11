@@ -76,7 +76,7 @@ export function AssetsView() {
     });
 
     const [openFilters, setOpenFilters] = useState(false);
-    const canReset = filters.status !== 'all' || filters.category !== 'all' || filters.startDate !== null || filters.endDate !== null;
+    const canReset = filters.status !== 'all' || filters.category !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const { data, total, refetch } = useAssets(page + 1, rowsPerPage, filterName, orderBy, order, filters);
 
@@ -489,11 +489,8 @@ export function AssetsView() {
                                     />
                                 ))}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                {!empty && !notFound && (
+                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
                                 )}
 
                                 {notFound && <TableNoData searchQuery={filterName} />}

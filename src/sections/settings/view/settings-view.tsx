@@ -1,4 +1,6 @@
+import { PiMoneyWavy } from "react-icons/pi";
 import { useState, useEffect, useCallback } from 'react';
+import { RiKey2Line, RiImageLine, RiGlobalLine, RiDashboardLine, RiNotification3Line, RiLayoutMasonryLine, RiMoneyDollarBoxLine, RiCheckboxCircleLine } from "react-icons/ri";
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -31,13 +33,13 @@ import { SettingsNotifications } from '../settings-notifications';
 // ----------------------------------------------------------------------
 
 const TABS = [
-  { value: 'logo', label: 'Logo', icon: <Iconify icon={"solar:gallery-bold-duotone" as any} width={24} /> },
-  { value: 'sidebar', label: 'Sidebar', icon: <Iconify icon={"solar:widget-bold-duotone" as any} width={24} /> },
-  { value: 'dashboard', label: 'Dashboard', icon: <Iconify icon={"solar:chart-bold-duotone" as any} width={24} /> },
-  { value: 'currency', label: 'Currency & Locale', icon: <Iconify icon={"solar:globus-bold-duotone" as any} width={24} /> },
-  { value: 'notifications', label: 'Notifications', icon: <Iconify icon={"solar:bell-bold-duotone" as any} width={24} /> },
-  { value: 'salary', label: 'Salary Slip', icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} width={24} /> },
-  { value: 'api', label: 'API', icon: <Iconify icon={"solar:key-minimalistic-bold-duotone" as any} width={24} /> },
+  { value: 'logo', label: 'Logo', icon: <RiImageLine size={22} /> },
+  { value: 'sidebar', label: 'Sidebar', icon: <RiLayoutMasonryLine size={22} /> },
+  { value: 'dashboard', label: 'Dashboard', icon: <RiDashboardLine size={22} /> },
+  { value: 'currency', label: 'Currency & Locale', icon: <RiGlobalLine size={22} /> },
+  { value: 'notifications', label: 'Notifications', icon: <RiNotification3Line size={22} /> },
+  { value: 'salary', label: 'Salary Slip', icon: <PiMoneyWavy size={22} /> },
+  { value: 'api', label: 'API', icon: <RiKey2Line size={22} /> },
 ];
 
 export function SettingsView() {
@@ -163,7 +165,7 @@ export function SettingsView() {
 
         <Button
           variant="contained"
-          startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <Iconify icon={"solar:check-circle-bold" as any} />}
+          startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <RiCheckboxCircleLine size={20} />}
           onClick={handleSave}
           disabled={saving}
           sx={{
