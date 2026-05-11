@@ -1,6 +1,6 @@
 import { PiMoneyWavy } from "react-icons/pi";
 import { useState, useEffect, useCallback } from 'react';
-import { RiKey2Line, RiImageLine, RiGlobalLine, RiDashboardLine, RiNotification3Line, RiLayoutMasonryLine, RiMoneyDollarBoxLine, RiCheckboxCircleLine } from "react-icons/ri";
+import { RiKey2Line, RiImageLine, RiGlobalLine, RiDashboardLine, RiNotification3Line, RiLayoutMasonryLine, RiMoneyDollarBoxLine, RiCheckboxCircleLine, RiMailLine } from "react-icons/ri";
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -17,6 +17,7 @@ import { useSettingsContext } from 'src/hooks/settings-context';
 
 import { updateHRMSSettings } from 'src/api/settings';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { getCompanyEmailSettings, updateCompanyEmailSettings, createCompanyEmailSettings } from 'src/api/company-email-settings';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -28,6 +29,7 @@ import { SettingsSidebar } from '../settings-sidebar';
 import { SettingsCurrency } from '../settings-currency';
 import { SettingsDashboard } from '../settings-dashboard';
 import { SettingsSalarySlip } from '../settings-salary-slip';
+import { SettingsCompanyEmail } from '../settings-company-email';
 import { SettingsNotifications } from '../settings-notifications';
 
 // ----------------------------------------------------------------------
@@ -39,6 +41,7 @@ const TABS = [
   { value: 'currency', label: 'Currency & Locale', icon: <RiGlobalLine size={22} /> },
   { value: 'notifications', label: 'Notifications', icon: <RiNotification3Line size={22} /> },
   { value: 'salary', label: 'Salary Slip', icon: <PiMoneyWavy size={22} /> },
+  { value: 'email', label: 'Email', icon: <RiMailLine size={22} /> },
   { value: 'api', label: 'API', icon: <RiKey2Line size={22} /> },
 ];
 
@@ -53,6 +56,13 @@ export function SettingsView() {
     severity: 'success',
   });
 
+  const [emailSettings, setEmailSettings] = useState<any>({
+    hr_email: '',
+    hr_name: '',
+    hr_cc_emails: '',
+  });
+  const [emailSettingsName, setEmailSettingsName] = useState<string | null>(null);
+
   const { user } = useAuth();
   const isAuthorized = (user?.roles || []).some((role: string) =>
     ['HR', 'Administrator', 'System Manager'].includes(role)
@@ -63,6 +73,21 @@ export function SettingsView() {
       setFormData(settings);
     }
   }, [settings, formData]);
+
+  useEffect(() => {
+    const fetchEmailSettings = async () => {
+      const data = await getCompanyEmailSettings();
+      if (data) {
+        setEmailSettingsName(data.name);
+        setEmailSettings({
+          hr_email: data.hr_email || '',
+          hr_name: data.hr_name || '',
+          hr_cc_emails: data.hr_cc_emails || '',
+        });
+      }
+    };
+    fetchEmailSettings();
+  }, []);
 
   const handleChangeTab = useCallback((event: React.SyntheticEvent, newValue: string) => {
     setCurrentTab(newValue);
@@ -75,7 +100,16 @@ export function SettingsView() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await updateHRMSSettings(formData);
+      if (currentTab === 'email') {
+        if (emailSettingsName) {
+          await updateCompanyEmailSettings(emailSettingsName, emailSettings);
+        } else {
+          const newDoc = await createCompanyEmailSettings(emailSettings);
+          setEmailSettingsName(newDoc.name);
+        }
+      } else {
+        await updateHRMSSettings(formData);
+      }
       setSnackbar({ open: true, message: 'Settings updated successfully', severity: 'success' });
       const freshSettings = await refetch();
       if (freshSettings) {
@@ -113,9 +147,25 @@ export function SettingsView() {
   }
 
   return (
-    <DashboardContent maxWidth={false} sx={{ px: { xs: 2, md: 3, lg: 5 }, pb: 5 }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-        <Typography variant="h4">HRMS Settings</Typography>
+    <DashboardContent maxWidth={false} sx={{ px: { xs: 2, md: 3, lg: 5 }, pb: 5, mt: 3 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 4 }}>
+        <Typography variant="body1" sx={{fontSize:'22px', fontWeight: 700}}>HRMS Settings</Typography>
+
+        <Button
+          variant="contained"
+          startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <RiCheckboxCircleLine size={20} />}
+          onClick={handleSave}
+          disabled={saving}
+          sx={{
+            bgcolor: '#08a3cd',
+            '&:hover': { bgcolor: '#068fb3' },
+            borderRadius: 1,
+            textTransform: 'none',
+            fontWeight: 600,
+          }}
+        >
+          {saving ? 'Saving...' : 'Save Settings'}
+        </Button>
       </Stack>
 
       <Stack
@@ -162,23 +212,6 @@ export function SettingsView() {
             />
           ))}
         </Tabs>
-
-        <Button
-          variant="contained"
-          startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <RiCheckboxCircleLine size={20} />}
-          onClick={handleSave}
-          disabled={saving}
-          sx={{
-            bgcolor: '#08a3cd',
-            '&:hover': { bgcolor: '#068fb3' },
-            borderRadius: 1,
-            textTransform: 'none',
-            fontWeight: 600,
-            mr: 1,
-          }}
-        >
-          {saving ? 'Saving...' : 'Save Settings'}
-        </Button>
       </Stack>
 
       <Box sx={{ width: 1 }}>
@@ -229,6 +262,13 @@ export function SettingsView() {
           <SettingsLiveKit
             data={formData}
             onChange={handleUpdateField}
+          />
+        )}
+
+        {currentTab === 'email' && (
+          <SettingsCompanyEmail
+            data={emailSettings}
+            onChange={(fieldname: string, value: any) => setEmailSettings((prev: any) => ({ ...prev, [fieldname]: value }))}
           />
         )}
       </Box>
