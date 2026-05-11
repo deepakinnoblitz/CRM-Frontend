@@ -133,6 +133,8 @@ export function LeaveTypeView() {
     }
   };
 
+  const canReset = filters.status !== 'all' || !!filterName;
+  
   return (
     <DashboardContent maxWidth={false} sx={{mt: 2}}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
@@ -160,7 +162,7 @@ export function LeaveTypeView() {
           sortOptions={SORT_OPTIONS}
           sortBy={`${orderBy}_${order}`}
           onSortChange={handleSortChange}
-          canReset={filters.status !== 'all'}
+          canReset={canReset}
         />
 
         <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
@@ -234,7 +236,7 @@ export function LeaveTypeView() {
         open={openFilters}
         onOpen={handleOpenFilters}
         onClose={handleCloseFilters}
-        canReset={filters.status !== 'all'}
+        canReset={canReset}
         filters={filters}
         onFilters={handleFilters}
         onResetFilters={handleResetFilters}

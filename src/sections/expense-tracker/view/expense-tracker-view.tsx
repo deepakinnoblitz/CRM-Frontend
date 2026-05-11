@@ -176,7 +176,7 @@ export default function ExpenseTrackerView() {
         });
     };
 
-    const canReset = filters.type !== 'all' || !!filters.startDate || !!filters.endDate;
+    const canReset = filters.type !== 'all' || !!filters.startDate || !!filters.endDate || !!filterName;
 
     const notFound = !loading && !data.length && (!!filterName || canReset);
     const empty = !loading && !data.length && !filterName && !canReset;
@@ -267,11 +267,8 @@ export default function ExpenseTrackerView() {
                                     </TableRow>
                                 )}
 
-                                {!loading && data.length < rowsPerPage && !empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                 {!empty && !notFound && (
+                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
                                 )}
                             </TableBody>
                         </Table>

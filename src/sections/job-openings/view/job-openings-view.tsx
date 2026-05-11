@@ -280,7 +280,7 @@ export function JobOpeningsView() {
         setPage(0);
     };
 
-    const canReset = filters.status !== 'all' || filters.location !== 'all' || filters.startDate !== null || filters.endDate !== null;
+    const canReset = filters.status !== 'all' || filters.location !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const handleSortChange = (value: string) => {
         if (value === 'date_desc') { setOrderBy('modified'); setOrder('desc'); }
@@ -399,11 +399,8 @@ export function JobOpeningsView() {
                                     </TableRow>
                                 )}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                 {!empty && !notFound && (
+                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
                                 )}
                             </TableBody>
                         </Table>

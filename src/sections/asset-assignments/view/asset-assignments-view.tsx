@@ -89,7 +89,7 @@ export function AssetAssignmentsView() {
     });
 
     const [openFilters, setOpenFilters] = useState(false);
-    const canReset = filters.employee !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null;
+    const canReset = filters.employee !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const effectiveFilters = useMemo(() => ({
         ...filters,
@@ -417,11 +417,8 @@ export function AssetAssignmentsView() {
                                     />
                                 ))}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                {!empty && !notFound && (
+                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
                                 )}
 
                                 {notFound && <TableNoData searchQuery={filterName} />}

@@ -178,7 +178,7 @@ export function EmployeeDailyLogView() {
         setFilterStartDate(value);
         setPage(0);
     };
-    
+
     const handleFilterEndDate = (value: string) => {
         setFilterEndDate(value);
         setPage(0);
@@ -193,7 +193,7 @@ export function EmployeeDailyLogView() {
         setPage(0);
     };
 
-    const canReset = filterStatus !== 'all' || filterEmployee !== 'all' || filterDay !== 'all' || !!filterStartDate || !!filterEndDate;
+    const canReset = filterStatus !== 'all' || filterEmployee !== 'all' || filterDay !== 'all' || !!filterStartDate || !!filterEndDate || !!filterName;
 
     const handleSortChange = (value: string) => {
         setSortBy(value);
@@ -203,7 +203,7 @@ export function EmployeeDailyLogView() {
     const emptyRows = (!loading && sessions.length > 0) ? (sessions.length < 5 ? 5 - sessions.length : 0) : 0;
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Employee Daily Log
@@ -266,7 +266,7 @@ export function EmployeeDailyLogView() {
                                 {notFound && <TableNoData searchQuery={filterName} />}
                                 {!loading && sessions.length === 0 && !filterName && !canReset && (
                                     <TableRow>
-                                        <TableCell align="center" colSpan={7}>
+                                        <TableCell align="center" colSpan={12}>
                                             <EmptyContent
                                                 title="No Data Available"
                                                 description="There is no activity list created yet."
@@ -326,7 +326,7 @@ export function EmployeeDailyLogView() {
                 onFilterEndDate={handleFilterEndDate}
                 canReset={canReset}
                 onResetFilters={handleResetFilters}
-                options={{ 
+                options={{
                     status: STATUS_OPTIONS,
                     employees: employees,
                     days: [

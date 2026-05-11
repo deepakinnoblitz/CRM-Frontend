@@ -42,6 +42,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { useAuth } from 'src/auth/auth-context';
 
+import { TableNoData } from '../../lead/table-no-data';
 import AutoAllocateDialog from './auto-allocate-dialog';
 import AutoAllocateResultDialog from './auto-allocate-result-dialog';
 import { LeaveAllocationTableRow } from './leave-allocation-table-row';
@@ -49,7 +50,6 @@ import { LeadTableHead as LeavesTableHead } from '../../lead/lead-table-head';
 import { LeaveAllocationDetailsDialog } from './leave-allocation-details-dialog';
 import { LeaveAllocationFiltersDrawer } from './leave-allocation-filters-drawer';
 import { LeadTableToolbar as LeavesTableToolbar } from '../../lead/lead-table-toolbar';
-
 
 // ----------------------------------------------------------------------
 
@@ -294,7 +294,7 @@ export function LeaveAllocationView() {
 
                     sortOptions={SORT_OPTIONS}
                     onOpenFilter={() => setOpenFilters(true)}
-                    canReset={filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== null || filters.startDate !== null || filters.endDate !== null}
+                    canReset={filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== null || filters.startDate !== null || filters.endDate !== null || !!filterName}
                 />
 
                 <Scrollbar>
@@ -349,10 +349,14 @@ export function LeaveAllocationView() {
                                     />
                                 ))}
 
-                                {!data.length && !loading && (
+                                {filterName && !data.length && !loading && (
+                                    <TableNoData searchQuery={filterName} />
+                                )}
+
+                                {!data.length && !loading && !filterName && (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
-                                            <EmptyContent title="No allocations found" />
+                                        <TableCell colSpan={12}>
+                                            <EmptyContent title="No Leave Allocation Found" sx={{ py: 16 }} />
                                         </TableCell>
                                     </TableRow>
                                 )}

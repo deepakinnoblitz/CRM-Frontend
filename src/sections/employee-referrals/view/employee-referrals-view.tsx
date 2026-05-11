@@ -26,6 +26,7 @@ import { fetchOpenJobs, fetchMyReferrals, createJobApplicant } from 'src/api/ref
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { TableEmptyRows } from 'src/components/table';
 import { EmptyContent } from 'src/components/empty-content';
 
 import { ReferralModal } from '../referral-modal';
@@ -168,7 +169,7 @@ export function EmployeeReferralsView() {
     setPage(0);
   };
 
-  const canReset = filters.status !== 'all' || filters.job_opening !== 'all' || filters.location !== 'all';
+  const canReset = filters.status !== 'all' || filters.job_opening !== 'all' || filters.location !== 'all' || !!filterName;
   const activeFiltersCount = (filters.status !== 'all' ? 1 : 0) +
     (filters.job_opening !== 'all' ? 1 : 0) +
     (filters.location !== 'all' ? 1 : 0);
@@ -192,6 +193,11 @@ export function EmployeeReferralsView() {
       setSnackbar({ open: true, message: error.message || 'Failed to create applicant', severity: 'error' });
     }
   };
+  
+  const emptyJobs = !jobs.length && !filterName;
+  const notFoundJobs = !jobs.length && !!filterName;
+  const emptyReferrals = !referrals.length && !filterName;
+  const notFoundReferrals = !referrals.length && !!filterName;
 
   return (
     <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -227,6 +233,7 @@ export function EmployeeReferralsView() {
             { value: 'date_desc', label: 'Newest First' },
             { value: 'date_asc', label: 'Oldest First' },
           ]}
+          canReset={canReset}
         />
 
         <Scrollbar>
@@ -244,7 +251,13 @@ export function EmployeeReferralsView() {
                       <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Action</TableCell>
                     </TableRow>
                     {jobs.map((row, index) => (
-                      <TableRow key={row.name}>
+                      <TableRow
+                        key={row.name}
+                        sx={{
+                          '& td, & th': { borderBottom: (theme) => `1px solid ${theme.palette.divider}` },
+                          '&:last-child td, &:last-child th': { borderBottom: 0 },
+                        }}
+                      >
                         <TableCell align="center">
                           <Box
                             sx={{
@@ -294,12 +307,27 @@ export function EmployeeReferralsView() {
                         </TableCell>
                       </TableRow>
                     ))}
-                    {!jobs.length && !loading && (
+                    {!emptyJobs && !notFoundJobs && (
+                      <TableEmptyRows height={68} emptyRows={jobs.length < 5 ? 5 - jobs.length : 0} />
+                    )}
+                    {emptyJobs && (
                       <TableRow>
                         <TableCell colSpan={6}>
                           <EmptyContent
-                            title={filterName ? "No matches found" : "No Job Openings"}
-                            description={filterName ? `No results found for "${filterName}"` : "There are currently no active job openings."}
+                            title="No Job Openings"
+                            description="There are currently no active job openings."
+                            icon="solar:case-minimalistic-bold-duotone"
+                            sx={{ py: 10 }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {notFoundJobs && (
+                      <TableRow>
+                        <TableCell colSpan={6}>
+                          <EmptyContent
+                            title="No matches found"
+                            description={`No results found for "${filterName}"`}
                             icon="solar:case-minimalistic-bold-duotone"
                             sx={{ py: 10 }}
                           />
@@ -319,7 +347,13 @@ export function EmployeeReferralsView() {
                       <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Action</TableCell>
                     </TableRow>
                     {referrals.map((row, index) => (
-                      <TableRow key={row.name}>
+                      <TableRow
+                        key={row.name}
+                        sx={{
+                          '& td, & th': { borderBottom: (theme) => `1px solid ${theme.palette.divider}` },
+                          '&:last-child td, &:last-child th': { borderBottom: 0 },
+                        }}
+                      >
                         <TableCell align="center">
                           <Box
                             sx={{
@@ -379,12 +413,27 @@ export function EmployeeReferralsView() {
                         </TableCell>
                       </TableRow>
                     ))}
-                    {!referrals.length && !loading && (
+                    {!emptyReferrals && !notFoundReferrals && (
+                      <TableEmptyRows height={68} emptyRows={referrals.length < 5 ? 5 - referrals.length : 0} />
+                    )}
+                    {emptyReferrals && (
                       <TableRow>
                         <TableCell colSpan={viewType === 'hr' ? 7 : 6}>
                           <EmptyContent
-                            title={filterName ? "No matches found" : "No Referrals Found"}
-                            description={filterName ? `No results found for "${filterName}"` : (viewType === 'hr' ? "No referrals found in the system." : "You haven't submitted any referrals yet.")}
+                            title="No Referrals Found"
+                            description={viewType === 'hr' ? "No referrals found in the system." : "You haven't submitted any referrals yet."}
+                            icon="solar:user-id-bold-duotone"
+                            sx={{ py: 10 }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {notFoundReferrals && (
+                      <TableRow>
+                        <TableCell colSpan={viewType === 'hr' ? 7 : 6}>
+                          <EmptyContent
+                            title="No matches found"
+                            description={`No results found for "${filterName}"`}
                             icon="solar:user-id-bold-duotone"
                             sx={{ py: 10 }}
                           />
@@ -406,7 +455,7 @@ export function EmployeeReferralsView() {
           onPageChange={handleChangePage}
           rowsPerPageOptions={[5, 10, 25]}
           onRowsPerPageChange={handleChangeRowsPerPage}
-          sx={{ borderTop: (t) => `1px solid ${t.palette.divider}` }}
+          sx={{ borderTop: 'none' }}
         />
       </Card>
 

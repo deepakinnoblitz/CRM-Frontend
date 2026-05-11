@@ -397,7 +397,7 @@ export function InterviewsView() {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const canReset = filters.status !== 'all' || filters.job_applied !== 'all' || !!filters.startDate || !!filters.endDate;
+    const canReset = filters.status !== 'all' || filters.job_applied !== 'all' || !!filters.startDate || !!filters.endDate || !!filterName;
 
     const notFound = !data.length && !!filterName;
     const empty = !data.length && !filterName && !canReset;
@@ -506,12 +506,9 @@ export function InterviewsView() {
                                     </TableRow>
                                 )}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
-                                )}
+                            {!empty && !notFound && (
+                            <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                            )}
                             </TableBody>
                         </Table>
                     </TableContainer>

@@ -1,4 +1,5 @@
 import { GiAlarmClock } from "react-icons/gi";
+import { TbBellSearch } from "react-icons/tb";
 import { IoCalendarNumberOutline } from "react-icons/io5";
 import { useRef, useEffect, useState, useCallback } from 'react';
 
@@ -38,6 +39,7 @@ import { Iconify } from 'src/components/iconify';
 import { useAuth } from 'src/auth/auth-context';
 
 import { ReminderDialog } from './reminder-dialog';
+import { MyRemindersDialog } from './my-reminders-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -76,6 +78,7 @@ export function UserStatusBar() {
     const [idlePermissionDialogOpen, setIdlePermissionDialogOpen] = useState(false);
     const [idleSupportError, setIdleSupportError] = useState<string | null>(null);
     const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
+    const [myRemindersDialogOpen, setMyRemindersDialogOpen] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
@@ -656,10 +659,35 @@ export function UserStatusBar() {
                     </Stack>
                     <Iconify icon="eva:chevron-right-fill" width={20} sx={{ color: 'text.secondary' }} />
                 </MenuItem>
+                
+                               {/* My Reminders */}
+                <MenuItem
+                    onClick={() => {
+                        handleClose();
+                        setMyRemindersDialogOpen(true);
+                    }}
+                    sx={{
+                        mx: 1,
+                        mb: 1,
+                        borderRadius: 1,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        '&:hover': {
+                            backgroundColor: alpha(theme.palette.grey[500], 0.08),
+                        },
+                    }}
+                >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                        <TbBellSearch size={20} color="#494949"/>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            My Reminders
+                        </Typography>
+                    </Stack>
+                    <Iconify icon="eva:chevron-right-fill" width={20} sx={{ color: 'text.secondary' }} />
+                </MenuItem>
 
                 <Divider />
             </Menu>
-
 
 
             {/* ── Check-In Dialog (Redesigned) ── */}
@@ -1204,6 +1232,13 @@ export function UserStatusBar() {
             <ReminderDialog
                 open={reminderDialogOpen}
                 onClose={() => setReminderDialogOpen(false)}
+                onSuccess={(msg) => setSnackbar({ open: true, message: msg, severity: 'success' })}
+                onError={(msg) => setSnackbar({ open: true, message: msg, severity: 'error' })}
+            />
+
+            <MyRemindersDialog
+                open={myRemindersDialogOpen}
+                onClose={() => setMyRemindersDialogOpen(false)}
                 onSuccess={(msg) => setSnackbar({ open: true, message: msg, severity: 'success' })}
                 onError={(msg) => setSnackbar({ open: true, message: msg, severity: 'error' })}
             />

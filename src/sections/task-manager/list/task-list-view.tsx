@@ -152,6 +152,7 @@ export default function TaskListView({
     }, []);
 
     const canReset =
+        !!filterName ||
         filters.status !== 'all' ||
         filters.project !== 'all' ||
         filters.priority !== 'all' ||
@@ -412,12 +413,13 @@ export default function TaskListView({
                                                 title="No tasks found"
                                                 description="Create your first task to get started."
                                                 icon="solar:clipboard-list-bold-duotone"
+                                                sx={{ py: 5 }}
                                             />
                                         </TableCell>
                                     </TableRow>
                                 )}
 
-                                {!isEmpty && (
+                                {!isEmpty && !isNotFound && (
                                     <TableEmptyRows
                                         height={68}
                                         emptyRows={dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).length < 5 ? 5 - dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).length : 0}

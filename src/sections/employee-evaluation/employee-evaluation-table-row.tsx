@@ -80,7 +80,7 @@ export function EmployeeEvaluationEventTableRow({
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
             {employee_name || 'Unknown'}
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             {employee}
           </Typography>
         </Box>

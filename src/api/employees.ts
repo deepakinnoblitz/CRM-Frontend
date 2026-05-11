@@ -59,10 +59,16 @@ export async function createEmployee(data: Partial<Employee>) {
 export async function updateEmployee(name: string, data: Partial<Employee>) {
     const headers = await getAuthHeaders();
 
-    const res = await frappeRequest("/api/method/frappe.client.set_value", {
+    const res = await frappeRequest("/api/method/frappe.client.save", {
         method: "POST",
         headers,
-        body: JSON.stringify({ doctype: "Employee", name, fieldname: data })
+        body: JSON.stringify({
+            doc: {
+                doctype: "Employee",
+                ...data,
+                name
+            }
+        })
     });
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update employee"));

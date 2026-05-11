@@ -21,13 +21,13 @@ export function TableNoData({ notFound, searchQuery }: Props) {
   return (
     <TableRow>
       <TableCell colSpan={12}>
-        <Box sx={{ py: 10, textAlign: 'center' }}>
+        <Box sx={{ py: 5, textAlign: 'center' }}>
           <Iconify
             icon="solar:clipboard-list-bold-duotone"
             width={64}
             sx={{ color: 'text.disabled', mb: 2, opacity: 0.48 }}
           />
-          
+
           <Typography variant="h6" sx={{ mb: 1, color: 'text.disabled' }}>
             No tasks found
           </Typography>

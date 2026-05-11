@@ -163,8 +163,8 @@ export const fetchProjects = (params: any) => {
     const { search, ...restParams } = params;
 
     const or_filters = search ? [
-        ["project_name", "like", `%${search}%`],
-        ["name", "like", `%${search}%`],
+        ["Project", "project", "like", `%${search}%`],
+        ["Project", "name", "like", `%${search}%`],
     ] : undefined;
 
     return fetchFrappeList("Project", {
@@ -238,6 +238,7 @@ export const fetchActivityTypes = (params: any) => {
     const { search, ...restParams } = params;
 
     const or_filters = search ? [
+        ["Activity Type", "name", "like", `%${search}%`],
         ["Activity Type", "activity_type", "like", `%${search}%`],
     ] : undefined;
 

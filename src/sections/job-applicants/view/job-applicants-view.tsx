@@ -287,7 +287,8 @@ export function JobApplicantsView() {
     filters.status !== 'all' ||
     filters.job_title !== 'all' ||
     filters.startDate !== null ||
-    filters.endDate !== null;
+    filters.endDate !== null ||
+    !!filterName;
 
   const handleSortChange = (value: string) => {
     if (value === 'date_desc') {
@@ -416,7 +417,7 @@ export function JobApplicantsView() {
                   </TableRow>
                 )}
 
-                {!empty && (
+                {!empty && !notFound && (
                   <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
                 )}
               </TableBody>

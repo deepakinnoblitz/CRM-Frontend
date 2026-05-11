@@ -663,7 +663,7 @@ export function EmployeeView() {
         });
     };
 
-    const canReset = filters.department !== 'all' || filters.designation !== 'all' || filters.status !== 'all' || filters.country !== '' || filters.state !== '' || filters.city !== '';
+    const canReset = !!filterName || filters.department !== 'all' || filters.designation !== 'all' || filters.status !== 'all' || filters.country !== '' || filters.state !== '' || filters.city !== '';
 
     const handleBulkDelete = async () => {
         try {
@@ -772,11 +772,9 @@ export function EmployeeView() {
 
             // Handle pending document uploads
             const documents = [...(dataToSave.documents || [])];
-            let hasNewUploads = false;
 
             for (let i = 0; i < documents.length; i++) {
                 if (documents[i].pendingFile) {
-                    hasNewUploads = true;
                     try {
                         const uploaded = await uploadFile(
                             documents[i].pendingFile,
@@ -793,9 +791,7 @@ export function EmployeeView() {
                 }
             }
 
-            if (hasNewUploads) {
-                dataToSave.documents = documents;
-            }
+            dataToSave.documents = documents;
 
             if (currentEmployeeId) {
                 await updateEmployee(currentEmployeeId, dataToSave as any);
@@ -1575,12 +1571,13 @@ export function EmployeeView() {
                                                 title="No employees found"
                                                 description="Click 'New Employee' to add your first team member."
                                                 icon="solar:users-group-rounded-bold-duotone"
+                                                sx={{ py: 5 }}
                                             />
                                         </TableCell>
                                     </TableRow>
                                 )}
 
-                                {!empty && (
+                                {!empty && !notFound && (
                                     <TableEmptyRows
                                         height={68}
                                         emptyRows={data.length < 5 ? 5 - data.length : 0}
@@ -1640,7 +1637,7 @@ export function EmployeeView() {
                     >
                         <Tab
                             label="Employee Info"
-                            icon={<LuUserCheck  size={20} />}
+                            icon={<LuUserCheck size={20} />}
                             iconPosition="start"
                         />
                         <Tab
@@ -1650,7 +1647,7 @@ export function EmployeeView() {
                         />
                         <Tab
                             label="Documents"
-                            icon={<GrDocumentLocked  size={20} />}
+                            icon={<GrDocumentLocked size={20} />}
                             iconPosition="start"
                         />
                     </Tabs>

@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import dayjs, { Dayjs } from 'dayjs';
+import { useState, useEffect } from 'react';
 import { useBoolean } from 'minimal-shared/hooks';
 
 import Box from '@mui/material/Box';
@@ -29,6 +29,7 @@ type Props = {
   onClose: VoidFunction;
   onSuccess?: (message: string) => void;
   onError?: (message: string) => void;
+  reminder?: any;
 };
 
 const TYPE_OPTIONS = [
@@ -43,7 +44,7 @@ const DAY_OPTIONS = [
   'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
 ];
 
-export function ReminderDialog({ open, onClose, onSuccess, onError }: Props) {
+export function ReminderDialog({ open, onClose, onSuccess, onError, reminder }: Props) {
   const theme = useTheme();
   const isSubmitting = useBoolean();
   const [type, setType] = useState('Task');
@@ -52,6 +53,25 @@ export function ReminderDialog({ open, onClose, onSuccess, onError }: Props) {
   const [date, setDate] = useState<Dayjs | null>(dayjs());
   const [time, setTime] = useState<Dayjs | null>(dayjs().add(15, 'minute'));
   const [day, setDay] = useState('Monday');
+
+  useEffect(() => {
+    if (reminder) {
+      setType(reminder.type || 'Task');
+      setRepeat(reminder.repeat || 'Single');
+      setMessage(reminder.message || '');
+      setDate(reminder.date ? dayjs(reminder.date) : dayjs());
+      setTime(reminder.time ? dayjs(`2000-01-01 ${reminder.time}`) : dayjs().add(15, 'minute'));
+      setDay(reminder.day || 'Monday');
+    } else {
+      // Reset to defaults for new reminder
+      setType('Task');
+      setRepeat('Single');
+      setMessage('');
+      setDate(dayjs());
+      setTime(dayjs().add(15, 'minute'));
+      setDay('Monday');
+    }
+  }, [reminder, open]);
 
   const handleSave = async () => {
     if (!time) {
@@ -68,6 +88,7 @@ export function ReminderDialog({ open, onClose, onSuccess, onError }: Props) {
       isSubmitting.onTrue();
 
       const payload = {
+        name: reminder?.name,
         type,
         repeat,
         message,
@@ -78,7 +99,7 @@ export function ReminderDialog({ open, onClose, onSuccess, onError }: Props) {
       };
 
       await saveRemainder(payload);
-      onSuccess?.('Reminder set successfully!');
+      onSuccess?.(reminder ? 'Reminder updated successfully!' : 'Reminder set successfully!');
       onClose();
       // Reset form
       setMessage('');
@@ -105,7 +126,7 @@ export function ReminderDialog({ open, onClose, onSuccess, onError }: Props) {
     >
       <DialogTitle sx={{ pb: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Typography variant="h6" sx={{ fontWeight: 700, my: 2 }}>
-          Set New Reminder
+          {reminder ? 'Edit Reminder' : 'Set New Reminder'}
         </Typography>
       </DialogTitle>
 
@@ -210,13 +231,13 @@ export function ReminderDialog({ open, onClose, onSuccess, onError }: Props) {
           onClick={handleSave}
           loading={isSubmitting.value}
           sx={{
-            px: 4,
+            px: 2,
             fontWeight: 700,
             borderRadius: 1.5,
             boxShadow: theme.customShadows.primary,
           }}
         >
-          Create Reminder
+          {reminder ? 'Update Reminder' : 'Create Reminder'}
         </Button>
       </DialogActions>
     </Dialog>

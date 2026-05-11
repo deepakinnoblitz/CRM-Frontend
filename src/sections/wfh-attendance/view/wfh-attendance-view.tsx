@@ -79,7 +79,7 @@ export function WFHAttendanceView() {
         endDate: null
     });
 
-    const canReset = filters.employee !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null;
+    const canReset = filters.employee !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const [openDetails, setOpenDetails] = useState(false);
     const [detailsId, setDetailsId] = useState<string | null>(null);
@@ -492,7 +492,7 @@ export function WFHAttendanceView() {
     };
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     WFH Attendance List
@@ -599,7 +599,7 @@ export function WFHAttendanceView() {
                                     </TableRow>
                                 )}
 
-                                {!empty && (
+                                {!empty && !notFound && (
                                     <TableEmptyRows
                                         height={68}
                                         emptyRows={data.length < 5 ? 5 - data.length : 0}

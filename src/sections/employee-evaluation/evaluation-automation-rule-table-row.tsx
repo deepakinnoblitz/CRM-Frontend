@@ -1,11 +1,12 @@
+import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
-import { styled } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import { alpha, styled } from '@mui/material/styles';
 
 import { EvaluationAutomationRule } from 'src/api/employee-evaluation';
 
@@ -83,9 +84,38 @@ export function EvaluationAutomationRuleTableRow({ row, index, onEdit, onDelete,
     }
 
     return (
-        <TableRow hover>
-            <TableCell align="center" sx={{ width: 60 }}>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>{index + 1}</Typography>
+        <TableRow
+            hover
+            sx={{
+                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                '&:last-child td, &:last-child th': { borderBottom: 0 },
+            }}
+        >
+            <TableCell align="center">
+                <Box
+                    sx={{
+                        width: 28,
+                        height: 28,
+                        display: 'flex',
+                        borderRadius: '50%',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                        color: 'primary.main',
+                        typography: 'subtitle2',
+                        fontWeight: 800,
+                        border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                        mx: 'auto',
+                        transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+                        '&:hover': {
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
+                            transform: 'scale(1.1)',
+                        },
+                    }}
+                >
+                    {index + 1}
+                </Box>
             </TableCell>
 
             <TableCell>

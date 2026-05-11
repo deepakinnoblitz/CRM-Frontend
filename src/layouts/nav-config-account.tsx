@@ -1,3 +1,7 @@
+import { FaUserTie } from "react-icons/fa";
+import { IoMdSettings } from "react-icons/io";
+import { IoHomeOutline } from "react-icons/io5";
+
 import { Iconify } from 'src/components/iconify';
 
 import type { AccountPopoverProps } from './components/account-popover';
@@ -8,16 +12,16 @@ export const _account: AccountPopoverProps['data'] = [
   {
     label: 'Home',
     href: '/',
-    icon: <Iconify width={22} icon="solar:home-angle-bold-duotone" />,
+    icon: <IoHomeOutline size={16} />,
   },
   {
     label: 'Profile',
     href: '/profile',
-    icon: <Iconify width={22} icon="solar:shield-keyhole-bold-duotone" />,
+    icon: <FaUserTie size={16} />,
   },
   {
     label: 'Settings',
     href: '/settings',
-    icon: <Iconify width={22} icon="solar:settings-bold-duotone" />,
+    icon: <IoMdSettings size={18}/>,
   }
 ];

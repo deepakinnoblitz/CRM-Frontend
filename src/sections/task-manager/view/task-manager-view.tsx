@@ -191,6 +191,7 @@ export default function TaskManagerView() {
     }), [sortBy]);
 
     const kanbanCanReset =
+        !!filterName ||
         kanbanFilters.status !== 'all' ||
         kanbanFilters.project !== 'all' ||
         kanbanFilters.priority !== 'all' ||

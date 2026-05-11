@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
@@ -14,6 +15,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
+import { getEmployee } from 'src/api/employees';
 import { getRequest, updateRequestStatus } from 'src/api/requests';
 
 import { Label } from 'src/components/label';
@@ -35,21 +37,38 @@ type Props = {
 
 export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket }: Props) {
     const { user } = useAuth();
-    const [loading, setLoading] = useState<string | null>(null);
     const [openClarification, setOpenClarification] = useState(false);
     const [clarificationType, setClarificationType] = useState<'HR' | 'Employee'>('HR');
     const [internalRequest, setInternalRequest] = useState<any>(request);
+    const [employeeDetails, setEmployeeDetails] = useState<any>(null);
+    const [loading, setLoading] = useState<string | null>(null);
+    const [fetching, setFetching] = useState(false);
 
     useEffect(() => {
-        setInternalRequest(request);
-    }, [request]);
+        if (open && request?.name) {
+            setFetching(true);
+            setInternalRequest(request);
+            setEmployeeDetails(null);
 
-    useEffect(() => {
-        if (open && internalRequest?.name) {
-            // Fetch fresh data when dialog opens
-            getRequest(internalRequest.name).then(setInternalRequest).catch(console.error);
+            getRequest(request.name)
+                .then((data) => {
+                    setInternalRequest(data);
+                    const empId = data.employee || data.employee_id;
+                    if (empId) {
+                        getEmployee(empId)
+                            .then(setEmployeeDetails)
+                            .catch(console.error)
+                            .finally(() => setFetching(false));
+                    } else {
+                        setFetching(false);
+                    }
+                })
+                .catch((err) => {
+                    console.error(err);
+                    setFetching(false);
+                });
         }
-    }, [open, internalRequest?.name]);
+    }, [open, request?.name, request]);
 
     // Real-time: refresh when this specific request changes
     useEffect(() => {
@@ -272,7 +291,11 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
             </DialogTitle>
 
             <DialogContent sx={{ p: 4, pt: 0 }}>
-                {internalRequest ? (
+                {fetching ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
+                        <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
+                    </Box>
+                ) : internalRequest ? (
                     <Box
                         sx={{
                             display: 'grid',
@@ -286,65 +309,100 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
                                 {/* Header Summary Card */}
                                 <Box
                                     sx={{
-                                        p: 3,
-                                        borderRadius: 2,
-                                        bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
-                                        boxShadow: (theme) => theme.customShadows?.z12,
-                                        border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.12)}`,
+                                        p: 3.5,
+                                        borderRadius: 3,
                                         position: 'relative',
                                         overflow: 'hidden',
+                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.03),
+                                        border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                                        boxShadow: (theme) => `0 12px 24px -4px ${alpha(theme.palette.common.black, 0.04)}`,
                                     }}
                                 >
-                                    <Stack direction="row" alignItems="center" spacing={2.5} sx={{ mb: 3 }}>
-                                        <Box
+                                    <Stack direction="row" alignItems="center" spacing={2.5} sx={{ mb: 3.5, position: 'relative', zIndex: 1 }}>
+                                        <Avatar
+                                            src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image}
                                             sx={{
-                                                width: 54,
-                                                height: 54,
-                                                borderRadius: 1.5,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: 'common.white',
-                                                background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.info.main} 100%)`,
-                                                boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.primary.main, 0.24)}`,
+                                                width: 72,
+                                                height: 72,
+                                                borderRadius: '50%',
+                                                border: (theme: any) => `2px solid ${theme.palette.common.white}`,
+                                                boxShadow: (theme: any) => `0 8px 24px -4px ${alpha(theme.palette.primary.main, 0.15)}`,
+                                                bgcolor: (theme: any) => {
+                                                    const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image;
+                                                    if (img) return 'transparent';
+                                                    const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                                    let hash = 0;
+                                                    const name = internalRequest?.employee_name || '';
+                                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                                    return colors[Math.abs(hash) % colors.length];
+                                                },
+                                                color: (theme: any) => {
+                                                    const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image;
+                                                    return img ? 'inherit' : alpha(theme.palette.common.black, 0.6);
+                                                },
+                                                fontSize: '1.75rem',
+                                                fontWeight: 900,
                                             }}
                                         >
-                                            <Iconify icon={"solar:user-bold-duotone" as any} width={32} />
-                                        </Box>
+                                            {internalRequest?.employee_name?.charAt(0) || 'U'}
+                                        </Avatar>
                                         <Box>
-                                            <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+                                            <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.2, color: 'text.primary' }}>
                                                 {internalRequest?.employee_name}
                                             </Typography>
-                                            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                                {internalRequest?.employee}
+                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, mt: 0.2, display: 'block', letterSpacing: 0.5 }}>
+                                                ID: {internalRequest?.employee || internalRequest?.employee_id || '-'}
                                             </Typography>
                                         </Box>
                                     </Stack>
 
                                     <Stack
                                         direction="row"
-                                        spacing={4}
+                                        alignItems="center"
+                                        justifyContent="space-between"
                                         sx={{
-                                            p: 2,
-                                            borderRadius: 1.5,
-                                            bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                            p: 2.5,
+                                            borderRadius: 2,
+                                            bgcolor: 'background.paper',
+                                            boxShadow: (theme) => theme.customShadows?.z8,
+                                            position: 'relative',
+                                            zIndex: 1,
+                                            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
                                         }}
                                     >
-                                        <Stack spacing={0.5}>
-                                            <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800 }}>STATUS</Typography>
-                                            {renderStatus(internalRequest.workflow_state)}
+                                        <Stack spacing={0.5} flex={1}>
+                                            <Typography variant="overline" sx={{ color: 'text.primary', fontWeight: 800, fontSize: '0.70rem' }}>STATUS</Typography>
+                                            <Box sx={{ display: 'flex' }}>
+                                                {renderStatus(internalRequest.workflow_state)}
+                                            </Box>
                                         </Stack>
-                                        <Stack spacing={0.5}>
-                                            <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800 }}>ID</Typography>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{internalRequest.name}</Typography>
+
+                                        <Divider orientation="vertical" flexItem sx={{ mx: 3, borderStyle: 'dashed' }} />
+
+                                        <Stack spacing={0.5} flex={1}>
+                                            <Typography variant="overline" sx={{ color: 'text.primary', fontWeight: 800, fontSize: '0.70rem' }}>ID</Typography>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                                                {internalRequest.name}
+                                            </Typography>
+                                        </Stack>
+
+                                        <Divider orientation="vertical" flexItem sx={{ mx: 3, borderStyle: 'dashed' }} />
+
+                                        <Stack spacing={0.5} flex={1.5}>
+                                            <Typography variant="overline" sx={{ color: 'text.primary', fontWeight: 800, fontSize: '0.70rem' }}>Submitted ON</Typography>
+                                            <Stack direction="row" alignItems="center" spacing={1}>
+                                                <Iconify icon="solar:calendar-bold" width={14} sx={{ color: 'text.disabled' }} />
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                                                    {internalRequest.creation ? new Date(internalRequest.creation).toLocaleString() : '-'}
+                                                </Typography>
+                                            </Stack>
                                         </Stack>
                                     </Stack>
                                 </Box>
 
                                 {/* Request Info */}
-                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
+                                <Box>
                                     <DetailItem label="Subject" value={internalRequest.subject} icon="solar:document-text-bold" />
-                                    <DetailItem label="Created On" value={internalRequest.creation ? new Date(internalRequest.creation).toLocaleString() : '-'} icon="solar:calendar-bold" />
                                 </Box>
 
                                 {/* Message Section */}
@@ -463,8 +521,8 @@ function SectionHeader({ title, icon, noMargin = false }: { title: string; icon:
 
 function DetailItem({ label, value, icon }: { label: string; value?: string | null; icon: string }) {
     return (
-        <Box>
-            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
+        <Box sx={{ m: 3 }}>
+            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block', py: 1, fontSize: '13px' }}>
                 {label}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

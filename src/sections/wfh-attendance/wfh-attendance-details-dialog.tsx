@@ -8,10 +8,11 @@ import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
-import { Button, Stack, DialogActions } from '@mui/material';
+import { Button, Stack, DialogActions, Avatar } from '@mui/material';
 
 import { fTime } from 'src/utils/format-time';
 
+import { getEmployee } from 'src/api/employees';
 import { handleWFHAction, getWFHAttendance } from 'src/api/wfh-attendance';
 
 import { Label } from 'src/components/label';
@@ -30,7 +31,9 @@ type Props = {
 
 export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Props) {
     const [wfh, setWfh] = useState<any>(null);
+    const [employeeDetails, setEmployeeDetails] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(false);
 
     const { user } = useAuth();
     const [actionLoading, setActionLoading] = useState(false);
@@ -41,9 +44,21 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
     useEffect(() => {
         if (open && wfhId) {
             setLoading(true);
+            setFetching(true);
             getWFHAttendance(wfhId)
-                .then(setWfh)
-                .catch((err) => console.error('Failed to fetch WFH details:', err))
+                .then((data) => {
+                    setWfh(data);
+                    const empId = data.employee || data.employee_id;
+                    if (empId) {
+                        getEmployee(empId).then(setEmployeeDetails).catch(console.error).finally(() => setFetching(false));
+                    } else {
+                        setFetching(false);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch WFH details:', err);
+                    setFetching(false);
+                })
                 .finally(() => setLoading(false));
         }
     }, [open, wfhId]);
@@ -93,7 +108,7 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
             </DialogTitle>
 
             <DialogContent dividers sx={{ p: 4 }}>
-                {loading ? (
+                {fetching || (loading && !wfh) ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
                         <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
                     </Box>
@@ -101,26 +116,39 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {/* Header Info */}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
-                            <Box
+                            <Avatar
+                                src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || wfh?.profile_picture || wfh?.image}
                                 sx={{
-                                    width: 64,
-                                    height: 64,
-                                    borderRadius: 1.5,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                                    color: 'primary.main',
+                                    width: 72,
+                                    height: 72,
+                                    borderRadius: '50%',
+                                    border: (theme: any) => `2px solid ${theme.palette.common.white}`,
+                                    boxShadow: (theme: any) => `0 8px 24px -4px ${alpha(theme.palette.primary.main, 0.15)}`,
+                                    bgcolor: (theme: any) => {
+                                        const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || wfh?.profile_picture || wfh?.image;
+                                        if (img) return 'transparent';
+                                        const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                        let hash = 0;
+                                        const name = wfh?.employee_name || '';
+                                        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                        return colors[Math.abs(hash) % colors.length];
+                                    },
+                                    color: (theme: any) => {
+                                        const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || wfh?.profile_picture || wfh?.image;
+                                        return img ? 'inherit' : alpha(theme.palette.common.black, 0.6);
+                                    },
+                                    fontSize: '1.75rem',
+                                    fontWeight: 900,
                                 }}
                             >
-                                <Iconify icon={"solar:user-rounded-bold-duotone" as any} width={32} />
-                            </Box>
+                                {wfh?.employee_name?.charAt(0) || 'U'}
+                            </Avatar>
                             <Box sx={{ flexGrow: 1 }}>
-                                <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                                <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.2, color: 'text.primary' }}>
                                     {wfh.employee_name || wfh.employee}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                    Employee ID: {wfh.employee}
+                                    ID: {wfh.employee}
                                 </Typography>
                             </Box>
                             <Box sx={{ textAlign: 'right' }}>

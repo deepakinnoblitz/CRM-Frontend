@@ -6,7 +6,9 @@ import Alert from '@mui/material/Alert';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
+import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
@@ -18,12 +20,14 @@ import { getUser, createUser, updateUser, deleteUser } from 'src/api/users';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from '../table-no-data';
 import { UserTableRow } from '../user-table-row';
 import { UserTableHead } from '../user-table-head';
 import { UserFormDialog } from '../user-form-dialog';
+import { TableEmptyRows } from '../table-empty-rows';
 import { UserDetailsDialog } from '../user-details-dialog';
 import { LeadTableToolbar } from '../../lead/lead-table-toolbar';
 import { UserTableFiltersDrawer } from '../user-table-filters-drawer';
@@ -259,9 +263,12 @@ export const UserView = forwardRef(
       filters.user_type !== 'all' ||
       filters.enabled !== 'all' ||
       filters.permission !== 'all' ||
-      filters.roles.length > 0;
+      filters.roles.length > 0 ||
+      !!filterName;
 
     const notFound = !loading && !data.length && (!!filterName || canReset);
+
+    const empty = !loading && !data.length && !filterName && !canReset;
 
     const renderContent = (
       <>
@@ -291,7 +298,7 @@ export const UserView = forwardRef(
               setPage(0);
             }}
             onOpenFilter={() => setOpenFilters(true)}
-            canReset={!!filterName || canReset}
+            canReset={canReset}
             sortBy={sortBy}
             onSortChange={setSortBy}
             searchPlaceholder="Search users..."
@@ -312,7 +319,7 @@ export const UserView = forwardRef(
                 <UserTableHead
                   rowCount={total}
                   numSelected={0}
-                  onSelectAllRows={() => {}}
+                  onSelectAllRows={() => { }}
                   hideCheckbox
                   headLabel={[
                     { id: 'sno', label: 'Sno', align: 'center' },
@@ -332,7 +339,7 @@ export const UserView = forwardRef(
                       row={row}
                       selected={false}
                       index={page * rowsPerPage + index}
-                      onSelectRow={() => {}}
+                      onSelectRow={() => { }}
                       onEdit={() => handleEditRow(row)}
                       onDelete={() => handleDeleteRow(row.name)}
                       onView={() => handleOpenDetails(row.name)}
@@ -340,6 +347,26 @@ export const UserView = forwardRef(
                   ))}
 
                   {notFound && <TableNoData searchQuery={filterName} />}
+
+                  {empty && (
+                    <TableRow>
+                      <TableCell colSpan={7}>
+                        <EmptyContent
+                          title="No users found"
+                          description="Start adding users to your organization."
+                          icon="solar:users-group-rounded-bold-duotone"
+                          sx={{ py: 5 }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {!empty && !notFound && (
+                    <TableEmptyRows
+                      height={68}
+                      emptyRows={data.length < 5 ? 5 - data.length : 0}
+                    />
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>

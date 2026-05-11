@@ -208,7 +208,8 @@ export function TimesheetsView() {
     const canReset =
         filters.employee !== 'all' ||
         !!filters.startDate ||
-        !!filters.endDate;
+        !!filters.endDate ||
+        !!filterName;
 
     const employeeOptions = employees.map((emp) => ({
         value: emp.name,
@@ -633,7 +634,7 @@ export function TimesheetsView() {
     const empty = !data.length && !filterName;
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Timesheets
@@ -717,17 +718,18 @@ export function TimesheetsView() {
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={4}>
+                                        <TableCell colSpan={12}>
                                             <EmptyContent
-                                                title="No timesheets found"
+                                                title="No Timesheet Found"
                                                 description="You haven't recorded any timesheets yet."
                                                 icon="solar:clock-circle-bold-duotone"
+                                                sx={{ py: 16 }}
                                             />
                                         </TableCell>
                                     </TableRow>
                                 )}
 
-                                {!empty && (
+                                {!empty && !notFound && (
                                     <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
                                 )}
                             </TableBody>

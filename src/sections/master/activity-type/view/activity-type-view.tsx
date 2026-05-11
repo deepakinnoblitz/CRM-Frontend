@@ -167,10 +167,12 @@ export function ActivityTypeView() {
                   />
                 ))}
 
-                <TableEmptyRows
-                    height={68}
-                    emptyRows={data.length < 5 ? 5 - data.length : 0}
-                />
+                {!empty && !notFound && (
+                    <TableEmptyRows
+                        height={68}
+                        emptyRows={data.length < 5 ? 5 - data.length : 0}
+                    />
+                )}
 
                 {notFound && <TableNoData searchQuery={filterName} />}
 
