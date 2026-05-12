@@ -72,8 +72,6 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                     '& .fc': {
                         '--fc-border-color': alpha(theme.palette.grey[500], 0.08),
                         '--fc-today-bg-color': alpha(theme.palette.primary.main, 0.04),
-                        '--fc-page-bg-color': 'transparent',
-                        '--fc-neutral-bg-color': alpha(theme.palette.grey[500], 0.02),
                         '--fc-list-event-hover-bg-color': alpha(theme.palette.primary.lighter, 0.4),
                         fontFamily: theme.typography.fontFamily,
                     },
