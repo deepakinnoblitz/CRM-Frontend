@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { fNumber } from 'src/utils/format-number';
 
@@ -15,9 +16,10 @@ type Props = CardProps & {
     title: string;
     subheader?: string;
     data: Array<{ date: string; count: number }>;
+    loading?: boolean;
 };
 
-export function MissingAttendanceChart({ title, subheader, data, sx, ...other }: Props) {
+export function MissingAttendanceChart({ title, subheader, data, loading, sx, ...other }: Props) {
     const theme = useTheme();
 
     // Prepare chart data
@@ -167,7 +169,18 @@ export function MissingAttendanceChart({ title, subheader, data, sx, ...other }:
                 )}
             </Box>
 
-            {data.length > 0 ? (
+            {loading ? (
+                <Box
+                    sx={{
+                        height: 280,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <CircularProgress color="primary" />
+                </Box>
+            ) : data.length > 0 ? (
                 <Chart
                     type="bar"
                     series={[{ name: 'Missing Attendance', data: series }]}

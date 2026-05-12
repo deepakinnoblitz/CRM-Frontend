@@ -14,6 +14,7 @@ import TableHead from '@mui/material/TableHead';
 import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { RouterLink } from 'src/routes/components';
 
@@ -30,9 +31,10 @@ type Props = CardProps & {
     emptyMessage?: string;
     totalCount?: number;
     viewAllPath?: string;
+    loading?: boolean;
 };
 
-export function HRDashboardTable({ title, subheader, tableData, headLabel, emptyMessage, totalCount, viewAllPath, ...other }: Props) {
+export function HRDashboardTable({ title, subheader, tableData, headLabel, emptyMessage, totalCount, viewAllPath, loading, ...other }: Props) {
     return (
         <Card {...other}>
             <CardHeader 
@@ -73,7 +75,13 @@ export function HRDashboardTable({ title, subheader, tableData, headLabel, empty
                         </TableHead>
 
                         <TableBody>
-                            {tableData.length === 0 ? (
+                            {loading ? (
+                                <TableRow>
+                                    <TableCell colSpan={headLabel.length} align="center" sx={{ py: 3 }}>
+                                        <CircularProgress />
+                                    </TableCell>
+                                </TableRow>
+                            ) : tableData.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={headLabel.length} align="center" sx={{ py: 3 }}>
                                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>

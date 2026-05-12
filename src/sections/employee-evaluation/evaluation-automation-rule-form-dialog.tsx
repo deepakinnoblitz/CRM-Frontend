@@ -111,6 +111,7 @@ export function EvaluationAutomationRuleFormDialog({ open, onClose, onSuccess, s
     const [specificDay, setSpecificDay] = useState<string>('Monday');
     const [specificDate, setSpecificDate] = useState<string | null>(null);
     const [description, setDescription] = useState('');
+    const [howToImprove, setHowToImprove] = useState('');
     const [points, setPoints] = useState<{ name: string; point_name: string; default_score: number }[]>([]);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -135,6 +136,7 @@ export function EvaluationAutomationRuleFormDialog({ open, onClose, onSuccess, s
             setSpecificDay(selectedRule.specific_day || 'Monday');
             setSpecificDate(selectedRule.specific_date || null);
             setDescription(selectedRule.description || '');
+            setHowToImprove(selectedRule.how_to_improve || '');
         } else {
             setRuleName('');
             setEventType('Late Login');
@@ -148,6 +150,7 @@ export function EvaluationAutomationRuleFormDialog({ open, onClose, onSuccess, s
             setSpecificDay('Monday');
             setSpecificDate(null);
             setDescription('');
+            setHowToImprove('');
         }
         setErrors({});
     }, [selectedRule, open]);
@@ -182,6 +185,7 @@ export function EvaluationAutomationRuleFormDialog({ open, onClose, onSuccess, s
                 specific_day: eventType === 'Specific Day Leave' ? specificDay : undefined,
                 specific_date: (eventType === 'Specific Date Leave' && specificDate) ? specificDate : undefined,
                 description,
+                how_to_improve: howToImprove,
             };
 
             if (isEdit) {
@@ -207,7 +211,7 @@ export function EvaluationAutomationRuleFormDialog({ open, onClose, onSuccess, s
     const selectedPointScore = selectedPoint?.default_score;
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 {isEdit ? 'Edit Automation Rule' : 'New Automation Rule'}
                 <IconButton onClick={onClose}>
@@ -217,6 +221,27 @@ export function EvaluationAutomationRuleFormDialog({ open, onClose, onSuccess, s
 
             <DialogContent dividers>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <Stack direction="row" spacing={3} sx={{ py: 1.5, pb: 3.5 }}>
+                        <FormControlLabel
+                            control={
+                                    <Android12Switch
+                                        checked={enabled}
+                                        onChange={(e) => setEnabled(e.target.checked)}
+                                    />
+                            }
+                            label="Enabled"
+                        />
+                        <FormControlLabel
+                            control={
+                                    <Android12Switch
+                                        checked={autoSubmit}
+                                        onChange={(e) => setAutoSubmit(e.target.checked)}
+                                    />
+                            }
+                            label="Auto Submit"
+                        />
+                    </Stack>
+
                     <Stack spacing={3} sx={{ pt: 1 }}>
 
                         <TextField
@@ -401,26 +426,17 @@ export function EvaluationAutomationRuleFormDialog({ open, onClose, onSuccess, s
                             </Stack>
                         )}
 
-                        <Stack direction="row" spacing={3}>
-                            <FormControlLabel
-                                control={
-                                        <Android12Switch
-                                            checked={enabled}
-                                            onChange={(e) => setEnabled(e.target.checked)}
-                                        />
-                                }
-                                label="Enabled"
-                            />
-                            <FormControlLabel
-                                control={
-                                        <Android12Switch
-                                            checked={autoSubmit}
-                                            onChange={(e) => setAutoSubmit(e.target.checked)}
-                                        />
-                                }
-                                label="Auto Submit"
-                            />
-                        </Stack>
+                        <TextField
+                            label="How to Improve (optional)"
+                            value={howToImprove}
+                            onChange={(e) => setHowToImprove(e.target.value)}
+                            fullWidth
+                            multiline
+                            rows={2}
+                            InputLabelProps={{ shrink: true }}
+                            placeholder="Provide suggestions for improvement..."
+                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
+                        />
 
                         <TextField
                             label="Description (optional)"

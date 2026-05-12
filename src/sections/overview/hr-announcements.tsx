@@ -259,7 +259,7 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                     spacing={1}
                     sx={{ zIndex: 1, flexShrink: 0, ml: 'auto' }}
                 >
-             
+
                     <IconButton
                         size="small"
                         onClick={(event) => {

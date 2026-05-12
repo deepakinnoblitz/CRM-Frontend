@@ -56,6 +56,7 @@ export function EmployeeEvaluationEventDetailsDialog({ open, onClose, event }: P
         score_change,
         hr_user,
         remarks,
+        how_to_improve,
         docstatus
     } = event;
 
@@ -153,6 +154,20 @@ export function EmployeeEvaluationEventDetailsDialog({ open, onClose, event }: P
                                 </Typography>
                             </Box>
                         </Box>
+
+                        {/* How to Improve */}
+                        {how_to_improve && (
+                            <Box sx={{ pl: 1, pr: 2 }}>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                    How to Improve
+                                </Typography>
+                                <Box sx={{ p: 2, bgcolor: '#ebfdf2', borderRadius: 1.5, border: '1px solid', borderColor: '#bbf7d0' }}>
+                                    <Typography variant="body2" sx={{ color: '#15803d', lineHeight: 1.6, fontWeight: 700 }}>
+                                        {how_to_improve}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        )}
                     </Stack>
                 </ScrollView>
             </DialogContent>

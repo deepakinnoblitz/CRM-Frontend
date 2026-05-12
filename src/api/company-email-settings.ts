@@ -1,5 +1,6 @@
 import { frappeRequest } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
+
 import { fetchFrappeList } from './hr-management';
 
 export async function getCompanyEmailSettings() {

@@ -14,6 +14,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -28,6 +29,7 @@ type Props = CardProps & {
     data: Array<{ date: string; day: string; present: number; absent: number }>;
     filter: string;
     onFilterChange: (filter: string, from?: string, to?: string) => void;
+    loading?: boolean;
 };
 
 // ----------------------------------------------------------------------
@@ -95,6 +97,7 @@ export function WeeklyPresentAbsentChart({
     data,
     filter,
     onFilterChange,
+    loading,
     sx,
     ...other
 }: Props) {
@@ -141,7 +144,7 @@ export function WeeklyPresentAbsentChart({
             },
         },
         // Use CSS gradient via ApexCharts fill
-        colors: ['#22C55E', '#FF5630'],
+        colors: ['#38cb6e', '#f15757'],
         plotOptions: {
             bar: {
                 borderRadius: data.length > 15 ? 4 : 7,
@@ -154,17 +157,8 @@ export function WeeklyPresentAbsentChart({
             show: false,
         },
         fill: {
-            type: ['gradient', 'gradient'],
-            gradient: {
-                shade: 'light',
-                type: 'vertical',
-                shadeIntensity: 0.2,
-                gradientToColors: ['#86EFAC', '#FFB4A2'],
-                inverseColors: false,
-                opacityFrom: 1,
-                opacityTo: 0.85,
-                stops: [0, 100],
-            },
+            type: 'solid',
+            opacity: 1,
         },
         dataLabels: {
             enabled: false, // shown only on hover via tooltip
@@ -188,7 +182,7 @@ export function WeeklyPresentAbsentChart({
             max: yMax,
             title: {
                 text: 'Employees',
-                offsetX: -8,
+                offsetX: -5,
                 style: {
                     color: theme.palette.text.disabled,
                     fontSize: '11px',
@@ -197,7 +191,7 @@ export function WeeklyPresentAbsentChart({
                 },
             },
             labels: {
-                padding: 12,
+                padding: 20,
                 formatter: (value: number) => Math.round(value).toString(),
                 style: {
                     colors: theme.palette.text.secondary,
@@ -214,6 +208,8 @@ export function WeeklyPresentAbsentChart({
                 const label = w.globals.labels[dataPointIndex];
                 const present = series[0]?.[dataPointIndex] ?? 0;
                 const absent = series[1]?.[dataPointIndex] ?? 0;
+                // Removed isHoliday check as holidays are skipped
+                
                 const bg = theme.palette.mode === 'dark' ? '#1C252E' : '#fff';
                 const border = alpha(theme.palette.grey[500], 0.16);
                 const text = theme.palette.text.primary;
@@ -230,11 +226,11 @@ export function WeeklyPresentAbsentChart({
                   ">
                     <div style="font-size:11px;font-weight:600;color:${sub};margin-bottom:8px;letter-spacing:0.5px;text-transform:uppercase;">${label}</div>
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-                      <span style="width:10px;height:10px;border-radius:50%;background:linear-gradient(180deg,#22C55E,#86EFAC);display:inline-block;"></span>
+                      <span style="width:10px;height:10px;border-radius:50%;background:#38cb6e;display:inline-block;"></span>
                       <span style="font-size:13px;color:${text};font-weight:600;">Present &nbsp;<strong>${present}</strong></span>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
-                      <span style="width:10px;height:10px;border-radius:50%;background:linear-gradient(180deg,#FF5630,#FFB4A2);display:inline-block;"></span>
+                      <span style="width:10px;height:10px;border-radius:50%;background:#f15757;display:inline-block;"></span>
                       <span style="font-size:13px;color:${text};font-weight:600;">Absent &nbsp;<strong>${absent}</strong></span>
                     </div>
                   </div>
@@ -328,7 +324,7 @@ export function WeeklyPresentAbsentChart({
                             : 'linear-gradient(135deg, #f8fafc 0%, #ffffff 60%)',
                     boxShadow: `0 2px 12px ${alpha(theme.palette.grey[500], 0.1)}, 0 1px 3px ${alpha(theme.palette.grey[500], 0.08)}`,
                     border: `1px solid ${alpha(theme.palette.grey[500], 0.1)}`,
-                    borderTop: `3px solid ${theme.palette.success.main}`,
+                    // borderTop: `3px solid ${theme.palette.success.main}`,
                     transition: 'box-shadow 0.3s ease, transform 0.3s ease',
                     '&:hover': {
                         boxShadow: `0 12px 32px ${alpha(theme.palette.grey[500], 0.18)}, 0 2px 8px ${alpha(theme.palette.grey[500], 0.1)}`,
@@ -506,7 +502,7 @@ export function WeeklyPresentAbsentChart({
                     {[
                         {
                             label: 'Present',
-                            from: '#22C55E',
+                            from: '#38cb6e',
                             to: '#86EFAC',
                             count: totalPresent,
                         },
@@ -523,7 +519,7 @@ export function WeeklyPresentAbsentChart({
                                     width: 10,
                                     height: 10,
                                     borderRadius: '50%',
-                                    background: `linear-gradient(135deg, ${item.from}, ${item.to})`,
+                                    bgcolor: item.label === 'Present' ? '#38cb6e' : '#f15757',
                                     flexShrink: 0,
                                     boxShadow: `0 2px 6px ${alpha(item.from, 0.4)}`,
                                 }}
@@ -555,7 +551,18 @@ export function WeeklyPresentAbsentChart({
             )}
 
             {/* ── Chart or Empty State ── */}
-            {data.length > 0 ? (
+            {loading ? (
+                <Box
+                    sx={{
+                        height: 260,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <CircularProgress color="primary" />
+                </Box>
+            ) : data.length > 0 ? (
                 <Box
                     key={chartKey}
                     sx={{

@@ -304,7 +304,7 @@ export async function fetchEmployeeEvaluationEvents(params: {
 
     const query = new URLSearchParams({
         doctype: "Employee Evaluation",
-        fields: JSON.stringify(["name", "employee", "employee_name", "trait", "evaluation_type", "evaluation_date", "score_change", "hr_user", "remarks", "docstatus", "modified_by", "modified"]),
+        fields: JSON.stringify(["name", "employee", "employee_name", "trait", "evaluation_type", "evaluation_date", "score_change", "hr_user", "remarks", "how_to_improve", "docstatus", "modified_by", "modified"]),
         filters: JSON.stringify(filters),
         or_filters: JSON.stringify(or_filters),
         limit_start: String((params.page - 1) * params.page_size),
@@ -515,6 +515,7 @@ export interface EvaluationAutomationRule {
     specific_day?: string;
     specific_date?: string;
     description?: string;
+    how_to_improve?: string;
 }
 
 export async function fetchEvaluationAutomationRules(params: {
@@ -551,7 +552,7 @@ export async function fetchEvaluationAutomationRules(params: {
 
     const query = new URLSearchParams({
         doctype: "Evaluation Automation Rule",
-        fields: JSON.stringify(["name", "rule_name", "event_type", "enabled", "auto_submit", "trait", "evaluation_point", "late_login_after", "early_exit_before", "break_duration_after", "specific_day", "specific_date", "description"]),
+        fields: JSON.stringify(["name", "rule_name", "event_type", "enabled", "auto_submit", "trait", "evaluation_point", "late_login_after", "early_exit_before", "break_duration_after", "specific_day", "specific_date", "description", "how_to_improve"]),
         filters: JSON.stringify(filters),
         or_filters: JSON.stringify(or_filters),
         limit_start: String((params.page - 1) * params.page_size),

@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
-import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
@@ -26,6 +26,7 @@ import { HRSummaryWidget } from '../hr-summary-widget';
 import { HRDashboardTable } from '../hr-dashboard-table';
 import { DashboardEomCard } from '../dashboard-eom-card';
 import { WeeklyPresentChart } from '../weekly-present-chart';
+import { HRTaskSummaryCards } from '../hr-task-summary-cards';
 import { MissingAttendanceChart } from '../missing-attendance-chart';
 import { WeeklyPresentAbsentChart } from '../weekly-present-absent-chart';
 
@@ -34,6 +35,7 @@ import { WeeklyPresentAbsentChart } from '../weekly-present-absent-chart';
 export function HRDashboardView() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
+    const [chartLoading, setChartLoading] = useState(false);
     const [data, setData] = useState<any>({
         announcements: [],
         total_employees: 0,
@@ -106,7 +108,7 @@ export function HRDashboardView() {
         if (from && to) {
             setAttendanceDates({ from, to });
         }
-
+        setChartLoading(true);
         try {
             const weeklyPresentAbsent = await fetchWeeklyPresentAbsentChartData({
                 filter_type: filter,
@@ -116,6 +118,8 @@ export function HRDashboardView() {
             setData((prev: any) => ({ ...prev, weekly_present_absent: weeklyPresentAbsent }));
         } catch (error) {
             console.error('Failed to update attendance chart:', error);
+        } finally {
+            setChartLoading(false);
         }
     };
 
@@ -128,37 +132,7 @@ export function HRDashboardView() {
         }
     };
 
-    if (loading) {
-        return (
-            <DashboardContent maxWidth="xl">
-                <Skeleton variant="text" sx={{ width: 300, height: 40, mb: 2, mt: 5 }} />
 
-                <Skeleton variant="rectangular" sx={{ width: 1, height: 160, borderRadius: 2, mb: 3 }} />
-
-                <Grid container spacing={3}>
-                    <Grid size={{ xs: 12 }}>
-                        <Skeleton variant="rectangular" sx={{ width: 1, height: 100, borderRadius: 2 }} />
-                    </Grid>
-
-                    {[...Array(3)].map((_, i) => (
-                        <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
-                            <Skeleton variant="rectangular" sx={{ width: 1, height: 120, borderRadius: 2 }} />
-                        </Grid>
-                    ))}
-
-                    <Grid size={{ xs: 12 }}>
-                        <Skeleton variant="rectangular" sx={{ width: 1, height: 400, borderRadius: 2 }} />
-                    </Grid>
-
-                    {[...Array(2)].map((_, i) => (
-                        <Grid key={i} size={{ xs: 12, md: 6 }}>
-                            <Skeleton variant="rectangular" sx={{ width: 1, height: 300, borderRadius: 2 }} />
-                        </Grid>
-                    ))}
-                </Grid>
-            </DashboardContent>
-        );
-    }
 
     return (
         <DashboardContent maxWidth="xl">
@@ -182,6 +156,7 @@ export function HRDashboardView() {
                     <HRSummaryWidget
                         title="Total Employees"
                         total={data.total_employees || 0}
+                        loading={loading}
                         icon={<Iconify icon="solar:users-group-rounded-bold-duotone" width={32} />}
                     />
                 </Grid>
@@ -191,6 +166,7 @@ export function HRDashboardView() {
                         title="Pending Leave Applications"
                         total={data.pending_leaves || 0}
                         color="warning"
+                        loading={loading}
                         icon={<Iconify icon="solar:calendar-add-bold-duotone" width={32} />}
                     />
                 </Grid>
@@ -209,6 +185,7 @@ export function HRDashboardView() {
                         title="Pending Request Applications"
                         total={data.pending_request || 0}
                         color="info"
+                        loading={loading}
                         icon={<Iconify icon="solar:clipboard-list-bold-duotone" width={32} />}
                     />
                 </Grid>
@@ -219,6 +196,7 @@ export function HRDashboardView() {
                         title="Weekly Present / Absent"
                         data={data.weekly_present_absent}
                         filter={attendanceFilter}
+                        loading={loading || chartLoading}
                         onFilterChange={handleAttendanceFilterChange}
                     />
                 </Grid>
@@ -241,11 +219,17 @@ export function HRDashboardView() {
                     />
                 </Grid> */}
 
+                {/* Task Dashboard */}
+                <Grid size={{ xs: 12 }}>
+                    {user?.roles?.includes('Task Manager') && <HRTaskSummaryCards />}
+                </Grid>
+
                 {/* Today's Leaves */}
                 <Grid size={{ xs: 12, md: 6 }}>
                     <HRDashboardTable
                         title="Today's Leave"
                         tableData={data.todays_leaves}
+                        loading={loading}
                         headLabel={[
                             { id: 'index', label: 'S.No' },
                             { id: 'employee_name', label: 'Employee Name' },
@@ -260,6 +244,7 @@ export function HRDashboardView() {
                     <HRDashboardTable
                         title="Today's Birthdays"
                         tableData={data.todays_birthdays}
+                        loading={loading}
                         headLabel={[
                             { id: 'index', label: 'S.No' },
                             { id: 'employee_name', label: 'Employee Name' },
@@ -275,6 +260,7 @@ export function HRDashboardView() {
                         title="Pending Leave Applications"
                         tableData={data.pending_leaves_list}
                         totalCount={data.pending_leaves}
+                        loading={loading}
                         viewAllPath="/leaves"
                         headLabel={[
                             { id: 'index', label: 'S.No' },
@@ -292,6 +278,7 @@ export function HRDashboardView() {
                         title="Pending Request Applications"
                         tableData={data.pending_requests_list}
                         totalCount={data.pending_request}
+                        loading={loading}
                         viewAllPath="/requests"
                         headLabel={[
                             { id: 'index', label: 'S.No' },
