@@ -125,6 +125,8 @@ export function RequestsView() {
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
+  const [submitting, setSubmitting] = useState(false);
+
   // Load permissions and employees
   useEffect(() => {
     getRequestPermissions().then(setPermissions);
@@ -363,15 +365,6 @@ export function RequestsView() {
   };
 
   const handleCreate = async () => {
-
-
-
-    const requestData = {
-      employee_id: employeeId.trim(),
-      subject: subject.trim(),
-      message: message.trim(),
-    };
-
     if (!validateForm()) {
       setSnackbar({
         open: true,
@@ -382,6 +375,14 @@ export function RequestsView() {
     }
 
     try {
+      setSubmitting(true);
+
+      const requestData = {
+        employee_id: employeeId.trim(),
+        subject: subject.trim(),
+        message: message.trim(),
+      };
+
       if (isEdit && currentRequest) {
         await updateRequest(currentRequest.name, requestData);
         setSnackbar({ open: true, message: 'Request updated successfully', severity: 'success' });
@@ -393,6 +394,8 @@ export function RequestsView() {
       refetch();
     } catch (error: any) {
       setSnackbar({ open: true, message: error.message || 'Operation failed', severity: 'error' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -645,8 +648,13 @@ export function RequestsView() {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleCreate} variant="contained" sx={{ bgcolor: "#08a3cd", "&": { bgcolor: "#068fb3" } }}>
-            {isEdit ? 'Update' : 'Submit'}
+          <Button
+            onClick={handleCreate}
+            variant="contained"
+            disabled={submitting}
+            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            {submitting ? 'Submitting...' : (isEdit ? 'Update' : 'Submit')}
           </Button>
         </DialogActions>
 
