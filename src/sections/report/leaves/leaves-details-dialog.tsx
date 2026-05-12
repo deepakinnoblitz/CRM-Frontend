@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -17,7 +18,7 @@ import DialogActions from '@mui/material/DialogActions';
 
 import { getEmployee } from 'src/api/employees';
 import { getHRDoc } from 'src/api/hr-management';
-import { type WorkflowAction, getLeaveWorkflowActions, updateLeaveStatus, applyLeaveWorkflowAction } from 'src/api/leaves';
+import { type WorkflowAction, getLeaveWorkflowActions, updateLeaveStatus, applyLeaveWorkflowAction, checkLeaveOverlap } from 'src/api/leaves';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -49,6 +50,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
     const [clarificationType, setClarificationType] = useState<'HR' | 'Employee'>('HR');
     const [employeeDetails, setEmployeeDetails] = useState<any>(null);
     const [fetching, setFetching] = useState(false);
+    const { enqueueSnackbar } = useSnackbar();
 
     const { user } = useAuth();
     const userRoles = user?.roles || [];
@@ -96,7 +98,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
         return () => socket.off('leave_application_updated', handleUpdate);
     }, [socket, open, leaveId, fetchData]);
 
-    const handleActionClick = (action: WorkflowAction) => {
+    const handleActionClick = async (action: WorkflowAction) => {
         setSelectedAction(action);
         const lowerAction = action.action.toLowerCase();
 
@@ -106,7 +108,30 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
         } else if (lowerAction.includes('reply')) {
             setClarificationType('Employee');
             setOpenClarification(true);
-        } else if (lowerAction.includes('approve') || lowerAction.includes('reject')) {
+        } else if (lowerAction.includes('approve')) {
+             // 🛡️ PREEMPTIVE OVERLAP CHECK
+             try {
+                setSubmitting(true);
+                const res = await checkLeaveOverlap({
+                    employee: leave.employee,
+                    from_date: leave.from_date,
+                    to_date: leave.to_date,
+                    exclude_doc: leave.name
+                });
+
+                if (res.overlap) {
+                    enqueueSnackbar(res.message, { variant: 'error' });
+                    setSubmitting(false);
+                    return;
+                }
+                setSubmitting(false);
+                handleApplyAction(action);
+             } catch (error) {
+                console.error("Overlap check failed", error);
+                setSubmitting(false);
+                handleApplyAction(action); // Fallback to normal flow if check fails
+             }
+        } else if (lowerAction.includes('reject')) {
             handleApplyAction(action);
         } else {
             setCommentDialogOpen(true);

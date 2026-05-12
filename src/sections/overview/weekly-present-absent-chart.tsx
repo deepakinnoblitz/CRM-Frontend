@@ -128,7 +128,7 @@ export function WeeklyPresentAbsentChart({
     const presentSeries = data.map((item) => item.present || 0);
     const absentSeries = data.map((item) => item.absent || 0);
     const maxVal = Math.max(...presentSeries, ...absentSeries, 0);
-    const yMax = maxVal === 0 ? 10 : Math.ceil((maxVal * 1.25) / 5) * 5;
+    const yMax = maxVal === 0 ? 10 : Math.ceil((maxVal * 1.4) / 5) * 5;
 
     const chartOptions = useChart({
         chart: {
@@ -161,7 +161,16 @@ export function WeeklyPresentAbsentChart({
             opacity: 1,
         },
         dataLabels: {
-            enabled: false, // shown only on hover via tooltip
+            enabled: true,
+            offsetY: -22,
+            style: {
+                fontSize: '12px',
+                fontWeight: 900,
+                colors: ['#00A76F', '#FF5630'], // Matches bar series colors
+            },
+            background: {
+                enabled: false,
+            },
         },
         xaxis: {
             categories,
@@ -226,11 +235,11 @@ export function WeeklyPresentAbsentChart({
                   ">
                     <div style="font-size:11px;font-weight:600;color:${sub};margin-bottom:8px;letter-spacing:0.5px;text-transform:uppercase;">${label}</div>
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-                      <span style="width:10px;height:10px;border-radius:50%;background:#38cb6e;display:inline-block;"></span>
+                      <span style="width:10px;height:10px;border-radius:50%;background:#00A76F;display:inline-block;"></span>
                       <span style="font-size:13px;color:${text};font-weight:600;">Present &nbsp;<strong>${present}</strong></span>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
-                      <span style="width:10px;height:10px;border-radius:50%;background:#f15757;display:inline-block;"></span>
+                      <span style="width:10px;height:10px;border-radius:50%;background:#FF5630;display:inline-block;"></span>
                       <span style="font-size:13px;color:${text};font-weight:600;">Absent &nbsp;<strong>${absent}</strong></span>
                     </div>
                   </div>
