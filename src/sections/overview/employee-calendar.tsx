@@ -129,7 +129,7 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                     '& .fc .fc-daygrid-day-number': {
                         color: theme.palette.text.secondary,
                         fontWeight: 600,
-                        fontSize: '0.8rem',
+                        fontSize: '1rem',
                         p: 1.5,
                         zIndex: 1,
                     },
