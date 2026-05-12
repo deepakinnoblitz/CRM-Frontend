@@ -26,6 +26,12 @@ type Props = CardProps & {
     onDateChange?: (date: Date) => void;
 };
 
+const shouldShowRedDayNumber = (title?: string) => {
+    const status = title?.trim().toLowerCase();
+
+    return status === 'absent' || status === 'holiday';
+};
+
 export function EmployeeCalendar({ title, subheader, events, onDateChange, ...other }: Props) {
     const theme = useTheme();
     const calendarRef = useRef<HTMLDivElement>(null);
@@ -41,8 +47,17 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                 (cell as HTMLElement).style.boxShadow = `inset 0 0 0px 1px ${alpha(event.color, 0.44)}`;
                 (cell as HTMLElement).style.border = 'none';
             }
+
+            const dayNumber = cell?.querySelector('.fc-daygrid-day-number') as HTMLElement | null;
+            if (dayNumber) {
+                if (shouldShowRedDayNumber(event.title)) {
+                    dayNumber.style.color = theme.palette.error.main;
+                } else {
+                    dayNumber.style.removeProperty('color');
+                }
+            }
         });
-    }, [events]);
+    }, [events, theme.palette.error.main]);
 
     return (
         <Card
@@ -219,6 +234,11 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                             arg.el.style.backgroundColor = 'transparent';
                             arg.el.style.boxShadow = `inset 0 0 12px 2px ${alpha(event.color, 0.24)}`;
                             arg.el.style.border = 'none';
+                        }
+
+                        const dayNumber = arg.el.querySelector('.fc-daygrid-day-number') as HTMLElement | null;
+                        if (dayNumber && shouldShowRedDayNumber(event?.title)) {
+                            dayNumber.style.color = theme.palette.error.main;
                         }
                     }}
                     eventContent={(arg) => (
