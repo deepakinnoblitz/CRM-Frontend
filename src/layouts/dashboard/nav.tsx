@@ -53,6 +53,7 @@ export function NavDesktop({
         flexDirection: 'column',
         zIndex: 'var(--layout-nav-zIndex)',
         width: 'var(--layout-nav-vertical-width)',
+        // bgcolor: 'var(--palette-grey-200)',
         bgcolor: '#f4faff',
         borderRight: `1px solid ${varAlpha(theme.vars.palette.grey['500Channel'], 0.12)}`,
         [theme.breakpoints.up(layoutQuery)]: {

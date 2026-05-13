@@ -37,6 +37,7 @@ export interface TaskManager {
     recurring_task?: number;
     recurring_frequency?: string;
     description?: string;
+    owner: string;
     creation: string;
     modified: string;
     closed_by?: string;
@@ -377,4 +378,19 @@ export async function getTaskManagerPermissions(): Promise<{ read: boolean; writ
 
     const data = await res.json();
     return data.message || { read: false, write: false, create: false, delete: false };
+}
+
+export async function fetchHRTaskStats(project?: string, department?: string, fromDate?: string, toDate?: string): Promise<{ total: number; open: number; reopen: number; in_progress: number; completed: number; on_hold: number }> {
+    let url = '/api/method/company.company.frontend_api.get_hr_task_stats';
+    const params = new URLSearchParams();
+    if (project && project !== 'All') params.append('project', project);
+    if (department && department !== 'All') params.append('department', department);
+    if (fromDate) params.append('from_date', fromDate);
+    if (toDate) params.append('to_date', toDate);
+    
+    if (params.toString()) url += `?${params.toString()}`;
+
+    const res = await frappeRequest(url);
+    const data = await handleResponse(res);
+    return data.message || { total: 0, open: 0, reopen: 0, in_progress: 0, completed: 0, on_hold: 0 };
 }

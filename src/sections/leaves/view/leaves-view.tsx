@@ -35,7 +35,7 @@ import { uploadFile } from 'src/api/data-import';
 import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getHRPermissions, getHRDoc } from 'src/api/hr-management';
-import { applyLeaveWorkflowAction, checkLeaveBalance, createLeaveApplication, deleteLeaveApplication, getEmployeeProbationInfo, updateLeaveStatus } from 'src/api/leaves';
+import { applyLeaveWorkflowAction, checkLeaveBalance, checkLeaveOverlap, createLeaveApplication, deleteLeaveApplication, getEmployeeProbationInfo, updateLeaveStatus } from 'src/api/leaves';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -359,6 +359,24 @@ export function LeavesView() {
 
     const handleApplyAction = async (id: string, action: string) => {
         try {
+            // 🛡️ PREEMPTIVE OVERLAP CHECK
+            if (action.toLowerCase().includes('approve')) {
+                const leaveRecord = data.find(r => r.name === id);
+                if (leaveRecord) {
+                    const res = await checkLeaveOverlap({
+                        employee: leaveRecord.employee,
+                        from_date: leaveRecord.from_date,
+                        to_date: leaveRecord.to_date,
+                        exclude_doc: id
+                    });
+
+                    if (res.overlap) {
+                        setSnackbar({ open: true, message: res.message, severity: 'error' });
+                        return;
+                    }
+                }
+            }
+
             await applyLeaveWorkflowAction(id, action);
             setSnackbar({ open: true, message: `Leave application ${action}ed successfully`, severity: 'success' });
             await refetch();

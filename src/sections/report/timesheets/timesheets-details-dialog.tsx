@@ -1,3 +1,5 @@
+import { LuUser, LuCalendar, LuHistory } from 'react-icons/lu';
+
 import Box from '@mui/material/Box';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
@@ -80,17 +82,16 @@ export function TimesheetDetailsDialog({ open, onClose, timesheet }: Props) {
                                     gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                 }}
                             >
-                                <DetailCard label="Employee" value={timesheet.employee_name} icon="solar:user-rounded-bold-duotone" />
+                                <DetailCard label="Employee" value={timesheet.employee_name} icon={<LuUser size={16} />} />
                                 <DetailCard
                                     label="Date"
                                     value={timesheet.timesheet_date ? fDate(timesheet.timesheet_date, 'DD-MM-YYYY') : '-'}
-                                    icon="solar:calendar-date-bold-duotone"
+                                    icon={<LuCalendar size={14} />}
                                 />
                                 <DetailCard
                                     label="Total Hours"
                                     value={`${timesheet.total_hours || 0} hours`}
-                                    icon="solar:history-bold-duotone"
-                                    highlight
+                                    icon={<LuHistory size={16} />}
                                 />
                             </Box>
                         </Box>
@@ -187,7 +188,7 @@ function SectionHeader({ title, icon }: { title: string; icon?: string }) {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
             {icon && (
                 <Box sx={{ display: 'flex', p: 0.75, borderRadius: 1, bgcolor: 'primary.main', color: 'common.white' }}>
-                    <Iconify icon={icon as any} width={18} />
+                    <Iconify icon={icon as any} width={14} />
                 </Box>
             )}
             <Typography variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', fontSize: 12 }}>
@@ -197,22 +198,24 @@ function SectionHeader({ title, icon }: { title: string; icon?: string }) {
     );
 }
 
-function DetailCard({ label, value, icon, highlight = false }: { label: string; value?: string | null; icon: string; highlight?: boolean }) {
+function DetailCard({ label, value, icon, highlight = false }: { label: string; value?: string | null; icon: React.ReactNode; highlight?: boolean }) {
     return (
         <Box
             sx={{
                 p: 2,
                 borderRadius: 2,
-                bgcolor: (theme) => highlight ? alpha(theme.palette.primary.main, 0.08) : 'background.neutral',
-                border: (theme) => highlight ? `1px solid ${alpha(theme.palette.primary.main, 0.2)}` : 'none',
+                bgcolor: (theme) => highlight ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.info.main, 0.04),
+                border: (theme) => highlight ? `1px solid ${alpha(theme.palette.primary.main, 0.2)}` : `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 1.5
             }}
         >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={20} sx={{ color: highlight ? 'primary.main' : 'text.disabled' }} />
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase' }}>
+                <Box sx={{ color: highlight ? 'primary.main' : 'text.primary', display: 'flex' }}>
+                    {icon}
+                </Box>
+                <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, textTransform: 'uppercase' }}>
                     {label}
                 </Typography>
             </Box>

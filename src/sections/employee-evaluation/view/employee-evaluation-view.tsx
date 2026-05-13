@@ -75,8 +75,8 @@ import { EmployeeEvaluationScoreLogTableRow } from '../employee-evaluation-score
 // ----------------------------------------------------------------------
 
 const TABS = [
-  { value: 'events', label: 'Employee Evaluations', icon: <BsFillClipboard2CheckFill size={18} />},
-  { value: 'traits', label: 'Performance Criteria', icon:  <FaTasks size={18} />},
+  { value: 'events', label: 'Employee Evaluations', icon: <BsFillClipboard2CheckFill size={18} /> },
+  { value: 'traits', label: 'Performance Criteria', icon: <FaTasks size={18} /> },
   { value: 'logs', label: 'Score Logs', icon: <FaClipboardList size={18} /> },
   { value: 'automation', label: 'Automation Rules', icon: <MdOutlineAccountTree size={20} /> },
 ];
@@ -84,7 +84,7 @@ const TABS = [
 export function EmployeeEvaluationView() {
   const { user } = useAuth();
 
-  const isAdminOrManager = user?.roles.some(role => 
+  const isAdminOrManager = user?.roles.some(role =>
     ['Administrator', 'HR', 'System Manager'].includes(role)
   );
 
@@ -164,13 +164,13 @@ export function EmployeeEvaluationView() {
   }, [openResetDialog]);
 
   useEffect(() => {
-     if (openResetDialog && employeeOptions.length > 0 && filters.employee && selectedResetEmployees.length === 0) {
-        setSelectedResetEmployees([filters.employee]);
-     }
+    if (openResetDialog && employeeOptions.length > 0 && filters.employee && selectedResetEmployees.length === 0) {
+      setSelectedResetEmployees([filters.employee]);
+    }
   }, [openResetDialog, employeeOptions, filters.employee, selectedResetEmployees]);
 
   const handleToggleResetEmployee = (name: string) => {
-    setSelectedResetEmployees(prev => 
+    setSelectedResetEmployees(prev =>
       prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
     );
   };
@@ -183,8 +183,8 @@ export function EmployeeEvaluationView() {
     setSelectedResetEmployees([]);
   };
 
-  const filteredResetEmployees = employeeOptions.filter(emp => 
-    emp.employee_name?.toLowerCase().includes(resetSearch.toLowerCase()) || 
+  const filteredResetEmployees = employeeOptions.filter(emp =>
+    emp.employee_name?.toLowerCase().includes(resetSearch.toLowerCase()) ||
     emp.name.toLowerCase().includes(resetSearch.toLowerCase())
   );
 
@@ -203,9 +203,9 @@ export function EmployeeEvaluationView() {
     if (!isAdminOrManager) return;
     setLoadingAutomation(true);
     try {
-      const result = await fetchEvaluationAutomationRules({ 
-        page: page + 1, 
-        page_size: rowsPerPage, 
+      const result = await fetchEvaluationAutomationRules({
+        page: page + 1,
+        page_size: rowsPerPage,
         search: filterName,
         sort_by: sortBy,
         event_type: filters.event_type,
@@ -296,7 +296,7 @@ export function EmployeeEvaluationView() {
   );
 
   return (
-    <DashboardContent maxWidth={false} sx={{mt: 2}}>
+    <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
         <Typography variant="h4">Employee Evaluation</Typography>
       </Stack>
@@ -381,8 +381,8 @@ export function EmployeeEvaluationView() {
                           try {
                             await submitEmployeeEvaluationEvent({
                               doctype: 'Employee Evaluation',
-                              ...row,
-                            });
+                              name: row.name,
+                            } as any);
                             setSnackbar({ open: true, message: 'Submitted successfully', severity: 'success' });
                             refetchEvents();
                             refetchLogs();
@@ -694,46 +694,46 @@ export function EmployeeEvaluationView() {
               color="error"
               onClick={async () => {
                 try {
-                    if (confirmDelete.type === 'event' && confirmDelete.name) {
-                      await deleteEmployeeEvaluationEvent(confirmDelete.name);
-                      setSnackbar({ open: true, message: 'Deleted successfully', severity: 'success' });
-                      refetchEvents();
-                      refetchLogs();
-                    } else if (confirmDelete.type === 'trait' && confirmDelete.name) {
-                      await deleteEmployeeEvaluationTrait(confirmDelete.name);
-                      setSnackbar({ open: true, message: 'Deleted successfully', severity: 'success' });
-                      refetchTraits();
-                    } else if (confirmDelete.type === 'automation' && confirmDelete.name) {
-                      await deleteEvaluationAutomationRule(confirmDelete.name);
-                      setSnackbar({ open: true, message: 'Automation rule deleted', severity: 'success' });
-                      refetchAutomation();
-                    }
-                    setConfirmDelete((prev) => ({ ...prev, open: false }));
-                  } catch (error: any) {
-                    setSnackbar({ open: true, message: error.message || 'Delete failed', severity: 'error' });
+                  if (confirmDelete.type === 'event' && confirmDelete.name) {
+                    await deleteEmployeeEvaluationEvent(confirmDelete.name);
+                    setSnackbar({ open: true, message: 'Deleted successfully', severity: 'success' });
+                    refetchEvents();
+                    refetchLogs();
+                  } else if (confirmDelete.type === 'trait' && confirmDelete.name) {
+                    await deleteEmployeeEvaluationTrait(confirmDelete.name);
+                    setSnackbar({ open: true, message: 'Deleted successfully', severity: 'success' });
+                    refetchTraits();
+                  } else if (confirmDelete.type === 'automation' && confirmDelete.name) {
+                    await deleteEvaluationAutomationRule(confirmDelete.name);
+                    setSnackbar({ open: true, message: 'Automation rule deleted', severity: 'success' });
+                    refetchAutomation();
                   }
-                }}
-              >
-                Delete
-              </Button>
-            )
-          }
-        />
+                  setConfirmDelete((prev) => ({ ...prev, open: false }));
+                } catch (error: any) {
+                  setSnackbar({ open: true, message: error.message || 'Delete failed', severity: 'error' });
+                }
+              }}
+            >
+              Delete
+            </Button>
+          )
+        }
+      />
 
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={6000}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar((prev: any) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
           onClose={() => setSnackbar((prev: any) => ({ ...prev, open: false }))}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          severity={snackbar.severity}
+          sx={{ width: '100%', boxShadow: (theme) => theme.customShadows.z8 }}
         >
-          <Alert
-            onClose={() => setSnackbar((prev: any) => ({ ...prev, open: false }))}
-            severity={snackbar.severity}
-            sx={{ width: '100%', boxShadow: (theme) => theme.customShadows.z8 }}
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
 
       <Dialog open={openResetDialog} onClose={() => !resetLoading && setOpenResetDialog(false)} fullWidth maxWidth="sm">
         <DialogTitle sx={{ pt: 3 }}>Reset Employee Evaluation Scores</DialogTitle>
@@ -747,7 +747,7 @@ export function EmployeeEvaluationView() {
               <Button size="small" variant="outlined" onClick={handleSelectAllReset}>Select All</Button>
               <Button size="small" variant="outlined" color="error" onClick={handleUnselectAllReset}>Unselect All (Off)</Button>
             </Stack>
-            
+
             <Stack direction="row" spacing={2}>
               <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 'bold' }}>
                 Selected: {selectedResetEmployees.length}
@@ -764,11 +764,11 @@ export function EmployeeEvaluationView() {
             placeholder="Search employees..."
             value={resetSearch}
             onChange={(e) => setResetSearch(e.target.value)}
-            sx={{ 
-                mb: 2,
-                '& .MuiOutlinedInput-root': {
-                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
-                }
+            sx={{
+              mb: 2,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+              }
             }}
             InputProps={{
               startAdornment: (
@@ -779,23 +779,23 @@ export function EmployeeEvaluationView() {
             }}
           />
 
-          <Card 
-            sx={{ 
-                border: (theme) => `1px solid ${theme.palette.divider}`, 
-                mb: 3,
-                height: 320,
-                display: 'flex',
-                flexDirection: 'column',
-                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.02),
+          <Card
+            sx={{
+              border: (theme) => `1px solid ${theme.palette.divider}`,
+              mb: 3,
+              height: 320,
+              display: 'flex',
+              flexDirection: 'column',
+              bgcolor: (theme) => alpha(theme.palette.grey[500], 0.02),
             }}
           >
             <Scrollbar>
               <List disablePadding>
                 {filteredResetEmployees.map((emp) => (
                   <ListItem key={emp.name} divider>
-                    <ListItemText 
-                      primary={emp.employee_name} 
-                      secondary={emp.name} 
+                    <ListItemText
+                      primary={emp.employee_name}
+                      secondary={emp.name}
                       primaryTypographyProps={{ variant: 'subtitle2' }}
                     />
                     <ListItemSecondaryAction sx={{ right: 16 }}>
@@ -817,25 +817,25 @@ export function EmployeeEvaluationView() {
           </Card>
 
           <TextField
-              fullWidth
-              type={showPassword ? 'text' : 'password'}
-              label="Admin Password"
-              value={resetPassword}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            fullWidth
+            type={showPassword ? 'text' : 'password'}
+            label="Admin Password"
+            value={resetPassword}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               setResetPassword(e.target.value);
               setResetError('');
-              }}
-              error={!!resetError}
-              helperText={resetError || "Enter Administrator password to confirm reset"}
-              InputProps={{
+            }}
+            error={!!resetError}
+            helperText={resetError || "Enter Administrator password to confirm reset"}
+            InputProps={{
               endAdornment: (
-                  <InputAdornment position="end">
+                <InputAdornment position="end">
                   <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                      <Iconify icon={showPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                    <Iconify icon={showPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
                   </IconButton>
-                  </InputAdornment>
+                </InputAdornment>
               ),
-              }}
+            }}
           />
         </DialogContent>
         <DialogActions>

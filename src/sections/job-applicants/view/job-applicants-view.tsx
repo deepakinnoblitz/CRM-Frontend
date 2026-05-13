@@ -438,16 +438,7 @@ export function JobApplicantsView() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-        <DialogTitle
-          sx={{
-            m: 0,
-            p: 2.5,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            bgcolor: 'background.neutral',
-          }}
-        >
+        <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
             {editApplicant ? 'Edit Applicant' : 'New Applicant'}
           </Typography>
@@ -468,9 +459,9 @@ export function JobApplicantsView() {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          <Stack spacing={3} sx={{ mt: 2 }}>
+          <Stack spacing={3} sx={{ mt: 3 }}>
             <Box
-              sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}
+              sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, pt: 1 }}
             >
               <TextField
                 fullWidth

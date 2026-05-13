@@ -18,7 +18,7 @@ import TimelineSeparator from '@mui/lab/TimelineSeparator';
 import TimelineConnector from '@mui/lab/TimelineConnector';
 import TimelineItem, { timelineItemClasses } from '@mui/lab/TimelineItem';
 
-import { fDate } from 'src/utils/format-time';
+import { fDate, fDateTime } from 'src/utils/format-time';
 
 import {
     TaskManager,
@@ -249,9 +249,11 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                                         <Box sx={{ width: 44, height: 44, borderRadius: 1.5, bgcolor: '#1877f214', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                             <Iconify icon={"solar:clipboard-list-bold" as any} width={24} sx={{ color: '#14b8a6' }} />
                                         </Box>
-                                        <Box>
-                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block' }}>Task Title</Typography>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.3 }}>{task.title}</Typography>
+                                        <Box sx={{ minWidth: 0, maxWidth: 480 }}>
+                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block', pb: 0.5 }}>Task Title</Typography>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.3, wordWrap: 'break-word' }}>
+                                                {task.title}
+                                            </Typography>
                                         </Box>
                                     </Stack>
 
@@ -273,25 +275,30 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                             </Box>
 
                             {/* Info rows — Custom grid */}
-                            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1 }}>
-                                <InfoRow icon="solar:folder-favourite-bookmark-bold" iconColor="#6366f1" label="Project" value={task.project || 'N/A'} />
-                                <InfoRow icon="solar:buildings-bold" iconColor="#8b5cf6" label="Department" value={task.department || 'N/A'} />
-                                <InfoRow icon="solar:calendar-date-bold" iconColor="#f97316" label="Due Date"
-                                    value={
-                                        task.due_date ? (
-                                            <>
-                                                {fDate(task.due_date)}
-                                                {task.due_time ? <><br />{task.due_time}</> : null}
-                                            </>
-                                        ) : (
-                                            '—'
-                                        )
-                                    }
-                                />
-                                {task.creation && (
-                                    <InfoRow icon="solar:clock-circle-bold" iconColor="#14b8a6" label="Created On" value={fDate(task.creation)} />
-                                )}
-                            </Box>
+                            <Stack spacing={2.5}>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, py: 1 }}>
+                                    <InfoRow icon="solar:folder-favourite-bookmark-bold" iconColor="#6366f1" label="Project" value={task.project || 'N/A'} />
+                                    <InfoRow icon="solar:buildings-bold" iconColor="#8b5cf6" label="Department" value={task.department || 'N/A'} />
+                                    <InfoRow icon="solar:calendar-date-bold" iconColor="#f97316" label="Due Date"
+                                        value={
+                                            task.due_date ? (
+                                                fDateTime(`${task.due_date} ${task.due_time || '00:00:00'}`)
+                                            ) : (
+                                                '—'
+                                            )
+                                        }
+                                    />
+                                </Box>
+
+                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, py: 1 }}>
+                                    {task.creation && (
+                                        <InfoRow icon="solar:clock-circle-bold" iconColor="#14b8a6" label="Created On" value={fDateTime(task.creation)} />
+                                    )}
+                                    
+                                    <InfoRow icon="solar:user-bold" iconColor="#0ea5e9" label="Created By" value={task.owner || 'N/A'} />
+
+                                </Box>
+                            </Stack>
 
                             {/* Description */}
                             {task.description && (

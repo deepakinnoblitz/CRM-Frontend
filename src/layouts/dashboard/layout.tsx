@@ -282,7 +282,9 @@ export function DashboardLayout({
       ),
       rightArea: (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 2 } }}>
-          <UserStatusBar />
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 2 }}>
+            <UserStatusBar />
+          </Box>
 
           <ChatNotifications>
             <Box
