@@ -419,17 +419,8 @@ export function JobOpeningsView() {
             </Card>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
-                <DialogTitle
-                    sx={{
-                        m: 0,
-                        p: 2.5,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        bgcolor: 'background.neutral',
-                    }}
-                >
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
+                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Typography variant="h6" sx={{ fontWeight: 700 }}>
                         {editJob ? 'Edit Job Opening' : 'New Job Opening'}
                     </Typography>
@@ -608,7 +599,7 @@ export function JobOpeningsView() {
                         </Stack>
                     </LocalizationProvider>
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ p: 2 }}>
                     <Button variant="contained" onClick={handleSubmit}>
                         {editJob ? 'Update' : 'Create'}
                     </Button>

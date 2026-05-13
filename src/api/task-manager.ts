@@ -37,6 +37,7 @@ export interface TaskManager {
     recurring_task?: number;
     recurring_frequency?: string;
     description?: string;
+    owner: string;
     creation: string;
     modified: string;
     closed_by?: string;

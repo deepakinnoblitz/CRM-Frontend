@@ -1,3 +1,8 @@
+import { GrUserWorker } from "react-icons/gr";
+import { AiOutlineDownload } from "react-icons/ai";
+import { MdOutlineWorkOutline } from "react-icons/md";
+import { MdOutlineAddLocationAlt } from "react-icons/md";
+
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
@@ -9,9 +14,9 @@ import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 
-import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+
 
 // ----------------------------------------------------------------------
 
@@ -21,66 +26,104 @@ type Props = {
     applicant: any;
 };
 
+// ── Status config ──
+const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string }> = {
+    'Accepted': { color: '#22c55e', bg: '#f0fdf4', border: '#bbf7d0' },
+    'Rejected': { color: '#ef4444', bg: '#fef2f2', border: '#fecaca' },
+    'Hold': { color: '#f59e0b', bg: '#fffbeb', border: '#fde68a' },
+    'Open': { color: '#0ea5e9', bg: '#e0f2fe', border: '#bae6fd' },
+    'Received': { color: '#06b6d4', bg: '#ecfeff', border: '#a5f3fc' },
+    'Replied': { color: '#6366f1', bg: '#eef2ff', border: '#e0e7ff' },
+};
+
+function StatusLabel({ status }: { status: string }) {
+    const conf = STATUS_CONFIG[status] || { color: '#64748b', bg: '#f1f5f9', border: '#e2e8f0' };
+    return (
+        <Box
+            sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                px: 1.75,
+                py: 0.75,
+                borderRadius: 1.5,
+                bgcolor: conf.bg,
+                border: `1px solid ${conf.border}`
+            }}
+        >
+            <Typography variant="caption" sx={{ fontWeight: 800, color: conf.color, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {status}
+            </Typography>
+        </Box>
+    );
+}
+
+function DetailItem({ icon, iconColor, label, value, isLink, href }: { icon: string; iconColor: string; label: string; value: string; isLink?: boolean; href?: string }) {
+    return (
+        <Stack direction="row" alignItems="center" spacing={2} sx={{ minWidth: 0 }}>
+            <Box sx={{ width: 44, height: 44, borderRadius: 1.5, bgcolor: `${iconColor}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Iconify icon={icon as any} width={22} sx={{ color: iconColor }} />
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block' }}>{label}</Typography>
+                {isLink ? (
+                    <Link href={href} color="primary" variant="body2" sx={{ fontWeight: 800, mt: 0.1, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                        {value}
+                    </Link>
+                ) : (
+                    <Typography variant="body2" sx={{ fontWeight: 800, mt: 0.1 }}>{value}</Typography>
+                )}
+            </Box>
+        </Stack>
+    );
+}
+
 export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
     if (!applicant) return null;
 
-    const renderStatus = (status: string) => {
-        let color: 'default' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'error' = 'default';
-
-        switch (status) {
-            case 'Accepted':
-                color = 'success';
-                break;
-            case 'Rejected':
-                color = 'error';
-                break;
-            case 'Hold':
-                color = 'warning';
-                break;
-            case 'Open':
-            case 'Received':
-                color = 'info';
-                break;
-            case 'Replied':
-                color = 'primary';
-                break;
-            default:
-                color = 'default';
-        }
-
-        return (
-            <Label variant="filled" color={color} sx={{ height: 32, px: 2, borderRadius: 1 }}>
-                {status}
-            </Label>
-        );
-    };
-
     const renderHeader = (
-        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2, mb: 3 }}>
+        <Box
+            sx={{
+                p: 3,
+                bgcolor: '#f8fafb',
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: '#ebedf0',
+                mb: 4
+            }}
+        >
             <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
                 <Box>
-                    <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
+                    <Typography variant="h5" sx={{ mb: 2, fontWeight: 800, color: '#1c252e' }}>
                         {applicant.applicant_name}
                     </Typography>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography variant="subtitle2" color="text.secondary">
-                            {applicant.job_title || 'No Job Assigned'}
-                        </Typography>
-                        {applicant.designation && (
-                            <>
-                                <Divider orientation="vertical" flexItem sx={{ height: 12, my: 'auto' }} />
-                                <Typography variant="subtitle2" color="text.secondary">
-                                    {applicant.designation}
-                                </Typography>
-                            </>
-                        )}
-                        <Divider orientation="vertical" flexItem sx={{ height: 12, my: 'auto' }} />
-                        <Typography variant="subtitle2" color="text.secondary">
-                            {applicant.city || applicant.state || applicant.country || 'Location N/A'}
-                        </Typography>
+                    <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                            <MdOutlineWorkOutline size={14} style={{ color: '#007bff', flexShrink: 0 }} />
+                            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 700, lineHeight: 1 }}>
+                                {applicant.job_title || 'No Job Assigned'}
+                            </Typography>
+                        </Box>
+
+                        <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 700, lineHeight: 1 }}>•</Typography>
+
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                            <GrUserWorker size={14} style={{ color: '#007bff', flexShrink: 0 }} />
+                            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 700, lineHeight: 1 }}>
+                                {applicant.designation || 'No Designation'}
+                            </Typography>
+                        </Box>
+
+                        <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 700, lineHeight: 1 }}>•</Typography>
+
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                            <MdOutlineAddLocationAlt size={14} style={{ color: '#007bff', flexShrink: 0 }} />
+                            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 700, lineHeight: 1 }}>
+                                {applicant.city || applicant.state || applicant.country || 'Location N/A'}
+                            </Typography>
+                        </Box>
                     </Stack>
                 </Box>
-                {renderStatus(applicant.status)}
+                <StatusLabel status={applicant.status} />
             </Stack>
         </Box>
     );
@@ -89,28 +132,34 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
         <Box
             sx={{
                 display: 'grid',
-                gap: 2.5,
+                gap: 3,
                 gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
                 mb: 4,
-                ml: 2,
-                pt: 2,
+                px: 1,
             }}
         >
-            <DetailItem icon="solar:letter-bold" label="Email" value={applicant.email_id} isLink href={`mailto:${applicant.email_id}`} />
-            <DetailItem icon="solar:phone-bold" label="Phone" value={applicant.phone_number || '-'} isLink href={`tel:${applicant.phone_number}`} />
-            <DetailItem icon="solar:share-bold" label="Source" value={applicant.source || '-'} />
-            <DetailItem icon="solar:wad-of-money-bold" label="Expected Salary" value={applicant.lower_range ? `${applicant.currency || '₹'} ${applicant.lower_range} - ${applicant.upper_range}` : 'Not Disclosed'} />
+            <DetailItem icon="solar:letter-bold" iconColor="#6366f1" label="Email" value={applicant.email_id} />
+            <DetailItem icon="solar:phone-bold" iconColor="#10b981" label="Phone" value={applicant.phone_number || '-'} />
+            <DetailItem icon="solar:share-bold" iconColor="#f59e0b" label="Source" value={applicant.source || '-'} />
+            <DetailItem icon="solar:wad-of-money-bold" iconColor="#8b5cf6" label="Expected Salary" value={applicant.lower_range ? `${applicant.currency || '₹'} ${applicant.lower_range} - ${applicant.upper_range}` : 'Not Disclosed'} />
         </Box>
     );
 
     const renderResume = (
-        <Box sx={{ mt: 2, ml: 2, pt: 2 }}>
-            <SectionHeader title="Application Details" icon="solar:notes-bold" />
-            <Box sx={{ display: 'grid', gap: 3, mt: 1, ml: 1 }}>
+        <Box sx={{ mt: 2 }}>
+            <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, fontSize: '16px', pl:1 }}>
+                    Application Details
+                </Typography>
+            </Stack>
+
+            <Box sx={{ display: 'grid', gap: 3.5, px: 1 }}>
                 <Box>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>Cover Letter</Typography>
-                    <Box sx={{ p: 2, bgcolor: 'background.neutral', borderRadius: 1 }}>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'pre-wrap' }}>
+                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', display: 'block', mb: 1.5 }}>
+                        Cover Letter
+                    </Typography>
+                    <Box sx={{ p: 2.5, bgcolor: '#f4f6f8', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
                             {applicant.cover_letter || 'No cover letter provided.'}
                         </Typography>
                     </Box>
@@ -118,14 +167,19 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
 
                 {(applicant.resume_attachment || applicant.resume_link) && (
                     <Box>
-                        <Typography variant="subtitle2" sx={{ mb: 1 }}>Resume / Portfolio</Typography>
+                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', display: 'block', mb: 1.5 }}>
+                            Resume / Portfolio
+                        </Typography>
                         <Stack direction="row" spacing={2}>
                             {applicant.resume_attachment && (
                                 <Button
-                                    variant="outlined"
-                                    startIcon={<Iconify icon={"solar:download-bold" as any} />}
+                                    variant="contained"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<AiOutlineDownload size={20}/>}
                                     href={applicant.resume_attachment}
                                     target="_blank"
+                                    sx={{ borderRadius: 1.5, fontWeight: 800, p: 1 }}
                                 >
                                     Download Resume
                                 </Button>
@@ -133,11 +187,14 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
                             {applicant.resume_link && (
                                 <Button
                                     variant="outlined"
+                                    color="primary"
+                                    size="small"
                                     startIcon={<Iconify icon={"solar:link-bold" as any} />}
                                     href={applicant.resume_link}
                                     target="_blank"
+                                    sx={{ borderRadius: 1.5, fontWeight: 800, px: 3 }}
                                 >
-                                    Resume Link
+                                    View Portfolio
                                 </Button>
                             )}
                         </Stack>
@@ -148,10 +205,10 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
     );
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                Job Applicant Details
-                <IconButton onClick={onClose}>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 1.5 } }}>
+            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>Job Applicant Details</Typography>
+                <IconButton onClick={onClose} sx={{ color: 'text.disabled' }}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
             </DialogTitle>
@@ -165,40 +222,5 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
                 </DialogContent>
             </Scrollbar>
         </Dialog>
-    );
-}
-
-// ----------------------------------------------------------------------
-
-function SectionHeader({ title, icon }: { title: string; icon: string }) {
-    return (
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Iconify icon={icon as any} width={24} sx={{ mr: 1.5, color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                {title}
-            </Typography>
-        </Box>
-    );
-}
-
-function DetailItem({ icon, label, value, isLink, href }: { icon: string; label: string; value: string; isLink?: boolean; href?: string }) {
-    return (
-        <Stack direction="row" spacing={1.5} alignItems="flex-start">
-            <Iconify icon={icon as any} width={20} sx={{ color: 'text.disabled', mt: 0.2 }} />
-            <Box>
-                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                    {label}
-                </Typography>
-                {isLink ? (
-                    <Link href={href} color="primary" variant="body2" sx={{ fontWeight: 600 }}>
-                        {value}
-                    </Link>
-                ) : (
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {value}
-                    </Typography>
-                )}
-            </Box>
-        </Stack>
     );
 }

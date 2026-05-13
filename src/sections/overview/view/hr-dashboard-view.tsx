@@ -19,6 +19,7 @@ import {
     fetchMonthHolidays
 } from 'src/api/dashboard';
 
+import { Loader } from 'src/components/loader';
 import { Iconify } from 'src/components/iconify';
 
 import { useAuth } from 'src/auth/auth-context';
@@ -105,6 +106,24 @@ export function HRDashboardView() {
 
         loadData();
     }, []);
+
+    if (loading) {
+        return (
+            <DashboardContent maxWidth="xl">
+                <Box
+                    sx={{
+                        height: '70vh',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'column',
+                    }}
+                >
+                    <Loader />
+                </Box>
+            </DashboardContent>
+        );
+    }
 
     const handleAttendanceFilterChange = async (filter: string, from?: string, to?: string) => {
         setAttendanceFilter(filter);
