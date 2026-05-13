@@ -26,6 +26,12 @@ type Props = CardProps & {
     onDateChange?: (date: Date) => void;
 };
 
+const shouldShowRedDayNumber = (title?: string) => {
+    const status = title?.trim().toLowerCase();
+
+    return status === 'absent' || status === 'holiday';
+};
+
 export function EmployeeCalendar({ title, subheader, events, onDateChange, ...other }: Props) {
     const theme = useTheme();
     const calendarRef = useRef<HTMLDivElement>(null);
@@ -41,8 +47,17 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                 (cell as HTMLElement).style.boxShadow = `inset 0 0 0px 1px ${alpha(event.color, 0.44)}`;
                 (cell as HTMLElement).style.border = 'none';
             }
+
+            const dayNumber = cell?.querySelector('.fc-daygrid-day-number') as HTMLElement | null;
+            if (dayNumber) {
+                if (shouldShowRedDayNumber(event.title)) {
+                    dayNumber.style.color = theme.palette.error.main;
+                } else {
+                    dayNumber.style.removeProperty('color');
+                }
+            }
         });
-    }, [events]);
+    }, [events, theme.palette.error.main]);
 
     return (
         <Card
@@ -72,8 +87,6 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                     '& .fc': {
                         '--fc-border-color': alpha(theme.palette.grey[500], 0.08),
                         '--fc-today-bg-color': alpha(theme.palette.primary.main, 0.04),
-                        '--fc-page-bg-color': 'transparent',
-                        '--fc-neutral-bg-color': alpha(theme.palette.grey[500], 0.02),
                         '--fc-list-event-hover-bg-color': alpha(theme.palette.primary.lighter, 0.4),
                         fontFamily: theme.typography.fontFamily,
                     },
@@ -131,7 +144,7 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                     '& .fc .fc-daygrid-day-number': {
                         color: theme.palette.text.secondary,
                         fontWeight: 600,
-                        fontSize: '0.8rem',
+                        fontSize: '.9rem',
                         p: 1.5,
                         zIndex: 1,
                     },
@@ -221,6 +234,11 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                             arg.el.style.backgroundColor = 'transparent';
                             arg.el.style.boxShadow = `inset 0 0 12px 2px ${alpha(event.color, 0.24)}`;
                             arg.el.style.border = 'none';
+                        }
+
+                        const dayNumber = arg.el.querySelector('.fc-daygrid-day-number') as HTMLElement | null;
+                        if (dayNumber && shouldShowRedDayNumber(event?.title)) {
+                            dayNumber.style.color = theme.palette.error.main;
                         }
                     }}
                     eventContent={(arg) => (

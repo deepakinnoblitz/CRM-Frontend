@@ -1,4 +1,29 @@
-import { useState, useEffect, useCallback } from 'react';
+import type { IconType } from 'react-icons';
+
+import { IoCall } from "react-icons/io5";
+import { FaPhoneVolume } from "react-icons/fa6";
+import { useState, useEffect, useCallback } from 'react'
+import {
+    FaAward,
+    FaBriefcase,
+    FaBuilding,
+    FaCalendarAlt,
+    FaCamera,
+    FaChartLine,
+    FaChartPie,
+    FaCreditCard,
+    FaDollarSign,
+    FaEnvelope,
+    FaFileAlt,
+    FaGhost,
+    FaGlobeAmericas,
+    FaHeartbeat,
+    FaInfoCircle,
+    FaMapMarkerAlt,
+    FaMedal,
+    FaUser,
+    FaWallet, 
+} from 'react-icons/fa';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -231,7 +256,7 @@ export function MyProfileView() {
                                                 },
                                             }}
                                         >
-                                            <Iconify icon={"solar:camera-bold" as any} width={18} />
+                                            <ReactIcon icon={FaCamera} size={18} />
                                             <input type="file" hidden accept="image/*" onChange={handleFileUpload} />
                                         </IconButton>
                                     </Tooltip>
@@ -252,7 +277,7 @@ export function MyProfileView() {
 
                             {/* Contact Information */}
                             <Box>
-                                <SectionHeader title="Contact Information" icon="solar:phone-calling-bold" />
+                                <SectionHeader title="Contact Information" icon={FaPhoneVolume} />
                                 <Box
                                     sx={{
                                         display: 'grid',
@@ -260,11 +285,11 @@ export function MyProfileView() {
                                         gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                     }}
                                 >
-                                    <DetailItem label="Official Email" value={employee.email} icon="solar:letter-bold" />
-                                    <DetailItem label="Personal Email" value={employee.personal_email} icon="solar:letter-bold" />
-                                    <DetailItem label="Personal Phone" value={employee.phone} icon="solar:phone-bold" />
-                                    <DetailItem label="Office Phone" value={employee.office_phone_number} icon="solar:phone-bold" />
-                                    <DetailItem label="User Login" value={employee.user} icon="solar:user-bold" />
+                                    <DetailItem label="Official Email" value={employee.email} icon={FaEnvelope} />
+                                    <DetailItem label="Personal Email" value={employee.personal_email} icon={FaEnvelope} />
+                                    <DetailItem label="Personal Phone" value={employee.phone} icon={IoCall} />
+                                    <DetailItem label="Office Phone" value={employee.office_phone_number} icon={IoCall} />
+                                    <DetailItem label="User Login" value={employee.user} icon={FaUser} />
                                 </Box>
                             </Box>
 
@@ -272,7 +297,7 @@ export function MyProfileView() {
 
                             {/* Employment Details */}
                             <Box>
-                                <SectionHeader title="Employment Details" icon="solar:case-bold" />
+                                <SectionHeader title="Employment Details" icon={FaBriefcase} />
                                 <Box
                                     sx={{
                                         display: 'grid',
@@ -280,11 +305,11 @@ export function MyProfileView() {
                                         gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                     }}
                                 >
-                                    <DetailItem label="Department" value={employee.department} icon="solar:buildings-bold" />
-                                    <DetailItem label="Designation" value={employee.designation} icon="solar:medal-star-bold" />
-                                    <DetailItem label="Joining Date" value={fDate(employee.date_of_joining, 'DD-MM-YYYY')} icon="solar:calendar-bold" />
-                                    <DetailItem label="Status" value={employee.status} icon="solar:info-circle-bold" />
-                                    <DetailItem label="Date of Birth" value={fDate(employee.dob, 'DD-MM-YYYY')} icon="solar:calendar-bold" />
+                                    <DetailItem label="Department" value={employee.department} icon={FaBuilding} />
+                                    <DetailItem label="Designation" value={employee.designation} icon={FaAward} />
+                                    <DetailItem label="Joining Date" value={fDate(employee.date_of_joining, 'DD-MM-YYYY')} icon={FaCalendarAlt} />
+                                    <DetailItem label="Status" value={employee.status} icon={FaInfoCircle} />
+                                    <DetailItem label="Date of Birth" value={fDate(employee.dob, 'DD-MM-YYYY')} icon={FaCalendarAlt} />
                                 </Box>
                             </Box>
 
@@ -292,7 +317,7 @@ export function MyProfileView() {
 
                             {/* Location Details */}
                             <Box>
-                                <SectionHeader title="Location Details" icon="solar:earth-bold" />
+                                <SectionHeader title="Location Details" icon={FaGlobeAmericas} />
                                 <Box
                                     sx={{
                                         display: 'grid',
@@ -300,9 +325,9 @@ export function MyProfileView() {
                                         gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                     }}
                                 >
-                                    <DetailItem label="Country" value={employee.country} icon="solar:earth-bold" />
-                                    <DetailItem label="State" value={employee.state} icon="solar:map-point-bold" />
-                                    <DetailItem label="City" value={employee.city} icon="solar:map-point-bold" />
+                                    <DetailItem label="Country" value={employee.country} icon={FaGlobeAmericas} />
+                                    <DetailItem label="State" value={employee.state} icon={FaMapMarkerAlt} />
+                                    <DetailItem label="City" value={employee.city} icon={FaMapMarkerAlt} />
                                 </Box>
                             </Box>
 
@@ -310,7 +335,7 @@ export function MyProfileView() {
 
                             {/* Bank & Identification */}
                             <Box>
-                                <SectionHeader title="Bank & Identification" icon="solar:card-bold" />
+                                <SectionHeader title="Bank & Identification" icon={FaCreditCard} />
                                 <Box
                                     sx={{
                                         display: 'grid',
@@ -318,10 +343,10 @@ export function MyProfileView() {
                                         gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                     }}
                                 >
-                                    <DetailItem label="Bank Name" value={employee.bank_name} icon="solar:buildings-bold" />
-                                    <DetailItem label="Bank Account" value={employee.bank_account} icon="solar:card-bold" />
-                                    <DetailItem label="PF Number" value={employee.pf_number} icon="solar:document-bold" />
-                                    <DetailItem label="ESI No" value={employee.esi_no} icon="solar:health-bold" />
+                                    <DetailItem label="Bank Name" value={employee.bank_name} icon={FaBuilding} />
+                                    <DetailItem label="Bank Account" value={employee.bank_account} icon={FaCreditCard} />
+                                    <DetailItem label="PF Number" value={employee.pf_number} icon={FaFileAlt} />
+                                    <DetailItem label="ESI No" value={employee.esi_no} icon={FaHeartbeat} />
                                 </Box>
                             </Box>
 
@@ -337,7 +362,7 @@ export function MyProfileView() {
 
                             {/* Badges & Achievements */}
                             <Box>
-                                <SectionHeader title="Badges & Achievements" icon="solar:medal-ribbon-bold" />
+                                <SectionHeader title="Badges & Achievements" icon={FaMedal} />
                                 <ProfileBadges employeeId={employee.name} />
                             </Box>
 
@@ -345,7 +370,7 @@ export function MyProfileView() {
 
                             {/* Salary & Finance */}
                             <Box>
-                                <SectionHeader title="Financial Summary" icon="solar:wallet-money-bold" />
+                                <SectionHeader title="Financial Summary" icon={FaWallet} />
 
                                 {/* CTC Card */}
                                 <Box sx={{
@@ -356,7 +381,7 @@ export function MyProfileView() {
                                     border: (theme) => `1px solid ${theme.palette.divider}`,
                                 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                        <Iconify icon={"solar:dollar-minimalistic-bold" as any} width={20} sx={{ color: 'primary.main' }} />
+                                        <ReactIcon icon={FaDollarSign} size={20} sx={{ color: 'primary.main' }} />
                                         <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}>
                                             Cost to Company (Monthly)
                                         </Typography>
@@ -387,7 +412,7 @@ export function MyProfileView() {
                                                 bgcolor: 'success.main',
                                                 color: 'white'
                                             }}>
-                                                <Iconify icon={"solar:chart-2-bold" as any} width={18} />
+                                                <ReactIcon icon={FaChartLine} size={18} />
                                             </Box>
                                             <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'success.darker' }}>
                                                 Earnings
@@ -421,7 +446,7 @@ export function MyProfileView() {
                                                 bgcolor: 'warning.main',
                                                 color: 'white'
                                             }}>
-                                                <Iconify icon={"solar:chart-square-bold" as any} width={18} />
+                                                <ReactIcon icon={FaChartPie} size={18} />
                                             </Box>
                                             <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'warning.darker' }}>
                                                 Deductions
@@ -475,7 +500,7 @@ export function MyProfileView() {
                         </Box>
                     ) : (
                         <Box sx={{ py: 10, textAlign: 'center' }}>
-                            <Iconify icon={"solar:ghost-bold" as any} width={64} sx={{ color: 'text.disabled', mb: 2 }} />
+                            <ReactIcon icon={FaGhost} size={64} sx={{ color: 'text.disabled', mb: 2 }} />
                             <Typography variant="h6" sx={{ color: 'text.secondary' }}>No Employee Profile Found</Typography>
                             <Typography variant="body2" sx={{ color: 'text.disabled' }}>Please ensure your account is linked to an Employee record.</Typography>
                         </Box>
@@ -497,10 +522,24 @@ export function MyProfileView() {
     );
 }
 
-function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: string, noMargin?: boolean }) {
+function ReactIcon({ icon: Icon, size, sx }: { icon: IconType; size: number; sx?: any }) {
+    return (
+        <Box
+            component={Icon as any}
+            sx={{
+                width: size,
+                height: size,
+                flexShrink: 0,
+                ...sx,
+            }}
+        />
+    );
+}
+
+function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: IconType, noMargin?: boolean }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
-            <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
+            <ReactIcon icon={icon} size={16} sx={{ color: 'primary.main' }} />
             <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '14px' }}>
                 {title}
             </Typography>
@@ -508,14 +547,14 @@ function SectionHeader({ title, icon, noMargin = false }: { title: string; icon:
     );
 }
 
-function DetailItem({ label, value, icon, color = 'text.primary' }: { label: string; value?: string | null; icon: string; color?: string }) {
+function DetailItem({ label, value, icon, color = 'text.primary' }: { label: string; value?: string | null; icon: IconType; color?: string }) {
     return (
         <Box>
             <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
                 {label}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
+                <ReactIcon icon={icon} size={16} sx={{ color: 'text.disabled' }} />
                 <Typography variant="body2" sx={{ fontWeight: 700, color }}>
                     {value || '-'}
                 </Typography>
