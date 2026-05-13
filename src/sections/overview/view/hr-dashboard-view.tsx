@@ -1,4 +1,7 @@
+import { FaUsers } from "react-icons/fa6";
 import { useState, useEffect } from 'react';
+import { GrDocumentUser } from "react-icons/gr";
+import { HiOutlineDocumentText } from "react-icons/hi2";
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -132,8 +135,6 @@ export function HRDashboardView() {
         }
     };
 
-
-
     return (
         <DashboardContent maxWidth="xl">
             <Typography variant="h4" sx={{ mb: { xs: 3, md: 2 }, mt: 3 }}>
@@ -157,7 +158,7 @@ export function HRDashboardView() {
                         title="Total Employees"
                         total={data.total_employees || 0}
                         loading={loading}
-                        icon={<Iconify icon="solar:users-group-rounded-bold-duotone" width={32} />}
+                        icon={<FaUsers />}
                     />
                 </Grid>
 
@@ -167,7 +168,7 @@ export function HRDashboardView() {
                         total={data.pending_leaves || 0}
                         color="warning"
                         loading={loading}
-                        icon={<Iconify icon="solar:calendar-add-bold-duotone" width={32} />}
+                        icon={<GrDocumentUser />}
                     />
                 </Grid>
 
@@ -186,7 +187,7 @@ export function HRDashboardView() {
                         total={data.pending_request || 0}
                         color="info"
                         loading={loading}
-                        icon={<Iconify icon="solar:clipboard-list-bold-duotone" width={32} />}
+                        icon={<HiOutlineDocumentText />}
                     />
                 </Grid>
 

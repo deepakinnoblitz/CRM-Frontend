@@ -5,6 +5,7 @@ import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { usePresence } from 'src/hooks/use-presence';
 
@@ -14,6 +15,8 @@ import {
     fetchEmployeeDashboardData,
     type EmployeeDashboardData,
 } from 'src/api/dashboard';
+
+import { Loader } from 'src/components/loader';
 
 import { useAuth } from 'src/auth/auth-context';
 
@@ -94,29 +97,17 @@ export function EmployeeDashboardView() {
     if (loading || !data) {
         return (
             <DashboardContent maxWidth="xl">
-                <Skeleton variant="text" sx={{ width: 300, height: 40, mb: 5 }} />
-
-                <Skeleton variant="rectangular" sx={{ width: 1, height: 160, borderRadius: 2, mb: 3 }} />
-
-                <Grid container spacing={3}>
-                    <Grid size={{ xs: 12 }}>
-                        <Skeleton variant="rectangular" sx={{ width: 1, height: 100, borderRadius: 2 }} />
-                    </Grid>
-
-                    <Grid size={{ xs: 12 }}>
-                        <Skeleton variant="rectangular" sx={{ width: 1, height: 140, borderRadius: 2 }} />
-                    </Grid>
-
-                    <Grid size={{ xs: 12 }}>
-                        <Skeleton variant="rectangular" sx={{ width: 1, height: 80, borderRadius: 2 }} />
-                    </Grid>
-
-                    {[...Array(2)].map((_, i) => (
-                        <Grid key={i} size={{ xs: 12, md: 6 }}>
-                            <Skeleton variant="rectangular" sx={{ width: 1, height: 400, borderRadius: 2 }} />
-                        </Grid>
-                    ))}
-                </Grid>
+                <Box
+                    sx={{
+                        height: '70vh',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'column',
+                    }}
+                >
+                    <Loader />
+                </Box>
             </DashboardContent>
         );
     }

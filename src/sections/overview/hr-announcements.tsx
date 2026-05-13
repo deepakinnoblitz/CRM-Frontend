@@ -1,6 +1,8 @@
 import type { CardProps } from '@mui/material/Card';
 
+import { LuCalendarCheck2 } from "react-icons/lu";
 import { useEffect, useRef, useState } from 'react';
+import { BsBell, BsBellFill  } from "react-icons/bs";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -132,21 +134,47 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                 >
                     <Box
                         sx={{
-                            width: 42,
-                            height: 42,
-                            borderRadius: 2.5,
+                            width: 46,
+                            height: 46,
+                            borderRadius: '50%',
                             display: 'grid',
                             placeItems: 'center',
                             color: 'primary.main',
-                            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.22)} 0%, ${alpha('#8b5cf6', 0.18)} 100%)`,
-                            border: `1px solid ${alpha(theme.palette.common.white, 0.65)}`,
-                            boxShadow: `inset 0 1px 0 ${alpha(theme.palette.common.white, 0.6)}`,
+                            background: `linear-gradient(135deg, ${alpha('#f4faff', 1)} 0%, ${alpha('#dce1e6', 0.6)} 100%)`,
+                            border: `1.5px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                            boxShadow: `
+                                0 4px 10px ${alpha(theme.palette.primary.main, 0.08)},
+                                inset 0 0 0 1px ${alpha(theme.palette.common.white, 1)}
+                            `,
+                            position: 'relative',
                         }}
                     >
-                        <Iconify icon={"solar:bell-bing-bold-duotone" as any} width={22} />
+                        <BsBell size={20} />
+
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: -7,
+                                right: -5,
+                                minWidth: 20,
+                                height: 20,
+                                borderRadius: '50%',
+                                bgcolor: 'primary.main',
+                                color: 'primary.contrastText',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 11,
+                                fontWeight: 800,
+                                border: `2px solid ${theme.palette.background.paper}`,
+                                boxShadow: `0 2px 4px ${alpha(theme.palette.common.black, 0.16)}`,
+                            }}
+                        >
+                            {list.length}
+                        </Box>
                     </Box>
 
-                    <Box sx={{ minWidth: 0 }}>
+                    <Box sx={{ minWidth: 0, pl: 1 }}>
                         <Stack direction="row" alignItems="center" spacing={1}>
                             <Typography
                                 variant="subtitle2"
@@ -159,17 +187,6 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                             >
                                 {title || 'Announcements'}
                             </Typography>
-                            <Chip
-                                label={list.length}
-                                size="small"
-                                sx={{
-                                    height: 22,
-                                    bgcolor: theme.palette.primary.main,
-                                    color: theme.palette.primary.contrastText,
-                                    fontWeight: 800,
-                                    '& .MuiChip-label': { px: 0.9 },
-                                }}
-                            />
                         </Stack>
                         <Typography
                             variant="caption"
@@ -339,7 +356,7 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                                 bgcolor: alpha(theme.palette.primary.main, 0.08),
                             }}
                         >
-                            <Iconify icon={"solar:bell-bing-bold-duotone" as any} width={18} />
+                            <BsBellFill  size={16} />
                         </Box>
                         <Typography variant="subtitle1" sx={{ fontWeight: 700, flexGrow: 1 }}>
                             Announcements
@@ -384,7 +401,7 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                                             color: 'primary.main',
                                         }}
                                     >
-                                        <Iconify icon="solar:bell-bold-duotone" width={18} />
+                                        <BsBellFill  size={14} />
                                     </Box>
 
                                     <Box sx={{ flexGrow: 1, minWidth: 0 }}>
@@ -395,7 +412,7 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                                             {item.message}
                                         </Typography>
                                         <Stack direction="row" alignItems="center" spacing={0.5}>
-                                            <Iconify icon="solar:calendar-bold-duotone" width={13} sx={{ color: 'text.disabled' }} />
+                                            <LuCalendarCheck2 size={11} style={{ color: theme.palette.text.disabled }} />
                                             <Typography variant="caption" sx={{ color: 'text.disabled' }}>
                                                 {fDate(item.posting_date)}
                                             </Typography>

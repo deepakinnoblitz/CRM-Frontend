@@ -194,7 +194,7 @@ export function ProfileView() {
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Container maxWidth="lg">
                 <Stack spacing={4} sx={{ maxWidth: 1200, mx: 'auto' }}>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: { xs: 2, md: 0 } }}>
                         <Typography variant="h4" sx={{ fontWeight: 800 }}>
                             My Profile
                         </Typography>
@@ -202,14 +202,24 @@ export function ProfileView() {
 
                     <Card>
                         <CardContent>
-                            <Stack direction="row" alignItems="center" sx={{ mb: 3, p: 2 }}>
-                                <Stack direction="row" spacing={3} alignItems="center">
+                            <Stack
+                                direction={{ xs: 'column', md: 'row' }}
+                                alignItems={{ xs: 'center', md: 'center' }}
+                                sx={{ mb: 3, p: { xs: 2, md: 2 }, width: '100%' }}
+                                spacing={3}
+                            >
+                                <Stack
+                                    direction={{ xs: 'column', md: 'row' }}
+                                    spacing={3}
+                                    alignItems="center"
+                                    sx={{ textAlign: { xs: 'center', md: 'left' }, width: { xs: '100%', md: 'auto' } }}
+                                >
                                     <Avatar
                                         alt={user.full_name}
                                         src={user.user_image}
                                         sx={{
-                                            width: 120,
-                                            height: 120,
+                                            width: { xs: 100, md: 120 },
+                                            height: { xs: 100, md: 120 },
                                             border: (theme) => `solid 4px ${theme.palette.background.paper}`,
                                             boxShadow: (theme) => theme.customShadows.z12,
                                             bgcolor: (theme) => {
@@ -223,7 +233,7 @@ export function ProfileView() {
                                         }}
                                     >
                                         {!user.user_image && (
-                                            <Typography variant="h3" sx={{
+                                            <Typography variant={{ xs: 'h4', md: 'h3' } as any} sx={{
                                                 fontWeight: 800,
                                                 color: (theme) => {
                                                     const name = user.full_name || '';
@@ -238,11 +248,11 @@ export function ProfileView() {
                                         )}
                                     </Avatar>
 
-                                    <Stack spacing={0.5}>
+                                    <Stack spacing={0.5} alignItems={{ xs: 'center', md: 'flex-start' }}>
                                         <Typography variant="h4" sx={{ fontWeight: 800 }}>
                                             {user.full_name}
                                         </Typography>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: { xs: 'center', md: 'flex-start' } }}>
                                             <Iconify icon="solar:letter-bold" width={16} />
                                             {user.email}
                                         </Typography>
@@ -254,15 +264,19 @@ export function ProfileView() {
                                     </Stack>
                                 </Stack>
 
-                                <Box sx={{ flexGrow: 1 }} />
+                                <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'block' } }} />
 
-                                <Stack direction="row" spacing={2}>
+                                <Stack
+                                    direction={{ xs: 'column', sm: 'row' }}
+                                    spacing={2}
+                                    sx={{ width: { xs: '100%', md: 'auto' }, mt: { xs: 1, md: 0 } }}
+                                >
                                     <Button
                                         variant="outlined"
                                         color="inherit"
+                                        fullWidth={{ xs: true, md: false } as any}
                                         onClick={changePassword.onTrue}
                                         startIcon={<LuShieldCheck size={20} />}
-
                                         sx={{
                                             borderRadius: 1,
                                             textTransform: 'none',
@@ -273,6 +287,7 @@ export function ProfileView() {
                                     </Button>
                                     <Button
                                         variant="contained"
+                                        fullWidth={{ xs: true, md: false } as any}
                                         onClick={handleSaveProfile}
                                         sx={{
                                             bgcolor: '#08a3cd',
@@ -286,16 +301,15 @@ export function ProfileView() {
                                         Save Changes
                                     </Button>
                                 </Stack>
-
                             </Stack>
 
                             <CardHeader
                                 title="Basic Info"
                                 subheader="Review your personal details"
-                                sx={{ mb: 3 }}
+                                sx={{ mb: 3, px: { xs: 3, md: 3 } }}
                             />
 
-                            <Grid container spacing={3} sx={{ mx: 2 }}>
+                            <Grid container spacing={3} sx={{ px: { xs: 2, md: 3 }, mb: 4 }}>
                                 <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         fullWidth

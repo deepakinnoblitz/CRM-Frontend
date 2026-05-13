@@ -38,8 +38,8 @@ export function HRSummaryWidget({ title, total, icon, color = 'primary', loading
                     duration: theme.transitions.duration.shorter,
                 }),
                 '& svg': {
-                    width: compact ? 24 : 32,
-                    height: compact ? 24 : 32,
+                    width: compact ? 24 : 28,
+                    height: compact ? 24 : 28,
                 },
             }}
         >

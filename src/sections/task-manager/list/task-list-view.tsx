@@ -245,7 +245,7 @@ export default function TaskListView({
                                                     },
                                                 }}
                                             >
-                                                {index + 1}
+                                                {page * rowsPerPage + index + 1}
                                             </Box>
                                         </TableCell>
 
