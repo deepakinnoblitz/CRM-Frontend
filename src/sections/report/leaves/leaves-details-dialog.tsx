@@ -505,7 +505,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                     {/* Date Details */}
                                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3, px: 2 }}>
                                         <DetailRow label="Applied On" value={dayjs(leave?.creation).format('DD MMM YYYY HH:mm')} icon="solar:calendar-bold" />
-                                        <DetailRow label="Half Day" value={leave?.half_day === 1 ? `Yes (${dayjs(leave?.half_day_date).format('DD MMM YYYY')})` : 'No'} icon="solar:history-bold" />
+                                        <DetailRow label="Half Day" value={leave?.half_day === 1 ? 'Yes' : 'No'} icon="solar:history-bold" />
                                         <DetailRow label="From Date" value={dayjs(leave?.from_date).format('DD MMM YYYY')} icon="solar:calendar-date-bold" />
                                         <DetailRow label="To Date" value={dayjs(leave?.to_date).format('DD MMM YYYY')} icon="solar:calendar-date-bold" />
                                     </Box>
