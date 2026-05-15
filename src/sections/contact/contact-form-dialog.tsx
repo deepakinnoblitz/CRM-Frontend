@@ -196,7 +196,7 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {contactId ? 'Edit Contact' : 'New Contact'}
+                {contactId ? 'Edit Client' : 'New Client'}
                 <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
@@ -255,7 +255,7 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
                         <TextField
                             select
                             fullWidth
-                            label="Contact Type"
+                            label="Client Type"
                             value={contactType}
                             onChange={(e) => setContactType(e.target.value)}
                             SelectProps={{ native: true }}
@@ -345,7 +345,7 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
 
             <DialogActions>
                 <Button variant="contained" onClick={handleSave} disabled={saving}>
-                    {saving ? 'Saving...' : (contactId ? 'Update Contact' : 'Create Contact')}
+                    {saving ? 'Saving...' : (contactId ? 'Update Client' : 'Create Client')}
                 </Button>
             </DialogActions>
         </Dialog>

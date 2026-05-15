@@ -54,7 +54,7 @@ export function PurchaseManagementView() {
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
                 <Typography variant="h4">Purchase Management</Typography>
                 <Button
                     variant="contained"

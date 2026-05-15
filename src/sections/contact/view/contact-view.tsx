@@ -251,7 +251,7 @@ export function ContactView() {
         if (!deleteId) return;
         try {
             await deleteContact(deleteId);
-            setSnackbar({ open: true, message: 'Contact deleted successfully', severity: 'success' });
+            setSnackbar({ open: true, message: 'Clients deleted successfully', severity: 'success' });
             await refetch();
         } catch (e: any) {
             console.error(e);
@@ -361,10 +361,10 @@ export function ContactView() {
 
             if (currentContactId) {
                 await updateContact(currentContactId, contactData);
-                setSnackbar({ open: true, message: 'Contact updated successfully', severity: 'success' });
+                setSnackbar({ open: true, message: 'Clients updated successfully', severity: 'success' });
             } else {
                 await createContact(contactData);
-                setSnackbar({ open: true, message: 'Contact created successfully', severity: 'success' });
+                setSnackbar({ open: true, message: 'Clients created successfully', severity: 'success' });
             }
 
             await refetch();
@@ -416,7 +416,7 @@ export function ContactView() {
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
-                    Contacts
+                    Clients
                 </Typography>
 
                 {permissions.write && (
@@ -435,7 +435,7 @@ export function ContactView() {
                             onClick={handleOpenCreate}
                             sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
                         >
-                            New Contact
+                            New Client
                         </Button>
                     </Box>
                 )}
@@ -449,7 +449,7 @@ export function ContactView() {
                         setFilterName(e.target.value);
                         setPage(0);
                     }}
-                    searchPlaceholder="Search contacts..."
+                    searchPlaceholder="Search Clients..."
                     onOpenFilter={() => setOpenFilters(true)}
                     canReset={canReset}
                     sortBy={sortBy}
@@ -518,7 +518,7 @@ export function ContactView() {
                                         <TableCell colSpan={10}>
                                             <EmptyContent
                                                 title="No contacts found"
-                                                description="Create a new contact to track your professional network."
+                                                description="Create a new Client to track your professional network."
                                                 icon="solar:users-group-rounded-bold-duotone"
                                             />
                                         </TableCell>
@@ -573,7 +573,7 @@ export function ContactView() {
                 open={openDelete}
                 onClose={() => setOpenDelete(false)}
                 title="Confirm Delete"
-                content="Are you sure you want to delete this contact?"
+                content="Are you sure you want to delete this Clients?"
                 action={
                     <Button onClick={handleConfirmDelete} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
                         Delete

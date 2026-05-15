@@ -7,6 +7,7 @@ import Table from '@mui/material/Table';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
+import { useTheme } from '@mui/material/styles';
 import TableHead from '@mui/material/TableHead';
 import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
@@ -38,6 +39,7 @@ import { AnalyticsCurrentVisits } from '../analytics-current-visits';
 // ----------------------------------------------------------------------
 
 export function CombinedDashboardView() {
+    const theme = useTheme();
     const { user } = useAuth();
     const [salesData, setSalesData] = useState<SalesDashboardData>({
         total_sales: 0,
@@ -136,7 +138,7 @@ export function CombinedDashboardView() {
 
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <AnalyticsWidgetSummary
-                        title="Total Contacts"
+                        title="Total Clients"
                         percent={getPercentChange(crmStats.charts?.contacts)}
                         total={crmStats.contacts || 0}
                         color="secondary"
@@ -144,6 +146,20 @@ export function CombinedDashboardView() {
                         chart={{
                             categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                             series: crmStats.charts?.contacts || [0, 0, 0, 0, 0, 0, 0],
+                        }}
+                    />
+                </Grid>
+
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <AnalyticsWidgetSummary
+                        title="Total Company"
+                        percent={getPercentChange(crmStats.charts?.accounts)}
+                        total={crmStats.accounts || 0}
+                        color="info"
+                        icon={<img alt="Accounts" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-users.svg`} />}
+                        chart={{
+                            categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                            series: crmStats.charts?.accounts || [0, 0, 0, 0, 0, 0, 0],
                         }}
                     />
                 </Grid>
@@ -158,20 +174,6 @@ export function CombinedDashboardView() {
                         chart={{
                             categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                             series: crmStats.charts?.deals || [0, 0, 0, 0, 0, 0, 0],
-                        }}
-                    />
-                </Grid>
-
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <AnalyticsWidgetSummary
-                        title="Total Accounts"
-                        percent={getPercentChange(crmStats.charts?.accounts)}
-                        total={crmStats.accounts || 0}
-                        color="info"
-                        icon={<img alt="Accounts" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-users.svg`} />}
-                        chart={{
-                            categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                            series: crmStats.charts?.accounts || [0, 0, 0, 0, 0, 0, 0],
                         }}
                     />
                 </Grid>
@@ -206,7 +208,7 @@ export function CombinedDashboardView() {
 
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <AnalyticsWidgetSummary
-                        title="Total Purchases"
+                        title="Total Proposal"
                         percent={getPercentChange(financialTotals.purchases.chart)}
                         total={financialTotals.purchases.count}
                         color="warning"
@@ -232,22 +234,27 @@ export function CombinedDashboardView() {
                     />
                 </Grid>
 
-                {/* Sales Trend Chart */}
+                {/* Today's Activities */}
+                <Grid size={{ xs: 12 }}>
+                    <TodayActivitiesWidget
+                        calls={activities.calls || []}
+                        meetings={activities.meetings || []}
+                    />
+                </Grid>
+
+                {/* Total Revenue Chart */}
                 <Grid size={{ xs: 12, md: 8 }}>
                     <AnalyticsWebsiteVisits
-                        title="Sales & Discount Trend"
-                        subheader="Total Revenue vs Total Discount over last 12 months"
+                        title="Total Revenue"
+                        subheader="Revenue over last 12 months"
                         chartType="line"
                         chart={{
+                            colors: [theme.palette.warning.main],
                             categories: salesData.sales_trend.categories,
                             series: [
                                 {
                                     name: 'Total Revenue',
                                     data: salesData.sales_trend.series,
-                                },
-                                {
-                                    name: 'Total Discount',
-                                    data: salesData.discount_trend.series,
                                 },
                             ],
                             options: {
@@ -273,14 +280,6 @@ export function CombinedDashboardView() {
                             })),
                         }}
                         sx={{ height: 1 }}
-                    />
-                </Grid>
-
-                {/* Today's Activities */}
-                <Grid size={{ xs: 12 }}>
-                    <TodayActivitiesWidget
-                        calls={activities.calls || []}
-                        meetings={activities.meetings || []}
                     />
                 </Grid>
 

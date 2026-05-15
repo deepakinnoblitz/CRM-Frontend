@@ -1,70 +1,78 @@
+import { useState } from 'react';
+
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import ButtonBase from '@mui/material/ButtonBase';
-import { useTheme, alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 
 import { useDashboardView } from 'src/hooks/dashboard-view-context';
 
 import { useAuth } from 'src/auth/auth-context';
 
-// ----------------------------------------------------------------------
-
 export function DashboardSwitcher() {
   const theme = useTheme();
   const { user } = useAuth();
   const { view, setView } = useDashboardView();
+  const [pressed, setPressed] = useState(false);
 
-  const isHR = user?.roles?.some(role => role.toLowerCase() === 'hr');
-  const isSalesOrCRM = user?.roles?.some(role => 
+  const isHR = user?.roles?.some((role) => role.toLowerCase() === 'hr');
+  const isSalesOrCRM = user?.roles?.some((role) =>
     ['sales', 'crm user', 'crm and sales'].includes(role.toLowerCase())
   );
-  const isAdmin = user?.roles?.some(role => ['administrator', 'system manager'].includes(role.toLowerCase()));
 
-  // Only show if user has both roles (HR and CRM/Sales)
-  const showSwitcher = isHR && isSalesOrCRM;
+  if (!isHR || !isSalesOrCRM) return null;
 
-  if (!showSwitcher) {
-    return null;
-  }
-
-  const handleToggle = (newView: 'HR' | 'CRM') => {
-    setView(newView);
-  };
+  const activeIndex = view === 'HR' ? 0 : 1;
 
   const renderOption = (label: string, value: 'HR' | 'CRM') => {
     const isActive = view === value;
 
     return (
       <ButtonBase
-        onClick={() => handleToggle(value)}
+        disableRipple
+        onClick={() => setView(value)}
+        onMouseDown={() => setPressed(true)}
+        onMouseUp={() => setPressed(false)}
+        onMouseLeave={() => setPressed(false)}
+        onTouchStart={() => setPressed(true)}
+        onTouchEnd={() => setPressed(false)}
         sx={{
           flex: 1,
-          height: 36,
+          height: 32,
           borderRadius: '30px',
-          px: 2.5,
-          zIndex: 1,
+          px: 1.5,
+          zIndex: 2,
           position: 'relative',
-          transition: theme.transitions.create(['color'], {
-            duration: theme.transitions.duration.shorter,
-          }),
-          color: isActive ? 'common.white' : 'text.secondary',
-          '&:hover': {
-            ...(!isActive && {
-              color: 'text.primary',
-            }),
+          transition: theme.transitions.create(
+            ['color', 'transform', 'text-shadow'],
+            { duration: 280, easing: theme.transitions.easing.easeInOut }
+          ),
+          color: isActive ? 'common.white' : 'text.disabled',
+          textShadow: isActive
+            ? `0 1px 10px ${alpha(theme.palette.common.black, 0.2)}`
+            : 'none',
+          '&:hover': !isActive
+            ? {
+                color: 'primary.main',
+                transform: 'translateY(-1px)',
+              }
+            : {},
+          '&:active': {
+            transform: 'scale(0.96)',
           },
         }}
       >
         <Typography
-          variant="subtitle2"
+          variant="caption"
           sx={{
+            fontSize: '14px',
             fontWeight: isActive ? 700 : 600,
             whiteSpace: 'nowrap',
-            letterSpacing: 0.5,
-            transform: isActive ? 'scale(1.05)' : 'scale(1)',
-            transition: theme.transitions.create(['transform'], {
-              duration: theme.transitions.duration.shorter,
+            transform: isActive ? 'scale(1.04)' : 'scale(1)',
+            transition: theme.transitions.create('transform', {
+              duration: 280,
+              easing: theme.transitions.easing.easeInOut,
             }),
           }}
         >
@@ -75,38 +83,72 @@ export function DashboardSwitcher() {
   };
 
   return (
-    <Box
+ <Box
       sx={{
-        p: 0.5,
+        p: 0.25,
         borderRadius: '40px',
-        bgcolor: alpha(theme.palette.grey[500], 0.08),
-        border: `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
+        background: `linear-gradient(135deg,
+          ${alpha(theme.palette.common.white, 0.94)},
+          ${alpha(theme.palette.primary.lighter ?? theme.palette.primary.light, 0.16)}
+        )`,
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.14)}`,
         display: 'inline-flex',
         alignItems: 'center',
-        minWidth: 220,
+        minWidth: 220,  // ← added
         position: 'relative',
         mr: 2,
         overflow: 'hidden',
+        boxShadow: `
+          0 16px 36px -24px ${alpha(theme.palette.common.black, 0.36)},
+          inset 0 1px 0 ${alpha(theme.palette.common.white, 0.92)}
+        `,
+        transition: theme.transitions.create('box-shadow', { duration: 300 }),
+        '&:hover': {
+          boxShadow: `
+            0 18px 40px -24px ${alpha(theme.palette.primary.main, 0.45)},
+            inset 0 1px 0 ${alpha(theme.palette.common.white, 0.95)}
+          `,
+        },
       }}
     >
-      {/* Sliding Background */}
       <Box
         sx={{
           position: 'absolute',
-          width: 'calc(50% - 4px)',
-          height: 'calc(100% - 8px)',
-          left: view === 'HR' ? 4 : 'calc(50%)',
-          bgcolor: theme.palette.primary.main,
-          borderRadius: '40px',
-          boxShadow: `0 4px 12px 0 ${alpha(theme.palette.primary.main, 0.35)}`,
-          transition: theme.transitions.create(['left'], {
+          top: 2,
+          left: 2,
+          width: 'calc(50% - 2px)',
+          height: 'calc(100% - 4px)',
+          borderRadius: '32px',
+          background: `linear-gradient(135deg,
+            ${theme.palette.primary.light},
+            ${theme.palette.primary.main} 52%,
+            ${theme.palette.primary.dark}
+          )`,
+          boxShadow: `
+            0 12px 24px -10px ${alpha(theme.palette.primary.main, 0.7)},
+            0 0 18px ${alpha(theme.palette.primary.main, 0.34)},
+            inset 0 1px 0 ${alpha(theme.palette.common.white, 0.32)}
+          `,
+          transform: `translateX(${activeIndex * 100}%) scale(${pressed ? 0.95 : 1})`,
+          transition: theme.transitions.create(['transform', 'box-shadow'], {
             easing: theme.transitions.easing.easeInOut,
-            duration: theme.transitions.duration.shorter,
+            duration: 320,
           }),
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            inset: 1,
+            borderRadius: 'inherit',
+            background: `linear-gradient(180deg,
+              ${alpha(theme.palette.common.white, 0.34)},
+              ${alpha(theme.palette.common.white, 0)}
+            )`,
+            pointerEvents: 'none',
+          },
         }}
       />
 
-      <Stack direction="row" spacing={0} sx={{ width: '100%', position: 'relative', zIndex: 2 }}>
+      <Stack direction="row" sx={{ width: '100%', position: 'relative', zIndex: 3 }}>
         {renderOption('HR View', 'HR')}
         {renderOption('CRM View', 'CRM')}
       </Stack>

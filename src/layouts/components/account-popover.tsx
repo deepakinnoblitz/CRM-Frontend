@@ -19,9 +19,12 @@ import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
 import { useRouter, usePathname } from 'src/routes/hooks';
 
+import { stringToColor, stringToDarkColor } from 'src/utils/color-utils';
+
 import { logout } from 'src/api/auth';
 
 import { useAuth } from 'src/auth/auth-context';
+
 
 // ----------------------------------------------------------------------
 
@@ -80,16 +83,29 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
     }
   }, [handleClosePopover, setUser]);
 
+  const isPng = photoURL.toLowerCase().endsWith('.png');
+
   return (
     <>
       <IconButton
         onClick={handleOpenPopover}
         sx={{
           p: '2px',
-          width: 40,
-          height: 40,
-          background: (theme) =>
-            `conic-gradient(${theme.vars.palette.primary.light}, ${theme.vars.palette.warning.light}, ${theme.vars.palette.primary.light})`,
+          width: 44,
+          height: 44,
+          background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.darker} 0%, #00f2ff 50%, ${theme.palette.primary.darker} 100%)`,
+          backgroundSize: '200% 200%',
+          animation: 'shimmer 2.5s ease infinite',
+          '@keyframes shimmer': {
+            '0%': { backgroundPosition: '0% 50%' },
+            '50%': { backgroundPosition: '100% 50%' },
+            '100%': { backgroundPosition: '0% 50%' },
+          },
+          transition: (theme) => theme.transitions.create('all'),
+          '&:hover': {
+            transform: 'scale(1.05)',
+            boxShadow: (theme) => `0 0 15px ${theme.palette.primary.main}40`,
+          },
           ...sx,
         }}
         {...other}
@@ -97,7 +113,15 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
         <Avatar
           src={photoURL}
           alt={displayName}
-          sx={{ width: 1, height: 1 }}
+          sx={{
+            width: 1,
+            height: 1,
+            bgcolor: !photoURL ? stringToColor(displayName) : (isPng ? '#FFFFFF' : 'transparent'),
+            color: stringToDarkColor(displayName),
+            fontWeight: 700,
+            fontSize: '16px',
+            border: (theme) => `2px solid ${theme.palette.background.paper}`,
+          }}
         >
           {displayName.charAt(0).toUpperCase()}
         </Avatar>

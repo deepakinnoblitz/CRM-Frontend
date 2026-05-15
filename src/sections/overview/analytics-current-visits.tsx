@@ -1,6 +1,7 @@
 import type { CardProps } from '@mui/material/Card';
 import type { ChartOptions } from 'src/components/chart';
 
+import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Divider from '@mui/material/Divider';
 import CardHeader from '@mui/material/CardHeader';
@@ -8,6 +9,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 
 import { fNumber } from 'src/utils/format-number';
 
+import { EmptyContent } from 'src/components/empty-content';
 import { Chart, useChart, ChartLegends } from 'src/components/chart';
 
 // ----------------------------------------------------------------------
@@ -64,18 +66,27 @@ export function AnalyticsCurrentVisits({ title, subheader, chart, sx, ...other }
     >
       <CardHeader title={title} subheader={subheader} titleTypographyProps={{ variant: 'h6' }} />
 
-      <Chart
-        type="pie"
-        series={chartSeries}
-        options={chartOptions}
-        sx={{
-          my: 3,
-          mx: 'auto',
-          width: '100%',
-          maxWidth: { xs: 240, xl: 320 },
-          height: { xs: 240, xl: 320 },
-        }}
-      />
+      {chartSeries.length > 0 && chartSeries.some(v => v > 0) ? (
+        <Chart
+          type="pie"
+          series={chartSeries}
+          options={chartOptions}
+          sx={{
+            my: 3,
+            mx: 'auto',
+            width: '100%',
+            maxWidth: { xs: 240, xl: 320 },
+            height: { xs: 240, xl: 320 },
+          }}
+        />
+      ) : (
+        <Box sx={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <EmptyContent
+            title="No data"
+            sx={{ py: 5 }}
+          />
+        </Box>
+      )}
 
       <Divider sx={{ borderStyle: 'dashed' }} />
 

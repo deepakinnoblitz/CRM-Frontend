@@ -12,6 +12,7 @@ import { PiMoneyWavy } from "react-icons/pi";
 import { FaHandshake } from "react-icons/fa";
 import { LuUsersRound } from "react-icons/lu";
 import { RiUserAddLine } from "react-icons/ri";
+import { BiPurchaseTag } from "react-icons/bi";
 import { BsFillBellFill } from "react-icons/bs";
 import { IoHomeOutline } from "react-icons/io5";
 import { TbReportSearch } from "react-icons/tb";
@@ -391,7 +392,7 @@ export const crmAndSalesNavData = [
   {
     title: 'Dashboard',
     path: '/',
-    icon: <MdSpaceDashboard size={22}/>,
+    icon: <IoHomeOutline size={18} />,
   },
   {
     title: 'Leads',
@@ -399,12 +400,12 @@ export const crmAndSalesNavData = [
     icon: <RiUserAddLine size={20} />,
   },
   {
-    title: 'Contacts',
+    title: 'Clients',
     path: '/contacts',
     icon: <MdContacts size={20} />,
   },
   {
-    title: 'Accounts',
+    title: 'Company',
     path: '/accounts',
     icon: <FaBuildingUser size={20}/>,
   },
@@ -413,11 +414,11 @@ export const crmAndSalesNavData = [
     path: '/deals',
     icon: <FaHandshake size={22} />,
   },
-  // {
-  //   title: 'Purchases',
-  //   path: '/purchase',
-  //   icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
-  // },
+  {
+    title: 'Purchases',
+    path: '/purchase',
+    icon: <BiPurchaseTag size={22} />,
+  },
   {
     title: 'Expense Tracker',
     path: '/crm-expense-tracker',
@@ -439,11 +440,11 @@ export const crmAndSalesNavData = [
       { title: 'Accounts Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
       { title: 'Meeting Report', path: '/reports/meeting' },
-      // { title: 'Purchase Report', path: '/reports/purchase' },
+      { title: 'Purchase Report', path: '/reports/purchase' },
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
-      // { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
+      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
     ]
   }
 ];

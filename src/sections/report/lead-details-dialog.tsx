@@ -152,8 +152,8 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
     ];
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
+            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Lead Profile</Typography>
                 <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500], bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows?.z1 }}>
                     <Iconify icon="mingcute:close-line" />
@@ -167,7 +167,6 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
                     justifyContent: 'space-between',
                     borderBottom: 1,
                     borderColor: 'divider',
-                    bgcolor: 'background.neutral',
                     pr: 2.5
                 }}
             >
@@ -187,22 +186,6 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
                     ))}
                 </Tabs>
 
-                {onEdit && (
-                    <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<Iconify icon={"solar:pen-bold" as any} width={16} />}
-                        onClick={onEdit}
-                        sx={{
-                            height: 32,
-                            bgcolor: '#08a3cd',
-                            fontWeight: 700,
-                            '&:hover': { bgcolor: '#068fb3' }
-                        }}
-                    >
-                        Edit
-                    </Button>
-                )}
             </Box>
 
             <DialogContent sx={{ p: 4, m: 0, mt: 0 }}>
@@ -213,7 +196,7 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
                 ) : lead ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {/* Static Header Info */}
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
                             <Box
                                 sx={{
                                     width: 64,

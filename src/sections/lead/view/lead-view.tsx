@@ -550,7 +550,7 @@ export function LeadView() {
   return (
     <>
       {/* CREATE LEAD DIALOG */}
-      <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
+      <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg">
         <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {viewOnly ? 'Lead Details' : (currentLeadId ? 'Edit Lead' : 'New Lead')}
           <IconButton
@@ -564,17 +564,19 @@ export function LeadView() {
           </IconButton>
         </DialogTitle>
 
-        <Box sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs
-            value={currentTab}
-            onChange={(e, newValue) => setCurrentTab(newValue)}
-          >
-            <Tab label="General" value="general" />
-            {currentLeadId && <Tab label="Pipeline" value="pipeline" />}
-            {currentLeadId && <Tab label="Followups" value="followups" />}
-            {currentLeadId && <Tab label="Convert Lead" value="convert" disabled={viewOnly} />}
-          </Tabs>
-        </Box>
+        {currentLeadId && (
+          <Box sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs
+              value={currentTab}
+              onChange={(e, newValue) => setCurrentTab(newValue)}
+            >
+              <Tab label="General" value="general" />
+              {currentLeadId && <Tab label="Pipeline" value="pipeline" />}
+              {currentLeadId && <Tab label="Followups" value="followups" />}
+              {currentLeadId && <Tab label="Convert Lead" value="convert" disabled={viewOnly} />}
+            </Tabs>
+          </Box>
+        )}
 
         <DialogContent dividers>
           {currentTab === 'general' && (
