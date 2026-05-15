@@ -43,54 +43,104 @@ export default function ExpenseTrackerStatsCards({ stats }: Props) {
     ];
 
     return (
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} sx={{ mb: 5 }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 4 }}>
             {ITEMS.map((item) => (
                 <Card
                     key={item.label}
                     sx={{
-                        p: 3,
+                        p: 2,
                         width: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        borderRadius: 2,
-                        boxShadow: 'none',
-                        color: (t) => t.palette[item.color].darker,
-                        bgcolor: (t) => alpha(t.palette[item.color].main, 0.08),
-                        border: (t) => `1px solid ${alpha(t.palette[item.color].main, 0.16)}`,
-                        transition: (theme) => theme.transitions.create(['background-color', 'box-shadow'], {
-                            duration: theme.transitions.duration.shorter,
-                        }),
+                        borderRadius: 3,
+                        border: 'none',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        bgcolor: '#EEF0F5',
+                        boxShadow: `
+                            6px 6px 12px #d1d4dc,
+                            -6px -6px 12px #ffffff
+                        `,
+                        transition: (t) =>
+                            t.transitions.create(['box-shadow', 'transform'], {
+                                duration: t.transitions.duration.short,
+                            }),
                         '&:hover': {
-                            bgcolor: (t) => alpha(t.palette[item.color].main, 0.12),
-                            boxShadow: (theme) => theme.customShadows.z4,
+                            transform: 'translateY(-2px)',
+                            boxShadow: `
+                                10px 10px 20px #c8ccd5,
+                                -10px -10px 20px #ffffff
+                            `,
                         },
                     }}
                 >
+                    <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        spacing={2}
+                    >
+                        {/* Icon — left */}
+                        <Box
+                            sx={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                bgcolor: '#EEF0F5',
+                                color: (t) => t.palette[item.color].main,
+                                boxShadow: `
+                                    inset 3px 3px 6px #d1d4dc,
+                                    inset -3px -3px 6px #ffffff
+                                `,
+                            }}
+                        >
+                            <Iconify icon={item.icon as any} width={22} />
+                        </Box>
+
+                        {/* Label + Value — right aligned */}
+                        <Box sx={{ textAlign: 'right' }}>
+                            <Typography
+                                variant="overline"
+                                sx={{
+                                    fontSize: 10,
+                                    letterSpacing: 0.8,
+                                    display: 'block',
+                                    mb: 0.4,
+                                    color: '#8a90a0',
+                                }}
+                            >
+                                {item.label}
+                            </Typography>
+
+                            <Typography
+                                variant="h5"
+                                sx={{
+                                    fontWeight: 800,
+                                    letterSpacing: -0.5,
+                                    color: '#2d3348',
+                                }}
+                            >
+                                {fCurrency(item.value)}
+                            </Typography>
+                        </Box>
+                    </Stack>
+
+                    {/* Colored bottom accent bar */}
                     <Box
                         sx={{
-                            width: 52,
-                            height: 52,
-                            flexShrink: 0,
-                            borderRadius: 1.5,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: (t) => t.palette[item.color].main,
-                            bgcolor: (t) => alpha(t.palette[item.color].main, 0.12),
-                            mr: 2.5,
+                            position: 'absolute',
+                            bottom: 0,
+                            left: '15%',
+                            right: '15%',
+                            height: 3,
+                            borderRadius: '4px 4px 0 0',
+                            bgcolor: (t) => t.palette[item.color].main,
+                            boxShadow: (t) =>
+                                `0 -2px 8px ${alpha(t.palette[item.color].main, 0.45)}`,
                         }}
-                    >
-                        <Iconify icon={item.icon as any} width={32} />
-                    </Box>
-
-                    <Box>
-                        <Typography variant="subtitle2" sx={{ opacity: 0.72, fontWeight: 'bold', textTransform: 'uppercase', fontSize: 11, letterSpacing: 0.5 }}>
-                            {item.label}
-                        </Typography>
-                        <Typography variant="h3">
-                            {fCurrency(item.value)}
-                        </Typography>
-                    </Box>
+                    />
                 </Card>
             ))}
         </Stack>
