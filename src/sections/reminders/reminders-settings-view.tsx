@@ -119,7 +119,14 @@ export function RemindersSettingsView({ settings, setSettings }: Props) {
               </Box>
               <CustomSwitch
                 checked={!!settings.enable_break_reminders}
-                onChange={(e) => setSettings({ ...settings, enable_break_reminders: e.target.checked ? 1 : 0 })}
+                onChange={(e) => {
+                  const isChecked = e.target.checked;
+                  setSettings({ 
+                    ...settings, 
+                    enable_break_reminders: isChecked ? 1 : 0,
+                    enable_max_break_reminders: isChecked ? 1 : 0
+                  });
+                }}
               />
             </Stack>
 
