@@ -7,13 +7,20 @@ import { GoTasklist } from "react-icons/go";
 import { RiAppsLine } from "react-icons/ri";
 import { RxCalendar } from "react-icons/rx";
 import { FaUsersCog } from "react-icons/fa";
+import { MdContacts } from "react-icons/md";
 import { PiMoneyWavy } from "react-icons/pi";
+import { FaHandshake } from "react-icons/fa";
 import { LuUsersRound } from "react-icons/lu";
+import { RiUserAddLine } from "react-icons/ri";
+import { BiPurchaseTag } from "react-icons/bi";
 import { BsFillBellFill } from "react-icons/bs";
 import { IoHomeOutline } from "react-icons/io5";
 import { TbReportSearch } from "react-icons/tb";
 import { IoMdFolderOpen } from "react-icons/io";
 import { RiSettings3Line } from "react-icons/ri";
+import { FaBuildingUser } from "react-icons/fa6";
+import { MdSpaceDashboard } from "react-icons/md";
+import { BsCalendar4Range } from "react-icons/bs";
 import { LuCalendarCheck2 } from "react-icons/lu";
 import { TbReportAnalytics } from "react-icons/tb";
 import { LuFileSpreadsheet } from "react-icons/lu";
@@ -385,47 +392,48 @@ export const crmAndSalesNavData = [
   {
     title: 'Dashboard',
     path: '/',
-    icon: <Iconify icon={"solar:widget-5-bold-duotone" as any} />,
+    icon: <IoHomeOutline size={18} />,
   },
   {
     title: 'Leads',
     path: '/leads',
-    icon: <Iconify icon={"solar:target-bold-duotone" as any} />,
+    icon: <RiUserAddLine size={20} />,
   },
   {
-    title: 'Contacts',
+    title: 'Clients',
     path: '/contacts',
-    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
+    icon: <MdContacts size={20} />,
   },
   {
-    title: 'Accounts',
+    title: 'Company',
     path: '/accounts',
-    icon: <Iconify icon={"solar:buildings-2-bold-duotone" as any} />,
+    icon: <FaBuildingUser size={20}/>,
   },
   {
     title: 'Deals',
     path: '/deals',
-    icon: <Iconify icon={"solar:hand-money-bold-duotone" as any} />,
+    icon: <FaHandshake size={22} />,
   },
   {
     title: 'Purchases',
     path: '/purchase',
-    icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
+    icon: <BiPurchaseTag size={22} />,
   },
   {
     title: 'Expense Tracker',
     path: '/crm-expense-tracker',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
+    icon: <HiOutlineCreditCard size={22} />,
   },
   {
     title: 'Calendar',
     path: '/events',
-    icon: <Iconify icon={"solar:calendar-mark-bold-duotone" as any} />,
+    icon: <BsCalendar4Range size={18} />
+,
   },
   {
     title: 'Reports',
     path: '/reports',
-    icon: <Iconify icon={"solar:chart-square-bold-duotone" as any} />,
+    icon: <TbReport size={22} />,
     children: [
       { title: 'Lead Report', path: '/reports/lead' },
       { title: 'Contact Report', path: '/reports/contact' },

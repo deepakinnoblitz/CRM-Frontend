@@ -38,13 +38,16 @@ type Props = {
 
 const DEAL_TYPES = ['Existing Business', 'New Business'];
 const DEAL_STAGES = [
-    'Qualification',
-    'Needs Analysis',
-    'Meeting Scheduled',
-    'Proposal Sent',
-    'Negotiation',
-    'Closed Won',
-    'Closed Lost',
+    'Just In',
+    'Working',
+    'Estimation Created',
+    'Estimation Sent',
+    'Invoice Created',
+    'Invoice Sent',
+    'Special Approval',
+    'Ready for Delivery',
+    'Project Started',
+    'Closed',
 ];
 
 export function DealTableFiltersDrawer({

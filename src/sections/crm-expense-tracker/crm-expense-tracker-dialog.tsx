@@ -69,7 +69,7 @@ export default function CRMExpenseTrackerDialog({ open, onClose, onSubmit, curre
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2, boxShadow: (theme) => theme.customShadows.z24,}}}>
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 {currentData ? 'Edit Record' : 'New Record'}
                 <IconButton onClick={onClose}>
@@ -125,7 +125,7 @@ export default function CRMExpenseTrackerDialog({ open, onClose, onSubmit, curre
                 </Box>
             </DialogContent>
 
-            <DialogActions>
+            <DialogActions sx={{m:1}}>
                 <Button variant="contained" onClick={handleSubmit} color="primary">
                     {currentData ? 'Update' : 'Create'}
                 </Button>

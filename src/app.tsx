@@ -55,6 +55,60 @@ export default function App({ children }: AppProps) {
                       {props.message}
                     </Alert>
                   )),
+                  error: forwardRef<HTMLDivElement, any>((props, ref) => (
+                    <Alert
+                      ref={ref}
+                      severity="error"
+                      variant="standard"
+                      onClose={() => closeSnackbar(props.id)}
+                      sx={{
+                        width: '100%',
+                        fontWeight: 500,
+                        borderRadius: 1.5,
+                        minWidth: 300,
+                        boxShadow: (theme) => theme.customShadows.z8,
+                        '& .MuiAlert-action': { padding: '0 8px' },
+                      }}
+                    >
+                      {props.message}
+                    </Alert>
+                  )),
+                  warning: forwardRef<HTMLDivElement, any>((props, ref) => (
+                    <Alert
+                      ref={ref}
+                      severity="warning"
+                      variant="standard"
+                      onClose={() => closeSnackbar(props.id)}
+                      sx={{
+                        width: '100%',
+                        fontWeight: 500,
+                        borderRadius: 1.5,
+                        minWidth: 300,
+                        boxShadow: (theme) => theme.customShadows.z8,
+                        '& .MuiAlert-action': { padding: '0 8px' },
+                      }}
+                    >
+                      {props.message}
+                    </Alert>
+                  )),
+                  info: forwardRef<HTMLDivElement, any>((props, ref) => (
+                    <Alert
+                      ref={ref}
+                      severity="info"
+                      variant="standard"
+                      onClose={() => closeSnackbar(props.id)}
+                      sx={{
+                        width: '100%',
+                        fontWeight: 500,
+                        borderRadius: 1.5,
+                        minWidth: 300,
+                        boxShadow: (theme) => theme.customShadows.z8,
+                        '& .MuiAlert-action': { padding: '0 8px' },
+                      }}
+                    >
+                      {props.message}
+                    </Alert>
+                  )),
                 }}
               >
                 {children}

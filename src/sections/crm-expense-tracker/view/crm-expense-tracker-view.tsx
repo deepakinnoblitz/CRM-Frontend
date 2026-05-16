@@ -224,8 +224,9 @@ export default function CRMExpenseTrackerView() {
                                 hideCheckbox
                                 showIndex
                                 headLabel={[
-                                    { id: 'type', label: 'Type' },
                                     { id: 'titlenotes', label: 'Title (Notes)' },
+                                    { id: 'type', label: 'Type' },
+                                    { id: 'date_time', label: 'Date' },
                                     { id: 'amount', label: 'Amount' },
                                     { id: '' },
                                 ]}
@@ -241,7 +242,7 @@ export default function CRMExpenseTrackerView() {
                                             type: row.type,
                                             titlenotes: row.titlenotes,
                                             amount: row.amount,
-                                            creation: row.creation,
+                                            date_time: row.date_time,
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}

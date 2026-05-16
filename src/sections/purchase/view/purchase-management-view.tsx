@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { HiOutlineShoppingBag, HiOutlineBanknotes } from "react-icons/hi2";
 
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -18,8 +19,8 @@ import { PurchaseCollectionListView } from '../../purchase-collection/view/purch
 // ----------------------------------------------------------------------
 
 const TABS = [
-    { value: 'purchases', label: 'Purchases', icon: <Iconify icon={"solar:cart-large-bold-duotone" as any} width={24} /> },
-    { value: 'collections', label: 'Settlements', icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} width={24} /> },
+    { value: 'purchases', label: 'Purchases', icon: <HiOutlineShoppingBag size={22} /> },
+    { value: 'collections', label: 'Settlements', icon: <HiOutlineBanknotes size={22} /> },
 ];
 
 // ----------------------------------------------------------------------
@@ -53,8 +54,8 @@ export function PurchaseManagementView() {
     };
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
                 <Typography variant="h4">Purchase Management</Typography>
                 <Button
                     variant="contained"
@@ -70,7 +71,22 @@ export function PurchaseManagementView() {
                 value={currentTab}
                 onChange={handleChangeTab}
                 sx={{
-                    mb: { xs: 3, md: 5 },
+                    mb: 3,
+                    '& .MuiTabs-flexContainer': {
+                        borderBottom: 1,
+                        borderColor: 'divider',
+                        width: 'fit-content',
+                    },
+                    '& .MuiTab-root': {
+                        minHeight: 48,
+                        fontWeight: 700,
+                        typography: 'subtitle2',
+                        marginRight: (theme) => theme.spacing(3),
+                        '&:last-of-type': {
+                            marginRight: 0,
+                        },
+                        '&.Mui-selected': { color: 'primary.main' },
+                    },
                 }}
             >
                 {TABS.map((tab) => (

@@ -1,4 +1,6 @@
+import { FaUserTie } from "react-icons/fa6";
 import { useState, useEffect } from 'react';
+import { HiOutlineUser, HiOutlineDocumentText, HiOutlineClipboardDocumentCheck, HiOutlineShoppingBag, HiOutlineCircleStack, HiOutlineBuildingOffice, HiOutlineEnvelope, HiOutlinePhone, HiOutlineBriefcase, HiOutlineHome, HiOutlineMapPin, HiOutlineGlobeAlt } from "react-icons/hi2";
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -46,23 +48,20 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                 .then(setContact)
                 .catch((err) => console.error('Failed to fetch contact details:', err))
                 .finally(() => setLoading(false));
-        } else {
-            setContact(null);
-            setCurrentTab('invoices');
         }
     }, [open, contactId]);
 
     const TABS = [
-        { value: 'invoices', label: 'Invoices', icon: 'solar:bill-list-bold' },
-        { value: 'estimations', label: 'Estimations', icon: 'solar:document-text-bold' },
-        { value: 'purchases', label: 'Purchases', icon: 'solar:cart-bold' },
-        { value: 'deals', label: 'Deals', icon: 'solar:hand-stars-bold' },
+        { value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> },
+        { value: 'estimations', label: 'Estimations', icon: <HiOutlineClipboardDocumentCheck size={18} /> },
+        { value: 'purchases', label: 'Purchases', icon: <HiOutlineShoppingBag size={18} /> },
+        { value: 'deals', label: 'Deals', icon: <HiOutlineCircleStack size={18} /> },
     ];
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
-            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>Contact Details</Typography>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>Client Details</Typography>
                 <IconButton onClick={onClose} sx={{ color: theme.palette.grey[500] }}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
@@ -74,54 +73,71 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                         <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={48} sx={{ color: 'primary.main' }} />
                     </Box>
                 ) : contact ? (
-                    <Box sx={{ display: 'flex', height: '75vh' }}>
+                    <Box sx={{ display: 'flex', height: '85vh' }}>
                         {/* Sidebar: Profile Details */}
                         <Box
                             sx={{
-                                width: 380,
+                                width: 350,
                                 borderRight: `1px solid ${theme.palette.divider}`,
                                 bgcolor: alpha(theme.palette.grey[500], 0.02),
                                 display: 'flex',
                                 flexDirection: 'column',
                             }}
                         >
-                            <Scrollbar sx={{ p: 4 }}>
+                            <Scrollbar
+                                sx={{
+                                    p: 4,
+                                    flexGrow: 1,
+                                    height: 1,
+                                    '& .simplebar-scrollbar:before': {
+                                        opacity: 0.25,
+                                        width: '4px',
+                                        borderRadius: 1,
+                                    },
+                                    '& .simplebar-track.simplebar-vertical': {
+                                        width: '10px',
+                                    },
+                                }}
+                            >
                                 <Stack spacing={5}>
                                     {/* Identity Hero */}
                                     <Box>
-                                        <Stack direction="row" spacing={2.5} alignItems="center" sx={{ mb: 3 }}>
+                                        <Stack direction="row" spacing={2.5} alignItems="center">
                                             <Box
                                                 sx={{
                                                     width: 72,
                                                     height: 72,
-                                                    borderRadius: 2,
-                                                    bgcolor: 'primary.main',
-                                                    color: 'white',
+                                                    borderRadius: '50%',
+                                                    bgcolor: (themeVar) => alpha(themeVar.palette.primary.main, 0.1),
+                                                    color: 'primary.main',
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    boxShadow: (themeVar) => `0 8px 16px 0 ${alpha(themeVar.palette.primary.main, 0.24)}`,
+                                                    border: (themeVar) => `1px solid ${alpha(themeVar.palette.primary.main, 0.2)}`,
                                                 }}
                                             >
-                                                <Iconify icon={"solar:user-bold" as any} width={36} />
+                                                <FaUserTie size={36} />
                                             </Box>
                                             <Box>
-                                                <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                                                <Typography variant="h5" sx={{ fontWeight: 900, color: 'text.primary', letterSpacing: -0.5 }}>
                                                     {contact.first_name} {contact.last_name}
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                                    {contact.designation || 'Contact'}
+                                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, display: 'block' }}>
+                                                    ID: {contact.name}
                                                 </Typography>
                                             </Box>
                                         </Stack>
+                                    </Box>
 
-                                        <Stack spacing={1.5}>
-                                            <DetailItem label="Organization" value={contact.company_name} icon="solar:buildings-bold" />
+                                    {/* Connectivity Grid */}
+                                    <Box>
+                                        <Stack spacing={2.5} sx={{ mb: 4 }}>
+                                            <DetailItem label="Company" value={contact.company_name} icon={<HiOutlineBuildingOffice size={18} />} />
                                             {contact.source_lead && (
                                                 <DetailItem
                                                     label="Source Lead"
                                                     value={contact.source_lead}
-                                                    icon="solar:user-speak-bold"
+                                                    icon={<HiOutlineUser size={18} />}
                                                     color="info.main"
                                                     onClick={() => {
                                                         router.push(`/leads?view=${encodeURIComponent(contact.source_lead)}`);
@@ -129,48 +145,23 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                                                     }}
                                                 />
                                             )}
-                                            <Stack direction="row" spacing={1} alignItems="center">
-                                                <Label variant="soft" color="secondary" sx={{ textTransform: 'none', fontWeight: 700 }}>
-                                                    {contact.name}
-                                                </Label>
-                                                {onEdit && contactId && (
-                                                    <Button
-                                                        variant="outlined"
-                                                        color="primary"
-                                                        size="small"
-                                                        startIcon={<Iconify icon={"solar:pen-bold" as any} width={14} />}
-                                                        onClick={() => {
-                                                            onEdit(contactId);
-                                                            onClose();
-                                                        }}
-                                                        sx={{ py: 0.5, height: 28, fontSize: 12, fontWeight: 700 }}
-                                                    >
-                                                        Edit
-                                                    </Button>
-                                                )}
-                                            </Stack>
                                         </Stack>
-                                    </Box>
 
-                                    <Divider sx={{ borderStyle: 'dashed' }} />
-
-                                    {/* Connectivity Grid */}
-                                    <Box>
-                                        <SectionHeader title="Connectivity" icon="solar:link-bold" />
+                                        <SectionHeader title="Contact Details" />
                                         <Stack spacing={2.5} sx={{ mt: 2.5 }}>
-                                            <DetailItem label="Email Address" value={contact.email} icon="solar:letter-bold" />
-                                            <DetailItem label="Phone Number" value={contact.phone} icon="solar:phone-bold" />
-                                            <DetailItem label="Account Owner" value={contact.owner} icon="solar:user-rounded-bold" />
+                                            <DetailItem label="Email Address" value={contact.email} icon={<HiOutlineEnvelope size={18} />} />
+                                            <DetailItem label="Phone Number" value={contact.phone} icon={<HiOutlinePhone size={18} />} />
+                                            <DetailItem label="Account Owner" value={contact.owner} icon={<HiOutlineBriefcase size={18} />} />
                                         </Stack>
                                     </Box>
 
                                     {/* Location Details */}
                                     <Box>
-                                        <SectionHeader title="Location" icon="solar:map-point-bold" />
+                                        <SectionHeader title="Location" />
                                         <Stack spacing={2.5} sx={{ mt: 3 }}>
-                                            <DetailItem label="Full Address" value={contact.address} icon="solar:home-bold" />
-                                            <DetailItem label="City & Jurisdiction" value={`${contact.city || '—'}, ${contact.state || '—'}`} icon="solar:city-bold" />
-                                            <DetailItem label="Country" value={contact.country} icon="solar:earth-bold" />
+                                            <DetailItem label="Full Address" value={contact.address} icon={<HiOutlineHome size={18} />} />
+                                            <DetailItem label="City & State" value={`${contact.city || '—'}, ${contact.state || '—'}`} icon={<HiOutlineMapPin size={18} />} />
+                                            <DetailItem label="Country" value={contact.country} icon={<HiOutlineGlobeAlt size={18} />} />
                                         </Stack>
                                     </Box>
 
@@ -184,9 +175,8 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                                         }}
                                     >
                                         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                                            <Iconify icon={"solar:clock-circle-bold" as any} width={16} sx={{ color: 'text.disabled' }} />
-                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase' }}>
-                                                Last Synchronized
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase' }}>
+                                                Last Update:
                                             </Typography>
                                         </Stack>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
@@ -199,7 +189,7 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
 
                         {/* Main Content: Tabs & Related Data */}
                         <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                            <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.neutral' }}>
+                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                                 <Tabs
                                     value={currentTab}
                                     onChange={(e, newValue) => setCurrentTab(newValue)}
@@ -222,7 +212,7 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                                             key={tab.value}
                                             value={tab.value}
                                             label={tab.label}
-                                            icon={<Iconify icon={tab.icon as any} width={22} />}
+                                            icon={tab.icon}
                                             iconPosition="start"
                                         />
                                     ))}
@@ -245,40 +235,48 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
     );
 }
 
-function SectionHeader({ title, icon }: { title: string; icon: string }) {
+function SectionHeader({ title }: { title: string }) {
     return (
         <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Iconify icon={icon as any} width={18} sx={{ color: 'primary.main' }} />
-            <Typography variant="overline" sx={{ fontWeight: 900, color: 'text.secondary' }}>
+            <Typography variant="overline" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '12px' }}>
                 {title}
             </Typography>
         </Stack>
     );
 }
 
-function DetailItem({ label, value, icon, color = 'text.primary', onClick, sx }: { label: string; value?: string | null; icon: string; color?: string; onClick?: () => void; sx?: any }) {
+function DetailItem({ label, value, subValue, icon, color = 'text.primary', onClick, sx }: { label: string; value?: string | null; subValue?: string | null; icon: React.ReactNode; color?: string; onClick?: () => void; sx?: any }) {
     return (
-        <Stack
-            direction="row"
-            spacing={1.5}
-            onClick={onClick}
-            sx={{
-                ...(onClick && {
-                    cursor: 'pointer',
-                    '&:hover': { opacity: 0.72 },
-                }),
-                ...sx
-            }}
-        >
-            <Iconify icon={icon as any} width={20} sx={{ mt: 0.5, color: 'text.disabled', opacity: 0.64 }} />
-            <Box>
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase', mb: 0.25, display: 'block', fontSize: 10 }}>
-                    {label}
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color, wordBreak: 'break-word', lineHeight: 1.4 }}>
-                    {value || '—'}
-                </Typography>
-            </Box>
-        </Stack>
+        <Box sx={{ pb: 2, borderBottom: (themeVar) => `1px dashed ${alpha(themeVar.palette.grey[500], 0.2)}`, ...sx }}>
+            <Typography variant="caption" sx={{ color: '#2081C3', fontWeight: 800, textTransform: 'uppercase', mb: 0.75, display: 'block', fontSize: 11, letterSpacing: 0.5 }}>
+                {label}
+            </Typography>
+            <Stack
+                direction="row"
+                spacing={1.5}
+                alignItems="center"
+                onClick={onClick}
+                sx={{
+                    ...(onClick && {
+                        cursor: 'pointer',
+                        '&:hover': { opacity: 0.72 },
+                    }),
+                }}
+            >
+                <Box sx={{ color: 'text.secondary', opacity: 0.8, display: 'flex', alignItems: 'center' }}>
+                    {icon}
+                </Box>
+                <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color, wordBreak: 'break-word', lineHeight: 1.4, fontSize: 14 }}>
+                        {value || '—'}
+                    </Typography>
+                    {subValue && (
+                        <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', mt: 0.5, fontSize: 12, fontWeight: 600 }}>
+                            {subValue}
+                        </Typography>
+                    )}
+                </Box>
+            </Stack>
+        </Box>
     );
 }

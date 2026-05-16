@@ -66,6 +66,7 @@ export function DashboardSwitcher() {
         <Typography
           variant="caption"
           sx={{
+            fontSize: '14px',
             fontWeight: isActive ? 700 : 600,
             whiteSpace: 'nowrap',
             transform: isActive ? 'scale(1.04)' : 'scale(1)',

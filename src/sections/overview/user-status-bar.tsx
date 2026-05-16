@@ -659,8 +659,8 @@ export function UserStatusBar() {
                     </Stack>
                     <Iconify icon="eva:chevron-right-fill" width={20} sx={{ color: 'text.secondary' }} />
                 </MenuItem>
-                
-                               {/* My Reminders */}
+
+                {/* My Reminders */}
                 <MenuItem
                     onClick={() => {
                         handleClose();
@@ -678,7 +678,7 @@ export function UserStatusBar() {
                     }}
                 >
                     <Stack direction="row" alignItems="center" spacing={1}>
-                        <TbBellSearch size={20} color="#494949"/>
+                        <TbBellSearch size={20} color="#494949" />
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
                             My Reminders
                         </Typography>

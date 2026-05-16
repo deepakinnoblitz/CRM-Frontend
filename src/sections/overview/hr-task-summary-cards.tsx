@@ -294,15 +294,6 @@ export function HRTaskSummaryCards() {
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
                     <HRSummaryWidget
-                        title="Reopen Tasks"
-                        total={stats.reopen}
-                        loading={loading}
-                        color="error"
-                        compact
-                    />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                    <HRSummaryWidget
                         title="In Progress Tasks"
                         total={stats.in_progress}
                         loading={loading}
@@ -316,6 +307,15 @@ export function HRTaskSummaryCards() {
                         total={stats.completed}
                         loading={loading}
                         color="success"
+                        compact
+                    />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                    <HRSummaryWidget
+                        title="Reopen Tasks"
+                        total={stats.reopen}
+                        loading={loading}
+                        color="error"
                         compact
                     />
                 </Grid>
