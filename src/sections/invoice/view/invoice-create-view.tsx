@@ -680,7 +680,7 @@ export function InvoiceCreateView() {
                                                         }}
                                                         ListboxProps={{
                                                             sx: {
-                                                                height: '300px',
+                                                                maxHeight: '300px',
                                                                 '& .MuiAutocomplete-option': {
                                                                     py: 1.5,
                                                                     px: 2,
@@ -893,6 +893,19 @@ export function InvoiceCreateView() {
                                                                 setTaxTypeDialogOpen(true);
                                                             } else {
                                                                 handleItemChange(index, 'tax_type', newValue?.name || '');
+                                                            }
+                                                        }}
+                                                        ListboxProps={{
+                                                            sx: {
+                                                                maxHeight: '300px',
+                                                                '& .MuiAutocomplete-option': {
+                                                                    py: 1.5,
+                                                                    px: 2,
+                                                                    borderRadius: 0.75,
+                                                                    mx: 0.5,
+                                                                    my: 0.25,
+                                                                    whiteSpace: 'nowrap',
+                                                                }
                                                             }
                                                         }}
                                                         renderInput={(params) => (

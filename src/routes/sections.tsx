@@ -42,6 +42,7 @@ export const UsersPage = lazy(() => import('src/pages/users'));
 export const ContactPage = lazy(() => import('src/pages/contact'));
 export const AccountsPage = lazy(() => import('src/pages/accounts'));
 export const DealsPage = lazy(() => import('src/pages/deals'));
+export const DealDetailsPage = lazy(() => import('src/pages/deals/details'));
 export const EventsPage = lazy(() => import('src/pages/events'));
 export const CallsPage = lazy(() => import('src/pages/calls'));
 export const MeetingsPage = lazy(() => import('src/pages/meetings'));
@@ -171,7 +172,13 @@ export const routesSection: RouteObject[] = [
 
       { path: 'contacts', element: <ContactPage /> },
       { path: 'accounts', element: <AccountsPage /> },
-      { path: 'deals', element: <DealsPage /> },
+      {
+        path: 'deals',
+        children: [
+          { index: true, element: <DealsPage /> },
+          { path: ':id/view', element: <DealDetailsPage /> },
+        ],
+      },
       { path: 'events', element: <EventsPage /> },
       { path: 'calls', element: <CallsPage /> },
       { path: 'meetings', element: <MeetingsPage /> },

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FaBuildingUser } from "react-icons/fa6";
-import { HiOutlineUsers, HiOutlineDocumentText, HiOutlineClipboardDocumentCheck, HiOutlineShoppingBag, HiOutlineCircleStack } from "react-icons/hi2";
+import { HiOutlineUsers, HiOutlineDocumentText, HiOutlineClipboardDocumentCheck, HiOutlineShoppingBag, HiOutlineCircleStack, HiOutlinePhone, HiOutlineGlobeAlt, HiOutlineIdentification, HiOutlineBriefcase, HiOutlineBuildingOffice, HiOutlineMapPin, HiOutlineGlobeEuropeAfrica } from "react-icons/hi2";
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -79,7 +78,7 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
                         {/* Sidebar: Profile Details */}
                         <Box
                             sx={{
-                                width: 350,
+                                width: 300,
                                 borderRight: `1px solid ${theme.palette.divider}`,
                                 bgcolor: alpha(theme.palette.grey[500], 0.02),
                                 display: 'flex',
@@ -104,27 +103,18 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
                                 <Stack spacing={5}>
                                     {/* Identity Hero */}
                                     <Box>
-                                        <Stack direction="row" spacing={2.5} alignItems="center">
-                                            <Box
-                                                sx={{
-                                                    width: 72,
-                                                    height: 72,
-                                                    borderRadius: '50%',
-                                                    bgcolor: (themeVar) => alpha(themeVar.palette.primary.main, 0.1),
-                                                    color: 'primary.main',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    border: (themeVar) => `1px solid ${alpha(themeVar.palette.primary.main, 0.2)}`,
-                                                }}
-                                            >
-                                                <FaBuildingUser size={36} />
+                                        <Typography variant="caption" sx={{ color: '#2081C3', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', fontSize: 12 }}>
+                                            Company Name
+                                        </Typography>
+                                        <Stack direction="row" spacing={1.5} alignItems="center">
+                                            <Box sx={{ color: 'text.secondary', opacity: 0.8, display: 'flex', alignItems: 'center' }}>
+                                                <HiOutlineBuildingOffice size={28} />
                                             </Box>
-                                            <Box>
-                                                <Typography variant="h5" sx={{ fontWeight: 900, color: 'text.primary', letterSpacing: -0.5 }}>
+                                            <Box sx={{ flexGrow: 1 }}>
+                                                <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary', textTransform: 'capitalize', fontSize: '16px', pb: 0.5, lineHeight: 1.4 }}>
                                                     {account.account_name}
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, display: 'block' }}>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '12px' }}>
                                                     ID: {account.name}
                                                 </Typography>
                                             </Box>
@@ -136,11 +126,11 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
                                     {/* Account Details */}
                                     <Box>
                                         <SectionHeader title="Account Details" />
-                                        <Stack spacing={2.5} sx={{ mt: 2.5 }}>
-                                            <DetailItem label="Phone Number" value={account.phone_number} icon="solar:phone-bold" />
-                                            <DetailItem label="Website" value={account.website} icon="solar:globus-bold" />
-                                            <DetailItem label="GSTIN" value={account.gstin} icon="solar:checklist-bold" />
-                                            <DetailItem label="Account Owner" value={account.owner} icon="solar:user-bold" />
+                                        <Stack spacing={2.5} sx={{ mt: 2 }}>
+                                            <DetailItem label="Phone Number" value={account.phone_number} icon={<HiOutlinePhone size={18} />} />
+                                            <DetailItem label="Website" value={account.website} icon={<HiOutlineGlobeAlt size={18} />} />
+                                            <DetailItem label="GSTIN" value={account.gstin} icon={<HiOutlineIdentification size={18} />} />
+                                            <DetailItem label="Account Owner" value={account.owner_name} subValue={account.owner} icon={<HiOutlineBriefcase size={18} />} />
                                         </Stack>
                                     </Box>
 
@@ -148,9 +138,9 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
                                     <Box>
                                         <SectionHeader title="Location" />
                                         <Stack spacing={2.5} sx={{ mt: 3 }}>
-                                            <DetailItem label="City" value={account.city} icon="solar:city-bold" />
-                                            <DetailItem label="State" value={account.state} icon="solar:point-on-map-bold" />
-                                            <DetailItem label="Country" value={account.country} icon="solar:earth-bold" />
+                                            <DetailItem label="City" value={account.city} icon={<HiOutlineBuildingOffice size={18} />} />
+                                            <DetailItem label="State" value={account.state} icon={<HiOutlineMapPin size={18} />} />
+                                            <DetailItem label="Country" value={account.country} icon={<HiOutlineGlobeEuropeAfrica size={18} />} />
                                         </Stack>
                                     </Box>
 
@@ -227,38 +217,46 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
 function SectionHeader({ title }: { title: string }) {
     return (
         <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Typography variant="overline" sx={{ fontWeight: 900, color: 'text.secondary' }}>
+            <Typography variant="overline" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '13px' }}>
                 {title}
             </Typography>
         </Stack>
     );
 }
 
-function DetailItem({ label, value, icon, color = 'text.primary', onClick, sx }: { label: string; value?: string | null; icon: string; color?: string; onClick?: () => void; sx?: any }) {
+function DetailItem({ label, value, subValue, icon, color = 'text.primary', onClick, sx }: { label: string; value?: string | null; subValue?: string | null; icon: React.ReactNode; color?: string; onClick?: () => void; sx?: any }) {
     return (
-        <Stack
-            direction="row"
-            spacing={1.5}
-            alignItems="center"
-            onClick={onClick}
-            sx={{
-                ...(onClick && {
-                    cursor: 'pointer',
-                    '&:hover': { opacity: 0.72 },
-                }),
-                ...sx
-            }}
-        >
-            <Iconify icon={icon as any} width={20} sx={{ color: 'text.disabled', opacity: 0.64 }} />
-            <Box>
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase', mb: 0.25, display: 'block', fontSize: 10 }}>
-                    {label}
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color, wordBreak: 'break-word', lineHeight: 1.4 }}>
-                    {value || '—'}
-                </Typography>
-            </Box>
-        </Stack>
+        <Box sx={{ pb: 2, borderBottom: (themeVar) => `1px dashed ${alpha(themeVar.palette.grey[500], 0.2)}`, ...sx }}>
+            <Typography variant="caption" sx={{ color: '#2081C3', fontWeight: 800, textTransform: 'uppercase', mb: 0.75, display: 'block', fontSize: 11, letterSpacing: 0.5 }}>
+                {label}
+            </Typography>
+            <Stack
+                direction="row"
+                spacing={1.5}
+                alignItems="center"
+                onClick={onClick}
+                sx={{
+                    ...(onClick && {
+                        cursor: 'pointer',
+                        '&:hover': { opacity: 0.72 },
+                    }),
+                }}
+            >
+                <Box sx={{ color: 'text.secondary', opacity: 0.8, display: 'flex', alignItems: 'center' }}>
+                    {icon}
+                </Box>
+                <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color, wordBreak: 'break-word', lineHeight: 1.4, fontSize: 14 }}>
+                        {value || '—'}
+                    </Typography>
+                    {subValue && (
+                        <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', mt: 0.5, fontSize: 12, fontWeight: 600 }}>
+                            {subValue}
+                        </Typography>
+                    )}
+                </Box>
+            </Stack>
+        </Box>
     );
 }
 

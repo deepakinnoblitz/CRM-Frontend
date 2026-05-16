@@ -3,6 +3,7 @@ import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
+import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
 import { Iconify } from 'src/components/iconify';
@@ -91,16 +92,22 @@ export function AccountTableRow({
                 </TableCell>
             )}
 
-            <TableCell component="th" scope="row">
-                <Box
+            <TableCell component="th" scope="row" sx={{ maxWidth: 260 }}>
+                <Typography
+                    variant="subtitle2"
                     sx={{
-                        gap: 2,
-                        display: 'flex',
-                        alignItems: 'center',
+                        fontWeight: 700,
+                        fontSize: '14px',
+                        color: 'text.primary',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: 'block',
+                        textTransform: 'capitalize'
                     }}
                 >
                     {row.account_name}
-                </Box>
+                </Typography>
             </TableCell>
 
             <TableCell>{row.phone_number}</TableCell>
@@ -112,8 +119,6 @@ export function AccountTableRow({
             <TableCell>{row.state}</TableCell>
 
             <TableCell>{row.country}</TableCell>
-
-            <TableCell>{row.website}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

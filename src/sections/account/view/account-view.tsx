@@ -516,7 +516,6 @@ export function AccountView() {
                                     { id: 'city', label: 'City' },
                                     { id: 'state', label: 'State' },
                                     { id: 'country', label: 'Country' },
-                                    { id: 'website', label: 'Website' },
                                     { id: '', label: '' },
                                 ]}
                             />

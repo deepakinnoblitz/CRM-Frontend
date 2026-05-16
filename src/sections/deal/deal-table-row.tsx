@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
+import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import { alpha, styled } from '@mui/material/styles';
 import Tooltip, { tooltipClasses, TooltipProps } from '@mui/material/Tooltip';
@@ -46,6 +47,7 @@ type Props = {
         id: string;
         title: string;
         account: string;
+        accountName?: string;
         contact: string;
         contactName: string;
         value: number;
@@ -138,22 +140,53 @@ export function DealTableRow({
                 </TableCell>
             )}
 
-            <TableCell component="th" scope="row">
-                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center' }}>
+            <TableCell component="th" scope="row" sx={{ maxWidth: 260 }}>
+                <Typography
+                    variant="subtitle2"
+                    sx={{
+                        fontWeight: 700,
+                        fontSize: '14px',
+                        color: 'text.primary',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: 'block'
+                    }}
+                >
                     {row.title}
-                </Box>
+                </Typography>
             </TableCell>
 
-            <TableCell>{row.account}</TableCell>
+            <TableCell>
+                <Typography variant="subtitle2" sx={{ fontSize: '14px' }}>
+                    {row.accountName || row.account}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
+                    {row.account}
+                </Typography>
+            </TableCell>
 
             <TableCell>
-                {row.contactName ? `${row.contactName} (${row.contact})` : row.contact}
+                <Typography variant="subtitle2" sx={{ fontSize: '14px' }}>
+                    {row.contactName || row.contact}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
+                    {row.contact}
+                </Typography>
             </TableCell>
 
             <TableCell>{row.expectedCloseDate || '-'}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+                     <IconButton
+                        onClick={onView}
+                        sx={{
+                            color: 'info.main',
+                        }}
+                    >
+                        <Iconify icon="solar:eye-bold" />
+                    </IconButton>
                     <StyledTooltip title="Create Estimation" placement="top" arrow>
                         <IconButton
                             onClick={() => navigate(`/estimations/new?deal_id=${encodeURIComponent(row.id)}&client_id=${encodeURIComponent(row.contact)}`)}
@@ -201,15 +234,6 @@ export function DealTableRow({
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>
                     )}
-
-                    <IconButton
-                        onClick={onView}
-                        sx={{
-                            color: 'info.main',
-                        }}
-                    >
-                        <Iconify icon="solar:eye-bold" />
-                    </IconButton>
                 </Box>
             </TableCell>
         </TableRow>

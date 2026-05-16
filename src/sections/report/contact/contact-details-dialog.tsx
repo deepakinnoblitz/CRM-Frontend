@@ -1,6 +1,6 @@
 import { FaUserTie } from "react-icons/fa6";
 import { useState, useEffect } from 'react';
-import { HiOutlineUser, HiOutlineDocumentText, HiOutlineClipboardDocumentCheck, HiOutlineShoppingBag, HiOutlineCircleStack } from "react-icons/hi2";
+import { HiOutlineUser, HiOutlineDocumentText, HiOutlineClipboardDocumentCheck, HiOutlineShoppingBag, HiOutlineCircleStack, HiOutlineBuildingOffice, HiOutlineEnvelope, HiOutlinePhone, HiOutlineBriefcase, HiOutlineHome, HiOutlineMapPin, HiOutlineGlobeAlt } from "react-icons/hi2";
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -102,7 +102,7 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                                 <Stack spacing={5}>
                                     {/* Identity Hero */}
                                     <Box>
-                                        <Stack direction="row" spacing={2.5} alignItems="center" sx={{ mb: 3 }}>
+                                        <Stack direction="row" spacing={2.5} alignItems="center">
                                             <Box
                                                 sx={{
                                                     width: 72,
@@ -127,14 +127,17 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                                                 </Typography>
                                             </Box>
                                         </Stack>
+                                    </Box>
 
-                                        <Stack spacing={1.5} sx={{ px: 2, pt: 2 }}>
-                                            <DetailItem label="Organization" value={contact.company_name} icon="solar:buildings-bold" />
+                                    {/* Connectivity Grid */}
+                                    <Box>
+                                        <Stack spacing={2.5} sx={{ mb: 4 }}>
+                                            <DetailItem label="Company" value={contact.company_name} icon={<HiOutlineBuildingOffice size={18} />} />
                                             {contact.source_lead && (
                                                 <DetailItem
                                                     label="Source Lead"
                                                     value={contact.source_lead}
-                                                    icon="solar:user-speak-bold"
+                                                    icon={<HiOutlineUser size={18} />}
                                                     color="info.main"
                                                     onClick={() => {
                                                         router.push(`/leads?view=${encodeURIComponent(contact.source_lead)}`);
@@ -143,17 +146,12 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                                                 />
                                             )}
                                         </Stack>
-                                    </Box>
 
-                                    <Divider sx={{ borderStyle: 'dashed' }} />
-
-                                    {/* Connectivity Grid */}
-                                    <Box>
-                                        <SectionHeader title="Connectivity" />
+                                        <SectionHeader title="Contact Details" />
                                         <Stack spacing={2.5} sx={{ mt: 2.5 }}>
-                                            <DetailItem label="Email Address" value={contact.email} icon="solar:letter-bold" />
-                                            <DetailItem label="Phone Number" value={contact.phone} icon="solar:phone-bold" />
-                                            <DetailItem label="Account Owner" value={contact.owner} icon="solar:user-rounded-bold" />
+                                            <DetailItem label="Email Address" value={contact.email} icon={<HiOutlineEnvelope size={18} />} />
+                                            <DetailItem label="Phone Number" value={contact.phone} icon={<HiOutlinePhone size={18} />} />
+                                            <DetailItem label="Account Owner" value={contact.owner} icon={<HiOutlineBriefcase size={18} />} />
                                         </Stack>
                                     </Box>
 
@@ -161,9 +159,9 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                                     <Box>
                                         <SectionHeader title="Location" />
                                         <Stack spacing={2.5} sx={{ mt: 3 }}>
-                                            <DetailItem label="Full Address" value={contact.address} icon="solar:home-bold" />
-                                            <DetailItem label="City & State" value={`${contact.city || '—'}, ${contact.state || '—'}`} icon="solar:city-bold" />
-                                            <DetailItem label="Country" value={contact.country} icon="solar:earth-bold" />
+                                            <DetailItem label="Full Address" value={contact.address} icon={<HiOutlineHome size={18} />} />
+                                            <DetailItem label="City & State" value={`${contact.city || '—'}, ${contact.state || '—'}`} icon={<HiOutlineMapPin size={18} />} />
+                                            <DetailItem label="Country" value={contact.country} icon={<HiOutlineGlobeAlt size={18} />} />
                                         </Stack>
                                     </Box>
 
@@ -240,37 +238,45 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
 function SectionHeader({ title }: { title: string }) {
     return (
         <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Typography variant="overline" sx={{ fontWeight: 900, color: 'text.secondary' }}>
+            <Typography variant="overline" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '12px' }}>
                 {title}
             </Typography>
         </Stack>
     );
 }
 
-function DetailItem({ label, value, icon, color = 'text.primary', onClick, sx }: { label: string; value?: string | null; icon: string; color?: string; onClick?: () => void; sx?: any }) {
+function DetailItem({ label, value, subValue, icon, color = 'text.primary', onClick, sx }: { label: string; value?: string | null; subValue?: string | null; icon: React.ReactNode; color?: string; onClick?: () => void; sx?: any }) {
     return (
-        <Stack
-            direction="row"
-            spacing={1.5}
-            alignItems="center"
-            onClick={onClick}
-            sx={{
-                ...(onClick && {
-                    cursor: 'pointer',
-                    '&:hover': { opacity: 0.72 },
-                }),
-                ...sx
-            }}
-        >
-            <Iconify icon={icon as any} width={20} sx={{ color: 'text.disabled', opacity: 0.64 }} />
-            <Box>
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase', mb: 0.25, display: 'block', fontSize: 10 }}>
-                    {label}
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color, wordBreak: 'break-word', lineHeight: 1.4 }}>
-                    {value || '—'}
-                </Typography>
-            </Box>
-        </Stack>
+        <Box sx={{ pb: 2, borderBottom: (themeVar) => `1px dashed ${alpha(themeVar.palette.grey[500], 0.2)}`, ...sx }}>
+            <Typography variant="caption" sx={{ color: '#2081C3', fontWeight: 800, textTransform: 'uppercase', mb: 0.75, display: 'block', fontSize: 11, letterSpacing: 0.5 }}>
+                {label}
+            </Typography>
+            <Stack
+                direction="row"
+                spacing={1.5}
+                alignItems="center"
+                onClick={onClick}
+                sx={{
+                    ...(onClick && {
+                        cursor: 'pointer',
+                        '&:hover': { opacity: 0.72 },
+                    }),
+                }}
+            >
+                <Box sx={{ color: 'text.secondary', opacity: 0.8, display: 'flex', alignItems: 'center' }}>
+                    {icon}
+                </Box>
+                <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color, wordBreak: 'break-word', lineHeight: 1.4, fontSize: 14 }}>
+                        {value || '—'}
+                    </Typography>
+                    {subValue && (
+                        <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', mt: 0.5, fontSize: 12, fontWeight: 600 }}>
+                            {subValue}
+                        </Typography>
+                    )}
+                </Box>
+            </Stack>
+        </Box>
     );
 }

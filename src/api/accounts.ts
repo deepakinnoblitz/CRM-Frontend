@@ -156,7 +156,7 @@ export async function getAccountPermissions() {
 
 
 export async function getAccount(name: string) {
-    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Accounts&name=${name}`);
+    const res = await frappeRequest(`/api/method/company.company.frontend_api.get_account_details?name=${name}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch account details");

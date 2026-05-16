@@ -34,10 +34,11 @@ import { LeadTableHead as DataTableHead } from '../lead/lead-table-head';
 
 type Props = {
     dealId: string;
-    type: 'invoices' | 'estimations';
+    type: 'invoices' | 'estimations' | 'stage_history';
+    deal?: any;
 };
 
-export function DealRelatedList({ dealId, type }: Props) {
+export function DealRelatedList({ dealId, type, deal }: Props) {
     const theme = useTheme();
     const router = useRouter();
     const [data, setData] = useState<any[]>([]);
@@ -68,6 +69,12 @@ export function DealRelatedList({ dealId, type }: Props) {
                     page_size: rowsPerPage,
                     filters: { deal_id: dealId },
                 });
+            } else if (type === 'stage_history') {
+                const hist = deal?.stage_history || [];
+                setData(hist);
+                setTotal(hist.length);
+                setLoading(false);
+                return;
             }
 
             const records = res?.data || [];
@@ -91,7 +98,7 @@ export function DealRelatedList({ dealId, type }: Props) {
         } finally {
             setLoading(false);
         }
-    }, [dealId, type, page, rowsPerPage]);
+    }, [dealId, type, page, rowsPerPage, deal]);
 
     useEffect(() => {
         loadData();
@@ -107,6 +114,14 @@ export function DealRelatedList({ dealId, type }: Props) {
     };
 
     const getHeadLabel = () => {
+        if (type === 'stage_history') {
+            return [
+                { id: 'state_from', label: 'State From' },
+                { id: 'state_to', label: 'State To' },
+                { id: 'date_and_time', label: 'Date & Time' },
+                { id: 'change_by', label: 'Updated By' },
+            ];
+        }
         if (type === 'invoices') {
             return [
                 { id: 'ref_no', label: 'Ref No' },
@@ -143,6 +158,27 @@ export function DealRelatedList({ dealId, type }: Props) {
 
     const renderRow = (row: any, index: number) => {
         const serialNumber = index + 1 + page * rowsPerPage;
+
+        if (type === 'stage_history') {
+            return (
+                <TableRow key={index} hover>
+                    <TableCell align="center">{serialNumber}</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: 'text.secondary' }}>{row.state_from || 'Initial'}</TableCell>
+                    <TableCell sx={{ fontWeight: 800, color: 'primary.main' }}>{row.state_to}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{row.date_and_time ? fDate(row.date_and_time) : '—'}</TableCell>
+                    <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                            {row.change_by_name || row.change_by}
+                        </Typography>
+                        {row.change_by_name && row.change_by !== row.change_by_name && (
+                            <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>
+                                ID: {row.change_by}
+                            </Typography>
+                        )}
+                    </TableCell>
+                </TableRow>
+            );
+        }
 
         if (type === 'invoices') {
             return (
@@ -187,63 +223,65 @@ export function DealRelatedList({ dealId, type }: Props) {
     return (
         <Stack spacing={3}>
             {/* Header with New Button */}
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Box
-                    sx={{
-                        display: 'grid',
-                        gap: 2,
-                        flexGrow: 1,
-                        gridTemplateColumns: {
-                            xs: 'repeat(1, 1fr)',
-                            sm: type === 'estimations' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-                            md: type === 'estimations' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-                        },
-                    }}
-                >
-                    <SummaryCard
-                        title="Total Volume"
-                        value={fCurrency(summary.total)}
-                        icon="solar:wad-of-money-bold"
-                        color={theme.palette.primary.main}
-                    />
-
-                    {type === 'estimations' ? (
+            {type !== 'stage_history' && (
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gap: 2,
+                            flexGrow: 1,
+                            gridTemplateColumns: {
+                                xs: 'repeat(1, 1fr)',
+                                sm: type === 'estimations' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                                md: type === 'estimations' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                            },
+                        }}
+                    >
                         <SummaryCard
-                            title="Total Count"
-                            value={String(total)}
-                            icon="solar:document-text-bold"
-                            color={theme.palette.info.main}
+                            title="Total Volume"
+                            value={fCurrency(summary.total)}
+                            icon="solar:wad-of-money-bold"
+                            color={theme.palette.primary.main}
                         />
-                    ) : (
-                        <>
-                            <SummaryCard
-                                title="Total Received"
-                                value={fCurrency(summary.paid)}
-                                icon="solar:check-circle-bold"
-                                color={theme.palette.success.main}
-                            />
 
+                        {type === 'estimations' ? (
                             <SummaryCard
-                                title="Outstanding"
-                                value={fCurrency(summary.balance)}
-                                icon="solar:info-circle-bold"
-                                color={theme.palette.error.main}
+                                title="Total Count"
+                                value={String(total)}
+                                icon="solar:document-text-bold"
+                                color={theme.palette.info.main}
                             />
-                        </>
-                    )}
-                </Box>
+                        ) : (
+                            <>
+                                <SummaryCard
+                                    title="Total Received"
+                                    value={fCurrency(summary.paid)}
+                                    icon="solar:check-circle-bold"
+                                    color={theme.palette.success.main}
+                                />
 
-                <Button
-                    variant="contained"
-                    color={type === 'estimations' ? "info" : "success"}
-                    size="small"
-                    startIcon={<Iconify icon="mingcute:add-line" width={16} />}
-                    onClick={handleCreate}
-                    sx={{ height: 40, px: 2, ml: 3 }}
-                >
-                    New {type === 'estimations' ? 'Estimation' : 'Invoice'}
-                </Button>
-            </Stack>
+                                <SummaryCard
+                                    title="Outstanding"
+                                    value={fCurrency(summary.balance)}
+                                    icon="solar:info-circle-bold"
+                                    color={theme.palette.error.main}
+                                />
+                            </>
+                        )}
+                    </Box>
+
+                    <Button
+                        variant="contained"
+                        color={type === 'estimations' ? "info" : "success"}
+                        size="small"
+                        startIcon={<Iconify icon="mingcute:add-line" width={16} />}
+                        onClick={handleCreate}
+                        sx={{ height: 40, px: 2, ml: 3 }}
+                    >
+                        New {type === 'estimations' ? 'Estimation' : 'Invoice'}
+                    </Button>
+                </Stack>
+            )}
 
             <Card sx={{ border: `1px solid ${alpha(theme.palette.grey[500], 0.12)}`, borderRadius: 1.5 }}>
                 <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>

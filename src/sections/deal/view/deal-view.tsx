@@ -33,6 +33,8 @@ import TablePagination from '@mui/material/TablePagination';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useRouter } from 'src/routes/hooks';
+
 import { useDeals } from 'src/hooks/useDeals';
 
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
@@ -49,7 +51,6 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { DealTableRow } from '../deal-table-row';
 import { TableNoData } from '../../lead/table-no-data';
-import { DealDetailsDialog } from '../deal-details-dialog';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { DealTableFiltersDrawer } from '../deal-table-filters-drawer';
 import { LeadTableHead as DealTableHead } from '../../lead/lead-table-head';
@@ -60,6 +61,7 @@ import { LeadTableToolbar as DealTableToolbar } from '../../lead/lead-table-tool
 // ----------------------------------------------------------------------
 
 export function DealView() {
+    const router = useRouter();
     const [searchParams, setSearchParams] = useSearchParams();
     const currentTab = searchParams.get('tab') || 'deals';
 
@@ -86,20 +88,23 @@ export function DealView() {
     const [selected, setSelected] = useState<string[]>([]);
 
     const STAGE_OPTIONS = [
-        { value: 'Qualification', label: 'Qualification' },
-        { value: 'Needs Analysis', label: 'Needs Analysis' },
-        { value: 'Meeting Scheduled', label: 'Meeting Scheduled' },
-        { value: 'Proposal Sent', label: 'Proposal Sent' },
-        { value: 'Negotiation', label: 'Negotiation' },
-        { value: 'Closed Won', label: 'Closed Won' },
-        { value: 'Closed Lost', label: 'Closed Lost' },
+        { value: 'Just In', label: 'Just In' },
+        { value: 'Working', label: 'Working' },
+        { value: 'Estimation Created', label: 'Estimation Created' },
+        { value: 'Estimation Sent', label: 'Estimation Sent' },
+        { value: 'Invoice Created', label: 'Invoice Created' },
+        { value: 'Invoice Sent', label: 'Invoice Sent' },
+        { value: 'Special Approval', label: 'Special Approval' },
+        { value: 'Ready for Delivery', label: 'Ready for Delivery' },
+        { value: 'Project Started', label: 'Project Started' },
+        { value: 'Closed', label: 'Closed' },
     ];
 
     const [openCreate, setOpenCreate] = useState(false);
     const [creating, setCreating] = useState(false);
     const [currentDealId, setCurrentDealId] = useState<string | null>(null);
     const [viewOnly, setViewOnly] = useState(false);
-    const [openView, setOpenView] = useState(false);
+
 
     // Form state
     const [dealTitle, setDealTitle] = useState('');
@@ -107,7 +112,7 @@ export function DealView() {
     const [contact, setContact] = useState('');
     const [value, setValue] = useState<number | string>('');
     const [expectedCloseDate, setExpectedCloseDate] = useState<Dayjs | null>(null);
-    const [stage, setStage] = useState('Qualification');
+    const [stage, setStage] = useState('Just In');
     const [probability, setProbability] = useState<number | string>('');
     const [dealType, setDealType] = useState('New Business');
     const [sourceLead, setSourceLead] = useState('');
@@ -203,7 +208,7 @@ export function DealView() {
         setContact('');
         setValue('');
         setExpectedCloseDate(null);
-        setStage('Qualification');
+        setStage('Just In');
         setProbability('');
         setDealType('New Business');
         setSourceLead('');
@@ -235,7 +240,7 @@ export function DealView() {
         setContact('');
         setValue('');
         setExpectedCloseDate(null);
-        setStage('Qualification');
+        setStage('Just In');
         setProbability('');
         setDealType('New Business');
         setSourceLead('');
@@ -395,7 +400,7 @@ export function DealView() {
             setContact(fullRow.contact || '');
             setValue(fullRow.value || '');
             setExpectedCloseDate(fullRow.expected_close_date ? dayjs(fullRow.expected_close_date) : null);
-            setStage(fullRow.stage || 'Qualification');
+            setStage(fullRow.stage || 'Just In');
             setProbability(fullRow.probability || '');
             setDealType(fullRow.type || 'New Business');
             setSourceLead(fullRow.source_lead || '');
@@ -407,8 +412,7 @@ export function DealView() {
     };
 
     const handleViewRow = (id: string) => {
-        setCurrentDealId(id);
-        setOpenView(true);
+        router.push(`/deals/${encodeURIComponent(id)}/view`);
     };
 
     const onChangePage = (_: unknown, newPage: number) => setPage(newPage);
@@ -477,10 +481,10 @@ export function DealView() {
                                     return (
                                         <li key={key || option.name} {...optionProps}>
                                             <Box>
-                                                <Typography variant="subtitle2">
+                                                <Typography variant="subtitle2" sx={{ fontSize: '14px' }}>
                                                     {option.account_name || option.name}
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
                                                     ID: {option.name}
                                                 </Typography>
                                             </Box>
@@ -512,7 +516,7 @@ export function DealView() {
                                                 <Typography variant="subtitle2">
                                                     {option.first_name || option.name}
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
                                                     ID: {option.name}
                                                 </Typography>
                                             </Box>
@@ -693,6 +697,7 @@ export function DealView() {
                                                                 id: row.name,
                                                                 title: row.deal_title ?? '-',
                                                                 account: row.account ?? '-',
+                                                                accountName: row.account_name ?? '',
                                                                 contact: row.contact ?? '-',
                                                                 contactName: row.contact_name ?? '',
                                                                 value: row.value ?? 0,
@@ -745,13 +750,6 @@ export function DealView() {
                                     onRowsPerPageChange={onChangeRowsPerPage}
                                 />
                             </Card>
-
-                            <DealDetailsDialog
-                                open={openView}
-                                onClose={() => setOpenView(false)}
-                                dealId={currentDealId}
-                                onEdit={handleEditRow}
-                            />
                         </>
                     )}
 
