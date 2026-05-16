@@ -447,7 +447,7 @@ export function AccountView() {
     const empty = !loading && !accounts.length && !filterName && !canReset;
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box display="flex" alignItems="center" mb={5}>
                 <Typography variant="h4" flexGrow={1}>
                     Company
@@ -601,7 +601,7 @@ export function AccountView() {
                 }}
             />
 
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {viewMode ? 'Company Details' : isEdit ? 'Edit Company' : 'New Company'}
                     <IconButton
@@ -753,7 +753,7 @@ export function AccountView() {
                     </Box>
                 </DialogContent>
 
-                <DialogActions>
+                <DialogActions sx={{ p: 2 }}>
 
                     {!viewMode && (
                         <Button variant="contained" onClick={handleCreate} disabled={creating}>

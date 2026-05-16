@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
+import { IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags, IoMdWallet } from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -416,13 +417,28 @@ export function InvoiceCreateView() {
 
     return (
         <DashboardContent maxWidth="xl">
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3}>
                 <Typography variant="h4">New Invoice</Typography>
                 <Stack direction="row" spacing={2}>
-                    <Button variant="outlined" color="inherit" onClick={handleCancel}>
-                        Cancel
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={handleCancel}
+                        startIcon={<IoMdArrowBack size={20} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 2.5,
+                            '&:hover': {
+                                bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
+                                borderColor: 'text.primary',
+                            }
+                        }}
+                    >
+                        Go Back
                     </Button>
-                    <Button variant="contained" color="primary" onClick={handleSave} loading={loading}>
+                    <Button variant="contained" color="primary" onClick={handleSave} loading={loading} sx={{ borderRadius: 1.5, bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}>
                         Save Invoice
                     </Button>
                 </Stack>
@@ -473,7 +489,7 @@ export function InvoiceCreateView() {
                                     variant="contained"
                                     color="primary"
                                     onClick={() => setContactDialogOpen(true)}
-                                    sx={{ height: 35, px: 2 }}
+                                    sx={{ height: 35, px: 2, bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
                                 >
                                     Edit
                                 </Button>
@@ -965,10 +981,10 @@ export function InvoiceCreateView() {
                     <Divider sx={{ my: 4 }} />
 
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Stack spacing={2} sx={{ width: 400, mt: 3 }}>
+                        <Stack spacing={2} sx={{ width: 500, mt: 3 }}>
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Iconify icon={"solar:box-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdCube size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Quantity</Typography>
                                 </Stack>
                                 <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{totalQty}</Typography>
@@ -976,7 +992,7 @@ export function InvoiceCreateView() {
 
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Iconify icon={"solar:bill-list-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
                                 </Stack>
                                 <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(itemsTotalTaxable)}</Typography>
@@ -984,7 +1000,7 @@ export function InvoiceCreateView() {
 
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Iconify icon={"solar:calculator-minimalistic-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdCalculator size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Tax</Typography>
                                 </Stack>
                                 <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(totalTax)}</Typography>
@@ -992,7 +1008,7 @@ export function InvoiceCreateView() {
 
                             <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end">
                                 <Stack direction="row" alignItems="center" spacing={1} sx={{ flexGrow: 1 }}>
-                                    <Iconify icon={"solar:tag-horizontal-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdPricetags size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Overall Discount</Typography>
                                 </Stack>
                                 <ToggleButtonGroup
@@ -1006,6 +1022,7 @@ export function InvoiceCreateView() {
                                     }}
                                     sx={{
                                         height: 32,
+                                        mr: 6,
                                         '& .MuiToggleButton-root': {
                                             px: 1,
                                             py: 0,
@@ -1028,11 +1045,12 @@ export function InvoiceCreateView() {
                                     onChange={(e) => setDiscountValue(Number(e.target.value))}
                                     onFocus={(e) => e.target.select()}
                                     sx={{
-                                        width: 100,
+                                        width: 150,
                                         '& .MuiInputBase-root': {
                                             bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
                                             borderRadius: 0.75,
-                                            px: 1,
+                                            px: 1.25,
+                                            py: 0.4,
                                             '&:hover': {
                                                 bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
                                             },
@@ -1048,7 +1066,7 @@ export function InvoiceCreateView() {
                             <Divider />
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1.5}>
-                                    <Iconify icon={"solar:wad-of-money-bold-duotone" as any} sx={{ color: 'primary.main', width: 24, height: 24 }} />
+                                    <IoMdWallet size={24} style={{ color: '#08a3cd' }} />
                                     <Typography variant="subtitle1" sx={{ color: 'primary.main' }}>Grand Total</Typography>
                                 </Stack>
                                 <Typography variant="h6" color="primary" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(grandTotal)}</Typography>
@@ -1099,6 +1117,7 @@ export function InvoiceCreateView() {
                                 <Button
                                     variant="contained"
                                     component="label"
+                                    sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
                                     color="primary"
                                     size="small"
                                     startIcon={<Iconify icon={"solar:upload-bold" as any} />}
@@ -1201,8 +1220,16 @@ export function InvoiceCreateView() {
             </Snackbar>
 
             <Dialog open={itemDialogOpen} onClose={() => !creatingItem && setItemDialogOpen(false)} fullWidth maxWidth="xs">
-                <DialogTitle>Create item</DialogTitle>
-                <DialogContent>
+                <DialogTitle sx={{ pb: 2, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+                    Create Item
+                    <IconButton
+                        onClick={() => !creatingItem && setItemDialogOpen(false)}
+                        sx={{ position: 'absolute', right: 8, top: 8 }}
+                    >
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2 }}>
                     <Stack spacing={3} sx={{ pt: 1 }}>
                         <TextField
                             fullWidth
@@ -1227,10 +1254,7 @@ export function InvoiceCreateView() {
                     </Stack>
                 </DialogContent>
                 <DialogActions>
-                    <Button color="inherit" onClick={() => setItemDialogOpen(false)} disabled={creatingItem}>
-                        Cancel
-                    </Button>
-                    <Button variant="contained" onClick={handleCreateItem} disabled={creatingItem}>
+                    <Button variant="contained" onClick={handleCreateItem} disabled={creatingItem} sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}>
                         {creatingItem ? <CircularProgress size={24} /> : 'Create'}
                     </Button>
                 </DialogActions>

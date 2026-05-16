@@ -4,6 +4,7 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
+import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -11,6 +12,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { createTaxType } from 'src/api/invoice';
 
+import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 type Props = {
@@ -57,7 +59,16 @@ export function TaxTypeFormDialog({ open, onClose, onSuccess, initialName = '' }
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-            <DialogTitle>Create New Tax Type</DialogTitle>
+            <DialogTitle sx={{ pb: 2, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+                Create New Tax Type
+                <IconButton
+                    onClick={onClose}
+                    disabled={loading}
+                    sx={{ position: 'absolute', right: 8, top: 8 }}
+                >
+                    <Iconify icon="mingcute:close-line" />
+                </IconButton>
+            </DialogTitle>
 
             <DialogContent sx={{ pt: 1 }}>
                 <TextField
@@ -103,10 +114,7 @@ export function TaxTypeFormDialog({ open, onClose, onSuccess, initialName = '' }
             </DialogContent>
 
             <DialogActions>
-                <Button onClick={onClose} color="inherit">
-                    Cancel
-                </Button>
-                <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+                <Button onClick={handleSubmit} variant="contained" disabled={loading} sx={{fontWeight: 600, textTransform: 'none', bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}>
                     {loading ? <CircularProgress size={24} /> : 'Create'}
                 </Button>
             </DialogActions>

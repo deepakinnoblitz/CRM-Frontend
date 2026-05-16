@@ -5,8 +5,11 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { IconButton } from '@mui/material';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 
@@ -194,10 +197,30 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {contactId ? 'Edit Client' : 'New Client'}
-                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
+        <Dialog 
+            open={open} 
+            onClose={onClose} 
+            fullWidth 
+            maxWidth="md"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    boxShadow: (theme) => theme.customShadows.z24,
+                }
+            }}
+        >
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                    {contactId ? 'Edit Client' : 'New Client'}
+                </Typography>
+                <IconButton
+                    onClick={onClose}
+                    sx={{
+                        color: (theme) => theme.palette.grey[500],
+                        bgcolor: 'background.paper',
+                        '&:hover': { bgcolor: 'background.default' },
+                    }}
+                >
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
             </DialogTitle>
@@ -258,68 +281,61 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
                             label="Client Type"
                             value={contactType}
                             onChange={(e) => setContactType(e.target.value)}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
+                            SelectProps={{
+                                MenuProps: {
+                                    PaperProps: {
+                                        sx: {
+                                            marginTop: 0.5,
+                                            boxShadow: (theme) => theme.customShadows.z20,
+                                            borderRadius: 1.5,
+                                        }
+                                    }
+                                }
+                            }}
                         >
-                            <option value="Sales">Sales</option>
-                            <option value="Purchase">Purchase</option>
+                            <MenuItem value="Sales">Sales</MenuItem>
+                            <MenuItem value="Purchase">Purchase</MenuItem>
                         </TextField>
-                        <TextField
+
+                        <Autocomplete
                             fullWidth
-                            label="Designation"
-                            value={designation}
-                            onChange={(e) => setDesignation(e.target.value)}
+                            options={countryOptions.filter(o => o !== '')}
+                            value={country}
+                            onChange={(e, newValue) => setCountry(newValue || '')}
+                            renderInput={(params) => <TextField {...params} label="Country" />}
                         />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="Country"
-                            name="country"
-                            value={country}
-                            onChange={(e) => setCountry(e.target.value)}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {countryOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
-
-                        <TextField
-                            select
-                            fullWidth
-                            label="State"
-                            name="state"
-                            value={state}
-                            onChange={(e) => setState(e.target.value)}
                             disabled={!country}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {stateOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
+                            options={stateOptions.filter(o => o !== '')}
+                            value={state}
+                            onChange={(e, newValue) => setState(newValue || '')}
+                            renderInput={(params) => (
+                                <TextField 
+                                    {...params} 
+                                    label="State" 
+                                    placeholder={!country ? "Select Country First" : ""}
+                                    InputLabelProps={{ shrink: true }}
+                                />
+                            )}
+                        />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="City"
-                            name="city"
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
                             disabled={!state}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {cityOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
+                            options={cityOptions.filter(o => o !== '')}
+                            value={city}
+                            onChange={(e, newValue) => setCity(newValue || '')}
+                            renderInput={(params) => (
+                                <TextField 
+                                    {...params} 
+                                    label="City" 
+                                    placeholder={!state ? "Select State First" : ""}
+                                    InputLabelProps={{ shrink: true }}
+                                />
+                            )}
+                        />
 
                         <TextField
                             fullWidth
@@ -343,7 +359,7 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
                 )}
             </DialogContent>
 
-            <DialogActions>
+            <DialogActions sx={{m:1}}>
                 <Button variant="contained" onClick={handleSave} disabled={saving}>
                     {saving ? 'Saving...' : (contactId ? 'Update Client' : 'Create Client')}
                 </Button>

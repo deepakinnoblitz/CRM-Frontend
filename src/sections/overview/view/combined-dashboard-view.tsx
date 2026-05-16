@@ -1,17 +1,28 @@
+import dayjs, { Dayjs } from 'dayjs';
+import { FiFilter } from "react-icons/fi";
 import { useState, useEffect } from 'react';
+import { IoMdArrowDropdown } from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Grid from '@mui/material/Grid';
+import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import Select from '@mui/material/Select';
 import TableRow from '@mui/material/TableRow';
+import MenuItem from '@mui/material/MenuItem';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import { useTheme } from '@mui/material/styles';
 import TableHead from '@mui/material/TableHead';
 import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
+import FormControl from '@mui/material/FormControl';
 import TableContainer from '@mui/material/TableContainer';
+import InputAdornment from '@mui/material/InputAdornment';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { fCurrency } from 'src/utils/format-number';
 
@@ -89,13 +100,34 @@ export function CombinedDashboardView() {
         categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     });
 
+    const [dateFilter, setDateFilter] = useState<string>('Last 7 Days');
+    const [customStartDate, setCustomStartDate] = useState<Dayjs | null>(dayjs().subtract(7, 'day'));
+    const [customEndDate, setCustomEndDate] = useState<Dayjs | null>(dayjs());
+
     useEffect(() => {
         const loadData = async () => {
+            let start_date: string | undefined;
+            let end_date: string | undefined;
+
+            if (dateFilter === 'Last 7 Days') {
+                start_date = dayjs().subtract(7, 'day').format('YYYY-MM-DD');
+                end_date = dayjs().format('YYYY-MM-DD');
+            } else if (dateFilter === 'Last Month') {
+                start_date = dayjs().subtract(1, 'month').startOf('month').format('YYYY-MM-DD');
+                end_date = dayjs().subtract(1, 'month').endOf('month').format('YYYY-MM-DD');
+            } else if (dateFilter === 'Custom') {
+                if (customStartDate && customEndDate) {
+                    start_date = customStartDate.format('YYYY-MM-DD');
+                    end_date = customEndDate.format('YYYY-MM-DD');
+                }
+            }
+            // If 'All Time', we leave start_date and end_date as undefined
+
             const [sales, stats, acts, financial] = await Promise.all([
-                fetchSalesDashboardData(),
-                fetchDashboardStats(),
+                fetchSalesDashboardData(start_date, end_date),
+                fetchDashboardStats(start_date, end_date),
                 fetchTodayActivities(),
-                fetchFinancialTotals()
+                fetchFinancialTotals(start_date, end_date)
             ]);
             setSalesData(sales);
             setCrmStats(stats);
@@ -104,7 +136,7 @@ export function CombinedDashboardView() {
         };
 
         loadData();
-    }, []);
+    }, [dateFilter, customStartDate, customEndDate]);
 
     // Calculate daily percentage change (today vs yesterday)
     const getPercentChange = (series: number[] = []) => {
@@ -117,9 +149,75 @@ export function CombinedDashboardView() {
 
     return (
         <DashboardContent maxWidth="xl">
-            <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 }, mt: 3 }}>
-                Hi, {user?.full_name || 'User'}, Welcome back 👋
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 3, md: 5 }, mt: 3, flexWrap: 'wrap', gap: 2 }}>
+                <Typography variant="h4">
+                    Hi, {user?.full_name || 'User'}, Welcome back 👋
+                </Typography>
+
+                <Stack direction="row" spacing={2} alignItems="center">
+                    {dateFilter === 'Custom' && (
+                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DatePicker
+                                label="Start Date"
+                                value={customStartDate}
+                                onChange={(newValue) => setCustomStartDate(newValue)}
+                                slotProps={{ textField: { size: 'small', sx: { width: 180 } } }}
+                                format="DD-MM-YYYY"
+                            />
+                            <DatePicker
+                                label="End Date"
+                                value={customEndDate}
+                                onChange={(newValue) => setCustomEndDate(newValue)}
+                                slotProps={{ textField: { size: 'small', sx: { width: 180 } } }}
+                                format="DD-MM-YYYY"
+                            />
+                        </LocalizationProvider>
+                    )}
+
+                    <FormControl size="small">
+                        <Select
+                            value={dateFilter}
+                            onChange={(e) => setDateFilter(e.target.value)}
+                            IconComponent={IoMdArrowDropdown}
+                            renderValue={(selected) => (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <FiFilter size={16} strokeWidth={2.5} color="#1a5b8f" />
+                                    <Typography variant="subtitle2" sx={{ color: '#1a5b8f', mt: 0.2 }}>
+                                        {selected}
+                                    </Typography>
+                                </Box>
+                            )}
+                            sx={{
+                                minWidth: 150,
+                                borderRadius: 1.5,
+                                '& .MuiSelect-select': {
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                },
+                                '& .MuiSelect-icon': {
+                                    color: 'text.secondary',
+                                    right: 8,
+                                },
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: 'rgba(145, 158, 171, 0.2)',
+                                },
+                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: 'rgba(145, 158, 171, 0.3)',
+                                },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: '#1a5b8f',
+                                    borderWidth: 1,
+                                },
+                            }}
+                        >
+                            <MenuItem value="All Time">All Time</MenuItem>
+                            <MenuItem value="Last 7 Days">Last 7 Days</MenuItem>
+                            <MenuItem value="Last Month">Last Month</MenuItem>
+                            <MenuItem value="Custom">Custom</MenuItem>
+                        </Select>
+                    </FormControl>
+                </Stack>
+            </Box>
 
             <Grid container spacing={3}>
                 {/* Row 1: CRM Summary Widgets */}

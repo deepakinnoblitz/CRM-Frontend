@@ -1,3 +1,4 @@
+import { FaUserTie } from "react-icons/fa6";
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -75,10 +76,6 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
 
             // Fetch workflow states for pipeline visualization
             getWorkflowStates('Lead').then(wf => setAllWorkflowStates(wf.states));
-        } else {
-            setLead(null);
-            setCurrentTab('general');
-            setConvertMsg(null);
         }
     }, [open, leadId]);
 
@@ -152,10 +149,10 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
     ];
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" PaperProps={{ sx: { borderRadius: 2, boxShadow: (theme) => theme.customShadows.z24, } }}>
+            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Lead Profile</Typography>
-                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500], bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows?.z1 }}>
+                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500], bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
             </DialogTitle>
@@ -201,21 +198,22 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
                                 sx={{
                                     width: 64,
                                     height: 64,
-                                    borderRadius: 2,
+                                    borderRadius: '50%',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    bgcolor: 'primary.lighter',
+                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
                                     color: 'primary.main',
+                                    border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
                                 }}
                             >
-                                <Iconify icon={"solar:user-bold" as any} width={32} />
+                                <FaUserTie size={32} />
                             </Box>
                             <Box sx={{ flexGrow: 1 }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Typography variant="h5" sx={{ fontWeight: 800 }}>{lead.lead_name}</Typography>
+                                    <Typography variant="h5" sx={{ fontWeight: 900, color: 'text.primary', letterSpacing: -0.5 }}>{lead.lead_name}</Typography>
                                 </Box>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{lead.company_name || 'Individual'}</Typography>
+                                <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, opacity: 0.8 }}>{lead.company_name || 'Individual'}</Typography>
                             </Box>
                             <Box sx={{ textAlign: 'right' }}>
                                 {renderStatus(lead.workflow_state || lead.status)}

@@ -199,6 +199,9 @@ export function LeadTableRow({
 
       <TableCell align="right">
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <IconButton onClick={onView} sx={{ color: 'info.main' }}>
+            <Iconify icon="solar:eye-bold" />
+          </IconButton>
           {canEdit && (
             <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
               <Iconify icon="solar:pen-bold" />
@@ -209,9 +212,6 @@ export function LeadTableRow({
               <Iconify icon="solar:trash-bin-trash-bold" />
             </IconButton>
           )}
-          <IconButton onClick={onView} sx={{ color: 'info.main' }}>
-            <Iconify icon="solar:eye-bold" />
-          </IconButton>
         </Box>
       </TableCell>
     </TableRow>

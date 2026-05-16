@@ -3,6 +3,8 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
+import { GrDocumentTime, GrDocumentStore } from "react-icons/gr";
+import { HiOutlineBriefcase, HiOutlineDocumentPlus, HiOutlineDocumentCheck } from "react-icons/hi2";
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -319,14 +321,6 @@ export function DealView() {
             newErrors.account = true;
             missingFields.push('Account');
         }
-        if (!value) {
-            newErrors.value = true;
-            missingFields.push('Deal Value');
-        }
-        if (!stage) {
-            newErrors.stage = true;
-            missingFields.push('Stage');
-        }
 
         if (Object.keys(newErrors).length > 0) {
             setValidationErrors(newErrors);
@@ -430,7 +424,7 @@ export function DealView() {
     return (
         <>
             {/* CREATE DEAL DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {viewOnly ? 'Deal Details' : (currentDealId ? 'Edit Deal' : 'New Deal')}
                     <IconButton
@@ -476,17 +470,22 @@ export function DealView() {
                                     setAccount(newValue?.name || '');
                                     if (newValue) setValidationErrors((prev) => ({ ...prev, account: false }));
                                 }}
-                                getOptionLabel={(option) => `${option.account_name || option.name} (${option.name})`}
+                                getOptionLabel={(option) => option.account_name || option.name}
                                 disabled={viewOnly}
-                                slotProps={{
-                                    paper: {
-                                        sx: {
-                                            bgcolor: '#F0F8FF',
-                                            '& .MuiAutocomplete-listbox': {
-                                                bgcolor: '#F0F8FF',
-                                            },
-                                        }
-                                    }
+                                renderOption={(props, option) => {
+                                    const { key, ...optionProps } = props as any;
+                                    return (
+                                        <li key={key || option.name} {...optionProps}>
+                                            <Box>
+                                                <Typography variant="subtitle2">
+                                                    {option.account_name || option.name}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                    ID: {option.name}
+                                                </Typography>
+                                            </Box>
+                                        </li>
+                                    );
                                 }}
                                 renderInput={(params) => (
                                     <TextField
@@ -503,17 +502,22 @@ export function DealView() {
                                 options={contactOptions}
                                 value={contactOptions.find((c) => c.name === contact) || null}
                                 onChange={(event, newValue) => setContact(newValue?.name || '')}
-                                getOptionLabel={(option) => `${option.first_name || option.name} (${option.name})`}
+                                getOptionLabel={(option) => option.first_name || option.name}
                                 disabled={viewOnly}
-                                slotProps={{
-                                    paper: {
-                                        sx: {
-                                            bgcolor: '#F0F8FF',
-                                            '& .MuiAutocomplete-listbox': {
-                                                bgcolor: '#F0F8FF',
-                                            },
-                                        }
-                                    }
+                                renderOption={(props, option) => {
+                                    const { key, ...optionProps } = props as any;
+                                    return (
+                                        <li key={key || option.name} {...optionProps}>
+                                            <Box>
+                                                <Typography variant="subtitle2">
+                                                    {option.first_name || option.name}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                    ID: {option.name}
+                                                </Typography>
+                                            </Box>
+                                        </li>
+                                    );
                                 }}
                                 renderInput={(params) => (
                                     <TextField
@@ -521,20 +525,6 @@ export function DealView() {
                                         label="Contact"
                                     />
                                 )}
-                            />
-
-                            <TextField
-                                fullWidth
-                                label="Deal Value"
-                                type="number"
-                                value={value}
-                                onChange={(e) => {
-                                    setValue(e.target.value);
-                                    if (e.target.value) setValidationErrors(prev => ({ ...prev, value: false }));
-                                }}
-                                required
-                                error={!!validationErrors.value}
-                                slotProps={{ input: { readOnly: viewOnly } }}
                             />
 
                             <DatePicker
@@ -550,94 +540,6 @@ export function DealView() {
                             />
 
                             <TextField
-                                select
-                                fullWidth
-                                label="Stage"
-                                value={stage}
-                                onChange={(e) => {
-                                    setStage(e.target.value);
-                                    if (e.target.value) setValidationErrors(prev => ({ ...prev, stage: false }));
-                                }}
-                                required
-                                error={!!validationErrors.stage}
-                                disabled={viewOnly}
-                                SelectProps={{ native: true }}
-                                InputLabelProps={{ shrink: true }}
-                                sx={{
-                                    "& .MuiInputBase-input.Mui-disabled": {
-                                        WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                                    },
-                                }}
-                            >
-                                <option value="Qualification">Qualification</option>
-                                <option value="Needs Analysis">Needs Analysis</option>
-                                <option value="Meeting Scheduled">Meeting Scheduled</option>
-                                <option value="Proposal Sent">Proposal Sent</option>
-                                <option value="Negotiation">Negotiation</option>
-                                <option value="Closed Won">Closed Won</option>
-                                <option value="Closed Lost">Closed Lost</option>
-                            </TextField>
-
-                            <TextField
-                                fullWidth
-                                label="Probability (%)"
-                                type="number"
-                                value={probability}
-                                onChange={(e) => setProbability(e.target.value)}
-                                slotProps={{ input: { readOnly: viewOnly } }}
-                            />
-
-                            <TextField
-                                select
-                                fullWidth
-                                label="Type"
-                                value={dealType}
-                                onChange={(e) => setDealType(e.target.value)}
-                                disabled={viewOnly}
-                                SelectProps={{ native: true }}
-                                InputLabelProps={{ shrink: true }}
-                                sx={{
-                                    "& .MuiInputBase-input.Mui-disabled": {
-                                        WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                                    },
-                                }}
-                            >
-                                <option value="New Business">New Business</option>
-                                <option value="Existing Business">Existing Business</option>
-                            </TextField>
-
-                            <TextField
-                                select
-                                fullWidth
-                                label="Source Lead"
-                                value={sourceLead}
-                                onChange={(e) => setSourceLead(e.target.value)}
-                                disabled={viewOnly}
-                                SelectProps={{ native: true }}
-                                InputLabelProps={{ shrink: true }}
-                                sx={{
-                                    "& .MuiInputBase-input.Mui-disabled": {
-                                        WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                                    },
-                                }}
-                            >
-                                <option value="" disabled>Select Source</option>
-                                {SOURCE_LEAD_OPTIONS.map((option) => (
-                                    <option key={option} value={option}>
-                                        {option}
-                                    </option>
-                                ))}
-                            </TextField>
-
-                            <TextField
-                                fullWidth
-                                label="Next Step"
-                                value={nextStep}
-                                onChange={(e) => setNextStep(e.target.value)}
-                                slotProps={{ input: { readOnly: viewOnly } }}
-                            />
-
-                            <TextField
                                 fullWidth
                                 label="Notes"
                                 multiline
@@ -648,103 +550,11 @@ export function DealView() {
                                 slotProps={{ input: { readOnly: viewOnly } }}
                             />
 
-                            <Box
-                                sx={{
-                                    gridColumn: { sm: 'span 2' },
-                                    p: 3,
-                                    borderRadius: 2,
-                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
-                                    border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
-                                }}
-                            >
-                                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
-                                    <Typography variant="h6">Attachments</Typography>
-
-                                    {!viewOnly && (
-                                        <Button
-                                            variant="contained"
-                                            component="label"
-                                            color="primary"
-                                            size="small"
-                                            startIcon={<Iconify icon={"solar:upload-bold" as any} />}
-                                            disabled={uploading}
-                                        >
-                                            {uploading ? 'Uploading...' : 'Upload File'}
-                                            <input type="file" hidden onChange={handleFileUpload} />
-                                        </Button>
-                                    )}
-                                </Stack>
-
-                                <Stack spacing={1}>
-                                    {attachments.length === 0 ? (
-                                        <Stack alignItems="center" justifyContent="center" sx={{ py: 3, color: 'text.disabled' }}>
-                                            <Iconify icon={"solar:file-bold" as any} width={40} height={40} sx={{ mb: 1, opacity: 0.48 }} />
-                                            <Typography variant="body2">No attachments yet</Typography>
-                                        </Stack>
-                                    ) : (
-                                        attachments.map((file: any, index) => (
-                                            <Stack
-                                                key={index}
-                                                direction="row"
-                                                alignItems="center"
-                                                sx={{
-                                                    px: 1.5,
-                                                    py: 0.75,
-                                                    borderRadius: 1.5,
-                                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                                }}
-                                            >
-                                                <Iconify icon={"solar:link-bold" as any} width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
-                                                <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
-                                                    {typeof file === 'string' ? file.split('/').pop() : (file.url?.split('/').pop() || file.name)}
-                                                </Typography>
-                                                {!viewOnly && (
-                                                    <Button
-                                                        size="small"
-                                                        color="inherit"
-                                                        onClick={() => handleRemoveAttachment(index)}
-                                                        sx={{
-                                                            px: 1.5,
-                                                            py: 0,
-                                                            height: 26,
-                                                            borderRadius: 1.5,
-                                                            minWidth: 'auto',
-                                                            typography: 'caption',
-                                                            bgcolor: 'background.paper',
-                                                            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.24)}`,
-                                                            '&:hover': {
-                                                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                                            }
-                                                        }}
-                                                    >
-                                                        Clear
-                                                    </Button>
-                                                )}
-                                                {viewOnly && (
-                                                    <IconButton
-                                                        size="small"
-                                                        color="primary"
-                                                        href={typeof file === 'string' ? file : file.url}
-                                                        target="_blank"
-                                                        sx={{
-                                                            bgcolor: 'background.paper',
-                                                            boxShadow: (theme) => theme.customShadows.z1,
-                                                            '&:hover': { bgcolor: 'background.neutral' }
-                                                        }}
-                                                    >
-                                                        <Iconify icon={"solar:download-bold" as any} width={16} />
-                                                    </IconButton>
-                                                )}
-                                            </Stack>
-                                        ))
-                                    )}
-                                </Stack>
-                            </Box>
                         </Box>
                     </LocalizationProvider>
                 </DialogContent>
 
-                <DialogActions>
+                <DialogActions sx={{ p: 2 }}>
                     {!viewOnly && (
                         <Button variant="contained" onClick={handleCreate} disabled={creating}>
                             {creating ? (currentDealId ? 'Updating...' : 'Creating...') : (currentDealId ? 'Update Deal' : 'Create Deal')}
@@ -754,60 +564,69 @@ export function DealView() {
             </Dialog>
 
             {/* MAIN CONTENT */}
-            <DashboardContent maxWidth={false}  sx={{mt: 2}}>
+            <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
                 <Stack spacing={3}>
                     <Stack direction="row" alignItems="center" justifyContent="space-between">
-                        <Typography variant="h4">Deals, Estimations & Invoices</Typography>
+                        <Typography variant="h4">Deals Management</Typography>
                     </Stack>
 
-                    <Tabs
-                        value={currentTab}
-                        onChange={handleChangeTab}
-                        sx={{
-                            px: 2.5,
-                            boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
-                        }}
-                    >
-                        <Tab
-                            key="deals"
-                            value="deals"
-                            label="Deals"
-                            icon={<Iconify icon={"solar:hand-money-bold-duotone" as any} width={24} />}
-                            iconPosition="start"
-                        />
-                        <Tab
-                            key="estimations"
-                            value="estimations"
-                            label="Estimations"
-                            icon={<Iconify icon={"solar:document-text-bold-duotone" as any} width={24} />}
-                            iconPosition="start"
-                        />
-                        <Tab
-                            key="invoices"
-                            value="invoices"
-                            label="Invoices"
-                            icon={<Iconify icon={"solar:bill-list-bold-duotone" as any} width={24} />}
-                            iconPosition="start"
-                        />
-                    </Tabs>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
+                        <Tabs
+                            value={currentTab}
+                            onChange={handleChangeTab}
+                            sx={{
+                                px: 0,
+                                borderBottom: 1,
+                                borderColor: 'divider',
+                                '& .MuiTab-root': {
+                                    minHeight: 48,
+                                    fontWeight: 700,
+                                    typography: 'subtitle2',
+                                    marginRight: (theme) => theme.spacing(1),
+                                    '&:last-of-type': {
+                                        marginRight: 0,
+                                    },
+                                    '&.Mui-selected': { color: 'primary.main' },
+                                },
+                            }}
+                        >
+                            <Tab
+                                key="deals"
+                                value="deals"
+                                label="Deals"
+                                icon={<HiOutlineBriefcase size={22} />}
+                                iconPosition="start"
+                            />
+                            <Tab
+                                key="estimations"
+                                value="estimations"
+                                label="Estimations"
+                                icon={<GrDocumentTime size={18} />}
+                                iconPosition="start"
+                            />
+                            <Tab
+                                key="invoices"
+                                value="invoices"
+                                label="Invoices"
+                                icon={<GrDocumentStore size={18} />}
+                                iconPosition="start"
+                            />
+                        </Tabs>
+
+                        {currentTab === 'deals' && permissions.write && (
+                            <Button
+                                variant="contained"
+                                startIcon={<Iconify icon="mingcute:add-line" />}
+                                onClick={handleOpenCreate}
+                                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                            >
+                                New Deal
+                            </Button>
+                        )}
+                    </Stack>
 
                     {currentTab === 'deals' && (
                         <>
-                            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-                                <Typography variant="h6" sx={{ flexGrow: 1 }} />
-
-                                {permissions.write && (
-                                    <Button
-                                        variant="contained"
-                                        startIcon={<Iconify icon="mingcute:add-line" />}
-                                        onClick={handleOpenCreate}
-                                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                                    >
-                                        New Deal
-                                    </Button>
-                                )}
-                            </Box>
-
                             <Card>
                                 <DealTableToolbar
                                     numSelected={selected.length}
@@ -854,8 +673,6 @@ export function DealView() {
                                                     { id: 'deal_title', label: 'Title' },
                                                     { id: 'account', label: 'Account' },
                                                     { id: 'contact', label: 'Contact' },
-                                                    { id: 'value', label: 'Value' },
-                                                    { id: 'stage', label: 'Stage' },
                                                     { id: 'expected_close_date', label: 'Expected Close' },
                                                     { id: '' },
                                                 ]}

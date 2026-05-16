@@ -6,6 +6,7 @@ import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
+import { fDate } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
 
 import { Label } from 'src/components/label';
@@ -20,7 +21,7 @@ export type CRMExpenseTrackerTableRowProps = {
         type: 'Income' | 'Expense';
         titlenotes: string;
         amount: number;
-        creation: string;
+        date_time: string;
     };
     selected: boolean;
     onSelectRow: () => void;
@@ -39,7 +40,7 @@ export function CRMExpenseTrackerTableRow({
     index,
     hideCheckbox = false,
 }: CRMExpenseTrackerTableRowProps) {
-    const { type, titlenotes, amount, creation, name } = row;
+    const { type, titlenotes, amount, date_time, name } = row;
 
     return (
         <TableRow
@@ -95,6 +96,12 @@ export function CRMExpenseTrackerTableRow({
                 >
                     {type}
                 </Label>
+            </TableCell>
+
+            <TableCell>
+                <Typography variant="body2" noWrap>
+                    {fDate(date_time)}
+                </Typography>
             </TableCell>
 
             <TableCell align="left" sx={{ fontWeight: 700 }}>

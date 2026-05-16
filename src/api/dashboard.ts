@@ -56,9 +56,15 @@ export interface TodayActivities {
     meetings: Meeting[];
 }
 
-export async function fetchDashboardStats(): Promise<DashboardStats> {
+export async function fetchDashboardStats(start_date?: string, end_date?: string): Promise<DashboardStats> {
     try {
-        const res = await frappeRequest('/api/method/company.company.frontend_api.get_dashboard_stats');
+        let url = '/api/method/company.company.frontend_api.get_dashboard_stats';
+        const params = new URLSearchParams();
+        if (start_date) params.append('start_date', start_date);
+        if (end_date) params.append('end_date', end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const res = await frappeRequest(url);
 
         if (!res.ok) {
             const error = await res.json();
@@ -473,11 +479,15 @@ export interface SalesDashboardData {
     conversion_rate: number;
 }
 
-export async function fetchSalesDashboardData(): Promise<SalesDashboardData> {
+export async function fetchSalesDashboardData(start_date?: string, end_date?: string): Promise<SalesDashboardData> {
     try {
-        const res = await frappeRequest(
-            '/api/method/company.company.frontend_api.get_sales_dashboard_data'
-        );
+        let url = '/api/method/company.company.frontend_api.get_sales_dashboard_data';
+        const params = new URLSearchParams();
+        if (start_date) params.append('start_date', start_date);
+        if (end_date) params.append('end_date', end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const res = await frappeRequest(url);
 
         if (!res.ok) {
             const error = await res.json();
@@ -541,11 +551,15 @@ export interface FinancialTotals {
     categories: string[];
 }
 
-export async function fetchFinancialTotals(): Promise<FinancialTotals> {
+export async function fetchFinancialTotals(start_date?: string, end_date?: string): Promise<FinancialTotals> {
     try {
-        const res = await frappeRequest(
-            '/api/method/company.company.frontend_api.get_financial_totals'
-        );
+        let url = '/api/method/company.company.frontend_api.get_financial_totals';
+        const params = new URLSearchParams();
+        if (start_date) params.append('start_date', start_date);
+        if (end_date) params.append('end_date', end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const res = await frappeRequest(url);
 
         if (!res.ok) {
             const error = await res.json();

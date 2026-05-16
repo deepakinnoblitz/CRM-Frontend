@@ -23,6 +23,7 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
@@ -550,8 +551,17 @@ export function LeadView() {
   return (
     <>
       {/* CREATE LEAD DIALOG */}
-      <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg">
-        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Dialog 
+        open={openCreate}
+        onClose={handleCloseCreate} 
+        fullWidth maxWidth="lg"
+        PaperProps={{
+          sx: {
+              borderRadius: 2,
+              boxShadow: (theme) => theme.customShadows.z24,
+          }
+      }}>
+        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
           {viewOnly ? 'Lead Details' : (currentLeadId ? 'Edit Lead' : 'New Lead')}
           <IconButton
             aria-label="close"
@@ -668,130 +678,92 @@ export function LeadView() {
                 required
                 disabled={viewOnly}
                 error={!!validationErrors.leadsType}
-                SelectProps={{ native: true }}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
+                SelectProps={{
+                  MenuProps: {
+                    PaperProps: {
+                      sx: {
+                        marginTop: 0.5,
+                        boxShadow: (theme) => theme.customShadows.z20,
+                        borderRadius: 1.5,
+                      }
+                    }
+                  }
                 }}
               >
-                <option value="" disabled>Select</option>
-                <option value="Incoming">Incoming</option>
-                <option value="Outgoing">Outgoing</option>
+                <MenuItem value="Incoming">Incoming</MenuItem>
+                <MenuItem value="Outgoing">Outgoing</MenuItem>
               </TextField>
 
 
-              <TextField
-                select
+              <Autocomplete
                 fullWidth
-                label="Leads From"
+                disabled={viewOnly}
+                options={leadsFromOptions}
                 value={leadsFrom}
-                onChange={(e) => {
-                  setLeadsFrom(e.target.value);
-                  if (e.target.value) setValidationErrors(prev => ({ ...prev, leadsFrom: false }));
+                onChange={(e, newValue) => {
+                  setLeadsFrom(newValue || '');
+                  if (newValue) setValidationErrors(prev => ({ ...prev, leadsFrom: false }));
                 }}
-                required
-                disabled={viewOnly}
-                error={!!validationErrors.leadsFrom}
-                SelectProps={{ native: true }}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
-                }}
-              >
-                <option value="" disabled>Select</option>
-                {leadsFromOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </TextField>
+                renderInput={(params) => (
+                  <TextField 
+                    {...params} 
+                    label="Leads From" 
+                    required 
+                    error={!!validationErrors.leadsFrom} 
+                  />
+                )}
+              />
 
 
-              <TextField
-                select
+              <Autocomplete
                 fullWidth
-                label="Service"
+                disabled={viewOnly}
+                options={serviceOptions}
                 value={service}
-                onChange={(e) => setService(e.target.value)}
-                disabled={viewOnly}
-                SelectProps={{ native: true }}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
-                }}
-              >
-                <option value="" disabled>Select</option>
-                {serviceOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </TextField>
+                onChange={(e, newValue) => setService(newValue || '')}
+                renderInput={(params) => <TextField {...params} label="Service" />}
+              />
 
-              <TextField
-                select
+              <Autocomplete
                 fullWidth
-                label="Country"
+                disabled={viewOnly}
+                options={countryOptions.filter(o => o !== '')}
                 value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                disabled={viewOnly}
-                SelectProps={{ native: true }}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
-                }}
-              >
-                <option value="" disabled>Select</option>
-                {countryOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </TextField>
+                onChange={(e, newValue) => setCountry(newValue || '')}
+                renderInput={(params) => <TextField {...params} label="Country" />}
+              />
 
-              <TextField
-                select
+              <Autocomplete
                 fullWidth
-                label="State"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
                 disabled={viewOnly || !country}
-                SelectProps={{ native: true }}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
-                }}
-              >
-                <option value="" disabled>{!country ? 'Select Country First' : 'Select'}</option>
-                {stateOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </TextField>
+                options={stateOptions.filter(o => o !== '' && o !== 'Select Country First')}
+                value={state}
+                onChange={(e, newValue) => setState(newValue || '')}
+                renderInput={(params) => (
+                  <TextField 
+                    {...params} 
+                    label="State" 
+                    placeholder={!country ? "Select Country First" : ""}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
+              />
 
-              <TextField
-                select
+              <Autocomplete
                 fullWidth
-                label="City"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
                 disabled={viewOnly || !state}
-                SelectProps={{ native: true }}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
-                }}
-              >
-                <option value="" disabled>{!state ? 'Select State First' : 'Select'}</option>
-                {cityOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </TextField>
+                options={cityOptions.filter(o => o !== '' && o !== 'Select State First')}
+                value={city}
+                onChange={(e, newValue) => setCity(newValue || '')}
+                renderInput={(params) => (
+                  <TextField 
+                    {...params} 
+                    label="City" 
+                    placeholder={!state ? "Select State First" : ""}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
+              />
 
               <TextField
                 fullWidth
@@ -1066,7 +1038,7 @@ export function LeadView() {
           )}
         </DialogContent>
 
-        <DialogActions>
+        <DialogActions sx={{m:1}}>
           {!viewOnly && currentTab === 'general' && (
             <Button variant="contained" onClick={handleCreate} disabled={creating}>
               {creating ? (currentLeadId ? 'Updating...' : 'Creating...') : (currentLeadId ? 'Update Lead' : 'Create Lead')}
