@@ -45,8 +45,9 @@ import { createItem, createInvoice } from 'src/api/invoice';
 
 import { Iconify } from 'src/components/iconify';
 
-import { TaxTypeFormDialog } from '../tax-type-form-dialog';
 import { PaymentTermsDialog } from 'src/sections/master/payment-terms/payment-terms-dialog';
+
+import { TaxTypeFormDialog } from '../tax-type-form-dialog';
 import { ContactFormDialog } from '../../contact/contact-form-dialog';
 
 // ----------------------------------------------------------------------
@@ -153,6 +154,7 @@ export function InvoiceCreateView() {
             return opts;
         } catch (error) {
             console.error('Failed to fetch payment terms options:', error);
+            return [];
         }
     };
 

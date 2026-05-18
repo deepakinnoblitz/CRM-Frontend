@@ -21,10 +21,10 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { LeadFromTableRow } from '../lead-from-table-row';
 import { LeadFromDialog } from '../lead-from-dialog';
-import { LeadTableHead } from '../../../lead/lead-table-head';
+import { LeadFromTableRow } from '../lead-from-table-row';
 import { TableNoData } from '../../../lead/table-no-data';
+import { LeadTableHead } from '../../../lead/lead-table-head';
 import { TableEmptyRows } from '../../../lead/table-empty-rows';
 import { LeadTableToolbar } from '../../../lead/lead-table-toolbar';
 

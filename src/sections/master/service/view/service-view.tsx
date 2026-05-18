@@ -23,8 +23,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { ServiceDialog } from '../service-dialog';
 import { ServiceTableRow } from '../service-table-row';
-import { LeadTableHead } from '../../../lead/lead-table-head';
 import { TableNoData } from '../../../lead/table-no-data';
+import { LeadTableHead } from '../../../lead/lead-table-head';
 import { TableEmptyRows } from '../../../lead/table-empty-rows';
 import { LeadTableToolbar } from '../../../lead/lead-table-toolbar';
 

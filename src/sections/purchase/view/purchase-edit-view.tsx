@@ -46,9 +46,10 @@ import { getPurchase, updatePurchase, getPurchasePrintUrl } from 'src/api/purcha
 
 import { Iconify } from 'src/components/iconify';
 
-import { TaxTypeFormDialog } from '../../invoice/tax-type-form-dialog';
-import { PaymentTermsDialog } from 'src/sections/master/payment-terms/payment-terms-dialog';
 import { PaymentTypeDialog } from 'src/sections/master/payment-type/payment-type-dialog';
+import { PaymentTermsDialog } from 'src/sections/master/payment-terms/payment-terms-dialog';
+
+import { TaxTypeFormDialog } from '../../invoice/tax-type-form-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -133,6 +134,7 @@ export function PurchaseEditView() {
             return opts;
         } catch (error) {
             console.error('Failed to load Payment Terms data:', error);
+            return [];
         }
     };
 
@@ -143,6 +145,7 @@ export function PurchaseEditView() {
             return opts;
         } catch (error) {
             console.error('Failed to load Payment Type data:', error);
+            return [];
         }
     };
 

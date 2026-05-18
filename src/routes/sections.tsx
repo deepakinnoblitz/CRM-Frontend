@@ -139,8 +139,8 @@ export const LeaveTypePage = lazy(() => import('src/pages/leave-type'));
 export const LeadFromPage = lazy(() => import('src/pages/lead-from'));
 export const ServicePage = lazy(() => import('src/pages/service'));
 export const ItemPage = lazy(() => import('src/pages/item'));
-export const PaymentTermsPage = lazy(() => import('src/pages/payment-terms'));
-export const PaymentTypePage = lazy(() => import('src/pages/payment-type'));
+export const PaymentTermsPage = lazy(() => import('../pages/payment-terms'));
+export const PaymentTypePage = lazy(() => import('../pages/payment-type'));
 export const EmployeeOverallReportPage = lazy(() => import('src/pages/employee-overall-report'));
 
 
