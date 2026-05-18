@@ -500,7 +500,8 @@ export function ContactView() {
                                             email: getString(row.email) || '',
                                             phone: getString(row.phone) || '',
                                             avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
-                                            sourceLead: row.source_lead ? `${getString(row.source_lead)} - ${leadOptions.find(l => l.name === getString(row.source_lead))?.lead_name || ''}` : '',
+                                            sourceLeadId: row.source_lead ? getString(row.source_lead) : '',
+                                            sourceLeadName: row.source_lead ? (leadOptions.find(l => l.name === getString(row.source_lead))?.lead_name || '') : '',
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
@@ -516,7 +517,7 @@ export function ContactView() {
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={10}>
+                                        <TableCell colSpan={10} sx={{py:10}}>
                                             <EmptyContent
                                                 title="No contacts found"
                                                 description="Create a new Client to track your professional network."
@@ -526,8 +527,11 @@ export function ContactView() {
                                     </TableRow>
                                 )}
 
-                                {!empty && (
-                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                {!empty && !notFound && (
+                                    <TableEmptyRows
+                                        height={68}
+                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                    />
                                 )}
                             </TableBody>
                         </Table>

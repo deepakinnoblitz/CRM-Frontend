@@ -1,4 +1,4 @@
-import Paper from '@mui/material/Paper';
+import Box from '@mui/material/Box';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
@@ -7,18 +7,15 @@ import Typography from '@mui/material/Typography';
 
 type TableNoDataProps = {
     searchQuery?: string;
+    colSpan?: number;
 };
 
-export function TableNoData({ searchQuery }: TableNoDataProps) {
+export function TableNoData({ searchQuery, colSpan = 12 }: TableNoDataProps) {
     return (
         <TableRow>
-            <TableCell align="center" colSpan={7}>
-                <Paper
-                    sx={{
-                        textAlign: 'center',
-                    }}
-                >
-                    <Typography variant="h6" paragraph>
+            <TableCell align="center" colSpan={colSpan}>
+                <Box sx={{ py: 13, textAlign: 'center' }}>
+                    <Typography variant="h6" sx={{ mb: 1 }}>
                         Not found
                     </Typography>
 
@@ -27,7 +24,7 @@ export function TableNoData({ searchQuery }: TableNoDataProps) {
                         <strong>&quot;{searchQuery}&quot;</strong>.
                         <br /> Try checking for typos or using complete words.
                     </Typography>
-                </Paper>
+                </Box>
             </TableCell>
         </TableRow>
     );

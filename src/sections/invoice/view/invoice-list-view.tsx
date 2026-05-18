@@ -258,16 +258,11 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
                                     />
                                 ))}
 
-                                <TableEmptyRows
-                                    height={77}
-                                    emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                />
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
+                                {notFound && <TableNoData colSpan={10} searchQuery={filterName} />}
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
+                                        <TableCell colSpan={10}>
                                             <EmptyContent
                                                 title="No invoices found"
                                                 description="Create a new invoice to track your sales pipeline."
@@ -275,6 +270,13 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
                                             />
                                         </TableCell>
                                     </TableRow>
+                                )}
+
+                                {!empty && !notFound && (
+                                    <TableEmptyRows
+                                        height={68}
+                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                    />
                                 )}
                             </TableBody>
                         </Table>

@@ -769,7 +769,7 @@ export function LeadView() {
                   const filtered = filter(options, params) as any[];
                   const { inputValue } = params;
                   const isExisting = options.some((option) => inputValue === option);
-                  
+
                   if (inputValue !== '' && !isExisting) {
                     filtered.push({
                       inputValue,
@@ -850,7 +850,7 @@ export function LeadView() {
                   const filtered = filter(options, params) as any[];
                   const { inputValue } = params;
                   const isExisting = options.some((option) => inputValue === option);
-                  
+
                   if (inputValue !== '' && !isExisting) {
                     filtered.push({
                       inputValue,
@@ -1336,14 +1336,17 @@ export function LeadView() {
                         <EmptyContent
                           title="No leads found"
                           description="Start capturing leads to boost your sales."
-                          icon="solar:flag-checkered-bold-duotone"
+                          icon="solar:user-plus-bold-duotone"
                         />
                       </TableCell>
                     </TableRow>
                   )}
 
-                  {!empty && !loading && (
-                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                  {!empty && !notFound && (
+                      <TableEmptyRows
+                          height={68}
+                          emptyRows={data.length < 5 ? 5 - data.length : 0}
+                      />
                   )}
                 </TableBody>
               </Table>
@@ -1544,12 +1547,12 @@ export function LeadView() {
         <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>
-      </Snackbar> 
+      </Snackbar>
 
-      <Dialog 
-        open={createLeadFromOpen} 
-        onClose={() => !creatingLeadFrom && setCreateLeadFromOpen(false)} 
-        fullWidth 
+      <Dialog
+        open={createLeadFromOpen}
+        onClose={() => !creatingLeadFrom && setCreateLeadFromOpen(false)}
+        fullWidth
         maxWidth="xs"
         PaperProps={{
           sx: { borderRadius: 2 }
@@ -1576,10 +1579,10 @@ export function LeadView() {
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button 
-            variant="contained" 
-            onClick={handleCreateLeadFromSubmit} 
-            disabled={creatingLeadFrom || !newLeadFromName.trim()} 
+          <Button
+            variant="contained"
+            onClick={handleCreateLeadFromSubmit}
+            disabled={creatingLeadFrom || !newLeadFromName.trim()}
             sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' }, borderRadius: 1 }}
           >
             {creatingLeadFrom ? <CircularProgress size={24} color="inherit" /> : 'Create'}
@@ -1587,10 +1590,10 @@ export function LeadView() {
         </DialogActions>
       </Dialog>
 
-      <Dialog 
-        open={createServiceOpen} 
-        onClose={() => !creatingService && setCreateServiceOpen(false)} 
-        fullWidth 
+      <Dialog
+        open={createServiceOpen}
+        onClose={() => !creatingService && setCreateServiceOpen(false)}
+        fullWidth
         maxWidth="xs"
         PaperProps={{
           sx: { borderRadius: 2 }
@@ -1617,10 +1620,10 @@ export function LeadView() {
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button 
-            variant="contained" 
-            onClick={handleCreateServiceSubmit} 
-            disabled={creatingService || !newServiceName.trim()} 
+          <Button
+            variant="contained"
+            onClick={handleCreateServiceSubmit}
+            disabled={creatingService || !newServiceName.trim()}
             sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' }, borderRadius: 1 }}
           >
             {creatingService ? <CircularProgress size={24} color="inherit" /> : 'Create'}

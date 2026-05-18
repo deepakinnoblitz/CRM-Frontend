@@ -172,14 +172,14 @@ export function LeadTableRow({
             alignItems: 'center',
           }}
         >
-          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, maxWidth: 240 }}>
             {row.name}
           </Typography>
         </Box>
       </TableCell>
 
       <TableCell>
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: 240 }}>
           {row.company}
         </Typography>
       </TableCell>

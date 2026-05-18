@@ -196,8 +196,8 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
                             <Box
                                 sx={{
-                                    width: 64,
-                                    height: 64,
+                                    width: 74,
+                                    height: 74,
                                     borderRadius: '50%',
                                     display: 'flex',
                                     alignItems: 'center',
@@ -469,7 +469,7 @@ function SectionHeader({ title, icon, noMargin = false }: { title: string; icon:
 function DetailItem({ label, value, icon, color = 'text.primary' }: { label: string; value?: string | null; icon: string; color?: string }) {
     return (
         <Box>
-            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
                 {label}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

@@ -554,7 +554,7 @@ export function AccountView() {
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
+                                        <TableCell colSpan={8} sx={{py:10}}>
                                             <EmptyContent
                                                 title="No Company found"
                                                 description="Create a new account to manage your business relationships."
@@ -564,12 +564,12 @@ export function AccountView() {
                                     </TableRow>
                                 )}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={accounts.length < 5 ? 5 - accounts.length : 0}
-                                    />
-                                )}
+                            {!empty && !notFound && (
+                                <TableEmptyRows
+                                    height={68}
+                                    emptyRows={accounts.length < 5 ? 5 - accounts.length : 0}
+                                />
+                            )}
                             </TableBody>
                         </Table>
                     </TableContainer>

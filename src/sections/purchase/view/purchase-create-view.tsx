@@ -321,7 +321,7 @@ export function PurchaseCreateView() {
             }
 
             const selectedVendor = vendorOptions.find((opt) => opt.name === vendorName);
-            const actualVendorName = selectedVendor ? `${selectedVendor.first_name || ''} - ${selectedVendor.company_name || ''}`.replace(/^ - | - $/g, '') : vendorName;
+            const actualVendorName = selectedVendor ? (selectedVendor.first_name || selectedVendor.name) : vendorName;
 
             const purchaseData = {
                 vendor_name: actualVendorName,
@@ -417,11 +417,11 @@ export function PurchaseCreateView() {
                                 if (newValue?.name) setErrors((prev) => ({ ...prev, vendor: false }));
                             }}
                             renderInput={(params) => (
-                                <TextField 
-                                    {...params} 
-                                    label="Vendor" 
-                                    required 
-                                    error={errors.vendor} 
+                                <TextField
+                                    {...params}
+                                    label="Vendor"
+                                    required
+                                    error={errors.vendor}
                                     helperText={errors.vendor ? 'Please select a vendor' : ''}
                                 />
                             )}
@@ -429,7 +429,7 @@ export function PurchaseCreateView() {
                                 <li {...props} key={option.name}>
                                     <Stack spacing={0.5} sx={{ py: 0.5 }}>
                                         <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                            {option.first_name || option.name} {option.company_name ? `(${option.company_name})` : ''}
+                                            {option.first_name || option.name}
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                             ID: {option.name}
@@ -521,7 +521,7 @@ export function PurchaseCreateView() {
                         boxShadow: (theme) => theme.customShadows.z8,
                     }}>
                         <Table sx={{ minWidth: 960 }}>
-                            <TableHead sx={{ 
+                            <TableHead sx={{
                                 bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
                                 '& th:first-of-type': { borderTopLeftRadius: 11 },
                                 '& th:last-of-type': { borderTopRightRadius: 11 }

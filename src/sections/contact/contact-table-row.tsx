@@ -22,6 +22,8 @@ export type ContactProps = {
     state?: string;
     city?: string;
     sourceLead?: string;
+    sourceLeadId?: string;
+    sourceLeadName?: string;
 };
 
 type ContactTableRowProps = {
@@ -103,20 +105,27 @@ export function ContactTableRow({
                         alignItems: 'center',
                     }}
                 >
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, maxWidth: 260 }}>
                         {row.firstName}
                     </Typography>
                 </Box>
             </TableCell>
 
             <TableCell>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {row.companyName}
+                <Typography variant="body2" sx={{ fontWeight: 500, maxWidth: 260 }}>
+                    {row.companyName || '-'}
                 </Typography>
             </TableCell>
 
+            <TableCell>
+                <Typography variant="subtitle2" sx={{ fontSize: '14px', maxWidth: 320 }}>
+                     {row.sourceLeadName || '-'}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
+                    {row.sourceLeadId}
+                </Typography>
+            </TableCell>
 
-            <TableCell>{row.sourceLead || '-'}</TableCell>
 
             <TableCell>{row.phone}</TableCell>
 

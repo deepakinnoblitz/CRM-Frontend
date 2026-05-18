@@ -721,7 +721,7 @@ export function DealView() {
 
                                                 {empty && (
                                                     <TableRow>
-                                                        <TableCell colSpan={10} align="center">
+                                                        <TableCell colSpan={10} align="center" sx={{py:5}}>
                                                             <EmptyContent
                                                                 title="No deals found"
                                                                 description="Create a new deal to track your sales pipeline."
@@ -731,7 +731,7 @@ export function DealView() {
                                                     </TableRow>
                                                 )}
 
-                                                {!empty && !loading && data.length < rowsPerPage && (
+                                                {!empty && !notFound && (
                                                     <TableEmptyRows
                                                         height={68}
                                                         emptyRows={data.length < 5 ? 5 - data.length : 0}

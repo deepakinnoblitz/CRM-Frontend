@@ -360,7 +360,7 @@ export function PurchaseEditView() {
             }
 
             const selectedVendor = vendorOptions.find((opt) => opt.name === vendorName);
-            const actualVendorName = selectedVendor ? `${selectedVendor.first_name || ''} - ${selectedVendor.company_name || ''}`.replace(/^ - | - $/g, '') : vendorName;
+            const actualVendorName = selectedVendor ? (selectedVendor.first_name || selectedVendor.name) : vendorName;
 
             const purchaseData = {
                 vendor_name: actualVendorName,
@@ -485,7 +485,7 @@ export function PurchaseEditView() {
                                 <li {...props} key={option.name}>
                                     <Stack spacing={0.5} sx={{ py: 0.5 }}>
                                         <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                            {option.first_name || option.name} {option.company_name ? `(${option.company_name})` : ''}
+                                            {option.first_name || option.name}
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                             ID: {option.name}

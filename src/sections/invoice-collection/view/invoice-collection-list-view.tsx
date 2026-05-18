@@ -321,18 +321,13 @@ export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?:
                                     />
                                 ))}
 
-                                    <TableEmptyRows
-                                        height={77}
-                                        emptyRows={tableData.length < 5 ? 5 - tableData.length : 0}
-                                    />
-
                                 {notFound && (
-                                    <TableNoData searchQuery={search} />
+                                    <TableNoData colSpan={10} searchQuery={search} />
                                 )}
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
+                                        <TableCell colSpan={10}>
                                             <EmptyContent
                                                 title="No invoice collections found"
                                                 description="Track your invoice payments and collections here."
@@ -340,6 +335,13 @@ export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?:
                                             />
                                         </TableCell>
                                     </TableRow>
+                                )}
+
+                                {!empty && !notFound && (
+                                    <TableEmptyRows
+                                        height={68}
+                                        emptyRows={tableData.length < 5 ? 5 - tableData.length : 0}
+                                    />
                                 )}
                             </TableBody>
                         </Table>

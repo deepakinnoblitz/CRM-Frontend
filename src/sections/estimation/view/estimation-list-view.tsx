@@ -262,16 +262,11 @@ export function EstimationListView({ hideTitle }: Props) {
                                     />
                                 ))}
 
-                                <TableEmptyRows
-                                    height={77}
-                                    emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                />
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
+                                {notFound && <TableNoData colSpan={8} searchQuery={filterName} />}
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
+                                        <TableCell colSpan={8}>
                                             <EmptyContent
                                                 title="No estimations found"
                                                 description="Create a new estimation to track your sales pipeline."
@@ -279,6 +274,13 @@ export function EstimationListView({ hideTitle }: Props) {
                                             />
                                         </TableCell>
                                     </TableRow>
+                                )}
+
+                                {!empty && !notFound && (
+                                    <TableEmptyRows
+                                        height={68}
+                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                    />
                                 )}
                             </TableBody>
                         </Table>
