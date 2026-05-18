@@ -46,6 +46,7 @@ import { getInvoice, createItem, updateInvoice } from 'src/api/invoice';
 import { Iconify } from 'src/components/iconify';
 
 import { TaxTypeFormDialog } from '../tax-type-form-dialog';
+import { PaymentTermsDialog } from 'src/sections/master/payment-terms/payment-terms-dialog';
 import { ContactFormDialog } from '../../contact/contact-form-dialog';
 
 // ----------------------------------------------------------------------
@@ -77,6 +78,7 @@ export function InvoiceEditView() {
     const [customerOptions, setCustomerOptions] = useState<any[]>([]);
     const [itemOptions, setItemOptions] = useState<any[]>([]);
     const [taxOptions, setTaxOptions] = useState<any[]>([]);
+    const [paymentTermsOptions, setPaymentTermsOptions] = useState<any[]>([]);
 
     const [customerId, setCustomerId] = useState('');
     const [customerName, setCustomerName] = useState('');
@@ -115,10 +117,23 @@ export function InvoiceEditView() {
 
     const [contactDialogOpen, setContactDialogOpen] = useState(false);
 
+    const [paymentTermsDialogOpen, setPaymentTermsDialogOpen] = useState(false);
+
+    const fetchPaymentTermsOptions = async () => {
+        try {
+            const opts = await getDoctypeList('Payment Terms', ['name', 'payment_terms', 'creation', 'modified']);
+            setPaymentTermsOptions(opts);
+            return opts;
+        } catch (error) {
+            console.error('Failed to fetch payment terms options:', error);
+        }
+    };
+
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'address']).then(setCustomerOptions);
         getDoctypeList('Item', ['name', 'item_name', 'rate', 'item_code']).then(setItemOptions);
         getDoctypeList('Tax Types', ['name', 'tax_name', 'tax_percentage', 'tax_type']).then(setTaxOptions);
+        fetchPaymentTermsOptions();
 
         if (id) {
             getInvoice(id)
@@ -535,19 +550,74 @@ export function InvoiceEditView() {
 
                         <Divider sx={{ my: 2, gridColumn: 'span 2' }} />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="Payment Terms"
-                            value={paymentTerms}
-                            onChange={(e) => setPaymentTerms(e.target.value)}
-                        >
-                            {['Next day Payment', 'Due On Receipt', '15 days', '30 days', '60 days', '1 Year'].map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </TextField>
+                            options={paymentTermsOptions}
+                            getOptionLabel={(option) => {
+                                if (typeof option === 'string') return option;
+                                return option.payment_terms || option.name || '';
+                            }}
+                            filterOptions={(options, params) => {
+                                const filtered = filter(options, params);
+                                // Always add "+ Create Payment Terms" option at the end
+                                filtered.push({
+                                    name: 'create_payment_term_custom_option',
+                                    payment_terms: 'Create Payment Terms',
+                                    isNew: true,
+                                });
+                                return filtered;
+                            }}
+                            value={paymentTermsOptions.find((opt) => opt.name === paymentTerms) || (paymentTerms ? { name: paymentTerms, payment_terms: paymentTerms } : null)}
+                            onChange={(_e, newValue) => {
+                                if (newValue?.isNew) {
+                                    setPaymentTermsDialogOpen(true);
+                                } else {
+                                    setPaymentTerms(newValue?.name || '');
+                                }
+                            }}
+                            ListboxProps={{
+                                sx: {
+                                    maxHeight: '300px',
+                                }
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Payment Terms"
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <Box
+                                    component="li"
+                                    {...props}
+                                    sx={{
+                                        ...(option.isNew && {
+                                            color: 'primary.main',
+                                            fontWeight: 600,
+                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                            py: '8px !important',
+                                            px: '16px !important',
+                                            mt: 0.5,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            '&:hover': {
+                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                            }
+                                        })
+                                    }}
+                                >
+                                    {option.isNew ? (
+                                        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ width: '100%' }}>
+                                            <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Create Payment Terms</Typography>
+                                        </Stack>
+                                    ) : (
+                                        option.payment_terms || option.name
+                                    )}
+                                </Box>
+                            )}
+                        />
 
                         <DatePicker
                             label="Due Date"
@@ -1248,6 +1318,20 @@ export function InvoiceEditView() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <PaymentTermsDialog
+                open={paymentTermsDialogOpen}
+                onClose={() => setPaymentTermsDialogOpen(false)}
+                onSuccess={async () => {
+                    const opts = await fetchPaymentTermsOptions();
+                    if (opts && opts.length > 0) {
+                        const newest = [...opts].sort((a, b) => (b.creation || '').localeCompare(a.creation || ''))[0];
+                        if (newest) {
+                            setPaymentTerms(newest.name);
+                        }
+                    }
+                }}
+            />
         </DashboardContent>
     );
 }
