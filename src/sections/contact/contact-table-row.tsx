@@ -3,6 +3,7 @@ import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
+import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
 import { Iconify } from 'src/components/iconify';
@@ -102,11 +103,17 @@ export function ContactTableRow({
                         alignItems: 'center',
                     }}
                 >
-                    {row.firstName}
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                        {row.firstName}
+                    </Typography>
                 </Box>
             </TableCell>
 
-            <TableCell>{row.companyName}</TableCell>
+            <TableCell>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {row.companyName}
+                </Typography>
+            </TableCell>
 
 
             <TableCell>{row.sourceLead || '-'}</TableCell>

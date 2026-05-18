@@ -38,9 +38,9 @@ import { PurchaseCollectionTableFiltersDrawer } from '../purchase-collection-tab
 const TABLE_HEAD = [
     { id: 'name', label: 'ID' },
     { id: 'purchase', label: 'Purchase ID' },
-    { id: 'vendor_name', label: 'Vendor' },
     { id: 'collection_date', label: 'Date' },
     { id: 'mode_of_payment', label: 'Mode' },
+    { id: 'amount_to_pay', label: 'Amount to Pay', align: 'right' },
     { id: 'amount_collected', label: 'Amount', align: 'right' },
     { id: 'amount_pending', label: 'Pending', align: 'right' },
     { id: '' },

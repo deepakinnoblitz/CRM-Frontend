@@ -17,6 +17,7 @@ export interface PurchaseItem {
 
 export interface Purchase {
     name: string;
+    vendor?: string;
     vendor_name: string;
     vendor_id?: string;
     bill_no: string;

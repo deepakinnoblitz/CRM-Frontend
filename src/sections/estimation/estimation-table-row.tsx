@@ -1,8 +1,10 @@
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
+import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
 import { fDate } from 'src/utils/format-time';
@@ -17,6 +19,7 @@ export type EstimationProps = {
     ref_no: string;
     client_name: string;
     customer_name: string;
+    billing_name?: string;
     estimate_date: string;
     grand_total: number;
 };
@@ -97,15 +100,24 @@ export function EstimationTableRow({
             )}
 
             <TableCell component="th" scope="row">
-                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center', fontWeight: 700  }}>
+                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center', fontWeight: 700 }}>
                     {row.ref_no}
                 </Box>
             </TableCell>
 
-            <TableCell align="left" sx={{ fontWeight: 400 }}>{row.client_name}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 600, maxWidth: 240 }}>{row.billing_name || '-' }</TableCell>
 
-            <TableCell align="left" sx={{ fontWeight: 400 }}>{row.customer_name}</TableCell>
-
+            <TableCell align="left" sx={{ maxWidth: 240 }}>
+                <Stack spacing={0.5}>
+                    <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                        {row.customer_name || row.client_name}
+                    </Typography>
+                    <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                        {row.client_name}
+                    </Typography>
+                </Stack>
+            </TableCell>
+            
             <TableCell align="left" sx={{ fontWeight: 400 }}>{fDate(row.estimate_date)}</TableCell>
 
             <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{fCurrency(row.grand_total)}</TableCell>
@@ -118,6 +130,9 @@ export function EstimationTableRow({
                     <IconButton onClick={onPreview} sx={{ color: 'secondary.main' }}>
                         <Iconify icon={"solar:file-text-bold" as any} />
                     </IconButton>
+                    <IconButton onClick={onView} sx={{ color: 'info.main' }}>
+                        <Iconify icon={"solar:eye-bold" as any} />
+                    </IconButton>
                     {canEdit && (
                         <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
                             <Iconify icon="solar:pen-bold" />
@@ -128,9 +143,6 @@ export function EstimationTableRow({
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>
                     )}
-                    <IconButton onClick={onView} sx={{ color: 'info.main' }}>
-                        <Iconify icon={"solar:eye-bold" as any} />
-                    </IconButton>
                 </Box>
             </TableCell>
         </TableRow>

@@ -158,7 +158,7 @@ export function DealTableRow({
             </TableCell>
 
             <TableCell>
-                <Typography variant="subtitle2" sx={{ fontSize: '14px' }}>
+                <Typography variant="subtitle2" sx={{ fontSize: '14px', maxWidth: 320 }}>
                     {row.accountName || row.account}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
@@ -167,7 +167,7 @@ export function DealTableRow({
             </TableCell>
 
             <TableCell>
-                <Typography variant="subtitle2" sx={{ fontSize: '14px' }}>
+                <Typography variant="subtitle2" sx={{ fontSize: '14px', maxWidth: 240 }}>
                     {row.contactName || row.contact}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>

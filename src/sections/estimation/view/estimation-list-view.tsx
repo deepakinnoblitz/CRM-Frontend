@@ -42,8 +42,8 @@ import { EstimationTableFiltersDrawer } from '../estimation-table-filters-drawer
 
 const TABLE_HEAD = [
     { id: 'ref_no', label: 'Ref No' },
-    { id: 'client_name', label: 'Customer ID' },
-    { id: 'customer_name', label: 'Customer' },
+    { id: 'billing_name', label: 'Billing Name' },
+    { id: 'client_name', label: 'Client' },
     { id: 'estimate_date', label: 'Date' },
     { id: 'grand_total', label: 'Amount', align: 'right' },
     { id: '' },
@@ -248,6 +248,7 @@ export function EstimationListView({ hideTitle }: Props) {
                                             ref_no: row.ref_no,
                                             client_name: row.client_name || '',
                                             customer_name: row.customer_name || '',
+                                            billing_name: row.billing_name || '',
                                             estimate_date: row.estimate_date,
                                             grand_total: row.grand_total || 0,
                                         }}

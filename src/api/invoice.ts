@@ -109,6 +109,7 @@ export async function fetchInvoices(params: {
             "ref_no",
             "client_name",
             "customer_name",
+            "billing_name",
             "invoice_date",
             "grand_total",
             "received_amount",

@@ -324,7 +324,7 @@ export function DealView() {
         }
         if (!account) {
             newErrors.account = true;
-            missingFields.push('Account');
+            missingFields.push('Company');
         }
 
         if (Object.keys(newErrors).length > 0) {
@@ -463,6 +463,7 @@ export function DealView() {
                                 }}
                                 required
                                 error={!!validationErrors.dealTitle}
+                                helperText={validationErrors.dealTitle ? 'Deal Title is required' : ''}
                                 slotProps={{ input: { readOnly: viewOnly } }}
                             />
 
@@ -494,9 +495,10 @@ export function DealView() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="Account"
+                                        label="Company"
                                         required
                                         error={!!validationErrors.account}
+                                        helperText={validationErrors.account ? 'Company is required' : ''}
                                     />
                                 )}
                             />
@@ -526,7 +528,7 @@ export function DealView() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="Contact"
+                                        label="Client"
                                     />
                                 )}
                             />
@@ -650,10 +652,10 @@ export function DealView() {
                                         { value: 'modified_asc', label: 'Oldest First' },
                                         { value: 'deal_title_asc', label: 'Title: A to Z' },
                                         { value: 'deal_title_desc', label: 'Title: Z to A' },
-                                        { value: 'account_asc', label: 'Account: A to Z' },
-                                        { value: 'account_desc', label: 'Account: Z to A' },
-                                        { value: 'contact_name_asc', label: 'Contact Name: A to Z' },
-                                        { value: 'contact_name_desc', label: 'Contact Name: Z to A' },
+                                        { value: 'account_asc', label: 'Company: A to Z' },
+                                        { value: 'account_desc', label: 'Company: Z to A' },
+                                        { value: 'contact_name_asc', label: 'Client Name: A to Z' },
+                                        { value: 'contact_name_desc', label: 'Client Name: Z to A' },
                                         { value: 'value_desc', label: 'Deal Value: High to Low' },
                                         { value: 'value_asc', label: 'Deal Value: Low to High' },
                                     ]}
@@ -675,8 +677,8 @@ export function DealView() {
                                                 showIndex
                                                 headLabel={[
                                                     { id: 'deal_title', label: 'Title' },
-                                                    { id: 'account', label: 'Account' },
-                                                    { id: 'contact', label: 'Contact' },
+                                                    { id: 'account', label: 'Company' },
+                                                    { id: 'contact', label: 'Client' },
                                                     { id: 'expected_close_date', label: 'Expected Close' },
                                                     { id: '' },
                                                 ]}

@@ -253,8 +253,8 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                                     })}
                                                 >
                                                     <MenuItem value="Lead">Lead</MenuItem>
-                                                    <MenuItem value="Contact">Contact</MenuItem>
-                                                    <MenuItem value="Accounts">Account</MenuItem>
+                                                    <MenuItem value="Contact">Client</MenuItem>
+                                                    <MenuItem value="Accounts">Company</MenuItem>
                                                     <MenuItem value="Others">Others</MenuItem>
                                                 </Select>
                                             </FormControl>
@@ -299,6 +299,20 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                                             helperText={formErrors.lead_name ? 'Lead is required' : ''}
                                                         />
                                                     )}
+                                                    renderOption={(props, option) => (
+                                                        <li {...props} key={typeof option === 'string' ? option : option.name}>
+                                                            <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                                                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                                    {typeof option === 'string' ? option : option.lead_name}
+                                                                </Typography>
+                                                                {typeof option !== 'string' && option.name && (
+                                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                                        ID: {option.name}
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
+                                                        </li>
+                                                    )}
                                                 />
                                             </Grid>
                                         )}
@@ -317,11 +331,25 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                                     renderInput={(params) => (
                                                         <TextField
                                                             {...params}
-                                                            label="Select Contact"
+                                                            label="Select Client"
                                                             required
                                                             error={!!formErrors.contact_name}
-                                                            helperText={formErrors.contact_name ? 'Contact is required' : ''}
+                                                            helperText={formErrors.contact_name ? 'Client is required' : ''}
                                                         />
+                                                    )}
+                                                    renderOption={(props, option) => (
+                                                        <li {...props} key={typeof option === 'string' ? option : option.name}>
+                                                            <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                                                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                                    {typeof option === 'string' ? option : `${option.first_name || ''} ${option.last_name || ''}`.trim()}
+                                                                </Typography>
+                                                                {typeof option !== 'string' && option.name && (
+                                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                                        ID: {option.name}
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
+                                                        </li>
                                                     )}
                                                 />
                                             </Grid>
@@ -341,11 +369,25 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                                     renderInput={(params) => (
                                                         <TextField
                                                             {...params}
-                                                            label="Select Account"
+                                                            label="Select Company"
                                                             required
                                                             error={!!formErrors.accounts_name}
-                                                            helperText={formErrors.accounts_name ? 'Account is required' : ''}
+                                                            helperText={formErrors.accounts_name ? 'Company is required' : ''}
                                                         />
+                                                    )}
+                                                    renderOption={(props, option) => (
+                                                        <li {...props} key={typeof option === 'string' ? option : option.name}>
+                                                            <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                                                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                                    {typeof option === 'string' ? option : option.account_name}
+                                                                </Typography>
+                                                                {typeof option !== 'string' && option.name && (
+                                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                                        ID: {option.name}
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
+                                                        </li>
                                                     )}
                                                 />
                                             </Grid>

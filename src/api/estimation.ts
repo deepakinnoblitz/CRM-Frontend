@@ -96,6 +96,7 @@ export async function fetchEstimations(params: {
             "ref_no",
             "client_name",
             "customer_name",
+            "billing_name",
             "estimate_date",
             "grand_total",
             "creation"
@@ -211,7 +212,22 @@ export async function convertEstimationToInvoice(name: string) {
 
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to convert estimation"));
-    return json.message;
+
+    let alreadyCreated = false;
+    let message = "";
+    if (json._server_messages) {
+        const msgStr = handleFrappeError(json);
+        if (msgStr.toLowerCase().includes("already created")) {
+            alreadyCreated = true;
+            message = msgStr;
+        }
+    }
+
+    return {
+        invoiceName: json.message,
+        alreadyCreated,
+        message
+    };
 }
 
 export async function fetchRelatedEstimations(dealId: string) {

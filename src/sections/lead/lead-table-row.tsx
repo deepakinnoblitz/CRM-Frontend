@@ -4,6 +4,7 @@ import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
+import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
 import { Label } from 'src/components/label';
@@ -171,18 +172,23 @@ export function LeadTableRow({
             alignItems: 'center',
           }}
         >
-
-          {row.name}
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            {row.name}
+          </Typography>
         </Box>
       </TableCell>
 
-      <TableCell>{row.company}</TableCell>
-
-      <TableCell>{row.country || '-'}</TableCell>
+      <TableCell>
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {row.company}
+        </Typography>
+      </TableCell>
 
       <TableCell>{row.phone}</TableCell>
 
       <TableCell>{row.email}</TableCell>
+
+      <TableCell>{row.country || '-'}</TableCell>
 
       <TableCell>
         <Label

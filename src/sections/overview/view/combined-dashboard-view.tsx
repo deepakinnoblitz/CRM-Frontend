@@ -1,5 +1,5 @@
 import dayjs, { Dayjs } from 'dayjs';
-import { FiFilter } from "react-icons/fi";
+import { ImFilter } from "react-icons/im";
 import { useState, useEffect } from 'react';
 import { IoMdArrowDropdown } from "react-icons/io";
 
@@ -13,11 +13,11 @@ import TableRow from '@mui/material/TableRow';
 import MenuItem from '@mui/material/MenuItem';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import { useTheme } from '@mui/material/styles';
 import TableHead from '@mui/material/TableHead';
 import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
+import { useTheme, alpha } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import InputAdornment from '@mui/material/InputAdornment';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -180,34 +180,45 @@ export function CombinedDashboardView() {
                             onChange={(e) => setDateFilter(e.target.value)}
                             IconComponent={IoMdArrowDropdown}
                             renderValue={(selected) => (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <FiFilter size={16} strokeWidth={2.5} color="#1a5b8f" />
-                                    <Typography variant="subtitle2" sx={{ color: '#1a5b8f', mt: 0.2 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 0.5 }}>
+                                    <ImFilter size={14} style={{ color: theme.palette.mode === 'dark' ? '#111111' : '#111111' }} />
+                                    <Typography variant="subtitle2" sx={{ color: theme.palette.mode === 'dark' ? 'common.white' : 'grey.900', fontWeight: 600, mt: 0.2, ml: 0.5 }}>
                                         {selected}
                                     </Typography>
                                 </Box>
                             )}
                             sx={{
-                                minWidth: 150,
-                                borderRadius: 1.5,
+                                minWidth: 160,
+                                height: 40,
+                                borderRadius: '20px',
+                                bgcolor: (themeVar) => themeVar.palette.mode === 'dark' ? alpha(themeVar.palette.grey[800], 0.8) : alpha(themeVar.palette.grey[500], 0.08),
+                                boxShadow: (themeVar) => themeVar.palette.mode === 'dark' ? '0 4px 12px rgba(0,0,0,0.2)' : '0 4px 12px rgba(145, 158, 171, 0.12)',
+                                transition: 'all 0.2s ease-in-out',
                                 '& .MuiSelect-select': {
                                     display: 'flex',
                                     alignItems: 'center',
+                                    py: 1,
                                 },
                                 '& .MuiSelect-icon': {
-                                    color: 'text.secondary',
-                                    right: 8,
+                                    color: (themeVar) => themeVar.palette.mode === 'dark' ? 'grey.400' : 'grey.700',
+                                    right: 15,
                                 },
                                 '& .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: 'rgba(145, 158, 171, 0.2)',
+                                    borderColor: (themeVar) => themeVar.palette.mode === 'dark' ? alpha(themeVar.palette.primary.light, 0.35) : alpha(themeVar.palette.primary.main, 0.35),
+                                    borderWidth: '0.5px',
                                 },
                                 '&:hover .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: 'rgba(145, 158, 171, 0.3)',
+                                    borderColor: (themeVar) => themeVar.palette.mode === 'dark' ? themeVar.palette.primary.light : themeVar.palette.primary.main,
+                                    borderWidth: '2px',
                                 },
                                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: '#1a5b8f',
-                                    borderWidth: 1,
+                                    borderColor: (themeVar) => themeVar.palette.mode === 'dark' ? themeVar.palette.primary.light : themeVar.palette.primary.main,
+                                    borderWidth: '2px',
                                 },
+                                '&:hover': {
+                                    transform: 'translateY(-1px)',
+                                    boxShadow: (themeVar) => themeVar.palette.mode === 'dark' ? '0 6px 16px rgba(0,0,0,0.4)' : '0 6px 16px rgba(145, 158, 171, 0.2)',
+                                }
                             }}
                         >
                             <MenuItem value="All Time">All Time</MenuItem>

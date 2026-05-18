@@ -1,4 +1,5 @@
 import { MuiTelInput } from 'mui-tel-input';
+import { IoMdCloudDownload } from "react-icons/io";
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -455,10 +456,10 @@ export function AccountView() {
                 <Box sx={{ display: 'flex', gap: 1 }}>
                     {permissions.write && (
                         <Button
-                            variant="outlined"
-                            startIcon={<Iconify icon={"solar:import-bold-duotone" as any} />}
+                            variant="contained"
+                            startIcon={<IoMdCloudDownload size={20} />}
                             onClick={handleOpenImport}
-                            sx={{ color: '#08a3cd', borderColor: '#08a3cd', '&:hover': { borderColor: '#068fb3', bgcolor: 'rgba(8, 163, 205, 0.04)' } }}
+                            sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
                         >
                             Import
                         </Button>
@@ -635,6 +636,7 @@ export function AccountView() {
                             }}
                             required
                             error={!!validationErrors.accountName}
+                            helperText={validationErrors.accountName ? 'Company Name is required' : ''}
                             disabled={viewMode}
                             placeholder="e.g. Acme Corp"
                         />
@@ -652,6 +654,7 @@ export function AccountView() {
                             }}
                             required
                             error={!!validationErrors.phoneNumber}
+                            helperText={validationErrors.phoneNumber ? 'Phone Number is required' : ''}
                             sx={{
                                 '& .MuiInputBase-input.Mui-disabled': {
                                     WebkitTextFillColor: 'inherit',

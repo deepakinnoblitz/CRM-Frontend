@@ -242,6 +242,7 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
                             }}
                             required
                             error={!!validationErrors.firstName}
+                            helperText={validationErrors.firstName ? 'Name is required' : ''}
                         />
                         <TextField
                             fullWidth
@@ -253,6 +254,7 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
                             }}
                             required
                             error={!!validationErrors.email}
+                            helperText={validationErrors.email ? 'Email is required' : ''}
                         />
 
                         <MuiTelInput
@@ -267,6 +269,7 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
                             }}
                             required
                             error={!!validationErrors.phone}
+                            helperText={validationErrors.phone ? 'Phone Number is required' : ''}
                         />
 
                         <TextField

@@ -40,6 +40,7 @@ const INITIAL_TODO_STATE: Partial<ToDo> = {
 
 export default function TodoDialog({ open, onClose, selectedTodo, initialData, onSuccess }: Props) {
     const [todoData, setTodoData] = useState<Partial<ToDo>>(INITIAL_TODO_STATE);
+    const [formErrors, setFormErrors] = useState({ description: false });
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
@@ -48,6 +49,7 @@ export default function TodoDialog({ open, onClose, selectedTodo, initialData, o
     });
 
     useEffect(() => {
+        setFormErrors({ description: false });
         if (selectedTodo) {
             setTodoData({
                 description: selectedTodo.description,
@@ -67,6 +69,15 @@ export default function TodoDialog({ open, onClose, selectedTodo, initialData, o
     }, [selectedTodo, initialData, open]);
 
     const handleSaveToDo = async () => {
+        const errors = {
+            description: !todoData.description?.trim(),
+        };
+        setFormErrors(errors);
+
+        if (errors.description) {
+            return;
+        }
+
         try {
             if (selectedTodo) {
                 await updateToDo(selectedTodo.name, todoData);
@@ -120,10 +131,16 @@ export default function TodoDialog({ open, onClose, selectedTodo, initialData, o
                                     fullWidth
                                     multiline
                                     rows={4}
+                                    required
                                     label="What needs to be done?"
                                     placeholder="Enter task details..."
                                     value={todoData.description}
-                                    onChange={(e) => setTodoData({ ...todoData, description: e.target.value })}
+                                    onChange={(e) => {
+                                        setTodoData({ ...todoData, description: e.target.value });
+                                        if (e.target.value.trim()) setFormErrors(prev => ({ ...prev, description: false }));
+                                    }}
+                                    error={formErrors.description}
+                                    helperText={formErrors.description ? 'Task description is required' : ''}
                                 />
                             </Box>
 

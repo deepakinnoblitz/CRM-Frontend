@@ -9,9 +9,11 @@ import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
 import Card from '@mui/material/Card';
 import Tabs from '@mui/material/Tabs';
+import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import Snackbar from '@mui/material/Snackbar';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -19,7 +21,9 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useRouter } from 'src/routes/hooks';
 
 import { getDeal, updateDeal } from 'src/api/deals';
+import { fetchRelatedInvoices } from 'src/api/invoice';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { fetchRelatedEstimations } from 'src/api/estimation';
 
 const STAGE_OPTIONS = [
     { value: 'Just In', label: 'Just In' },
@@ -46,6 +50,7 @@ const getClipPath = (index: number, total: number) => {
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { DealRelatedList } from '../deal-related-list';
 
@@ -61,6 +66,12 @@ export function DealDetailsView() {
     const [currentTab, setCurrentTab] = useState('estimations');
     const [selectedStage, setSelectedStage] = useState<string | null>(null);
     const [updatingStage, setUpdatingStage] = useState(false);
+    const [confirmUpdate, setConfirmUpdate] = useState(false);
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
 
     useEffect(() => {
         if (deal && deal.stage) {
@@ -71,16 +82,74 @@ export function DealDetailsView() {
 
     const handleUpdateStage = useCallback(async () => {
         if (!deal || !selectedStage || selectedStage === deal.stage) return;
+        const previousStage = deal.stage;
+        setConfirmUpdate(false);
         setUpdatingStage(true);
         try {
             await updateDeal(deal.name, { stage: selectedStage as any });
             const updated = await getDeal(deal.name);
             setDeal(updated);
-        } catch (err) {
+            setSnackbar({
+                open: true,
+                message: `Deal stage updated from "${previousStage}" to "${selectedStage}" successfully`,
+                severity: 'success'
+            });
+        } catch (err: any) {
             console.error('Failed to update stage:', err);
+            setSnackbar({
+                open: true,
+                message: err.message || 'Failed to update stage',
+                severity: 'error'
+            });
         } finally {
             setUpdatingStage(false);
         }
+    }, [deal, selectedStage]);
+
+    const handleStageUpdateClick = useCallback(async () => {
+        if (!deal || !selectedStage) return;
+
+        if (selectedStage === 'Estimation Created' || selectedStage === 'Estimation Sent') {
+            try {
+                setUpdatingStage(true);
+                const estimations = await fetchRelatedEstimations(deal.name);
+                setUpdatingStage(false);
+                if (estimations.length === 0) {
+                    setSnackbar({
+                        open: true,
+                        message: 'At least one Estimation must be created.',
+                        severity: 'error'
+                    });
+                    setSelectedStage(deal.stage);
+                    return;
+                }
+            } catch (err) {
+                setUpdatingStage(false);
+                console.error('Failed to validate estimations:', err);
+            }
+        }
+
+        if (selectedStage === 'Invoice Created' || selectedStage === 'Invoice Sent') {
+            try {
+                setUpdatingStage(true);
+                const invoices = await fetchRelatedInvoices(deal.name);
+                setUpdatingStage(false);
+                if (invoices.length === 0) {
+                    setSnackbar({
+                        open: true,
+                        message: 'At least one Invoice must be created.',
+                        severity: 'error'
+                    });
+                    setSelectedStage(deal.stage);
+                    return;
+                }
+            } catch (err) {
+                setUpdatingStage(false);
+                console.error('Failed to validate invoices:', err);
+            }
+        }
+
+        setConfirmUpdate(true);
     }, [deal, selectedStage]);
 
     useEffect(() => {
@@ -260,7 +329,7 @@ export function DealDetailsView() {
                 <Button
                     variant="contained"
                     disabled={!selectedStage || selectedStage === (STAGE_OPTIONS.some(s => s.value === deal.stage) ? deal.stage : 'Just In') || updatingStage}
-                    onClick={handleUpdateStage}
+                    onClick={handleStageUpdateClick}
                     sx={{
                         height: 36,
                         px: 3,
@@ -314,8 +383,8 @@ export function DealDetailsView() {
                                 <Box>
                                     <SectionHeader title="Deal Information" />
                                     <Stack spacing={2.5} sx={{ mt: 2.5 }}>
-                                        <DetailItem label="Account" value={deal.account_name || deal.account} subValue={deal.account_name ? deal.account : null} icon={<HiOutlineBuildingOffice size={20} />} />
-                                        <DetailItem label="Contact" value={deal.contact_name || deal.contact} subValue={deal.contact_name ? deal.contact : null} icon={<HiOutlineUser size={20} />} />
+                                        <DetailItem label="Company" value={deal.account_name || deal.account} subValue={deal.account_name ? deal.account : null} icon={<HiOutlineBuildingOffice size={20} />} />
+                                        <DetailItem label="Client" value={deal.contact_name || deal.contact} subValue={deal.contact_name ? deal.contact : null} icon={<HiOutlineUser size={20} />} />
                                         <DetailItem label="Expected Close" value={deal.expected_close_date} icon={<HiOutlineCalendar size={20} />} />
                                         <DetailItem label="Deal Owner" value={deal.deal_owner_name || deal.deal_owner || deal.owner} subValue={deal.deal_owner_name && (deal.deal_owner || deal.owner) !== deal.deal_owner_name ? (deal.deal_owner || deal.owner) : null} icon={<HiOutlineBriefcase size={20} />} />
                                     </Stack>
@@ -390,6 +459,31 @@ export function DealDetailsView() {
                     </Box>
                 </Box>
             </Card>
+
+            <ConfirmDialog
+                open={confirmUpdate}
+                onClose={() => setConfirmUpdate(false)}
+                title="Confirm Stage Update"
+                content={`Are you sure you want to update the deal stage to "${selectedStage}"?`}
+                icon="solar:info-circle-bold"
+                iconColor="#2081C3"
+                action={
+                    <Button onClick={handleUpdateStage} color="primary" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
+                        Update
+                    </Button>
+                }
+            />
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert onClose={() => setSnackbar(prev => ({ ...prev, open: false }))} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </DashboardContent>
     );
 }
@@ -397,7 +491,7 @@ export function DealDetailsView() {
 function SectionHeader({ title }: { title: string }) {
     return (
         <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Typography variant="overline" sx={{ fontWeight: 700, color: 'text.secondary', fontSize:'13px' }}>
+            <Typography variant="overline" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '13px' }}>
                 {title}
             </Typography>
         </Stack>

@@ -125,6 +125,43 @@ export async function createLead(data: Partial<Lead>) {
     return json.message;
 }
 
+export async function createLeadFrom(name: string) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: "Lead From",
+                lead_from: name,
+            }
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create Lead From"));
+    return json.message;
+}
+
+export async function createService(name: string) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: "Service",
+                service_id: name,
+                service_name: name,
+            }
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create Service"));
+    return json.message;
+}
+
 
 export async function updateLead(name: string, data: Partial<Lead>) {
     const headers = await getAuthHeaders();

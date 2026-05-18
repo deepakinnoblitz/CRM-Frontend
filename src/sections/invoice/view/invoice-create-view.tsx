@@ -1,11 +1,11 @@
 import dayjs from 'dayjs';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags, IoMdWallet } from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
@@ -13,13 +13,11 @@ import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
-import AlertTitle from '@mui/material/AlertTitle';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -126,11 +124,7 @@ export function InvoiceCreateView() {
     const [discountValue, setDiscountValue] = useState(estimationData?.overall_discount || 0);
 
     const [loading, setLoading] = useState(false);
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-        open: false,
-        message: '',
-        severity: 'success',
-    });
+    const { enqueueSnackbar } = useSnackbar();
 
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
     const [newItem, setNewItem] = useState({ item_name: '', item_code: '', rate: 0 });
@@ -142,6 +136,9 @@ export function InvoiceCreateView() {
     const [taxTypeDialogOpen, setTaxTypeDialogOpen] = useState(false);
     const [newTaxInitialName, setNewTaxInitialName] = useState('');
 
+    const [customerError, setCustomerError] = useState(false);
+    const [itemError, setItemError] = useState(false);
+
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'address']).then(setCustomerOptions);
         getDoctypeList('Item', ['name', 'item_name', 'rate', 'item_code']).then(setItemOptions);
@@ -152,6 +149,7 @@ export function InvoiceCreateView() {
     const handleCustomerChange = async (name: string) => {
         setCustomerId(name);
         if (name) {
+            setCustomerError(false);
             try {
                 const contact = await getDoc('Contacts', name);
                 setCustomerName(contact.first_name || '');
@@ -199,6 +197,7 @@ export function InvoiceCreateView() {
         const item = { ...newItems[index], [field]: value };
 
         if (field === 'service') {
+            setItemError(false);
             const selectedItem = itemOptions.find((opt) => opt.name === value);
             if (selectedItem) {
                 item.price = selectedItem.rate || 0;
@@ -259,7 +258,7 @@ export function InvoiceCreateView() {
 
     const handleCreateItem = async () => {
         if (!newItem.item_name) {
-            setSnackbar({ open: true, message: 'Please enter Item Name', severity: 'error' });
+            enqueueSnackbar('Please enter Item Name', { variant: 'error' });
             return;
         }
 
@@ -300,9 +299,9 @@ export function InvoiceCreateView() {
 
             setItemDialogOpen(false);
             setNewItem({ item_name: '', item_code: '', rate: 0 });
-            setSnackbar({ open: true, message: 'Item created successfully', severity: 'success' });
+            enqueueSnackbar('Item created successfully', { variant: 'success' });
         } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Failed to create item', severity: 'error' });
+            enqueueSnackbar(error.message || 'Failed to create item', { variant: 'error' });
         } finally {
             setCreatingItem(false);
         }
@@ -335,15 +334,19 @@ export function InvoiceCreateView() {
 
     const handleSave = async () => {
         if (!customerId) {
-            setSnackbar({ open: true, message: 'Please select a customer', severity: 'error' });
+            setCustomerError(true);
+            enqueueSnackbar('Please select a Client', { variant: 'error' });
             return;
         }
+        setCustomerError(false);
 
         const validItems = items.filter((item) => item.service !== '');
         if (validItems.length === 0) {
-            setSnackbar({ open: true, message: 'Please add at least one item', severity: 'error' });
+            setItemError(true);
+            enqueueSnackbar('Please add at least one item', { variant: 'error' });
             return;
         }
+        setItemError(false);
 
         try {
             setLoading(true);
@@ -401,11 +404,11 @@ export function InvoiceCreateView() {
             };
 
             await createInvoice(invoiceData);
-            setSnackbar({ open: true, message: 'Invoice created successfully', severity: 'success' });
+            enqueueSnackbar('Invoice created successfully', { variant: 'success' });
             setTimeout(() => router.push('/deals?tab=invoices'), 1500);
         } catch (err: any) {
             console.error(err);
-            setSnackbar({ open: true, message: err.message || 'Failed to create invoice', severity: 'error' });
+            enqueueSnackbar(err.message || 'Failed to create invoice', { variant: 'error' });
         } finally {
             setLoading(false);
         }
@@ -466,6 +469,18 @@ export function InvoiceCreateView() {
                                     label="Linked Deal"
                                 />
                             )}
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.name}>
+                                    <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                            {option.name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                </li>
+                            )}
                             sx={{ gridColumn: 'span 2', display: 'none' }}
                         />
 
@@ -479,9 +494,23 @@ export function InvoiceCreateView() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="Customer ID"
+                                        label="Client ID"
                                         required
+                                        error={customerError}
+                                        helperText={customerError ? 'Please select a Client' : ''}
                                     />
+                                )}
+                                renderOption={(props, option) => (
+                                    <li {...props} key={option.name}>
+                                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                {option.first_name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                ID: {option.name}
+                                            </Typography>
+                                        </Stack>
+                                    </li>
                                 )}
                             />
                             {customerId && (
@@ -498,16 +527,12 @@ export function InvoiceCreateView() {
 
                         <TextField
                             fullWidth
-                            label="Customer Name"
+                            label="Client Name"
                             value={customerName}
                             InputProps={{
                                 readOnly: true,
                             }}
-                            sx={{
-                                '& .MuiInputBase-root': {
-                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                },
-                            }}
+                            sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}
                         />
 
                         <TextField
@@ -517,11 +542,7 @@ export function InvoiceCreateView() {
                             InputProps={{
                                 readOnly: true,
                             }}
-                            sx={{
-                                '& .MuiInputBase-root': {
-                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                },
-                            }}
+                            sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}
                         />
 
                         <TextField
@@ -535,9 +556,7 @@ export function InvoiceCreateView() {
                             }}
                             sx={{
                                 gridColumn: 'span 2',
-                                '& .MuiInputBase-root': {
-                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                },
+                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
                             }}
                         />
 
@@ -610,13 +629,17 @@ export function InvoiceCreateView() {
 
                     <TableContainer sx={{
                         overflow: 'unset',
-                        border: (theme) => `1px solid ${theme.palette.divider}`,
+                        border: (theme) => itemError ? `2px solid ${theme.palette.error.main}` : `1px solid ${theme.palette.divider}`,
                         borderRadius: 1.5,
                         bgcolor: 'background.paper',
                         boxShadow: (theme) => theme.customShadows.z8,
                     }}>
                         <Table sx={{ minWidth: 960 }}>
-                            <TableHead sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}>
+                            <TableHead sx={{ 
+                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                '& th:first-of-type': { borderTopLeftRadius: 11 },
+                                '& th:last-of-type': { borderTopRightRadius: 11 }
+                            }}>
                                 <TableRow>
                                     <TableCell width={180} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Service</TableCell>
                                     <TableCell width={80} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>HSN</TableCell>
@@ -1213,24 +1236,6 @@ export function InvoiceCreateView() {
                     }
                 }}
             />
-
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={6000}
-                onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-                <Alert
-                    severity={snackbar.severity}
-                    sx={{
-                        width: '100%',
-                        boxShadow: (theme) => theme.customShadows.z20
-                    }}
-                >
-                    <AlertTitle>{snackbar.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
 
             <Dialog open={itemDialogOpen} onClose={() => !creatingItem && setItemDialogOpen(false)} fullWidth maxWidth="xs">
                 <DialogTitle sx={{ pb: 2, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>

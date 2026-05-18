@@ -38,9 +38,9 @@ import { InvoiceCollectionTableFiltersDrawer } from '../invoice-collection-table
 const TABLE_HEAD = [
     { id: 'name', label: 'ID' },
     { id: 'invoice', label: 'Invoice No' },
-    { id: 'customer', label: 'Customer' },
     { id: 'collection_date', label: 'Date' },
     { id: 'mode_of_payment', label: 'Mode' },
+    { id: 'amount_to_pay', label: 'Amount to Pay', align: 'right' },
     { id: 'amount_collected', label: 'Amount', align: 'right' },
     { id: 'amount_pending', label: 'Pending', align: 'right' },
     { id: '' },
@@ -84,7 +84,7 @@ export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?:
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name']).then((res) => {
             const options = res.map((c: any) => ({
                 name: c.name,
-                customer_name: c.first_name + (c.company_name ? ` - ${c.company_name}` : '')
+                customer_name: c.first_name || c.name
             }));
             setCustomerOptions(options);
         });

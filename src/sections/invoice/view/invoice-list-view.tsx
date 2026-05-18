@@ -42,7 +42,8 @@ import { InvoiceTableFiltersDrawer } from '../invoice-table-filters-drawer';
 
 const TABLE_HEAD = [
     { id: 'ref_no', label: 'Ref No' },
-    { id: 'customer_name', label: 'Customer' },
+    { id: 'billing_name', label: 'Billing Name' },
+    { id: 'customer_name', label: 'Client' },
     { id: 'invoice_date', label: 'Date' },
     { id: 'grand_total', label: 'Amount', align: 'right' },
     { id: 'received_amount', label: 'Received', align: 'right' },
@@ -239,7 +240,9 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
                                         row={{
                                             id: row.name,
                                             ref_no: row.ref_no,
+                                            client_name: row.client_name || '',
                                             customer_name: row.customer_name || '',
+                                            billing_name: row.billing_name || '',
                                             invoice_date: row.invoice_date,
                                             grand_total: row.grand_total || 0,
                                             received_amount: row.received_amount || 0,
@@ -255,10 +258,10 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
                                     />
                                 ))}
 
-                                    <TableEmptyRows
-                                        height={77}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                <TableEmptyRows
+                                    height={77}
+                                    emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                />
 
                                 {notFound && <TableNoData searchQuery={filterName} />}
 

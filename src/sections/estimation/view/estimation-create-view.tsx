@@ -1,24 +1,22 @@
 import dayjs from 'dayjs';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags, IoMdWallet } from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
-import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
-import AlertTitle from '@mui/material/AlertTitle';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -111,11 +109,7 @@ export function EstimationCreateView() {
     const [discountValue, setDiscountValue] = useState(0);
 
     const [loading, setLoading] = useState(false);
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-        open: false,
-        message: '',
-        severity: 'success',
-    });
+    const { enqueueSnackbar } = useSnackbar();
 
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
     const [contactDialogOpen, setContactDialogOpen] = useState(false);
@@ -125,6 +119,9 @@ export function EstimationCreateView() {
 
     const [taxTypeDialogOpen, setTaxTypeDialogOpen] = useState(false);
     const [newTaxInitialName, setNewTaxInitialName] = useState('');
+
+    const [clientError, setClientError] = useState(false);
+    const [itemError, setItemError] = useState(false);
 
     const [searchParams] = useSearchParams();
     const dealIdParam = searchParams.get('deal_id');
@@ -169,6 +166,7 @@ export function EstimationCreateView() {
     const handleCustomerChange = async (name: string) => {
         setClientName(name);
         if (name) {
+            setClientError(false);
             try {
                 const contact = await getDoc('Contacts', name);
                 setCustomerName(contact.first_name || '');
@@ -216,6 +214,7 @@ export function EstimationCreateView() {
         const item = { ...newItems[index], [field]: value };
 
         if (field === 'service') {
+            setItemError(false);
             const selectedItem = itemOptions.find((opt) => opt.name === value);
             if (selectedItem) {
                 item.price = selectedItem.rate || 0;
@@ -276,7 +275,7 @@ export function EstimationCreateView() {
 
     const handleCreateItem = async () => {
         if (!newItem.item_name) {
-            setSnackbar({ open: true, message: 'Please enter Item Name', severity: 'error' });
+            enqueueSnackbar('Please enter Item Name', { variant: 'error' });
             return;
         }
 
@@ -317,9 +316,9 @@ export function EstimationCreateView() {
 
             setItemDialogOpen(false);
             setNewItem({ item_name: '', item_code: '', rate: 0 });
-            setSnackbar({ open: true, message: 'Item created successfully', severity: 'success' });
+            enqueueSnackbar('Item created successfully', { variant: 'success' });
         } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Failed to create item', severity: 'error' });
+            enqueueSnackbar(error.message || 'Failed to create item', { variant: 'error' });
         } finally {
             setCreatingItem(false);
         }
@@ -352,15 +351,19 @@ export function EstimationCreateView() {
 
     const handleSave = async () => {
         if (!clientName) {
-            setSnackbar({ open: true, message: 'Please select a customer', severity: 'error' });
+            setClientError(true);
+            enqueueSnackbar('Please select a Client', { variant: 'error' });
             return;
         }
+        setClientError(false);
 
         const validItems = items.filter((item) => item.service !== '');
         if (validItems.length === 0) {
-            setSnackbar({ open: true, message: 'Please add at least one item', severity: 'error' });
+            setItemError(true);
+            enqueueSnackbar('Please add at least one item', { variant: 'error' });
             return;
         }
+        setItemError(false);
 
         try {
             setLoading(true);
@@ -414,11 +417,11 @@ export function EstimationCreateView() {
             };
 
             await createEstimation(estimationData);
-            setSnackbar({ open: true, message: 'Estimation created successfully', severity: 'success' });
+            enqueueSnackbar('Estimation created successfully', { variant: 'success' });
             setTimeout(() => router.push('/estimations'), 1500);
         } catch (err: any) {
             console.error(err);
-            setSnackbar({ open: true, message: err.message || 'Failed to create estimation', severity: 'error' });
+            enqueueSnackbar(err.message || 'Failed to create estimation', { variant: 'error' });
         } finally {
             setLoading(false);
         }
@@ -475,7 +478,25 @@ export function EstimationCreateView() {
                                 value={customerOptions.find((opt) => opt.name === clientName) || null}
                                 onChange={(_e, newValue) => handleCustomerChange(newValue?.name || '')}
                                 renderInput={(params) => (
-                                    <TextField {...params} label="Customer ID" required />
+                                    <TextField
+                                        {...params}
+                                        label="Client ID"
+                                        required
+                                        error={clientError}
+                                        helperText={clientError ? 'Please select a Client' : ''}
+                                    />
+                                )}
+                                renderOption={(props, option) => (
+                                    <li {...props} key={option.name}>
+                                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                {option.first_name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                ID: {option.name}
+                                            </Typography>
+                                        </Stack>
+                                    </li>
                                 )}
                             />
                             {clientName && (
@@ -496,14 +517,29 @@ export function EstimationCreateView() {
                             value={dealOptions.find((opt) => opt.name === deal) || null}
                             onChange={(_e, newValue) => setDeal(newValue?.name || '')}
                             renderInput={(params) => (
-                                <TextField {...params} label="Link Deal" />
+                                <TextField
+                                    {...params}
+                                    label="Link Deal"
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.name}>
+                                    <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                            {option.deal_title}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                </li>
                             )}
                             sx={{ display: 'none' }}
                         />
 
                         <TextField
                             fullWidth
-                            label="Customer Name"
+                            label="Client Name"
                             value={customerName}
                             onChange={(e) => setCustomerName(e.target.value)}
                             slotProps={{ input: { readOnly: true } }}
@@ -552,13 +588,17 @@ export function EstimationCreateView() {
 
                     <TableContainer sx={{
                         overflow: 'unset',
-                        border: (theme) => `1px solid ${theme.palette.divider}`,
+                        border: (theme) => itemError ? `2px solid ${theme.palette.error.main}` : `1px solid ${theme.palette.divider}`,
                         borderRadius: 1.5,
                         bgcolor: 'background.paper',
                         boxShadow: (theme) => theme.customShadows.z8,
                     }}>
                         <Table sx={{ minWidth: 960 }}>
-                            <TableHead sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}>
+                            <TableHead sx={{ 
+                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                '& th:first-of-type': { borderTopLeftRadius: 11 },
+                                '& th:last-of-type': { borderTopRightRadius: 11 }
+                            }}>
                                 <TableRow>
                                     <TableCell width={180} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Service</TableCell>
                                     <TableCell width={80} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>HSN</TableCell>
@@ -1141,23 +1181,6 @@ export function EstimationCreateView() {
                 }}
             />
 
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={6000}
-                onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-                <Alert
-                    severity={snackbar.severity}
-                    sx={{
-                        width: '100%',
-                        boxShadow: (theme) => theme.customShadows.z20
-                    }}
-                >
-                    <AlertTitle>{snackbar.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
 
             <Dialog open={itemDialogOpen} onClose={() => !creatingItem && setItemDialogOpen(false)} fullWidth maxWidth="xs">
                 <DialogTitle sx={{ pb: 2, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
