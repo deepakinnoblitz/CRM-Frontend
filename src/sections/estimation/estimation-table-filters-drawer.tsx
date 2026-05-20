@@ -103,7 +103,7 @@ export function EstimationTableFiltersDrawer({
     const renderCustomer = (
         <Stack spacing={1.5}>
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Customer
+                Client
             </Typography>
             <Autocomplete
                 fullWidth
@@ -121,7 +121,7 @@ export function EstimationTableFiltersDrawer({
                 renderInput={(params) => (
                     <TextField
                         {...params}
-                        placeholder="Search customers..."
+                        placeholder="Search clients..."
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
@@ -132,6 +132,18 @@ export function EstimationTableFiltersDrawer({
                             },
                         }}
                     />
+                )}
+                renderOption={(props, option) => (
+                    <li {...props} key={option.name}>
+                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                {option.customer_name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                ID: {option.name}
+                            </Typography>
+                        </Stack>
+                    </li>
                 )}
             />
         </Stack>

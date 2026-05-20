@@ -32,6 +32,7 @@ export async function fetchLeads(params: {
     const or_filters: any[] = [];
 
     if (params.search) {
+        or_filters.push(["Lead", "name", "like", `%${params.search}%`]);
         or_filters.push(["Lead", "lead_name", "like", `%${params.search}%`]);
         or_filters.push(["Lead", "email", "like", `%${params.search}%`]);
         or_filters.push(["Lead", "company_name", "like", `%${params.search}%`]);
@@ -122,6 +123,43 @@ export async function createLead(data: Partial<Lead>) {
     });
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create lead"));
+    return json.message;
+}
+
+export async function createLeadFrom(name: string) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: "Lead From",
+                lead_from: name,
+            }
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create Lead From"));
+    return json.message;
+}
+
+export async function createService(name: string) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: "Service",
+                service_id: name,
+                service_name: name,
+            }
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create Service"));
     return json.message;
 }
 

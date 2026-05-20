@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
+import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
 import { alpha } from '@mui/material/styles';
@@ -104,33 +105,29 @@ export function PurchaseTableToolbar({
                     </IconButton>
                 ) : (
                     <>
-                        <Button
-                            disableRipple
-                            color="inherit"
-                            onClick={onOpenFilter}
-                            endIcon={
-                                <Iconify
-                                    icon="ic:round-filter-list"
-                                    width={20}
-                                    sx={canReset ? { color: 'error.main' } : undefined}
-                                />
-                            }
-                            sx={{
-                                color: 'text.primary',
-                                bgcolor: 'background.neutral',
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                height: 40,
-                                px: 2,
-                                fontWeight: 500,
-                                borderRadius: 1,
-                                '&:hover': {
-                                    bgcolor: 'action.hover',
-                                },
-                            }}
-                        >
-                            Filters
-                        </Button>
+                        {onOpenFilter && (
+                            <Button
+                                disableRipple
+                                color="inherit"
+                                onClick={onOpenFilter}
+                                startIcon={
+                                    <Badge color="error" variant="dot" invisible={!canReset}>
+                                        <Iconify icon="ic:round-filter-list" />
+                                    </Badge>
+                                }
+                                sx={{
+                                    height: 40,
+                                    px: 2,
+                                    bgcolor: 'background.neutral',
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    borderRadius: 1,
+                                    fontWeight: 500,
+                                }}
+                            >
+                                Filters
+                            </Button>
+                        )}
 
                         {onSortChange && (
                             <>

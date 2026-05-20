@@ -4,6 +4,7 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -136,6 +137,18 @@ export function PurchaseTableFiltersDrawer({
                         }}
                     />
                 )}
+                renderOption={(props, option) => (
+                    <li {...props} key={option.name}>
+                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                {option.first_name || option.name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                ID: {option.name}
+                            </Typography>
+                        </Stack>
+                    </li>
+                )}
             />
         </Stack>
     );
@@ -187,7 +200,6 @@ export function PurchaseTableFiltersDrawer({
                 fullWidth
                 value={filters.payment_terms}
                 onChange={(e) => handleFilterChange('payment_terms', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
                 sx={{
                     '& .MuiOutlinedInput-root': {
@@ -199,11 +211,11 @@ export function PurchaseTableFiltersDrawer({
                     },
                 }}
             >
-                <option value="all">All Payment Terms</option>
+                <MenuItem value="all">All Payment Terms</MenuItem>
                 {PAYMENT_TERMS_OPTIONS.map((term) => (
-                    <option key={term} value={term}>
+                    <MenuItem key={term} value={term}>
                         {term}
-                    </option>
+                    </MenuItem>
                 ))}
             </TextField>
         </Stack>

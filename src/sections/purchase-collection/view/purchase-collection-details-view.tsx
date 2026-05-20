@@ -47,7 +47,7 @@ export function PurchaseCollectionDetailsView() {
                 .then((data) => {
                     setCollection(data);
                     // Check if latest - fetch the most recent collection for this purchase
-                    fetch(`/api/method/frappe.client.get_list?doctype=Purchase Collection&fields=["name"]&filters=[["Purchase Collection","purchase","=","${data.purchase}"]]&order_by=collection_date desc&limit_page_length=1`, { credentials: 'include' })
+                    fetch(`/api/method/frappe.client.get_list?doctype=Purchase Collection&fields=["name"]&filters=[["Purchase Collection","purchase","=","${data.purchase}"]]&order_by=collection_date desc, creation desc&limit_page_length=1`, { credentials: 'include' })
                         .then(res => res.json())
                         .then(res => {
                             if (res.message && res.message.length > 0) {

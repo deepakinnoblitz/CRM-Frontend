@@ -3,6 +3,7 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -120,7 +121,17 @@ export function DealTableFiltersDrawer({
                 fullWidth
                 value={filters.type}
                 onChange={(e) => handleFilterChange('type', e.target.value)}
-                SelectProps={{ native: true }}
+                SelectProps={{
+                    MenuProps: {
+                        PaperProps: {
+                            sx: {
+                                maxHeight: 280,
+                                borderRadius: 1.5,
+                                boxShadow: (theme) => theme.customShadows?.z20 || theme.shadows[10],
+                            },
+                        },
+                    },
+                }}
                 size="small"
                 sx={{
                     '& .MuiOutlinedInput-root': {
@@ -132,11 +143,11 @@ export function DealTableFiltersDrawer({
                     },
                 }}
             >
-                <option value="all">All Types</option>
+                <MenuItem value="all">All Types</MenuItem>
                 {DEAL_TYPES.map((type) => (
-                    <option key={type} value={type}>
+                    <MenuItem key={type} value={type}>
                         {type}
-                    </option>
+                    </MenuItem>
                 ))}
             </TextField>
         </Stack>
@@ -145,7 +156,7 @@ export function DealTableFiltersDrawer({
     const renderContact = (
         <Stack spacing={1.5}>
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Contact
+                Client
             </Typography>
             <Autocomplete
                 fullWidth
@@ -163,7 +174,7 @@ export function DealTableFiltersDrawer({
                 renderInput={(params) => (
                     <TextField
                         {...params}
-                        placeholder="Search contacts..."
+                        placeholder="Search clients..."
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
@@ -177,9 +188,14 @@ export function DealTableFiltersDrawer({
                 )}
                 renderOption={(props, option) => (
                     <li {...props} key={option.name}>
-                        <Typography variant="body2" sx={{ fontSize: '13px' }}>
-                            {option.first_name} ({option.name})
-                        </Typography>
+                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                {option.first_name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                ID: {option.name}
+                            </Typography>
+                        </Stack>
                     </li>
                 )}
             />
@@ -189,7 +205,7 @@ export function DealTableFiltersDrawer({
     const renderAccount = (
         <Stack spacing={1.5}>
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Account
+                Company
             </Typography>
             <Autocomplete
                 fullWidth
@@ -207,7 +223,7 @@ export function DealTableFiltersDrawer({
                 renderInput={(params) => (
                     <TextField
                         {...params}
-                        placeholder="Search accounts..."
+                        placeholder="Search companies..."
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
@@ -221,44 +237,17 @@ export function DealTableFiltersDrawer({
                 )}
                 renderOption={(props, option) => (
                     <li {...props} key={option.name}>
-                        <Typography variant="body2" sx={{ fontSize: '13px' }}>
-                            {option.account_name} ({option.name})
-                        </Typography>
+                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                {option.account_name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                ID: {option.name}
+                            </Typography>
+                        </Stack>
                     </li>
                 )}
             />
-        </Stack>
-    );
-
-    const renderSourceLead = (
-        <Stack spacing={1.5}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Source Lead
-            </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filters.source_lead}
-                onChange={(e) => handleFilterChange('source_lead', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">All Sources</option>
-                {options.source_leads.map((source) => (
-                    <option key={source} value={source}>
-                        {source}
-                    </option>
-                ))}
-            </TextField>
         </Stack>
     );
 
@@ -272,7 +261,17 @@ export function DealTableFiltersDrawer({
                 fullWidth
                 value={filters.stage}
                 onChange={(e) => handleFilterChange('stage', e.target.value)}
-                SelectProps={{ native: true }}
+                SelectProps={{
+                    MenuProps: {
+                        PaperProps: {
+                            sx: {
+                                maxHeight: 280,
+                                borderRadius: 1.5,
+                                boxShadow: (theme) => theme.customShadows?.z20 || theme.shadows[10],
+                            },
+                        },
+                    },
+                }}
                 size="small"
                 sx={{
                     '& .MuiOutlinedInput-root': {
@@ -284,11 +283,11 @@ export function DealTableFiltersDrawer({
                     },
                 }}
             >
-                <option value="all">All Stages</option>
+                <MenuItem value="all">All Stages</MenuItem>
                 {DEAL_STAGES.map((stage) => (
-                    <option key={stage} value={stage}>
+                    <MenuItem key={stage} value={stage}>
                         {stage}
-                    </option>
+                    </MenuItem>
                 ))}
             </TextField>
         </Stack>
@@ -318,7 +317,6 @@ export function DealTableFiltersDrawer({
                     {renderDealType}
                     {renderContact}
                     {renderAccount}
-                    {renderSourceLead}
                     {renderStage}
                 </Stack>
             </Scrollbar>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { IoMdCloudDownload } from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -139,7 +140,8 @@ export function ContactView() {
         filters.source_lead !== 'all' ||
         filters.country !== 'all' ||
         filters.state !== 'all' ||
-        filters.city !== 'all';
+        filters.city !== 'all' ||
+        !!filterName;
 
     useEffect(() => {
         getContactPermissions().then(setPermissions);
@@ -413,7 +415,7 @@ export function ContactView() {
     const empty = !loading && !data.length && !filterName && !canReset;
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Clients
@@ -422,10 +424,10 @@ export function ContactView() {
                 {permissions.write && (
                     <Box sx={{ display: 'flex', gap: 2 }}>
                         <Button
-                            variant="outlined"
-                            startIcon={<Iconify icon={"solar:import-bold-duotone" as any} />}
+                            variant="contained"
+                            startIcon={<IoMdCloudDownload size={20} />}
                             onClick={() => setOpenImport(true)}
-                            sx={{ color: '#08a3cd', borderColor: '#08a3cd', '&:hover': { borderColor: '#068fb3', bgcolor: 'rgba(8, 163, 205, 0.04)' } }}
+                            sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
                         >
                             Import
                         </Button>
@@ -496,10 +498,12 @@ export function ContactView() {
                                             id: row.name,
                                             firstName: row.first_name,
                                             companyName: getString(row.company_name) || '',
+                                            companyNames: row.company_names || [],
                                             email: getString(row.email) || '',
                                             phone: getString(row.phone) || '',
                                             avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
-                                            sourceLead: row.source_lead ? `${getString(row.source_lead)} - ${leadOptions.find(l => l.name === getString(row.source_lead))?.lead_name || ''}` : '',
+                                            sourceLeadId: row.source_lead ? getString(row.source_lead) : '',
+                                            sourceLeadName: row.source_lead ? (leadOptions.find(l => l.name === getString(row.source_lead))?.lead_name || '') : '',
                                         }}
                                         selected={selected.includes(row.name)}
                                         onSelectRow={() => handleSelectRow(row.name)}
@@ -515,7 +519,7 @@ export function ContactView() {
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={10}>
+                                        <TableCell colSpan={10} sx={{py:10}}>
                                             <EmptyContent
                                                 title="No contacts found"
                                                 description="Create a new Client to track your professional network."
@@ -525,8 +529,11 @@ export function ContactView() {
                                     </TableRow>
                                 )}
 
-                                {!empty && (
-                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                {!empty && !notFound && (
+                                    <TableEmptyRows
+                                        height={68}
+                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                    />
                                 )}
                             </TableBody>
                         </Table>

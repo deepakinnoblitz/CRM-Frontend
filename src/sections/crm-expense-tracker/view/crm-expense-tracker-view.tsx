@@ -176,7 +176,7 @@ export default function CRMExpenseTrackerView() {
         });
     };
 
-    const canReset = filters.type !== 'all' || !!filters.startDate || !!filters.endDate;
+    const canReset = filters.type !== 'all' || !!filters.startDate || !!filters.endDate || !!filterName;
 
     const notFound = !loading && !data.length && (!!filterName || canReset);
     const empty = !loading && !data.length && !filterName && !canReset;

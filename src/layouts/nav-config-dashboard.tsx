@@ -410,7 +410,7 @@ export const crmAndSalesNavData = [
     icon: <FaBuildingUser size={20}/>,
   },
   {
-    title: 'Deals',
+    title: 'Prospects',
     path: '/deals',
     icon: <FaHandshake size={22} />,
   },

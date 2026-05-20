@@ -183,7 +183,7 @@ export function ContactRelatedList({ contactId, type }: Props) {
                     <TableCell align="center">{serialNumber}</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>{row.ref_no}</TableCell>
                     <TableCell>{fDate(row.invoice_date)}</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600}}>{fCurrency(row.grand_total)}</TableCell>
                     <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.received_amount)}</TableCell>
                     <TableCell align="right" sx={{ color: 'error.main', fontWeight: 700 }}>{fCurrency(row.balance_amount)}</TableCell>
                     <TableCell align="right">

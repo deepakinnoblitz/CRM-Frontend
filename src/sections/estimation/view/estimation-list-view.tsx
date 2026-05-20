@@ -42,8 +42,8 @@ import { EstimationTableFiltersDrawer } from '../estimation-table-filters-drawer
 
 const TABLE_HEAD = [
     { id: 'ref_no', label: 'Ref No' },
-    { id: 'client_name', label: 'Customer ID' },
-    { id: 'customer_name', label: 'Customer' },
+    { id: 'billing_name', label: 'Billing Name' },
+    { id: 'client_name', label: 'Client' },
     { id: 'estimate_date', label: 'Date' },
     { id: 'grand_total', label: 'Amount', align: 'right' },
     { id: '' },
@@ -121,7 +121,7 @@ export function EstimationListView({ hideTitle }: Props) {
         table.onResetPage();
     };
 
-    const canReset = filters.client_name !== 'all' || !!filters.ref_no || !!filters.estimate_date;
+    const canReset = filters.client_name !== 'all' || !!filters.ref_no || !!filters.estimate_date || !!filterName;
 
     const handleFilterName = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,6 +248,8 @@ export function EstimationListView({ hideTitle }: Props) {
                                             ref_no: row.ref_no,
                                             client_name: row.client_name || '',
                                             customer_name: row.customer_name || '',
+                                            billing_name: row.billing_name || '',
+                                            billing_account_name: row.billing_account_name || '',
                                             estimate_date: row.estimate_date,
                                             grand_total: row.grand_total || 0,
                                         }}
@@ -261,16 +263,11 @@ export function EstimationListView({ hideTitle }: Props) {
                                     />
                                 ))}
 
-                                <TableEmptyRows
-                                    height={77}
-                                    emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                />
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
+                                {notFound && <TableNoData colSpan={8} searchQuery={filterName} />}
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
+                                        <TableCell colSpan={8}>
                                             <EmptyContent
                                                 title="No estimations found"
                                                 description="Create a new estimation to track your sales pipeline."
@@ -278,6 +275,13 @@ export function EstimationListView({ hideTitle }: Props) {
                                             />
                                         </TableCell>
                                     </TableRow>
+                                )}
+
+                                {!empty && !notFound && (
+                                    <TableEmptyRows
+                                        height={68}
+                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                    />
                                 )}
                             </TableBody>
                         </Table>

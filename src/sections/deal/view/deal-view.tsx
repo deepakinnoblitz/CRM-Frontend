@@ -124,6 +124,7 @@ export function DealView() {
     // Dropdown Options
     const [accountOptions, setAccountOptions] = useState<any[]>([]);
     const [contactOptions, setContactOptions] = useState<any[]>([]);
+    const [formContactOptions, setFormContactOptions] = useState<any[]>([]);
 
     // Alert & Dialog State
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
@@ -173,7 +174,8 @@ export function DealView() {
         filters.contact !== 'all' ||
         filters.account !== 'all' ||
         filters.source_lead !== 'all' ||
-        filters.stage !== 'all';
+        filters.stage !== 'all' ||
+        !!filterName;
 
     const SOURCE_LEAD_OPTIONS = [
         'Advertisement', 'Cold Call', 'Employee Referral', 'External Referral', 'Online Store',
@@ -199,6 +201,24 @@ export function DealView() {
         // Fetch Permissions
         getDealPermissions().then(setPermissions);
     }, []);
+
+    useEffect(() => {
+        if (account) {
+            // Fetch contacts associated with this account (company)
+            fetch(`/api/method/company.company.frontend_api.get_contacts_by_account?account_id=${encodeURIComponent(account)}&limit_start=0&limit_page_length=999`, { credentials: 'include' })
+                .then(res => res.json())
+                .then(resData => {
+                    setFormContactOptions(resData.message?.contacts || []);
+                })
+                .catch(err => {
+                    console.error('Failed to fetch contacts for account', err);
+                    setFormContactOptions([]);
+                });
+        } else {
+            // If no company selected, show all contacts
+            setFormContactOptions(contactOptions);
+        }
+    }, [account, contactOptions]);
 
     const handleOpenCreate = () => {
         setViewOnly(false);
@@ -262,7 +282,7 @@ export function DealView() {
         if (!confirmDelete.id) return;
         try {
             await deleteDeal(confirmDelete.id);
-            setSnackbar({ open: true, message: 'Deal deleted successfully', severity: 'success' });
+            setSnackbar({ open: true, message: 'Prospect deleted successfully', severity: 'success' });
             await refetch();
         } catch (e: any) {
             console.error(e);
@@ -276,7 +296,7 @@ export function DealView() {
     const handleBulkDelete = async () => {
         try {
             await Promise.all(selected.map((id) => deleteDeal(id)));
-            setSnackbar({ open: true, message: `${selected.length} deals deleted successfully`, severity: 'success' });
+            setSnackbar({ open: true, message: `${selected.length} Prospects deleted successfully`, severity: 'success' });
             setSelected([]);
             await refetch();
         } catch (e: any) {
@@ -320,11 +340,11 @@ export function DealView() {
 
         if (!dealTitle) {
             newErrors.dealTitle = true;
-            missingFields.push('Deal Title');
+            missingFields.push('Prospect Title');
         }
         if (!account) {
             newErrors.account = true;
-            missingFields.push('Account');
+            missingFields.push('Company');
         }
 
         if (Object.keys(newErrors).length > 0) {
@@ -372,10 +392,10 @@ export function DealView() {
 
             if (currentDealId) {
                 await updateDeal(currentDealId, dealData);
-                setSnackbar({ open: true, message: 'Deal updated successfully', severity: 'success' });
+                setSnackbar({ open: true, message: 'Prospect updated successfully', severity: 'success' });
             } else {
                 await createDeal(dealData);
-                setSnackbar({ open: true, message: 'Deal created successfully', severity: 'success' });
+                setSnackbar({ open: true, message: 'Prospect created successfully', severity: 'success' });
             }
 
             await refetch();
@@ -383,7 +403,7 @@ export function DealView() {
         } catch (err: any) {
             console.error(err);
             const friendlyMsg = getFriendlyErrorMessage(err);
-            setSnackbar({ open: true, message: friendlyMsg || (currentDealId ? 'Failed to update deal' : 'Failed to create deal'), severity: 'error' });
+            setSnackbar({ open: true, message: friendlyMsg || (currentDealId ? 'Failed to update Prospect' : 'Failed to create Prospect'), severity: 'error' });
         } finally {
             setCreating(false);
         }
@@ -430,7 +450,7 @@ export function DealView() {
             {/* CREATE DEAL DIALOG */}
             <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {viewOnly ? 'Deal Details' : (currentDealId ? 'Edit Deal' : 'New Deal')}
+                    {viewOnly ? 'Prospect Details' : (currentDealId ? 'Edit Prospect' : 'New Prospect')}
                     <IconButton
                         aria-label="close"
                         onClick={handleCloseCreate}
@@ -455,7 +475,7 @@ export function DealView() {
                         >
                             <TextField
                                 fullWidth
-                                label="Deal Title"
+                                label="Prospect Title"
                                 value={dealTitle}
                                 onChange={(e) => {
                                     setDealTitle(e.target.value);
@@ -463,6 +483,7 @@ export function DealView() {
                                 }}
                                 required
                                 error={!!validationErrors.dealTitle}
+                                helperText={validationErrors.dealTitle ? 'Prospect Title is required' : ''}
                                 slotProps={{ input: { readOnly: viewOnly } }}
                             />
 
@@ -472,6 +493,7 @@ export function DealView() {
                                 value={accountOptions.find((a) => a.name === account) || null}
                                 onChange={(event, newValue) => {
                                     setAccount(newValue?.name || '');
+                                    setContact(''); // Reset client when company changes
                                     if (newValue) setValidationErrors((prev) => ({ ...prev, account: false }));
                                 }}
                                 getOptionLabel={(option) => option.account_name || option.name}
@@ -494,16 +516,17 @@ export function DealView() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="Account"
+                                        label="Company"
                                         required
                                         error={!!validationErrors.account}
+                                        helperText={validationErrors.account ? 'Company is required' : ''}
                                     />
                                 )}
                             />
 
                             <Autocomplete
                                 fullWidth
-                                options={contactOptions}
+                                options={formContactOptions}
                                 value={contactOptions.find((c) => c.name === contact) || null}
                                 onChange={(event, newValue) => setContact(newValue?.name || '')}
                                 getOptionLabel={(option) => option.first_name || option.name}
@@ -526,7 +549,7 @@ export function DealView() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="Contact"
+                                        label="Client"
                                     />
                                 )}
                             />
@@ -561,7 +584,7 @@ export function DealView() {
                 <DialogActions sx={{ p: 2 }}>
                     {!viewOnly && (
                         <Button variant="contained" onClick={handleCreate} disabled={creating}>
-                            {creating ? (currentDealId ? 'Updating...' : 'Creating...') : (currentDealId ? 'Update Deal' : 'Create Deal')}
+                            {creating ? (currentDealId ? 'Updating...' : 'Creating...') : (currentDealId ? 'Update Prospect' : 'Create Prospect')}
                         </Button>
                     )}
                 </DialogActions>
@@ -571,7 +594,7 @@ export function DealView() {
             <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
                 <Stack spacing={3}>
                     <Stack direction="row" alignItems="center" justifyContent="space-between">
-                        <Typography variant="h4">Deals Management</Typography>
+                        <Typography variant="h4">Prospects Management</Typography>
                     </Stack>
 
                     <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
@@ -597,7 +620,7 @@ export function DealView() {
                             <Tab
                                 key="deals"
                                 value="deals"
-                                label="Deals"
+                                label="Prospects"
                                 icon={<HiOutlineBriefcase size={22} />}
                                 iconPosition="start"
                             />
@@ -624,7 +647,7 @@ export function DealView() {
                                 onClick={handleOpenCreate}
                                 sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
                             >
-                                New Deal
+                                New Prospect
                             </Button>
                         )}
                     </Stack>
@@ -639,7 +662,7 @@ export function DealView() {
                                         setFilterName(e.target.value);
                                         setPage(0);
                                     }}
-                                    searchPlaceholder="Search deals..."
+                                    searchPlaceholder="Search Prospects..."
                                     onOpenFilter={() => setOpenFilters(true)}
                                     canReset={canReset}
                                     sortBy={sortBy}
@@ -650,12 +673,12 @@ export function DealView() {
                                         { value: 'modified_asc', label: 'Oldest First' },
                                         { value: 'deal_title_asc', label: 'Title: A to Z' },
                                         { value: 'deal_title_desc', label: 'Title: Z to A' },
-                                        { value: 'account_asc', label: 'Account: A to Z' },
-                                        { value: 'account_desc', label: 'Account: Z to A' },
-                                        { value: 'contact_name_asc', label: 'Contact Name: A to Z' },
-                                        { value: 'contact_name_desc', label: 'Contact Name: Z to A' },
-                                        { value: 'value_desc', label: 'Deal Value: High to Low' },
-                                        { value: 'value_asc', label: 'Deal Value: Low to High' },
+                                        { value: 'account_asc', label: 'Company: A to Z' },
+                                        { value: 'account_desc', label: 'Company: Z to A' },
+                                        { value: 'contact_name_asc', label: 'Client Name: A to Z' },
+                                        { value: 'contact_name_desc', label: 'Client Name: Z to A' },
+                                        { value: 'value_desc', label: 'Prospect Value: High to Low' },
+                                        { value: 'value_asc', label: 'Prospect Value: Low to High' },
                                     ]}
                                 />
 
@@ -675,8 +698,8 @@ export function DealView() {
                                                 showIndex
                                                 headLabel={[
                                                     { id: 'deal_title', label: 'Title' },
-                                                    { id: 'account', label: 'Account' },
-                                                    { id: 'contact', label: 'Contact' },
+                                                    { id: 'account', label: 'Company' },
+                                                    { id: 'contact', label: 'Client' },
                                                     { id: 'expected_close_date', label: 'Expected Close' },
                                                     { id: '' },
                                                 ]}
@@ -719,17 +742,17 @@ export function DealView() {
 
                                                 {empty && (
                                                     <TableRow>
-                                                        <TableCell colSpan={10} align="center">
+                                                        <TableCell colSpan={10} align="center" sx={{py:5}}>
                                                             <EmptyContent
-                                                                title="No deals found"
-                                                                description="Create a new deal to track your sales pipeline."
+                                                                title="No Prospects found"
+                                                                description="Create a new Prospect to track your sales pipeline."
                                                                 icon="solar:hand-stars-bold-duotone"
                                                             />
                                                         </TableCell>
                                                     </TableRow>
                                                 )}
 
-                                                {!empty && !loading && data.length < rowsPerPage && (
+                                                {!empty && !notFound && (
                                                     <TableEmptyRows
                                                         height={68}
                                                         emptyRows={data.length < 5 ? 5 - data.length : 0}
@@ -781,7 +804,7 @@ export function DealView() {
                     open={confirmDelete.open}
                     onClose={() => setConfirmDelete({ open: false, id: null })}
                     title="Confirm Delete"
-                    content="Are you sure you want to delete this deal?"
+                    content="Are you sure you want to delete this Prospect?"
                     action={
                         <Button onClick={handleConfirmDelete} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
                             Delete

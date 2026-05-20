@@ -6,12 +6,15 @@ import Typography from '@mui/material/Typography';
 import ButtonBase from '@mui/material/ButtonBase';
 import { alpha, useTheme } from '@mui/material/styles';
 
+import { useRouter } from 'src/routes/hooks';
+
 import { useDashboardView } from 'src/hooks/dashboard-view-context';
 
 import { useAuth } from 'src/auth/auth-context';
 
 export function DashboardSwitcher() {
   const theme = useTheme();
+  const router = useRouter();
   const { user } = useAuth();
   const { view, setView } = useDashboardView();
   const [pressed, setPressed] = useState(false);
@@ -31,7 +34,10 @@ export function DashboardSwitcher() {
     return (
       <ButtonBase
         disableRipple
-        onClick={() => setView(value)}
+        onClick={() => {
+          setView(value);
+          router.push('/');
+        }}
         onMouseDown={() => setPressed(true)}
         onMouseUp={() => setPressed(false)}
         onMouseLeave={() => setPressed(false)}
@@ -125,9 +131,9 @@ export function DashboardSwitcher() {
             ${theme.palette.primary.dark}
           )`,
           boxShadow: `
-            0 12px 24px -10px ${alpha(theme.palette.primary.main, 0.7)},
-            0 0 18px ${alpha(theme.palette.primary.main, 0.34)},
-            inset 0 1px 0 ${alpha(theme.palette.common.white, 0.32)}
+            0 12px 24px -10px ${alpha(theme.palette.primary.main, 0.4)},
+            0 0 18px ${alpha(theme.palette.primary.main, 0.14)},
+            inset 0 1px 0 ${alpha(theme.palette.common.white, 0.12)}
           `,
           transform: `translateX(${activeIndex * 100}%) scale(${pressed ? 0.95 : 1})`,
           transition: theme.transitions.create(['transform', 'box-shadow'], {

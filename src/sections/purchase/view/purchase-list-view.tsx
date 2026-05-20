@@ -40,8 +40,9 @@ const TABLE_HEAD = [
     { id: 'bill_no', label: 'Bill No' },
     { id: 'vendor_name', label: 'Vendor' },
     { id: 'bill_date', label: 'Bill Date' },
-    { id: 'payment_type', label: 'Payment Type' },
-    { id: 'grand_total', label: 'Grand Total', align: 'right' },
+    { id: 'grand_total', label: 'Amount', align: 'right' },
+    { id: 'paid_amount', label: 'Paid', align: 'right' },
+    { id: 'balance_amount', label: 'Balance', align: 'right' },
     { id: '' },
 ];
 
@@ -100,7 +101,8 @@ export function PurchaseListView({ hideHeader }: Props) {
     const canReset =
         filters.vendor_name !== 'all' ||
         filters.payment_type !== 'all' ||
-        filters.payment_terms !== 'all';
+        filters.payment_terms !== 'all' ||
+        !!filterName;
 
     // Fetch filters options
     useEffect(() => {
@@ -212,28 +214,36 @@ export function PurchaseListView({ hideHeader }: Props) {
                                 headLabel={TABLE_HEAD}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <PurchaseTableRow
-                                        key={row.name}
-                                        index={table.page * table.rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            name: row.name,
-                                            bill_no: row.bill_no,
-                                            vendor_name: row.vendor_name || '',
-                                            bill_date: row.bill_date,
-                                            grand_total: row.grand_total || 0,
-                                            payment_type: row.payment_type || '',
-                                            paid_amount: row.paid_amount || 0,
-                                        }}
-                                        selected={table.selected.includes(row.name)}
-                                        onSelectRow={() => table.onSelectRow(row.name)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onView={() => handleViewRow(row.name)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                    />
-                                ))}
+                                {data.map((row, index) => {
+                                    const matchedVendor = vendorOptions.find((v) => v.name === row.vendor_name);
+                                    const displayVendorName = matchedVendor ? matchedVendor.first_name || matchedVendor.name : row.vendor_name || '';
+                                    const displayVendorId = matchedVendor ? matchedVendor.name : row.vendor_name || '';
+
+                                    return (
+                                        <PurchaseTableRow
+                                            key={row.name}
+                                            index={table.page * table.rowsPerPage + index}
+                                            hideCheckbox
+                                            row={{
+                                                id: row.name,
+                                                name: row.name,
+                                                bill_no: row.bill_no,
+                                                vendor: displayVendorId,
+                                                vendor_name: displayVendorName,
+                                                bill_date: row.bill_date,
+                                                grand_total: row.grand_total || 0,
+                                                payment_type: row.payment_type || '',
+                                                paid_amount: row.paid_amount || 0,
+                                                balance_amount: row.balance_amount || 0,
+                                            }}
+                                            selected={table.selected.includes(row.name)}
+                                            onSelectRow={() => table.onSelectRow(row.name)}
+                                            onEdit={() => handleEditRow(row.name)}
+                                            onView={() => handleViewRow(row.name)}
+                                            onDelete={() => handleDeleteRow(row.name)}
+                                        />
+                                    );
+                                })}
 
                                     {data.length > 0 && (
                                         <TableEmptyRows

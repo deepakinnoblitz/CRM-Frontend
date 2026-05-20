@@ -126,6 +126,18 @@ export function PurchaseCollectionTableFiltersDrawer({
                         }}
                     />
                 )}
+                renderOption={(props, option) => (
+                    <li {...props} key={option.name}>
+                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                {option.first_name || option.name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                ID: {option.name}
+                            </Typography>
+                        </Stack>
+                    </li>
+                )}
             />
         </Stack>
     );

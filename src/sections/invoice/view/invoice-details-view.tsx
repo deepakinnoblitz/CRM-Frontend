@@ -1,3 +1,4 @@
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { 
@@ -48,7 +49,8 @@ export function InvoiceDetailsView() {
     const [deleting, setDeleting] = useState(false);
     const [printing, setPrinting] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-    const [showConvertedMessage, setShowConvertedMessage] = useState(false);
+
+    const { enqueueSnackbar } = useSnackbar();
 
     useEffect(() => {
         if (id) {
@@ -60,11 +62,12 @@ export function InvoiceDetailsView() {
 
     useEffect(() => {
         if (location.state?.converted) {
-            setShowConvertedMessage(true);
+            enqueueSnackbar('Converted from estimation successfully!', { variant: 'success' });
             // Clear navigation state to prevent re-showing on refresh
             window.history.replaceState({}, document.title);
+            location.state.converted = false;
         }
-    }, [location.state]);
+    }, [location.state, enqueueSnackbar]);
 
     if (fetching) {
         return (
@@ -87,6 +90,8 @@ export function InvoiceDetailsView() {
 
     const {
         client_name,
+        customer_name,
+        billing_name,
         invoice_date,
         billing_address,
         description,
@@ -209,6 +214,23 @@ export function InvoiceDetailsView() {
                             Edit Invoice
                         </Button>
                     )}
+                    {(balance_amount || 0) > 0 && (
+                        <Button
+                            variant="contained"
+                            onClick={() => router.push(`/invoice-collections/new?invoice=${encodeURIComponent(id || '')}`)}
+                            startIcon={<IoMdCash size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                bgcolor: '#36b37e',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#2b9065' }
+                            }}
+                        >
+                            Create Collection
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 
@@ -230,8 +252,16 @@ export function InvoiceDetailsView() {
                                 <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>Customer Details</Typography>
                             </Stack>
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                                <Typography variant="subtitle1" color="primary.main">{client_name}</Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>{billing_address || 'No address provided'}</Typography>
+                                <Typography variant="subtitle1" color="text.primary" sx={{ fontWeight: 700 }}>
+                                    {billing_name || 'No Company Name'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+                                    {customer_name || 'No Contact Name'}
+                                </Typography>
+                                <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
+                                    ID: {client_name}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, whiteSpace: 'pre-wrap' }}>{billing_address || 'No address provided'}</Typography>
                             </Box>
                         </Stack>
 
@@ -468,24 +498,6 @@ export function InvoiceDetailsView() {
                     </Box>
                 </Stack>
             </Card >
-
-            <Snackbar
-                open={showConvertedMessage}
-                autoHideDuration={5000}
-                onClose={() => setShowConvertedMessage(false)}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-                <Alert
-                    severity="success"
-                    sx={{
-                        width: '100%',
-                        boxShadow: (theme) => theme.customShadows.z20
-                    }}
-                >
-                    <AlertTitle>Success</AlertTitle>
-                    Converted from estimation successfully!
-                </Alert>
-            </Snackbar>
 
             <ConfirmDialog
                 open={confirmDeleteOpen}

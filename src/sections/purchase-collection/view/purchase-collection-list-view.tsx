@@ -38,9 +38,9 @@ import { PurchaseCollectionTableFiltersDrawer } from '../purchase-collection-tab
 const TABLE_HEAD = [
     { id: 'name', label: 'ID' },
     { id: 'purchase', label: 'Purchase ID' },
-    { id: 'vendor_name', label: 'Vendor' },
     { id: 'collection_date', label: 'Date' },
     { id: 'mode_of_payment', label: 'Mode' },
+    { id: 'amount_to_pay', label: 'Amount to Pay', align: 'right' },
     { id: 'amount_collected', label: 'Amount', align: 'right' },
     { id: 'amount_pending', label: 'Pending', align: 'right' },
     { id: '' },
@@ -142,7 +142,7 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
         setPage(0);
     }, []);
 
-    const canReset = filters.vendor_name !== 'all' || filters.mode_of_payment !== 'all';
+    const canReset = filters.vendor_name !== 'all' || filters.mode_of_payment !== 'all' || !!filterName;
 
     useEffect(() => {
         getCollections();
