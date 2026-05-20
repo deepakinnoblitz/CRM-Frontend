@@ -2,29 +2,29 @@ import { useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Alert from '@mui/material/Alert';
+import Alert from '@mui/material/Alert'
+import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
-import Table from '@mui/material/Table';
 
 import { usePaymentTypes } from 'src/hooks/use-masters';
 
-import { deletePaymentTypeCustom, PaymentType } from 'src/api/masters';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { deletePaymentTypeCustom, PaymentType } from 'src/api/masters';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { PaymentTypeTableRow } from '../payment-type-table-row';
+import { TableNoData } from '../../../lead/table-no-data';
 import { PaymentTypeDialog } from '../payment-type-dialog';
 import { LeadTableHead } from '../../../lead/lead-table-head';
-import { TableNoData } from '../../../lead/table-no-data';
 import { TableEmptyRows } from '../../../lead/table-empty-rows';
+import { PaymentTypeTableRow } from '../payment-type-table-row';
 import { LeadTableToolbar } from '../../../lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------

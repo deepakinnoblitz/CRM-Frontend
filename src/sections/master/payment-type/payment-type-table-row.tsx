@@ -5,9 +5,9 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
-import { Iconify } from 'src/components/iconify';
-
 import { PaymentType } from 'src/api/masters';
+
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
