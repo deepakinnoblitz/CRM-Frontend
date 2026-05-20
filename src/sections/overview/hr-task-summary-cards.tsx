@@ -32,7 +32,7 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { TableHeadCustom } from 'src/components/table';
 
-import { HRSummaryWidget } from './hr-summary-widget';
+import { HRSummaryWidgetV2 } from './hr-summary-widget-v2';
 
 // ----------------------------------------------------------------------
 
@@ -181,6 +181,37 @@ export function HRTaskSummaryCards() {
             },
         },
     };
+const fieldSx = {
+    '& .MuiOutlinedInput-root': {
+        borderRadius: '8px',
+        backgroundColor: '#fff',
+        fontSize: '0.8rem',
+        fontWeight: 500,
+        '& fieldset': { borderColor: '#E5E7EB', borderWidth: '1.5px' },
+        '&:hover fieldset': { borderColor: '#9CA3AF' },
+        '&.Mui-focused fieldset': { borderColor: 'primary.main', borderWidth: '1.5px' },
+    },
+    '& .MuiInputLabel-root': {
+        fontSize: '0.78rem',
+        color: '#9CA3AF',
+        '&.Mui-focused': { color: 'primary.main' },
+    },
+    '& .MuiInputBase-input': { py: '9px' },
+};
+
+const autoSx = {
+    width: 200,
+    ...fieldSx,
+    '& .MuiOutlinedInput-root': {
+        ...fieldSx['& .MuiOutlinedInput-root'],
+        py: '2.5px',
+    },
+};
+
+const dateSx = {
+    width: 178,
+    ...fieldSx,
+};
 
     const datePickerSx = {
         ...autocompleteSx,
@@ -210,82 +241,147 @@ export function HRTaskSummaryCards() {
 
     return (
         <Card sx={{ p: 3, borderRadius: 2, mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 4, flexWrap: 'wrap', gap: 3 }}>
+            <Box
+            sx={{
+                display: 'flex',
+                alignItems: { xs: 'flex-start', md: 'center' },
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 2,
+                mb: 4,
+            }}
+        >
+            {/* ── Left: title block ── */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                {/* Accent bar */}
+                <Box
+                    sx={{
+                        width: 4,
+                        height: 36,
+                        borderRadius: '4px',
+                        background: `linear-gradient(180deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
+                        flexShrink: 0,
+                    }}
+                />
                 <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 'fontWeightBold', pl: 0.5, }}>Task Analytics Overview</Typography>
-                </Box>
-
-                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <DatePicker
-                            label="From Due Date"
-                            value={fromDate}
-                            onChange={(val) => setFromDate(val)}
-                            slotProps={{
-                                textField: {
-                                    size: 'small',
-                                    sx: datePickerSx,
-                                }
-                            }}
-                        />
-                        <DatePicker
-                            label="To Due Date"
-                            value={toDate}
-                            onChange={(val) => setToDate(val)}
-                            slotProps={{
-                                textField: {
-                                    size: 'small',
-                                    sx: datePickerSx,
-                                }
-                            }}
-                        />
-                    </LocalizationProvider>
-
-                    <Autocomplete
-                        size="small"
-                        options={['All Projects', ...projects.map(p => p.project)]}
-                        filterOptions={(options, params) => {
-                            const filtered = filter(options, params);
-                            return filtered.slice(0, 10);
+                    <Typography
+                        variant="h6"
+                        sx={{
+                            fontWeight: 700,
+                            fontSize: '1.02rem',
+                            color: 'text.primary',
+                            lineHeight: 1.25,
+                            letterSpacing: '-0.01em',
                         }}
-                        value={selectedProject === 'All' ? 'All Projects' : projects.find(p => p.name === selectedProject)?.project || 'All Projects'}
-                        onChange={(_event, newValue) => {
-                            if (!newValue || newValue === 'All Projects') {
-                                setSelectedProject('All');
-                            } else {
-                                const proj = projects.find(p => p.project === newValue);
-                                setSelectedProject(proj ? proj.name : 'All');
-                            }
-                        }}
-                        sx={autocompleteSx}
-                        renderInput={(params) => <TextField {...params} placeholder="Project" />}
-                    />
-
-                    <Autocomplete
-                        size="small"
-                        options={['All Departments', ...departments.map(d => d.department_name)]}
-                        filterOptions={(options, params) => {
-                            const filtered = filter(options, params);
-                            return filtered.slice(0, 10);
-                        }}
-                        value={selectedDepartment === 'All' ? 'All Departments' : departments.find(d => d.name === selectedDepartment)?.department_name || 'All Departments'}
-                        onChange={(_event, newValue) => {
-                            if (!newValue || newValue === 'All Departments') {
-                                setSelectedDepartment('All');
-                            } else {
-                                const dept = departments.find(d => d.department_name === newValue);
-                                setSelectedDepartment(dept ? dept.name : 'All');
-                            }
-                        }}
-                        sx={autocompleteSx}
-                        renderInput={(params) => <TextField {...params} placeholder="Department" />}
-                    />
+                    >
+                        Task Analytics Overview
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 500 }}>
+                        Filter and explore task data
+                    </Typography>
                 </Box>
             </Box>
 
+            {/* ── Right: filter row ── */}
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 1.6,
+                    p: 1.8,
+                    borderRadius: '12px',
+                    border: `1.5px solid #F0F0F0`,
+                    bgcolor: '#FAFAFA',
+                }}
+            >
+                {/* Date range */}
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                        label="From Date"
+                        value={fromDate}
+                        onChange={(val) => setFromDate(val)}
+                        slotProps={{ textField: { size: 'small', sx: dateSx } }}
+                    />
+
+                    {/* Arrow between dates */}
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            color: '#9CA3AF',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            userSelect: 'none',
+                        }}
+                    >
+                        →
+                    </Box>
+
+                    <DatePicker
+                        label="To Date"
+                        value={toDate}
+                        onChange={(val) => setToDate(val)}
+                        slotProps={{ textField: { size: 'small', sx: dateSx } }}
+                    />
+                </LocalizationProvider>
+
+                {/* Separator */}
+                <Box sx={{ width: '1px', height: 30, bgcolor: '#E5E7EB', mx: 0.3 }} />
+
+      {/* Project */}
+<Autocomplete
+    size="small"
+    options={['All Projects', ...projects.map((p: any) => p.project)]}
+    filterOptions={(options, params) => filter(options, params).slice(0, 10)}
+    value={
+        selectedProject === 'All'
+            ? 'All Projects'
+            : projects.find((p: any) => p.name === selectedProject)?.project || 'All Projects'
+    }
+    onChange={(_e, val) => {
+        if (!val || val === 'All Projects') {
+            setSelectedProject('All');
+        } else {
+            const proj = projects.find((p: any) => p.project === val);
+            setSelectedProject(proj ? proj.name : 'All');
+        }
+    }}
+    sx={autoSx}
+    renderInput={(params) => (
+        <TextField {...params} label="Project" />
+    )}
+/>
+
+{/* Department */}
+<Autocomplete
+    size="small"
+    options={['All Departments', ...departments.map((d: any) => d.department_name)]}
+    filterOptions={(options, params) => filter(options, params).slice(0, 10)}
+    value={
+        selectedDepartment === 'All'
+            ? 'All Departments'
+            : departments.find((d: any) => d.name === selectedDepartment)?.department_name || 'All Departments'
+    }
+    onChange={(_e, val) => {
+        if (!val || val === 'All Departments') {
+            setSelectedDepartment('All');
+        } else {
+            const dept = departments.find((d: any) => d.department_name === val);
+            setSelectedDepartment(dept ? dept.name : 'All');
+        }
+    }}
+    sx={autoSx}
+    renderInput={(params) => (
+        <TextField {...params} label="Department" />
+    )}
+/>
+            </Box>
+        </Box>
+
             <Grid container spacing={3}>
                 <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                    <HRSummaryWidget
+                    <HRSummaryWidgetV2
                         title="Total Tasks"
                         total={stats.total}
                         loading={loading}
@@ -293,7 +389,7 @@ export function HRTaskSummaryCards() {
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                    <HRSummaryWidget
+                    <HRSummaryWidgetV2
                         title="In Progress Tasks"
                         total={stats.in_progress}
                         loading={loading}
@@ -302,7 +398,7 @@ export function HRTaskSummaryCards() {
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                    <HRSummaryWidget
+                    <HRSummaryWidgetV2
                         title="Completed Tasks"
                         total={stats.completed}
                         loading={loading}
@@ -311,7 +407,7 @@ export function HRTaskSummaryCards() {
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                    <HRSummaryWidget
+                    <HRSummaryWidgetV2
                         title="Reopen Tasks"
                         total={stats.reopen}
                         loading={loading}
@@ -320,7 +416,7 @@ export function HRTaskSummaryCards() {
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                    <HRSummaryWidget
+                    <HRSummaryWidgetV2
                         title="On Hold Tasks"
                         total={stats.on_hold}
                         loading={loading}
