@@ -22,6 +22,7 @@ import { fCurrency } from 'src/utils/format-number';
 
 import { fetchInvoices } from 'src/api/invoice';
 import { fetchEstimations } from 'src/api/estimation';
+import { fetchRelatedProposals } from 'src/api/proposal';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -34,7 +35,7 @@ import { LeadTableHead as DataTableHead } from '../lead/lead-table-head';
 
 type Props = {
     dealId: string;
-    type: 'invoices' | 'estimations' | 'stage_history';
+    type: 'invoices' | 'estimations' | 'proposals' | 'stage_history';
     deal?: any;
 };
 
@@ -69,6 +70,17 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                     page_size: rowsPerPage,
                     filters: { deal_id: dealId },
                 });
+            } else if (type === 'proposals') {
+                const rows = await fetchRelatedProposals(dealId);
+                setData(rows);
+                setTotal(rows.length);
+                const s = rows.reduce((acc: any, curr: any) => {
+                    acc.total += 0;
+                    return acc;
+                }, { total: 0, paid: 0, balance: 0 });
+                setSummary(s);
+                setLoading(false);
+                return;
             } else if (type === 'stage_history') {
                 const hist = deal?.stage_history || [];
                 setData(hist);
@@ -132,6 +144,15 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                 { id: 'action', label: '' },
             ];
         }
+        if (type === 'proposals') {
+            return [
+                { id: 'reference_no', label: 'Reference No' },
+                { id: 'proposal_title', label: 'Title' },
+                { id: 'proposal_date', label: 'Date' },
+                { id: 'status', label: 'Status' },
+                { id: 'action', label: '' },
+            ];
+        }
         return [
             { id: 'ref_no', label: 'Ref No' },
             { id: 'estimate_date', label: 'Date' },
@@ -151,6 +172,8 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
     const handleCreate = () => {
         if (type === 'estimations') {
             router.push(`/estimations/new?deal_id=${dealId}`);
+        } else if (type === 'proposals') {
+            router.push(`/proposals/new?prospect_id=${dealId}`);
         } else {
             router.push(`/invoices/new?deal_id=${dealId}`);
         }
@@ -220,6 +243,28 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
         );
     };
 
+    const renderProposalRow = (row: any, index: number) => {
+        const serialNumber = index + 1 + page * rowsPerPage;
+        return (
+            <TableRow key={row.name} hover>
+                <TableCell align="center">{serialNumber}</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{row.reference_no || row.name}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{row.proposal_title}</TableCell>
+                <TableCell>{fDate(row.proposal_date)}</TableCell>
+                <TableCell>{row.status || 'Draft'}</TableCell>
+                <TableCell align="right">
+                    <IconButton
+                        color="primary"
+                        onClick={() => router.push(`/proposals/${encodeURIComponent(row.name)}/view`)}
+                        size="small"
+                    >
+                        <Iconify icon="solar:eye-bold" />
+                    </IconButton>
+                </TableCell>
+            </TableRow>
+        );
+    };
+
     return (
         <Stack spacing={3}>
             {/* Header with New Button */}
@@ -232,8 +277,8 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                             flexGrow: 1,
                             gridTemplateColumns: {
                                 xs: 'repeat(1, 1fr)',
-                                sm: type === 'estimations' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-                                md: type === 'estimations' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                                sm: type === 'estimations' || type === 'proposals' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                                md: type === 'estimations' || type === 'proposals' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
                             },
                         }}
                     >
@@ -250,6 +295,13 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                                 value={String(total)}
                                 icon="solar:document-text-bold"
                                 color={theme.palette.info.main}
+                            />
+                        ) : type === 'proposals' ? (
+                            <SummaryCard
+                                title="Total Proposals"
+                                value={String(total)}
+                                icon="solar:document-text-bold"
+                                color={theme.palette.secondary.main}
                             />
                         ) : (
                             <>
@@ -272,13 +324,13 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
 
                     <Button
                         variant="contained"
-                        color={type === 'estimations' ? "info" : "success"}
+                        color={type === 'estimations' ? "info" : type === 'proposals' ? "secondary" : "success"}
                         size="small"
                         startIcon={<Iconify icon="mingcute:add-line" width={16} />}
                         onClick={handleCreate}
                         sx={{ height: 40, px: 2, ml: 3 }}
                     >
-                        New {type === 'estimations' ? 'Estimation' : 'Invoice'}
+                        New {type === 'estimations' ? 'Estimation' : type === 'proposals' ? 'Proposal' : 'Invoice'}
                     </Button>
                 </Stack>
             )}
@@ -304,7 +356,9 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                                     </TableRow>
                                 ) : (
                                     <>
-                                        {data.map((row, index) => renderRow(row, index))}
+                                        {type === 'proposals'
+                                            ? data.map((row, index) => renderProposalRow(row, index))
+                                            : data.map((row, index) => renderRow(row, index))}
                                         {data.length === 0 && (
                                             <TableRow>
                                                 <TableCell colSpan={10}>

@@ -23,6 +23,7 @@ import { useRouter } from 'src/routes/hooks';
 import { getDeal, updateDeal } from 'src/api/deals';
 import { fetchRelatedInvoices } from 'src/api/invoice';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { fetchRelatedProposals } from 'src/api/proposal';
 import { fetchRelatedEstimations } from 'src/api/estimation';
 
 const STAGE_OPTIONS = [
@@ -181,6 +182,7 @@ export function DealDetailsView() {
     const TABS = [
         { value: 'estimations', label: 'Estimations', icon: <HiOutlineClipboardDocumentCheck size={18} /> },
         { value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> },
+        { value: 'proposals', label: 'Proposals', icon: <HiOutlineDocumentPlus size={18} /> },
         { value: 'stage_history', label: 'Stage History', icon: <HiOutlineClock size={18} /> },
     ];
 

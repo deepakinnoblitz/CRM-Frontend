@@ -57,6 +57,10 @@ export const EstimationListPage = lazy(() => import('src/pages/estimation/list')
 export const EstimationCreatePage = lazy(() => import('src/pages/estimation/new'));
 export const EstimationEditPage = lazy(() => import('src/pages/estimation/edit'));
 export const EstimationDetailsPage = lazy(() => import('src/pages/estimation/details'));
+export const ProposalListPage = lazy(() => import('src/pages/proposals/list'));
+export const ProposalCreatePage = lazy(() => import('src/pages/proposals/new'));
+export const ProposalEditPage = lazy(() => import('src/pages/proposals/edit'));
+export const ProposalDetailsPage = lazy(() => import('src/pages/proposals/details'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 
 export const LeadReportPage = lazy(() => import('src/pages/reports/lead'));
@@ -206,6 +210,15 @@ export const routesSection: RouteObject[] = [
           { path: 'new', element: <EstimationCreatePage /> },
           { path: ':id/edit', element: <EstimationEditPage /> },
           { path: ':id/view', element: <EstimationDetailsPage /> },
+        ],
+      },
+      {
+        path: 'proposals',
+        children: [
+          { index: true, element: <ProposalListPage /> },
+          { path: 'new', element: <ProposalCreatePage /> },
+          { path: ':id/edit', element: <ProposalEditPage /> },
+          { path: ':id/view', element: <ProposalDetailsPage /> },
         ],
       },
       { path: 'blog', element: <BlogPage /> },

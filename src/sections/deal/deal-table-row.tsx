@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom';
+import { BsFillSendPlusFill } from "react-icons/bs";
+import { GrDocumentTime, GrDocumentVerified } from "react-icons/gr";
 
 import Box from '@mui/material/Box';
 import TableRow from '@mui/material/TableRow';
@@ -187,16 +189,30 @@ export function DealTableRow({
                     >
                         <Iconify icon="solar:eye-bold" />
                     </IconButton>
+
+                    <StyledTooltip title="Create Proposal" placement="top" arrow>
+                        <IconButton
+                            onClick={() => navigate(`/proposals/new?deal_id=${encodeURIComponent(row.id)}`)}
+                            sx={{
+                                color: '#8B5CF6',
+                                transition: (theme) => theme.transitions.create(['transform'], { duration: theme.transitions.duration.shorter }),
+                                '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#8B5CF6', 0.08) }
+                            }}
+                        >
+                            <BsFillSendPlusFill size={20}/>
+                        </IconButton>
+                    </StyledTooltip>
+
                     <StyledTooltip title="Create Estimation" placement="top" arrow>
                         <IconButton
                             onClick={() => navigate(`/estimations/new?deal_id=${encodeURIComponent(row.id)}`)}
                             sx={{
-                                color: 'secondary.main',
+                                color: '#10B981',
                                 transition: (theme) => theme.transitions.create(['transform'], { duration: theme.transitions.duration.shorter }),
-                                '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha(theme.palette.secondary.main, 0.08) }
+                                '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#10B981', 0.08) }
                             }}
                         >
-                            <Iconify icon={"solar:document-add-bold" as any} />
+                            <GrDocumentTime size={20}/>
                         </IconButton>
                     </StyledTooltip>
 
@@ -204,12 +220,12 @@ export function DealTableRow({
                         <IconButton
                             onClick={() => navigate(`/invoices/new?deal_id=${encodeURIComponent(row.id)}`)}
                             sx={{
-                                color: 'success.main',
+                                color: '#D97706',
                                 transition: (theme) => theme.transitions.create(['transform'], { duration: theme.transitions.duration.shorter }),
-                                '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha(theme.palette.success.main, 0.08) }
+                                '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#D97706', 0.08) }
                             }}
                         >
-                            <Iconify icon={"solar:bill-list-bold" as any} />
+                            <GrDocumentVerified size={20}/>
                         </IconButton>
                     </StyledTooltip>
 

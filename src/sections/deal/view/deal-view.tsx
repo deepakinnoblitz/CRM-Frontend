@@ -1,6 +1,7 @@
 import type { Dayjs } from 'dayjs';
 
 import dayjs from 'dayjs';
+import { RiMailSendLine } from "react-icons/ri";
 import { useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 import { GrDocumentTime, GrDocumentStore } from "react-icons/gr";
@@ -53,6 +54,7 @@ import { DealTableRow } from '../deal-table-row';
 import { TableNoData } from '../../lead/table-no-data';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { DealTableFiltersDrawer } from '../deal-table-filters-drawer';
+import { ProposalListView } from '../../proposal/view/proposal-list-view';
 import { LeadTableHead as DealTableHead } from '../../lead/lead-table-head';
 import { EstimationListView } from '../../estimation/view/estimation-list-view';
 import { InvoiceManagementView } from '../../invoice/view/invoice-management-view';
@@ -625,6 +627,13 @@ export function DealView() {
                                 iconPosition="start"
                             />
                             <Tab
+                                key="proposals"
+                                value="proposals"
+                                label="Proposal"
+                                icon={<RiMailSendLine size={22} />}
+                                iconPosition="start"
+                            />
+                            <Tab
                                 key="estimations"
                                 value="estimations"
                                 label="Estimations"
@@ -774,6 +783,10 @@ export function DealView() {
                                 />
                             </Card>
                         </>
+                    )}
+                    
+                    {currentTab === 'proposals' && (
+                        <ProposalListView hideTitle />
                     )}
 
                     {currentTab === 'estimations' && (
