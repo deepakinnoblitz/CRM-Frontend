@@ -532,7 +532,7 @@ export function ReimbursementClaimsView() {
         setPage(0);
     };
 
-    const canReset = filters.employee !== null || filters.paid !== 'all' || filters.claim_type !== 'all' || filters.startDate !== null || filters.endDate !== null;
+    const canReset = filters.employee !== null || filters.paid !== 'all' || filters.claim_type !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const handleSortChange = (value: string) => {
         if (value === 'newest') { setOrderBy('modified'); setOrder('desc'); }

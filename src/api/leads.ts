@@ -32,6 +32,7 @@ export async function fetchLeads(params: {
     const or_filters: any[] = [];
 
     if (params.search) {
+        or_filters.push(["Lead", "name", "like", `%${params.search}%`]);
         or_filters.push(["Lead", "lead_name", "like", `%${params.search}%`]);
         or_filters.push(["Lead", "email", "like", `%${params.search}%`]);
         or_filters.push(["Lead", "company_name", "like", `%${params.search}%`]);

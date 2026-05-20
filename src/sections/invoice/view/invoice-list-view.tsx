@@ -111,7 +111,7 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
         table.onResetPage();
     };
 
-    const canReset = filters.client_name !== 'all' || !!filters.ref_no || !!filters.invoice_date;
+    const canReset = filters.client_name !== 'all' || !!filters.ref_no || !!filters.invoice_date || !!filterName;
 
     const handleFilterName = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {

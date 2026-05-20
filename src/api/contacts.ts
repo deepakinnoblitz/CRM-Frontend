@@ -37,6 +37,7 @@ export async function fetchContacts(params: {
 
 
     const or_filters: any[] = params.search ? [
+        ["Contacts", "name", "like", `%${params.search}%`],
         ["Contacts", "first_name", "like", `%${params.search}%`],
         ["Contacts", "email", "like", `%${params.search}%`],
         ["Contacts", "company_name", "like", `%${params.search}%`],
@@ -63,6 +64,7 @@ export async function fetchContacts(params: {
             "name",
             "first_name",
             "company_name",
+            "company_name.account_name",
             "email",
             "phone",
             "designation",

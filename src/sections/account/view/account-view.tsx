@@ -16,6 +16,7 @@ import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
@@ -673,74 +674,46 @@ export function AccountView() {
                             placeholder="e.g. 22AAAAA0000A1Z5"
                         />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="Country"
-                            name="country"
-                            value={country}
-                            onChange={(e) => setCountry(e.target.value)}
                             disabled={viewMode}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {countryOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
+                            options={countryOptions.filter(o => o !== '')}
+                            value={country}
+                            onChange={(e, newValue) => setCountry(newValue || '')}
+                            renderInput={(params) => <TextField {...params} label="Country" />}
+                        />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="State"
-                            name="state"
-                            value={state}
-                            onChange={(e) => setState(e.target.value)}
                             disabled={viewMode || !country}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {stateOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
+                            options={stateOptions.filter(o => o !== '')}
+                            value={state}
+                            onChange={(e, newValue) => setState(newValue || '')}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="State"
+                                    placeholder={!country ? "Select Country First" : ""}
+                                    InputLabelProps={{ shrink: true }}
+                                />
+                            )}
+                        />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="City"
-                            name="city"
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
                             disabled={viewMode || !state}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {cityOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
+                            options={cityOptions.filter(o => o !== '')}
+                            value={city}
+                            onChange={(e, newValue) => setCity(newValue || '')}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="City"
+                                    placeholder={!state ? "Select State First" : ""}
+                                    InputLabelProps={{ shrink: true }}
+                                />
+                            )}
+                        />
 
                         <TextField
                             fullWidth

@@ -161,7 +161,7 @@ export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?:
         setPage(0);
     };
 
-    const canReset = filters.customer !== 'all' || !!filters.invoice || !!filters.collection_date || filters.mode_of_payment !== 'all';
+    const canReset = filters.customer !== 'all' || !!filters.invoice || !!filters.collection_date || filters.mode_of_payment !== 'all' || !!search;
 
     const handleSort = (id: string) => {
         const isAsc = orderBy === id && order === 'asc';

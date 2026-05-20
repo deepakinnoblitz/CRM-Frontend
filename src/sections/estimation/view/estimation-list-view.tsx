@@ -121,7 +121,7 @@ export function EstimationListView({ hideTitle }: Props) {
         table.onResetPage();
     };
 
-    const canReset = filters.client_name !== 'all' || !!filters.ref_no || !!filters.estimate_date;
+    const canReset = filters.client_name !== 'all' || !!filters.ref_no || !!filters.estimate_date || !!filterName;
 
     const handleFilterName = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {

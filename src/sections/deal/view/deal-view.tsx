@@ -173,7 +173,8 @@ export function DealView() {
         filters.contact !== 'all' ||
         filters.account !== 'all' ||
         filters.source_lead !== 'all' ||
-        filters.stage !== 'all';
+        filters.stage !== 'all' ||
+        !!filterName;
 
     const SOURCE_LEAD_OPTIONS = [
         'Advertisement', 'Cold Call', 'Employee Referral', 'External Referral', 'Online Store',

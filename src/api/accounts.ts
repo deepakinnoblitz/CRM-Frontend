@@ -32,6 +32,7 @@ export async function fetchAccounts(params: {
     }
 
     const or_filters: any[] = params.search ? [
+        ["Accounts", "name", "like", `%${params.search}%`],
         ["Accounts", "account_name", "like", `%${params.search}%`],
         ["Accounts", "account_owner", "like", `%${params.search}%`],
         ["Accounts", "phone_number", "like", `%${params.search}%`],

@@ -142,7 +142,7 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
         setPage(0);
     }, []);
 
-    const canReset = filters.vendor_name !== 'all' || filters.mode_of_payment !== 'all';
+    const canReset = filters.vendor_name !== 'all' || filters.mode_of_payment !== 'all' || !!filterName;
 
     useEffect(() => {
         getCollections();

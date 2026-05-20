@@ -223,7 +223,8 @@ export function LeadView() {
     filters.service !== 'all' ||
     filters.country !== 'all' ||
     filters.state !== 'all' ||
-    filters.city !== 'all';
+    filters.city !== 'all' ||
+    !!filterName;
 
   useEffect(() => {
     // Fetch dropdown options on mount
@@ -1343,10 +1344,10 @@ export function LeadView() {
                   )}
 
                   {!empty && !notFound && (
-                      <TableEmptyRows
-                          height={68}
-                          emptyRows={data.length < 5 ? 5 - data.length : 0}
-                      />
+                    <TableEmptyRows
+                      height={68}
+                      emptyRows={data.length < 5 ? 5 - data.length : 0}
+                    />
                   )}
                 </TableBody>
               </Table>

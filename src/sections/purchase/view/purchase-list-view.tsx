@@ -101,7 +101,8 @@ export function PurchaseListView({ hideHeader }: Props) {
     const canReset =
         filters.vendor_name !== 'all' ||
         filters.payment_type !== 'all' ||
-        filters.payment_terms !== 'all';
+        filters.payment_terms !== 'all' ||
+        !!filterName;
 
     // Fetch filters options
     useEffect(() => {
