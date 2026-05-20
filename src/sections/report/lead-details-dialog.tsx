@@ -340,7 +340,7 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
                             />
 
                             {/* Avatar with online dot */}
-                            <Box sx={{ position: 'relative', flexShrink: 0, zIndex: 1 }}>
+                            {/* <Box sx={{ position: 'relative', flexShrink: 0, zIndex: 1 }}>
                                 <Box
                                     sx={{
                                         width: 76,
@@ -357,10 +357,10 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
                                 >
                                     <FaUserTie size={34} />
                                 </Box>
-                            </Box>
+                            </Box> */}
 
                             {/* Name, Company, Location, Tags */}
-                            <Box sx={{ flexGrow: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
+                            <Box sx={{ flexGrow: 1, minWidth: 0, position: 'relative', zIndex: 1, ml: 1 }}>
                                 <Typography
                                     variant="h5"
                                     sx={{ fontWeight: 900, color: 'text.primary', letterSpacing: -0.4, lineHeight: 1.2, mb: 1.5, ml: 1 }}

@@ -91,7 +91,7 @@ export function DealDetailsView() {
             setDeal(updated);
             setSnackbar({
                 open: true,
-                message: `Deal stage updated from "${previousStage}" to "${selectedStage}" successfully`,
+                message: `Prospect stage updated from "${previousStage}" to "${selectedStage}" successfully`,
                 severity: 'success'
             });
         } catch (err: any) {
@@ -197,7 +197,7 @@ export function DealDetailsView() {
             <DashboardContent maxWidth={false}>
                 <Box sx={{ py: 20, textAlign: 'center' }}>
                     <Iconify icon={"solar:ghost-bold" as any} width={80} sx={{ color: 'text.disabled', mb: 3 }} />
-                    <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 800 }}>Deal Not Found</Typography>
+                    <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 800 }}>Prospect Not Found</Typography>
                     <Button onClick={() => router.push('/deals')} sx={{ mt: 3 }} variant="contained">
                         Go back to deals
                     </Button>
@@ -210,7 +210,7 @@ export function DealDetailsView() {
         <DashboardContent maxWidth={false}>
             {/* Top Header */}
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={2}>
-                <Typography variant="h4">Deal: {deal.deal_title}</Typography>
+                <Typography variant="h4">Prospect: {deal.deal_title}</Typography>
                 <Stack direction="row" spacing={2}>
                     <Button
                         variant="outlined"
@@ -349,7 +349,7 @@ export function DealDetailsView() {
 
             <Card sx={{ overflow: 'hidden', borderRadius: 2 }}>
                 <Box sx={{ display: 'flex', minHeight: '75vh', flexDirection: { xs: 'column', md: 'row' } }}>
-                    {/* Sidebar: Deal Details */}
+                    {/* Sidebar: Prospect Details */}
                     <Box
                         sx={{
                             width: { xs: '100%', md: 320 },
@@ -367,7 +367,7 @@ export function DealDetailsView() {
                                 height: 1,
                             }}>
                             <Stack spacing={5}>
-                                {/* Deal Identity */}
+                                {/* Prospect Identity */}
                                 <Box>
                                     <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.5 }}>
                                         {deal.deal_title}
@@ -381,12 +381,12 @@ export function DealDetailsView() {
 
                                 {/* Relationships */}
                                 <Box>
-                                    <SectionHeader title="Deal Information" />
+                                    <SectionHeader title="Prospect Information" />
                                     <Stack spacing={2.5} sx={{ mt: 2.5 }}>
                                         <DetailItem label="Company" value={deal.account_name || deal.account} subValue={deal.account_name ? deal.account : null} icon={<HiOutlineBuildingOffice size={20} />} />
                                         <DetailItem label="Client" value={deal.contact_name || deal.contact} subValue={deal.contact_name ? deal.contact : null} icon={<HiOutlineUser size={20} />} />
                                         <DetailItem label="Expected Close" value={deal.expected_close_date} icon={<HiOutlineCalendar size={20} />} />
-                                        <DetailItem label="Deal Owner" value={deal.deal_owner_name || deal.deal_owner || deal.owner} subValue={deal.deal_owner_name && (deal.deal_owner || deal.owner) !== deal.deal_owner_name ? (deal.deal_owner || deal.owner) : null} icon={<HiOutlineBriefcase size={20} />} />
+                                        <DetailItem label="Prospect Owner" value={deal.deal_owner_name || deal.deal_owner || deal.owner} subValue={deal.deal_owner_name && (deal.deal_owner || deal.owner) !== deal.deal_owner_name ? (deal.deal_owner || deal.owner) : null} icon={<HiOutlineBriefcase size={20} />} />
                                     </Stack>
                                 </Box>
 

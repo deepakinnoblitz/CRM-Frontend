@@ -2,6 +2,7 @@ import { MuiTelInput } from 'mui-tel-input';
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { IconButton } from '@mui/material';
@@ -34,7 +35,7 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
 
     // Form state
     const [firstName, setFirstName] = useState('');
-    const [companyName, setCompanyName] = useState('');
+    const [companyName, setCompanyName] = useState<string[]>([]);
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [designation, setDesignation] = useState('');
@@ -134,7 +135,7 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
                 city: newCompanyCity,
             });
             setAccountOptions((prev) => [...prev, { name: newAcc.name, account_name: newAcc.account_name }]);
-            setCompanyName(newAcc.name);
+            setCompanyName((prev) => [...prev, newAcc.name]);
             setCreateCompanyOpen(false);
         } catch (error) {
             console.error("Failed to create company", error);
@@ -161,7 +162,7 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
             getContact(contactId)
                 .then((contact) => {
                     setFirstName(contact.first_name || '');
-                    setCompanyName(contact.company_name || '');
+                    setCompanyName(contact.company_names || []);
                     setEmail(contact.email || '');
                     setPhone(cleanPhoneNumber(contact.phone || ''));
                     setDesignation(contact.designation || '');
@@ -219,7 +220,7 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
 
     const resetForm = () => {
         setFirstName('');
-        setCompanyName('');
+        setCompanyName([]);
         setEmail('');
         setPhone('');
         setDesignation('');
@@ -262,7 +263,10 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
 
             const contactData = {
                 first_name: firstName,
-                company_name: companyName,
+                company_name: (companyName || []).map((nameVal) => ({
+                    doctype: "Contact Company",
+                    company_name: nameVal
+                })),
                 email,
                 phone: formattedPhone,
                 designation,
@@ -368,7 +372,30 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
                             helperText={validationErrors.phone ? 'Phone Number is required' : ''}
                         />
 
+                        <TextField
+                            select
+                            fullWidth
+                            label="Client Type"
+                            value={contactType}
+                            onChange={(e) => setContactType(e.target.value)}
+                            SelectProps={{
+                                MenuProps: {
+                                    PaperProps: {
+                                        sx: {
+                                            marginTop: 0.5,
+                                            boxShadow: (theme) => theme.customShadows.z20,
+                                            borderRadius: 1.5,
+                                        }
+                                    }
+                                }
+                            }}
+                        >
+                            <MenuItem value="Sales">Sales</MenuItem>
+                            <MenuItem value="Purchase">Purchase</MenuItem>
+                        </TextField>
+                        
                         <Autocomplete
+                            multiple
                             fullWidth
                             options={accountOptions}
                             getOptionLabel={(option: any) => {
@@ -377,13 +404,16 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
                                 return option.account_name || '';
                             }}
                             value={
-                                accountOptions.find((acc) => acc.name === companyName) ||
-                                accountOptions.find((acc) => acc.account_name === companyName) ||
-                                (companyName ? { name: companyName, account_name: companyName } : null)
+                                (companyName || []).map((nameVal) => 
+                                    accountOptions.find((acc) => acc.name === nameVal) ||
+                                    accountOptions.find((acc) => acc.account_name === nameVal) ||
+                                    { name: nameVal, account_name: nameVal }
+                                )
                             }
-                            onChange={(event, newValue: any) => {
-                                if (newValue && newValue.isNew) {
-                                    setNewCompanyName(newValue.inputValue || '');
+                            onChange={(event, newValue: any[]) => {
+                                const lastValue = newValue[newValue.length - 1];
+                                if (lastValue && lastValue.isNew) {
+                                    setNewCompanyName(lastValue.inputValue || '');
                                     setNewCompanyPhone('');
                                     setNewCompanyGSTIN('');
                                     setNewCompanyWebsite('');
@@ -393,7 +423,11 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
                                     setNewCompanyValidationErrors({});
                                     setCreateCompanyOpen(true);
                                 } else {
-                                    setCompanyName(newValue ? newValue.name : '');
+                                    const newCompanyNames = newValue.map((val: any) => {
+                                        if (typeof val === 'string') return val;
+                                        return val.name || val.account_name || '';
+                                    }).filter(Boolean);
+                                    setCompanyName(newCompanyNames);
                                 }
                             }}
                             filterOptions={(options, params) => {
@@ -470,30 +504,57 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
                                     </Box>
                                 );
                             }}
-                            renderInput={(params) => <TextField {...params} label="Company Name" />}
-                        />
-                        <TextField
-                            select
-                            fullWidth
-                            label="Client Type"
-                            value={contactType}
-                            onChange={(e) => setContactType(e.target.value)}
-                            SelectProps={{
-                                MenuProps: {
-                                    PaperProps: {
-                                        sx: {
-                                            marginTop: 0.5,
-                                            boxShadow: (theme) => theme.customShadows.z20,
-                                            borderRadius: 1.5,
-                                        }
-                                    }
+                            renderTags={(value: readonly any[], getTagProps) =>
+                                value.map((option: any, index: number) => {
+                                    const { key, ...tagProps } = getTagProps({ index });
+                                    const labelStr = option.account_name || (typeof option === 'string' ? option : '');
+                                    return (
+                                        <Chip
+                                            key={key}
+                                            label={labelStr}
+                                            size="small"
+                                            {...tagProps}
+                                            sx={{
+                                                bgcolor: '#00a2d2',
+                                                color: '#fff',
+                                                fontWeight: 700,
+                                                fontSize: '12px',
+                                                borderRadius: '24px',
+                                                height: 28,
+                                                px: 0.5,
+                                                '&:hover': {
+                                                    bgcolor: '#008fb9',
+                                                },
+                                                '& .MuiChip-label': {
+                                                    px: 1.25,
+                                                },
+                                                '& .MuiChip-deleteIcon': {
+                                                    color: 'rgba(255, 255, 255, 0.75)',
+                                                    transition: 'color 0.2s, opacity 0.2s',
+                                                    fontSize: '16px',
+                                                    '&:hover': {
+                                                        color: '#fff',
+                                                    },
+                                                },
+                                            }}
+                                        />
+                                    );
+                                })
+                            }
+                            sx={{
+                                gridColumn: 'span 2',
+                                '& .MuiOutlinedInput-root': {
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: '#00a2d2',
+                                        borderWidth: '2px',
+                                    },
+                                },
+                                '& .MuiInputLabel-root.Mui-focused': {
+                                    color: '#00a2d2',
                                 }
                             }}
-                        >
-                            <MenuItem value="Sales">Sales</MenuItem>
-                            <MenuItem value="Purchase">Purchase</MenuItem>
-                        </TextField>
-
+                            renderInput={(params) => <TextField {...params} label="Company Name" />}
+                        />
                         <Autocomplete
                             fullWidth
                             options={countryOptions.filter(o => o !== '')}

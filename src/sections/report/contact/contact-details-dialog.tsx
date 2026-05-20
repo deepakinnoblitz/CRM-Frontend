@@ -52,14 +52,14 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
     }, [open, contactId]);
 
     const TABS = [
-        { value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> },
+        { value: 'deals', label: 'Prospects', icon: <HiOutlineCircleStack size={18} /> },
         { value: 'estimations', label: 'Estimations', icon: <HiOutlineClipboardDocumentCheck size={18} /> },
+        { value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> },
         { value: 'purchases', label: 'Purchases', icon: <HiOutlineShoppingBag size={18} /> },
-        { value: 'deals', label: 'Deals', icon: <HiOutlineCircleStack size={18} /> },
     ];
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth={false} PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, width: '1350px',  maxWidth: '1350px'} }}>
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Client Details</Typography>
                 <IconButton onClick={onClose} sx={{ color: theme.palette.grey[500] }}>
@@ -77,7 +77,7 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                         {/* Sidebar: Profile Details */}
                         <Box
                             sx={{
-                                width: 350,
+                                width: 330,
                                 borderRight: `1px solid ${theme.palette.divider}`,
                                 bgcolor: alpha(theme.palette.grey[500], 0.02),
                                 display: 'flex',
@@ -132,13 +132,77 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                                     {/* Connectivity Grid */}
                                     <Box>
                                         <Stack spacing={2.5} sx={{ mb: 4 }}>
-                                            <DetailItem label="Company" value={contact.company_name} icon={<HiOutlineBuildingOffice size={18} />} />
+                                            <DetailItem
+                                                label="Company"
+                                                value={(() => {
+                                                    const list = contact.company_name_list || [];
+                                                    if (list.length === 0) return '—';
+                                                    return (
+                                                        <Stack spacing={1} sx={{ mt: 0.5 }}>
+                                                            {list.map((name: string, index: number) => (
+                                                                <Box
+                                                                    key={index}
+                                                                    sx={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: list.length > 1 ? 1.25 : 0,
+                                                                        px: 1.5,
+                                                                        py: 0.75,
+                                                                        borderRadius: '8px',
+                                                                        bgcolor: (themeVar) => alpha(themeVar.palette.primary.main, 0.04),
+                                                                        border: (themeVar) => `1px solid ${alpha(themeVar.palette.primary.main, 0.08)}`,
+                                                                        transition: (themeVar) => themeVar.transitions.create(['background-color', 'border-color', 'transform']),
+                                                                        '&:hover': {
+                                                                            bgcolor: (themeVar) => alpha(themeVar.palette.primary.main, 0.08),
+                                                                            borderColor: (themeVar) => alpha(themeVar.palette.primary.main, 0.2),
+                                                                            transform: 'translateX(4px)',
+                                                                        },
+                                                                    }}
+                                                                >
+                                                                    {list.length > 1 && (
+                                                                        <Box
+                                                                            sx={{
+                                                                                width: 18,
+                                                                                height: 18,
+                                                                                borderRadius: '50%',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                bgcolor: 'primary.main',
+                                                                                color: 'primary.contrastText',
+                                                                                fontSize: '10px',
+                                                                                fontWeight: 800,
+                                                                                flexShrink: 0,
+                                                                            }}
+                                                                        >
+                                                                            {index + 1}
+                                                                        </Box>
+                                                                    )}
+                                                                    <Typography
+                                                                        variant="body2"
+                                                                        sx={{
+                                                                            fontWeight: 700,
+                                                                            color: 'text.primary',
+                                                                            fontSize: 13,
+                                                                            wordBreak: 'break-word',
+                                                                            lineHeight: 1.3,
+                                                                        }}
+                                                                    >
+                                                                        {name}
+                                                                    </Typography>
+                                                                </Box>
+                                                            ))}
+                                                        </Stack>
+                                                    );
+                                                })()}
+                                                icon={(contact.company_name_list || []).length > 1 ? null : <HiOutlineBuildingOffice size={18} />}
+                                            />
                                             {contact.source_lead && (
                                                 <DetailItem
                                                     label="Source Lead"
                                                     value={contact.source_lead}
                                                     icon={<HiOutlineUser size={18} />}
-                                                    color="info.main"
+                                                    color="text-primary"
                                                     onClick={() => {
                                                         router.push(`/leads?view=${encodeURIComponent(contact.source_lead)}`);
                                                         onClose();
@@ -245,7 +309,7 @@ function SectionHeader({ title }: { title: string }) {
     );
 }
 
-function DetailItem({ label, value, subValue, icon, color = 'text.primary', onClick, sx }: { label: string; value?: string | null; subValue?: string | null; icon: React.ReactNode; color?: string; onClick?: () => void; sx?: any }) {
+function DetailItem({ label, value, subValue, icon, color = 'text.primary', onClick, sx }: { label: string; value?: React.ReactNode; subValue?: string | null; icon: React.ReactNode; color?: string; onClick?: () => void; sx?: any }) {
     return (
         <Box sx={{ pb: 2, borderBottom: (themeVar) => `1px dashed ${alpha(themeVar.palette.grey[500], 0.2)}`, ...sx }}>
             <Typography variant="caption" sx={{ color: '#2081C3', fontWeight: 800, textTransform: 'uppercase', mb: 0.75, display: 'block', fontSize: 11, letterSpacing: 0.5 }}>
@@ -263,13 +327,19 @@ function DetailItem({ label, value, subValue, icon, color = 'text.primary', onCl
                     }),
                 }}
             >
-                <Box sx={{ color: 'text.secondary', opacity: 0.8, display: 'flex', alignItems: 'center' }}>
-                    {icon}
-                </Box>
+                {icon && (
+                    <Box sx={{ color: 'text.secondary', opacity: 0.8, display: 'flex', alignItems: 'center' }}>
+                        {icon}
+                    </Box>
+                )}
                 <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color, wordBreak: 'break-word', lineHeight: 1.4, fontSize: 14 }}>
-                        {value || '—'}
-                    </Typography>
+                    {typeof value === 'string' || value === null || value === undefined ? (
+                        <Typography variant="body2" sx={{ fontWeight: 700, color, wordBreak: 'break-word', lineHeight: 1.4, fontSize: 14 }}>
+                            {value || '—'}
+                        </Typography>
+                    ) : (
+                        value
+                    )}
                     {subValue && (
                         <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', mt: 0.5, fontSize: 12, fontWeight: 600 }}>
                             {subValue}

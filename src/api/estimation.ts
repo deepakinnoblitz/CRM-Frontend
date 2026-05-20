@@ -24,6 +24,7 @@ export interface Estimation {
     client_name: string;
     customer_name?: string;
     billing_name?: string;
+    billing_account_name?: string;
     billing_address?: string;
     phone_number?: string;
     estimate_date: string;
@@ -75,18 +76,29 @@ export async function fetchEstimations(params: {
         }
     }
 
-    // Convert sort_by format (e.g., "estimate_date_desc") to Frappe order_by format
+
     let orderBy = "creation desc";
+
     if (params.sort_by) {
-        const [field, direction] = params.sort_by.split('_').reduce((acc, part) => {
-            if (part === 'asc' || part === 'desc') {
-                acc[1] = part;
-            } else {
-                acc[0] = acc[0] ? `${acc[0]}_${part}` : part;
-            }
-            return acc;
-        }, ['', 'desc']);
-        orderBy = `${field} ${direction}`;
+        const [field, direction] = params.sort_by.split('_').reduce(
+            (acc, part) => {
+                if (part === 'asc' || part === 'desc') {
+                    acc[1] = part;
+                } else {
+                    acc[0] = acc[0] ? `${acc[0]}_${part}` : part;
+                }
+                return acc;
+            },
+            ['', 'desc'] as [string, string]
+        );
+
+        const ambiguousFields = ['modified', 'creation', 'owner'];
+
+        if (ambiguousFields.includes(field)) {
+            orderBy = `tabEstimation.${field} ${direction}`;
+        } else {
+            orderBy = `${field} ${direction}`;
+        }
     }
 
     const query = new URLSearchParams({
@@ -97,6 +109,7 @@ export async function fetchEstimations(params: {
             "client_name",
             "customer_name",
             "billing_name",
+            "billing_name.account_name as billing_account_name",
             "estimate_date",
             "grand_total",
             "creation"

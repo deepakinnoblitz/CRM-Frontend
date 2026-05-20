@@ -232,7 +232,7 @@ export function CombinedDashboardView() {
 
             <Grid container spacing={3}>
                 {/* Row 1: CRM Summary Widgets */}
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                     <AnalyticsWidgetSummary
                         title="Total Leads"
                         percent={getPercentChange(crmStats.charts?.leads)}
@@ -245,7 +245,7 @@ export function CombinedDashboardView() {
                     />
                 </Grid>
 
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                     <AnalyticsWidgetSummary
                         title="Total Clients"
                         percent={getPercentChange(crmStats.charts?.contacts)}
@@ -259,7 +259,7 @@ export function CombinedDashboardView() {
                     />
                 </Grid>
 
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                     <AnalyticsWidgetSummary
                         title="Total Company"
                         percent={getPercentChange(crmStats.charts?.accounts)}
@@ -273,9 +273,10 @@ export function CombinedDashboardView() {
                     />
                 </Grid>
 
+                {/* Row 2: Financial Totals */}
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <AnalyticsWidgetSummary
-                        title="Total Deals"
+                        title="Total Prospects"
                         percent={getPercentChange(crmStats.charts?.deals)}
                         total={crmStats.deals || 0}
                         color="warning"
@@ -286,20 +287,21 @@ export function CombinedDashboardView() {
                         }}
                     />
                 </Grid>
-
-                {/* Row 2: Financial Totals */}
+                
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <AnalyticsWidgetSummary
-                        title="Total Invoices"
-                        percent={getPercentChange(financialTotals.invoices.chart)}
-                        total={financialTotals.invoices.count}
-                        icon={<img alt="Invoices" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-buy.svg`} />}
+                        title="Total Proposal"
+                        percent={getPercentChange(financialTotals.purchases.chart)}
+                        total={financialTotals.purchases.count}
+                        color="warning"
+                        icon={<img alt="Purchases" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-message.svg`} />}
                         chart={{
                             categories: financialTotals.categories,
-                            series: financialTotals.invoices.chart,
+                            series: financialTotals.purchases.chart,
                         }}
                     />
                 </Grid>
+
 
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <AnalyticsWidgetSummary
@@ -317,19 +319,18 @@ export function CombinedDashboardView() {
 
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <AnalyticsWidgetSummary
-                        title="Total Proposal"
-                        percent={getPercentChange(financialTotals.purchases.chart)}
-                        total={financialTotals.purchases.count}
-                        color="warning"
-                        icon={<img alt="Purchases" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-message.svg`} />}
+                        title="Total Invoices"
+                        percent={getPercentChange(financialTotals.invoices.chart)}
+                        total={financialTotals.invoices.count}
+                        icon={<img alt="Invoices" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-buy.svg`} />}
                         chart={{
                             categories: financialTotals.categories,
-                            series: financialTotals.purchases.chart,
+                            series: financialTotals.invoices.chart,
                         }}
                     />
                 </Grid>
 
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                {/* <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <AnalyticsWidgetSummary
                         title="Total Expenses"
                         percent={getPercentChange(financialTotals.expenses.chart)}
@@ -341,7 +342,7 @@ export function CombinedDashboardView() {
                             series: financialTotals.expenses.chart,
                         }}
                     />
-                </Grid>
+                </Grid> */}
 
                 {/* Today's Activities */}
                 <Grid size={{ xs: 12 }}>

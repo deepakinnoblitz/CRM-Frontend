@@ -37,6 +37,7 @@ import { fCurrency } from 'src/utils/format-number';
 import { handleDirectPrint } from 'src/utils/print';
 
 import { createItem } from 'src/api/invoice';
+import { getContact } from 'src/api/contacts';
 import { uploadFile } from 'src/api/data-import';
 import { getDoc, getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -83,6 +84,7 @@ export function EstimationEditView() {
     const [clientName, setClientName] = useState('');
     const [customerName, setCustomerName] = useState('');
     const [billingName, setBillingName] = useState('');
+    const [billingNameOptions, setBillingNameOptions] = useState<{ name: string; account_name: string }[]>([]);
     const [estimateDate, setEstimateDate] = useState('');
     const [billingAddress, setBillingAddress] = useState('');
     const [description, setDescription] = useState('');
@@ -129,13 +131,26 @@ export function EstimationEditView() {
     useEffect(() => {
         if (id) {
             getEstimation(id)
-                .then((data) => {
+                .then(async (data) => {
                     setClientName(data.client_name || '');
                     setDeal(data.deal || '');
                     setCustomerName(data.customer_name || '');
                     setBillingName(data.billing_name || '');
                     setEstimateDate(data.estimate_date || '');
                     setBillingAddress(data.billing_address || '');
+                    // Fetch contact to populate billing name options
+                    if (data.client_name) {
+                        try {
+                            const contact = await getContact(data.client_name);
+                            const mappedOptions = contact.company_names?.map((cid: string, idx: number) => ({
+                                name: cid,
+                                account_name: contact.company_name_list?.[idx] || cid
+                            })) || [];
+                            setBillingNameOptions(mappedOptions);
+                        } catch (err) {
+                            console.error('Failed to fetch contact details for estimation initial load:', err);
+                        }
+                    }
                     setDescription(data.description || '');
                     setRemarks(data.terms_and_conditions || '');
                     if (data.attachments) {
@@ -162,21 +177,48 @@ export function EstimationEditView() {
         }
     }, [id]);
 
+    type BillingNameOption = {
+        name: string;
+        account_name: string;
+    };
+
     const handleCustomerChange = async (name: string) => {
         setClientName(name);
+
         if (name) {
             setClientError(false);
+
             try {
-                const contact = await getDoc('Contacts', name);
+                const contact = await getContact(name);
+
                 setCustomerName(contact.first_name || '');
-                setBillingName(contact.company_name || '');
                 setBillingAddress(contact.address || '');
+
+                // Explicitly type the array so TypeScript can infer `opt`
+                const mappedOptions: BillingNameOption[] =
+                    contact.company_names?.map((cid: string, idx: number) => ({
+                        name: cid,
+                        account_name: contact.company_name_list?.[idx] || cid,
+                    })) || [];
+
+                setBillingNameOptions(mappedOptions);
+
+                // Auto-select if there is only one billing option
+                if (mappedOptions.length === 1) {
+                    setBillingName(mappedOptions[0].name);
+                }
+                // Clear the selected billing name if it is not present in the new options
+                else if (!mappedOptions.find((opt) => opt.name === billingName)) {
+                    setBillingName('');
+                }
             } catch (error) {
                 console.error('Failed to fetch contact details:', error);
             }
         } else {
+            // Reset related fields when customer is cleared
             setCustomerName('');
             setBillingName('');
+            setBillingNameOptions([]);
             setBillingAddress('');
         }
     };
@@ -605,13 +647,30 @@ export function EstimationEditView() {
                             sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}
                         />
 
-                        <TextField
+                        <Autocomplete
                             fullWidth
-                            label="Billing Name"
-                            value={billingName}
-                            onChange={(e) => setBillingName(e.target.value)}
-                            slotProps={{ input: { readOnly: true } }}
-                            sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}
+                            options={billingNameOptions}
+                            getOptionLabel={(option) => option.account_name || option.name || ''}
+                            value={billingNameOptions.find((opt) => opt.name === billingName) || null}
+                            onChange={(_e, newValue) => setBillingName(newValue?.name || '')}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Billing Name"
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.name}>
+                                    <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                            {option.account_name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                </li>
+                            )}
                         />
 
                         <DatePicker

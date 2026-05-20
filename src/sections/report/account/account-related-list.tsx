@@ -17,19 +17,15 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useRouter } from 'src/routes/hooks';
 
 import { fDate } from 'src/utils/format-time';
+import { frappeRequest } from 'src/utils/csrf';
 import { fCurrency } from 'src/utils/format-number';
-
-import { fetchDeals } from 'src/api/deals';
-import { fetchInvoices } from 'src/api/invoice';
-import { fetchContacts } from 'src/api/contacts';
-import { fetchPurchases } from 'src/api/purchase';
-import { fetchEstimations } from 'src/api/estimation';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 
+import { ContactDetailsDialog } from '../contact/contact-details-dialog';
 import { LeadTableHead as DataTableHead } from '../../lead/lead-table-head';
 
 // ----------------------------------------------------------------------
@@ -54,40 +50,35 @@ export function AccountRelatedList({ accountId, type }: Props) {
         balance: 0,
     });
 
+    const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+
     const loadData = useCallback(async () => {
         setLoading(true);
         try {
             let res: any;
-            if (type === 'invoices') {
-                res = await fetchInvoices({
-                    page: page + 1,
-                    page_size: rowsPerPage,
-                    filters: { company: accountId } as any,
-                });
-            } else if (type === 'purchases') {
-                res = await fetchPurchases({
-                    page: page + 1,
-                    page_size: rowsPerPage,
-                    filterValues: { company: accountId } as any,
-                });
-            } else if (type === 'deals') {
-                res = await fetchDeals({
-                    page: page + 1,
-                    page_size: rowsPerPage,
-                    filterValues: { company: accountId } as any,
-                });
-            } else if (type === 'estimations') {
-                res = await fetchEstimations({
-                    page: page + 1,
-                    page_size: rowsPerPage,
-                    filters: { company: accountId } as any,
-                });
-            } else if (type === 'contacts') {
-                res = await fetchContacts({
-                    page: page + 1,
-                    page_size: rowsPerPage,
-                    filterValues: { company_name: accountId } as any,
-                });
+            if (type === 'contacts') {
+                // Direct child-table lookup: Account → Contact Company → Contacts
+                const contactRes = await frappeRequest(
+                    `/api/method/company.company.frontend_api.get_contacts_by_account?account_id=${encodeURIComponent(accountId)}&limit_start=${page * rowsPerPage}&limit_page_length=${rowsPerPage}`
+                );
+                const contactJson = await contactRes.json();
+                const contactData = contactJson.message || { contacts: [], total: 0 };
+                res = { data: contactData.contacts || [], total: contactData.total || 0 };
+            } else {
+                // For invoices/purchases/estimations/deals: link is Account → Contacts (child table) → client_name
+                const doctypeMap: Record<string, string> = {
+                    invoices: 'Invoice',
+                    purchases: 'Purchase',
+                    deals: 'Deal',
+                    estimations: 'Estimation',
+                };
+                const frappe_doctype = doctypeMap[type];
+                const relRes = await frappeRequest(
+                    `/api/method/company.company.frontend_api.get_account_related_records?account_id=${encodeURIComponent(accountId)}&doctype=${frappe_doctype}&limit_start=${page * rowsPerPage}&limit_page_length=${rowsPerPage}`
+                );
+                const relJson = await relRes.json();
+                const relData = relJson.message || { records: [], total: 0 };
+                res = { data: relData.records || [], total: relData.total || 0 };
             }
 
             const records = res?.data || [];
@@ -130,7 +121,6 @@ export function AccountRelatedList({ accountId, type }: Props) {
         if (type === 'contacts') {
             return [
                 { id: 'first_name', label: 'Name' },
-                { id: 'designation', label: 'Designation' },
                 { id: 'email', label: 'Email' },
                 { id: 'phone', label: 'Phone' },
                 { id: 'action', label: '' },
@@ -160,7 +150,6 @@ export function AccountRelatedList({ accountId, type }: Props) {
             return [
                 { id: 'deal_title', label: 'Title' },
                 { id: 'stage', label: 'Stage', align: 'center' },
-                { id: 'value', label: 'Value', align: 'right' },
                 { id: 'expected_close_date', label: 'Expected Close' },
                 { id: 'action', label: '' },
             ];
@@ -198,13 +187,12 @@ export function AccountRelatedList({ accountId, type }: Props) {
                 <TableRow key={row.name} hover>
                     <TableCell align="center">{serialNumber}</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>{row.first_name}</TableCell>
-                    <TableCell>{row.designation || '-'}</TableCell>
                     <TableCell>{row.email}</TableCell>
                     <TableCell>{row.phone}</TableCell>
                     <TableCell align="right">
                         <IconButton
                             color="primary"
-                            onClick={() => router.push(`/contacts`)}
+                            onClick={() => setSelectedContactId(row.name)}
                             size="small"
                         >
                             <Iconify icon="solar:eye-bold" />
@@ -262,12 +250,11 @@ export function AccountRelatedList({ accountId, type }: Props) {
                     <TableCell align="center">{serialNumber}</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>{row.deal_title}</TableCell>
                     <TableCell align="center">{getStatusLabel(row)}</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600, color: 'primary.main' }}>{fCurrency(row.value)}</TableCell>
                     <TableCell>{fDate(row.expected_close_date)}</TableCell>
                     <TableCell align="right">
                         <IconButton
                             color="primary"
-                            onClick={() => router.push(`/deals`)}
+                            onClick={() => router.push(`/deals/${encodeURIComponent(row.name)}/view`)}
                             size="small"
                         >
                             <Iconify icon="solar:eye-bold" />
@@ -296,6 +283,7 @@ export function AccountRelatedList({ accountId, type }: Props) {
     };
 
     return (
+        <>
         <Stack spacing={3}>
             {/* Analytics Summary - Only show for financial types */}
             {type !== 'contacts' && (
@@ -395,6 +383,13 @@ export function AccountRelatedList({ accountId, type }: Props) {
                 />
             </Card>
         </Stack>
+
+        <ContactDetailsDialog
+            open={Boolean(selectedContactId)}
+            onClose={() => setSelectedContactId(null)}
+            contactId={selectedContactId}
+        />
+    </>
     );
 }
 

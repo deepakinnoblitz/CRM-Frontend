@@ -497,7 +497,8 @@ export function ContactView() {
                                         row={{
                                             id: row.name,
                                             firstName: row.first_name,
-                                            companyName: getString(row['company_name.account_name'] || row.company_name) || '',
+                                            companyName: getString(row.company_name) || '',
+                                            companyNames: row.company_names || [],
                                             email: getString(row.email) || '',
                                             phone: getString(row.phone) || '',
                                             avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,

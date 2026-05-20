@@ -20,6 +20,7 @@ export type EstimationProps = {
     client_name: string;
     customer_name: string;
     billing_name?: string;
+    billing_account_name?: string;
     estimate_date: string;
     grand_total: number;
 };
@@ -105,7 +106,7 @@ export function EstimationTableRow({
                 </Box>
             </TableCell>
 
-            <TableCell align="left" sx={{ fontWeight: 600, maxWidth: 240 }}>{row.billing_name || '-' }</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 600, maxWidth: 240 }}>{row.billing_account_name || row.billing_name || '-' }</TableCell>
 
             <TableCell align="left" sx={{ maxWidth: 240 }}>
                 <Stack spacing={0.5}>

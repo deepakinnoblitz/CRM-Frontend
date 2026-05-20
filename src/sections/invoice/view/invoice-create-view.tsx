@@ -36,6 +36,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
 
+import { getContact } from 'src/api/contacts';
 import { uploadFile } from 'src/api/data-import';
 import { getDoc, getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -84,6 +85,7 @@ export function InvoiceCreateView() {
     const [customerId, setCustomerId] = useState(estimationData?.client_name || estimationData?.customer_id || '');
     const [customerName, setCustomerName] = useState(estimationData?.customer_name || '');
     const [billingName, setBillingName] = useState(estimationData?.billing_name || '');
+    const [billingNameOptions, setBillingNameOptions] = useState<{ name: string; account_name: string }[]>([]);
     const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
     const [dueDate, setDueDate] = useState('');
     const [paymentTerms, setPaymentTerms] = useState('Due On Receipt');
@@ -151,16 +153,28 @@ export function InvoiceCreateView() {
         if (name) {
             setCustomerError(false);
             try {
-                const contact = await getDoc('Contacts', name);
+                const contact = await getContact(name);
                 setCustomerName(contact.first_name || '');
-                setBillingName(contact.company_name || '');
                 setBillingAddress(contact.address || '');
+
+                const mappedOptions = contact.company_names?.map((id: string, idx: number) => ({
+                    name: id,
+                    account_name: contact.company_name_list?.[idx] || id
+                })) || [];
+                setBillingNameOptions(mappedOptions);
+
+                if (mappedOptions.length === 1) {
+                    setBillingName(mappedOptions[0].name);
+                } else {
+                    setBillingName('');
+                }
             } catch (error) {
                 console.error('Failed to fetch contact details:', error);
             }
         } else {
             setCustomerName('');
             setBillingName('');
+            setBillingNameOptions([]);
             setBillingAddress('');
         }
     };
@@ -535,14 +549,30 @@ export function InvoiceCreateView() {
                             sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}
                         />
 
-                        <TextField
+                        <Autocomplete
                             fullWidth
-                            label="Billing Name"
-                            value={billingName}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}
+                            options={billingNameOptions}
+                            getOptionLabel={(option) => option.account_name || option.name || ''}
+                            value={billingNameOptions.find((opt) => opt.name === billingName) || null}
+                            onChange={(_e, newValue) => setBillingName(newValue?.name || '')}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Billing Name"
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.name}>
+                                    <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                            {option.account_name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                </li>
+                            )}
                         />
 
                         <TextField

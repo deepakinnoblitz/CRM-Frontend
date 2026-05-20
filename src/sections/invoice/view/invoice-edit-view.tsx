@@ -36,6 +36,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
 
+import { getContact } from 'src/api/contacts';
 import { uploadFile } from 'src/api/data-import';
 import { getDoc, getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -79,6 +80,7 @@ export function InvoiceEditView() {
     const [customerId, setCustomerId] = useState('');
     const [customerName, setCustomerName] = useState('');
     const [billingName, setBillingName] = useState('');
+    const [billingNameOptions, setBillingNameOptions] = useState<{ name: string; account_name: string }[]>([]);
     const [invoiceDate, setInvoiceDate] = useState('');
     const [dueDate, setDueDate] = useState('');
     const [paymentTerms, setPaymentTerms] = useState('');
@@ -119,7 +121,7 @@ export function InvoiceEditView() {
 
         if (id) {
             getInvoice(id)
-                .then((data) => {
+                .then(async (data) => {
                     setCustomerId(data.customer_id || data.client_name || '');
                     setCustomerName(data.customer_name || '');
                     setBillingName(data.billing_name || '');
@@ -129,6 +131,20 @@ export function InvoiceEditView() {
                     setPoNo(data.po_no || '');
                     setPoDate(data.po_date || '');
                     setBillingAddress(data.billing_address || '');
+                    // Fetch contact to populate billing name options
+                    const clientId = data.customer_id || data.client_name;
+                    if (clientId) {
+                        try {
+                            const contact = await getContact(clientId);
+                            const mappedOptions = contact.company_names?.map((cid: string, idx: number) => ({
+                                name: cid,
+                                account_name: contact.company_name_list?.[idx] || cid
+                            })) || [];
+                            setBillingNameOptions(mappedOptions);
+                        } catch (err) {
+                            console.error('Failed to fetch contact details for invoice initial load:', err);
+                        }
+                    }
                     setDescription(data.description || '');
                     setRemarks(data.terms_and_conditions || '');
                     if (data.attachments) {
@@ -158,21 +174,48 @@ export function InvoiceEditView() {
         }
     }, [id]);
 
+    type BillingNameOption = {
+        name: string;
+        account_name: string;
+    };
+
     const handleCustomerChange = async (name: string) => {
         setCustomerId(name);
+
         if (name) {
             setCustomerError(false);
+
             try {
-                const contact = await getDoc('Contacts', name);
+                const contact = await getContact(name);
+
                 setCustomerName(contact.first_name || '');
-                setBillingName(contact.company_name || '');
                 setBillingAddress(contact.address || '');
+
+                // Explicitly type the mapped array so TypeScript can infer the type of `opt`
+                const mappedOptions: BillingNameOption[] =
+                    contact.company_names?.map((cid: string, idx: number) => ({
+                        name: cid,
+                        account_name: contact.company_name_list?.[idx] || cid,
+                    })) || [];
+
+                setBillingNameOptions(mappedOptions);
+
+                // Auto-select if only one billing option is available
+                if (mappedOptions.length === 1) {
+                    setBillingName(mappedOptions[0].name);
+                }
+                // Clear current billing name if it does not exist in the new options
+                else if (!mappedOptions.find((opt) => opt.name === billingName)) {
+                    setBillingName('');
+                }
             } catch (error) {
                 console.error('Failed to fetch contact details:', error);
             }
         } else {
+            // Reset all related fields when customer is cleared
             setCustomerName('');
             setBillingName('');
+            setBillingNameOptions([]);
             setBillingAddress('');
         }
     };
@@ -519,14 +562,30 @@ export function InvoiceEditView() {
                             sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}
                         />
 
-                        <TextField
+                        <Autocomplete
                             fullWidth
-                            label="Billing Name"
-                            value={billingName}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            sx={{ bgcolor: ((theme) => alpha(theme.palette.grey[500], 0.08)) }}
+                            options={billingNameOptions}
+                            getOptionLabel={(option) => option.account_name || option.name || ''}
+                            value={billingNameOptions.find((opt) => opt.name === billingName) || null}
+                            onChange={(_e, newValue) => setBillingName(newValue?.name || '')}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Billing Name"
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.name}>
+                                    <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                            {option.account_name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                </li>
+                            )}
                         />
 
                         <TextField
