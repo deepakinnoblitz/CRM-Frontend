@@ -136,6 +136,11 @@ export const PerformanceCriteriaCategoryPage = lazy(() => import('src/pages/perf
 export const DesignationPage = lazy(() => import('src/pages/designation'));
 export const SalaryStructureComponentPage = lazy(() => import('src/pages/salary-structure-component'));
 export const LeaveTypePage = lazy(() => import('src/pages/leave-type'));
+export const LeadFromPage = lazy(() => import('src/pages/lead-from'));
+export const ServicePage = lazy(() => import('src/pages/service'));
+export const ItemPage = lazy(() => import('src/pages/item'));
+export const PaymentTermsPage = lazy(() => import('../pages/payment-terms'));
+export const PaymentTypePage = lazy(() => import('../pages/payment-type'));
 export const EmployeeOverallReportPage = lazy(() => import('src/pages/employee-overall-report'));
 
 
@@ -235,6 +240,11 @@ export const routesSection: RouteObject[] = [
       { path: 'designation', element: <DesignationPage /> },
       { path: 'salary-structure-component', element: <SalaryStructureComponentPage /> },
       { path: 'leave-type', element: <LeaveTypePage /> },
+      { path: 'master/lead-from', element: <LeadFromPage /> },
+      { path: 'master/service', element: <ServicePage /> },
+      { path: 'master/item', element: <ItemPage /> },
+      { path: 'master/payment-terms', element: <PaymentTermsPage /> },
+      { path: 'master/payment-type', element: <PaymentTypePage /> },
       { path: 'employee-overall-report', element: <EmployeeOverallReportPage /> },
       { path: 'timesheet-reports', element: <TimesheetReportPage /> },
       {

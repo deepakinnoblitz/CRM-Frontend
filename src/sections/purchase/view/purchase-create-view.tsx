@@ -43,6 +43,9 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 
+import { PaymentTypeDialog } from 'src/sections/master/payment-type/payment-type-dialog';
+import { PaymentTermsDialog } from 'src/sections/master/payment-terms/payment-terms-dialog';
+
 import { TaxTypeFormDialog } from '../../invoice/tax-type-form-dialog';
 
 // ----------------------------------------------------------------------
@@ -70,6 +73,7 @@ export function PurchaseCreateView() {
     const [itemOptions, setItemOptions] = useState<any[]>([]);
     const [taxOptions, setTaxOptions] = useState<any[]>([]);
     const [paymentTypeOptions, setPaymentTypeOptions] = useState<any[]>([]);
+    const [paymentTermsOptions, setPaymentTermsOptions] = useState<any[]>([]);
 
     const [vendorName, setVendorName] = useState('');
     const [billNo, setBillNo] = useState('');
@@ -111,6 +115,30 @@ export function PurchaseCreateView() {
 
     const [taxTypeDialogOpen, setTaxTypeDialogOpen] = useState(false);
     const [newTaxInitialName, setNewTaxInitialName] = useState('');
+    const [paymentTermsDialogOpen, setPaymentTermsDialogOpen] = useState(false);
+    const [paymentTypeDialogOpen, setPaymentTypeDialogOpen] = useState(false);
+
+    const fetchPaymentTermsOptions = async () => {
+        try {
+            const opts = await getDoctypeList('Payment Terms', ['name', 'payment_terms', 'creation', 'modified']);
+            setPaymentTermsOptions(opts);
+            return opts;
+        } catch (error) {
+            console.error('Failed to load Payment Terms data:', error);
+            return [];
+        }
+    };
+
+    const fetchPaymentTypeOptions = async () => {
+        try {
+            const opts = await getDoctypeList('Payment Type', ['name', 'payment_type', 'creation', 'modified']);
+            setPaymentTypeOptions(opts);
+            return opts;
+        } catch (error) {
+            console.error('Failed to load Payment Type data:', error);
+            return [];
+        }
+    };
 
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'customer_type'])
@@ -133,9 +161,8 @@ export function PurchaseCreateView() {
             .then(setTaxOptions)
             .catch((error) => console.error('Failed to load Tax Types data:', error));
 
-        getDoctypeList('Payment Type', ['name', 'payment_type'])
-            .then(setPaymentTypeOptions)
-            .catch((error) => console.error('Failed to load Payment Type data:', error));
+        fetchPaymentTypeOptions();
+        fetchPaymentTermsOptions();
     }, []);
 
     const handleAddRow = () => {
@@ -464,35 +491,159 @@ export function PurchaseCreateView() {
                             }}
                         />
 
-                        <TextField
+                        <Autocomplete
                             fullWidth
-                            select
-                            label="Payment Type"
-                            value={paymentType}
-                            onChange={(e) => setPaymentType(e.target.value)}
-                            required
-                        >
-                            {paymentTypeOptions.map((opt) => (
-                                <MenuItem key={opt.name} value={opt.name}>
-                                    {opt.payment_type || opt.name}
-                                </MenuItem>
-                            ))}
-                        </TextField>
+                            options={paymentTypeOptions.filter((opt) => opt.name !== paymentType)}
+                            getOptionLabel={(option) => {
+                                if (typeof option === 'string') return option;
+                                return option.payment_type || option.name || '';
+                            }}
+                            filterOptions={(options, params) => {
+                                const filtered = options.filter((opt) => opt.name !== paymentType);
+                                filtered.push({
+                                    name: 'create_payment_type_custom_option',
+                                    payment_type: 'Create Payment Type',
+                                    isNew: true,
+                                });
+                                return filtered;
+                            }}
+                            value={paymentTypeOptions.find((opt) => opt.name === paymentType) || (paymentType ? { name: paymentType, payment_type: paymentType } : null)}
+                            onChange={(_e, newValue) => {
+                                if (newValue?.isNew) {
+                                    setPaymentTypeDialogOpen(true);
+                                } else {
+                                    setPaymentType(newValue?.name || '');
+                                }
+                            }}
+                            ListboxProps={{
+                                sx: {
+                                    maxHeight: '300px',
+                                    '& .MuiAutocomplete-option': {
+                                        fontSize: '14px !important',
+                                    }
+                                }
+                            }}
+                            sx={{
+                                '& .MuiInputBase-input': {
+                                    fontSize: '14px !important',
+                                }
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Payment Type"
+                                    required
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <Box
+                                    component="li"
+                                    {...props}
+                                    sx={{
+                                        ...(option.isNew && {
+                                            color: 'primary.main',
+                                            fontWeight: 600,
+                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                            py: '8px !important',
+                                            px: '16px !important',
+                                            mt: 0.5,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            '&:hover': {
+                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                            }
+                                        })
+                                    }}
+                                >
+                                    {option.isNew ? (
+                                        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ width: '100%' }}>
+                                            <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Create Payment Type</Typography>
+                                        </Stack>
+                                    ) : (
+                                        option.payment_type || option.name
+                                    )}
+                                </Box>
+                            )}
+                        />
 
-                        <TextField
+                        <Autocomplete
                             fullWidth
-                            select
-                            label="Payment Terms"
-                            value={paymentTerms}
-                            onChange={(e) => setPaymentTerms(e.target.value)}
-                            required
-                        >
-                            {['Next day Payment', 'Due On Receipt', '15 days', '30 days', '60 days', '1 Year'].map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </TextField>
+                            options={paymentTermsOptions.filter((opt) => opt.name !== paymentTerms)}
+                            getOptionLabel={(option) => {
+                                if (typeof option === 'string') return option;
+                                return option.payment_terms || option.name || '';
+                            }}
+                            filterOptions={(options, params) => {
+                                const filtered = options.filter((opt) => opt.name !== paymentTerms);
+                                filtered.push({
+                                    name: 'create_payment_term_custom_option',
+                                    payment_terms: 'Create Payment Terms',
+                                    isNew: true,
+                                });
+                                return filtered;
+                            }}
+                            value={paymentTermsOptions.find((opt) => opt.name === paymentTerms) || (paymentTerms ? { name: paymentTerms, payment_terms: paymentTerms } : null)}
+                            onChange={(_e, newValue) => {
+                                if (newValue?.isNew) {
+                                    setPaymentTermsDialogOpen(true);
+                                } else {
+                                    setPaymentTerms(newValue?.name || '');
+                                }
+                            }}
+                            ListboxProps={{
+                                sx: {
+                                    maxHeight: '300px',
+                                    '& .MuiAutocomplete-option': {
+                                        fontSize: '14px !important',
+                                    }
+                                }
+                            }}
+                            sx={{
+                                '& .MuiInputBase-input': {
+                                    fontSize: '14px !important',
+                                }
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Payment Terms"
+                                    required
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <Box
+                                    component="li"
+                                    {...props}
+                                    sx={{
+                                        ...(option.isNew && {
+                                            color: 'primary.main',
+                                            fontWeight: 600,
+                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                            py: '8px !important',
+                                            px: '16px !important',
+                                            mt: 0.5,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            '&:hover': {
+                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                            }
+                                        })
+                                    }}
+                                >
+                                    {option.isNew ? (
+                                        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ width: '100%' }}>
+                                            <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Create Payment Terms</Typography>
+                                        </Stack>
+                                    ) : (
+                                        option.payment_terms || option.name
+                                    )}
+                                </Box>
+                            )}
+                        />
 
                         <DatePicker
                             label="Due Date"
@@ -1126,6 +1277,32 @@ export function PurchaseCreateView() {
                         setTaxOptions((prev) => [...prev, newTax]);
                         if (activeRowIndex !== null) {
                             handleItemChange(activeRowIndex, 'tax_type', newTax.name);
+                        }
+                    }}
+                />
+                <PaymentTermsDialog
+                    open={paymentTermsDialogOpen}
+                    onClose={() => setPaymentTermsDialogOpen(false)}
+                    onSuccess={async () => {
+                        const opts = await fetchPaymentTermsOptions();
+                        if (opts && opts.length > 0) {
+                            const newest = [...opts].sort((a, b) => (b.creation || '').localeCompare(a.creation || ''))[0];
+                            if (newest) {
+                                setPaymentTerms(newest.name);
+                            }
+                        }
+                    }}
+                />
+                <PaymentTypeDialog
+                    open={paymentTypeDialogOpen}
+                    onClose={() => setPaymentTypeDialogOpen(false)}
+                    onSuccess={async () => {
+                        const opts = await fetchPaymentTypeOptions();
+                        if (opts && opts.length > 0) {
+                            const newest = [...opts].sort((a, b) => (b.creation || '').localeCompare(a.creation || ''))[0];
+                            if (newest) {
+                                setPaymentType(newest.name);
+                            }
                         }
                     }}
                 />

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { fetchDepartments, fetchProjects, fetchActivityTypes, fetchBankAccounts, fetchClaimTypes, fetchAssetCategories, fetchEvaluationTraitCategories, fetchDesignations, fetchSalaryStructureComponents, fetchLeaveTypes } from 'src/api/masters';
+import { fetchDepartments, fetchProjects, fetchActivityTypes, fetchBankAccounts, fetchClaimTypes, fetchAssetCategories, fetchEvaluationTraitCategories, fetchDesignations, fetchSalaryStructureComponents, fetchLeaveTypes, fetchLeadFroms, fetchServices, fetchItems, fetchPaymentTerms, fetchPaymentTypesCustom } from 'src/api/masters';
 
 export function useDepartments(
   page: number = 1,
@@ -422,3 +422,204 @@ export function useLeaveTypes(
 
   return { data, total, loading, error, refetch };
 }
+
+export function useLeadFroms(
+  page: number = 1,
+  pageSize: number = 10,
+  search: string = '',
+  orderBy: string = 'modified',
+  order: 'asc' | 'desc' = 'desc'
+) {
+  const [data, setData] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(async (overrides?: any) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchLeadFroms({
+        page: overrides?.page ?? page,
+        page_size: overrides?.pageSize ?? pageSize,
+        search: overrides?.search ?? search,
+        orderBy: overrides?.orderBy ?? orderBy,
+        order: overrides?.order ?? order
+      });
+      setData(result.data || []);
+      setTotal(result.total || 0);
+    } catch (err: any) {
+      console.error('Failed to fetch lead sources:', err);
+      setError(err.message || 'Failed to fetch lead sources');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, search, orderBy, order]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  return { data, total, loading, error, refetch };
+}
+
+export function useServices(
+  page: number = 1,
+  pageSize: number = 10,
+  search: string = '',
+  orderBy: string = 'modified',
+  order: 'asc' | 'desc' = 'desc'
+) {
+  const [data, setData] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(async (overrides?: any) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchServices({
+        page: overrides?.page ?? page,
+        page_size: overrides?.pageSize ?? pageSize,
+        search: overrides?.search ?? search,
+        orderBy: overrides?.orderBy ?? orderBy,
+        order: overrides?.order ?? order
+      });
+      setData(result.data || []);
+      setTotal(result.total || 0);
+    } catch (err: any) {
+      console.error('Failed to fetch services:', err);
+      setError(err.message || 'Failed to fetch services');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, search, orderBy, order]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  return { data, total, loading, error, refetch };
+}
+
+export function useItems(
+  page: number = 1,
+  pageSize: number = 10,
+  search: string = '',
+  orderBy: string = 'modified',
+  order: 'asc' | 'desc' = 'desc'
+) {
+  const [data, setData] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(async (overrides?: any) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchItems({
+        page: overrides?.page ?? page,
+        page_size: overrides?.pageSize ?? pageSize,
+        search: overrides?.search ?? search,
+        orderBy: overrides?.orderBy ?? orderBy,
+        order: overrides?.order ?? order
+      });
+      setData(result.data || []);
+      setTotal(result.total || 0);
+    } catch (err: any) {
+      console.error('Failed to fetch items:', err);
+      setError(err.message || 'Failed to fetch items');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, search, orderBy, order]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  return { data, total, loading, error, refetch };
+}
+
+export function usePaymentTerms(
+  page: number = 1,
+  pageSize: number = 10,
+  search: string = '',
+  orderBy: string = 'modified',
+  order: 'asc' | 'desc' = 'desc'
+) {
+  const [data, setData] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(async (overrides?: any) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchPaymentTerms({
+        page: overrides?.page ?? page,
+        page_size: overrides?.pageSize ?? pageSize,
+        search: overrides?.search ?? search,
+        orderBy: overrides?.orderBy ?? orderBy,
+        order: overrides?.order ?? order
+      });
+      setData(result.data || []);
+      setTotal(result.total || 0);
+    } catch (err: any) {
+      console.error('Failed to fetch payment terms:', err);
+      setError(err.message || 'Failed to fetch payment terms');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, search, orderBy, order]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  return { data, total, loading, error, refetch };
+}
+
+export function usePaymentTypes(
+  page: number = 1,
+  pageSize: number = 10,
+  search: string = '',
+  orderBy: string = 'modified',
+  order: 'asc' | 'desc' = 'desc'
+) {
+  const [data, setData] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(async (overrides?: any) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchPaymentTypesCustom({
+        page: overrides?.page ?? page,
+        page_size: overrides?.pageSize ?? pageSize,
+        search: overrides?.search ?? search,
+        orderBy: overrides?.orderBy ?? orderBy,
+        order: overrides?.order ?? order
+      });
+      setData(result.data || []);
+      setTotal(result.total || 0);
+    } catch (err: any) {
+      console.error('Failed to fetch payment types:', err);
+      setError(err.message || 'Failed to fetch payment types');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, search, orderBy, order]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  return { data, total, loading, error, refetch };
+}
+

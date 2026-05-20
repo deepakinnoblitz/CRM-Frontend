@@ -430,6 +430,18 @@ export const crmAndSalesNavData = [
     icon: <BsCalendar4Range size={18} />
 ,
   },
+    {
+    title: 'Masters',
+    path: '',
+    icon: <IoMdFolderOpen size={22} />,
+    children: [
+      { title: 'Lead From', path: '/master/lead-from' },
+      { title: 'Service', path: '/master/service' },
+      { title: 'Item', path: '/master/item' },
+      { title: 'Payment Terms', path: '/master/payment-terms' },
+      { title: 'Payment Type', path: '/master/payment-type' },
+    ],
+  },
   {
     title: 'Reports',
     path: '/reports',

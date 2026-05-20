@@ -57,6 +57,13 @@ export function PersonalityManagement() {
     const displayTraits = stats?.traits ?? [];
     const totalScore = stats?.totalScore ?? 100;
 
+    const improvementsList = Array.isArray(stats?.howToImprove)
+        ? stats.howToImprove.filter(Boolean)
+        : stats?.howToImprove
+            ? [stats.howToImprove]
+            : [];
+    const hasImprovements = improvementsList.length > 0;
+
     return (
         <Card
             sx={{
@@ -101,13 +108,13 @@ export function PersonalityManagement() {
                                 <Box sx={{ display: 'inline-block' }}>
                                     <Tooltip
                                         title={
-                                            Array.isArray(stats?.howToImprove) && stats.howToImprove.length > 0 ? (
+                                            hasImprovements ? (
                                                 <Box sx={{ p: 0.5 }}>
                                                     <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 800, color: '#0e7490', borderBottom: '1px solid rgba(6, 182, 212, 0.3)', pb: 1, fontSize: '0.95rem' }}>
                                                         Recommended Improvements
                                                     </Typography>
                                                     <Stack spacing={2}>
-                                                        {stats.howToImprove.map((item, i) => {
+                                                        {improvementsList.map((item, i) => {
                                                             const [advice, details] = item.split(' - ');
                                                             return (
                                                                 <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
@@ -128,7 +135,17 @@ export function PersonalityManagement() {
                                                     </Stack>
                                                 </Box>
                                             ) : (
-                                                stats?.howToImprove || "Improve your evaluation score by focusing on attendance, punctuality, and meeting performance targets. Consistency is key!"
+                                                <Box sx={{ p: 0.5 }}>
+                                                    <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 800, color: '#166534', borderBottom: '1px solid rgba(34, 197, 94, 0.3)', pb: 1, fontSize: '0.95rem' }}>
+                                                        Recommended Improvements
+                                                    </Typography>
+                                                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                                        <Iconify icon={"eva:checkmark-circle-2-fill" as any} width={18} sx={{ color: '#22c55e', mt: 0.2 }} />
+                                                        <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: '#15803d', lineHeight: 1.4, textAlign: 'left' }}>
+                                                            No improvement suggestions at the moment. Keep up the excellent performance!
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
                                             )
                                         }
                                         arrow
@@ -141,8 +158,10 @@ export function PersonalityManagement() {
                                         slotProps={{
                                             tooltip: {
                                                 sx: {
-                                                    background: 'linear-gradient(135deg, #f0f9ff 0%, #ecfeff 50%, #f0fdf4 100%)',
-                                                    color: '#117eb2',
+                                                    background: hasImprovements
+                                                        ? 'linear-gradient(135deg, #f0f9ff 0%, #ecfeff 50%, #f0fdf4 100%)'
+                                                        : 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                                                    color: hasImprovements ? '#117eb2' : '#15803d',
                                                     fontSize: '0.875rem',
                                                     padding: '16px 24px',
                                                     borderRadius: '16px',
@@ -151,13 +170,13 @@ export function PersonalityManagement() {
                                                     fontWeight: 700,
                                                     lineHeight: 1.6,
                                                     textAlign: 'left',
-                                                    border: '1px solid #06b6d4',
+                                                    border: hasImprovements ? '1px solid #06b6d4' : '1px solid #22c55e',
                                                     backdropFilter: 'blur(10px)',
                                                 },
                                             },
                                             arrow: {
                                                 sx: {
-                                                    color: '#f0f9ff',
+                                                    color: hasImprovements ? '#f0f9ff' : '#f0fdf4',
                                                 },
                                             },
                                         }}

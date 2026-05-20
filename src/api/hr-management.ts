@@ -43,7 +43,8 @@ export async function fetchFrappeList(doctype: string, params: {
         or_filters: params.or_filters ? JSON.stringify(params.or_filters) : "[]",
         limit_start: String((params.page - 1) * params.page_size),
         limit_page_length: String(params.page_size),
-        order_by: orderByParam
+        order_by: orderByParam,
+        _: String(Date.now())
     });
 
     const fullUrl = `/api/method/frappe.client.get_list?${query.toString()}`;

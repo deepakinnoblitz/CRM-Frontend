@@ -799,6 +799,200 @@ export async function updateLeaveType(name: string, data: Partial<LeaveType>) {
     return json.message;
 }
 
+export interface LeadFrom {
+    name: string;
+    lead_from: string;
+    creation?: string;
+    modified?: string;
+}
+
+// Lead From APIs
+export const fetchLeadFroms = (params: any) => {
+    const { search, ...restParams } = params;
+
+    const or_filters = search ? [
+        ["Lead From", "lead_from", "like", `%${search}%`],
+        ["Lead From", "name", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("Lead From", {
+        ...restParams,
+        search: undefined,
+        or_filters,
+        fields: ["name", "lead_from", "modified", "creation"]
+    });
+};
+
+export async function createLeadFrom(data: Partial<LeadFrom>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "Lead From", ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create lead source"));
+    return json.message;
+}
+
+export async function updateLeadFrom(name: string, data: Partial<LeadFrom>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/Lead From/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update lead source"));
+    return json.data || json.message;
+}
+
+export async function renameLeadFrom(oldName: string, newName: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.rename_doc", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype: "Lead From",
+            old_name: oldName,
+            new_name: newName,
+            merge: false
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to rename lead from"));
+
+    // Touch the renamed document using frappe.client.set_value to update `modified` timestamp
+    try {
+        const touchRes = await frappeRequest("/api/method/frappe.client.set_value", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                doctype: "Lead From",
+                name: newName,
+                fieldname: { lead_from: newName }
+            })
+        });
+        if (!touchRes.ok) {
+            console.error("Failed to touch Lead From after rename");
+        }
+    } catch (touchErr) {
+        console.error("Error touching Lead From after rename:", touchErr);
+    }
+
+    return json.message;
+}
+
+export async function deleteLeadFrom(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Lead From", name })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete lead source"));
+    return true;
+}
+
+export interface Service {
+    name: string;
+    service_id: string;
+    service_name: string;
+    creation?: string;
+    modified?: string;
+}
+
+// Service APIs
+export const fetchServices = (params: any) => {
+    const { search, ...restParams } = params;
+
+    const or_filters = search ? [
+        ["Service", "service_name", "like", `%${search}%`],
+        ["Service", "service_id", "like", `%${search}%`],
+        ["Service", "name", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("Service", {
+        ...restParams,
+        search: undefined,
+        or_filters,
+        fields: ["name", "service_name", "service_id", "modified", "creation"]
+    });
+};
+
+export async function createService(data: Partial<Service>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "Service", ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create service"));
+    return json.message;
+}
+
+export async function updateService(name: string, data: Partial<Service>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/Service/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update service"));
+    return json.data || json.message;
+}
+
+export async function renameService(oldName: string, newName: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.rename_doc", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype: "Service",
+            old_name: oldName,
+            new_name: newName,
+            merge: false
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to rename service"));
+
+    // Touch the renamed document using frappe.client.set_value to update `modified` timestamp
+    try {
+        const touchRes = await frappeRequest("/api/method/frappe.client.set_value", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                doctype: "Service",
+                name: newName,
+                fieldname: { service_name: newName }
+            })
+        });
+        if (!touchRes.ok) {
+            console.error("Failed to touch Service after rename");
+        }
+    } catch (touchErr) {
+        console.error("Error touching Service after rename:", touchErr);
+    }
+
+    return json.message;
+}
+
+export async function deleteService(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Service", name })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete service"));
+    return true;
+}
+
 export async function deleteLeaveType(name: string) {
     const headers = await getAuthHeaders();
     const res = await frappeRequest("/api/method/frappe.client.delete", {
@@ -833,3 +1027,272 @@ export async function getLeaveType(name: string) {
     if (!res.ok) throw new Error("Failed to fetch leave type details");
     return (await res.json()).message;
 }
+
+export interface Item {
+    name: string;
+    item_code: string; // HSN Code
+    item_name: string;
+    rate: number;
+    creation?: string;
+    modified?: string;
+}
+
+// Item APIs
+export const fetchItems = async (params: any) => {
+    const { search, ...restParams } = params;
+
+    const or_filters = search ? [
+        ["Item", "item_name", "like", `%${search}%`],
+        ["Item", "item_code", "like", `%${search}%`],
+    ] : undefined;
+
+    let orderByParam = "modified desc";
+    if (params.orderBy) {
+        if (params.order) {
+            orderByParam = `${params.orderBy} ${params.order}`;
+        } else {
+            orderByParam = `${params.orderBy} desc`;
+        }
+    }
+
+    const query = new URLSearchParams({
+        fields: JSON.stringify(["name", "item_code", "item_name", "rate", "modified", "creation"]),
+        filters: JSON.stringify([]),
+        or_filters: or_filters ? JSON.stringify(or_filters) : "[]",
+        limit_start: String((params.page - 1) * params.page_size),
+        limit_page_length: String(params.page_size),
+        order_by: orderByParam,
+        _: String(Date.now())
+    });
+
+    const [res, countRes] = await Promise.all([
+        frappeRequest(`/api/resource/Item?${query.toString()}`),
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Item&filters=${encodeURIComponent(JSON.stringify([]))}&or_filters=${or_filters ? encodeURIComponent(JSON.stringify(or_filters)) : "[]"}`)
+    ]);
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to fetch items"));
+    }
+
+    const data = await res.json();
+    const countData = await countRes.json();
+
+    return {
+        data: data.data || [],
+        total: countData.message || 0
+    };
+};
+
+export async function createItem(data: Partial<Item>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/resource/Item", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create item"));
+    return json.data || json.message;
+}
+
+export async function updateItem(name: string, data: Partial<Item>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/Item/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update item"));
+    return json.data || json.message;
+}
+
+export async function deleteItem(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/Item/${encodeURIComponent(name)}`, {
+        method: "DELETE",
+        headers
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete item"));
+    return true;
+}
+
+export interface PaymentTerm {
+    name: string;
+    payment_terms: string;
+    creation?: string;
+    modified?: string;
+}
+
+// Payment Terms APIs
+export const fetchPaymentTerms = async (params: any) => {
+    const { search } = params;
+
+    const or_filters = search ? [
+        ["Payment Terms", "payment_terms", "like", `%${search}%`],
+    ] : undefined;
+
+    let orderByParam = "modified desc";
+    if (params.orderBy) {
+        if (params.order) {
+            orderByParam = `${params.orderBy} ${params.order}`;
+        } else {
+            orderByParam = `${params.orderBy} desc`;
+        }
+    }
+
+    const query = new URLSearchParams({
+        fields: JSON.stringify(["name", "payment_terms", "modified", "creation"]),
+        filters: JSON.stringify([]),
+        or_filters: or_filters ? JSON.stringify(or_filters) : "[]",
+        limit_start: String((params.page - 1) * params.page_size),
+        limit_page_length: String(params.page_size),
+        order_by: orderByParam,
+        _: String(Date.now())
+    });
+
+    const [res, countRes] = await Promise.all([
+        frappeRequest(`/api/resource/Payment Terms?${query.toString()}`),
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Payment Terms&filters=${encodeURIComponent(JSON.stringify([]))}&or_filters=${or_filters ? encodeURIComponent(JSON.stringify(or_filters)) : "[]"}`)
+    ]);
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to fetch payment terms"));
+    }
+
+    const data = await res.json();
+    const countData = await countRes.json();
+
+    return {
+        data: data.data || [],
+        total: countData.message || 0
+    };
+};
+
+export async function createPaymentTerm(data: Partial<PaymentTerm>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/resource/Payment Terms", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create payment term"));
+    return json.data || json.message;
+}
+
+export async function updatePaymentTerm(name: string, data: Partial<PaymentTerm>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/Payment Terms/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update payment term"));
+    return json.data || json.message;
+}
+
+export async function deletePaymentTerm(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/Payment Terms/${encodeURIComponent(name)}`, {
+        method: "DELETE",
+        headers
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete payment term"));
+    return true;
+}
+
+export interface PaymentType {
+    name: string;
+    payment_type: string;
+    creation?: string;
+    modified?: string;
+}
+
+// Payment Type APIs
+export const fetchPaymentTypesCustom = async (params: any) => {
+    const { search } = params;
+
+    const or_filters = search ? [
+        ["Payment Type", "payment_type", "like", `%${search}%`],
+    ] : undefined;
+
+    let orderByParam = "modified desc";
+    if (params.orderBy) {
+        if (params.order) {
+            orderByParam = `${params.orderBy} ${params.order}`;
+        } else {
+            orderByParam = `${params.orderBy} desc`;
+        }
+    }
+
+    const query = new URLSearchParams({
+        fields: JSON.stringify(["name", "payment_type", "modified", "creation"]),
+        filters: JSON.stringify([]),
+        or_filters: or_filters ? JSON.stringify(or_filters) : "[]",
+        limit_start: String((params.page - 1) * params.page_size),
+        limit_page_length: String(params.page_size),
+        order_by: orderByParam,
+        _: String(Date.now())
+    });
+
+    const [res, countRes] = await Promise.all([
+        frappeRequest(`/api/resource/Payment Type?${query.toString()}`),
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Payment Type&filters=${encodeURIComponent(JSON.stringify([]))}&or_filters=${or_filters ? encodeURIComponent(JSON.stringify(or_filters)) : "[]"}`)
+    ]);
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to fetch payment types"));
+    }
+
+    const data = await res.json();
+    const countData = await countRes.json();
+
+    return {
+        data: data.data || [],
+        total: countData.message || 0
+    };
+};
+
+export async function createPaymentTypeCustom(data: Partial<PaymentType>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/resource/Payment Type", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create payment type"));
+    return json.data || json.message;
+}
+
+export async function updatePaymentTypeCustom(name: string, data: Partial<PaymentType>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/Payment Type/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update payment type"));
+    return json.data || json.message;
+}
+
+export async function deletePaymentTypeCustom(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/Payment Type/${encodeURIComponent(name)}`, {
+        method: "DELETE",
+        headers
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete payment type"));
+    return true;
+}
+
+
