@@ -1,8 +1,10 @@
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
+import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
 import { fDate } from 'src/utils/format-time';
@@ -15,7 +17,9 @@ import { Iconify } from 'src/components/iconify';
 export type InvoiceProps = {
     id: string;
     ref_no: string;
+    client_name: string;
     customer_name: string;
+    billing_name?: string;
     invoice_date: string;
     grand_total: number;
     received_amount: number;
@@ -101,7 +105,18 @@ export function InvoiceTableRow({
                 {row.ref_no}
             </TableCell>
 
-            <TableCell align="left" sx={{ fontWeight: 400 }}>{row.customer_name}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 600, maxWidth: 240 }}>{ row.billing_name }</TableCell>
+            
+            <TableCell align="left" sx={{ maxWidth: 240 }}>
+                <Stack spacing={0.5}>
+                    <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                        { row.customer_name || row.client_name}
+                    </Typography>
+                    <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                        {row.client_name}
+                    </Typography>
+                </Stack>
+            </TableCell>
 
             <TableCell align="left" sx={{ fontWeight: 400 }}>{fDate(row.invoice_date)}</TableCell>
 
@@ -113,6 +128,15 @@ export function InvoiceTableRow({
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <IconButton onClick={onPrint} sx={{ color: 'warning.main' }}>
+                        <Iconify icon={"solar:printer-bold" as any} />
+                    </IconButton>
+                    <IconButton onClick={onPreview} sx={{ color: 'secondary.main' }}>
+                        <Iconify icon={"solar:file-text-bold" as any} />
+                    </IconButton>
+                    <IconButton onClick={onView} sx={{ color: 'info.main' }}>
+                        <Iconify icon={"solar:eye-bold" as any} />
+                    </IconButton>
                     {canEdit && row.received_amount === 0 && (
                         <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
                             <Iconify icon="solar:pen-bold" />
@@ -123,15 +147,6 @@ export function InvoiceTableRow({
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>
                     )}
-                    <IconButton onClick={onPrint} sx={{ color: 'warning.main' }}>
-                        <Iconify icon={"solar:printer-bold" as any} />
-                    </IconButton>
-                    <IconButton onClick={onPreview} sx={{ color: 'secondary.main' }}>
-                        <Iconify icon={"solar:file-text-bold" as any} />
-                    </IconButton>
-                    <IconButton onClick={onView} sx={{ color: 'info.main' }}>
-                        <Iconify icon={"solar:eye-bold" as any} />
-                    </IconButton>
                 </Box>
             </TableCell>
         </TableRow>

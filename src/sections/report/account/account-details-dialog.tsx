@@ -50,15 +50,15 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
     }, [open, accountId]);
 
     const TABS = [
-        { value: 'contacts', label: 'Contacts', icon: <HiOutlineUsers size={18} /> },
-        { value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> },
+        { value: 'contacts', label: 'Client', icon: <HiOutlineUsers size={18} /> },
+        { value: 'deals', label: 'Prospects', icon: <HiOutlineCircleStack size={18} /> },
         { value: 'estimations', label: 'Estimations', icon: <HiOutlineClipboardDocumentCheck size={18} /> },
+        { value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> },
         { value: 'purchases', label: 'Purchases', icon: <HiOutlineShoppingBag size={18} /> },
-        { value: 'deals', label: 'Deals', icon: <HiOutlineCircleStack size={18} /> },
     ];
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth={false} PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, width: '1350px',  maxWidth: '1350px' } }}>
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Company Details</Typography>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>

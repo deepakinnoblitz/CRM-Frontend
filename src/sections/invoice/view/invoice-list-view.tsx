@@ -42,7 +42,8 @@ import { InvoiceTableFiltersDrawer } from '../invoice-table-filters-drawer';
 
 const TABLE_HEAD = [
     { id: 'ref_no', label: 'Ref No' },
-    { id: 'customer_name', label: 'Customer' },
+    { id: 'billing_name', label: 'Billing Name' },
+    { id: 'customer_name', label: 'Client' },
     { id: 'invoice_date', label: 'Date' },
     { id: 'grand_total', label: 'Amount', align: 'right' },
     { id: 'received_amount', label: 'Received', align: 'right' },
@@ -110,7 +111,7 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
         table.onResetPage();
     };
 
-    const canReset = filters.client_name !== 'all' || !!filters.ref_no || !!filters.invoice_date;
+    const canReset = filters.client_name !== 'all' || !!filters.ref_no || !!filters.invoice_date || !!filterName;
 
     const handleFilterName = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -239,7 +240,9 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
                                         row={{
                                             id: row.name,
                                             ref_no: row.ref_no,
+                                            client_name: row.client_name || '',
                                             customer_name: row.customer_name || '',
+                                            billing_name: row.billing_name || '',
                                             invoice_date: row.invoice_date,
                                             grand_total: row.grand_total || 0,
                                             received_amount: row.received_amount || 0,
@@ -255,16 +258,11 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
                                     />
                                 ))}
 
-                                    <TableEmptyRows
-                                        height={77}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
+                                {notFound && <TableNoData colSpan={10} searchQuery={filterName} />}
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
+                                        <TableCell colSpan={10}>
                                             <EmptyContent
                                                 title="No invoices found"
                                                 description="Create a new invoice to track your sales pipeline."
@@ -272,6 +270,13 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
                                             />
                                         </TableCell>
                                     </TableRow>
+                                )}
+
+                                {!empty && !notFound && (
+                                    <TableEmptyRows
+                                        height={68}
+                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                    />
                                 )}
                             </TableBody>
                         </Table>

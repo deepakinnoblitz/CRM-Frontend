@@ -85,7 +85,7 @@ export function ExpenseListView() {
         table.onResetPage();
     };
 
-    const canReset = !!filters.expense_id || filters.expense_category !== 'all' || filters.payment_type !== 'all' || !!filters.start_date || !!filters.end_date;
+    const canReset = !!filters.expense_id || filters.expense_category !== 'all' || filters.payment_type !== 'all' || !!filters.start_date || !!filters.end_date || !!filterName;
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',

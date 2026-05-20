@@ -49,7 +49,7 @@ export default function App({ children }: AppProps) {
                         borderRadius: 1.5,
                         minWidth: 300,
                         boxShadow: (theme) => theme.customShadows.z8,
-                        '& .MuiAlert-action': { padding: '0 8px' },
+                        '& .MuiAlert-action': { padding: '0 8px', display: 'flex', alignItems: 'center' },
                       }}
                     >
                       {props.message}
@@ -67,7 +67,7 @@ export default function App({ children }: AppProps) {
                         borderRadius: 1.5,
                         minWidth: 300,
                         boxShadow: (theme) => theme.customShadows.z8,
-                        '& .MuiAlert-action': { padding: '0 8px' },
+                        '& .MuiAlert-action': { padding: '0 8px', display: 'flex', alignItems: 'center' },
                       }}
                     >
                       {props.message}
@@ -85,7 +85,7 @@ export default function App({ children }: AppProps) {
                         borderRadius: 1.5,
                         minWidth: 300,
                         boxShadow: (theme) => theme.customShadows.z8,
-                        '& .MuiAlert-action': { padding: '0 8px' },
+                        '& .MuiAlert-action': { padding: '0 8px', display: 'flex', alignItems: 'center' },
                       }}
                     >
                       {props.message}
@@ -103,7 +103,7 @@ export default function App({ children }: AppProps) {
                         borderRadius: 1.5,
                         minWidth: 300,
                         boxShadow: (theme) => theme.customShadows.z8,
-                        '& .MuiAlert-action': { padding: '0 8px' },
+                        '& .MuiAlert-action': { padding: '0 8px', display: 'flex', alignItems: 'center' },
                       }}
                     >
                       {props.message}

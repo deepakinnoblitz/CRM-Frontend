@@ -158,7 +158,7 @@ export function DealTableRow({
             </TableCell>
 
             <TableCell>
-                <Typography variant="subtitle2" sx={{ fontSize: '14px' }}>
+                <Typography variant="subtitle2" sx={{ fontSize: '14px', maxWidth: 320 }}>
                     {row.accountName || row.account}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
@@ -167,8 +167,8 @@ export function DealTableRow({
             </TableCell>
 
             <TableCell>
-                <Typography variant="subtitle2" sx={{ fontSize: '14px' }}>
-                    {row.contactName || row.contact}
+                <Typography variant="subtitle2" sx={{ fontSize: '14px', maxWidth: 240 }}>
+                    {row.contactName || row.contact || '-'}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
                     {row.contact}
@@ -179,7 +179,7 @@ export function DealTableRow({
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                     <IconButton
+                    <IconButton
                         onClick={onView}
                         sx={{
                             color: 'info.main',
@@ -189,7 +189,7 @@ export function DealTableRow({
                     </IconButton>
                     <StyledTooltip title="Create Estimation" placement="top" arrow>
                         <IconButton
-                            onClick={() => navigate(`/estimations/new?deal_id=${encodeURIComponent(row.id)}&client_id=${encodeURIComponent(row.contact)}`)}
+                            onClick={() => navigate(`/estimations/new?deal_id=${encodeURIComponent(row.id)}`)}
                             sx={{
                                 color: 'secondary.main',
                                 transition: (theme) => theme.transitions.create(['transform'], { duration: theme.transitions.duration.shorter }),

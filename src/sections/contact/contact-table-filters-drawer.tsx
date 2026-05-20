@@ -3,6 +3,7 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -107,14 +108,24 @@ export function ContactTableFiltersDrawer({
     const renderContactType = (
         <Stack spacing={1.5}>
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Contact Type
+                Client Type
             </Typography>
             <TextField
                 select
                 fullWidth
                 value={filters.customer_type}
                 onChange={(e) => handleFilterChange('customer_type', e.target.value)}
-                SelectProps={{ native: true }}
+                SelectProps={{
+                    MenuProps: {
+                        PaperProps: {
+                            sx: {
+                                maxHeight: 280,
+                                borderRadius: 1.5,
+                                boxShadow: (theme) => theme.customShadows?.z20 || theme.shadows[10],
+                            },
+                        },
+                    },
+                }}
                 size="small"
                 sx={{
                     '& .MuiOutlinedInput-root': {
@@ -126,9 +137,9 @@ export function ContactTableFiltersDrawer({
                     },
                 }}
             >
-                <option value="all">All Types</option>
-                <option value="Sales">Sales</option>
-                <option value="Purchase">Purchase</option>
+                <MenuItem value="all">All Types</MenuItem>
+                <MenuItem value="Sales">Sales</MenuItem>
+                <MenuItem value="Purchase">Purchase</MenuItem>
             </TextField>
         </Stack>
     );
@@ -168,9 +179,14 @@ export function ContactTableFiltersDrawer({
                 )}
                 renderOption={(props, option) => (
                     <li {...props} key={option.name}>
-                        <Typography variant="body2" sx={{ fontSize: '13px' }}>
-                            {option.lead_name} ({option.name})
-                        </Typography>
+                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                {option.lead_name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                ID: {option.name}
+                            </Typography>
+                        </Stack>
                     </li>
                 )}
             />
@@ -182,30 +198,29 @@ export function ContactTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Country
             </Typography>
-            <TextField
-                select
+            <Autocomplete
                 fullWidth
-                value={filters.country}
-                onChange={(e) => handleFilterChange('country', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">All Countries</option>
-                {options.countries.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
+                options={['all', ...options.countries]}
+                getOptionLabel={(option) => (option === 'all' ? 'All Countries' : option)}
+                value={filters.country || 'all'}
+                onChange={(e, newValue) => handleFilterChange('country', newValue || 'all')}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Select Country"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+            />
         </Stack>
     );
 
@@ -214,33 +229,35 @@ export function ContactTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 State
             </Typography>
-            <TextField
-                select
+            <Autocomplete
                 fullWidth
-                value={filters.state}
-                onChange={(e) => handleFilterChange('state', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
                 disabled={!filters.country || filters.country === 'all'}
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
+                options={['all', ...options.states]}
+                getOptionLabel={(option) => {
+                    if (option === 'all') {
+                        return !filters.country || filters.country === 'all' ? 'Select Country First' : 'All States';
+                    }
+                    return option;
                 }}
-            >
-                <option value="all">
-                    {!filters.country || filters.country === 'all' ? 'Select Country First' : 'All States'}
-                </option>
-                {options.states.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
+                value={filters.state || 'all'}
+                onChange={(e, newValue) => handleFilterChange('state', newValue || 'all')}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Select State"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+            />
         </Stack>
     );
 
@@ -249,33 +266,35 @@ export function ContactTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 City
             </Typography>
-            <TextField
-                select
+            <Autocomplete
                 fullWidth
-                value={filters.city}
-                onChange={(e) => handleFilterChange('city', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
                 disabled={!filters.state || filters.state === 'all'}
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
+                options={['all', ...options.cities]}
+                getOptionLabel={(option) => {
+                    if (option === 'all') {
+                        return !filters.state || filters.state === 'all' ? 'Select State First' : 'All Cities';
+                    }
+                    return option;
                 }}
-            >
-                <option value="all">
-                    {!filters.state || filters.state === 'all' ? 'Select State First' : 'All Cities'}
-                </option>
-                {options.cities.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
+                value={filters.city || 'all'}
+                onChange={(e, newValue) => handleFilterChange('city', newValue || 'all')}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Select City"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+            />
         </Stack>
     );
 

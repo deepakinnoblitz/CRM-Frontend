@@ -28,7 +28,7 @@ import { handleDirectPrint } from 'src/utils/print';
 import { fCurrency } from 'src/utils/format-number';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getPurchase, deletePurchase, getPurchasePrintUrl } from 'src/api/purchase';
+import { getPurchase, deletePurchase, getPurchasePrintUrl, getDoctypeList } from 'src/api/purchase';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -40,6 +40,7 @@ export function PurchaseDetailsView() {
     const router = useRouter();
 
     const [purchase, setPurchase] = useState<any>(null);
+    const [contactDetails, setContactDetails] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [printing, setPrinting] = useState(false);
@@ -53,6 +54,18 @@ export function PurchaseDetailsView() {
                 .finally(() => setFetching(false));
         }
     }, [id]);
+
+    useEffect(() => {
+        if (purchase?.vendor_id || purchase?.vendor || purchase?.vendor_name) {
+            const vid = purchase.vendor_id || purchase.vendor || purchase.vendor_name;
+            getDoctypeList('Contacts', ['name', 'first_name', 'company_name'])
+                .then((contacts) => {
+                    const found = contacts.find((c: any) => c.name === vid);
+                    if (found) setContactDetails(found);
+                })
+                .catch(err => console.error('Failed to fetch contact details', err));
+        }
+    }, [purchase]);
 
     if (fetching) {
         return (
@@ -74,6 +87,8 @@ export function PurchaseDetailsView() {
     }
 
     const {
+        vendor_id,
+        vendor,
         vendor_name,
         bill_date,
         bill_no,
@@ -108,6 +123,14 @@ export function PurchaseDetailsView() {
     const totalTax = table_qecz.reduce((sum: number, item: any) => sum + (item.tax_amount || 0), 0);
     const subTotal = total_amount + totalTax;
     const discountAmount = overall_discount_type === 'Flat' ? overall_discount : (subTotal * overall_discount) / 100;
+
+    const parts = (vendor_name || '').split(' - ');
+    const fallbackCompanyName = parts.length > 1 ? parts[1] : parts[0];
+    const fallbackContactName = parts.length > 1 ? parts[0] : '';
+
+    const companyName = contactDetails?.company_name || fallbackCompanyName;
+    const contactName = contactDetails?.first_name || fallbackContactName;
+    const displayId = vendor_id || vendor || contactDetails?.name || fallbackCompanyName;
 
 
     const handleDelete = async () => {
@@ -197,8 +220,19 @@ export function PurchaseDetailsView() {
                                 <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Vendor Details</Typography>
                             </Stack>
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                                <Typography variant="subtitle1" color="primary.main">{vendor_name}</Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{payment_type} | {payment_terms}</Typography>
+                                <Stack spacing={0.5}>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                        {companyName || '-'}
+                                    </Typography>
+                                    {contactName && (
+                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                            {contactName}
+                                        </Typography>
+                                    )}
+                                    <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600, pt: 0.5 }}>
+                                        ID: {displayId}
+                                    </Typography>
+                                </Stack>
                             </Box>
                         </Stack>
 
@@ -220,6 +254,14 @@ export function PurchaseDetailsView() {
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                                     <Typography variant="caption" color="text.disabled">Due Date</Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold', color: 'error.main' }}>{due_date || '-'}</Typography>
+                                </Stack>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="caption" color="text.disabled">Payment Type</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{payment_type || '-'}</Typography>
+                                </Stack>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="caption" color="text.disabled">Payment Terms</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{payment_terms || '-'}</Typography>
                                 </Stack>
                             </Stack>
                         </Stack>

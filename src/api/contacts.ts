@@ -4,7 +4,7 @@ import { handleFrappeError } from 'src/utils/api-error-handler';
 export interface Contact {
     name: string;
     first_name: string;
-    company_name?: string;
+    company_name?: string | { name?: string; company_name: string; doctype?: string }[];
     email?: string;
     phone?: string;
     designation?: string;
@@ -35,8 +35,8 @@ export async function fetchContacts(params: {
         });
     }
 
-
     const or_filters: any[] = params.search ? [
+        ["Contacts", "name", "like", `%${params.search}%`],
         ["Contacts", "first_name", "like", `%${params.search}%`],
         ["Contacts", "email", "like", `%${params.search}%`],
         ["Contacts", "company_name", "like", `%${params.search}%`],
@@ -58,25 +58,6 @@ export async function fetchContacts(params: {
     }
 
     const query = new URLSearchParams({
-        doctype: "Contacts",
-        fields: JSON.stringify([
-            "name",
-            "first_name",
-            "company_name",
-            "email",
-            "phone",
-            "designation",
-            "source_lead",
-            "address",
-            "notes",
-            "country",
-            "state",
-            "city",
-            "customer_type",
-            "owner",
-            "creation",
-            "modified"
-        ]),
         filters: JSON.stringify(filters),
         or_filters: JSON.stringify(or_filters),
         limit_start: String((params.page - 1) * params.page_size),
@@ -85,7 +66,7 @@ export async function fetchContacts(params: {
     });
 
     const [res, countRes] = await Promise.all([
-        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/company.company.frontend_api.get_contact_list?${query.toString()}`),
         frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Contacts&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
@@ -169,7 +150,7 @@ export async function getContactPermissions() {
 }
 
 export async function getContact(name: string) {
-    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Contacts&name=${encodeURIComponent(name)}`);
+    const res = await frappeRequest(`/api/method/company.company.frontend_api.get_contact_detail?name=${encodeURIComponent(name)}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch contact details");

@@ -1,3 +1,4 @@
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
@@ -47,6 +48,8 @@ export function EstimationDetailsView() {
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
+    const { enqueueSnackbar } = useSnackbar();
+
     useEffect(() => {
         if (id) {
             getEstimation(id)
@@ -76,6 +79,8 @@ export function EstimationDetailsView() {
 
     const {
         client_name,
+        customer_name,
+        billing_name,
         deal,
         estimate_date,
         billing_address,
@@ -122,11 +127,16 @@ export function EstimationDetailsView() {
         if (!id) return;
         try {
             setConverting(true);
-            const invoiceName = await convertEstimationToInvoice(id);
-            router.push(`/invoices/${encodeURIComponent(invoiceName)}/view`, { converted: true });
-        } catch (error) {
+            const result = await convertEstimationToInvoice(id);
+            if (result.alreadyCreated) {
+                enqueueSnackbar(result.message || `Invoice ${result.invoiceName} already created for this estimation.`, { variant: 'info' });
+                router.push(`/invoices/${encodeURIComponent(result.invoiceName)}/view`);
+            } else {
+                router.push(`/invoices/${encodeURIComponent(result.invoiceName)}/view`, { converted: true });
+            }
+        } catch (error: any) {
             console.error('Failed to convert estimation:', error);
-            // You might want to add a snackbar here for error notification
+            enqueueSnackbar(error.message || 'Failed to convert estimation', { variant: 'error' });
         } finally {
             setConverting(false);
             setConfirmOpen(false);
@@ -243,11 +253,19 @@ export function EstimationDetailsView() {
                         <Stack spacing={1.5}>
                             <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#08a3cd' }}>
                                 <IoMdPerson size={20} />
-                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>Customer Details</Typography>
+                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>Client Details</Typography>
                             </Stack>
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                                <Typography variant="subtitle1" color="primary.main">{client_name}</Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>{billing_address || 'No address provided'}</Typography>
+                                <Typography variant="subtitle1" color="text.primary" sx={{ fontWeight: 700, fontSize: '16px' }}>
+                                    {billing_name || 'No Company Name'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+                                    {customer_name || 'No Contact Name'}
+                                </Typography>
+                                <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
+                                    ID: {client_name}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, whiteSpace: 'pre-wrap' }}>{billing_address || 'No address provided'}</Typography>
                             </Box>
                         </Stack>
 
@@ -481,8 +499,10 @@ export function EstimationDetailsView() {
                 onClose={() => !converting && setConfirmOpen(false)}
                 title="Confirm Conversion"
                 content="Are you sure you want to convert this estimation into an invoice? This will create a new invoice document."
+                icon="solar:transfer-horizontal-bold"
+                iconColor="#02c281"
                 action={
-                    <Button onClick={handleConvertToInvoice} color="warning" variant="contained" disabled={converting} sx={{ borderRadius: 1.5, minWidth: 100 }}>
+                    <Button onClick={handleConvertToInvoice} variant="contained" disabled={converting} sx={{ borderRadius: 1.5, minWidth: 100, bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#007850' } }}>
                         {converting ? 'Converting...' : 'Confirm'}
                     </Button>
                 }

@@ -1,5 +1,6 @@
 import { MuiTelInput } from 'mui-tel-input';
 import { useSearchParams } from 'react-router-dom';
+import { IoMdCloudDownload } from "react-icons/io";
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -14,6 +15,7 @@ import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
 import { IconButton } from '@mui/material';
 import Divider from '@mui/material/Divider';
+import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
@@ -23,11 +25,12 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
-import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 
 import { useLeads } from 'src/hooks/useLeads';
 
@@ -37,7 +40,7 @@ import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 import { CONFIG } from 'src/config-global';
 import { DashboardContent } from 'src/layouts/dashboard';
 import locationData from 'src/assets/data/location_data.json';
-import { getLead, createLead, updateLead, deleteLead, convertLead, getDoctypeList, getWorkflowStates, getWorkflowActions, applyWorkflowAction, type ConvertLeadResponse } from 'src/api/leads';
+import { getLead, createLead, updateLead, deleteLead, convertLead, getDoctypeList, getWorkflowStates, getWorkflowActions, applyWorkflowAction, createLeadFrom, createService, type ConvertLeadResponse } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -60,6 +63,7 @@ import { ContactDetailsDialog } from '../../report/contact/contact-details-dialo
 
 
 // ----------------------------------------------------------------------
+const filter = createFilterOptions<any>();
 
 export function LeadView() {
   const table = useTable();
@@ -140,6 +144,16 @@ export function LeadView() {
   const [converting, setConverting] = useState(false);
   const [convertResult, setConvertResult] = useState<ConvertLeadResponse | null>(null);
 
+  // Lead From Dialog State
+  const [createLeadFromOpen, setCreateLeadFromOpen] = useState(false);
+  const [newLeadFromName, setNewLeadFromName] = useState('');
+  const [creatingLeadFrom, setCreatingLeadFrom] = useState(false);
+
+  // Service Dialog State
+  const [createServiceOpen, setCreateServiceOpen] = useState(false);
+  const [newServiceName, setNewServiceName] = useState('');
+  const [creatingService, setCreatingService] = useState(false);
+
   // Alert & Dialog State
   const [openDelete, setOpenDelete] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -209,7 +223,8 @@ export function LeadView() {
     filters.service !== 'all' ||
     filters.country !== 'all' ||
     filters.state !== 'all' ||
-    filters.city !== 'all';
+    filters.city !== 'all' ||
+    !!filterName;
 
   useEffect(() => {
     // Fetch dropdown options on mount
@@ -378,6 +393,42 @@ export function LeadView() {
 
   // Validation State
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
+
+  const handleCreateServiceSubmit = async () => {
+    if (!newServiceName.trim()) return;
+    try {
+      setCreatingService(true);
+      await createService(newServiceName.trim());
+      setServiceOptions(prev => [...prev, newServiceName.trim()]);
+      setService(newServiceName.trim());
+      setCreateServiceOpen(false);
+      setSnackbar({ open: true, message: 'Service created successfully', severity: 'success' });
+    } catch (err: any) {
+      console.error(err);
+      const friendlyMsg = getFriendlyErrorMessage(err);
+      setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
+    } finally {
+      setCreatingService(false);
+    }
+  };
+
+  const handleCreateLeadFromSubmit = async () => {
+    if (!newLeadFromName.trim()) return;
+    try {
+      setCreatingLeadFrom(true);
+      await createLeadFrom(newLeadFromName.trim());
+      setLeadsFromOptions(prev => [...prev, newLeadFromName.trim()]);
+      setLeadsFrom(newLeadFromName.trim());
+      setCreateLeadFromOpen(false);
+      setSnackbar({ open: true, message: 'Lead From created successfully', severity: 'success' });
+    } catch (err: any) {
+      console.error(err);
+      const friendlyMsg = getFriendlyErrorMessage(err);
+      setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
+    } finally {
+      setCreatingLeadFrom(false);
+    }
+  };
 
   const handleCreate = async () => {
     // Validation
@@ -551,16 +602,16 @@ export function LeadView() {
   return (
     <>
       {/* CREATE LEAD DIALOG */}
-      <Dialog 
+      <Dialog
         open={openCreate}
-        onClose={handleCloseCreate} 
+        onClose={handleCloseCreate}
         fullWidth maxWidth="lg"
         PaperProps={{
           sx: {
-              borderRadius: 2,
-              boxShadow: (theme) => theme.customShadows.z24,
+            borderRadius: 2,
+            boxShadow: (theme) => theme.customShadows.z24,
           }
-      }}>
+        }}>
         <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
           {viewOnly ? 'Lead Details' : (currentLeadId ? 'Edit Lead' : 'New Lead')}
           <IconButton
@@ -609,6 +660,7 @@ export function LeadView() {
                 }}
                 required
                 error={!!validationErrors.leadName}
+                helperText={validationErrors.leadName ? 'Lead Name is required' : ''}
                 slotProps={{ input: { readOnly: viewOnly } }}
               />
 
@@ -622,6 +674,7 @@ export function LeadView() {
                 }}
                 required
                 error={!!validationErrors.companyName}
+                helperText={validationErrors.companyName ? 'Company Name is required' : ''}
                 slotProps={{ input: { readOnly: viewOnly } }}
               />
 
@@ -646,6 +699,7 @@ export function LeadView() {
                 required
                 disabled={viewOnly}
                 error={!!validationErrors.phoneNumber}
+                helperText={validationErrors.phoneNumber ? 'Phone Number is required' : ''}
                 sx={{
                   "& .MuiInputBase-input.Mui-disabled": {
                     WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
@@ -678,6 +732,7 @@ export function LeadView() {
                 required
                 disabled={viewOnly}
                 error={!!validationErrors.leadsType}
+                helperText={validationErrors.leadsType ? 'Leads Type is required' : ''}
                 SelectProps={{
                   MenuProps: {
                     PaperProps: {
@@ -700,16 +755,78 @@ export function LeadView() {
                 disabled={viewOnly}
                 options={leadsFromOptions}
                 value={leadsFrom}
-                onChange={(e, newValue) => {
-                  setLeadsFrom(newValue || '');
+                onChange={(e, newValue: any) => {
+                  if (typeof newValue === 'string') {
+                    setLeadsFrom(newValue);
+                  } else if (newValue && newValue.isNew) {
+                    setNewLeadFromName(newValue.inputValue);
+                    setCreateLeadFromOpen(true);
+                  } else {
+                    setLeadsFrom(newValue || '');
+                  }
                   if (newValue) setValidationErrors(prev => ({ ...prev, leadsFrom: false }));
                 }}
+                filterOptions={(options, params) => {
+                  const filtered = filter(options, params) as any[];
+                  const { inputValue } = params;
+                  const isExisting = options.some((option) => inputValue === option);
+
+                  if (inputValue !== '' && !isExisting) {
+                    filtered.push({
+                      inputValue,
+                      label: `+ Create "${inputValue}"`,
+                      isNew: true,
+                    });
+                  } else if (inputValue === '') {
+                    filtered.push({
+                      inputValue: '',
+                      label: '+ Create Lead From',
+                      isNew: true,
+                    });
+                  }
+                  return filtered;
+                }}
+                getOptionLabel={(option: any) => {
+                  if (typeof option === 'string') return option;
+                  if (option.inputValue) return option.inputValue;
+                  return option.label || '';
+                }}
+                renderOption={(props, option: any) => {
+                  const { key, ...optionProps } = props as any;
+                  return (
+                    <Box component="li" key={key || (typeof option === 'string' ? option : option.label)} {...optionProps} sx={{
+                      typography: 'body2',
+                      ...(option.isNew && {
+                        color: 'primary.main',
+                        fontWeight: 600,
+                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                        borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                        mt: 0.5,
+                        '&:hover': {
+                          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                        }
+                      })
+                    }}>
+                      {option.isNew ? (
+                        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 0.5 }}>
+                          <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                            {option.inputValue ? `Create "${option.inputValue}"` : 'Create Lead From'}
+                          </Typography>
+                        </Stack>
+                      ) : (
+                        option.label || option
+                      )}
+                    </Box>
+                  );
+                }}
                 renderInput={(params) => (
-                  <TextField 
-                    {...params} 
-                    label="Leads From" 
-                    required 
-                    error={!!validationErrors.leadsFrom} 
+                  <TextField
+                    {...params}
+                    label="Leads From"
+                    required
+                    error={!!validationErrors.leadsFrom}
+                    helperText={validationErrors.leadsFrom ? 'Leads From is required' : ''}
                   />
                 )}
               />
@@ -720,7 +837,70 @@ export function LeadView() {
                 disabled={viewOnly}
                 options={serviceOptions}
                 value={service}
-                onChange={(e, newValue) => setService(newValue || '')}
+                onChange={(e, newValue: any) => {
+                  if (typeof newValue === 'string') {
+                    setService(newValue);
+                  } else if (newValue && newValue.isNew) {
+                    setNewServiceName(newValue.inputValue);
+                    setCreateServiceOpen(true);
+                  } else {
+                    setService(newValue?.label || newValue || '');
+                  }
+                }}
+                filterOptions={(options, params) => {
+                  const filtered = filter(options, params) as any[];
+                  const { inputValue } = params;
+                  const isExisting = options.some((option) => inputValue === option);
+
+                  if (inputValue !== '' && !isExisting) {
+                    filtered.push({
+                      inputValue,
+                      label: `+ Create "${inputValue}"`,
+                      isNew: true,
+                    });
+                  } else if (inputValue === '') {
+                    filtered.push({
+                      inputValue: '',
+                      label: '+ Create Service',
+                      isNew: true,
+                    });
+                  }
+                  return filtered;
+                }}
+                getOptionLabel={(option: any) => {
+                  if (typeof option === 'string') return option;
+                  if (option.inputValue) return option.inputValue;
+                  return option.label || '';
+                }}
+                renderOption={(props, option: any) => {
+                  const { key, ...optionProps } = props as any;
+                  return (
+                    <Box component="li" key={key || (typeof option === 'string' ? option : option.label)} {...optionProps} sx={{
+                      typography: 'body2',
+                      ...(option.isNew && {
+                        color: 'primary.main',
+                        fontWeight: 600,
+                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                        borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                        mt: 0.5,
+                        '&:hover': {
+                          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                        }
+                      })
+                    }}>
+                      {option.isNew ? (
+                        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 0.5 }}>
+                          <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                            {option.inputValue ? `Create "${option.inputValue}"` : 'Create Service'}
+                          </Typography>
+                        </Stack>
+                      ) : (
+                        option.label || option
+                      )}
+                    </Box>
+                  );
+                }}
                 renderInput={(params) => <TextField {...params} label="Service" />}
               />
 
@@ -740,9 +920,9 @@ export function LeadView() {
                 value={state}
                 onChange={(e, newValue) => setState(newValue || '')}
                 renderInput={(params) => (
-                  <TextField 
-                    {...params} 
-                    label="State" 
+                  <TextField
+                    {...params}
+                    label="State"
                     placeholder={!country ? "Select Country First" : ""}
                     InputLabelProps={{ shrink: true }}
                   />
@@ -756,9 +936,9 @@ export function LeadView() {
                 value={city}
                 onChange={(e, newValue) => setCity(newValue || '')}
                 renderInput={(params) => (
-                  <TextField 
-                    {...params} 
-                    label="City" 
+                  <TextField
+                    {...params}
+                    label="City"
                     placeholder={!state ? "Select State First" : ""}
                     InputLabelProps={{ shrink: true }}
                   />
@@ -1038,7 +1218,7 @@ export function LeadView() {
           )}
         </DialogContent>
 
-        <DialogActions sx={{m:1}}>
+        <DialogActions sx={{ m: 1 }}>
           {!viewOnly && currentTab === 'general' && (
             <Button variant="contained" onClick={handleCreate} disabled={creating}>
               {creating ? (currentLeadId ? 'Updating...' : 'Creating...') : (currentLeadId ? 'Update Lead' : 'Create Lead')}
@@ -1057,10 +1237,10 @@ export function LeadView() {
           {permissions.write && (
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
-                variant="outlined"
-                startIcon={<Iconify icon={"solar:import-bold-duotone" as any} />}
+                variant="contained"
+                startIcon={<IoMdCloudDownload size={20} />}
                 onClick={() => setOpenImport(true)}
-                sx={{ color: '#08a3cd', borderColor: '#08a3cd', '&:hover': { borderColor: '#068fb3', bgcolor: 'rgba(8, 163, 205, 0.04)' } }}
+                sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
               >
                 Import
               </Button>
@@ -1108,9 +1288,9 @@ export function LeadView() {
                   headLabel={[
                     { id: 'lead_name', label: 'Name' },
                     { id: 'company_name', label: 'Company' },
-                    { id: 'country', label: 'Country' },
                     { id: 'phone_number', label: 'Phone' },
                     { id: 'email', label: 'Email' },
+                    { id: 'country', label: 'Country' },
                     { id: 'workflow_state', label: 'Status' },
                     { id: '' },
                   ]}
@@ -1130,9 +1310,9 @@ export function LeadView() {
                         row={{
                           id: row.name,
                           name: getString(row.lead_name) ?? '-',
-                          company: getString(row.company_name) ?? '-',
                           phone: getString(row.phone_number) ?? '-',
                           email: getString(row.email) ?? '-',
+                          company: getString(row.company_name) ?? '-',
                           status: getString(row.status) ?? '-',
                           workflow_state: getString(row.workflow_state) ?? '-',
                           avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
@@ -1157,14 +1337,17 @@ export function LeadView() {
                         <EmptyContent
                           title="No leads found"
                           description="Start capturing leads to boost your sales."
-                          icon="solar:flag-checkered-bold-duotone"
+                          icon="solar:user-plus-bold-duotone"
                         />
                       </TableCell>
                     </TableRow>
                   )}
 
-                  {!empty && !loading && (
-                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                  {!empty && !notFound && (
+                    <TableEmptyRows
+                      height={68}
+                      emptyRows={data.length < 5 ? 5 - data.length : 0}
+                    />
                   )}
                 </TableBody>
               </Table>
@@ -1366,6 +1549,88 @@ export function LeadView() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      <Dialog
+        open={createLeadFromOpen}
+        onClose={() => !creatingLeadFrom && setCreateLeadFromOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, pb: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>Create Lead From</Typography>
+          <IconButton
+            onClick={() => !creatingLeadFrom && setCreateLeadFromOpen(false)}
+            sx={{ color: 'text.secondary' }}
+          >
+            <Iconify icon="mingcute:close-line" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ px: 3, pb: 2, pt: 1 }}>
+          <TextField
+            fullWidth
+            label="Lead From"
+            value={newLeadFromName}
+            onChange={(e) => setNewLeadFromName(e.target.value)}
+            required
+            autoFocus
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            variant="contained"
+            onClick={handleCreateLeadFromSubmit}
+            disabled={creatingLeadFrom || !newLeadFromName.trim()}
+            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' }, borderRadius: 1 }}
+          >
+            {creatingLeadFrom ? <CircularProgress size={24} color="inherit" /> : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={createServiceOpen}
+        onClose={() => !creatingService && setCreateServiceOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, pb: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>Create Service</Typography>
+          <IconButton
+            onClick={() => !creatingService && setCreateServiceOpen(false)}
+            sx={{ color: 'text.secondary' }}
+          >
+            <Iconify icon="mingcute:close-line" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ px: 3, pb: 2, pt: 1 }}>
+          <TextField
+            fullWidth
+            label="Service Name"
+            value={newServiceName}
+            onChange={(e) => setNewServiceName(e.target.value)}
+            required
+            autoFocus
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            variant="contained"
+            onClick={handleCreateServiceSubmit}
+            disabled={creatingService || !newServiceName.trim()}
+            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' }, borderRadius: 1 }}
+          >
+            {creatingService ? <CircularProgress size={24} color="inherit" /> : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

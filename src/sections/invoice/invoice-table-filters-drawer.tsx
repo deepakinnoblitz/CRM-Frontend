@@ -101,7 +101,7 @@ export function InvoiceTableFiltersDrawer({
     const renderCustomer = (
         <Stack spacing={1.5}>
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Customer
+                Client
             </Typography>
             <Autocomplete
                 fullWidth
@@ -115,11 +115,11 @@ export function InvoiceTableFiltersDrawer({
                     handleFilterChange('client_name', newValue ? newValue.name : 'all');
                 }}
                 options={options.customers}
-                getOptionLabel={(option) => `${option.customer_name} (${option.name})`}
+                getOptionLabel={(option) => `${option.customer_name.split(' - ')[0]} (${option.name})`}
                 renderInput={(params) => (
                     <TextField
                         {...params}
-                        placeholder="Search customers..."
+                        placeholder="Search clients..."
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
@@ -133,9 +133,14 @@ export function InvoiceTableFiltersDrawer({
                 )}
                 renderOption={(props, option) => (
                     <li {...props} key={option.name}>
-                        <Typography variant="body2" sx={{ fontSize: '13px' }}>
-                            {option.customer_name} ({option.name})
-                        </Typography>
+                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                {option.customer_name.split(' - ')[0]}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                ID: {option.name}
+                            </Typography>
+                        </Stack>
                     </li>
                 )}
             />
@@ -169,13 +174,6 @@ export function InvoiceTableFiltersDrawer({
                             },
                         }}
                     />
-                )}
-                renderOption={(props, option) => (
-                    <li {...props} key={option}>
-                        <Typography variant="body2" sx={{ fontSize: '13px' }}>
-                            {option}
-                        </Typography>
-                    </li>
                 )}
             />
         </Stack>
@@ -215,11 +213,16 @@ export function InvoiceTableFiltersDrawer({
             anchor="right"
             open={open}
             onClose={onClose}
-            PaperProps={{
-                sx: { width: 320 },
+            slotProps={{
+                paper: {
+                    sx: {
+                        width: 340,
+                        boxShadow: (theme) => theme.customShadows.z24,
+                    },
+                },
             }}
             sx={{
-                zIndex: (theme) => theme.zIndex.drawer + 2,
+                zIndex: (theme) => theme.zIndex.drawer + 100,
             }}
         >
             <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -233,15 +236,35 @@ export function InvoiceTableFiltersDrawer({
                     </Stack>
                 </Scrollbar>
 
-                <Box sx={{ p: 3 }}>
+                <Box
+                    sx={{
+                        p: 2.5,
+                        borderTop: '1px solid',
+                        borderColor: 'divider',
+                        bgcolor: 'background.neutral',
+                    }}
+                >
                     <Button
                         fullWidth
-                        color="inherit"
                         size="large"
+                        color="inherit"
                         variant="outlined"
                         startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
                         onClick={onResetFilters}
                         disabled={!canReset}
+                        sx={{
+                            borderRadius: 1.5,
+                            borderColor: 'divider',
+                            fontWeight: 600,
+                            '&:hover': {
+                                borderColor: 'error.main',
+                                color: 'error.main',
+                                bgcolor: 'error.lighter',
+                            },
+                            '&.Mui-disabled': {
+                                borderColor: 'divider',
+                            },
+                        }}
                     >
                         Clear All Filters
                     </Button>

@@ -127,6 +127,14 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
         }
     };
 
+    useEffect(() => {
+        const searchParams = new URLSearchParams(window.location.search);
+        const invoiceParam = searchParams.get('invoice');
+        if (invoiceParam && !currentInvoiceCollection) {
+            handleInvoiceChange(invoiceParam);
+        }
+    }, [currentInvoiceCollection]);
+
     const handleSubmit = async () => {
         const newErrors: Record<string, string> = {};
         const normalizedAmount = Number(formData.amount_collected);
@@ -187,7 +195,7 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
 
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Card sx={{ p: 3 }}>
+            <Card sx={{ p: 3, pt: 5 }}>
                 <Box
                     rowGap={3}
                     columnGap={3}
@@ -229,7 +237,7 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
                     />
 
                     <TextField
-                        label="Customer ID"
+                        label="Client ID"
                         value={formData.customer}
                         InputProps={{
                             readOnly: true,
@@ -237,7 +245,7 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
                     />
 
                     <TextField
-                        label="Customer Name"
+                        label="Client Name"
                         value={formData.customer_name}
                         InputProps={{
                             readOnly: true,

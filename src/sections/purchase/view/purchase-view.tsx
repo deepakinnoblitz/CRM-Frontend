@@ -160,6 +160,7 @@ export function PurchaseView() {
                                                 id: row.name,
                                                 name: row.name,
                                                 bill_no: row.bill_no,
+                                                vendor: row.vendor || row.vendor_id || '',
                                                 vendor_name: row.vendor_name || '',
                                                 bill_date: row.bill_date,
                                                 grand_total: row.grand_total || 0,

@@ -1,4 +1,5 @@
 import { MuiTelInput } from 'mui-tel-input';
+import { IoMdCloudDownload } from "react-icons/io";
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -15,6 +16,7 @@ import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
@@ -455,10 +457,10 @@ export function AccountView() {
                 <Box sx={{ display: 'flex', gap: 1 }}>
                     {permissions.write && (
                         <Button
-                            variant="outlined"
-                            startIcon={<Iconify icon={"solar:import-bold-duotone" as any} />}
+                            variant="contained"
+                            startIcon={<IoMdCloudDownload size={20} />}
                             onClick={handleOpenImport}
-                            sx={{ color: '#08a3cd', borderColor: '#08a3cd', '&:hover': { borderColor: '#068fb3', bgcolor: 'rgba(8, 163, 205, 0.04)' } }}
+                            sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
                         >
                             Import
                         </Button>
@@ -553,7 +555,7 @@ export function AccountView() {
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
+                                        <TableCell colSpan={8} sx={{py:10}}>
                                             <EmptyContent
                                                 title="No Company found"
                                                 description="Create a new account to manage your business relationships."
@@ -563,12 +565,12 @@ export function AccountView() {
                                     </TableRow>
                                 )}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={accounts.length < 5 ? 5 - accounts.length : 0}
-                                    />
-                                )}
+                            {!empty && !notFound && (
+                                <TableEmptyRows
+                                    height={68}
+                                    emptyRows={accounts.length < 5 ? 5 - accounts.length : 0}
+                                />
+                            )}
                             </TableBody>
                         </Table>
                     </TableContainer>
@@ -635,6 +637,7 @@ export function AccountView() {
                             }}
                             required
                             error={!!validationErrors.accountName}
+                            helperText={validationErrors.accountName ? 'Company Name is required' : ''}
                             disabled={viewMode}
                             placeholder="e.g. Acme Corp"
                         />
@@ -652,6 +655,7 @@ export function AccountView() {
                             }}
                             required
                             error={!!validationErrors.phoneNumber}
+                            helperText={validationErrors.phoneNumber ? 'Phone Number is required' : ''}
                             sx={{
                                 '& .MuiInputBase-input.Mui-disabled': {
                                     WebkitTextFillColor: 'inherit',
@@ -670,74 +674,46 @@ export function AccountView() {
                             placeholder="e.g. 22AAAAA0000A1Z5"
                         />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="Country"
-                            name="country"
-                            value={country}
-                            onChange={(e) => setCountry(e.target.value)}
                             disabled={viewMode}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {countryOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
+                            options={countryOptions.filter(o => o !== '')}
+                            value={country}
+                            onChange={(e, newValue) => setCountry(newValue || '')}
+                            renderInput={(params) => <TextField {...params} label="Country" />}
+                        />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="State"
-                            name="state"
-                            value={state}
-                            onChange={(e) => setState(e.target.value)}
                             disabled={viewMode || !country}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {stateOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
+                            options={stateOptions.filter(o => o !== '')}
+                            value={state}
+                            onChange={(e, newValue) => setState(newValue || '')}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="State"
+                                    placeholder={!country ? "Select Country First" : ""}
+                                    InputLabelProps={{ shrink: true }}
+                                />
+                            )}
+                        />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="City"
-                            name="city"
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
                             disabled={viewMode || !state}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {cityOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
+                            options={cityOptions.filter(o => o !== '')}
+                            value={city}
+                            onChange={(e, newValue) => setCity(newValue || '')}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="City"
+                                    placeholder={!state ? "Select State First" : ""}
+                                    InputLabelProps={{ shrink: true }}
+                                />
+                            )}
+                        />
 
                         <TextField
                             fullWidth

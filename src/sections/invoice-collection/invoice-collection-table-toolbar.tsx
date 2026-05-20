@@ -34,8 +34,8 @@ const SORT_OPTIONS = [
     { value: 'collection_date_asc', label: 'Date: Oldest First' },
     { value: 'amount_collected_desc', label: 'Amount: High to Low' },
     { value: 'amount_collected_asc', label: 'Amount: Low to High' },
-    { value: 'customer_name_asc', label: 'Customer: A to Z' },
-    { value: 'customer_name_desc', label: 'Customer: Z to A' },
+    { value: 'amount_to_pay_desc', label: 'Amount to Pay: High to Low' },
+    { value: 'amount_to_pay_asc', label: 'Amount to Pay: Low to High' },
 ];
 
 export function InvoiceCollectionTableToolbar({
@@ -88,7 +88,7 @@ export function InvoiceCollectionTableToolbar({
                 <OutlinedInput
                     value={filterName}
                     onChange={onFilterName}
-                    placeholder="Search by ID, Invoice No or Customer..."
+                    placeholder="Search by ID or Invoice No..."
                     startAdornment={
                         <InputAdornment position="start">
                             <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />

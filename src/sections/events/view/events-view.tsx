@@ -298,7 +298,7 @@ export function EventsView() {
 
     return (
         <DashboardContent maxWidth="xl">
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3} mt={2}>
                 <Box>
                     <Typography variant="h4">Events Calendar</Typography>
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>

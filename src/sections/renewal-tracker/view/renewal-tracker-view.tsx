@@ -78,7 +78,7 @@ export function RenewalTrackerView() {
     });
 
     const [openFilters, setOpenFilters] = useState(false);
-    const canReset = filters.category !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null;
+    const canReset = filters.category !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const { data, total, refetch } = useRenewals(
         page + 1,

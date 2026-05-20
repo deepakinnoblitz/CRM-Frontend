@@ -1,10 +1,10 @@
 import dayjs from 'dayjs';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags, IoMdWallet } from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
@@ -12,13 +12,11 @@ import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
-import AlertTitle from '@mui/material/AlertTitle';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -107,11 +105,8 @@ export function PurchaseCreateView() {
     const [discountValue, setDiscountValue] = useState(0);
 
     const [loading, setLoading] = useState(false);
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-        open: false,
-        message: '',
-        severity: 'success',
-    });
+    const { enqueueSnackbar } = useSnackbar();
+    const [errors, setErrors] = useState<{ vendor?: boolean; billNo?: boolean; items?: boolean }>({});
 
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
     const [newItem, setNewItem] = useState({ item_name: '', item_code: '', rate: 0 });
@@ -238,7 +233,7 @@ export function PurchaseCreateView() {
 
     const handleCreateItem = async () => {
         if (!newItem.item_name) {
-            setSnackbar({ open: true, message: 'Please enter Item Name', severity: 'error' });
+            enqueueSnackbar('Please enter Item Name', { variant: 'error' });
             return;
         }
 
@@ -276,9 +271,9 @@ export function PurchaseCreateView() {
 
             setItemDialogOpen(false);
             setNewItem({ item_name: '', item_code: '', rate: 0 });
-            setSnackbar({ open: true, message: 'Item created successfully', severity: 'success' });
+            enqueueSnackbar('Item created successfully', { variant: 'success' });
         } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Failed to create item', severity: 'error' });
+            enqueueSnackbar(error.message || 'Failed to create item', { variant: 'error' });
         } finally {
             setCreatingItem(false);
         }
@@ -310,19 +305,26 @@ export function PurchaseCreateView() {
     };
 
     const handleSave = async () => {
-        if (!vendorName) {
-            setSnackbar({ open: true, message: 'Please select a vendor', severity: 'error' });
-            return;
-        }
-
-        if (!billNo) {
-            setSnackbar({ open: true, message: 'Please enter bill number', severity: 'error' });
-            return;
-        }
-
+        const newErrors: { vendor?: boolean; billNo?: boolean; items?: boolean } = {};
+        if (!vendorName) newErrors.vendor = true;
+        if (!billNo) newErrors.billNo = true;
         const validItems = items.filter((item) => item.service !== '');
-        if (validItems.length === 0) {
-            setSnackbar({ open: true, message: 'Please add at least one item', severity: 'error' });
+        if (validItems.length === 0) newErrors.items = true;
+
+        setErrors(newErrors);
+
+        if (newErrors.vendor) {
+            enqueueSnackbar('Please select a vendor', { variant: 'error' });
+            return;
+        }
+
+        if (newErrors.billNo) {
+            enqueueSnackbar('Please enter bill number', { variant: 'error' });
+            return;
+        }
+
+        if (newErrors.items) {
+            enqueueSnackbar('Please add at least one item', { variant: 'error' });
             return;
         }
 
@@ -345,8 +347,11 @@ export function PurchaseCreateView() {
                 attachmentUrl = attachments[0].url || '';
             }
 
+            const selectedVendor = vendorOptions.find((opt) => opt.name === vendorName);
+            const actualVendorName = selectedVendor ? (selectedVendor.first_name || selectedVendor.name) : vendorName;
+
             const purchaseData = {
-                vendor_name: vendorName,
+                vendor_name: actualVendorName,
                 vendor_id: vendorName,
                 bill_no: billNo,
                 bill_date: billDate,
@@ -375,11 +380,11 @@ export function PurchaseCreateView() {
             };
 
             await createPurchase(purchaseData);
-            setSnackbar({ open: true, message: 'Purchase created successfully', severity: 'success' });
+            enqueueSnackbar('Purchase created successfully', { variant: 'success' });
             setTimeout(() => router.push('/purchase'), 1500);
         } catch (err: any) {
             console.error(err);
-            setSnackbar({ open: true, message: err.message || 'Failed to create purchase', severity: 'error' });
+            enqueueSnackbar(err.message || 'Failed to create purchase', { variant: 'error' });
         } finally {
             setLoading(false);
         }
@@ -432,11 +437,32 @@ export function PurchaseCreateView() {
                         <Autocomplete
                             fullWidth
                             options={vendorOptions}
-                            getOptionLabel={(option) => (option.first_name ? `${option.name} - ${option.first_name}` : option.name || '')}
+                            getOptionLabel={(option) => (option.first_name ? `${option.first_name} (${option.name})` : option.name || '')}
                             value={vendorOptions.find((opt) => opt.name === vendorName) || null}
-                            onChange={(_e, newValue) => setVendorName(newValue?.name || '')}
+                            onChange={(_e, newValue) => {
+                                setVendorName(newValue?.name || '');
+                                if (newValue?.name) setErrors((prev) => ({ ...prev, vendor: false }));
+                            }}
                             renderInput={(params) => (
-                                <TextField {...params} label="Vendor" required />
+                                <TextField
+                                    {...params}
+                                    label="Vendor"
+                                    required
+                                    error={errors.vendor}
+                                    helperText={errors.vendor ? 'Please select a vendor' : ''}
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.name}>
+                                    <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                            {option.first_name || option.name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                </li>
                             )}
                         />
 
@@ -444,8 +470,13 @@ export function PurchaseCreateView() {
                             fullWidth
                             label="Bill No"
                             value={billNo}
-                            onChange={(e) => setBillNo(e.target.value)}
+                            onChange={(e) => {
+                                setBillNo(e.target.value);
+                                if (e.target.value) setErrors((prev) => ({ ...prev, billNo: false }));
+                            }}
                             required
+                            error={errors.billNo}
+                            helperText={errors.billNo ? 'Please enter bill number' : ''}
                         />
 
                         <DatePicker
@@ -635,13 +666,17 @@ export function PurchaseCreateView() {
 
                     <TableContainer sx={{
                         overflow: 'unset',
-                        border: (theme) => `1px solid ${theme.palette.divider}`,
+                        border: (theme) => errors.items ? `2px solid ${theme.palette.error.main}` : `1px solid ${theme.palette.divider}`,
                         borderRadius: 1.5,
                         bgcolor: 'background.paper',
                         boxShadow: (theme) => theme.customShadows.z8,
                     }}>
                         <Table sx={{ minWidth: 960 }}>
-                            <TableHead sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}>
+                            <TableHead sx={{
+                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                '& th:first-of-type': { borderTopLeftRadius: 11 },
+                                '& th:last-of-type': { borderTopRightRadius: 11 }
+                            }}>
                                 <TableRow>
                                     <TableCell width={180} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Service</TableCell>
                                     <TableCell width={80} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>HSN</TableCell>
@@ -1193,24 +1228,6 @@ export function PurchaseCreateView() {
                         </Box>
                     </Box>
                 </Card>
-
-                <Snackbar
-                    open={snackbar.open}
-                    autoHideDuration={6000}
-                    onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                >
-                    <Alert
-                        severity={snackbar.severity}
-                        sx={{
-                            width: '100%',
-                            boxShadow: (theme) => theme.customShadows.z20
-                        }}
-                    >
-                        <AlertTitle>{snackbar.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
-                        {snackbar.message}
-                    </Alert>
-                </Snackbar>
 
                 <Dialog open={itemDialogOpen} onClose={() => !creatingItem && setItemDialogOpen(false)} fullWidth maxWidth="xs">
                     <DialogTitle sx={{ pb: 2, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>

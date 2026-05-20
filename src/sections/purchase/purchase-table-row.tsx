@@ -1,8 +1,10 @@
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
+import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
 import { fDate } from 'src/utils/format-time';
@@ -16,11 +18,13 @@ export type PurchaseProps = {
     id: string;
     name: string;
     bill_no: string;
+    vendor: string;
     vendor_name: string;
     bill_date: string;
     payment_type: string;
     grand_total: number;
     paid_amount: number;
+    balance_amount?: number;
 };
 
 type PurchaseTableRowProps = {
@@ -30,6 +34,8 @@ type PurchaseTableRowProps = {
     onView: () => void;
     onEdit: () => void;
     onDelete: () => void;
+    onPrint?: () => void;
+    onPreview?: () => void;
     canEdit?: boolean;
     canDelete?: boolean;
     hideCheckbox?: boolean;
@@ -43,6 +49,8 @@ export function PurchaseTableRow({
     onView,
     onEdit,
     onDelete,
+    onPrint,
+    onPreview,
     canEdit = true,
     canDelete = true,
     hideCheckbox = false,
@@ -96,22 +104,44 @@ export function PurchaseTableRow({
 
             <TableCell align="left" sx={{ fontWeight: 700 }}>{row.name}</TableCell>
 
-            <TableCell component="th" scope="row">
-                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center', fontWeight: 400 }}>
-                    {row.bill_no}
-                </Box>
+            <TableCell component="th" scope="row" sx={{ fontWeight: 700 }}>
+                {row.bill_no}
             </TableCell>
 
-            <TableCell align="left" sx={{ fontWeight: 400 }}>{row.vendor_name}</TableCell>
+            <TableCell align="left" sx={{ maxWidth: 240 }}>
+                <Stack spacing={0.5}>
+                    <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                        {row.vendor_name || row.vendor}
+                    </Typography>
+                    <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                        {row.vendor}
+                    </Typography>
+                </Stack>
+            </TableCell>
 
             <TableCell align="left" sx={{ fontWeight: 400 }}>{fDate(row.bill_date)}</TableCell>
 
-            <TableCell align="left" sx={{ fontWeight: 400 }}>{row.payment_type}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
 
-            <TableCell align="right" sx={{ fontWeight: 700 }}>{fCurrency(row.grand_total)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{fCurrency(row.paid_amount)}</TableCell>
+
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>{fCurrency(row.balance_amount ?? (row.grand_total - row.paid_amount))}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    {onPrint && (
+                        <IconButton onClick={onPrint} sx={{ color: 'warning.main' }}>
+                            <Iconify icon={"solar:printer-bold" as any} />
+                        </IconButton>
+                    )}
+                    {onPreview && (
+                        <IconButton onClick={onPreview} sx={{ color: 'secondary.main' }}>
+                            <Iconify icon={"solar:file-text-bold" as any} />
+                        </IconButton>
+                    )}
+                    <IconButton onClick={onView} sx={{ color: 'info.main' }}>
+                        <Iconify icon={"solar:eye-bold" as any} />
+                    </IconButton>
                     {canEdit && row.paid_amount === 0 && (
                         <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
                             <Iconify icon="solar:pen-bold" />
@@ -122,9 +152,6 @@ export function PurchaseTableRow({
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>
                     )}
-                    <IconButton onClick={onView} sx={{ color: 'info.main' }}>
-                        <Iconify icon={"solar:eye-bold" as any} />
-                    </IconButton>
                 </Box>
             </TableCell>
         </TableRow>
