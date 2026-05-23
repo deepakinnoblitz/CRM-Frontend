@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-import Box from '@mui/material/Box';
+import Box from '@mui/material/Box';  
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
@@ -20,6 +20,8 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
 import { ServiceDialog } from '../service-dialog';
 import { ServiceTableRow } from '../service-table-row';
@@ -193,7 +195,10 @@ export function ServiceView() {
                 {notFound && <TableNoData searchQuery={filterName} />}
 
                 {empty && (
-                  <TableEmptyRows height={68 * 5} emptyRows={1} />
+                  <MasterEmptyState
+                    masterName="Service"
+                    colSpan={4}
+                  />
                 )}
 
                 {!empty && !notFound && (

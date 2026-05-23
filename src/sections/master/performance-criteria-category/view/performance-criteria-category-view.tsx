@@ -21,8 +21,9 @@ import { deleteEvaluationTraitCategory } from 'src/api/masters';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
-import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
 import { TableNoData } from '../../../lead/table-no-data';
 import { LeadTableHead } from '../../../lead/lead-table-head';
@@ -176,15 +177,10 @@ export function PerformanceCriteriaCategoryView() {
                 {notFound && <TableNoData searchQuery={filterName} />}
 
                 {empty && (
-                    <TableRow>
-                        <TableCell colSpan={6} sx={{ py: 10 }}>
-                            <EmptyContent
-                                title="No Categories Found"
-                                description="It looks like there are no categories yet."
-                                icon="solar:bill-list-bold-duotone"
-                            />
-                        </TableCell>
-                    </TableRow>
+                  <MasterEmptyState
+                    masterName="Performance Criteria Category"
+                    colSpan={3}
+                  />
                 )}
               </TableBody>
             </Table>

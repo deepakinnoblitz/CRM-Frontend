@@ -1,6 +1,6 @@
 import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { 
     IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags, 
     IoMdWallet, IoMdPrint, IoMdTrash, IoMdCreate, IoMdPerson, 
@@ -43,6 +43,7 @@ export function InvoiceDetailsView() {
     const { id } = useParams();
     const router = useRouter();
     const location = useLocation() as any;
+    const navigate = useNavigate();
 
     const [invoice, setInvoice] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
@@ -64,10 +65,9 @@ export function InvoiceDetailsView() {
         if (location.state?.converted) {
             enqueueSnackbar('Converted from estimation successfully!', { variant: 'success' });
             // Clear navigation state to prevent re-showing on refresh
-            window.history.replaceState({}, document.title);
-            location.state.converted = false;
+            navigate(location.pathname, { replace: true, state: {} });
         }
-    }, [location.state, enqueueSnackbar]);
+    }, [location.state, enqueueSnackbar, navigate, location.pathname]);
 
     if (fetching) {
         return (
@@ -156,7 +156,7 @@ export function InvoiceDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/deals?tab=invoices')}
+                        onClick={() => navigate(-1)}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,

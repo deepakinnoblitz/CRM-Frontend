@@ -20,6 +20,8 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { MasterEmptyState } from 'src/sections/master/master-empty-state';
+
 import { TableNoData } from '../../../lead/table-no-data';
 import { PaymentTermsDialog } from '../payment-terms-dialog';
 import { LeadTableHead } from '../../../lead/lead-table-head';
@@ -191,7 +193,10 @@ export function PaymentTermsView() {
                 {notFound && <TableNoData searchQuery={filterName} />}
 
                 {empty && (
-                  <TableEmptyRows height={68 * 5} emptyRows={1} />
+                  <MasterEmptyState
+                    masterName="Payment Terms"
+                    colSpan={3}
+                  />
                 )}
 
                 {!empty && !notFound && (

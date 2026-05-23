@@ -21,8 +21,9 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
-import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
 import { TableNoData } from '../../../lead/table-no-data';
 import { ActivityTypeDialog } from '../activity-type-dialog';
@@ -177,15 +178,10 @@ export function ActivityTypeView() {
                 {notFound && <TableNoData searchQuery={filterName} />}
 
                 {empty && (
-                  <TableRow>
-                    <TableCell colSpan={6} sx={{ py: 10 }}>
-                      <EmptyContent
-                        title="No Activity Types Found"
-                        description="It looks like there are no activity types yet."
-                        icon="solar:notes-bold-duotone"
-                      />
-                    </TableCell>
-                  </TableRow>
+                  <MasterEmptyState
+                    masterName="Activity Type"
+                    colSpan={3}
+                  />
                 )}
               </TableBody>
             </Table>

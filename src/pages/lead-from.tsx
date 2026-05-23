@@ -1,3 +1,5 @@
+import { CONFIG } from 'src/config-global';
+
 import { LeadFromView } from 'src/sections/master/lead-from';
 
 // ----------------------------------------------------------------------
@@ -5,7 +7,7 @@ import { LeadFromView } from 'src/sections/master/lead-from';
 export default function LeadFromPage() {
   return (
     <>
-      <title> Master: Lead From</title>
+      <title>{`Lead From - ${CONFIG.appName}`}</title>
 
       <LeadFromView />
     </>

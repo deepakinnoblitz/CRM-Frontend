@@ -21,8 +21,9 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
-import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
 import { DepartmentDialog } from '../department-dialog';
 import { TableNoData } from '../../../lead/table-no-data';
@@ -254,16 +255,10 @@ export function DepartmentView() {
                 ))}
 
                 {empty && (
-                    <TableRow>
-                        <TableCell colSpan={6} sx={{ height: 68 * 5, verticalAlign: 'middle' }}>
-                            <EmptyContent
-                                title="No Departments Found"
-                                description="It looks like there are no departments yet."
-                                icon="solar:buildings-bold-duotone"
-                                sx={{ py: 0 }}
-                            />
-                        </TableCell>
-                    </TableRow>
+                  <MasterEmptyState
+                    masterName="Department"
+                    colSpan={5}
+                  />
                 )}
 
                 {notFound && <TableNoData searchQuery={filterName} />}

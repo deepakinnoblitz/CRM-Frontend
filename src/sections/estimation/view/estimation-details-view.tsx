@@ -1,6 +1,6 @@
 import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags,
     IoMdWallet, IoMdPrint, IoMdSwap, IoMdTrash, IoMdCreate,
@@ -39,6 +39,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 export function EstimationDetailsView() {
     const { id } = useParams();
     const router = useRouter();
+    const navigate = useNavigate();
 
     const [estimation, setEstimation] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
@@ -70,7 +71,7 @@ export function EstimationDetailsView() {
         return (
             <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Estimation not found</Typography>
-                <Button onClick={() => router.push('/estimations')} sx={{ mt: 3 }}>
+                <Button onClick={() => navigate(-1)} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
             </DashboardContent>
@@ -165,7 +166,7 @@ export function EstimationDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/estimations')}
+                        onClick={() => navigate(-1)}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,

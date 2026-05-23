@@ -1,6 +1,8 @@
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -22,14 +24,17 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { usePdfExport } from 'src/hooks/use-pdf-export';
+
 import { runReport } from 'src/api/reports';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { generateInvoicePdf } from 'src/components/export/pdf/invoice-pdf-generator';
 
 import { ExportFieldsDialog } from '../../export-fields-dialog';
-import { InvoiceDetailsDialog } from '../../invoice-details-dialog';
+
 
 // ----------------------------------------------------------------------
 
@@ -40,6 +45,8 @@ export function InvoiceReportView() {
     const [reportData, setReportData] = useState<any[]>([]);
     const [summaryData, setSummaryData] = useState<any[]>([]);
 
+    const { exportingPdf, handleExportPdf } = usePdfExport();
+
     // Filters
     const [customerName, setCustomerName] = useState('');
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
@@ -49,9 +56,8 @@ export function InvoiceReportView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
-    // View Details
-    const [openView, setOpenView] = useState(false);
-    const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+    // Navigation
+    const navigate = useNavigate();
 
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
@@ -204,8 +210,33 @@ export function InvoiceReportView() {
                         variant="contained"
                         startIcon={<Iconify icon={"solar:export-bold" as any} />}
                         onClick={() => setOpenExportFields(true)}
+                        disabled={reportData.length === 0}
+                        sx={{ mr: 1 }}
                     >
-                        Export
+                        Export Excel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                        onClick={() => handleExportPdf(() => generateInvoicePdf({
+                            reportData,
+                            selected,
+                            summary: summaryData.length > 0 ? summaryData : [
+                                { label: 'Total Invoices', value: reportData.length },
+                                { label: 'Total Quantity', value: reportData.reduce((acc, curr) => acc + (curr.quantity || 0), 0) },
+                                { label: 'Grand Total Amount', value: reportData.reduce((acc, curr) => acc + (curr.grand_total || 0), 0) }
+                            ]
+                        }))}
+                        disabled={exportingPdf || reportData.length === 0}
+                        sx={{
+                            bgcolor: '#f43f5e',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#e11d48' },
+                            height: 40,
+                            px: 3,
+                        }}
+                    >
+                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
                     </Button>
                 </Card>
 
@@ -285,10 +316,7 @@ export function InvoiceReportView() {
                                                     <TableCell align="right" sx={{ fontWeight: 700 }}>₹{row.grand_total?.toLocaleString() || 0}</TableCell>
                                                     <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                         <IconButton
-                                                            onClick={() => {
-                                                                setSelectedInvoiceId(row.name);
-                                                                setOpenView(true);
-                                                            }}
+                                                            onClick={() => navigate(`/invoices/${encodeURIComponent(row.name)}/view`)}
                                                             sx={{ color: 'info.main' }}
                                                         >
                                                             <Iconify icon="solar:eye-bold" />
@@ -325,15 +353,6 @@ export function InvoiceReportView() {
                     />
                 </Card>
             </Stack>
-
-            <InvoiceDetailsDialog
-                open={openView}
-                invoiceId={selectedInvoiceId}
-                onClose={() => {
-                    setOpenView(false);
-                    setSelectedInvoiceId(null);
-                }}
-            />
 
             <ExportFieldsDialog
                 open={openExportFields}

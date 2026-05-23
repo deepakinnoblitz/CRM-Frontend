@@ -1,3 +1,5 @@
+import { CONFIG } from 'src/config-global';
+
 import { PaymentTermsView } from 'src/sections/master/payment-terms/view/payment-terms-view';
 
 // ----------------------------------------------------------------------
@@ -5,7 +7,7 @@ import { PaymentTermsView } from 'src/sections/master/payment-terms/view/payment
 export default function PaymentTermsPage() {
   return (
     <>
-      <title> Master: Payment Terms</title>
+      <title>{` Payment Terms - ${CONFIG.appName}`}</title>
 
       <PaymentTermsView />
     </>
