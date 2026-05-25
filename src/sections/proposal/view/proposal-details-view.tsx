@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import {IoMdCreate} from "react-icons/io";
 import { useParams } from 'react-router-dom';
 import { IoMdArrowBack } from 'react-icons/io';
+import { useState, useEffect, useCallback } from 'react';
 import {
     HiOutlineUser,
     HiOutlineCalendar,
@@ -18,6 +19,7 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
@@ -29,7 +31,10 @@ import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import CircularProgress from '@mui/material/CircularProgress';
 
@@ -38,8 +43,9 @@ import { useRouter } from 'src/routes/hooks';
 import { fDate } from 'src/utils/format-time';
 import { handleDownload, handleDirectPrint } from 'src/utils/print';
 
-import { getProposal, updateProposal, getProposalPrintUrl } from 'src/api/proposal';
+import { getAccount } from 'src/api/accounts';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { getProposal, updateProposal, getProposalPrintUrl } from 'src/api/proposal';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -48,6 +54,16 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 // ----------------------------------------------------------------------
 
 const STATUS_OPTIONS = ['Draft', 'Sent', 'Approved', 'Rejected', 'Expired'];
+
+const getClipPath = (index: number, total: number) => {
+    if (index === 0) {
+        return 'polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 6px calc(100% - 1px), 3px calc(100% - 3px), 1px calc(100% - 6px), 0 calc(100% - 12px), 0 12px, 1px 6px, 3px 3px, 6px 1px)';
+    }
+    if (index === total - 1) {
+        return 'polygon(0 0, calc(100% - 12px) 0, calc(100% - 6px) 1px, calc(100% - 3px) 3px, calc(100% - 1px) 6px, 100% 12px, 100% calc(100% - 12px), calc(100% - 1px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 1px), calc(100% - 12px) 100%, 0 100%, 12px 50%)';
+    }
+    return 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)';
+};
 
 const STATUS_COLORS: Record<string, any> = {
     Draft: 'default',
@@ -65,10 +81,12 @@ export function ProposalDetailsView() {
     const theme = useTheme();
 
     const [proposal, setProposal] = useState<any>(null);
+    const [billingAccountName, setBillingAccountName] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [printing, setPrinting] = useState(false);
+    const [viewAttachment, setViewAttachment] = useState<any>(null);
 
-    const [selectedStatus, setSelectedStatus] = useState('');
+    const [selectedStatus, setSelectedStatus] = useState<string>('');
     const [updatingStatus, setUpdatingStatus] = useState(false);
     const [confirmStatusUpdate, setConfirmStatusUpdate] = useState(false);
 
@@ -84,9 +102,20 @@ export function ProposalDetailsView() {
         if (id) {
             setLoading(true);
             getProposal(decodedId)
-                .then((data) => {
+                .then(async (data) => {
                     setProposal(data);
                     setSelectedStatus(data.status || 'Draft');
+                    
+                    if (data.billing_name) {
+                        try {
+                            const accountData = await getAccount(data.billing_name);
+                            if (accountData && accountData.account_name) {
+                                setBillingAccountName(accountData.account_name);
+                            }
+                        } catch (err) {
+                            console.error('Failed to fetch account info:', err);
+                        }
+                    }
                 })
                 .catch((err) => console.error('Failed to fetch proposal:', err))
                 .finally(() => setLoading(false));
@@ -171,69 +200,107 @@ export function ProposalDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/proposals')}
+                        onClick={() => router.push('/deals?tab=proposals')}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', px: 2.5 }}
                     >
                         Go Back
                     </Button>
                     <Button
-                        variant="outlined"
-                        onClick={handlePrint}
-                        startIcon={<Iconify icon={'solar:printer-bold' as any} width={18} />}
-                        sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none' }}
-                    >
-                        Download PDF
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        onClick={handlePreview}
-                        startIcon={<Iconify icon={'solar:file-text-bold' as any} width={18} />}
-                        sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none' }}
-                    >
-                        Preview
-                    </Button>
-                    <Button
                         variant="contained"
                         onClick={() => router.push(`/proposals/${encodeURIComponent(decodedId)}/edit`)}
-                        startIcon={<Iconify icon="solar:pen-bold" width={18} />}
-                        sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                        startIcon={<IoMdCreate size={20} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            bgcolor: '#08a3cd',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#068fb3' }
+                        }}
                     >
                         Edit
                     </Button>
                 </Stack>
             </Stack>
 
-            {/* Status Bar */}
-            <Card sx={{ mb: 3, p: 2.5, display: 'flex', alignItems: 'center', gap: 2, flexWrap: { xs: 'wrap', md: 'nowrap' }, borderRadius: 2 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
-                    Update Status:
-                </Typography>
-                <TextField
-                    select
-                    size="small"
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    sx={{ minWidth: 160 }}
-                >
-                    {STATUS_OPTIONS.map((s) => (
-                        <MenuItem key={s} value={s}>{s}</MenuItem>
-                    ))}
-                </TextField>
+            {/* Status Pipeline */}
+            <Card sx={{ mb: 3, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: { xs: 'wrap', md: 'nowrap' }, gap: 2, borderRadius: 2 }}>
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    overflowX: 'auto',
+                    flexGrow: 1,
+                    py: 0.5,
+                    px: 0.5,
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                    '&::-webkit-scrollbar': {
+                        display: 'none',
+                    },
+                }}>
+                    {STATUS_OPTIONS.map((stage, index) => {
+                        const activeIndex = STATUS_OPTIONS.indexOf(selectedStatus);
+                        const isCompletedOrActive = index <= activeIndex;
+                        const isActive = index === activeIndex;
+
+                        return (
+                            <Box
+                                key={stage}
+                                onClick={() => setSelectedStatus(stage)}
+                                sx={{
+                                    height: 46,
+                                    display: 'flex',
+                                    flex: '1 1 0',
+                                    minWidth: { xs: 100, md: 92 },
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    px: 1,
+                                    ml: index === 0 ? 0 : '-10px',
+                                    cursor: 'pointer',
+                                    userSelect: 'none',
+                                    clipPath: getClipPath(index, STATUS_OPTIONS.length),
+                                    bgcolor: isCompletedOrActive ? '#2081C3' : (themeVar) => themeVar.palette.mode === 'dark' ? alpha(themeVar.palette.grey[700], 0.5) : '#e0e0e0b5',
+                                    color: isCompletedOrActive ? 'common.white' : (themeVar) => themeVar.palette.mode === 'dark' ? 'text.secondary' : '#4c545a',
+                                    fontWeight: isActive ? 800 : 600,
+                                    fontSize: { xs: 11, md: 12 },
+                                    lineHeight: 1.15,
+                                    textAlign: 'center',
+                                    transition: 'all 0.2s',
+                                    whiteSpace: 'pre-line',
+                                    position: 'relative',
+                                    zIndex: STATUS_OPTIONS.length - index,
+                                    '&:hover': {
+                                        opacity: 0.88,
+                                    }
+                                }}
+                            >
+                                <Typography variant="body2" sx={{ fontWeight: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', textAlign: 'inherit', zIndex: 1, pl: index === 0 ? 0 : 1, pr: index === STATUS_OPTIONS.length - 1 ? 0 : 1 }}>
+                                    {stage}
+                                </Typography>
+                            </Box>
+                        );
+                    })}
+                </Box>
                 <Button
                     variant="contained"
                     disabled={!selectedStatus || selectedStatus === proposal.status || updatingStatus}
                     onClick={() => setConfirmStatusUpdate(true)}
-                    sx={{ height: 36, px: 3, borderRadius: 1.5, fontWeight: 700, textTransform: 'none', bgcolor: '#2081C3', color: 'common.white', minWidth: 130, '&:hover': { bgcolor: '#1a699f' } }}
+                    sx={{
+                        height: 36,
+                        px: 3,
+                        borderRadius: 1.5,
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        bgcolor: '#2081C3',
+                        color: 'common.white',
+                        minWidth: 130,
+                        '&:hover': { bgcolor: '#1a699f' },
+                        '&:disabled': { bgcolor: 'action.disabledBackground', color: 'text.disabled' }
+                    }}
                 >
                     {updatingStatus ? <CircularProgress size={20} color="inherit" /> : 'Update Status'}
                 </Button>
-                <Box sx={{ flexGrow: 1 }} />
-                <Chip
-                    label={proposal.status || 'Draft'}
-                    color={STATUS_COLORS[proposal.status || 'Draft'] || 'default'}
-                    sx={{ fontWeight: 800, fontSize: 13, px: 1 }}
-                />
             </Card>
 
             <Card sx={{ overflow: 'hidden', borderRadius: 2 }}>
@@ -268,7 +335,7 @@ export function ProposalDetailsView() {
                                     <SectionHeader title="Proposal Information" />
                                     <Stack spacing={2.5} sx={{ mt: 2.5 }}>
                                         <DetailItem label="Client" value={proposal.customer_name || proposal.client_name} subValue={proposal.client_name} icon={<HiOutlineUser size={20} />} />
-                                        <DetailItem label="Billing Name" value={proposal.billing_name || '—'} icon={<HiOutlineBuildingOffice size={20} />} />
+                                        <DetailItem label="Billing Name" value={billingAccountName || proposal.billing_name || '—'} subValue={billingAccountName ? proposal.billing_name : undefined} icon={<HiOutlineBuildingOffice size={20} />} />
                                         <DetailItem label="Proposal Date" value={fDate(proposal.proposal_date)} icon={<HiOutlineCalendar size={20} />} />
                                         {proposal.valid_until && (
                                             <DetailItem label="Valid Until" value={fDate(proposal.valid_until)} icon={<HiOutlineClock size={20} />} />
@@ -357,10 +424,21 @@ export function ProposalDetailsView() {
                                                         <TableCell align="center">{index + 1}</TableCell>
                                                         <TableCell>
                                                             <Stack direction="row" alignItems="center" spacing={1}>
-                                                                <Iconify icon="solar:paperclip-bold" width={16} sx={{ color: 'text.secondary' }} />
-                                                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                                                    {att.file_name || att.attachment?.split('/')?.pop() || '—'}
-                                                                </Typography>
+                                                                <Chip
+                                                                    label={att.file_name || att.attachment?.split('/')?.pop() || '—'}
+                                                                    size="small"
+                                                                    icon={<Iconify icon={"solar:file-bold" as any} width={14} />}
+                                                                    sx={{
+                                                                        maxWidth: 150,
+                                                                        bgcolor: '#22c55e',
+                                                                        color: '#ffffff',
+                                                                        fontWeight: 600,
+                                                                        '& .MuiChip-icon': {
+                                                                            color: '#ffffff',
+                                                                            ml: 0.5,
+                                                                        },
+                                                                    }}
+                                                                />
                                                             </Stack>
                                                         </TableCell>
                                                         <TableCell>
@@ -385,15 +463,13 @@ export function ProposalDetailsView() {
                                                         </TableCell>
                                                         <TableCell align="center">
                                                             <Stack direction="row" spacing={0.5} justifyContent="center">
+                                                                <IconButton size="small" onClick={() => setViewAttachment(att)} sx={{ color: 'info.main' }} title="View Details">
+                                                                    <Iconify icon="solar:eye-bold" width={18} />
+                                                                </IconButton>
                                                                 {att.attachment && (
-                                                                    <>
-                                                                        <IconButton size="small" onClick={() => window.open(att.attachment, '_blank')} sx={{ color: 'info.main' }} title="Preview">
-                                                                            <Iconify icon="solar:eye-bold" width={16} />
-                                                                        </IconButton>
-                                                                        <IconButton size="small" component="a" href={att.attachment} download={att.file_name} sx={{ color: 'success.main' }} title="Download">
-                                                                            <Iconify icon="solar:download-bold" width={16} />
-                                                                        </IconButton>
-                                                                    </>
+                                                                    <IconButton size="small" component="a" href={att.attachment} download={att.file_name} sx={{ color: 'success.main' }} title="Download">
+                                                                        <Iconify icon="solar:download-bold" width={18} />
+                                                                    </IconButton>
                                                                 )}
                                                             </Stack>
                                                         </TableCell>
@@ -433,10 +509,50 @@ export function ProposalDetailsView() {
 
             {/* Snackbar */}
             <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar((p) => ({ ...p, open: false }))} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-                <Alert onClose={() => setSnackbar((p) => ({ ...p, open: false }))} severity={snackbar.severity} sx={{ width: '100%' }}>
+                <Alert onClose={() => setSnackbar(prev => ({ ...prev, open: false }))} severity={snackbar.severity} sx={{ width: '100%' }}>
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            <Dialog open={!!viewAttachment} onClose={() => setViewAttachment(null)} maxWidth="sm" fullWidth>
+                <DialogTitle sx={{ pb: 2 }}>View Attachment Details</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {viewAttachment?.attachment && (
+                            <Box sx={{
+                                mb: 2, 
+                                p: 2, 
+                                border: '1px solid', 
+                                borderColor: 'divider', 
+                                borderRadius: 1, 
+                                textAlign: 'center',
+                                bgcolor: (themeVar) => alpha(themeVar.palette.grey[500], 0.04)
+                            }}>
+                                <Typography variant="subtitle2" sx={{ mb: 1.5 }}>File Preview</Typography>
+                                <Button 
+                                    variant="outlined" 
+                                    color="inherit"
+                                    onClick={() => window.open(viewAttachment.attachment)}
+                                    startIcon={<Iconify icon="solar:link-bold" />}
+                                >
+                                    Open File in New Tab
+                                </Button>
+                            </Box>
+                        )}
+                        
+                        <DetailItem label="File Name" value={viewAttachment?.file_name || viewAttachment?.attachment?.split('/')?.pop()} icon={<HiOutlineDocumentText size={20} />} />
+                        <DetailItem label="Description" value={viewAttachment?.description} icon={<HiOutlineDocumentText size={20} />} />
+                        <DetailItem label="File Size" value={viewAttachment?.file_size} icon={<HiOutlineDocumentText size={20} />} />
+                        <DetailItem label="Uploaded By" value={viewAttachment?.uploaded_by} icon={<HiOutlineUser size={20} />} />
+                        <DetailItem label="Uploaded On" value={viewAttachment?.uploaded_on ? new Date(viewAttachment.uploaded_on).toLocaleString() : undefined} icon={<HiOutlineCalendar size={20} />} />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setViewAttachment(null)} color="inherit">
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* Print Backdrop */}
             <Backdrop sx={{ color: '#fff', zIndex: (t) => t.zIndex.drawer + 1 }} open={printing}>

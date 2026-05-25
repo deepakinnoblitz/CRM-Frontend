@@ -117,7 +117,7 @@ export function ProposalTableRow({
 
             {/* Proposal No */}
             <TableCell component="th" scope="row">
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, }}>
                     {row.reference_no || row.id}
                 </Typography>
             </TableCell>
@@ -178,12 +178,6 @@ export function ProposalTableRow({
             {/* Actions */}
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <IconButton onClick={onPrint} sx={{ color: 'warning.main' }} title="Download PDF">
-                        <Iconify icon={'solar:printer-bold' as any} />
-                    </IconButton>
-                    <IconButton onClick={onPreview} sx={{ color: 'secondary.main' }} title="Preview PDF">
-                        <Iconify icon={'solar:file-text-bold' as any} />
-                    </IconButton>
                     <IconButton onClick={onView} sx={{ color: 'info.main' }} title="View">
                         <Iconify icon={'solar:eye-bold' as any} />
                     </IconButton>

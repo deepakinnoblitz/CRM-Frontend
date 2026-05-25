@@ -106,7 +106,7 @@ export function PurchaseCreateView() {
 
     const [loading, setLoading] = useState(false);
     const { enqueueSnackbar } = useSnackbar();
-    const [errors, setErrors] = useState<{ vendor?: boolean; billNo?: boolean; items?: boolean }>({});
+    const [errors, setErrors] = useState<{ vendor?: boolean; billNo?: boolean; items?: boolean; paymentType?: boolean; paymentTerms?: boolean }>({});
 
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
     const [newItem, setNewItem] = useState({ item_name: '', item_code: '', rate: 0 });
@@ -305,9 +305,11 @@ export function PurchaseCreateView() {
     };
 
     const handleSave = async () => {
-        const newErrors: { vendor?: boolean; billNo?: boolean; items?: boolean } = {};
+        const newErrors: { vendor?: boolean; billNo?: boolean; items?: boolean; paymentType?: boolean; paymentTerms?: boolean } = {};
         if (!vendorName) newErrors.vendor = true;
         if (!billNo) newErrors.billNo = true;
+        if (!paymentType) newErrors.paymentType = true;
+        if (!paymentTerms) newErrors.paymentTerms = true;
         const validItems = items.filter((item) => item.service !== '');
         if (validItems.length === 0) newErrors.items = true;
 
@@ -320,6 +322,16 @@ export function PurchaseCreateView() {
 
         if (newErrors.billNo) {
             enqueueSnackbar('Please enter bill number', { variant: 'error' });
+            return;
+        }
+
+        if (newErrors.paymentType) {
+            enqueueSnackbar('Please select payment type', { variant: 'error' });
+            return;
+        }
+
+        if (newErrors.paymentTerms) {
+            enqueueSnackbar('Please select payment terms', { variant: 'error' });
             return;
         }
 
@@ -351,7 +363,7 @@ export function PurchaseCreateView() {
             const actualVendorName = selectedVendor ? (selectedVendor.first_name || selectedVendor.name) : vendorName;
 
             const purchaseData = {
-                vendor_name: actualVendorName,
+                vendor_name: vendorName,
                 vendor_id: vendorName,
                 bill_no: billNo,
                 bill_date: billDate,
@@ -513,6 +525,7 @@ export function PurchaseCreateView() {
                                     setPaymentTypeDialogOpen(true);
                                 } else {
                                     setPaymentType(newValue?.name || '');
+                                    if (newValue?.name) setErrors((prev) => ({ ...prev, paymentType: false }));
                                 }
                             }}
                             ListboxProps={{
@@ -533,6 +546,8 @@ export function PurchaseCreateView() {
                                     {...params}
                                     label="Payment Type"
                                     required
+                                    error={errors.paymentType}
+                                    helperText={errors.paymentType ? 'Please select payment type' : ''}
                                 />
                             )}
                             renderOption={(props, option) => (
@@ -590,6 +605,7 @@ export function PurchaseCreateView() {
                                     setPaymentTermsDialogOpen(true);
                                 } else {
                                     setPaymentTerms(newValue?.name || '');
+                                    if (newValue?.name) setErrors((prev) => ({ ...prev, paymentTerms: false }));
                                 }
                             }}
                             ListboxProps={{
@@ -610,6 +626,8 @@ export function PurchaseCreateView() {
                                     {...params}
                                     label="Payment Terms"
                                     required
+                                    error={errors.paymentTerms}
+                                    helperText={errors.paymentTerms ? 'Please select payment terms' : ''}
                                 />
                             )}
                             renderOption={(props, option) => (

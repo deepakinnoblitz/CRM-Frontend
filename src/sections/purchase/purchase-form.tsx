@@ -228,7 +228,7 @@ export function PurchaseForm({ id }: Props) {
                         options={vendorOptions}
                         getOptionLabel={(option) => {
                             if (typeof option === 'string') return option;
-                            return option ? `${option.name} - ${option.first_name}` : '';
+                            return option?.first_name || option?.name || '';
                         }}
                         value={
                             vendorOptions.find((opt) => opt.name === formData.vendor_name) ||

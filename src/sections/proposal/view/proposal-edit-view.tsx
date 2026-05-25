@@ -1,7 +1,9 @@
 import dayjs from 'dayjs';
 import { useSnackbar } from 'notistack';
 import { useParams } from 'react-router-dom';
+import { FaFileUpload } from "react-icons/fa";
 import { IoMdArrowBack } from 'react-icons/io';
+import { RiUploadCloud2Line } from "react-icons/ri";
 import { useState, useEffect, useRef } from 'react';
 
 import Box from '@mui/material/Box';
@@ -9,7 +11,9 @@ import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import MenuItem from '@mui/material/MenuItem';
@@ -19,7 +23,10 @@ import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import DialogTitle from '@mui/material/DialogTitle';
 import Autocomplete from '@mui/material/Autocomplete';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -101,6 +108,7 @@ export function ProposalEditView() {
     const [termsAndConditions, setTermsAndConditions] = useState('');
     const [status, setStatus] = useState('Draft');
     const [attachments, setAttachments] = useState<AttachmentRow[]>([]);
+    const [previewAttachment, setPreviewAttachment] = useState<AttachmentRow | null>(null);
 
     // Options
     const [customerOptions, setCustomerOptions] = useState<any[]>([]);
@@ -227,8 +235,20 @@ export function ProposalEditView() {
     };
 
     const handlePreviewAttachment = (row: AttachmentRow) => {
-        if (row._preview) window.open(row._preview, '_blank');
-        else if (row.attachment) window.open(row.attachment, '_blank');
+        setPreviewAttachment(row);
+    };
+
+    const handleClosePreview = () => {
+        setPreviewAttachment(null);
+    };
+
+    const handleOpenFile = () => {
+        if (!previewAttachment) return;
+        if (previewAttachment._preview) {
+            window.open(previewAttachment._preview, '_blank');
+        } else if (typeof previewAttachment.attachment === 'string' && previewAttachment.attachment) {
+            window.open(previewAttachment.attachment, '_blank');
+        }
     };
 
     const handleDownloadAttachment = (row: AttachmentRow) => {
@@ -355,7 +375,7 @@ export function ProposalEditView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/proposals')}
+                        onClick={() => router.push('/deals?tab=proposals')}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', px: 2.5 }}
                     >
@@ -374,21 +394,12 @@ export function ProposalEditView() {
 
             <LocalizationProvider dateAdapter={AdapterDayjs}>
                 {/* Main Details Card */}
-                <Card sx={{ p: 4, mb: 3 }}>
-                    <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: 12, letterSpacing: 1 }}>
-                        Proposal Details
-                    </Typography>
+                <Card sx={{ p: 4, mb: 3, pt: 5 }}>
                     <Box sx={{ display: 'grid', columnGap: 3, rowGap: 3, gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' } }}>
                         <TextField fullWidth label="Proposal Title" required value={proposalTitle}
                             onChange={(e) => { setProposalTitle(e.target.value); if (e.target.value) setTitleError(false); }}
                             error={titleError} helperText={titleError ? 'Proposal title is required' : ''}
                             sx={{ gridColumn: { sm: 'span 2' } }} />
-
-                        {referenceNo && (
-                            <TextField fullWidth label="Reference No" value={referenceNo}
-                                slotProps={{ input: { readOnly: true } }}
-                                sx={{ bgcolor: (t) => alpha(t.palette.grey[500], 0.05) }} />
-                        )}
 
                         <Autocomplete fullWidth options={customerOptions}
                             getOptionLabel={(opt) => opt.first_name ? `${opt.first_name} (${opt.name})` : opt.name || ''}
@@ -399,7 +410,7 @@ export function ProposalEditView() {
                                     helperText={clientError ? 'Please select a client' : ''} />
                             )} />
 
-                        <TextField fullWidth label="Customer Name" value={customerName}
+                        <TextField fullWidth label="Client Name" value={customerName}
                             slotProps={{ input: { readOnly: true } }}
                             sx={{ bgcolor: (t) => alpha(t.palette.grey[500], 0.05) }} />
 
@@ -408,12 +419,6 @@ export function ProposalEditView() {
                             value={billingNameOptions.find((o) => o.name === billingName) || null}
                             onChange={(_e, val) => setBillingName(val?.name || '')}
                             renderInput={(params) => <TextField {...params} label="Billing Name" />} />
-
-                        <Autocomplete fullWidth options={prospectOptions}
-                            getOptionLabel={(opt) => opt.deal_title ? `${opt.deal_title} (${opt.name})` : opt.name || ''}
-                            value={prospectOptions.find((o) => o.name === prospect) || null}
-                            onChange={(_e, val) => setProspect(val?.name || '')}
-                            renderInput={(params) => <TextField {...params} label="Prospect" />} />
 
                         <DatePicker label="Proposal Date *"
                             value={proposalDate ? dayjs(proposalDate) : null}
@@ -425,30 +430,22 @@ export function ProposalEditView() {
                             onChange={(val) => setValidUntil(val?.format('YYYY-MM-DD') || '')}
                             slotProps={{ textField: { fullWidth: true, InputLabelProps: { shrink: true } }, field: { clearable: true, onClear: () => setValidUntil('') } }} />
 
-                        <TextField fullWidth label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
-
                         <TextField fullWidth label="Status" select value={status} onChange={(e) => setStatus(e.target.value)}>
                             {STATUS_OPTIONS.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                         </TextField>
 
                         <TextField fullWidth label="Description" multiline rows={3} value={description}
                             onChange={(e) => setDescription(e.target.value)} sx={{ gridColumn: { sm: 'span 2' } }} />
+                        
+                        <TextField fullWidth multiline rows={5} label="Terms and Conditions"
+                            value={termsAndConditions} onChange={(e) => setTermsAndConditions(e.target.value)} sx={{ gridColumn: { sm: 'span 2' } }}/>
                     </Box>
-                </Card>
-
-                {/* Terms & Conditions */}
-                <Card sx={{ p: 4, mb: 3 }}>
-                    <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: 12, letterSpacing: 1 }}>
-                        Terms & Conditions
-                    </Typography>
-                    <TextField fullWidth multiline rows={6} label="Terms and Conditions"
-                        value={termsAndConditions} onChange={(e) => setTermsAndConditions(e.target.value)} />
                 </Card>
 
                 {/* Attachments */}
                 <Card sx={{ p: 4, mb: 3 }}>
                     <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: 12, letterSpacing: 1 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: 14 }}>
                             Attachments ({attachments.filter((a) => a.attachment).length})
                         </Typography>
                         <Button variant="outlined" size="small" startIcon={<Iconify icon="mingcute:add-line" />}
@@ -485,14 +482,37 @@ export function ProposalEditView() {
                                                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(index, f); e.target.value = ''; }} />
                                             {row.attachment ? (
                                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                                    <Chip label={row.file_name || 'File'} size="small" color="success" icon={<Iconify icon={"solar:file-bold" as any} width={14} />} sx={{ maxWidth: 150 }} />
-                                                    <IconButton size="small" onClick={() => fileInputRefs.current[index]?.click()} title="Change">
-                                                        <Iconify icon="solar:refresh-bold" width={14} />
+                                                    <Chip
+                                                        label={row.file_name || 'File'}
+                                                        size="small"
+                                                        icon={<FaFileUpload size={13} />}
+                                                        sx={{
+                                                            maxWidth: 150,
+                                                            bgcolor: '#22c55e',
+                                                            color: '#ffffff',
+                                                            fontWeight: 600,
+                                                            '& .MuiChip-icon': {
+                                                                color: '#ffffff',
+                                                                ml: 0.5,
+                                                            },
+                                                            p: 1
+                                                        }}
+                                                    />
+                                                    <IconButton size="small" onClick={() => fileInputRefs.current[index]?.click()} title="Change file">
+                                                        <Iconify icon="solar:refresh-bold" width={16} />
                                                     </IconButton>
                                                 </Stack>
                                             ) : (
-                                                <Button size="small" variant="outlined" startIcon={<Iconify icon="solar:upload-bold" width={14} />}
-                                                    onClick={() => fileInputRefs.current[index]?.click()} sx={{ fontSize: 12, borderRadius: 1 }}>
+                                                <Button size="small" variant="contained" startIcon={<RiUploadCloud2Line />}
+                                                    onClick={() => fileInputRefs.current[index]?.click()} 
+                                                    sx={{ 
+                                                        borderRadius: 1.5,
+                                                        fontWeight: 600,
+                                                        textTransform: 'none',
+                                                        bgcolor: '#36b37e',
+                                                        color: 'common.white',
+                                                        '&:hover': { bgcolor: '#2b9065' }
+                                                    }}>
                                                     Upload File
                                                 </Button>
                                             )}
@@ -502,15 +522,15 @@ export function ProposalEditView() {
                                                 onChange={(e) => { const updated = [...attachments]; updated[index].description = e.target.value; setAttachments(updated); }}
                                                 variant="standard" InputProps={{ disableUnderline: true, sx: { fontSize: 13 } }} fullWidth />
                                         </TableCell>
-                                        <TableCell><Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 12 }}>{row.file_name || '—'}</Typography></TableCell>
-                                        <TableCell><Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 12 }}>{row.file_size || '—'}</Typography></TableCell>
-                                        <TableCell><Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 12 }}>{row.uploaded_on || '—'}</Typography></TableCell>
-                                        <TableCell><Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 12 }}>{row.uploaded_by || '—'}</Typography></TableCell>
+                                        <TableCell><Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 14 }}>{row.file_name || '—'}</Typography></TableCell>
+                                        <TableCell><Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 14 }}>{row.file_size || '—'}</Typography></TableCell>
+                                        <TableCell><Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 14 }}>{row.uploaded_on || '—'}</Typography></TableCell>
+                                        <TableCell><Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 14 }}>{row.uploaded_by || '—'}</Typography></TableCell>
                                         <TableCell align="center">
                                             <Stack direction="row" spacing={0.5} justifyContent="center">
-                                                <IconButton size="small" onClick={() => handlePreviewAttachment(row)} sx={{ color: 'info.main' }} disabled={!row.attachment} title="Preview"><Iconify icon="solar:eye-bold" width={16} /></IconButton>
-                                                <IconButton size="small" onClick={() => handleDownloadAttachment(row)} sx={{ color: 'success.main' }} disabled={!row.attachment} title="Download"><Iconify icon="solar:download-bold" width={16} /></IconButton>
-                                                <IconButton size="small" onClick={() => handleRemoveAttachmentRow(index)} sx={{ color: 'error.main' }} title="Delete"><Iconify icon="solar:trash-bin-trash-bold" width={16} /></IconButton>
+                                                <IconButton size="small" onClick={() => handlePreviewAttachment(row)} sx={{ color: 'info.main' }} disabled={!row.attachment} title="Preview"><Iconify icon="solar:eye-bold" width={18} /></IconButton>
+                                                <IconButton size="small" onClick={() => handleDownloadAttachment(row)} sx={{ color: 'success.main' }} disabled={!row.attachment} title="Download"><Iconify icon="solar:download-bold" width={18} /></IconButton>
+                                                <IconButton size="small" onClick={() => handleRemoveAttachmentRow(index)} sx={{ color: 'error.main' }} title="Delete row"><Iconify icon="solar:trash-bin-trash-bold" width={18} /></IconButton>
                                             </Stack>
                                         </TableCell>
                                     </TableRow>
@@ -527,6 +547,100 @@ export function ProposalEditView() {
                     </TableContainer>
                 </Card>
             </LocalizationProvider>
+
+            {/* Preview Dialog */}
+            <Dialog 
+                open={!!previewAttachment} 
+                onClose={handleClosePreview} 
+                maxWidth="sm" 
+                fullWidth 
+                PaperProps={{ sx: { borderRadius: 2 } }}
+            >
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800 }}>Attachment Details</Typography>
+                    <IconButton
+                        onClick={handleClosePreview}
+                        sx={{
+                            color: (theme) => theme.palette.grey[500],
+                            bgcolor: 'background.paper',
+                            '&:hover': { bgcolor: 'background.default' },
+                        }}
+                    >
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent dividers sx={{ px: 3, pb: 4, pt: 3 }}>
+                    {previewAttachment && (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {/* Document Info Card */}
+                            <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.grey[500], 0.04), border: (t) => `1px dashed ${alpha(t.palette.grey[500], 0.2)}` }}>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, textTransform: 'uppercase', fontWeight: 600 }}>
+                                            <Iconify icon="solar:document-bold" width={14} />
+                                            File Name
+                                        </Typography>
+                                        <Typography variant="subtitle2" sx={{ wordBreak: 'break-all' }}>{previewAttachment.file_name || '—'}</Typography>
+                                    </Box>
+                                    
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, textTransform: 'uppercase', fontWeight: 600 }}>
+                                            <Iconify icon={"solar:diskette-bold" as any} width={14} />
+                                            File Size
+                                        </Typography>
+                                        <Typography variant="subtitle2">{previewAttachment.file_size || '—'}</Typography>
+                                    </Box>
+                                </Box>
+                                
+                                <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
+                                
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, textTransform: 'uppercase', fontWeight: 600 }}>
+                                        <Iconify icon="solar:notes-bold" width={14} />
+                                        Description
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: previewAttachment.description ? 'text.primary' : 'text.disabled' }}>
+                                        {previewAttachment.description || 'No description provided.'}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            
+                            {/* Meta Info */}
+                            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2, px: 1 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.success.main, 0.1), color: 'success.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Iconify icon="solar:calendar-date-bold" width={16} />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Uploaded On</Typography>
+                                        <Typography variant="subtitle2" sx={{ fontSize: 13 }}>{previewAttachment.uploaded_on || '—'}</Typography>
+                                    </Box>
+                                </Box>
+                                
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.warning.main, 0.1), color: 'warning.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Iconify icon={"solar:user-circle-bold" as any} width={16} />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Uploaded By</Typography>
+                                        <Typography variant="subtitle2" sx={{ fontSize: 13 }}>{previewAttachment.uploaded_by || '—'}</Typography>
+                                    </Box>
+                                </Box>
+                            </Box>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ m: 1 }}>
+                    <Button
+                        onClick={handleOpenFile}
+                        variant="contained"
+                        disabled={!previewAttachment?.attachment && !previewAttachment?._preview}
+                        startIcon={<Iconify icon="solar:eye-bold" />}
+                    >
+                        View File
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </DashboardContent>
     );
 }

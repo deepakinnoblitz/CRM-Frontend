@@ -173,6 +173,12 @@ export function DealDetailsView() {
         }
     }, [deal, router]);
 
+    const handleCreateProposal = useCallback(() => {
+        if (deal) {
+            router.push(`/proposals/new?deal_id=${deal.name}`);
+        }
+    }, [deal, router]);
+
     const handleCreateInvoice = useCallback(() => {
         if (deal) {
             router.push(`/invoices/new?deal_id=${deal.name}`);
@@ -231,6 +237,21 @@ export function DealDetailsView() {
                         }}
                     >
                         Go Back
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleCreateProposal}
+                        startIcon={<HiOutlineDocumentPlus size={17} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            bgcolor: '#8E33FF',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#6A22C4' }
+                        }}
+                    >
+                        Create Proposal
                     </Button>
                     <Button
                         variant="contained"
