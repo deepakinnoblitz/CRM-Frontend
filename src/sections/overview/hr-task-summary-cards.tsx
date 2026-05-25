@@ -13,6 +13,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import ButtonBase from '@mui/material/ButtonBase';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -21,9 +22,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
-const filter = createFilterOptions<string>();
-
 import { fDate } from 'src/utils/format-time';
+import { frappeRequest } from 'src/utils/csrf';
 
 import { fetchHRTaskStats, fetchProjects, fetchDepartments, fetchTaskManagerList, TaskManager } from 'src/api/task-manager';
 
@@ -31,6 +31,8 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { TableHeadCustom } from 'src/components/table';
+
+import { useAuth } from 'src/auth/auth-context';
 
 import { HRSummaryWidget } from './hr-summary-widget';
 
@@ -45,6 +47,7 @@ const TABLE_HEAD = [
     { id: 'due_date', label: 'Due Date', width: 120 },
 ];
 
+const filter = createFilterOptions<string>();
 const STATUS_LABEL_COLOR: Record<string, 'error' | 'warning' | 'success' | 'info' | 'default'> = {
     Open: 'error',
     'In Progress': 'warning',
@@ -59,8 +62,118 @@ const PRIORITY_MAP: Record<string, { color: string, icon: string }> = {
     Low: { color: '#3399ff', icon: 'solar:flag-bold' },
 };
 
-export function HRTaskSummaryCards() {
+function RoleViewSwitcher({ value, onChange }: { value: 'Self' | 'Manager'; onChange: (val: 'Self' | 'Manager') => void }) {
     const theme = useTheme();
+    const [pressed, setPressed] = useState(false);
+
+    const activeIndex = value === 'Self' ? 0 : 1;
+
+    const renderOption = (label: string, optionValue: 'Self' | 'Manager') => {
+        const isActive = value === optionValue;
+        return (
+            <ButtonBase
+                disableRipple
+                onClick={() => onChange(optionValue)}
+                onMouseDown={() => setPressed(true)}
+                onMouseUp={() => setPressed(false)}
+                onMouseLeave={() => setPressed(false)}
+                onTouchStart={() => setPressed(true)}
+                onTouchEnd={() => setPressed(false)}
+                sx={{
+                    flex: 1,
+                    height: 32,
+                    borderRadius: '30px',
+                    px: 1.5,
+                    zIndex: 2,
+                    position: 'relative',
+                    transition: theme.transitions.create(
+                        ['color', 'transform', 'text-shadow'],
+                        { duration: 280, easing: theme.transitions.easing.easeInOut }
+                    ),
+                    color: isActive ? 'common.white' : 'text.disabled',
+                    '&:hover': !isActive
+                        ? {
+                            color: 'primary.main',
+                            transform: 'translateY(-1px)',
+                        }
+                        : {},
+                    '&:active': {
+                        transform: 'scale(0.96)',
+                    },
+                }}
+            >
+                <Typography
+                    variant="caption"
+                    sx={{
+                        fontSize: '13px',
+                        fontWeight: isActive ? 700 : 600,
+                        whiteSpace: 'nowrap',
+                        transform: isActive ? 'scale(1.04)' : 'scale(1)',
+                        transition: theme.transitions.create('transform', {
+                            duration: 280,
+                            easing: theme.transitions.easing.easeInOut,
+                        }),
+                    }}
+                >
+                    {label}
+                </Typography>
+            </ButtonBase>
+        );
+    };
+
+    return (
+        <Box
+            sx={{
+                p: 0.25,
+                borderRadius: '40px',
+                background: `linear-gradient(135deg,
+                    ${alpha(theme.palette.common.white, 0.94)},
+                    ${alpha(theme.palette.primary.lighter ?? theme.palette.primary.light, 0.16)}
+                )`,
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.14)}`,
+                display: 'inline-flex',
+                alignItems: 'center',
+                minWidth: 160,
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: `
+                    0 8px 24px -16px ${alpha(theme.palette.common.black, 0.2)},
+                    inset 0 1px 0 ${alpha(theme.palette.common.white, 0.92)}
+                `,
+            }}
+        >
+            <Box
+                sx={{
+                    position: 'absolute',
+                    top: 2,
+                    left: 2,
+                    width: 'calc(50% - 2px)',
+                    height: 'calc(100% - 4px)',
+                    borderRadius: '32px',
+                    background: `linear-gradient(135deg,
+                        ${value === 'Self' ? theme.palette.info.light : theme.palette.primary.light},
+                        ${value === 'Self' ? theme.palette.info.main : theme.palette.primary.main}
+                    )`,
+                    transform: `translateX(${activeIndex * 100}%) scale(${pressed ? 0.95 : 1})`,
+                    transition: theme.transitions.create(['transform', 'box-shadow'], {
+                        easing: theme.transitions.easing.easeInOut,
+                        duration: 320,
+                    }),
+                }}
+            />
+            <Stack direction="row" sx={{ width: '100%', position: 'relative', zIndex: 3 }}>
+                {renderOption('Self', 'Self')}
+                {renderOption('Manager', 'Manager')}
+            </Stack>
+        </Box>
+    );
+}
+
+export function HRTaskSummaryCards({ employeeFilter }: { employeeFilter?: string }) {
+    const theme = useTheme();
+    const { user } = useAuth();
+    const isTaskManager = user?.roles?.includes('Task Manager');
+    const [viewMode, setViewMode] = useState<'Self' | 'Manager'>('Self');
 
     const [stats, setStats] = useState({ total: 0, open: 0, reopen: 0, in_progress: 0, completed: 0, on_hold: 0 });
     const [overdueTasks, setOverdueTasks] = useState<TaskManager[]>([]);
@@ -105,35 +218,53 @@ export function HRTaskSummaryCards() {
             setLoading(true);
             setTasksLoading(true);
 
+            const effectiveEmployeeFilter = (isTaskManager && viewMode === 'Manager') ? undefined : employeeFilter;
+
             // Fetch Stats
             const statsData = await fetchHRTaskStats(
                 selectedProject,
                 selectedDepartment,
                 fromDate?.format('YYYY-MM-DD'),
-                toDate?.format('YYYY-MM-DD')
+                toDate?.format('YYYY-MM-DD'),
+                effectiveEmployeeFilter
             );
             setStats(statsData);
 
             const today = dayjs().format('YYYY-MM-DD');
             const nextWeek = dayjs().add(7, 'days').format('YYYY-MM-DD');
 
+            // Resolve employee tasks if filtering by employee
+            let employeeTaskNames: string[] | null = null;
+            if (effectiveEmployeeFilter) {
+                employeeTaskNames = statsData.employee_task_names || [];
+
+                if (employeeTaskNames.length === 0) {
+                    setOverdueTasks([]);
+                    setUpcomingTasks([]);
+                    return;
+                }
+            }
+
             // Common filters
             const baseFilters: any[] = [];
             if (selectedProject !== 'All') baseFilters.push(['Task Manager', 'project', '=', selectedProject]);
             if (selectedDepartment !== 'All') baseFilters.push(['Task Manager', 'department', '=', selectedDepartment]);
+            if (employeeTaskNames && employeeTaskNames.length > 0) {
+                baseFilters.push(['Task Manager', 'name', 'in', employeeTaskNames]);
+            }
 
             // Fetch Overdue
             const overdueFilters = [
                 ...baseFilters,
                 ['Task Manager', 'due_date', '<', today],
-                ['Task Manager', 'status', 'not in', ['Completed', 'Cancelled']]
+                ['Task Manager', 'status', 'in', ['Open', 'In Progress', 'Reopened']]
             ];
 
             // Fetch Upcoming
             const upcomingFilters = [
                 ...baseFilters,
                 ['Task Manager', 'due_date', 'between', [today, nextWeek]],
-                ['Task Manager', 'status', 'not in', ['Completed', 'Cancelled']]
+                ['Task Manager', 'status', 'in', ['Open', 'In Progress', 'Reopened']]
             ];
 
             const [overdueData, upcomingData] = await Promise.all([
@@ -152,7 +283,7 @@ export function HRTaskSummaryCards() {
             setLoading(false);
             setTasksLoading(false);
         }
-    }, [selectedProject, selectedDepartment, fromDate, toDate]);
+    }, [selectedProject, selectedDepartment, fromDate, toDate, employeeFilter, isTaskManager, viewMode]);
 
     useEffect(() => {
         loadData();
@@ -211,8 +342,11 @@ export function HRTaskSummaryCards() {
     return (
         <Card sx={{ p: 3, borderRadius: 2, mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 4, flexWrap: 'wrap', gap: 3 }}>
-                <Box>
+                <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
                     <Typography variant="h6" sx={{ fontWeight: 'fontWeightBold', pl: 0.5, }}>Task Analytics Overview</Typography>
+                    {employeeFilter && isTaskManager && (
+                        <RoleViewSwitcher value={viewMode} onChange={setViewMode} />
+                    )}
                 </Box>
 
                 <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -261,71 +395,88 @@ export function HRTaskSummaryCards() {
                         renderInput={(params) => <TextField {...params} placeholder="Project" />}
                     />
 
-                    <Autocomplete
-                        size="small"
-                        options={['All Departments', ...departments.map(d => d.department_name)]}
-                        filterOptions={(options, params) => {
-                            const filtered = filter(options, params);
-                            return filtered.slice(0, 10);
-                        }}
-                        value={selectedDepartment === 'All' ? 'All Departments' : departments.find(d => d.name === selectedDepartment)?.department_name || 'All Departments'}
-                        onChange={(_event, newValue) => {
-                            if (!newValue || newValue === 'All Departments') {
-                                setSelectedDepartment('All');
-                            } else {
-                                const dept = departments.find(d => d.department_name === newValue);
-                                setSelectedDepartment(dept ? dept.name : 'All');
-                            }
-                        }}
-                        sx={autocompleteSx}
-                        renderInput={(params) => <TextField {...params} placeholder="Department" />}
-                    />
+                    {(!employeeFilter || (isTaskManager && viewMode === 'Manager')) && (
+                        <Autocomplete
+                            size="small"
+                            options={['All Departments', ...departments.map(d => d.department_name)]}
+                            filterOptions={(options, params) => {
+                                const filtered = filter(options, params);
+                                return filtered.slice(0, 10);
+                            }}
+                            value={selectedDepartment === 'All' ? 'All Departments' : departments.find(d => d.name === selectedDepartment)?.department_name || 'All Departments'}
+                            onChange={(_event, newValue) => {
+                                if (!newValue || newValue === 'All Departments') {
+                                    setSelectedDepartment('All');
+                                } else {
+                                    const dept = departments.find(d => d.department_name === newValue);
+                                    setSelectedDepartment(dept ? dept.name : 'All');
+                                }
+                            }}
+                            sx={autocompleteSx}
+                            renderInput={(params) => <TextField {...params} placeholder="Department" />}
+                        />
+                    )}
                 </Box>
             </Box>
 
             <Grid container spacing={3}>
-                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
                     <HRSummaryWidget
                         title="Total Tasks"
                         total={stats.total}
                         loading={loading}
                         compact
+                        borderStyle="borderLeft"
                     />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
+                    <HRSummaryWidget
+                        title="Open Tasks"
+                        total={stats.open}
+                        loading={loading}
+                        color="primary"
+                        compact
+                        borderStyle="borderLeft"
+                    />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
                     <HRSummaryWidget
                         title="In Progress Tasks"
                         total={stats.in_progress}
                         loading={loading}
                         color="info"
                         compact
+                        borderStyle="borderLeft"
                     />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
                     <HRSummaryWidget
                         title="Completed Tasks"
                         total={stats.completed}
                         loading={loading}
                         color="success"
                         compact
+                        borderStyle="borderLeft"
                     />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
                     <HRSummaryWidget
                         title="Reopen Tasks"
                         total={stats.reopen}
                         loading={loading}
                         color="error"
                         compact
+                        borderStyle="borderLeft"
                     />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
                     <HRSummaryWidget
                         title="On Hold Tasks"
                         total={stats.on_hold}
                         loading={loading}
                         color="warning"
                         compact
+                        borderStyle="borderLeft"
                     />
                 </Grid>
             </Grid>
@@ -336,7 +487,7 @@ export function HRTaskSummaryCards() {
                 {/* Overdue Tasks Column */}
                 <Grid size={{ xs: 12, md: 6 }}>
                     <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700, pl: 1 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, pl: 1, color: '#d03f18' }}>
                             Overdue Tasks
                         </Typography>
                         <Label color="error" variant="soft" sx={{ height: 22, px: 0.75, fontSize: 12, fontWeight: 800, borderRadius: '6px' }}>
@@ -362,7 +513,7 @@ export function HRTaskSummaryCards() {
                 {/* Upcoming Tasks Column */}
                 <Grid size={{ xs: 12, md: 6 }}>
                     <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700, pl: 1 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, pl: 1, color: '#0EA5E9' }}>
                             Upcoming (Next 7 Days)
                         </Typography>
                         <Label color="info" variant="soft" sx={{ height: 22, px: 0.75, fontSize: 12, fontWeight: 800, borderRadius: '6px' }}>
@@ -436,8 +587,8 @@ function TaskMiniTable({
                     )}
                     <Table size="medium" sx={{
                         '& .MuiTableCell-head': {
-                            bgcolor: alpha(theme.palette.grey[500], 0.08),
-                            borderBottom: `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
+                            bgcolor: (th) => th.palette.background.neutral,
+                            borderBottom: (th) => `1px solid ${th.palette.divider}`,
                             py: 1.5,
                             color: 'text.secondary',
                             fontSize: '0.8rem',

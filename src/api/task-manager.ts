@@ -380,13 +380,14 @@ export async function getTaskManagerPermissions(): Promise<{ read: boolean; writ
     return data.message || { read: false, write: false, create: false, delete: false };
 }
 
-export async function fetchHRTaskStats(project?: string, department?: string, fromDate?: string, toDate?: string): Promise<{ total: number; open: number; reopen: number; in_progress: number; completed: number; on_hold: number }> {
+export async function fetchHRTaskStats(project?: string, department?: string, fromDate?: string, toDate?: string, employeeId?: string): Promise<{ total: number; open: number; reopen: number; in_progress: number; completed: number; on_hold: number; employee_task_names?: string[] }> {
     let url = '/api/method/company.company.frontend_api.get_hr_task_stats';
     const params = new URLSearchParams();
     if (project && project !== 'All') params.append('project', project);
     if (department && department !== 'All') params.append('department', department);
     if (fromDate) params.append('from_date', fromDate);
     if (toDate) params.append('to_date', toDate);
+    if (employeeId) params.append('employee_id', employeeId);
     
     if (params.toString()) url += `?${params.toString()}`;
 
