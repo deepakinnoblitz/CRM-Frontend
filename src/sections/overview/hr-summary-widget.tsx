@@ -17,10 +17,13 @@ type Props = CardProps & {
     color?: 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'error';
     loading?: boolean;
     compact?: boolean;
+    borderStyle?: 'default' | 'borderLeft';
 };
 
-export function HRSummaryWidget({ title, total, icon, color = 'primary', loading, compact, sx, ...other }: Props) {
+export function HRSummaryWidget({ title, total, icon, color = 'primary', loading, compact, borderStyle = 'default', sx, ...other }: Props) {
     const theme = useTheme();
+
+    const mainColor = (theme.palette as any)[color]?.main || theme.palette.primary.main;
 
     const renderIcon = icon ? (
         <Box
@@ -33,7 +36,7 @@ export function HRSummaryWidget({ title, total, icon, color = 'primary', loading
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: `${color}.main`,
-                bgcolor: alpha((theme.palette as any)[color]?.main || theme.palette.primary.main, 0.12),
+                bgcolor: alpha(mainColor, 0.12),
                 transition: theme.transitions.create(['transform'], {
                     duration: theme.transitions.duration.shorter,
                 }),
@@ -67,9 +70,24 @@ export function HRSummaryWidget({ title, total, icon, color = 'primary', loading
                             transform: 'scale(1.1)',
                         },
                     },
-                    // Subtle background gradient based on color
-                    background: `linear-gradient(150deg, ${alpha((theme.palette as any)[color]?.main || theme.palette.primary.main, 0.06)} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                    border: `1px solid ${alpha((theme.palette as any)[color]?.main || theme.palette.primary.main, 0.16)}`,
+                    border: `1px solid ${alpha(mainColor, 0.16)}`,
+                    ...(borderStyle === 'default' && {
+                        background: `linear-gradient(150deg, ${alpha(mainColor, 0.06)} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                    }),
+                    ...(borderStyle === 'borderLeft' && {
+                        bgcolor: 'background.paper',
+                        overflow: 'hidden',
+                        '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 10,
+                            bottom: 10,
+                            left: 0,
+                            width: 2,
+                            borderRadius: '0 4px 4px 0',
+                            bgcolor: mainColor,
+                        }
+                    }),
                 },
                 ...(Array.isArray(sx) ? sx : [sx]),
             ]}

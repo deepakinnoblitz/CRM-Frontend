@@ -3,8 +3,8 @@ import { varAlpha } from 'minimal-shared/utils';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
+import { useTheme, alpha } from '@mui/material/styles';
 
 import { TaskManager } from 'src/api/task-manager';
 
@@ -22,9 +22,9 @@ interface Props {
     permissions: { read: boolean; write: boolean; create: boolean; delete: boolean };
 }
 
-export default function TaskKanbanColumn({ 
-    status, 
-    tasks, 
+export default function TaskKanbanColumn({
+    status,
+    tasks,
     onUpdateStatus,
     onViewDetails,
     onEditTask,
@@ -35,12 +35,23 @@ export default function TaskKanbanColumn({
 
     const getStatusColor = () => {
         switch (status) {
-            case 'Open': return theme.palette.info.main;
-            case 'In Progress': return theme.palette.warning.main;
-            case 'On Hold': return '#f59e0b';
-            case 'Completed': return theme.palette.success.main;
-            case 'Reopened': return theme.palette.error.main;
-            default: return theme.palette.text.primary;
+            case 'Open':
+                return '#0EA5E9'; // Sky Blue
+
+            case 'In Progress':
+                return '#F59E0B'; // Amber
+
+            case 'On Hold':
+                return '#F97316'; // Orange
+
+            case 'Completed':
+                return '#22C55E'; // Emerald Green
+
+            case 'Reopened':
+                return '#EF4444'; // Soft Red
+
+            default:
+                return theme.palette.text.primary;
         }
     };
 
@@ -55,27 +66,26 @@ export default function TaskKanbanColumn({
                 backgroundColor: varAlpha(theme.vars.palette.grey['500Channel'], 0.04),
                 borderRadius: 2,
                 flexShrink: 0,
-                border: `1px solid ${varAlpha(theme.vars.palette.grey['500Channel'], 0.12)}`,
+                border: `1px solid ${alpha(getStatusColor(), 0.24)}`,
             }}
         >
-            <Box 
-                sx={{ 
-                    p: 2, 
-                    pb: 1.5, 
-                    display: 'flex', 
-                    alignItems: 'center', 
+            <Box
+                sx={{
+                    p: 2,
+                    pb: 1.5,
+                    display: 'flex',
+                    alignItems: 'center',
                     justifyContent: 'space-between',
-                    borderBottom: (prevTheme) => `2px solid ${getStatusColor()}`,
-                    bgcolor: varAlpha(theme.vars.palette.grey['500Channel'], 0.02),
+                    bgcolor: getStatusColor(),
                     borderTopLeftRadius: 'inherit',
                     borderTopRightRadius: 'inherit',
-                }} 
+                }}
             >
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, textTransform: 'capitalize' }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, textTransform: 'capitalize', color: '#fff' }}>
                     {status}
                 </Typography>
-                
-                <Box sx={{ width: 22, height: 22, borderRadius: '50%', bgcolor: 'text.primary', color: 'background.paper', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>
+
+                <Box sx={{ width: 22, height: 22, borderRadius: '50%', bgcolor: 'background.paper', color: getStatusColor(), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>
                     {tasks.length}
                 </Box>
             </Box>
@@ -97,12 +107,12 @@ export default function TaskKanbanColumn({
                 }}
             >
                 {tasks.length === 0 ? (
-                    <Stack 
-                        alignItems="center" 
-                        justifyContent="center" 
-                        sx={{ 
-                            flexGrow: 1, 
-                            height: 1, 
+                    <Stack
+                        alignItems="center"
+                        justifyContent="center"
+                        sx={{
+                            flexGrow: 1,
+                            height: 1,
                             py: 8,
                             borderRadius: 1.5,
                             border: (th) => `1px dashed ${varAlpha(th.vars.palette.grey['500Channel'], 0.16)}`,
@@ -117,10 +127,10 @@ export default function TaskKanbanColumn({
                     </Stack>
                 ) : (
                     tasks.map((task) => (
-                        <TaskKanbanCard 
-                            key={task.name} 
-                            task={task} 
-                            onUpdateStatus={onUpdateStatus} 
+                        <TaskKanbanCard
+                            key={task.name}
+                            task={task}
+                            onUpdateStatus={onUpdateStatus}
                             onViewDetails={onViewDetails}
                             onEditTask={onEditTask}
                             onDeleteTask={onDeleteTask}

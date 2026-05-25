@@ -154,6 +154,13 @@ export function HRDashboardView() {
         }
     };
 
+    const hasCrmOrSalesRole = user?.roles?.some((role: string) => {
+        const r = role.toLowerCase();
+        return r.includes('crm and sales');
+    });
+
+    const isHrOnlyWithTaskAccess = !hasCrmOrSalesRole && user?.roles?.some((role: string) => role.toLowerCase().includes('task manager'));
+
     return (
         <DashboardContent maxWidth="xl">
             <Typography variant="h4" sx={{ mb: { xs: 3, md: 2 }, mt: 3 }}>
@@ -170,6 +177,13 @@ export function HRDashboardView() {
                         list={data.announcements}
                     />
                 </Grid>
+
+                {/* Task Dashboard for CRM/Sales Roles */}
+                {hasCrmOrSalesRole && (
+                    <Grid size={{ xs: 12 }}>
+                        <HRTaskSummaryCards />
+                    </Grid>
+                )}
 
                 {/* Summary Widgets */}
                 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
@@ -239,10 +253,13 @@ export function HRDashboardView() {
                     />
                 </Grid> */}
 
-                {/* Task Dashboard */}
-                <Grid size={{ xs: 12 }}>
-                    {user?.roles?.includes('Task Manager') && <HRTaskSummaryCards />}
-                </Grid>
+                {/* Task Dashboard for HR Only Role */}
+                {isHrOnlyWithTaskAccess && (
+                    <Grid size={{ xs: 12 }}>
+                        <HRTaskSummaryCards />
+                    </Grid>
+                )}
+
 
                 {/* Today's Leaves */}
                 <Grid size={{ xs: 12, md: 6 }}>

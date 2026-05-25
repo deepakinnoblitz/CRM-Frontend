@@ -161,7 +161,12 @@ export default function TaskListView({
         filters.department !== 'all';
 
     const dataFiltered = tasks.filter((task) => {
-        if (filterName && !task.title.toLowerCase().includes(filterName.toLowerCase())) return false;
+        if (filterName) {
+            const searchStr = filterName.toLowerCase();
+            const titleMatch = task.title?.toLowerCase().includes(searchStr);
+            const nameMatch = task.name?.toLowerCase().includes(searchStr);
+            if (!titleMatch && !nameMatch) return false;
+        }
         if (filters.status !== 'all' && task.status !== filters.status) return false;
         if (filters.project !== 'all' && task.project !== filters.project) return false;
         if (filters.priority !== 'all' && task.priority !== filters.priority) return false;

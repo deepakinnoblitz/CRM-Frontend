@@ -26,6 +26,7 @@ import { HRDashboardTable } from '../hr-dashboard-table';
 import { LeaveStatusCards } from '../leave-status-cards';
 import { DashboardEomCard } from '../dashboard-eom-card';
 import { MissingTimesheets } from '../missing-timesheets';
+import { HRTaskSummaryCards } from '../hr-task-summary-cards';
 import { PremiumWorkingHours } from '../premium-working-hours';
 import { TodayPresenceWidget } from '../today-presence-widget';
 import { PersonalityManagement } from '../personality-management';
@@ -134,6 +135,11 @@ export function EmployeeDashboardView() {
                             posting_date: a.posting_date,
                         }))}
                     />
+                </Grid>
+
+                {/* Task Analytics Overview */}
+                <Grid size={{ xs: 12 }}>
+                    <HRTaskSummaryCards employeeFilter={data.employee} />
                 </Grid>
 
                 {/* 2. Last Seven Days Working Hours (Premium Widget) */}
