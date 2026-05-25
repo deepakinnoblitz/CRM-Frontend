@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
-import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -42,6 +42,7 @@ export function InvoiceCollectionReportView() {
     const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
+    const location = useLocation();
     const { exportingPdf, handleExportPdf } = usePdfExport();
 
     // Filters
@@ -311,7 +312,7 @@ export function InvoiceCollectionReportView() {
                                                 <TableCell sx={{ color: 'error.main', fontWeight: 600 }}>{fCurrency(row.amount_pending)}</TableCell>
                                                 <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                     <IconButton
-                                                        onClick={() => navigate(`/invoice-collections/${encodeURIComponent(row.id)}/view`)}
+                                                        onClick={() => navigate(`/invoice-collections/${encodeURIComponent(row.id)}/view`, { state: { from: location.pathname } })}
                                                         sx={{ color: 'info.main' }}
                                                     >
                                                         <Iconify icon="solar:eye-bold" />

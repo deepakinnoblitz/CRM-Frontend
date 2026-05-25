@@ -116,14 +116,12 @@ export function exportToPdf({
     },
     styles: {
       fontSize: fontSize,
-      cellPadding: 2.5,
+      cellPadding: 3,
       overflow: 'linebreak',
-      lineWidth: 0.1,
-      lineColor: [220, 220, 220],
-      textColor: [33, 43, 54]
-    },
-    alternateRowStyles: {
-      fillColor: [248, 249, 250]
+      lineWidth: 0.15,
+      lineColor: [60, 60, 60],
+      textColor: [33, 43, 54],
+      valign: 'middle'
     },
     columnStyles: columnStyles
   };
@@ -236,9 +234,10 @@ export function exportToPdf({
       theme: 'grid',
       styles: {
         fontSize: 8,
-        cellPadding: 2.5,
-        lineWidth: 0.1,
-        lineColor: [220, 220, 220]
+        cellPadding: 3,
+        lineWidth: 0.15,
+        lineColor: [60, 60, 60],
+        valign: 'middle'
       },
       columnStyles: {
         0: { fontStyle: 'bold', fillColor: [244, 246, 248], textColor: [99, 115, 129], cellWidth: 60 },

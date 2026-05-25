@@ -32,8 +32,8 @@ export async function generateContactPdf({ reportData, selected = [], summary }:
   ]);
 
   await exportToPdf({
-    title: 'Contact Report',
-    filename: 'Contact_Report',
+    title: 'Clients Report',
+    filename: 'Clients_Report',
     headers,
     body,
     orientation: 'landscape',
