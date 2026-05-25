@@ -432,7 +432,7 @@ export const crmAndSalesNavData = [
   },
     {
     title: 'Masters',
-    path: '',
+    path: '/master',
     icon: <IoMdFolderOpen size={22} />,
     children: [
       { title: 'Lead From', path: '/master/lead-from' },

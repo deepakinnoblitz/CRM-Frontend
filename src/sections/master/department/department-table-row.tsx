@@ -104,10 +104,6 @@ export function DepartmentTableRow({
 
       <TableCell align="right">
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-          <IconButton size="small" onClick={onViewRow} sx={{ color: 'info.main' }}>
-            <Iconify icon="solar:eye-bold" />
-          </IconButton>
-
           <IconButton size="small" onClick={onEditRow} sx={{ color: 'primary.main' }}>
             <Iconify icon="solar:pen-bold" />
           </IconButton>

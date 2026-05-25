@@ -110,7 +110,7 @@ export function PurchaseEditView() {
     const [loading, setLoading] = useState(false);
     const [dataLoading, setDataLoading] = useState(true);
     const { enqueueSnackbar } = useSnackbar();
-    const [errors, setErrors] = useState<{ vendor?: boolean; billNo?: boolean; items?: boolean }>({});
+    const [errors, setErrors] = useState<{ vendor?: boolean; billNo?: boolean; items?: boolean; paymentType?: boolean; paymentTerms?: boolean }>({});
 
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
     const [newItem, setNewItem] = useState({ item_name: '', item_code: '', rate: 0 });
@@ -347,9 +347,11 @@ export function PurchaseEditView() {
     };
 
     const handleSave = async () => {
-        const newErrors: { vendor?: boolean; billNo?: boolean; items?: boolean } = {};
+        const newErrors: { vendor?: boolean; billNo?: boolean; items?: boolean; paymentType?: boolean; paymentTerms?: boolean } = {};
         if (!vendorName) newErrors.vendor = true;
         if (!billNo) newErrors.billNo = true;
+        if (!paymentType) newErrors.paymentType = true;
+        if (!paymentTerms) newErrors.paymentTerms = true;
         const validItems = items.filter((item) => item.service !== '');
         if (validItems.length === 0) newErrors.items = true;
 
@@ -362,6 +364,16 @@ export function PurchaseEditView() {
 
         if (newErrors.billNo) {
             enqueueSnackbar('Please enter bill number', { variant: 'error' });
+            return;
+        }
+
+        if (newErrors.paymentType) {
+            enqueueSnackbar('Please select payment type', { variant: 'error' });
+            return;
+        }
+
+        if (newErrors.paymentTerms) {
+            enqueueSnackbar('Please select payment terms', { variant: 'error' });
             return;
         }
 
@@ -393,7 +405,7 @@ export function PurchaseEditView() {
             const actualVendorName = selectedVendor ? (selectedVendor.first_name || selectedVendor.name) : vendorName;
 
             const purchaseData = {
-                vendor_name: actualVendorName,
+                vendor_name: vendorName,
                 vendor_id: vendorName,
                 bill_no: billNo,
                 bill_date: billDate,
@@ -572,6 +584,7 @@ export function PurchaseEditView() {
                                     setPaymentTypeDialogOpen(true);
                                 } else {
                                     setPaymentType(newValue?.name || '');
+                                    if (newValue?.name) setErrors((prev) => ({ ...prev, paymentType: false }));
                                 }
                             }}
                             ListboxProps={{
@@ -591,6 +604,9 @@ export function PurchaseEditView() {
                                 <TextField
                                     {...params}
                                     label="Payment Type"
+                                    required
+                                    error={errors.paymentType}
+                                    helperText={errors.paymentType ? 'Please select payment type' : ''}
                                 />
                             )}
                             renderOption={(props, option) => (
@@ -648,6 +664,7 @@ export function PurchaseEditView() {
                                     setPaymentTermsDialogOpen(true);
                                 } else {
                                     setPaymentTerms(newValue?.name || '');
+                                    if (newValue?.name) setErrors((prev) => ({ ...prev, paymentTerms: false }));
                                 }
                             }}
                             ListboxProps={{
@@ -667,7 +684,10 @@ export function PurchaseEditView() {
                                 <TextField
                                     {...params}
                                     label="Payment Terms"
-                                 />
+                                    required
+                                    error={errors.paymentTerms}
+                                    helperText={errors.paymentTerms ? 'Please select payment terms' : ''}
+                                />
                             )}
                             renderOption={(props, option) => (
                                 <Box

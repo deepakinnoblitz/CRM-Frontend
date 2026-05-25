@@ -23,6 +23,7 @@ import { useRouter } from 'src/routes/hooks';
 import { getDeal, updateDeal } from 'src/api/deals';
 import { fetchRelatedInvoices } from 'src/api/invoice';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { fetchRelatedProposals } from 'src/api/proposal';
 import { fetchRelatedEstimations } from 'src/api/estimation';
 
 const STAGE_OPTIONS = [
@@ -172,6 +173,12 @@ export function DealDetailsView() {
         }
     }, [deal, router]);
 
+    const handleCreateProposal = useCallback(() => {
+        if (deal) {
+            router.push(`/proposals/new?deal_id=${deal.name}`);
+        }
+    }, [deal, router]);
+
     const handleCreateInvoice = useCallback(() => {
         if (deal) {
             router.push(`/invoices/new?deal_id=${deal.name}`);
@@ -181,6 +188,7 @@ export function DealDetailsView() {
     const TABS = [
         { value: 'estimations', label: 'Estimations', icon: <HiOutlineClipboardDocumentCheck size={18} /> },
         { value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> },
+        { value: 'proposals', label: 'Proposals', icon: <HiOutlineDocumentPlus size={18} /> },
         { value: 'stage_history', label: 'Stage History', icon: <HiOutlineClock size={18} /> },
     ];
 
@@ -229,6 +237,21 @@ export function DealDetailsView() {
                         }}
                     >
                         Go Back
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleCreateProposal}
+                        startIcon={<HiOutlineDocumentPlus size={17} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            bgcolor: '#8E33FF',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#6A22C4' }
+                        }}
+                    >
+                        Create Proposal
                     </Button>
                     <Button
                         variant="contained"
