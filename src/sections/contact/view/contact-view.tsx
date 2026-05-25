@@ -480,7 +480,7 @@ export function ContactView() {
                                     { id: 'sourceLead', label: 'Source Lead' },
                                     { id: 'phone', label: 'Phone' },
                                     { id: 'email', label: 'Email' },
-                                    { id: '' },
+                                    { id: 'actions', label: 'Actions', align: 'right' },
                                 ]}
                             />
 

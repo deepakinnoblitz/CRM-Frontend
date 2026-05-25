@@ -228,7 +228,7 @@ export default function CRMExpenseTrackerView() {
                                     { id: 'type', label: 'Type' },
                                     { id: 'date_time', label: 'Date' },
                                     { id: 'amount', label: 'Amount' },
-                                    { id: '' },
+                                    { id: 'actions', label: 'Actions', align: 'right' },
                                 ]}
                             />
                             <TableBody>

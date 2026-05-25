@@ -23,6 +23,35 @@ import type { NavItem } from '../nav-config-dashboard';
 
 // ----------------------------------------------------------------------
 
+const isRouteActive = (itemPath: string, currentFullPath: string) => {
+  if (!itemPath) return false;
+
+  const [itemPathname, itemSearch] = itemPath.split('?');
+  const [currentPathname, currentSearch] = currentFullPath.split('?');
+
+  if (itemPathname === '/') {
+    return currentPathname === '/';
+  }
+
+  const isPathnameActive =
+    currentPathname === itemPathname ||
+    currentPathname.startsWith(itemPathname + '/');
+
+  if (!isPathnameActive) return false;
+
+  if (itemSearch) {
+    const itemParams = new URLSearchParams(itemSearch);
+    const currentParams = new URLSearchParams(currentSearch);
+    for (const [key, value] of itemParams.entries()) {
+      if (currentParams.get(key) !== value) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+};
+
 export type NavContentProps = {
   data: NavItem[];
   slots?: {
@@ -155,8 +184,8 @@ function NavListItem({ item, fullPath }: { item: NavItem; fullPath: string }) {
     setOpen((prev) => !prev);
   }, []);
 
-  const isActived = (item.path === '/' ? fullPath === '/' : fullPath.startsWith(item.path)) ||
-    (item.children && item.children.some(child => child.path === '/' ? fullPath === '/' : fullPath.startsWith(child.path)));
+  const isActived = isRouteActive(item.path, fullPath) ||
+    (item.children && item.children.some(child => isRouteActive(child.path, fullPath)));
 
   const renderContent = (
     <ListItemButton
@@ -265,7 +294,7 @@ function NavListItem({ item, fullPath }: { item: NavItem; fullPath: string }) {
             }
           }}>
             {item.children.map((child: any) => {
-              const isChildActived = child.path === '/' ? fullPath === '/' : fullPath.startsWith(child.path);
+              const isChildActived = isRouteActive(child.path, fullPath);
 
               return (
                 <ListItemButton

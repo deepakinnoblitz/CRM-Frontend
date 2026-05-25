@@ -48,7 +48,7 @@ const TABLE_HEAD = [
     { id: 'grand_total', label: 'Amount', align: 'right' },
     { id: 'received_amount', label: 'Received', align: 'right' },
     { id: 'balance_amount', label: 'Balance', align: 'right' },
-    { id: '' },
+    { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
 // ----------------------------------------------------------------------

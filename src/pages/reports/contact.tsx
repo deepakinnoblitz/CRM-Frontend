@@ -7,7 +7,7 @@ import { ContactReportView } from 'src/sections/report/contact/view/contact-repo
 export default function ContactReportPage() {
     return (
         <>
-            <title>{`Contact Report - ${CONFIG.appName}`}</title>
+            <title>{`Clients Report - ${CONFIG.appName}`}</title>
             <ContactReportView />
         </>
     );

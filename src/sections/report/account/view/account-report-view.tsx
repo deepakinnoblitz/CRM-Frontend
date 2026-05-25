@@ -26,12 +26,15 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { usePdfExport } from 'src/hooks/use-pdf-export';
+
 import { runReport } from 'src/api/reports';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getStates, getCities, getDoctypeList } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { generateAccountPdf } from 'src/components/export/pdf/account-pdf-generator';
 
 import { useAuth } from 'src/auth/auth-context';
 
@@ -46,6 +49,7 @@ export function AccountReportView() {
     const [loading, setLoading] = useState(false);
 
     const { user } = useAuth();
+    const { exportingPdf, handleExportPdf } = usePdfExport();
     // Filters
     const [accountName, setAccountName] = useState('');
     const [country, setCountry] = useState('all');
@@ -257,7 +261,7 @@ export function AccountReportView() {
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Typography variant="h4">Account Report</Typography>
+                    <Typography variant="h4">Company Report</Typography>
                     <Stack direction="row" spacing={1}>
                         <Button
                             variant="outlined"
@@ -375,8 +379,34 @@ export function AccountReportView() {
                         variant="contained"
                         startIcon={<Iconify icon={"solar:export-bold" as any} />}
                         onClick={() => setOpenExportFields(true)}
+                        disabled={reportData.length === 0}
+                        sx={{ mr: 1 }}
                     >
-                        Export
+                        Export Excel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                        onClick={() => handleExportPdf(() => generateAccountPdf({
+                            reportData,
+                            selected,
+                            summary: summaryData.length > 0 ? summaryData : [
+                                { label: 'Total Accounts', value: reportData.length },
+                                { label: 'With GSTIN', value: reportData.filter((r: any) => r.gstin).length },
+                                { label: 'With Website', value: reportData.filter((r: any) => r.website).length },
+                                { label: 'With Phone', value: reportData.filter((r: any) => r.phone_number).length },
+                            ]
+                        }))}
+                        disabled={exportingPdf || reportData.length === 0}
+                        sx={{
+                            bgcolor: '#f43f5e',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#e11d48' },
+                            height: 40,
+                            px: 3,
+                        }}
+                    >
+                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
                     </Button>
                 </Card>
 

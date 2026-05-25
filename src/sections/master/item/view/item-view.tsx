@@ -20,6 +20,8 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { MasterEmptyState } from 'src/sections/master/master-empty-state';
+
 import { ItemDialog } from '../item-dialog';
 import { ItemTableRow } from '../item-table-row';
 import { TableNoData } from '../../../lead/table-no-data';
@@ -33,7 +35,7 @@ const TABLE_HEAD = [
   { id: 'item_name', label: 'Item Name' },
   { id: 'item_code', label: 'HSN Code' },
   { id: 'rate', label: 'Rate' },
-  { id: 'actions', label: '', align: 'right' },
+  { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
 const SORT_OPTIONS = [
@@ -193,7 +195,10 @@ export function ItemView() {
                 {notFound && <TableNoData searchQuery={filterName} />}
 
                 {empty && (
-                  <TableEmptyRows height={68 * 5} emptyRows={1} />
+                  <MasterEmptyState
+                    masterName="Item"
+                    colSpan={5}
+                  />
                 )}
 
                 {!empty && !notFound && (

@@ -21,8 +21,9 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
-import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
 import { ProjectDialog } from '../project-dialog';
 import { ProjectTableRow } from '../project-table-row';
@@ -193,15 +194,10 @@ export function ProjectView() {
                 {notFound && <TableNoData searchQuery={filterName} />}
 
                 {empty && (
-                    <TableRow>
-                        <TableCell colSpan={6} sx={{ py: 10 }}>
-                            <EmptyContent
-                                title="No Projects Found"
-                                description="It looks like there are no projects yet."
-                                icon="solar:folder-error-bold-duotone"
-                            />
-                        </TableCell>
-                    </TableRow>
+                  <MasterEmptyState
+                    masterName="Project"
+                    colSpan={4}
+                  />
                 )}
               </TableBody>
             </Table>

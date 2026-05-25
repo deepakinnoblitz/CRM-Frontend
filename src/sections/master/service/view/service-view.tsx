@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-import Box from '@mui/material/Box';
+import Box from '@mui/material/Box';  
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
@@ -21,6 +21,8 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { MasterEmptyState } from 'src/sections/master/master-empty-state';
+
 import { ServiceDialog } from '../service-dialog';
 import { ServiceTableRow } from '../service-table-row';
 import { TableNoData } from '../../../lead/table-no-data';
@@ -33,7 +35,7 @@ import { LeadTableToolbar } from '../../../lead/lead-table-toolbar';
 const TABLE_HEAD = [
   { id: 'service_name', label: 'Service Name' },
   { id: 'service_id', label: 'Service ID' },
-  { id: 'actions', label: '', align: 'right' },
+  { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
 const SORT_OPTIONS = [
@@ -193,7 +195,10 @@ export function ServiceView() {
                 {notFound && <TableNoData searchQuery={filterName} />}
 
                 {empty && (
-                  <TableEmptyRows height={68 * 5} emptyRows={1} />
+                  <MasterEmptyState
+                    masterName="Service"
+                    colSpan={4}
+                  />
                 )}
 
                 {!empty && !notFound && (

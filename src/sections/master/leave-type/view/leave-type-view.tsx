@@ -21,8 +21,9 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
-import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
 import { LeaveTypeDialog } from '../leave-type-dialog';
 import { TableNoData } from '../../../lead/table-no-data';
@@ -193,16 +194,10 @@ export function LeaveTypeView() {
                 ))}
 
                 {empty && (
-                    <TableRow>
-                        <TableCell colSpan={7} sx={{ height: 68 * 5, verticalAlign: 'middle' }}>
-                            <EmptyContent
-                                title="No Leave Types Found"
-                                description="It looks like there are no leave types yet."
-                                icon="solar:bill-list-bold-duotone"
-                                sx={{ py: 0 }}
-                            />
-                        </TableCell>
-                    </TableRow>
+                  <MasterEmptyState
+                    masterName="Leave Type"
+                    colSpan={8}
+                  />
                 )}
 
                 {notFound && <TableNoData searchQuery={filterName} />}

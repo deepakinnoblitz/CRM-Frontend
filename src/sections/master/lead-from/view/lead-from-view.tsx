@@ -21,6 +21,8 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { MasterEmptyState } from 'src/sections/master/master-empty-state';
+
 import { LeadFromDialog } from '../lead-from-dialog';
 import { LeadFromTableRow } from '../lead-from-table-row';
 import { TableNoData } from '../../../lead/table-no-data';
@@ -32,7 +34,7 @@ import { LeadTableToolbar } from '../../../lead/lead-table-toolbar';
 
 const TABLE_HEAD = [
   { id: 'lead_from', label: 'Lead From' },
-  { id: 'actions', label: '', align: 'right' },
+  { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
 const SORT_OPTIONS = [
@@ -192,7 +194,10 @@ export function LeadFromView() {
                 {notFound && <TableNoData searchQuery={filterName} />}
 
                 {empty && (
-                  <TableEmptyRows height={68 * 5} emptyRows={1} />
+                  <MasterEmptyState
+                    masterName="Lead From"
+                    colSpan={3}
+                  />
                 )}
 
                 {!empty && !notFound && (

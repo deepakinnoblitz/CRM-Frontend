@@ -374,8 +374,8 @@ export const crmNavData = [
     icon: <Iconify icon={"solar:chart-square-bold-duotone" as any} />,
     children: [
       { title: 'Lead Report', path: '/reports/lead' },
-      { title: 'Contact Report', path: '/reports/contact' },
-      { title: 'Accounts Report', path: '/reports/account' },
+      { title: 'Clients Report', path: '/reports/contact' },
+      { title: 'Company Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
       { title: 'Meeting Report', path: '/reports/meeting' }
     ]
@@ -448,8 +448,8 @@ export const crmAndSalesNavData = [
     icon: <TbReport size={22} />,
     children: [
       { title: 'Lead Report', path: '/reports/lead' },
-      { title: 'Contact Report', path: '/reports/contact' },
-      { title: 'Accounts Report', path: '/reports/account' },
+      { title: 'Clients Report', path: '/reports/contact' },
+      { title: 'Company Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
       { title: 'Meeting Report', path: '/reports/meeting' },
       { title: 'Purchase Report', path: '/reports/purchase' },

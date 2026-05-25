@@ -21,8 +21,9 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
-import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
 import { TableNoData } from '../../../lead/table-no-data';
 import { LeadTableHead } from '../../../lead/lead-table-head';
@@ -177,15 +178,10 @@ export function AssetCategoryView() {
                 {notFound && <TableNoData searchQuery={filterName} />}
 
                 {empty && (
-                    <TableRow>
-                        <TableCell colSpan={6} sx={{ py: 10 }}>
-                            <EmptyContent
-                                title="No Asset Categories Found"
-                                description="It looks like there are no asset categories yet."
-                                icon="solar:bill-list-bold-duotone"
-                            />
-                        </TableCell>
-                    </TableRow>
+                  <MasterEmptyState
+                    masterName="Asset Category"
+                    colSpan={4}
+                  />
                 )}
               </TableBody>
             </Table>

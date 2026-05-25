@@ -20,6 +20,8 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { MasterEmptyState } from 'src/sections/master/master-empty-state';
+
 import { TableNoData } from '../../../lead/table-no-data';
 import { PaymentTypeDialog } from '../payment-type-dialog';
 import { LeadTableHead } from '../../../lead/lead-table-head';
@@ -31,7 +33,7 @@ import { LeadTableToolbar } from '../../../lead/lead-table-toolbar';
 
 const TABLE_HEAD = [
   { id: 'payment_type', label: 'Payment Type' },
-  { id: 'actions', label: '', align: 'right' },
+  { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
 const SORT_OPTIONS = [
@@ -191,7 +193,10 @@ export function PaymentTypesView() {
                 {notFound && <TableNoData searchQuery={filterName} />}
 
                 {empty && (
-                  <TableEmptyRows height={68 * 5} emptyRows={1} />
+                  <MasterEmptyState
+                    masterName="Payment Type"
+                    colSpan={3}
+                  />
                 )}
 
                 {!empty && !notFound && (

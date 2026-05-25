@@ -141,7 +141,7 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                 { id: 'grand_total', label: 'Total', align: 'right' },
                 { id: 'received_amount', label: 'Received', align: 'right' },
                 { id: 'balance_amount', label: 'Balance', align: 'right' },
-                { id: 'action', label: '' },
+                { id: 'action', label: 'Actions', align: 'right' },
             ];
         }
         if (type === 'proposals') {
@@ -157,7 +157,7 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
             { id: 'ref_no', label: 'Ref No' },
             { id: 'estimate_date', label: 'Date' },
             { id: 'grand_total', label: 'Total', align: 'right' },
-            { id: 'action', label: '' },
+            { id: 'action', label: 'Actions', align: 'right' },
         ];
     };
 

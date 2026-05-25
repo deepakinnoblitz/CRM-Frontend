@@ -1,3 +1,5 @@
+import { CONFIG } from 'src/config-global';
+
 import { PaymentTypesView } from 'src/sections/master/payment-type/view/payment-type-view';
 
 // ----------------------------------------------------------------------
@@ -5,7 +7,8 @@ import { PaymentTypesView } from 'src/sections/master/payment-type/view/payment-
 export default function PaymentTypesPage() {
   return (
     <>
-      <title> Master: Payment Type</title>
+       <title>{` Payment Type - ${CONFIG.appName}`}</title>
+
 
       <PaymentTypesView />
     </>

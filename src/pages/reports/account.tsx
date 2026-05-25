@@ -7,7 +7,7 @@ import { AccountReportView } from 'src/sections/report/account/view/account-repo
 export default function AccountReportPage() {
     return (
         <>
-            <title>{`Account Report - ${CONFIG.appName}`}</title>
+            <title>{`Company Report - ${CONFIG.appName}`}</title>
             <AccountReportView />
         </>
     );
