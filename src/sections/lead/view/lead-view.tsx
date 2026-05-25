@@ -1292,7 +1292,7 @@ export function LeadView() {
                     { id: 'email', label: 'Email' },
                     { id: 'country', label: 'Country' },
                     { id: 'workflow_state', label: 'Status' },
-                    { id: '' },
+                    { id: 'actions', label: 'Actions', align: 'right' },
                   ]}
                 />
 

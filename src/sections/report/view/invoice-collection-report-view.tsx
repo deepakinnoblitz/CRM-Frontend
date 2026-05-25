@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
+import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -8,14 +9,13 @@ import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import TableRow from '@mui/material/TableRow';
+import Checkbox from '@mui/material/Checkbox';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import Checkbox from '@mui/material/Checkbox';
-import { useNavigate } from 'react-router-dom';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
@@ -59,19 +59,19 @@ export function InvoiceCollectionReportView() {
 
     const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
-            const newSelected = reportData.map((n) => n.invoice);
+            const newSelected = reportData.map((n) => n.id);
             setSelected(newSelected);
             return;
         }
         setSelected([]);
     };
 
-    const handleClick = (event: React.MouseEvent<unknown>, invoice: string) => {
-        const selectedIndex = selected.indexOf(invoice);
+    const handleClick = (event: React.MouseEvent<unknown>, id: string) => {
+        const selectedIndex = selected.indexOf(id);
         let newSelected: string[] = [];
 
         if (selectedIndex === -1) {
-            newSelected = newSelected.concat(selected, invoice);
+            newSelected = newSelected.concat(selected, id);
         } else if (selectedIndex === 0) {
             newSelected = newSelected.concat(selected.slice(1));
         } else if (selectedIndex === selected.length - 1) {
@@ -215,10 +215,14 @@ export function InvoiceCollectionReportView() {
                         startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
                         onClick={() => handleExportPdf(() => generateInvoiceCollectionPdf({
                             reportData,
-                            summary: summaryData.length > 0 ? summaryData : [
-                                { label: 'Total Invoices', value: reportData.length },
-                                { label: 'Collected Amount', value: reportData.reduce((acc, curr) => acc + (curr.amount_collected || 0), 0) },
-                                { label: 'Pending Amount', value: reportData.reduce((acc, curr) => acc + (curr.amount_pending || 0), 0) }
+                            summary: summaryData.length > 0 ? summaryData.map(s => ({
+                                label: s.label,
+                                value: s.value,
+                                isCurrency: s.datatype === 'Currency'
+                            })) : [
+                                { label: 'Total Amount to Pay', value: reportData.reduce((acc, curr) => acc + (curr.amount_to_pay || 0), 0), isCurrency: true },
+                                { label: 'Total Collected', value: reportData.reduce((acc, curr) => acc + (curr.amount_collected || 0), 0), isCurrency: true },
+                                { label: 'Total Pending', value: reportData.reduce((acc, curr) => acc + (curr.amount_pending || 0), 0), isCurrency: true }
                             ]
                         }))}
                         disabled={exportingPdf || reportData.length === 0}
@@ -250,9 +254,9 @@ export function InvoiceCollectionReportView() {
                     ))}
                     {summaryData.length === 0 && (
                         <>
-                            <SummaryCard item={{ label: 'Total Invoices', value: 0, indicator: 'blue' }} />
-                            <SummaryCard item={{ label: 'Collected Amount', value: 0, indicator: 'green', datatype: 'Currency' }} />
-                            <SummaryCard item={{ label: 'Pending Amount', value: 0, indicator: 'red', datatype: 'Currency' }} />
+                            <SummaryCard item={{ label: 'Total Amount to Pay', value: 0, indicator: 'blue', datatype: 'Currency' }} />
+                            <SummaryCard item={{ label: 'Total Collected', value: 0, indicator: 'green', datatype: 'Currency' }} />
+                            <SummaryCard item={{ label: 'Total Pending', value: 0, indicator: 'red', datatype: 'Currency' }} />
                         </>
                     )}
                 </Box>
@@ -270,20 +274,19 @@ export function InvoiceCollectionReportView() {
                                                 onChange={handleSelectAllClick}
                                             />
                                         </TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Invoice</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>ID</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Invoice No</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Customer</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Grand Total</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Collected</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Pending</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Last Collection</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Mode</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Amount to Pay</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Amount</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Pending</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', position: 'sticky', right: 0, bgcolor: '#f4f6f8', zIndex: 11 }}>Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
-                                        const isSelected = selected.indexOf(row.invoice) !== -1;
+                                        const isSelected = selected.indexOf(row.id) !== -1;
                                         return (
                                             <TableRow 
                                                 key={index} 
@@ -297,22 +300,18 @@ export function InvoiceCollectionReportView() {
                                                 }}
                                             >
                                                 <TableCell padding="checkbox">
-                                                    <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.invoice)} />
+                                                    <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.id)} />
                                                 </TableCell>
+                                                <TableCell sx={{ fontWeight: 600 }}>{row.id}</TableCell>
                                                 <TableCell sx={{ fontWeight: 600 }}>{row.invoice}</TableCell>
-                                                <TableCell>{row.invoice_date ? dayjs(row.invoice_date).format('DD MMM YYYY') : '-'}</TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.customer_name}</Typography>
-                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>{row.customer}</Typography>
-                                                </TableCell>
-                                                <TableCell sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
+                                                <TableCell>{row.collection_date ? dayjs(row.collection_date).format('DD MMM YYYY') : '-'}</TableCell>
+                                                <TableCell>{row.mode_of_payment || '-'}</TableCell>
+                                                <TableCell sx={{ fontWeight: 600 }}>{fCurrency(row.amount_to_pay)}</TableCell>
                                                 <TableCell sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.amount_collected)}</TableCell>
                                                 <TableCell sx={{ color: 'error.main', fontWeight: 600 }}>{fCurrency(row.amount_pending)}</TableCell>
-                                                <TableCell>{row.last_collection_date ? dayjs(row.last_collection_date).format('DD MMM YYYY') : '-'}</TableCell>
-                                                <TableCell>{row.payment_mode || '-'}</TableCell>
                                                 <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                     <IconButton
-                                                        onClick={() => navigate(`/invoices/${encodeURIComponent(row.invoice)}/view`)}
+                                                        onClick={() => navigate(`/invoice-collections/${encodeURIComponent(row.id)}/view`)}
                                                         sx={{ color: 'info.main' }}
                                                     >
                                                         <Iconify icon="solar:eye-bold" />
@@ -323,10 +322,10 @@ export function InvoiceCollectionReportView() {
                                     })}
                                     {reportData.length === 0 && !loading && (
                                         <TableRow>
-                                            <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
+                                            <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
                                                 <Stack spacing={1} alignItems="center">
                                                     <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
+                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>No invoice collections found</Typography>
                                                 </Stack>
                                             </TableCell>
                                         </TableRow>

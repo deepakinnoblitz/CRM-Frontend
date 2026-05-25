@@ -33,7 +33,7 @@ import { LeadTableToolbar } from '../../../lead/lead-table-toolbar';
 
 const TABLE_HEAD = [
   { id: 'payment_terms', label: 'Payment Terms' },
-  { id: 'actions', label: '', align: 'right' },
+  { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
 const SORT_OPTIONS = [

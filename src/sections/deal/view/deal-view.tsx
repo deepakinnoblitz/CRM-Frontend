@@ -701,7 +701,7 @@ export function DealView() {
                                                     { id: 'account', label: 'Company' },
                                                     { id: 'contact', label: 'Client' },
                                                     { id: 'expected_close_date', label: 'Expected Close' },
-                                                    { id: '' },
+                                                    { id: 'actions', label: 'Actions', align: 'right' },
                                                 ]}
                                             />
 

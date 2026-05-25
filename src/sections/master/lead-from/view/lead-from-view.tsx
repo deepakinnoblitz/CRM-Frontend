@@ -34,7 +34,7 @@ import { LeadTableToolbar } from '../../../lead/lead-table-toolbar';
 
 const TABLE_HEAD = [
   { id: 'lead_from', label: 'Lead From' },
-  { id: 'actions', label: '', align: 'right' },
+  { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
 const SORT_OPTIONS = [

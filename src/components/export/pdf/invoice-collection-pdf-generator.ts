@@ -10,27 +10,23 @@ interface GenerateInvoiceCollectionPdfOptions {
 
 export async function generateInvoiceCollectionPdf({ reportData, summary }: GenerateInvoiceCollectionPdfOptions) {
   const headers = [
-    'Invoice',
+    'ID',
+    'Invoice No',
     'Date',
-    'Customer ID',
-    'Customer Name',
-    'Grand Total',
-    'Collected',
-    'Pending',
-    'Last Collection',
-    'Mode'
+    'Mode',
+    'Amount to Pay',
+    'Amount',
+    'Pending'
   ];
 
   const body = reportData.map((row) => [
+    row.id || '-',
     row.invoice || '-',
-    row.invoice_date ? dayjs(row.invoice_date).format('DD MMM YYYY') : '-',
-    row.customer || '-',
-    row.customer_name || '-',
-    fCurrency(row.grand_total) || '₹0.00',
+    row.collection_date ? dayjs(row.collection_date).format('DD MMM YYYY') : '-',
+    row.mode_of_payment || '-',
+    fCurrency(row.amount_to_pay) || '₹0.00',
     fCurrency(row.amount_collected) || '₹0.00',
-    fCurrency(row.amount_pending) || '₹0.00',
-    row.last_collection_date ? dayjs(row.last_collection_date).format('DD MMM YYYY') : '-',
-    row.payment_mode || '-'
+    fCurrency(row.amount_pending) || '₹0.00'
   ]);
 
   await exportToPdf({

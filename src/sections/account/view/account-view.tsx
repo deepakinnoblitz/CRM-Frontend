@@ -518,7 +518,7 @@ export function AccountView() {
                                     { id: 'city', label: 'City' },
                                     { id: 'state', label: 'State' },
                                     { id: 'country', label: 'Country' },
-                                    { id: '', label: '' },
+                                    { id: 'actions', label: 'Actions', align: 'right' },
                                 ]}
                             />
                             <TableBody>

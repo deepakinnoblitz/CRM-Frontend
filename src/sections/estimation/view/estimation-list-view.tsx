@@ -46,7 +46,7 @@ const TABLE_HEAD = [
     { id: 'client_name', label: 'Client' },
     { id: 'estimate_date', label: 'Date' },
     { id: 'grand_total', label: 'Amount', align: 'right' },
-    { id: '' },
+    { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
 // ----------------------------------------------------------------------

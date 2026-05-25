@@ -10,27 +10,27 @@ interface GeneratePurchaseCollectionPdfOptions {
 
 export async function generatePurchaseCollectionPdf({ reportData, summary }: GeneratePurchaseCollectionPdfOptions) {
   const headers = [
-    'Purchase',
-    'Bill Date',
+    'ID',
+    'Purchase No',
+    'Date',
     'Vendor ID',
     'Vendor Name',
-    'Grand Total',
+    'Mode',
+    'Amount to Pay',
     'Paid',
-    'Pending',
-    'Last Payment',
-    'Mode'
+    'Pending'
   ];
 
   const body = reportData.map((row) => [
+    row.id || '-',
     row.purchase || '-',
-    row.bill_date ? dayjs(row.bill_date).format('DD MMM YYYY') : '-',
+    row.collection_date ? dayjs(row.collection_date).format('DD MMM YYYY') : '-',
     row.vendor || '-',
     row.vendor_name || '-',
-    fCurrency(row.grand_total) || '₹0.00',
-    fCurrency(row.amount_paid) || '₹0.00',
-    fCurrency(row.amount_pending) || '₹0.00',
-    row.last_payment_date ? dayjs(row.last_payment_date).format('DD MMM YYYY') : '-',
-    row.payment_mode || '-'
+    row.mode_of_payment || '-',
+    fCurrency(row.amount_to_pay) || '₹0.00',
+    fCurrency(row.amount_collected) || '₹0.00',
+    fCurrency(row.amount_pending) || '₹0.00'
   ]);
 
   await exportToPdf({
@@ -42,3 +42,4 @@ export async function generatePurchaseCollectionPdf({ reportData, summary }: Gen
     summary
   });
 }
+

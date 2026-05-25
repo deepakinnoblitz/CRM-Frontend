@@ -43,7 +43,7 @@ const TABLE_HEAD = [
     { id: 'amount_to_pay', label: 'Amount to Pay', align: 'right' },
     { id: 'amount_collected', label: 'Amount', align: 'right' },
     { id: 'amount_pending', label: 'Pending', align: 'right' },
-    { id: '' },
+    { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
 

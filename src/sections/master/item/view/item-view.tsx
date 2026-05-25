@@ -35,7 +35,7 @@ const TABLE_HEAD = [
   { id: 'item_name', label: 'Item Name' },
   { id: 'item_code', label: 'HSN Code' },
   { id: 'rate', label: 'Rate' },
-  { id: 'actions', label: '', align: 'right' },
+  { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
 const SORT_OPTIONS = [

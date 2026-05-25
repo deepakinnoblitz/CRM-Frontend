@@ -228,7 +228,7 @@ export default function ExpenseTrackerView() {
                                     { id: 'date_time', label: 'Date & Time' },
                                     { id: 'type', label: 'Type' },
                                     { id: 'amount', label: 'Amount' },
-                                    { id: '' },
+                                    { id: 'actions', label: 'Actions', align: 'right' },
                                 ]}
                             />
                             <TableBody>
