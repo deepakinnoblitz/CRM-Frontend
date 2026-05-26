@@ -622,7 +622,7 @@ export function WFHAttendanceView() {
             </Card>
 
             {/* CREATE/EDIT DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2 } }}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {currentId ? 'Edit WFH Entry' : 'New WFH Entry'}
                     <IconButton onClick={handleCloseCreate} sx={{ color: theme.palette.grey[500] }}>

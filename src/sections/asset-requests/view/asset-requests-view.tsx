@@ -945,16 +945,30 @@ export function AssetRequestsView() {
             )}
 
             {/* ── SUBMIT REQUEST DIALOG ── */}
-            <Dialog open={openSubmit} onClose={() => { setOpenSubmit(false); resetSubmitForm(); }} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+            <Dialog 
+                open={openSubmit} 
+                onClose={() => { setOpenSubmit(false); resetSubmitForm(); }} 
+                fullWidth 
+                maxWidth="sm"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }
+                }}
+            >
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
                     <Typography variant="h6" fontWeight={700}>
                         {isHR ? 'New Asset Declaration' : 'New Asset Request'}
                     </Typography>
-                    <IconButton onClick={() => { setOpenSubmit(false); resetSubmitForm(); }}>
+                    <IconButton onClick={() => { setOpenSubmit(false); resetSubmitForm(); }} sx={{ color: (theme) => theme.palette.grey[500] }}>
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
                 </DialogTitle>
-                <DialogContent dividers>
+                <DialogContent dividers sx={{ flexGrow: 1, overflowY: 'auto' }}>
                     <Box sx={{ display: 'grid', gap: 3, mt: 1 }}>
                         {isHR && (
                             <Autocomplete
@@ -1149,7 +1163,7 @@ export function AssetRequestsView() {
                         />
                     </Box>
                 </DialogContent>
-                <DialogActions sx={{ p: 2.5 }}>
+                <DialogActions sx={{ p: 1.5 }}>
                     <LoadingButton
                         variant="contained"
                         loading={submitting}

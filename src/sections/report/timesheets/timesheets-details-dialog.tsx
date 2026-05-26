@@ -25,7 +25,7 @@ export function TimesheetDetailsDialog({ open, onClose, timesheet }: Props) {
     const theme = useTheme();
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Timesheet Details</Typography>
                 <IconButton onClick={onClose} sx={{ color: theme.palette.grey[500] }}>

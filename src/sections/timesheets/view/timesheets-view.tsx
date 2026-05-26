@@ -794,7 +794,7 @@ export function TimesheetsView() {
             />
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
                 <DialogTitle
                     sx={{
                         m: 0,
@@ -802,6 +802,7 @@ export function TimesheetsView() {
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
+
                     }}
                 >
                     {isEdit ? 'Edit Timesheet' : 'New Timesheet'}
@@ -966,7 +967,7 @@ export function TimesheetsView() {
                     </Box>
                 </DialogContent>
 
-                <DialogActions>
+                <DialogActions sx={{p:1.5}}>
                     <Button
                         onClick={handleCreate}
                         variant="contained"

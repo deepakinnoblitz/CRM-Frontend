@@ -115,15 +115,40 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
 
     return (
         <>
-            <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {selectedTrait ? 'Edit Performance Criteria' : 'New Performance Criteria'}
-                    <IconButton onClick={onClose}>
+            <Dialog
+                open={open}
+                onClose={onClose}
+                fullWidth
+                maxWidth="sm"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }
+                }}
+            >
+                <DialogTitle
+                    sx={{
+                        m: 0,
+                        p: 2,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                    }}
+                >
+                    <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
+                        {selectedTrait ? 'Edit Performance Criteria' : 'New Performance Criteria'}
+                    </Typography>
+                    <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent dividers>
+                <DialogContent dividers sx={{ flexGrow: 1, overflowY: 'auto', p: 3 }}>
                     <Stack spacing={3} sx={{ pt: 1 }}>
                         <TextField
                             fullWidth
@@ -275,7 +300,7 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
                     </Stack>
                 </DialogContent>
 
-                <DialogActions>
+                <DialogActions sx={{ p: 1.5 }}>
                     <LoadingButton
                         variant="contained"
                         onClick={handleSave}

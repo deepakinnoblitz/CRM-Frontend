@@ -204,11 +204,9 @@ export default function SalarySlipCreateDialog({ open, onClose, onSuccess, onErr
             onClose={handleClose}
             fullWidth
             maxWidth="sm"
-            PaperProps={{
-                sx: { borderRadius: 2.5 },
-            }}
+            PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24 } }}
         >
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}`, }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>{slip ? 'Edit Salary Slip' : 'Create New Salary Slip'}</Typography>
                 <IconButton onClick={handleClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
                     <Iconify icon="mingcute:close-line" />
@@ -217,7 +215,7 @@ export default function SalarySlipCreateDialog({ open, onClose, onSuccess, onErr
 
 
             <DialogContent sx={{ p: 3 }}>
-                <Stack spacing={3} sx={{ mt: 2 }}>
+                <Stack spacing={3} sx={{ mt: 3 }}>
                     <Autocomplete
                         fullWidth
                         options={employees}

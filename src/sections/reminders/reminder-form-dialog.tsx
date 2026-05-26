@@ -105,7 +105,7 @@ export function HRReminderFormDialog({ open, onClose, onSuccess, selectedReminde
   };
  
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         {selectedReminder ? 'Edit Reminder' : 'New Reminder'}
         <IconButton onClick={onClose}>

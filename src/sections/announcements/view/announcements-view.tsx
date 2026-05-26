@@ -409,16 +409,30 @@ export function AnnouncementsView() {
             </Card>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
-                <form onSubmit={handleCreate} noValidate>
-                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Dialog 
+                open={openCreate} 
+                onClose={handleCloseCreate} 
+                fullWidth 
+                maxWidth="sm" 
+                PaperProps={{ 
+                    sx: { 
+                        borderRadius: 2, 
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    } 
+                }}
+            >
+                <form onSubmit={handleCreate} noValidate style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}`, }}>
                         {isEdit ? 'Edit Announcement' : 'New Announcement'}
                         <IconButton onClick={handleCloseCreate}>
                             <Iconify icon="mingcute:close-line" />
                         </IconButton>
                     </DialogTitle>
 
-                    <DialogContent dividers>
+                    <DialogContent dividers sx={{ flexGrow: 1, overflowY: 'auto' }}>
 
                         <Box sx={{ display: 'grid', gap: 3, margin: '1rem' }}>
 
@@ -470,7 +484,7 @@ export function AnnouncementsView() {
                         </Box>
                     </DialogContent>
 
-                    <DialogActions>
+                    <DialogActions sx={{p:1.5}}>
                         <Button type="submit" variant="contained">
                             {isEdit ? 'Update' : 'Create'}
                         </Button>

@@ -118,7 +118,17 @@ export function ProjectDialog({ open, onClose, onSuccess, id }: Props) {
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="xs"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                },
+            }}
+        >
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="h6">{id ? 'Edit Project' : 'New Project'}</Typography>

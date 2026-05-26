@@ -1600,7 +1600,7 @@ export function EmployeeView() {
             </Card>
 
             {/* CREATE/EDIT DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
                 <DialogTitle sx={{ m: 0, p: 2, px: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {currentEmployeeId ? 'Edit Employee' : 'New Employee'}
                     <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>

@@ -462,16 +462,30 @@ export function AssetAssignmentsView() {
             />
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-                <form onSubmit={handleCreate} noValidate>
-                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Dialog 
+                open={openCreate} 
+                onClose={handleCloseCreate} 
+                fullWidth 
+                maxWidth="md"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }
+                }}
+            >
+                <form onSubmit={handleCreate} noValidate style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
                         {isEdit ? 'Edit Assignment' : 'New Assignment'}
-                        <IconButton onClick={handleCloseCreate}>
+                        <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
                             <Iconify icon="mingcute:close-line" />
                         </IconButton>
                     </DialogTitle>
 
-                    <DialogContent dividers>
+                    <DialogContent dividers sx={{ flexGrow: 1, overflowY: 'auto' }}>
                         <Box sx={{ display: 'grid', gap: 3, margin: '1rem', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
                             <Autocomplete
                                 fullWidth
@@ -586,7 +600,7 @@ export function AssetAssignmentsView() {
                         </Box>
                     </DialogContent>
 
-                    <DialogActions>
+                    <DialogActions sx={{p:1.5}}>
                         <Button type="submit" variant="contained">
                             {isEdit ? 'Update' : 'Create'}
                         </Button>
@@ -595,20 +609,26 @@ export function AssetAssignmentsView() {
             </Dialog>
 
             {/* View Dialog */}
-            <Dialog open={openView} onClose={() => setOpenView(false)} fullWidth maxWidth="md">
-                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+            <Dialog 
+                open={openView} 
+                onClose={() => setOpenView(false)} 
+                fullWidth 
+                maxWidth="md"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }
+                }}
+            >
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
                     <Typography variant="h6" sx={{ fontWeight: 800 }}>Assignment Details</Typography>
                     <IconButton
                         onClick={() => setOpenView(false)}
-                        sx={{
-                            color: 'text.disabled',
-                            bgcolor: 'background.paper',
-                            boxShadow: (theme) => theme.customShadows?.z1,
-                            '&:hover': {
-                                color: 'error.main',
-                                bgcolor: (theme) => alpha(theme.palette.error.main, 0.08)
-                            }
-                        }}
+                        sx={{ color: (theme) => theme.palette.grey[500] }}
                     >
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>

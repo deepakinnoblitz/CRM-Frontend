@@ -73,8 +73,9 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
             fullWidth
             maxWidth="md"
             TransitionProps={{ onExited: () => setAttendance(null) }}
+            PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24 } }}
         >
-            <DialogTitle sx={{ m: 0, p: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
                 <Stack direction="row" alignItems="center" spacing={1.5}>
                     <Typography variant="h5" sx={{ fontWeight: 800 }}>Attendance Details</Typography>
                 </Stack>
@@ -83,7 +84,7 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 4, pt: 0 }}>
+            <DialogContent sx={{ p: 4, mt: 3.5 }}>
                 {fetching || (loading && !attendance) ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
                         <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />

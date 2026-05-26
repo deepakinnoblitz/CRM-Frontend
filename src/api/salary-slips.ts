@@ -89,6 +89,23 @@ async function fetchFrappeList(params: {
 
 export const fetchSalarySlips = (params: any) => fetchFrappeList(params);
 
+export async function fetchSalarySlipsWithDetails(params: {
+    start_date?: string;
+    end_date?: string;
+    employee?: string;
+}) {
+    const query = new URLSearchParams({
+        ...(params.start_date && { start_date: params.start_date }),
+        ...(params.end_date && { end_date: params.end_date }),
+        ...(params.employee && { employee: params.employee }),
+    });
+
+    const res = await frappeRequest(`/api/method/company.company.api.get_salary_slips_with_child_tables?${query.toString()}&_t=${Date.now()}`);
+    if (!res.ok) throw new Error("Failed to fetch detailed salary slips");
+    const json = await res.json();
+    return json.message || [];
+}
+
 export async function createSalarySlip(data: Partial<SalarySlip>) {
     const res = await frappeRequest("/api/method/frappe.client.insert", {
         method: "POST",
