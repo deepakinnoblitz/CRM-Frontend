@@ -64,7 +64,7 @@ export function DealDetailsView() {
 
     const [deal, setDeal] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [currentTab, setCurrentTab] = useState('estimations');
+    const [currentTab, setCurrentTab] = useState('proposals');
     const [selectedStage, setSelectedStage] = useState<string | null>(null);
     const [updatingStage, setUpdatingStage] = useState(false);
     const [confirmUpdate, setConfirmUpdate] = useState(false);
@@ -163,7 +163,7 @@ export function DealDetailsView() {
                 .catch((err) => console.error('Failed to fetch deal details:', err))
                 .finally(() => setLoading(false));
         } else {
-            setCurrentTab('estimations');
+            setCurrentTab('proposals');
         }
     }, [id]);
 
@@ -186,9 +186,9 @@ export function DealDetailsView() {
     }, [deal, router]);
 
     const TABS = [
+        { value: 'proposals', label: 'Proposals', icon: <HiOutlineDocumentPlus size={18} /> },
         { value: 'estimations', label: 'Estimations', icon: <HiOutlineClipboardDocumentCheck size={18} /> },
         { value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> },
-        { value: 'proposals', label: 'Proposals', icon: <HiOutlineDocumentPlus size={18} /> },
         { value: 'stage_history', label: 'Stage History', icon: <HiOutlineClock size={18} /> },
     ];
 
@@ -241,13 +241,13 @@ export function DealDetailsView() {
                     <Button
                         variant="contained"
                         onClick={handleCreateProposal}
-                        startIcon={<HiOutlineDocumentPlus size={17} />}
+                        startIcon={<HiOutlineDocumentPlus size={20} />}
                         sx={{
                             borderRadius: 1.5,
                             fontWeight: 600,
                             textTransform: 'none',
-                            bgcolor: '#8E33FF',
-                            color: 'common.white',
+                            background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+                            color: '#fff',
                             '&:hover': { bgcolor: '#6A22C4' }
                         }}
                     >
@@ -261,8 +261,8 @@ export function DealDetailsView() {
                             borderRadius: 1.5,
                             fontWeight: 600,
                             textTransform: 'none',
-                            bgcolor: '#08a3cd',
-                            color: 'common.white',
+                            background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                            color: '#fff',
                             '&:hover': { bgcolor: '#068fb3' }
                         }}
                     >
@@ -276,8 +276,8 @@ export function DealDetailsView() {
                             borderRadius: 1.5,
                             fontWeight: 600,
                             textTransform: 'none',
-                            bgcolor: '#02c281',
-                            color: 'common.white',
+                            background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                            color: '#fff',
                             '&:hover': { bgcolor: '#007850' }
                         }}
                     >

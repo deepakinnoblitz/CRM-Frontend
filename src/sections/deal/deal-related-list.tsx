@@ -182,10 +182,39 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
     const renderRow = (row: any, index: number) => {
         const serialNumber = index + 1 + page * rowsPerPage;
 
+        const renderSNoCell = () => (
+            <TableCell align="center">
+                <Box
+                    sx={{
+                        width: 28,
+                        height: 28,
+                        display: 'flex',
+                        borderRadius: '50%',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: (themeVar) => alpha(themeVar.palette.primary.main, 0.08),
+                        color: 'primary.main',
+                        typography: 'subtitle2',
+                        fontWeight: 800,
+                        border: (themeVar) => `1px solid ${alpha(themeVar.palette.primary.main, 0.16)}`,
+                        mx: 'auto',
+                        transition: (themeVar) => themeVar.transitions.create(['all'], { duration: themeVar.transitions.duration.shorter }),
+                        '&:hover': {
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
+                            transform: 'scale(1.1)',
+                        },
+                    }}
+                >
+                    {serialNumber}
+                </Box>
+            </TableCell>
+        );
+
         if (type === 'stage_history') {
             return (
                 <TableRow key={index} hover>
-                    <TableCell align="center">{serialNumber}</TableCell>
+                    {renderSNoCell()}
                     <TableCell sx={{ fontWeight: 600, color: 'text.secondary' }}>{row.state_from || 'Initial'}</TableCell>
                     <TableCell sx={{ fontWeight: 800, color: 'primary.main' }}>{row.state_to}</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>{row.date_and_time ? fDate(row.date_and_time) : '—'}</TableCell>
@@ -206,9 +235,9 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
         if (type === 'invoices') {
             return (
                 <TableRow key={row.name} hover>
-                    <TableCell align="center">{serialNumber}</TableCell>
+                    {renderSNoCell()}
                     <TableCell sx={{ fontWeight: 700 }}>{row.ref_no}</TableCell>
-                    <TableCell>{fDate(row.invoice_date)}</TableCell>
+                    <TableCell>{row.invoice_date ? fDate(row.invoice_date) : '-'}</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
                     <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.received_amount)}</TableCell>
                     <TableCell align="right" sx={{ color: 'error.main', fontWeight: 700 }}>{fCurrency(row.balance_amount)}</TableCell>
@@ -226,9 +255,9 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
         }
         return (
             <TableRow key={row.name} hover>
-                <TableCell align="center">{serialNumber}</TableCell>
+                {renderSNoCell()}
                 <TableCell sx={{ fontWeight: 700 }}>{row.ref_no}</TableCell>
-                <TableCell>{fDate(row.estimate_date)}</TableCell>
+                <TableCell>{row.estimate_date ? fDate(row.estimate_date) : '-'}</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
                 <TableCell align="right">
                     <IconButton
@@ -247,10 +276,35 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
         const serialNumber = index + 1 + page * rowsPerPage;
         return (
             <TableRow key={row.name} hover>
-                <TableCell align="center">{serialNumber}</TableCell>
+                <TableCell align="center">
+                    <Box
+                        sx={{
+                            width: 28,
+                            height: 28,
+                            display: 'flex',
+                            borderRadius: '50%',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: (themeVar) => alpha(themeVar.palette.primary.main, 0.08),
+                            color: 'primary.main',
+                            typography: 'subtitle2',
+                            fontWeight: 800,
+                            border: (themeVar) => `1px solid ${alpha(themeVar.palette.primary.main, 0.16)}`,
+                            mx: 'auto',
+                            transition: (themeVar) => themeVar.transitions.create(['all'], { duration: themeVar.transitions.duration.shorter }),
+                            '&:hover': {
+                                bgcolor: 'primary.main',
+                                color: 'primary.contrastText',
+                                transform: 'scale(1.1)',
+                            },
+                        }}
+                    >
+                        {serialNumber}
+                    </Box>
+                </TableCell>
                 <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{row.reference_no || row.name}</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>{row.proposal_title}</TableCell>
-                <TableCell>{fDate(row.proposal_date)}</TableCell>
+                <TableCell>{row.proposal_date ? fDate(row.proposal_date) : '-'}</TableCell>
                 <TableCell>{row.status || 'Draft'}</TableCell>
                 <TableCell align="right">
                     <IconButton
@@ -399,30 +453,48 @@ function SummaryCard({ title, value, icon, color }: { title: string; value: stri
             spacing={2}
             sx={{
                 p: 2,
+                pl: 1.5,
                 borderRadius: 2,
+                position: 'relative',
+                overflow: 'hidden',
                 bgcolor: alpha(color, 0.04),
                 border: `1px solid ${alpha(color, 0.1)}`,
             }}
         >
+            {/* Decorative circle */}
             <Box
                 sx={{
-                    width: 40,
-                    height: 40,
+                    position: 'absolute',
+                    top: -24,
+                    right: -24,
+                    width: 96,
+                    height: 96,
+                    borderRadius: '50%',
+                    bgcolor: alpha(color, 0.08),
+                    zIndex: 0,
+                }}
+            />
+            
+            <Box
+                sx={{
+                    width: 56,
+                    height: 56,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    borderRadius: 1.5,
-                    bgcolor: alpha(color, 0.1),
+                    borderRadius: 2,
+                    bgcolor: alpha(color, 0.12),
                     color,
+                    zIndex: 1,
                 }}
             >
-                <Iconify icon={icon as any} width={20} />
+                <Iconify icon={icon as any} width={28} />
             </Box>
-            <Box>
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', fontSize: 10 }}>
+            <Box sx={{ zIndex: 1 }}>
+                <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, mb: 0.5 }}>
                     {title}
                 </Typography>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                <Typography variant="h5" sx={{ fontWeight: 800 }}>
                     {value}
                 </Typography>
             </Box>

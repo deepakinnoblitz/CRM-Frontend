@@ -36,6 +36,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
 
+import { getDeal } from 'src/api/deals';
 import { getContact } from 'src/api/contacts';
 import { uploadFile } from 'src/api/data-import';
 import { getDoc, getDoctypeList } from 'src/api/leads';
@@ -163,6 +164,24 @@ export function InvoiceCreateView() {
         getDoctypeList('Deal', ['name']).then(setDealOptions);
         fetchPaymentTermsOptions();
     }, []);
+
+    // Prefill client from deal when navigated from the Deals table
+    useEffect(() => {
+        if (queryDealId && !estimationData?.client_name && !estimationData?.customer_id) {
+            getDeal(queryDealId)
+                .then(async (dealData) => {
+                    if (dealData.contact) {
+                        await handleCustomerChange(dealData.contact);
+                        if (dealData.account) {
+                            setBillingName(dealData.account);
+                        }
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch deal from deal_id:', err);
+                });
+        }
+    }, [queryDealId]);
 
     const handleCustomerChange = async (name: string) => {
         setCustomerId(name);

@@ -10,16 +10,45 @@ import IconButton from '@mui/material/IconButton';
 
 import { fDate } from 'src/utils/format-time';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-const STATUS_COLORS: Record<string, 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'> = {
-    Draft: 'default',
-    Sent: 'info',
-    Approved: 'success',
-    Rejected: 'error',
-    Expired: 'warning',
+const getStatusStyle = (status: string) => {
+    const styles: Record<string, { bgcolor: string; border: string; color: string }> = {
+        'Draft': {
+            bgcolor: 'rgba(156, 163, 175, 0.25)',
+            border: '1px solid rgba(156, 163, 175, 0.45)',
+            color: '#374151'
+        },
+        'Sent': {
+            bgcolor: 'rgba(99, 102, 241, 0.25)',
+            border: '1px solid rgba(99, 102, 241, 0.45)',
+            color: '#4338ca'
+        },
+        'Approved': {
+            bgcolor: 'rgba(34, 197, 94, 0.25)',
+            border: '1px solid rgba(34, 197, 94, 0.45)',
+            color: '#15803d'
+        },
+        'Rejected': {
+            bgcolor: 'rgba(239, 68, 68, 0.25)',
+            border: '1px solid rgba(239, 68, 68, 0.45)',
+            color: '#991b1b'
+        },
+        'Expired': {
+            bgcolor: 'rgba(251, 146, 60, 0.24)',
+            border: '1px solid rgba(251, 146, 60, 0.45)',
+            color: '#9a3412'
+        }
+    };
+
+    return styles[status] || {
+        bgcolor: 'rgba(156, 163, 175, 0.25)',
+        border: '1px solid rgba(156, 163, 175, 0.45)',
+        color: '#374151'
+    };
 };
 
 export type ProposalRowProps = {
@@ -64,7 +93,7 @@ export function ProposalTableRow({
     hideCheckbox = false,
     index,
 }: ProposalTableRowProps) {
-    const statusColor = STATUS_COLORS[row.status || 'Draft'] || 'default';
+    const { id } = row;
 
     return (
         <TableRow
@@ -151,12 +180,18 @@ export function ProposalTableRow({
 
             {/* Status */}
             <TableCell>
-                <Chip
-                    label={row.status || 'Draft'}
-                    color={statusColor}
-                    size="small"
-                    sx={{ fontWeight: 700, fontSize: 11 }}
-                />
+                <Label
+                    sx={{
+                        ...getStatusStyle(row.status || 'Draft'),
+                        fontWeight: 700,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        borderRadius: '6px',
+                        padding: '4px 12px',
+                    }}
+                >
+                    {row.status || 'Draft'}
+                </Label>
             </TableCell>
 
             {/* Total Attachments */}

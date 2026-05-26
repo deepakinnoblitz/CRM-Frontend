@@ -365,10 +365,7 @@ export function ProposalEditView() {
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3}>
                 <Stack spacing={0.5}>
                     <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                        Edit Proposal
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        {referenceNo || 'Updating proposal details'}
+                        Edit Proposal : {referenceNo}
                     </Typography>
                 </Stack>
                 <Stack direction="row" spacing={2}>
@@ -448,8 +445,14 @@ export function ProposalEditView() {
                         <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: 14 }}>
                             Attachments ({attachments.filter((a) => a.attachment).length})
                         </Typography>
-                        <Button variant="outlined" size="small" startIcon={<Iconify icon="mingcute:add-line" />}
-                            onClick={handleAddAttachmentRow} sx={{ borderRadius: 1.5 }}>
+                        <Button variant="contained" size="small" startIcon={<Iconify icon="mingcute:add-line" />}
+                            onClick={handleAddAttachmentRow} 
+                            sx={{
+                                borderRadius: 1,
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#068fb3' },
+                            }}>
                             Add Row
                         </Button>
                     </Stack>
