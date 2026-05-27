@@ -323,7 +323,7 @@ export function AccountReportView() {
                         />
                     </LocalizationProvider>
                     <TextField
-                        label="Account Name"
+                        label="Company Name"
                         size="small"
                         sx={{ minWidth: 160 }}
                         value={accountName}
