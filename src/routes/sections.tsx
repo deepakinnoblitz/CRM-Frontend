@@ -80,6 +80,7 @@ export const DailyLogReportPage = lazy(() => import('src/pages/reports/daily-log
 export const TaskReportPage = lazy(() => import('src/pages/reports/task-manager'));
 export const SalarySlipReportPage = lazy(() => import('src/pages/reports/salary-slip'));
 export const EmployeePage = lazy(() => import('src/pages/employee'));
+export const EmployeeDetailsPage = lazy(() => import('src/pages/employee/details'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
 export const LeavesPage = lazy(() => import('src/pages/leaves'));
 export const LeaveAllocationsPage = lazy(() => import('src/pages/leave-allocations'));
@@ -224,7 +225,13 @@ export const routesSection: RouteObject[] = [
       },
       { path: 'blog', element: <BlogPage /> },
 
-      { path: 'employee', element: <EmployeePage /> },
+      {
+        path: 'employee',
+        children: [
+          { index: true, element: <EmployeePage /> },
+          { path: ':id/view', element: <EmployeeDetailsPage /> },
+        ]
+      },
       { path: 'attendance', element: <AttendancePage /> },
       { path: 'leaves', element: <LeavesPage /> },
       { path: 'leave-allocations', element: <LeaveAllocationsPage /> },

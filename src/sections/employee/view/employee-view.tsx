@@ -38,6 +38,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useRouter } from 'src/routes/hooks';
+
 import { useEmployees } from 'src/hooks/useEmployees';
 
 import { fNumber, fCurrency } from 'src/utils/format-number';
@@ -164,6 +166,7 @@ SalaryRow.displayName = 'SalaryRow';
 // ----------------------------------------------------------------------
 
 export function EmployeeView() {
+    const router = useRouter();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -586,8 +589,7 @@ export function EmployeeView() {
 
 
     const handleOpenDetails = (id: string) => {
-        setDetailsId(id);
-        setOpenDetails(true);
+        router.push(`/employee/${id}/view`);
     };
 
     const handleCloseDetails = () => {
