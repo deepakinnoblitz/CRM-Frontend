@@ -393,16 +393,16 @@ export function CombinedDashboardView() {
                     />
                 </Grid>
 
-                {/* Top Customers */}
+                {/* Top Clients */}
                 <Grid size={{ xs: 12, md: 6 }}>
                     <Card>
-                        <CardHeader title="Top Customers by Revenue" />
+                        <CardHeader title="Top Clients by Revenue" sx={{pb:2}} />
                         <Scrollbar>
                             <TableContainer sx={{ minWidth: 400 }}>
                                 <Table>
                                     <TableHead>
                                         <TableRow>
-                                            <TableCell>Customer</TableCell>
+                                            <TableCell>Clients</TableCell>
                                             <TableCell>Revenue</TableCell>
                                             <TableCell align="center">Orders</TableCell>
                                         </TableRow>
@@ -411,7 +411,14 @@ export function CombinedDashboardView() {
                                         {salesData.top_customers_by_revenue.length > 0 ? (
                                             salesData.top_customers_by_revenue.map((row) => (
                                                 <TableRow key={row.client_name}>
-                                                    <TableCell>{row.billing_name}</TableCell>
+                                                    <TableCell sx={{ maxWidth: 200 }}>
+                                                        <Typography variant="subtitle2" noWrap sx={{ color: 'text.primary', fontWeight: 800 }}>
+                                                            {row.billing_name}
+                                                        </Typography>
+                                                        <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
+                                                            {row.client_name}
+                                                        </Typography>
+                                                    </TableCell>
                                                     <TableCell>{fCurrency(row.revenue)}</TableCell>
                                                     <TableCell align="center">{row.order_count}</TableCell>
                                                 </TableRow>
@@ -450,14 +457,14 @@ export function CombinedDashboardView() {
                 {/* Overdue Orders */}
                 <Grid size={{ xs: 12, md: 6 }}>
                     <Card>
-                        <CardHeader title="Overdue Orders" />
+                        <CardHeader title="Overdue Orders" sx={{pb:2}}/>
                         <Scrollbar>
                             <TableContainer sx={{ minWidth: 400 }}>
                                 <Table>
                                     <TableHead>
                                         <TableRow>
                                             <TableCell>Order ID</TableCell>
-                                            <TableCell>Customer</TableCell>
+                                            <TableCell>Clients</TableCell>
                                             <TableCell>Due Date</TableCell>
                                             <TableCell align="right">Balance</TableCell>
                                         </TableRow>
@@ -466,9 +473,13 @@ export function CombinedDashboardView() {
                                         {salesData.overdue_orders.length > 0 ? (
                                             salesData.overdue_orders.map((row) => (
                                                 <TableRow key={row.name}>
-                                                    <TableCell>{row.name}</TableCell>
-                                                    <TableCell>{row.billing_name}</TableCell>
-                                                    <TableCell>{row.due_date}</TableCell>
+                                                    <TableCell sx={{ color: 'text.primary', fontWeight: 800 }}>{row.name}</TableCell>
+                                                    <TableCell sx={{ maxWidth: 200 }}>
+                                                        <Typography variant="body2" noWrap sx={{ color: 'text.primary', fontWeight: 700 }}>
+                                                            {row.billing_name}
+                                                        </Typography>
+                                                    </TableCell>
+                                                    <TableCell>{row.due_date || '-'}</TableCell>
                                                     <TableCell align="right">{fCurrency(row.balance_amount)}</TableCell>
                                                 </TableRow>
                                             ))

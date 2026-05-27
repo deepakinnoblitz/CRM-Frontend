@@ -156,6 +156,7 @@ export function InvoiceCreateView() {
     };
     const [customerError, setCustomerError] = useState(false);
     const [itemError, setItemError] = useState(false);
+    const [paymentTermsError, setPaymentTermsError] = useState(false);
 
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'address']).then(setCustomerOptions);
@@ -388,6 +389,13 @@ export function InvoiceCreateView() {
             return;
         }
         setCustomerError(false);
+
+        if (!paymentTerms || paymentTerms === 'Select Payment terms') {
+            setPaymentTermsError(true);
+            enqueueSnackbar('Please select Payment Terms', { variant: 'error' });
+            return;
+        }
+        setPaymentTermsError(false);
 
         const validItems = items.filter((item) => item.service !== '');
         if (validItems.length === 0) {
@@ -661,6 +669,8 @@ export function InvoiceCreateView() {
                                 <TextField
                                     {...params}
                                     label="Payment Terms"
+                                    error={paymentTermsError}
+                                    helperText={paymentTermsError ? 'Payment Terms is required' : ''}
                                 />
                             )}
                             renderOption={(props, option) => (
