@@ -30,11 +30,30 @@ export async function getLoggedUser() {
 
 export async function logout() {
   const headers = await getAuthHeaders();
+  
+  let fcmResponse = null;
+
+  // Clear the FCM token from the backend database first
+  try {
+    const res = await frappeRequest('/api/method/company.company.api.remove_fcm_token', {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+    });
+    fcmResponse = await res.json();
+  } catch (err) {
+    console.error('Failed to clear FCM token from backend:', err);
+    fcmResponse = { error: String(err) };
+  }
+
+  // Now perform the actual logout
   await frappeRequest('/api/method/logout', {
     method: 'POST',
     headers,
     credentials: 'include',
   });
+
+  return fcmResponse;
 }
 
 export async function getCurrentUserInfo() {
