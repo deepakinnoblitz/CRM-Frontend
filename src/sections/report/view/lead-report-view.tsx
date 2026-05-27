@@ -302,20 +302,35 @@ export function LeadReportView() {
                             <MenuItem value="Outgoing">Outgoing</MenuItem>
                         </Select>
                     </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 160 }}>
-                        <Select
-                            value={leadsFrom}
-                            onChange={(e) => setLeadsFrom(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">Leads From</MenuItem>
-                            {leadsFromOptions.map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                    <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 200 }}
+                        options={['All Leads From', ...leadsFromOptions]}
+                        getOptionLabel={(option) => option || 'All Leads From'}
+                        value={leadsFrom === 'all' || !leadsFrom ? 'All Leads From' : leadsFrom}
+                        onChange={(event, newValue) => {
+                            if (newValue === 'All Leads From' || !newValue) {
+                                setLeadsFrom('all');
+                            } else {
+                                setLeadsFrom(newValue);
+                            }
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="All Leads From"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                    />
                     <Autocomplete
                         size="small"
                         sx={{ minWidth: 240 }}
