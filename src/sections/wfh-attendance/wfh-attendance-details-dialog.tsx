@@ -5,11 +5,11 @@ import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 import { Button, Stack, DialogActions, Avatar } from '@mui/material';
-import LoadingButton from '@mui/lab/LoadingButton';
 
 import { fTime } from 'src/utils/format-time';
 

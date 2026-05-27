@@ -32,8 +32,9 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
-import { useAuth } from 'src/auth/auth-context';
 import { generateInvoiceCollectionPdf } from 'src/components/export/pdf/invoice-collection-pdf-generator';
+
+import { useAuth } from 'src/auth/auth-context';
 
 // ----------------------------------------------------------------------
 
