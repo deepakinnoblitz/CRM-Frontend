@@ -1,7 +1,7 @@
 import type { Invoice } from 'src/api/invoice';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { 
     IoMdArrowBack, IoMdTrash, IoMdCreate, IoMdDocument, 
     IoMdPerson, IoMdCalendar, IoMdCash, IoMdAlert, 
@@ -35,6 +35,16 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 export function InvoiceCollectionDetailsView() {
     const { id } = useParams();
     const router = useRouter();
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    const handleGoBack = () => {
+        if (location.state?.from) {
+            navigate(location.state.from);
+        } else {
+            router.push('/deals?tab=invoices&subtab=collections');
+        }
+    };
 
     const [collection, setCollection] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
@@ -85,7 +95,7 @@ export function InvoiceCollectionDetailsView() {
         return (
             <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Invoice Collection not found</Typography>
-                <Button onClick={() => router.push('/deals?tab=invoices&subtab=collections')} sx={{ mt: 3 }}>
+                <Button onClick={handleGoBack} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
             </DashboardContent>
@@ -111,7 +121,7 @@ export function InvoiceCollectionDetailsView() {
             setDeleting(true);
             await deleteInvoiceCollection(id);
             setSnackbar({ open: true, message: 'Collection deleted successfully', severity: 'success' });
-            setTimeout(() => router.push('/deals?tab=invoices&subtab=collections'), 1500);
+            setTimeout(() => handleGoBack(), 1500);
         } catch (error) {
             console.error('Failed to delete collection:', error);
             setSnackbar({ open: true, message: 'Failed to delete collection', severity: 'error' });
@@ -129,7 +139,7 @@ export function InvoiceCollectionDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/deals?tab=invoices&subtab=collections')}
+                        onClick={handleGoBack}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,

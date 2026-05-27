@@ -32,12 +32,15 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { generateInvoicePdf } from 'src/components/export/pdf/invoice-pdf-generator';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { ExportFieldsDialog } from '../../export-fields-dialog';
 
 
 // ----------------------------------------------------------------------
 
 export function InvoiceReportView() {
+    const { user } = useAuth();
     const theme = useTheme();
 
     const [loading, setLoading] = useState(false);
@@ -126,6 +129,7 @@ export function InvoiceReportView() {
             if (customerName) filters.client_name = customerName;
             if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
             if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
+            if (user?.has_crm_permission) filters.owner = user.name;
 
             const result = await runReport('Invoice Report', filters);
             setReportData(result.result || []);
@@ -135,7 +139,7 @@ export function InvoiceReportView() {
         } finally {
             setLoading(false);
         }
-    }, [customerName, fromDate, toDate]);
+    }, [customerName, fromDate, toDate, user]);
 
     useEffect(() => {
         fetchReport();
@@ -181,7 +185,7 @@ export function InvoiceReportView() {
                     </Stack>
                 </Stack>
 
-                <Card sx={{ p: 2.5, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', bgcolor: 'background.neutral', border: (t) => `1px solid ${t.palette.divider}` }}>
+                <Card sx={{ py: 2.2, px: 2, display: 'flex', columnGap: 2, rowGap: 1.5, flexWrap: 'wrap', alignItems: 'center', bgcolor: 'background.neutral', border: (t) => `1px solid ${t.palette.divider}` }}>
                     <TextField
                         label="Customer Name"
                         value={customerName}
@@ -193,15 +197,27 @@ export function InvoiceReportView() {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="From Date"
+                            format="DD-MM-YYYY"
                             value={fromDate}
                             onChange={(newValue) => setFromDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 190, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                         <DatePicker
                             label="To Date"
+                            format="DD-MM-YYYY"
                             value={toDate}
                             onChange={(newValue) => setToDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 190, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                     </LocalizationProvider>
                     <Box sx={{ flexGrow: 1 }} />
@@ -231,7 +247,7 @@ export function InvoiceReportView() {
                             bgcolor: '#f43f5e',
                             color: 'common.white',
                             '&:hover': { bgcolor: '#e11d48' },
-                            height: 40,
+                            height: 37,
                             px: 3,
                         }}
                     >

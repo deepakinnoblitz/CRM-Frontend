@@ -86,6 +86,7 @@ const INITIAL_MEETING_STATE: Partial<Meeting> = {
 
 export default function MeetingDialog({ open, onClose, selectedMeeting, initialData, onSuccess }: Props) {
     const [meetingData, setMeetingData] = useState<Partial<Meeting>>(INITIAL_MEETING_STATE);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
@@ -161,6 +162,7 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
         }
 
         try {
+            setIsSubmitting(true);
             const formattedData = {
                 ...meetingData,
                 from: meetingData.from?.replace('T', ' '),
@@ -178,6 +180,8 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
         } catch (error: any) {
             console.error('Failed to save meeting:', error);
             setSnackbar({ open: true, message: error.message || 'Failed to save meeting', severity: 'error' });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -630,9 +634,12 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                         variant="contained"
                         color="info"
                         onClick={handleSaveMeeting}
+                        disabled={isSubmitting}
                         sx={{ borderRadius: 1, px: 3 }}
                     >
-                        {selectedMeeting ? 'Save Changes' : 'Create Meeting'}
+                        {isSubmitting 
+                            ? (selectedMeeting ? 'Saving...' : 'Creating...') 
+                            : (selectedMeeting ? 'Save Changes' : 'Create Meeting')}
                     </Button>
                 </DialogActions>
             </Dialog>

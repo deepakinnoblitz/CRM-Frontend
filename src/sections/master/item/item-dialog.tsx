@@ -55,21 +55,9 @@ export function ItemDialog({ open, onClose, onSuccess, currentItem }: Props) {
   }, [open, currentItem]);
 
   const handleSubmit = async () => {
-    if (!itemCode.trim()) {
-      setError('HSN Code is required');
-      setSnackbar({ open: true, message: 'HSN Code is required', severity: 'error' });
-      return;
-    }
-
     if (!itemName.trim()) {
-      setError('Item Name is required');
+      setError('Item Name');
       setSnackbar({ open: true, message: 'Item Name is required', severity: 'error' });
-      return;
-    }
-
-    if (rate === '') {
-      setError('Rate is required');
-      setSnackbar({ open: true, message: 'Rate is required', severity: 'error' });
       return;
     }
 
@@ -142,15 +130,12 @@ export function ItemDialog({ open, onClose, onSuccess, currentItem }: Props) {
           }}
         >
           <TextField
-            required
             fullWidth
             label="HSN Code"
             value={itemCode}
             onChange={(e) => {
               setItemCode(e.target.value);
-              if (error) setError('');
             }}
-            error={!!error && !itemCode}
             disabled={loading}
             placeholder="e.g. 84713010"
           />
@@ -162,15 +147,15 @@ export function ItemDialog({ open, onClose, onSuccess, currentItem }: Props) {
             value={itemName}
             onChange={(e) => {
               setItemName(e.target.value);
-              if (error) setError('');
+              if (error === 'Item Name') setError('');
             }}
-            error={!!error && !itemName}
+            error={error === 'Item Name'}
+            helperText={error === 'Item Name' ? 'Item Name is required' : ''}
             disabled={loading}
             placeholder="e.g. Laptop"
           />
 
           <TextField
-            required
             fullWidth
             type="number"
             label="Rate"
@@ -178,9 +163,7 @@ export function ItemDialog({ open, onClose, onSuccess, currentItem }: Props) {
             onChange={(e) => {
               const val = e.target.value;
               setRate(val === '' ? '' : Number(val));
-              if (error) setError('');
             }}
-            error={!!error && rate === ''}
             disabled={loading}
             placeholder="e.g. 50000"
           />

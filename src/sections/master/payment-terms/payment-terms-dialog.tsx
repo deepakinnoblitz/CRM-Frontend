@@ -50,7 +50,7 @@ export function PaymentTermsDialog({ open, onClose, onSuccess, currentItem }: Pr
 
   const handleSubmit = async () => {
     if (!paymentTerms.trim()) {
-      setError('Payment Terms is required');
+      setError('Payment Terms');
       setSnackbar({ open: true, message: 'Payment Terms is required', severity: 'error' });
       return;
     }
@@ -124,9 +124,10 @@ export function PaymentTermsDialog({ open, onClose, onSuccess, currentItem }: Pr
             value={paymentTerms}
             onChange={(e) => {
               setPaymentTerms(e.target.value);
-              if (error) setError('');
+              if (error === 'Payment Terms') setError('');
             }}
-            error={!!error && !paymentTerms}
+            error={error === 'Payment Terms'}
+            helperText={error === 'Payment Terms' ? 'Payment Terms is required' : ''}
             disabled={loading}
             placeholder="e.g. 30 Days"
           />

@@ -85,6 +85,7 @@ const INITIAL_CALL_STATE: Partial<Call> = {
 
 export default function CallDialog({ open, onClose, selectedCall, initialData, onSuccess }: Props) {
     const [callData, setCallData] = useState<Partial<Call>>(INITIAL_CALL_STATE);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
@@ -159,6 +160,7 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
         }
 
         try {
+            setIsSubmitting(true);
             const formattedData = {
                 ...callData,
                 call_start_time: callData.call_start_time?.replace('T', ' '),
@@ -176,6 +178,8 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
         } catch (error: any) {
             console.error('Failed to save call:', error);
             setSnackbar({ open: true, message: error.message || 'Failed to save call', severity: 'error' });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -605,9 +609,12 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                         variant="contained"
                         color="info"
                         onClick={handleSaveCall}
+                        disabled={isSubmitting}
                         sx={{ borderRadius: 1, px: 3 }}
                     >
-                        {selectedCall ? 'Save Changes' : 'Create Call'}
+                        {isSubmitting 
+                            ? (selectedCall ? 'Saving...' : 'Creating...') 
+                            : (selectedCall ? 'Save Changes' : 'Create Call')}
                     </Button>
                 </DialogActions>
             </Dialog>

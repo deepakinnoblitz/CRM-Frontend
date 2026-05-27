@@ -340,19 +340,33 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
             </DialogContent>
 
             {actions.length > 0 && (
-                <DialogActions sx={{ p: 1.5, gap: 1.5 }}>
-                    {actions.map((action) => (
-                        <LoadingButton
-                            key={action.action}
-                            color={getActionColor(action.action) as any}
-                            variant="contained"
-                            loading={submitting && selectedAction?.action === action.action}
-                            onClick={() => handleActionClick(action)}
-                            sx={{ fontWeight: 800, px: 3 }}
-                        >
-                            {action.action}
-                        </LoadingButton>
-                    ))}
+                <DialogActions sx={{ p: 3, bgcolor: 'background.neutral', gap: 1.5 }}>
+                    {actions.map((action) => {
+                        const isPendingThis = submitting && selectedAction?.action === action.action;
+                        const isApprove = action.action.toLowerCase().includes('approve');
+                        const isReject = action.action.toLowerCase().includes('reject');
+                        
+                        let label = action.action;
+                        if (isPendingThis) {
+                            if (isApprove) label = 'Approving...';
+                            else if (isReject) label = 'Rejecting...';
+                            else label = 'Processing...';
+                        }
+
+                        return (
+                            <LoadingButton
+                                key={action.action}
+                                color={getActionColor(action.action) as any}
+                                variant="contained"
+                                loading={isPendingThis}
+                                disabled={submitting}
+                                onClick={() => handleActionClick(action)}
+                                sx={{ fontWeight: 800, px: 3 }}
+                            >
+                                {label}
+                            </LoadingButton>
+                        );
+                    })}
                 </DialogActions>
             )}
 
@@ -393,10 +407,17 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                         variant="contained"
                         color={getActionColor(selectedAction?.action || '') as any}
                         loading={submitting}
+                        disabled={submitting}
                         onClick={handleApplyAction}
                         sx={{ borderRadius: 1.5, minWidth: 100 }}
                     >
-                        Confirm
+                        {submitting ? (
+                            selectedAction?.action.toLowerCase().includes('approve')
+                                ? 'Approving...'
+                                : (selectedAction?.action.toLowerCase().includes('reject')
+                                    ? 'Rejecting...'
+                                    : 'Processing...')
+                        ) : 'Confirm'}
                     </LoadingButton>
                 }
             />
@@ -431,10 +452,11 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                         variant="contained"
                         color="primary"
                         loading={submitting}
+                        disabled={submitting}
                         onClick={handleUpdatePayment}
                         sx={{ borderRadius: 1.5, minWidth: 100 }}
                     >
-                        Update
+                        {submitting ? 'Updating...' : 'Update'}
                     </LoadingButton>
                 }
             />

@@ -34,11 +34,14 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { generatePurchasePdf } from 'src/components/export/pdf/purchase-pdf-generator';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { ExportFieldsDialog } from '../../export-fields-dialog';
 
 // ----------------------------------------------------------------------
 
 export function PurchaseReportView() {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -104,6 +107,7 @@ export function PurchaseReportView() {
                 if (fromDate) filters.push(['Purchase', 'bill_date', '>=', fromDate.format('YYYY-MM-DD')]);
                 if (toDate) filters.push(['Purchase', 'bill_date', '<=', toDate.format('YYYY-MM-DD')]);
                 if (vendor) filters.push(['Purchase', 'vendor_name', '=', vendor.name]);
+                if (user?.has_crm_permission) filters.push(['Purchase', 'owner', '=', user.name]);
             }
 
             const query = new URLSearchParams({
@@ -161,6 +165,7 @@ export function PurchaseReportView() {
             if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
             if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
             if (vendor) filters.vendor = vendor.name;
+            if (user?.has_crm_permission) filters.owner = user.name;
 
             console.log('Fetching Purchase Report with filters:', filters);
             const result = await runReport('Purchase Report', filters);
@@ -182,7 +187,7 @@ export function PurchaseReportView() {
         } finally {
             setLoading(false);
         }
-    }, [fromDate, toDate, vendor]);
+    }, [fromDate, toDate, vendor, user]);
 
     useEffect(() => {
         fetchReport();
@@ -227,9 +232,11 @@ export function PurchaseReportView() {
 
                 <Card
                     sx={{
-                        p: 2.5,
+                        py: 2.5,
+                        px: 2,
                         display: 'flex',
-                        gap: 2,
+                        columnGap: 2,
+                        rowGap: 1.5,
                         flexWrap: 'wrap',
                         alignItems: 'center',
                         bgcolor: 'background.neutral',
@@ -239,25 +246,63 @@ export function PurchaseReportView() {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="From Date"
+                            format="DD-MM-YYYY"
                             value={fromDate}
                             onChange={(newValue) => setFromDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 190, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                         <DatePicker
                             label="To Date"
+                            format="DD-MM-YYYY"
                             value={toDate}
                             onChange={(newValue) => setToDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 190, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                     </LocalizationProvider>
                     <Autocomplete
                         size="small"
                         sx={{ minWidth: 240 }}
                         options={vendorOptions}
-                        getOptionLabel={(option) => option ? `${option.name} - ${option.first_name}` : ''}
+                        getOptionLabel={(option) => option ? `${option.first_name} (${option.name})` : ''}
                         value={vendor}
                         onChange={(event, newValue) => setVendor(newValue)}
-                        renderInput={(params) => <TextField {...params} label="Vendor" placeholder="All Vendors" />}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="Search vendors..."
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                        renderOption={(props, option) => (
+                            <li {...props} key={option.name}>
+                                <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                        {option.first_name}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                        ID: {option.name}
+                                    </Typography>
+                                </Stack>
+                            </li>
+                        )}
                     />
                     <Box sx={{ flexGrow: 1 }} />
                     <Button
@@ -287,7 +332,7 @@ export function PurchaseReportView() {
                             bgcolor: '#f43f5e',
                             color: 'common.white',
                             '&:hover': { bgcolor: '#e11d48' },
-                            height: 40,
+                            height: 37,
                             px: 3,
                         }}
                     >

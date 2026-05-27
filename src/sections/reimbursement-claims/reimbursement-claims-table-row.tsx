@@ -36,7 +36,7 @@ type Props = {
     onView: () => void;
     onEdit: () => void;
     onDelete: () => void;
-    onApplyAction: (action: string) => void;
+    onApplyAction: (action: string) => Promise<void>;
     canEdit: boolean;
     canDelete: boolean;
     isHR?: boolean;
@@ -61,6 +61,7 @@ export function ReimbursementClaimTableRow({
     const isUnread = unreadCounts.unread_ids['Reimbursement Claim']?.includes(row.id);
 
     const [openMenu, setOpenMenu] = useState<HTMLElement | null>(null);
+    const [actionPending, setActionPending] = useState<string | null>(null);
 
 
     const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -68,12 +69,20 @@ export function ReimbursementClaimTableRow({
     };
 
     const handleCloseMenu = () => {
+        if (actionPending) return;
         setOpenMenu(null);
     };
 
-    const handleAction = (action: string) => {
-        onApplyAction(action);
-        handleCloseMenu();
+    const handleAction = async (action: string) => {
+        try {
+            setActionPending(action);
+            await onApplyAction(action);
+            handleCloseMenu();
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setActionPending(null);
+        }
     };
 
     const handleClick = (event: MouseEvent<HTMLButtonElement>, action: () => void) => {
@@ -209,17 +218,30 @@ export function ReimbursementClaimTableRow({
                     sx: { width: 160, p: 1 },
                 }}
             >
-                <MenuItem onClick={() => handleAction('Approve')} sx={{ color: 'success.main' }}>
-                    <Iconify icon={"solar:check-circle-bold" as any} sx={{ mr: 2 }} />
-                    Approve
+                <MenuItem
+                    onClick={() => !actionPending && handleAction('Approve')}
+                    disabled={!!actionPending}
+                    sx={{ color: 'success.main' }}
+                >
+                    <Iconify
+                        icon={(actionPending === 'Approve' ? "svg-spinners:18-dots-indicator" : "solar:check-circle-bold") as any}
+                        sx={{ mr: 2 }}
+                    />
+                    {actionPending === 'Approve' ? 'Approving...' : 'Approve'}
                 </MenuItem>
-
-                <MenuItem onClick={() => handleAction('Reject')} sx={{ color: 'error.main' }}>
-                    <Iconify icon={"mingcute:close-line" as any} sx={{ mr: 2 }} />
-                    Reject
+ 
+                <MenuItem
+                    onClick={() => !actionPending && handleAction('Reject')}
+                    disabled={!!actionPending}
+                    sx={{ color: 'error.main' }}
+                >
+                    <Iconify
+                        icon={(actionPending === 'Reject' ? "svg-spinners:18-dots-indicator" : "mingcute:close-line") as any}
+                        sx={{ mr: 2 }}
+                    />
+                    {actionPending === 'Reject' ? 'Rejecting...' : 'Reject'}
                 </MenuItem>
             </Popover>
         </>
     );
 }
-

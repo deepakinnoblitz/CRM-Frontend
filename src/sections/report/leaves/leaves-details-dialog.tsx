@@ -124,15 +124,13 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                     setSubmitting(false);
                     return;
                 }
-                setSubmitting(false);
-                handleApplyAction(action);
+                await handleApplyAction(action);
              } catch (error) {
                 console.error("Overlap check failed", error);
-                setSubmitting(false);
-                handleApplyAction(action); // Fallback to normal flow if check fails
+                await handleApplyAction(action); // Fallback to normal flow if check fails
              }
         } else if (lowerAction.includes('reject')) {
-            handleApplyAction(action);
+            await handleApplyAction(action);
         } else {
             setCommentDialogOpen(true);
         }
@@ -552,19 +550,32 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                     <>
                         <Divider />
                         <DialogActions sx={{ p: 3, justifyContent: 'flex-end', gap: 1.5 }}>
-                            {filteredActions.map((action) => (
-                                <Button
-                                    key={action.action}
-                                    variant="contained"
-                                    color={getActionColor(action.action)}
-                                    onClick={() => handleActionClick(action)}
-                                    disabled={submitting}
-                                    sx={{ fontWeight: 800, px: 3 }}
-                                    startIcon={submitting && selectedAction?.action === action.action ? <Iconify icon={"svg-spinners:18-dots-indicator" as any} /> : null}
-                                >
-                                    {action.action}
-                                </Button>
-                            ))}
+                            {filteredActions.map((action) => {
+                                const isPendingThis = submitting && selectedAction?.action === action.action;
+                                const isApprove = action.action.toLowerCase().includes('approve');
+                                const isReject = action.action.toLowerCase().includes('reject');
+                                
+                                let label = action.action;
+                                if (isPendingThis) {
+                                    if (isApprove) label = 'Approving...';
+                                    else if (isReject) label = 'Rejecting...';
+                                    else label = 'Processing...';
+                                }
+
+                                return (
+                                    <Button
+                                        key={action.action}
+                                        variant="contained"
+                                        color={getActionColor(action.action)}
+                                        onClick={() => handleActionClick(action)}
+                                        disabled={submitting}
+                                        sx={{ fontWeight: 800, px: 3 }}
+                                        startIcon={isPendingThis ? <Iconify icon={"svg-spinners:18-dots-indicator" as any} /> : null}
+                                    >
+                                        {label}
+                                    </Button>
+                                );
+                            })}
                         </DialogActions>
                     </>
                 )}
@@ -599,7 +610,13 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                         disabled={submitting}
                         startIcon={submitting ? <Iconify icon={"svg-spinners:18-dots-indicator" as any} /> : null}
                     >
-                        {submitting ? 'Processing...' : 'Confirm'}
+                        {submitting ? (
+                            selectedAction?.action.toLowerCase().includes('approve')
+                                ? 'Approving...'
+                                : (selectedAction?.action.toLowerCase().includes('reject')
+                                    ? 'Rejecting...'
+                                    : 'Processing...')
+                        ) : 'Confirm'}
                     </Button>
                 </DialogActions>
             </Dialog>

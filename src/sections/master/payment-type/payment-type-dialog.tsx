@@ -50,7 +50,7 @@ export function PaymentTypeDialog({ open, onClose, onSuccess, currentItem }: Pro
 
   const handleSubmit = async () => {
     if (!paymentType.trim()) {
-      setError('Payment Type is required');
+      setError('Payment Type');
       setSnackbar({ open: true, message: 'Payment Type is required', severity: 'error' });
       return;
     }
@@ -124,9 +124,10 @@ export function PaymentTypeDialog({ open, onClose, onSuccess, currentItem }: Pro
             value={paymentType}
             onChange={(e) => {
               setPaymentType(e.target.value);
-              if (error) setError('');
+              if (error === 'Payment Type') setError('');
             }}
-            error={!!error && !paymentType}
+            error={error === 'Payment Type'}
+            helperText={error === 'Payment Type' ? 'Payment Type is required' : ''}
             disabled={loading}
             placeholder="e.g. Bank Transfer"
           />

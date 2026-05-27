@@ -71,9 +71,9 @@ export function RequestsView() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-  const [orderBy, setOrderBy] = useState('creation');
+  const [orderBy, setOrderBy] = useState('modified');
   const [selected, setSelected] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState('creation_desc');
+  const [sortBy, setSortBy] = useState('modified_desc');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterEmployee, setFilterEmployee] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<string | null>(null);
@@ -449,8 +449,8 @@ export function RequestsView() {
           sortBy={sortBy}
           onSortChange={handleSortChange}
           sortOptions={[
-            { value: 'creation_desc', label: 'Newest First' },
-            { value: 'creation_asc', label: 'Oldest First' },
+            { value: 'modified_desc', label: 'Newest First' },
+            { value: 'modified_asc', label: 'Oldest First' },
             { value: 'employee_id_asc', label: 'Employee ID: Low to High' },
             { value: 'employee_id_desc', label: 'Employee ID: High to Low' },
             { value: 'employee_name_asc', label: 'Employee Name: A to Z' },

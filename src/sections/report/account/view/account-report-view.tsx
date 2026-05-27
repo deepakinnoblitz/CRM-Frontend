@@ -19,6 +19,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import FormControl from '@mui/material/FormControl';
+import Autocomplete from '@mui/material/Autocomplete';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
@@ -55,12 +56,12 @@ export function AccountReportView() {
     const [country, setCountry] = useState('all');
     const [state, setState] = useState('all');
     const [city, setCity] = useState('all');
-    const [owner, setOwner] = useState(user?.name || 'all');
+    const [owner, setOwner] = useState('all');
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
 
     useEffect(() => {
         if (user?.name) {
-            setOwner(user.name);
+            setOwner(user.has_crm_permission ? user.name : 'all');
         }
     }, [user]);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
@@ -220,7 +221,7 @@ export function AccountReportView() {
         setState('all');
         setCity('all');
         if (user?.name) {
-            setOwner(user.name);
+            setOwner(user.has_crm_permission ? user.name : 'all');
         }
     };
 
@@ -284,9 +285,11 @@ export function AccountReportView() {
 
                 <Card
                     sx={{
-                        p: 2.5,
+                        py: 2.5,
+                        px: 2,
                         display: 'flex',
-                        gap: 2,
+                        columnGap: 2,
+                        rowGap: 1.5,
                         flexWrap: 'wrap',
                         alignItems: 'center',
                         bgcolor: 'background.neutral',
@@ -296,37 +299,44 @@ export function AccountReportView() {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="From Date"
+                            format="DD-MM-YYYY"
                             value={fromDate}
                             onChange={(newValue) => setFromDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 160, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                         <DatePicker
                             label="To Date"
+                            format="DD-MM-YYYY"
                             value={toDate}
                             onChange={(newValue) => setToDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 160, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                     </LocalizationProvider>
                     <TextField
-                        label="Account Name"
+                        label="Company Name"
                         size="small"
                         sx={{ minWidth: 160 }}
                         value={accountName}
                         onChange={(e) => setAccountName(e.target.value)}
                     />
                     <FormControl size="small" sx={{ minWidth: 160 }}>
-                        <Select
-                            value={country}
-                            onChange={(e) => setCountry(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">Country</MenuItem>
-                            {countryOptions.map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </Select>
+                        <Autocomplete
+                            size="small"
+                            options={countryOptions}
+                            value={country === 'all' ? null : country}
+                            onChange={(e, newValue) => setCountry(newValue || 'all')}
+                            renderInput={(params) => <TextField {...params} placeholder="Country" />}
+                        />
                     </FormControl>
                     <FormControl size="small" sx={{ minWidth: 160 }} disabled={country === 'all'}>
                         <Select
@@ -356,24 +366,36 @@ export function AccountReportView() {
                             ))}
                         </Select>
                     </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 160 }} disabled>
-                        <Select
-                            value={owner}
-                            onChange={(e) => setOwner(e.target.value)}
-                            displayEmpty
-                            inputProps={{ readOnly: true }}
-                        >
-                            <MenuItem value="all">Owner</MenuItem>
-                            <MenuItem value="Administrator">Administrator</MenuItem>
-                            {ownerOptions
-                                .filter((opt) => opt !== 'Administrator')
-                                .map((opt) => (
-                                    <MenuItem key={opt} value={opt}>
-                                        {opt}
-                                    </MenuItem>
-                                ))}
-                        </Select>
-                    </FormControl>
+                    <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 250 }}
+                        disabled={user?.has_crm_permission}
+                        options={['All Owners', ...ownerOptions.filter((opt) => opt !== 'Administrator')]}
+                        getOptionLabel={(option) => option || 'All Owners'}
+                        value={owner === 'all' || !owner ? 'All Owners' : owner}
+                        onChange={(event, newValue) => {
+                            if (newValue === 'All Owners' || !newValue) {
+                                setOwner('all');
+                            } else {
+                                setOwner(newValue);
+                            }
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="All Owners"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                    />
                     <Box sx={{ flexGrow: 1 }} />
                     <Button
                         variant="contained"
@@ -402,7 +424,7 @@ export function AccountReportView() {
                             bgcolor: '#f43f5e',
                             color: 'common.white',
                             '&:hover': { bgcolor: '#e11d48' },
-                            height: 40,
+                            height: 37,
                             px: 3,
                         }}
                     >

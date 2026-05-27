@@ -45,6 +45,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
     const [fetching, setFetching] = useState(false);
     const [actions, setActions] = useState<WorkflowAction[]>([]);
     const [submitting, setSubmitting] = useState(false);
+    const [actionPending, setActionPending] = useState<string | null>(null);
     const [commentDialogOpen, setCommentDialogOpen] = useState(false);
     const [comment, setComment] = useState('');
     const [selectedAction, setSelectedAction] = useState<WorkflowAction | null>(null);
@@ -113,6 +114,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
         if (!actionToApply || !allocationId) return;
 
         try {
+            setActionPending(actionToApply.action);
             setSubmitting(true);
             await applyLeaveAllocationWorkflowAction(allocationId, actionToApply.action, comment);
             setComment('');
@@ -123,6 +125,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
             console.error('Failed to apply action:', e);
         } finally {
             setSubmitting(false);
+            setActionPending(null);
         }
     };
 
@@ -293,12 +296,23 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
                 <Stack direction="row" spacing={1.5} justifyContent="flex-end" sx={{ pt: 1 }}>
                     {actions.map((action) => {
                         const isReject = action.action.toLowerCase().includes('reject') || action.action.toLowerCase().includes('cancel');
+                        const isApprove = action.action.toLowerCase().includes('approve');
+                        const isPendingThis = actionPending === action.action;
+                        
+                        let label = action.action;
+                        if (isPendingThis) {
+                            if (isApprove) label = 'Approving...';
+                            else if (isReject) label = 'Rejecting...';
+                            else label = 'Processing...';
+                        }
+
                         return (
                             <LoadingButton
                                 key={action.action}
                                 variant="contained"
                                 onClick={() => handleActionClick(action)}
-                                loading={submitting}
+                                loading={isPendingThis && submitting}
+                                disabled={submitting}
                                 sx={{
                                     height: 40,
                                     borderRadius: 1,
@@ -312,7 +326,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
                                     },
                                 }}
                             >
-                                {action.action}
+                                {label}
                             </LoadingButton>
                         );
                     })}
@@ -402,9 +416,12 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
                         variant="contained"
                         onClick={() => handleApplyAction()}
                         loading={submitting}
+                        disabled={submitting}
                         sx={{ px: 4, height: 40 }}
                     >
-                        Confirm Action
+                        {submitting
+                            ? (selectedAction?.action.toLowerCase().includes('approve') ? 'Approving...' : (selectedAction?.action.toLowerCase().includes('reject') || selectedAction?.action.toLowerCase().includes('cancel') ? 'Rejecting...' : 'Processing...'))
+                            : 'Confirm Action'}
                     </LoadingButton>
                 </DialogActions>
             </Dialog>
