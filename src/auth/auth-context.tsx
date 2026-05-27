@@ -19,6 +19,7 @@ type UserType = {
   employee_name?: string;
   last_login?: string;
   user_status?: string;
+  has_crm_permission?: boolean;
 };
 
 type AuthContextType = {

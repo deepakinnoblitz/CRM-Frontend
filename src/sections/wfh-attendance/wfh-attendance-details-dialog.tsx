@@ -9,6 +9,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 import { Button, Stack, DialogActions, Avatar } from '@mui/material';
+import LoadingButton from '@mui/lab/LoadingButton';
 
 import { fTime } from 'src/utils/format-time';
 
@@ -37,6 +38,7 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
 
     const { user } = useAuth();
     const [actionLoading, setActionLoading] = useState(false);
+    const [actionPending, setActionPending] = useState<'Approve' | 'Reject' | null>(null);
 
     const hrRoles = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
     const isHR = user?.roles?.some((role: string) => hrRoles.includes(role));
@@ -217,25 +219,27 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
             {isHR && wfh?.workflow_state === 'Pending' && (
                 <DialogActions sx={{ px: 4, py: 3, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04) }}>
                     <Stack direction="row" spacing={1.5} sx={{ width: 1 }}>
-                        <Button
+                        <LoadingButton
                             fullWidth
                             variant="outlined"
                             color="error"
                             size="large"
                             startIcon={<Iconify icon="mingcute:close-line" />}
                             onClick={() => onAction('Reject')}
+                            loading={actionPending === 'Reject'}
                             disabled={actionLoading}
                             sx={{ fontWeight: 800 }}
                         >
-                            Reject
-                        </Button>
-                        <Button
+                            {actionPending === 'Reject' ? 'Rejecting...' : 'Reject'}
+                        </LoadingButton>
+                        <LoadingButton
                             fullWidth
                             variant="contained"
                             color="success"
                             size="large"
                             startIcon={<Iconify icon="solar:check-circle-bold" />}
                             onClick={() => onAction('Approve')}
+                            loading={actionPending === 'Approve'}
                             disabled={actionLoading}
                             sx={{
                                 fontWeight: 800,
@@ -244,8 +248,8 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
                                 boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.success.main, 0.24)}`,
                             }}
                         >
-                            Approve Request
-                        </Button>
+                            {actionPending === 'Approve' ? 'Approving...' : 'Approve Request'}
+                        </LoadingButton>
                     </Stack>
                 </DialogActions>
             )}
@@ -255,6 +259,7 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
     async function onAction(action: 'Approve' | 'Reject') {
         if (!wfhId) return;
         try {
+            setActionPending(action);
             setActionLoading(true);
             await handleWFHAction(wfhId, action);
             const updatedWfh = await getWFHAttendance(wfhId);
@@ -263,6 +268,7 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
             console.error(`Failed to ${action} WFH:`, error);
         } finally {
             setActionLoading(false);
+            setActionPending(null);
         }
     }
 }

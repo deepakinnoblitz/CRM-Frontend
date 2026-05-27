@@ -17,6 +17,8 @@ import TableHead from '@mui/material/TableHead';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import FormControl from '@mui/material/FormControl';
+import TextField from '@mui/material/TextField';
+import Autocomplete from '@mui/material/Autocomplete';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
@@ -53,11 +55,11 @@ export function CallsReportView() {
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [callFor, setCallFor] = useState('all');
     const [status, setStatus] = useState('all');
-    const [owner, setOwner] = useState(user?.name || 'all');
+    const [owner, setOwner] = useState('all');
 
     useEffect(() => {
         if (user?.name) {
-            setOwner(user.name);
+            setOwner(user.has_crm_permission ? user.name : 'all');
         }
     }, [user]);
     const [reminder, setReminder] = useState('all');
@@ -207,7 +209,7 @@ export function CallsReportView() {
         setStatus('all');
         setReminder('all');
         if (user?.name) {
-            setOwner(user.name);
+            setOwner(user.has_crm_permission ? user.name : 'all');
         }
     };
 
@@ -242,9 +244,11 @@ export function CallsReportView() {
 
                 <Card
                     sx={{
-                        p: 2.5,
+                        py: 3,
+                        px: 2,
                         display: 'flex',
-                        gap: 2,
+                        columnGap: 2,
+                        rowGap: 1.5,
                         flexWrap: 'wrap',
                         alignItems: 'center',
                         bgcolor: 'background.neutral',
@@ -254,15 +258,27 @@ export function CallsReportView() {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="From Date"
+                            format="DD-MM-YYYY"
                             value={fromDate}
                             onChange={(newValue) => setFromDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 160, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                         <DatePicker
                             label="To Date"
+                            format="DD-MM-YYYY"
                             value={toDate}
                             onChange={(newValue) => setToDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 160, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                     </LocalizationProvider>
                     <FormControl size="small" sx={{ minWidth: 160 }}>
@@ -293,25 +309,37 @@ export function CallsReportView() {
                             ))}
                         </Select>
                     </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 160 }} disabled>
-                        <Select
-                            value={owner}
-                            onChange={(e) => setOwner(e.target.value)}
-                            displayEmpty
-                            inputProps={{ readOnly: true }}
-                        >
-                            <MenuItem value="all">Owner</MenuItem>
-                            <MenuItem value="Administrator">Administrator</MenuItem>
-                            {ownerOptions
-                                .filter((opt) => opt !== 'Administrator')
-                                .map((opt) => (
-                                    <MenuItem key={opt} value={opt}>
-                                        {opt}
-                                    </MenuItem>
-                                ))}
-                        </Select>
-                    </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 160 }}>
+                    <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 250 }}
+                        disabled={user?.has_crm_permission}
+                        options={['All Owners', ...ownerOptions.filter((opt) => opt !== 'Administrator')]}
+                        getOptionLabel={(option) => option || 'All Owners'}
+                        value={owner === 'all' || !owner ? 'All Owners' : owner}
+                        onChange={(event, newValue) => {
+                            if (newValue === 'All Owners' || !newValue) {
+                                setOwner('all');
+                            } else {
+                                setOwner(newValue);
+                            }
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="All Owners"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                    />
+                    <FormControl size="small" sx={{ minWidth: 150 }}>
                         <Select
                             value={reminder}
                             onChange={(e) => setReminder(e.target.value)}
@@ -350,7 +378,7 @@ export function CallsReportView() {
                             bgcolor: '#f43f5e',
                             color: 'common.white',
                             '&:hover': { bgcolor: '#e11d48' },
-                            height: 40,
+                            height: 37,
                             px: 3,
                         }}
                     >

@@ -53,7 +53,7 @@ export function ServiceDialog({ open, onClose, onSuccess, currentService }: Prop
 
   const handleSubmit = async () => {
     if (!serviceName.trim()) {
-      setError('Service Name is required');
+      setError('Service Name');
       setSnackbar({ open: true, message: 'Service Name is required', severity: 'error' });
       return;
     }
@@ -127,9 +127,10 @@ export function ServiceDialog({ open, onClose, onSuccess, currentService }: Prop
             value={serviceName}
             onChange={(e) => {
               setServiceName(e.target.value);
-              if (error) setError('');
+              if (error === 'Service Name') setError('');
             }}
-            error={!!error && !serviceName}
+            error={error === 'Service Name'}
+            helperText={error === 'Service Name' ? 'Service Name is required' : ''}
             disabled={loading}
             placeholder="e.g. Web Development"
           />

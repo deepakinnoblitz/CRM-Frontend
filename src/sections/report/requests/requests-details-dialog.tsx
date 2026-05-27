@@ -447,26 +447,28 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
                                 color="success"
                                 variant="contained"
                                 loading={loading === 'Approved'}
+                                disabled={!!loading}
                                 onClick={() => handleUpdateStatus('Approved')}
                                 startIcon={<Iconify icon={"solar:check-circle-bold" as any} />}
                             >
-                                Approve
+                                {loading === 'Approved' ? 'Approving...' : 'Approve'}
                             </LoadingButton>
 
                             <LoadingButton
                                 color="error"
                                 variant="contained"
                                 loading={loading === 'Rejected'}
+                                disabled={!!loading}
                                 onClick={() => handleUpdateStatus('Rejected')}
                                 startIcon={<Iconify icon={"solar:close-circle-bold" as any} />}
                             >
-                                Reject
+                                {loading === 'Rejected' ? 'Rejecting...' : 'Reject'}
                             </LoadingButton>
 
                             <Button
                                 color="info"
                                 variant="contained"
-                                disabled={hrLimitReached}
+                                disabled={hrLimitReached || !!loading}
                                 onClick={() => {
                                     setClarificationType('HR');
                                     setOpenClarification(true);
@@ -483,7 +485,7 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
                         <Button
                             color="info"
                             variant="contained"
-                            disabled={employeeLimitReached}
+                            disabled={employeeLimitReached || !!loading}
                             onClick={() => {
                                 setClarificationType('Employee');
                                 setOpenClarification(true);

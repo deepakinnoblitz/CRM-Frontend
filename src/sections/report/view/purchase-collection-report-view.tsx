@@ -30,13 +30,15 @@ import { fCurrency } from 'src/utils/format-number';
 import { runReport } from 'src/api/reports';
 import { DashboardContent } from 'src/layouts/dashboard';
 
-import { Iconify } from 'src/components/iconify'; 
+import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { useAuth } from 'src/auth/auth-context';
 import { generatePurchaseCollectionPdf } from 'src/components/export/pdf/purchase-collection-pdf-generator';
 
 // ----------------------------------------------------------------------
 
 export function PurchaseCollectionReportView() {
+    const { user } = useAuth();
     const [reportData, setReportData] = useState<any[]>([]);
     const [summaryData, setSummaryData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -94,6 +96,7 @@ export function PurchaseCollectionReportView() {
             if (purchaseNo) filters.purchase = purchaseNo;
             if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
             if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
+            if (user?.has_crm_permission) filters.owner = user.name;
 
             const result = await runReport('Purchase Settlement Report', filters);
             setReportData(result.result || []);
@@ -105,7 +108,7 @@ export function PurchaseCollectionReportView() {
         } finally {
             setLoading(false);
         }
-    }, [vendor, purchaseNo, fromDate, toDate]);
+    }, [vendor, purchaseNo, fromDate, toDate, user]);
 
     useEffect(() => {
         fetchReport();
@@ -136,7 +139,7 @@ export function PurchaseCollectionReportView() {
     };
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
                     <Typography variant="h4">Purchase Settlement Report</Typography>
@@ -162,9 +165,11 @@ export function PurchaseCollectionReportView() {
 
                 <Card
                     sx={{
-                        p: 2.5,
+                        py: 2.2,
+                        px: 2,
                         display: 'flex',
-                        gap: 2,
+                        columnGap: 2,
+                        rowGap: 1.5,
                         flexWrap: 'wrap',
                         alignItems: 'center',
                         bgcolor: 'background.neutral',
@@ -190,15 +195,27 @@ export function PurchaseCollectionReportView() {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="From Date"
+                            format="DD-MM-YYYY"
                             value={fromDate}
                             onChange={(newValue) => setFromDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 190, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                         <DatePicker
                             label="To Date"
+                            format="DD-MM-YYYY"
                             value={toDate}
                             onChange={(newValue) => setToDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 190, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                     </LocalizationProvider>
                     <Box sx={{ flexGrow: 1 }} />
@@ -227,7 +244,7 @@ export function PurchaseCollectionReportView() {
                             bgcolor: '#f43f5e',
                             color: 'common.white',
                             '&:hover': { bgcolor: '#e11d48' },
-                            height: 40,
+                            height: 36,
                             px: 3,
                         }}
                     >

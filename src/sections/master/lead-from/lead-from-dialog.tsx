@@ -50,7 +50,7 @@ export function LeadFromDialog({ open, onClose, onSuccess, currentLeadFrom }: Pr
 
   const handleSubmit = async () => {
     if (!leadFrom.trim()) {
-      setError('required');
+      setError('Lead From');
       setSnackbar({ open: true, message: 'Lead From is required', severity: 'error' });
       return;
     }
@@ -124,9 +124,10 @@ export function LeadFromDialog({ open, onClose, onSuccess, currentLeadFrom }: Pr
             value={leadFrom}
             onChange={(e) => {
               setLeadFrom(e.target.value);
-              if (error) setError('');
+              if (error === 'Lead From') setError('');
             }}
-            error={!!error}
+            error={error === 'Lead From'}
+            helperText={error === 'Lead From' ? 'Lead From is required' : ''}
             disabled={loading}
             placeholder="e.g. Google"
           />

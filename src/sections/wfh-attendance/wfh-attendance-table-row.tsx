@@ -38,7 +38,7 @@ type Props = {
     onSelectRow: VoidFunction;
     onView: VoidFunction;
     onEdit: VoidFunction;
-    onApplyAction: (action: string) => void;
+    onApplyAction: (action: string) => Promise<void>;
     canEdit?: boolean;
     isHR?: boolean;
     hideCheckbox?: boolean;
@@ -72,23 +72,32 @@ export function WFHAttendanceTableRow({
     };
 
     const [openMenu, setOpenMenu] = useState<HTMLElement | null>(null);
+    const [actionPending, setActionPending] = useState<string | null>(null);
 
     const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
         setOpenMenu(event.currentTarget);
     };
 
     const handleCloseMenu = () => {
+        if (actionPending) return;
         setOpenMenu(null);
     };
 
-    const handleAction = (action: string) => {
+    const handleAction = async (action: string) => {
         // Mark as read when action is taken
         markAsRead('WFH Attendance', row.id).then(() => {
             window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
         });
 
-        onApplyAction(action);
-        handleCloseMenu();
+        try {
+            setActionPending(action);
+            await onApplyAction(action);
+            handleCloseMenu();
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setActionPending(null);
+        }
     };
 
     return (
@@ -225,14 +234,28 @@ export function WFHAttendanceTableRow({
                     sx: { width: 140, p: 1 },
                 }}
             >
-                <MenuItem onClick={() => handleAction('Approve')} sx={{ color: 'success.main' }}>
-                    <Iconify icon="solar:check-circle-bold" sx={{ mr: 2 }} />
-                    Approve
+                <MenuItem
+                    onClick={() => !actionPending && handleAction('Approve')}
+                    disabled={!!actionPending}
+                    sx={{ color: 'success.main' }}
+                >
+                    <Iconify
+                        icon={(actionPending === 'Approve' ? "svg-spinners:18-dots-indicator" : "solar:check-circle-bold") as any}
+                        sx={{ mr: 2 }}
+                    />
+                    {actionPending === 'Approve' ? 'Approving...' : 'Approve'}
                 </MenuItem>
 
-                <MenuItem onClick={() => handleAction('Reject')} sx={{ color: 'error.main' }}>
-                    <Iconify icon="mingcute:close-line" sx={{ mr: 2 }} />
-                    Reject
+                <MenuItem
+                    onClick={() => !actionPending && handleAction('Reject')}
+                    disabled={!!actionPending}
+                    sx={{ color: 'error.main' }}
+                >
+                    <Iconify
+                        icon={(actionPending === 'Reject' ? "svg-spinners:18-dots-indicator" : "mingcute:close-line") as any}
+                        sx={{ mr: 2 }}
+                    />
+                    {actionPending === 'Reject' ? 'Rejecting...' : 'Reject'}
                 </MenuItem>
             </Popover>
         </>
