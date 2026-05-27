@@ -327,15 +327,20 @@ export function SalarySlipDetailsDialog({ open, onClose, slip }: Props) {
     // ── Dialog ────────────────────────────────────────────────────────────────
     return (
         <>
-            <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+            <Dialog 
+                open={open} 
+                onClose={onClose} 
+                fullWidth 
+                PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, maxWidth: '1100px', } }}
+            >
                 <DialogTitle
                     sx={{
                         m: 0,
-                        p: 2.5,
+                        p: 2,
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        bgcolor: 'background.neutral',
+                        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
                     }}
                 >
                     <Typography variant="h6" sx={{ fontWeight: 800 }}>

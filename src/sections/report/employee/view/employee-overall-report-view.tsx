@@ -422,11 +422,11 @@ export function EmployeeOverallReportView() {
           cell.font = { bold: true, color: { argb: 'FF1C252E' } };
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
-          cell.border = { 
-            top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-            left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-            right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
           };
         });
         detailsSheet.mergeCells(`A${earningsTitleRow.number}:B${earningsTitleRow.number}`);
@@ -437,11 +437,11 @@ export function EmployeeOverallReportView() {
           cell.font = { bold: true, color: { argb: 'FF1C252E' } };
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }; // Slightly darker gray for headers
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
-          cell.border = { 
-            top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-            left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-            right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
           };
         });
 
@@ -451,11 +451,11 @@ export function EmployeeOverallReportView() {
             const r = detailsSheet.addRow([row.component_name || row.component || '-', row.amount || 0]);
             r.eachCell(cell => {
               cell.font = { color: { argb: 'FF1C252E' } };
-              cell.border = { 
-                top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-                left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-                bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-                right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+              cell.border = {
+                top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+                left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+                bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+                right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
               };
               cell.alignment = { vertical: 'middle', horizontal: 'center' };
             });
@@ -464,11 +464,11 @@ export function EmployeeOverallReportView() {
           const r = detailsSheet.addRow(['-', '-']);
           r.eachCell(cell => {
             cell.font = { color: { argb: 'FF1C252E' } };
-            cell.border = { 
-              top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-              left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-              bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-              right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+              left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+              bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+              right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
             };
             cell.alignment = { vertical: 'middle', horizontal: 'center' };
           });
@@ -482,11 +482,11 @@ export function EmployeeOverallReportView() {
           cell.font = { bold: true, color: { argb: 'FF1C252E' } };
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
-          cell.border = { 
-            top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-            left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-            right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
           };
         });
         detailsSheet.mergeCells(`A${deductionsTitleRow.number}:B${deductionsTitleRow.number}`);
@@ -497,11 +497,11 @@ export function EmployeeOverallReportView() {
           cell.font = { bold: true, color: { argb: 'FF1C252E' } };
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
-          cell.border = { 
-            top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-            left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-            right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
           };
         });
 
@@ -511,11 +511,11 @@ export function EmployeeOverallReportView() {
             const r = detailsSheet.addRow([row.component_name || row.component || '-', row.amount || 0]);
             r.eachCell(cell => {
               cell.font = { color: { argb: 'FF1C252E' } };
-              cell.border = { 
-                top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-                left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-                bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-                right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+              cell.border = {
+                top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+                left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+                bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+                right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
               };
               cell.alignment = { vertical: 'middle', horizontal: 'center' };
             });
@@ -524,11 +524,11 @@ export function EmployeeOverallReportView() {
           const r = detailsSheet.addRow(['-', '-']);
           r.eachCell(cell => {
             cell.font = { color: { argb: 'FF1C252E' } };
-            cell.border = { 
-              top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-              left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-              bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, 
-              right: { style: 'thin', color: { argb: 'FFD1D5DB' } } 
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+              left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+              bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+              right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
             };
             cell.alignment = { vertical: 'middle', horizontal: 'center' };
           });
@@ -1033,9 +1033,9 @@ export function EmployeeOverallReportView() {
           body: verticalBasic,
           ...tableStyles,
           alternateRowStyles: { fillColor: [252, 253, 255] },
-          columnStyles: { 
-            0: { fontStyle: 'bold', width: 60, fillColor: [244, 246, 248], textColor: [28, 37, 46], fontSize: 8 }, 
-            1: { halign: 'left', textColor: [28, 37, 46], fontSize: 9 } 
+          columnStyles: {
+            0: { fontStyle: 'bold', width: 60, fillColor: [244, 246, 248], textColor: [28, 37, 46], fontSize: 8 },
+            1: { halign: 'left', textColor: [28, 37, 46], fontSize: 9 }
           }
         });
       } else {
@@ -1073,9 +1073,9 @@ export function EmployeeOverallReportView() {
           body: verticalContact,
           ...tableStyles,
           alternateRowStyles: { fillColor: [252, 253, 255] },
-          columnStyles: { 
-            0: { fontStyle: 'bold', width: 60, fillColor: [244, 246, 248], textColor: [28, 37, 46], fontSize: 8 }, 
-            1: { halign: 'left', textColor: [28, 37, 46], fontSize: 9 } 
+          columnStyles: {
+            0: { fontStyle: 'bold', width: 60, fillColor: [244, 246, 248], textColor: [28, 37, 46], fontSize: 8 },
+            1: { halign: 'left', textColor: [28, 37, 46], fontSize: 9 }
           }
         });
       } else {
@@ -1112,9 +1112,9 @@ export function EmployeeOverallReportView() {
           body: verticalEmployment,
           ...tableStyles,
           alternateRowStyles: { fillColor: [252, 253, 255] },
-          columnStyles: { 
-            0: { fontStyle: 'bold', width: 60, fillColor: [244, 246, 248], textColor: [28, 37, 46], fontSize: 8 }, 
-            1: { halign: 'left', textColor: [28, 37, 46], fontSize: 9 } 
+          columnStyles: {
+            0: { fontStyle: 'bold', width: 60, fillColor: [244, 246, 248], textColor: [28, 37, 46], fontSize: 8 },
+            1: { halign: 'left', textColor: [28, 37, 46], fontSize: 9 }
           }
         });
       } else {
@@ -1153,9 +1153,9 @@ export function EmployeeOverallReportView() {
           body: verticalSalary,
           ...tableStyles,
           alternateRowStyles: { fillColor: [252, 253, 255] },
-          columnStyles: { 
-            0: { fontStyle: 'bold', width: 60, fillColor: [244, 246, 248], textColor: [28, 37, 46], fontSize: 8 }, 
-            1: { halign: 'left', textColor: [28, 37, 46], fontSize: 9 } 
+          columnStyles: {
+            0: { fontStyle: 'bold', width: 60, fillColor: [244, 246, 248], textColor: [28, 37, 46], fontSize: 8 },
+            1: { halign: 'left', textColor: [28, 37, 46], fontSize: 9 }
           }
         });
       } else {
@@ -1346,7 +1346,7 @@ export function EmployeeOverallReportView() {
 
         <Card
           sx={{
-            p: 1.5,
+            p: 2.5,
             display: 'flex',
             flexDirection: 'column',
             gap: 2,
@@ -1359,21 +1359,15 @@ export function EmployeeOverallReportView() {
               <DatePicker
                 format="DD-MM-YYYY"
                 value={joiningDateFrom}
-                label={joiningDateFrom ? "" : "Joining Date From"}
+                label="Joining Date From"
                 onChange={(newValue) => setJoiningDateFrom(newValue)}
                 slotProps={{
                   textField: {
                     size: 'small',
-                    InputLabelProps: { shrink: false },
+                    InputLabelProps: { shrink: true },
                     sx: {
                       flexGrow: 1,
                       minWidth: 190,
-                      '& .MuiInputLabel-root': {
-                        transform: 'translate(14px, 9px) scale(1)',
-                      },
-                      '& .MuiInputLabel-root.Mui-focused, & .MuiInputLabel-root.MuiFormLabel-filled': {
-                        visibility: 'hidden',
-                      },
                     },
                   },
                 }}
@@ -1381,21 +1375,15 @@ export function EmployeeOverallReportView() {
               <DatePicker
                 format="DD-MM-YYYY"
                 value={joiningDateTo}
-                label={joiningDateTo ? "" : "Joining Date To"}
+                label="Joining Date To"
                 onChange={(newValue) => setJoiningDateTo(newValue)}
                 slotProps={{
                   textField: {
                     size: 'small',
-                    InputLabelProps: { shrink: false },
+                    InputLabelProps: { shrink: true },
                     sx: {
                       flexGrow: 1,
                       minWidth: 190,
-                      '& .MuiInputLabel-root': {
-                        transform: 'translate(14px, 9px) scale(1)',
-                      },
-                      '& .MuiInputLabel-root.Mui-focused, & .MuiInputLabel-root.MuiFormLabel-filled': {
-                        visibility: 'hidden',
-                      },
                     },
                   },
                 }}

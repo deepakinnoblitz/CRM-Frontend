@@ -703,8 +703,8 @@ export function UserFormDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-        <DialogTitle>
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
+        <DialogTitle sx={{borderBottom: (theme) => `1px solid ${theme.palette.divider}`,}}>
           {selectedUser ? 'Edit User' : 'New User'}
           <IconButton onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}>
             <Iconify icon="mingcute:close-line" />

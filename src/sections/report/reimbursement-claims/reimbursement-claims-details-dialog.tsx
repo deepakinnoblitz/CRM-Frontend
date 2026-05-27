@@ -156,7 +156,7 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
 
             <Stack spacing={1} alignItems="flex-end">
                 <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                    ₹{claim.amount?.toLocaleString() || 0}
+                    <Box component="span" sx={{ fontFamily: 'Arial' }}>₹</Box>{claim.amount?.toLocaleString() || 0}
                 </Typography>
                 <Label variant="soft" color={claim.paid === 1 ? 'success' : 'warning'}>
                     {claim.workflow_state || (claim.paid === 1 ? 'Paid' : 'Pending')}
@@ -166,23 +166,75 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
     );
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="md"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    boxShadow: (themeVar) => themeVar.customShadows.z24,
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }
+            }}
+        >
+            <DialogTitle
+                sx={{
+                    m: 0,
+                    p: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                }}
+            >
                 Claim Details
-                <IconButton onClick={onClose}>
+                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
                     <Iconify icon={"mingcute:close-line" as any} />
                 </IconButton>
             </DialogTitle>
 
-            <Scrollbar sx={{ maxHeight: '80vh' }}>
-                <DialogContent sx={{ p: 0 }}>
-                    {renderHeader}
+            <DialogContent sx={{ p: 0, flexGrow: 1, overflowY: 'auto' }}>
+                {renderHeader}
 
-                    <Box sx={{ p: 3, marginLeft: 2 }}>
-                        <Stack spacing={3}>
-                            {/* Claim Information */}
-                            <Box>
-                                <SectionHeader title="Claim Information" icon="" />
+                <Box sx={{ p: 3, marginLeft: 2 }}>
+                    <Stack spacing={3}>
+                        {/* Claim Information */}
+                        <Box>
+                            <SectionHeader title="Claim Information" icon="" />
+                            <Box
+                                sx={{
+                                    display: 'grid',
+                                    gap: 3,
+                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+                                }}
+                            >
+                                <DetailItem label="Claim Type" value={claim.claim_type} icon="solar:tag-bold" />
+                                <DetailItem label="Date of Expense" value={dayjs(claim.date_of_expense).format('DD/MM/YYYY')} icon="solar:calendar-bold" />
+                                <DetailItem
+                                    label="Amount"
+                                    value={
+                                        <>
+                                            <Box component="span" sx={{ fontFamily: 'Arial' }}>₹</Box>
+                                            {claim.amount?.toLocaleString() || 0}
+                                        </>
+                                    }
+                                    icon="solar:wad-of-money-bold"
+                                />
+                                <DetailItem label="Status" value={claim.paid === 1 ? 'Paid' : 'Pending'} icon="solar:info-circle-bold" />
+                            </Box>
+                        </Box>
+
+                        {/* Settlement Details */}
+                        {(claim.workflow_state === 'Paid' || claim.paid === 1) && (
+                            <Box sx={{ pt: 3 }}>
+                                <SectionHeader
+                                    title="Settlement Details"
+                                    icon=""
+                                />
                                 <Box
                                     sx={{
                                         display: 'grid',
@@ -190,124 +242,102 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                                         gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
                                     }}
                                 >
-                                    <DetailItem label="Claim Type" value={claim.claim_type} icon="solar:tag-bold" />
-                                    <DetailItem label="Date of Expense" value={dayjs(claim.date_of_expense).format('DD/MM/YYYY')} icon="solar:calendar-bold" />
-                                    <DetailItem label="Amount" value={`₹${claim.amount?.toLocaleString() || 0}`} icon="solar:wad-of-money-bold" />
-                                    <DetailItem label="Status" value={claim.paid === 1 ? 'Paid' : 'Pending'} icon="solar:info-circle-bold" />
+                                    <DetailItem label="Approved By" value={claim.approved_by || '-'} icon="solar:user-bold" />
+                                    <DetailItem label="Status" value={claim.workflow_state || (claim.paid === 1 ? 'Paid' : 'Pending')} icon="solar:flag-bold" />
+                                    <DetailItem label="Paid By" value={claim.paid_by || '-'} icon="solar:user-bold" />
+                                    <DetailItem label="Paid Date" value={claim.paid_date ? dayjs(claim.paid_date).format('DD/MM/YYYY') : '-'} icon="solar:calendar-bold" />
+                                    <DetailItem label="Payment Reference" value={claim.payment_reference || '-'} icon="solar:bill-bold" />
                                 </Box>
                             </Box>
+                        )}
 
-                            {/* Settlement Details */}
-                            {(claim.workflow_state === 'Paid' || claim.paid === 1) && (
-                                <Box sx={{ pt: 3 }}>
-                                    <SectionHeader
-                                        title="Settlement Details"
-                                        icon=""
-                                    />
-                                    <Box
-                                        sx={{
-                                            display: 'grid',
-                                            gap: 3,
-                                            gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
-                                        }}
-                                    >
-                                        <DetailItem label="Approved By" value={claim.approved_by || '-'} icon="solar:user-bold" />
-                                        <DetailItem label="Status" value={claim.workflow_state || (claim.paid === 1 ? 'Paid' : 'Pending')} icon="solar:flag-bold" />
-                                        <DetailItem label="Paid By" value={claim.paid_by || '-'} icon="solar:user-bold" />
-                                        <DetailItem label="Paid Date" value={claim.paid_date ? dayjs(claim.paid_date).format('DD/MM/YYYY') : '-'} icon="solar:calendar-bold" />
-                                        <DetailItem label="Payment Reference" value={claim.payment_reference || '-'} icon="solar:bill-bold" />
-                                    </Box>
+                        {/* Claim Details / Notes */}
+                        {(claim.claim_details || claim.approver_comments) && (
+                            <Box sx={{ pt: 3 }}>
+                                <SectionHeader title="Details & Notes" icon="solar:notes-bold" />
+                                <Stack spacing={2}>
+                                    {claim.claim_details && (
+                                        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, mb: 1, display: 'block', textTransform: 'uppercase' }}>
+                                                Claim Details
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: 'pre-wrap' }}>
+                                                {claim.claim_details}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Stack>
+                            </Box>
+                        )}
+
+                        {/* Attachments */}
+                        {(claim.receipt || claim.payment_proof) && (
+                            <Box sx={{ pt: 3 }}>
+                                <SectionHeader
+                                    title="Attachments"
+                                    icon="solar:link-bold"
+                                    action={
+                                        <Stack direction="row" spacing={1}>
+                                            {claim.receipt && (
+                                                <Button
+                                                    variant="text"
+                                                    size="small"
+                                                    color="primary"
+                                                    startIcon={<Iconify icon={"solar:paperclip-bold" as any} />}
+                                                    href={claim.receipt}
+                                                    target="_blank"
+                                                    sx={{ fontSize: '0.75rem', fontWeight: 700 }}
+                                                >
+                                                    Expense Receipt
+                                                </Button>
+                                            )}
+                                            {claim.payment_proof && (
+                                                <Button
+                                                    variant="text"
+                                                    size="small"
+                                                    color="success"
+                                                    startIcon={<Iconify icon={"solar:check-read-bold" as any} />}
+                                                    href={claim.payment_proof}
+                                                    target="_blank"
+                                                    sx={{ fontSize: '0.75rem', fontWeight: 700 }}
+                                                >
+                                                    Payment Proof
+                                                </Button>
+                                            )}
+                                        </Stack>
+                                    }
+                                />
+                            </Box>
+                        )}
+
+                        {/* Metadata */}
+                        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                            <SectionHeader title="Record Information" icon="solar:info-circle-bold" noMargin />
+                            <Box
+                                sx={{
+                                    display: 'grid',
+                                    gap: 2,
+                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(3, 1fr)' },
+                                    mt: 2
+                                }}
+                            >
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Created On</Typography>
+                                    <Typography variant="body2">{dayjs(claim.creation).format('DD/MM/YYYY HH:mm')}</Typography>
                                 </Box>
-                            )}
-
-                            {/* Claim Details / Notes */}
-                            {(claim.claim_details || claim.approver_comments) && (
-                                <Box sx={{ pt: 3 }}>
-                                    <SectionHeader title="Details & Notes" icon="solar:notes-bold" />
-                                    <Stack spacing={2}>
-                                        {claim.claim_details && (
-                                            <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, mb: 1, display: 'block', textTransform: 'uppercase' }}>
-                                                    Claim Details
-                                                </Typography>
-                                                <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: 'pre-wrap' }}>
-                                                    {claim.claim_details}
-                                                </Typography>
-                                            </Box>
-                                        )}
-                                    </Stack>
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Last Modified</Typography>
+                                    <Typography variant="body2">{dayjs(claim.modified).format('DD/MM/YYYY HH:mm')}</Typography>
                                 </Box>
-                            )}
-
-                            {/* Attachments */}
-                            {(claim.receipt || claim.payment_proof) && (
-                                <Box sx={{ pt: 3 }}>
-                                    <SectionHeader
-                                        title="Attachments"
-                                        icon="solar:link-bold"
-                                        action={
-                                            <Stack direction="row" spacing={1}>
-                                                {claim.receipt && (
-                                                    <Button
-                                                        variant="text"
-                                                        size="small"
-                                                        color="primary"
-                                                        startIcon={<Iconify icon={"solar:paperclip-bold" as any} />}
-                                                        href={claim.receipt}
-                                                        target="_blank"
-                                                        sx={{ fontSize: '0.75rem', fontWeight: 700 }}
-                                                    >
-                                                        Expense Receipt
-                                                    </Button>
-                                                )}
-                                                {claim.payment_proof && (
-                                                    <Button
-                                                        variant="text"
-                                                        size="small"
-                                                        color="success"
-                                                        startIcon={<Iconify icon={"solar:check-read-bold" as any} />}
-                                                        href={claim.payment_proof}
-                                                        target="_blank"
-                                                        sx={{ fontSize: '0.75rem', fontWeight: 700 }}
-                                                    >
-                                                        Payment Proof
-                                                    </Button>
-                                                )}
-                                            </Stack>
-                                        }
-                                    />
-                                </Box>
-                            )}
-
-                            {/* Metadata */}
-                            <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                                <SectionHeader title="Record Information" icon="solar:info-circle-bold" noMargin />
-                                <Box
-                                    sx={{
-                                        display: 'grid',
-                                        gap: 2,
-                                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(3, 1fr)' },
-                                        mt: 2
-                                    }}
-                                >
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Created On</Typography>
-                                        <Typography variant="body2">{dayjs(claim.creation).format('DD/MM/YYYY HH:mm')}</Typography>
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Last Modified</Typography>
-                                        <Typography variant="body2">{dayjs(claim.modified).format('DD/MM/YYYY HH:mm')}</Typography>
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Record ID</Typography>
-                                        <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 600 }}>{claim.name}</Typography>
-                                    </Box>
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Record ID</Typography>
+                                    <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 600 }}>{claim.name}</Typography>
                                 </Box>
                             </Box>
-                        </Stack>
-                    </Box>
-                </DialogContent>
-            </Scrollbar>
+                        </Box>
+                    </Stack>
+                </Box>
+            </DialogContent>
 
             {actions.length > 0 && (
                 <DialogActions sx={{ p: 3, bgcolor: 'background.neutral', gap: 1.5 }}>
@@ -466,7 +496,7 @@ function SectionHeader({ title, icon, action, noMargin = false }: { title: strin
     );
 }
 
-function DetailItem({ label, value, icon }: { label: string; value: string; icon: string }) {
+function DetailItem({ label, value, icon }: { label: string; value: React.ReactNode; icon: string }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
             <Box

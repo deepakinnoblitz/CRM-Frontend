@@ -101,6 +101,7 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
             fullWidth
             maxWidth="md"
             TransitionProps={{ onExited: () => setWfh(null) }}
+            PaperProps={{ sx: { borderRadius: 2 } }}
         >
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>WFH Entry Details</Typography>

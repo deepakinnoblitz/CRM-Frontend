@@ -35,6 +35,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
 
+import { getDeal } from 'src/api/deals';
 import { createItem } from 'src/api/invoice';
 import { getContact } from 'src/api/contacts';
 import { uploadFile } from 'src/api/data-import';
@@ -138,6 +139,18 @@ export function EstimationCreateView() {
     useEffect(() => {
         if (dealIdParam) {
             setDeal(dealIdParam);
+            getDeal(dealIdParam)
+                .then(async (dealData) => {
+                    if (dealData.contact) {
+                        await handleCustomerChange(dealData.contact);
+                        if (dealData.account) {
+                            setBillingName(dealData.account);
+                        }
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch deal from deal_id:', err);
+                });
         }
     }, [dealIdParam]);
 

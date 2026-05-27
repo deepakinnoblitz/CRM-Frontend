@@ -610,8 +610,22 @@ export function AssetsView() {
             </Dialog>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-                <form onSubmit={handleCreate} noValidate>
+            <Dialog 
+                open={openCreate} 
+                onClose={handleCloseCreate} 
+                fullWidth 
+                maxWidth="md"
+                PaperProps={{
+                    sx: {
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                    }
+                }}
+            >
+                <form onSubmit={handleCreate} noValidate style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                     <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         {isEdit ? 'Edit Asset' : 'New Asset'}
                         <IconButton onClick={handleCloseCreate}>
@@ -619,7 +633,7 @@ export function AssetsView() {
                         </IconButton>
                     </DialogTitle>
 
-                    <DialogContent dividers>
+                    <DialogContent dividers sx={{ flexGrow: 1, overflowY: 'auto' }}>
                         <Box sx={{ display: 'grid', gap: 3, margin: '1rem', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
                             <TextField
                                 fullWidth
@@ -854,7 +868,7 @@ export function AssetsView() {
                         </Box>
                     </DialogContent>
 
-                    <DialogActions>
+                    <DialogActions sx={{p:1.5}}>
                         <LoadingButton type="submit" variant="contained" loading={uploading}>
                             {isEdit ? 'Update' : 'Create'}
                         </LoadingButton>

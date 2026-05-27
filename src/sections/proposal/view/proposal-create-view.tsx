@@ -110,6 +110,7 @@ export function ProposalCreateView() {
 
     // Validation
     const [titleError, setTitleError] = useState(false);
+    const [BillingError, setBillingError] = useState(false);
     const [clientError, setClientError] = useState(false);
 
     // File input ref per row
@@ -267,6 +268,10 @@ export function ProposalCreateView() {
         }
         if (!clientName) {
             setClientError(true);
+            hasError = true;
+        }
+        if (!billingName){
+            setBillingError(true);
             hasError = true;
         }
         if (hasError) {
@@ -446,9 +451,9 @@ export function ProposalCreateView() {
                             value={
                                 billingNameOptions.find((o) => o.name === billingName) || null
                             }
-                            onChange={(_e, val) => setBillingName(val?.name || '')}
+                            onChange={(_e, val) => { setBillingName(val?.name || ''); if (val?.name) setBillingError(false); }}
                             renderInput={(params) => (
-                                <TextField {...params} label="Billing Name" />
+                                <TextField {...params} label="Billing Name" required error={BillingError} helperText={BillingError ? 'Billing Name is required' : ''}/>
                             )}
                             renderOption={(props, option) => (
                                 <li {...props} key={option.name}>

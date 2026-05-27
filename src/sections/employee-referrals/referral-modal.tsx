@@ -187,16 +187,45 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        Refer a Candidate
-        <IconButton onClick={onClose}>
-          <Iconify icon="mingcute:close-line" />
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="md"
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          boxShadow: (themeVar) => themeVar.customShadows.z24,
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+        }
+      }}
+    >
+      <DialogTitle
+        sx={{
+          m: 0,
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          Refer a Candidate
+        </Typography>
+
+        <IconButton
+          onClick={onClose}
+          sx={{ color: (theme) => theme.palette.grey[500] }}
+        >
+          <Iconify icon="mingcute:close-line" width={20} />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers>
-        <Stack spacing={3} sx={{ pt: 1 }}>
+      <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
+        <Stack spacing={3} sx={{ pt: 3 }}>
           <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
           <TextField
             name="candidate_name"
@@ -320,7 +349,7 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
         </Stack>
       </DialogContent>
 
-      <DialogActions>
+      <DialogActions sx={{ p: 1.5 }}>
         <Button 
           onClick={handleSubmit} 
           variant="contained" 

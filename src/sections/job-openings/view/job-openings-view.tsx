@@ -419,28 +419,43 @@ export function JobOpeningsView() {
             </Card>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            <Dialog
+                open={openCreate}
+                onClose={handleCloseCreate}
+                fullWidth
+                maxWidth="md"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }
+                }}
+            >
+                <DialogTitle
+                    sx={{
+                        m: 0,
+                        p: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                    }}
+                >
+                    <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
                         {editJob ? 'Edit Job Opening' : 'New Job Opening'}
                     </Typography>
 
                     <IconButton
                         onClick={handleCloseCreate}
-                        sx={{
-                            p: 0.75,
-                            bgcolor: 'background.paper',
-                            boxShadow: (theme) => theme.customShadows.z8,
-                            '&:hover': {
-                                bgcolor: 'background.paper',
-                                color: 'error.main',
-                            },
-                        }}
+                        sx={{ color: (theme) => theme.palette.grey[500] }}
                     >
                         <Iconify icon="mingcute:close-line" width={20} />
                     </IconButton>
                 </DialogTitle>
-                <DialogContent>
+                <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <Stack spacing={3} sx={{ mt: 2 }}>
                             <TextField
@@ -599,7 +614,7 @@ export function JobOpeningsView() {
                         </Stack>
                     </LocalizationProvider>
                 </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
+                <DialogActions sx={{ p: 1.5 }}>
                     <Button variant="contained" onClick={handleSubmit}>
                         {editJob ? 'Update' : 'Create'}
                     </Button>

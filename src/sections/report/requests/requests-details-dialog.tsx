@@ -281,16 +281,16 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
                 }
             }}
         >
-            <DialogTitle sx={{ m: 0, p: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}`, }}>
                 <Stack direction="row" alignItems="center" spacing={1.5}>
-                    <Typography variant="h5" sx={{ fontWeight: 800 }}>Request Details</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>Request Details</Typography>
                 </Stack>
-                <IconButton onClick={onClose} sx={{ color: 'text.disabled', '&:hover': { color: 'error.main', bgcolor: (theme) => alpha(theme.palette.error.main, 0.08) } }}>
-                    <Iconify icon="mingcute:close-line" width={24} />
+                <IconButton onClick={onClose} sx={{ color: 'text.disabled' }}>
+                    <Iconify icon="mingcute:close-line" width={20} />
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 4, pt: 0 }}>
+            <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
                 {fetching ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
                         <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
@@ -439,7 +439,7 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
             </DialogContent>
 
             {internalRequest && (
-                <DialogActions sx={{ p: 3, justifyContent: 'flex-end', gap: 1.5 }}>
+                <DialogActions sx={{ p: 1.5, justifyContent: 'flex-end', gap: 1.5 }}>
                     {/* HR Actions */}
                     {!isEmployee && (internalRequest.workflow_state === 'Pending' || internalRequest.workflow_state === 'Clarification Requested' || !internalRequest.workflow_state) && (
                         <>

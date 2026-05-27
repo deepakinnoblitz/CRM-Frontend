@@ -190,10 +190,7 @@ export function ProposalDetailsView() {
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={2}>
                 <Stack spacing={0.5}>
                     <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                        {proposal.proposal_title}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                        {proposal.reference_no}
+                        Proposal: {proposal.name}
                     </Typography>
                 </Stack>
                 <Stack direction="row" spacing={1.5}>

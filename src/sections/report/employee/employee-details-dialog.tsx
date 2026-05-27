@@ -115,9 +115,10 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
                     setCurrentTab(0);
                 }
             }}
+            PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}
         >
 
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}`, }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Employee Profile</Typography>
                 <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500], bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows?.z1 }}>
                     <Iconify icon="mingcute:close-line" />

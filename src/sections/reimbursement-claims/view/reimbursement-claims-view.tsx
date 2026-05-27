@@ -824,15 +824,29 @@ export function ReimbursementClaimsView() {
             </Card>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
+            <Dialog
+                open={openCreate}
+                onClose={handleCloseCreate}
+                fullWidth
+                maxWidth="md"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }
+                }}
+            >
                 <DialogTitle
                     sx={{
                         m: 0,
-                        p: 2.5,
+                        p: 2,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        bgcolor: 'background.neutral',
+                        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
                     }}
                 >
                     <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
@@ -841,21 +855,13 @@ export function ReimbursementClaimsView() {
 
                     <IconButton
                         onClick={handleCloseCreate}
-                        sx={{
-                            p: 0.75,
-                            bgcolor: 'background.paper',
-                            boxShadow: (theme) => theme.customShadows.z8,
-                            '&:hover': {
-                                bgcolor: 'background.paper',
-                                color: 'error.main',
-                            },
-                        }}
+                        sx={{ color: (theme) => theme.palette.grey[500] }}
                     >
                         <Iconify icon="mingcute:close-line" width={20} />
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent dividers>
+                <DialogContent dividers sx={{ flexGrow: 1, overflowY: 'auto', p: 3 }}>
                     <Box sx={{ display: 'grid', gap: 3, p: 2 }}>
                         <Autocomplete
                             fullWidth
@@ -927,7 +933,7 @@ export function ReimbursementClaimsView() {
                     </Box>
                 </DialogContent>
 
-                <DialogActions sx={{ px: 3, pb: 2, pt: 2 }}>
+                <DialogActions sx={{ p: 1.5 }}>
                     <LoadingButton
                         onClick={handleCreate}
                         variant="contained"

@@ -120,15 +120,40 @@ export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, se
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {selectedEvent ? 'Edit Employee Evaluation' : 'New Employee Evaluation'}
-                <IconButton onClick={onClose}>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="sm"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    boxShadow: (themeVar: any) => themeVar.customShadows.z24,
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }
+            }}
+        >
+            <DialogTitle
+                sx={{
+                    m: 0,
+                    p: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: (theme: any) => `1px solid ${theme.palette.divider}`,
+                }}
+            >
+                <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
+                    {selectedEvent ? 'Edit Employee Evaluation' : 'New Employee Evaluation'}
+                </Typography>
+                <IconButton onClick={onClose} sx={{ color: (theme: any) => theme.palette.grey[500] }}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent dividers>
+            <DialogContent dividers sx={{ flexGrow: 1, overflowY: 'auto', p: 3 }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Stack spacing={3} sx={{ pt: 1 }}>
                         <Autocomplete
@@ -284,7 +309,7 @@ export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, se
                 </LocalizationProvider>
             </DialogContent>
 
-            <DialogActions>
+            <DialogActions sx={{ p: 1.5 }}>
                 <LoadingButton
                     variant="contained"
                     onClick={handleSave}

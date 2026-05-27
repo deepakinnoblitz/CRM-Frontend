@@ -286,38 +286,55 @@ export function InterviewDetailsDialog({ open, onClose, interview }: Props) {
     // ── Render ────────────────────────────────────────────────────────────
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="md"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    boxShadow: (themeVar) => themeVar.customShadows.z24,
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }
+            }}
+        >
             <DialogTitle
-                sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                sx={{
+                    m: 0,
+                    p: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                }}
             >
-                Interview Details
-                <IconButton onClick={onClose}>
-                    <Iconify icon="mingcute:close-line" />
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>Interview Details</Typography>
+                <IconButton onClick={onClose} sx={{ color: 'text.disabled' }}>
+                    <Iconify icon="mingcute:close-line" width={20} />
                 </IconButton>
             </DialogTitle>
 
-            <Scrollbar sx={{ maxHeight: '85vh' }}>
-                <DialogContent sx={{ p: 3, pt: 2 }}>
-                    {/* {renderHeader} */}
+            <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
+                <Tabs
+                    value={tab}
+                    onChange={(_, val) => setTab(val)}
+                    sx={{
+                        mb: 3,
+                        borderBottom: (t) => `1px solid ${t.vars.palette.divider}`,
+                    }}
+                >
+                    <Tab label="Applicant Details" />
+                    <Tab label="Interview Details" />
+                    <Tab label="Performance" />
+                </Tabs>
 
-                    <Tabs
-                        value={tab}
-                        onChange={(_, val) => setTab(val)}
-                        sx={{
-                            mb: 3,
-                            borderBottom: (t) => `1px solid ${t.vars.palette.divider}`,
-                        }}
-                    >
-                        <Tab label="Applicant Details" />
-                        <Tab label="Interview Details" />
-                        <Tab label="Performance" />
-                    </Tabs>
-
-                    {tab === 0 && renderApplicantDetails}
-                    {tab === 1 && renderInterviewDetails}
-                    {tab === 2 && renderPerformance}
-                </DialogContent>
-            </Scrollbar>
+                {tab === 0 && renderApplicantDetails}
+                {tab === 1 && renderInterviewDetails}
+                {tab === 2 && renderPerformance}
+            </DialogContent>
         </Dialog>
     );
 }

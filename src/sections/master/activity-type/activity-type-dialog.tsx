@@ -105,7 +105,17 @@ export function ActivityTypeDialog({ open, onClose, onSuccess, id }: Props) {
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="xs"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                },
+            }}
+        >
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6">{id ? 'Edit Activity Type' : 'New Activity Type'}</Typography>
                 <Iconify icon="mingcute:close-line" onClick={onClose} sx={{ cursor: 'pointer', color: 'text.disabled' }} />

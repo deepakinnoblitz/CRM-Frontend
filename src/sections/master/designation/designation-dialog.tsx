@@ -6,6 +6,7 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Snackbar from '@mui/material/Snackbar';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -156,7 +157,17 @@ export function DesignationDialog({ open, onClose, onSuccess, id }: Props) {
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="sm"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                },
+            }}
+        >
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6">{id ? 'Edit Designation' : 'New Designation'}</Typography>
                 <Iconify icon="mingcute:close-line" onClick={onClose} sx={{ cursor: 'pointer', color: 'text.disabled' }} />
@@ -214,12 +225,11 @@ export function DesignationDialog({ open, onClose, onSuccess, id }: Props) {
                             label="Level"
                             value={level}
                             onChange={(e) => setLevel(e.target.value)}
-                            SelectProps={{ native: true }}
                             disabled={loading}
                             InputLabelProps={{ shrink: true }}
                         >
                             {LEVEL_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>{opt}</option>
+                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                             ))}
                         </TextField>
                         <TextField
@@ -228,12 +238,11 @@ export function DesignationDialog({ open, onClose, onSuccess, id }: Props) {
                             label="Status"
                             value={status}
                             onChange={(e) => setStatus(e.target.value as any)}
-                            SelectProps={{ native: true }}
                             disabled={loading}
                             InputLabelProps={{ shrink: true }}
                         >
                             {STATUS_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>{opt}</option>
+                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                             ))}
                         </TextField>
                     </Box>

@@ -348,6 +348,10 @@ export function DealView() {
             newErrors.account = true;
             missingFields.push('Company');
         }
+        if (!contact) {
+            newErrors.client = true;
+            missingFields.push('Client');
+        }
 
         if (Object.keys(newErrors).length > 0) {
             setValidationErrors(newErrors);
@@ -530,7 +534,12 @@ export function DealView() {
                                 fullWidth
                                 options={formContactOptions}
                                 value={contactOptions.find((c) => c.name === contact) || null}
-                                onChange={(event, newValue) => setContact(newValue?.name || '')}
+                                onChange={(event, newValue) => {
+                                    setContact(newValue?.name || '');
+                                    if (newValue?.name) {
+                                        setValidationErrors(prev => ({ ...prev, client: false }));
+                                    }
+                                }}
                                 getOptionLabel={(option) => option.first_name || option.name}
                                 disabled={viewOnly}
                                 renderOption={(props, option) => {
@@ -552,6 +561,9 @@ export function DealView() {
                                     <TextField
                                         {...params}
                                         label="Client"
+                                        required
+                                        error={!!validationErrors.client}
+                                        helperText={validationErrors.client ? 'Client is required' : ''}
                                     />
                                 )}
                             />

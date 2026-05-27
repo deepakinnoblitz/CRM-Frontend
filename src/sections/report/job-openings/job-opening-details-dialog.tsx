@@ -31,7 +31,7 @@ export function JobOpeningDetailsDialog({ open, onClose, onRefer, job }: Props) 
     };
 
     const renderHeader = (
-        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2, mb: 3 }}>
+        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2, mb: 3 , mt: 3 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
                 <Box>
                     <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
@@ -104,25 +104,76 @@ export function JobOpeningDetailsDialog({ open, onClose, onRefer, job }: Props) 
     );
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                Job Opening Details
-                <IconButton onClick={onClose}>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="md"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    boxShadow: (themeVar) => themeVar.customShadows.z24,
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }
+            }}
+        >
+            <DialogTitle
+                sx={{
+                    m: 0,
+                    p: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                }}
+            >
+                <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
+                    Job Opening Details
+                </Typography>
+                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
                     <Iconify icon={"mingcute:close-line" as any} />
                 </IconButton>
             </DialogTitle>
 
-            <Scrollbar sx={{ maxHeight: '85vh' }}>
-                <DialogContent sx={{ p: 4 }}>
-                    {renderHeader}
-                    {renderDetails}
-                    <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
-                    {renderDescription}
-                </DialogContent>
-            </Scrollbar>
+            <DialogContent sx={{ p: 4, flexGrow: 1, overflowY: 'auto' }}>
+                {renderHeader}
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gap: 2.5,
+                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+                        mb: 4,
+                        ml: 2
+                    }}
+                >
+                    <DetailItem icon="solar:calendar-date-bold" label="Posted On" value={formatDate(job.posted_on)} />
+                    <DetailItem icon="solar:calendar-add-bold" label="Closes On" value={formatDate(job.closes_on)} />
+                    <DetailItem icon="solar:clock-circle-bold" label="Shift" value={job.shift} />
+                    <DetailItem icon="solar:ranking-bold" label="Experience" value={job.experience} />
+                    <DetailItem
+                        icon="solar:wad-of-money-bold"
+                        label="Salary Range"
+                        value={
+                            job.lower_range ? (
+                                <>
+                                    <Box component="span" sx={{ fontFamily: 'Arial' }}>₹</Box>
+                                    {job.lower_range} - <Box component="span" sx={{ fontFamily: 'Arial' }}>₹</Box>{job.upper_range} per {job.salary_per}
+                                </>
+                            ) : (
+                                'Not Disclosed'
+                            )
+                        }
+                    />
+                    <DetailItem icon="solar:settings-bold" label="Skills Required" value={job.skills_required || '-'} />
+                </Box>
+                <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
+                {renderDescription}
+            </DialogContent>
 
             {onRefer && (
-                <DialogActions sx={{ p: 3, pt: 1 }}>
+                <DialogActions sx={{ p: 1.5 }}>
                     <Button
                         fullWidth
                         variant="contained"
@@ -155,7 +206,7 @@ function SectionHeader({ title, icon }: { title: string; icon: string }) {
     );
 }
 
-function DetailItem({ icon, label, value }: { icon: string; label: string; value: string }) {
+function DetailItem({ icon, label, value }: { icon: string; label: string; value: React.ReactNode }) {
     return (
         <Stack direction="row" spacing={1.5} alignItems="flex-start">
             <Iconify icon={icon as any} width={20} sx={{ color: 'text.disabled', mt: 0.2 }} />

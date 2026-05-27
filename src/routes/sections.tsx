@@ -78,7 +78,10 @@ export const TimesheetReportPage = lazy(() => import('src/pages/reports/timeshee
 export const AttendanceReportPage = lazy(() => import('src/pages/reports/attendance'));
 export const DailyLogReportPage = lazy(() => import('src/pages/reports/daily-log'));
 export const TaskReportPage = lazy(() => import('src/pages/reports/task-manager'));
+export const SalarySlipReportPage = lazy(() => import('src/pages/reports/salary-slip'));
 export const EmployeePage = lazy(() => import('src/pages/employee'));
+export const EmployeeDetailsPage = lazy(() => import('src/pages/employee/details'));
+export const CalendarPage = lazy(() => import('src/pages/calendar'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
 export const LeavesPage = lazy(() => import('src/pages/leaves'));
 export const LeaveAllocationsPage = lazy(() => import('src/pages/leave-allocations'));
@@ -223,7 +226,14 @@ export const routesSection: RouteObject[] = [
       },
       { path: 'blog', element: <BlogPage /> },
 
-      { path: 'employee', element: <EmployeePage /> },
+      {
+        path: 'employee',
+        children: [
+          { index: true, element: <EmployeePage /> },
+          { path: ':id/view', element: <EmployeeDetailsPage /> },
+        ]
+      },
+      { path: 'calendar', element: <CalendarPage /> },
       { path: 'attendance', element: <AttendancePage /> },
       { path: 'leaves', element: <LeavesPage /> },
       { path: 'leave-allocations', element: <LeaveAllocationsPage /> },
@@ -327,6 +337,7 @@ export const routesSection: RouteObject[] = [
           { path: 'attendance', element: <AttendanceReportPage /> },
           { path: 'daily-log', element: <DailyLogReportPage /> },
           { path: 'task-manager', element: <TaskReportPage /> },
+          { path: 'salary-slip', element: <SalarySlipReportPage /> },
         ],
       },
       { path: 'employee-evaluation', element: <EmployeeEvaluationPage /> },

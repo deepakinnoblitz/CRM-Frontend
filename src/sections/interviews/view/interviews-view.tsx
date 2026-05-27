@@ -526,14 +526,29 @@ export function InterviewsView() {
             </Card>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
+            <Dialog
+                open={openCreate}
+                onClose={handleCloseCreate}
+                fullWidth
+                maxWidth="md"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }
+                }}
+            >
                 <DialogTitle
                     sx={{
                         m: 0,
-                        p: 2.5,
+                        p: 2,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
+                        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
                     }}
                 >
                     <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -542,15 +557,7 @@ export function InterviewsView() {
 
                     <IconButton
                         onClick={handleCloseCreate}
-                        sx={{
-                            p: 0.75,
-                            bgcolor: 'background.paper',
-                            boxShadow: (theme) => theme.customShadows.z8,
-                            '&:hover': {
-                                bgcolor: 'background.paper',
-                                color: 'error.main',
-                            },
-                        }}
+                        sx={{ color: (theme) => theme.palette.grey[500] }}
                     >
                         <Iconify icon="mingcute:close-line" width={20} />
                     </IconButton>
@@ -568,7 +575,7 @@ export function InterviewsView() {
                     <Tab label="Interview Details" />
                     <Tab label="Performance" />
                 </Tabs>
-                <DialogContent sx={{ mt: 0, pt: 3 }}>
+                <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
 
                     {/* ── Tab 0: Applicant Details ── */}
                     {dialogTab === 0 && (
@@ -1081,7 +1088,7 @@ export function InterviewsView() {
                     )}
 
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ p: 1.5 }}>
                     <Button variant="contained" onClick={handleSubmit}>
                         {editInterview ? 'Update' : 'Schedule'}
                     </Button>

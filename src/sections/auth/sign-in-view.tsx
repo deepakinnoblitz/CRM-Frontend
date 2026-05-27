@@ -39,6 +39,11 @@ export function SignInView() {
     setLoading(true);
 
     try {
+      // Request notification permission immediately upon user interaction
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().catch(console.error);
+      }
+
       await login(email, password);
 
       // Fetch full user info including roles

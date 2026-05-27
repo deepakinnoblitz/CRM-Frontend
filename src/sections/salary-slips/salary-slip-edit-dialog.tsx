@@ -513,7 +513,7 @@ export function SalarySlipEditDialog({ open, onClose, slip, onSuccess }: Props) 
     );
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
             <DialogTitle
                 sx={{
                     m: 0,
@@ -521,7 +521,7 @@ export function SalarySlipEditDialog({ open, onClose, slip, onSuccess }: Props) 
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    bgcolor: 'background.neutral',
+                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`
                 }}
             >
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>

@@ -387,19 +387,32 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6" component="span" sx={{ fontWeight: 800 }}>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="md"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    boxShadow: (themeVar) => themeVar.customShadows.z24,
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }
+            }}
+        >
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
+                <Typography variant="h6" component="span" sx={{ fontWeight: 700 }}>
                     Details for {employee_name || 'Employee'} - {fDate(login_date, 'DD MMM YYYY')}
                 </Typography>
-                <IconButton onClick={onClose}>
-                    <Iconify icon="mingcute:close-line" />
+                <IconButton onClick={onClose} sx={{ color: (t) => t.palette.grey[500] }}>
+                    <Iconify icon="mingcute:close-line" width={20} />
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent dividers sx={{ p: 0 }}>
-                <Scrollbar sx={{ p: 4, maxHeight: '72vh' }}>
-
+            <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
+                <Box sx={{ pt: 1 }}>
                     {/* Summary Section */}
                     <Box sx={{ mb: 5 }}>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
@@ -673,7 +686,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                             )}
                         </Box>
                     </Stack>
-                </Scrollbar>
+                </Box>
             </DialogContent>
         </Dialog>
     );

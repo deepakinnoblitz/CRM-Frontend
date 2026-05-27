@@ -522,7 +522,7 @@ export function AttendanceView() {
                 </Typography>
 
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                    {permissions.write && (
+                    {isHR && permissions.write && (
                         <>
                             <Button
                                 variant="outlined"
@@ -659,7 +659,7 @@ export function AttendanceView() {
             </Card>
 
             {/* CREATE/EDIT DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24 } }}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {currentAttendanceId ? 'Edit Attendance' : 'Mark Attendance'}
                     <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
@@ -715,7 +715,7 @@ export function AttendanceView() {
                     </LocalizationProvider>
                 </DialogContent>
 
-                <DialogActions>
+                <DialogActions sx={{ p: 2}}>
                     <Button variant="contained" onClick={handleCreate} disabled={creating} sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}>
                         {creating ? 'Saving...' : (currentAttendanceId ? 'Update Record' : 'Save Record')}
                     </Button>

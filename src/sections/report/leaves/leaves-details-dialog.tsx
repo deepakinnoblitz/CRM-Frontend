@@ -356,15 +356,10 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                 onClose={onClose}
                 fullWidth
                 maxWidth={hasHistory ? 'lg' : 'md'}
-                PaperProps={{
-                    sx: {
-                        borderRadius: 2,
-                        boxShadow: (theme) => theme.customShadows?.z24,
-                    }
-                }}
+                PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24 } }}
                 TransitionProps={{ onExited: () => { setLeave(null); setActions([]); } }}
             >
-                <DialogTitle sx={{ m: 0, p: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
                     <Stack direction="row" alignItems="center" spacing={1.5}>
                         <Typography variant="h5" sx={{ fontWeight: 800 }}>Application Details</Typography>
                     </Stack>
@@ -373,7 +368,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent sx={{ p: { xs: 2.5, sm: 4 }, pt: 0 }}>
+                <DialogContent sx={{ p: { xs: 2.5, sm: 4 }, mt: 3 }}>
                     {fetching || (loading && !leave) ? (
                         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
                             <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
