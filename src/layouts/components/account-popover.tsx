@@ -74,7 +74,24 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
     setIsLoggingOut(true);
 
     try {
-      await logout();
+      try {
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            const subscription = await registration.pushManager.getSubscription();
+            if (subscription) {
+              await subscription.unsubscribe();
+            }
+          }
+        }
+      } catch (swError) {
+        console.error('Failed to unsubscribe from PushManager:', swError);
+      }
+
+      const fcmResponse = await logout();
+            
+      // Wait 3 seconds so the user can read the debug message before the page reloads
+      await new Promise(resolve => setTimeout(resolve, 3000));
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {

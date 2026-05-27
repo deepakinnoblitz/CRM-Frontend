@@ -169,6 +169,7 @@ export const hrNavData = [
       { title: 'Task Report', path: '/reports/task-manager' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
       { title: 'Employee Overall Report', path: '/employee-overall-report' },
+      { title: 'Salary Slip Report', path: '/reports/salary-slip' },
     ],
   },
   {

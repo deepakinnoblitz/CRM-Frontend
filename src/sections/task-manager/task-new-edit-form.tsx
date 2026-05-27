@@ -232,15 +232,20 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
 
     return (
         <>
-            <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
+            <Dialog
+                open={open}
+                onClose={onClose}
+                fullWidth
+                maxWidth="lg"
+                PaperProps={{ sx: { borderRadius: 2 } }}
+            >
                 <DialogTitle
                     sx={{
                         m: 0,
-                        p: 2.5,
+                        p: 2,
                         display: 'flex',
                         justifyContent: 'space-between',
-                        alignItems: 'center',
-                        bgcolor: 'background.neutral'
+                        alignItems: 'center'
                     }}
                 >
                     <Typography variant="h6" sx={{ fontWeight: 800 }}>
@@ -673,7 +678,7 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
                     </LocalizationProvider>
                 </DialogContent>
 
-                <DialogActions sx={{ px: 3, py: 2.5, gap: 1.5 }}>
+                <DialogActions sx={{ px: 2, py: 1.5, gap: 1.5 }}>
                     {/* <Button 
                     variant="outlined" 
                     onClick={onClose}
@@ -723,6 +728,7 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
                 }}
                 maxWidth="xs"
                 fullWidth
+                PaperProps={{ sx: { borderRadius: 2 } }}
             >
                 <DialogTitle
                     sx={{
@@ -731,11 +737,14 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        bgcolor: 'background.neutral'
+                        borderBottom: (t: any) => `1px solid ${t.palette.divider}`,
                     }}
                 >
                     <Typography variant="h6" sx={{ fontWeight: 700 }}>Create New Project</Typography>
-                    <IconButton onClick={() => { setOpenProjectCreate(false); setNewProjectName(''); }}>
+                    <IconButton
+                        onClick={() => { setOpenProjectCreate(false); setNewProjectName(''); }}
+                        sx={{ color: 'text.disabled', bgcolor: 'background.paper', boxShadow: (t: any) => t.customShadows?.z1 }}
+                    >
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
                 </DialogTitle>
@@ -793,6 +802,7 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
                 }}
                 maxWidth="xs"
                 fullWidth
+                PaperProps={{ sx: { borderRadius: 2 } }}
             >
                 <DialogTitle
                     sx={{
@@ -801,11 +811,14 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        bgcolor: 'background.neutral'
+                        borderBottom: (t: any) => `1px solid ${t.palette.divider}`,
                     }}
                 >
                     <Typography variant="h6" sx={{ fontWeight: 700 }}>Create New Department</Typography>
-                    <IconButton onClick={() => { setOpenDepartmentCreate(false); setNewDepartmentName(''); }}>
+                    <IconButton
+                        onClick={() => { setOpenDepartmentCreate(false); setNewDepartmentName(''); }}
+                        sx={{ color: 'text.disabled', bgcolor: 'background.paper', boxShadow: (t: any) => t.customShadows?.z1 }}
+                    >
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
                 </DialogTitle>

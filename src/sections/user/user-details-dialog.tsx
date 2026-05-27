@@ -66,6 +66,7 @@ export function UserDetailsDialog({ open, onClose, userId, onEdit }: Props) {
                     setUser(null);
                 }
             }}
+            PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}
         >
             <DialogTitle sx={{ m: 0, px: 3, py: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 1, borderColor: 'divider' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>User Profile</Typography>

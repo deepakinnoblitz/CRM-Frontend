@@ -505,7 +505,7 @@ export function HolidaysView() {
             </Card>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {isEdit ? 'Edit Holiday List' : 'New Holiday List'}
                     <IconButton onClick={handleCloseCreate}>
@@ -678,7 +678,7 @@ export function HolidaysView() {
                     </Box>
                 </DialogContent>
 
-                <DialogActions>
+                <DialogActions sx={{p: 1.5}}>
                     <Button onClick={handleCreate} variant="contained">
                         {isEdit ? 'Update' : 'Create'}
                     </Button>

@@ -39,7 +39,7 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
     const router = useRouter();
     const [contact, setContact] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [currentTab, setCurrentTab] = useState('invoices');
+    const [currentTab, setCurrentTab] = useState('deals');
 
     useEffect(() => {
         if (open && contactId) {
@@ -59,7 +59,7 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
     ];
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth={false} PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, width: '1350px',  maxWidth: '1350px'} }}>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth={false} PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, width: '1350px', maxWidth: '1350px' } }}>
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Client Details</Typography>
                 <IconButton onClick={onClose} sx={{ color: theme.palette.grey[500] }}>
@@ -107,6 +107,7 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                                                 sx={{
                                                     width: 72,
                                                     height: 72,
+                                                    flexShrink: 0,
                                                     borderRadius: '50%',
                                                     bgcolor: (themeVar) => alpha(themeVar.palette.primary.main, 0.1),
                                                     color: 'primary.main',
@@ -122,7 +123,7 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                                                 <Typography variant="h5" sx={{ fontWeight: 900, color: 'text.primary', letterSpacing: -0.5 }}>
                                                     {contact.first_name} {contact.last_name}
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, display: 'block' }}>
+                                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, display: 'block', pt: 1 }}>
                                                     ID: {contact.name}
                                                 </Typography>
                                             </Box>

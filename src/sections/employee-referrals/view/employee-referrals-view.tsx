@@ -19,11 +19,13 @@ import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { fetchFrappeList } from 'src/api/hr-management';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchOpenJobs, fetchMyReferrals, createJobApplicant } from 'src/api/referrals';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { TableEmptyRows } from 'src/components/table';
@@ -37,8 +39,8 @@ import { JobOpeningDetailsDialog } from '../../report/job-openings/job-opening-d
 // ----------------------------------------------------------------------
 
 const TABS = [
-  { value: 'jobs', label: 'Job Openings', icon: <CgWorkAlt size={22}/> },
-  { value: 'my-referrals', label: 'My Referrals', icon: <MdOutlineRoomPreferences size={22}/>},
+  { value: 'jobs', label: 'Job Openings', icon: <CgWorkAlt size={22} /> },
+  { value: 'my-referrals', label: 'My Referrals', icon: <MdOutlineRoomPreferences size={22} /> },
 ];
 
 export function EmployeeReferralsView() {
@@ -100,7 +102,9 @@ export function EmployeeReferralsView() {
               ...(filters.status !== 'all' ? [['status', '=', filters.status]] : []),
               ...(filters.job_opening !== 'all' ? [['job_opening', '=', filters.job_opening]] : [])
             ],
-            orderBy: sortBy === 'date_desc' ? 'modified desc' : 'modified asc'
+            fields: ['name', 'candidate_name', 'candidate_email', 'job_opening', 'status', 'referrer', 'creation', 'job_applicant', 'referrer.employee_name'],
+            orderBy: '`tabEmployee Referral`.modified',
+            order: sortBy === 'date_desc' ? 'desc' : 'asc'
           });
           setReferrals(response.data);
           setTotal(response.total);
@@ -119,6 +123,7 @@ export function EmployeeReferralsView() {
   }, [currentTab, viewType, filters, filterName, page, rowsPerPage, sortBy]);
 
   useEffect(() => {
+    setLoading(true);
     const timeout = setTimeout(() => {
       loadData();
     }, 500);
@@ -134,6 +139,9 @@ export function EmployeeReferralsView() {
     setCurrentTab(newValue);
     setFilterName('');
     setPage(0);
+    setReferrals([]);
+    setJobs([]);
+    setLoading(true);
     handleResetFilters();
   }, []);
 
@@ -193,15 +201,15 @@ export function EmployeeReferralsView() {
       setSnackbar({ open: true, message: error.message || 'Failed to create applicant', severity: 'error' });
     }
   };
-  
-  const emptyJobs = !jobs.length && !filterName;
-  const notFoundJobs = !jobs.length && !!filterName;
-  const emptyReferrals = !referrals.length && !filterName;
-  const notFoundReferrals = !referrals.length && !!filterName;
+
+  const emptyJobs = !jobs.length && !filterName && !loading;
+  const notFoundJobs = !jobs.length && !!filterName && !loading;
+  const emptyReferrals = !referrals.length && !filterName && !loading;
+  const notFoundReferrals = !referrals.length && !!filterName && !loading;
 
   return (
-    <DashboardContent maxWidth={false} sx={{mt: 2}}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={{ xs: 3, md: 3 }}>
+    <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={{ xs: 3, md: 1 }}>
         <Typography variant="h4">{viewType === 'hr' ? 'Referral Management' : 'Employee Referrals'}</Typography>
       </Stack>
 
@@ -209,13 +217,19 @@ export function EmployeeReferralsView() {
         value={currentTab}
         onChange={handleChangeTab}
         sx={{
-          mb: { xs: 3, md: 5 },
+          mb: { xs: 2, md: 4 },
           '& .MuiTabs-indicator': { backgroundColor: '#00A5D1' },
           '& .MuiTab-root.Mui-selected': { color: '#00A5D1' },
         }}
       >
         {TABS.map((tab) => (
-          <Tab key={tab.value} label={tab.label} icon={tab.icon} value={tab.value} iconPosition="start" />
+          <Tab 
+            key={tab.value} 
+            label={tab.value === 'my-referrals' && viewType === 'hr' ? 'Employee Referrals' : tab.label} 
+            icon={tab.icon} 
+            value={tab.value} 
+            iconPosition="start" 
+          />
         ))}
       </Tabs>
 
@@ -250,89 +264,99 @@ export function EmployeeReferralsView() {
                       <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Posted On</TableCell>
                       <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Action</TableCell>
                     </TableRow>
-                    {jobs.map((row, index) => (
-                      <TableRow
-                        key={row.name}
-                        sx={{
-                          '& td, & th': { borderBottom: (theme) => `1px solid ${theme.palette.divider}` },
-                          '&:last-child td, &:last-child th': { borderBottom: 0 },
-                        }}
-                      >
-                        <TableCell align="center">
-                          <Box
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                          <CircularProgress />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      <>
+                        {jobs.map((row, index) => (
+                          <TableRow
+                            key={row.name}
                             sx={{
-                              width: 28,
-                              height: 28,
-                              display: 'flex',
-                              borderRadius: '50%',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                              color: 'primary.main',
-                              typography: 'subtitle2',
-                              fontWeight: 800,
-                              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
-                              mx: 'auto',
+                              '& td, & th': { borderBottom: (theme) => `1px solid ${theme.palette.divider}` },
+                              '&:last-child td, &:last-child th': { borderBottom: 0 },
                             }}
                           >
-                            {index + 1}
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="subtitle2">{row.job_title}</Typography>
-                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>{row.name}</Typography>
-                        </TableCell>
-                        <TableCell>{row.designation}</TableCell>
-                        <TableCell>{row.location}</TableCell>
-                        <TableCell>{new Date(row.posted_on).toLocaleDateString()}</TableCell>
-                        <TableCell align="right">
-                          <Stack direction="row" spacing={1} justifyContent="flex-end">
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              onClick={() => handleViewJob(row)}
-                              sx={{ color: '#00A5D1', borderColor: alpha('#00A5D1', 0.5) }}
-                            >
-                              View
-                            </Button>
-                            <Button
-                              variant="contained"
-                              size="small"
-                              onClick={() => handleReferClick(row.name)}
-                              sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}
-                            >
-                              Refer
-                            </Button>
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {!emptyJobs && !notFoundJobs && (
-                      <TableEmptyRows height={68} emptyRows={jobs.length < 5 ? 5 - jobs.length : 0} />
-                    )}
-                    {emptyJobs && (
-                      <TableRow>
-                        <TableCell colSpan={6}>
-                          <EmptyContent
-                            title="No Job Openings"
-                            description="There are currently no active job openings."
-                            icon="solar:case-minimalistic-bold-duotone"
-                            sx={{ py: 10 }}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    )}
-                    {notFoundJobs && (
-                      <TableRow>
-                        <TableCell colSpan={6}>
-                          <EmptyContent
-                            title="No matches found"
-                            description={`No results found for "${filterName}"`}
-                            icon="solar:case-minimalistic-bold-duotone"
-                            sx={{ py: 10 }}
-                          />
-                        </TableCell>
-                      </TableRow>
+                            <TableCell align="center">
+                              <Box
+                                sx={{
+                                  width: 28,
+                                  height: 28,
+                                  display: 'flex',
+                                  borderRadius: '50%',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                  color: 'primary.main',
+                                  typography: 'subtitle2',
+                                  fontWeight: 800,
+                                  border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                                  mx: 'auto',
+                                }}
+                              >
+                                {index + 1}
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="subtitle2">{row.job_title}</Typography>
+                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{row.name}</Typography>
+                            </TableCell>
+                            <TableCell>{row.designation}</TableCell>
+                            <TableCell>{row.location}</TableCell>
+                            <TableCell>{new Date(row.posted_on).toLocaleDateString()}</TableCell>
+                            <TableCell align="right">
+                              <Stack direction="row" spacing={1} justifyContent="flex-end">
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  onClick={() => handleViewJob(row)}
+                                  sx={{ color: '#00A5D1', borderColor: alpha('#00A5D1', 0.5) }}
+                                >
+                                  View
+                                </Button>
+                                <Button
+                                  variant="contained"
+                                  size="small"
+                                  onClick={() => handleReferClick(row.name)}
+                                  sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}
+                                >
+                                  Refer
+                                </Button>
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {!emptyJobs && !notFoundJobs && (
+                          <TableEmptyRows height={68} emptyRows={jobs.length < 5 ? 5 - jobs.length : 0} />
+                        )}
+                        {emptyJobs && (
+                          <TableRow>
+                            <TableCell colSpan={6}>
+                              <EmptyContent
+                                title="No Job Openings"
+                                description="There are currently no active job openings."
+                                icon="solar:case-minimalistic-bold-duotone"
+                                sx={{ py: 10 }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        {notFoundJobs && (
+                          <TableRow>
+                            <TableCell colSpan={6}>
+                              <EmptyContent
+                                title="No matches found"
+                                description={`No results found for "${filterName}"`}
+                                icon="solar:case-minimalistic-bold-duotone"
+                                sx={{ py: 10 }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
                     )}
                   </>
                 ) : (
@@ -346,99 +370,109 @@ export function EmployeeReferralsView() {
                       <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Date</TableCell>
                       <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Action</TableCell>
                     </TableRow>
-                    {referrals.map((row, index) => (
-                      <TableRow
-                        key={row.name}
-                        sx={{
-                          '& td, & th': { borderBottom: (theme) => `1px solid ${theme.palette.divider}` },
-                          '&:last-child td, &:last-child th': { borderBottom: 0 },
-                        }}
-                      >
-                        <TableCell align="center">
-                          <Box
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={viewType === 'hr' ? 7 : 6} align="center" sx={{ py: 10 }}>
+                          <CircularProgress />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      <>
+                        {referrals.map((row, index) => (
+                          <TableRow
+                            key={row.name}
                             sx={{
-                              width: 28,
-                              height: 28,
-                              display: 'flex',
-                              borderRadius: '50%',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                              color: 'primary.main',
-                              typography: 'subtitle2',
-                              fontWeight: 800,
-                              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
-                              mx: 'auto',
+                              '& td, & th': { borderBottom: (theme) => `1px solid ${theme.palette.divider}` },
+                              '&:last-child td, &:last-child th': { borderBottom: 0 },
                             }}
                           >
-                            {index + 1}
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="subtitle2">{row.candidate_name}</Typography>
-                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>{row.candidate_email}</Typography>
-                        </TableCell>
-                        <TableCell>{row.job_opening}</TableCell>
-                        <TableCell>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              px: 1, py: 0.5, borderRadius: 1,
-                              bgcolor: row.status === 'Accepted' || row.status === 'Hired' ? 'success.lighter' : row.status === 'Rejected' ? 'error.lighter' : 'warning.lighter',
-                              color: row.status === 'Accepted' || row.status === 'Hired' ? 'success.darker' : row.status === 'Rejected' ? 'error.darker' : 'warning.darker',
-                              fontWeight: 'bold'
-                            }}
-                          >
-                            {row.status}
-                          </Typography>
-                        </TableCell>
-                        {viewType === 'hr' && <TableCell>{row.referrer}</TableCell>}
-                        <TableCell>{new Date(row.creation).toLocaleDateString()}</TableCell>
-                        <TableCell align="right">
-                          {viewType === 'hr' && row.status === 'Pending' && (
-                            <Button
-                              variant="contained"
-                              color="primary"
-                              size="small"
-                              onClick={() => handleCreateApplicant(row.name)}
-                            >
-                              Create Job Applicant
-                            </Button>
-                          )}
-                          {row.job_applicant && (
-                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                              Applicant: {row.job_applicant}
-                            </Typography>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {!emptyReferrals && !notFoundReferrals && (
-                      <TableEmptyRows height={68} emptyRows={referrals.length < 5 ? 5 - referrals.length : 0} />
-                    )}
-                    {emptyReferrals && (
-                      <TableRow>
-                        <TableCell colSpan={viewType === 'hr' ? 7 : 6}>
-                          <EmptyContent
-                            title="No Referrals Found"
-                            description={viewType === 'hr' ? "No referrals found in the system." : "You haven't submitted any referrals yet."}
-                            icon="solar:user-id-bold-duotone"
-                            sx={{ py: 10 }}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    )}
-                    {notFoundReferrals && (
-                      <TableRow>
-                        <TableCell colSpan={viewType === 'hr' ? 7 : 6}>
-                          <EmptyContent
-                            title="No matches found"
-                            description={`No results found for "${filterName}"`}
-                            icon="solar:user-id-bold-duotone"
-                            sx={{ py: 10 }}
-                          />
-                        </TableCell>
-                      </TableRow>
+                            <TableCell align="center">
+                              <Box
+                                sx={{
+                                  width: 28,
+                                  height: 28,
+                                  display: 'flex',
+                                  borderRadius: '50%',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                  color: 'primary.main',
+                                  typography: 'subtitle2',
+                                  fontWeight: 800,
+                                  border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                                  mx: 'auto',
+                                }}
+                              >
+                                {index + 1}
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="subtitle2">{row.candidate_name}</Typography>
+                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{row.candidate_email}</Typography>
+                            </TableCell>
+                            <TableCell>{row.job_opening}</TableCell>
+                            <TableCell>
+                              <Label 
+                                variant="soft" 
+                                color={row.status === 'Accepted' || row.status === 'Hired' ? 'success' : row.status === 'Rejected' ? 'error' : 'warning'}
+                              >
+                                {row.status}
+                              </Label>
+                            </TableCell>
+                            {viewType === 'hr' && (
+                              <TableCell>
+                                <Typography variant="subtitle2">{row.employee_name || 'Employee'}</Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>{row.referrer}</Typography>
+                              </TableCell>
+                            )}
+                            <TableCell>{new Date(row.creation).toLocaleDateString()}</TableCell>
+                            <TableCell align="right">
+                              {viewType === 'hr' && row.status === 'Pending' && (
+                                <Button
+                                  variant="contained"
+                                  color="primary"
+                                  size="small"
+                                  onClick={() => handleCreateApplicant(row.name)}
+                                >
+                                  Create Job Applicant
+                                </Button>
+                              )}
+                              {row.job_applicant && (
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  Applicant: {row.job_applicant}
+                                </Typography>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {!emptyReferrals && !notFoundReferrals && (
+                          <TableEmptyRows height={68} emptyRows={referrals.length < 5 ? 5 - referrals.length : 0} />
+                        )}
+                        {emptyReferrals && (
+                          <TableRow>
+                            <TableCell colSpan={viewType === 'hr' ? 7 : 6}>
+                              <EmptyContent
+                                title="No Referrals Found"
+                                description={viewType === 'hr' ? "No referrals found in the system." : "You haven't submitted any referrals yet."}
+                                icon="solar:user-id-bold-duotone"
+                                sx={{ py: 10 }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        {notFoundReferrals && (
+                          <TableRow>
+                            <TableCell colSpan={viewType === 'hr' ? 7 : 6}>
+                              <EmptyContent
+                                title="No matches found"
+                                description={`No results found for "${filterName}"`}
+                                icon="solar:user-id-bold-duotone"
+                                sx={{ py: 10 }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
                     )}
                   </>
                 )}

@@ -8,6 +8,7 @@ import Dialog from '@mui/material/Dialog';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
@@ -136,20 +137,30 @@ export function DepartmentDialog({ open, onClose, onSuccess, id }: Props) {
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="h6">{id ? 'Edit Department' : 'New Department'}</Typography>
-                </Box>
-                <Iconify
-                    icon="mingcute:close-line"
-                    onClick={onClose}
-                    sx={{ cursor: 'pointer', color: 'text.disabled' }}
-                />
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="md"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    boxShadow: (theme) => theme.customShadows.z24,
+                    maxHeight: '90vh',
+                },
+            }}
+        >
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    {id ? 'Edit Department' : 'New Department'}
+                </Typography>
+                <IconButton onClick={onClose} size="small" sx={{ color: 'text.disabled' }}>
+                    <Iconify icon="mingcute:close-line" />
+                </IconButton>
             </DialogTitle>
 
-            <DialogContent dividers>
-                <Box sx={{ py: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <DialogContent sx={{ p: 3, overflowY: 'auto' }}>
+                <Box sx={{ py: 1, display: 'flex', flexDirection: 'column', gap: 3, pt: 4 }}>
                     <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3}>
                         <TextField
                             required
@@ -215,7 +226,7 @@ export function DepartmentDialog({ open, onClose, onSuccess, id }: Props) {
                                             </Typography>
                                         </Stack>
                                     </li>
-                                );
+                               );
                             }}
                         />
                         <TextField
@@ -257,7 +268,7 @@ export function DepartmentDialog({ open, onClose, onSuccess, id }: Props) {
                 </Box>
             </DialogContent>
 
-            <DialogActions>
+            <DialogActions sx={{ p: 1.5, borderTop: (theme) => `1px solid ${theme.palette.divider}` }}>
                 <Button
                     onClick={handleSubmit}
                     variant="contained"

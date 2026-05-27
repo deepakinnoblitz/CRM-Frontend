@@ -78,116 +78,129 @@ export function EmployeeMonthlyAwardDetailsDialog({ open, onClose, award, onSave
     const isEdit = mode === 'edit';
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2 } }}>
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="md"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    boxShadow: (themeVar) => themeVar.customShadows.z24,
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }
+            }}
+        >
+            <DialogTitle
+                sx={{
+                    m: 0,
+                    p: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                }}
+            >
+                <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
                     {isEdit ? 'Edit' : 'View'} Award Details
                 </Typography>
-                <IconButton onClick={onClose} sx={{ bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows.z1 }}>
+                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent dividers sx={{ p: 0 }}>
-                <Scrollbar sx={{ maxHeight: '70vh' }}>
-                    <Stack spacing={3} sx={{ p: 3 }}>
-                        {/* Hero Section */}
-                        <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: '#f4f6f8', border: '1px solid', borderColor: 'divider' }}>
-                            <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
-                                <Stack direction="row" spacing={2} alignItems="center">
-                                    <Box sx={{ width: 44, height: 44, borderRadius: 1.5, bgcolor: '#00A5D114', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Iconify icon={"solar:cup-star-bold" as any} width={24} sx={{ color: '#00A5D1' }} />
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block' }}>Month</Typography>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>{fDate(award.month, 'MMMM YYYY').toUpperCase()}</Typography>
-                                    </Box>
-                                </Stack>
-                                <Box sx={{ textAlign: 'right' }}>
-                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
-                                        Rank
-                                    </Typography>
-                                    <Label color={award.rank === 1 ? 'success' : 'warning'} variant="soft" sx={{ height: 28, fontWeight: 800 }}>
-                                        Rank {award.rank}
-                                    </Label>
+            <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto', mt: 3 }}>
+                <Stack spacing={3}>
+                    {/* Hero Section */}
+                    <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: '#f4f6f8', border: '1px solid', borderColor: 'divider' }}>
+                        <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                            <Stack direction="row" spacing={2} alignItems="center">
+                                <Box sx={{ width: 44, height: 44, borderRadius: 1.5, bgcolor: '#00A5D114', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Iconify icon={"solar:cup-star-bold" as any} width={24} sx={{ color: '#00A5D1' }} />
+                                </Box>
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block' }}>Month</Typography>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>{fDate(award.month, 'MMMM YYYY').toUpperCase()}</Typography>
                                 </Box>
                             </Stack>
-                        </Box>
-
-                        {/* Info Grid */}
-                        <Grid container spacing={3} sx={{ pl: 1 }}>
-                            <Grid size={{ xs: 6 }}>
-                                <InfoRow variant="premium" icon="solar:user-id-bold" iconColor="#6366f1" label="Employee" value={`${award.employee_name} (${award.employee})`} />
-                            </Grid>
-                            <Grid size={{ xs: 6 }}>
-                                <InfoRow variant="premium" icon="solar:medal-star-bold" iconColor="#f59e0b" label="Total Score" value={Number(award.total_score).toFixed(2)} />
-                            </Grid>
-                        </Grid>
-
-                        <Divider sx={{ borderStyle: 'dashed' }} />
-
-                        {/* Score Breakdown Grid */}
-                        <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800 }}>Score Breakdown</Typography>
-                        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1.5, pl: 1 }}>
-                            <InfoRow icon="solar:calendar-date-bold" iconColor="#10b981" label="Attendance" value={Number(award.attendance_score).toFixed(2)} />
-                            <InfoRow icon="solar:user-speak-bold" iconColor="#8b5cf6" label="Personality" value={Number(award.personality_score).toFixed(2)} />
-                            <InfoRow icon="solar:clock-circle-bold" iconColor="#3b82f6" label="Login Time" value={Number(award.login_score).toFixed(2)} />
-                            <InfoRow icon="solar:history-bold" iconColor="#f97316" label="Overtime" value={Number(award.overtime_score).toFixed(2)} />
-                            <InfoRow icon="solar:danger-bold" iconColor="#ef4444" label="Leave Penalty" value={Number(award.leave_penalty).toFixed(2)} />
-                        </Box>
-
-                        <Divider sx={{ borderStyle: 'dashed' }} />
-
-                        {/* Calculation Log */}
-                        {/* <Box sx={{ pl: 1 }}>
-                            <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, mb: 1, display: 'block' }}>Calculation Log</Typography>
-                            <Box sx={{ p: 2, bgcolor: 'grey.900', color: 'common.white', borderRadius: 1.5, whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.75rem', maxHeight: 200, overflow: 'auto' }}>
-                                {award.calculation_log}
+                            <Box sx={{ textAlign: 'right' }}>
+                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+                                    Rank
+                                </Typography>
+                                <Label color={award.rank === 1 ? 'success' : 'warning'} variant="soft" sx={{ height: 28, fontWeight: 800 }}>
+                                    Rank {award.rank}
+                                </Label>
                             </Box>
-                        </Box> */}
-
-                        {/* Controls */}
-                        <Stack spacing={2} direction="row" sx={{ mt: 2, pl: 1 }}>
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={!!formData.published}
-                                        onChange={handleChange}
-                                        name="published"
-                                        disabled={!isEdit}
-                                    />
-                                }
-                                label={<Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Published</Typography>}
-                            />
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={!!formData.is_auto_generated}
-                                        onChange={handleChange}
-                                        name="is_auto_generated"
-                                        disabled={!isEdit}
-                                    />
-                                }
-                                label={<Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Auto Generated</Typography>}
-                            />
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={!!formData.manually_selected}
-                                        onChange={handleChange}
-                                        name="manually_selected"
-                                        disabled={!isEdit}
-                                    />
-                                }
-                                label={<Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Manually Selected</Typography>}
-                            />
                         </Stack>
+                    </Box>
+
+                    {/* Info Grid */}
+                    <Grid container spacing={3} sx={{ pl: 1 }}>
+                        <Grid size={{ xs: 6 }}>
+                            <InfoRow variant="premium" icon="solar:user-id-bold" iconColor="#6366f1" label="Employee" value={`${award.employee_name} (${award.employee})`} />
+                        </Grid>
+                        <Grid size={{ xs: 6 }}>
+                            <InfoRow variant="premium" icon="solar:medal-star-bold" iconColor="#f59e0b" label="Total Score" value={Number(award.total_score).toFixed(2)} />
+                        </Grid>
+                    </Grid>
+
+                    <Divider sx={{ borderStyle: 'dashed' }} />
+
+                    {/* Score Breakdown Grid */}
+                    <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800 }}>Score Breakdown</Typography>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1.5, pl: 1 }}>
+                        <InfoRow icon="solar:calendar-date-bold" iconColor="#10b981" label="Attendance" value={Number(award.attendance_score).toFixed(2)} />
+                        <InfoRow icon="solar:user-speak-bold" iconColor="#8b5cf6" label="Personality" value={Number(award.personality_score).toFixed(2)} />
+                        <InfoRow icon="solar:clock-circle-bold" iconColor="#3b82f6" label="Login Time" value={Number(award.login_score).toFixed(2)} />
+                        <InfoRow icon="solar:history-bold" iconColor="#f97316" label="Overtime" value={Number(award.overtime_score).toFixed(2)} />
+                        <InfoRow icon="solar:danger-bold" iconColor="#ef4444" label="Leave Penalty" value={Number(award.leave_penalty).toFixed(2)} />
+                    </Box>
+
+                    <Divider sx={{ borderStyle: 'dashed' }} />
+
+                    {/* Controls */}
+                    <Stack spacing={2} direction="row" sx={{ mt: 2, pl: 1 }}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={!!formData.published}
+                                    onChange={handleChange}
+                                    name="published"
+                                    disabled={!isEdit}
+                                />
+                            }
+                            label={<Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Published</Typography>}
+                        />
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={!!formData.is_auto_generated}
+                                    onChange={handleChange}
+                                    name="is_auto_generated"
+                                    disabled={!isEdit}
+                                />
+                            }
+                            label={<Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Auto Generated</Typography>}
+                        />
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={!!formData.manually_selected}
+                                    onChange={handleChange}
+                                    name="manually_selected"
+                                    disabled={!isEdit}
+                                />
+                            }
+                            label={<Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Manually Selected</Typography>}
+                        />
                     </Stack>
-                </Scrollbar>
+                </Stack>
             </DialogContent>
 
             {isEdit && (
-                <DialogActions sx={{ p: 2.5 }}>
+                <DialogActions sx={{ p: 1.5 }}>
                     <LoadingButton
                         variant="contained"
                         loading={saving}

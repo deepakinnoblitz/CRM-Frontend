@@ -57,7 +57,7 @@ function StatusLabel({ status }: { status: string }) {
     );
 }
 
-function DetailItem({ icon, iconColor, label, value, isLink, href }: { icon: string; iconColor: string; label: string; value: string; isLink?: boolean; href?: string }) {
+function DetailItem({ icon, iconColor, label, value, isLink, href }: { icon: string; iconColor: string; label: string; value: React.ReactNode; isLink?: boolean; href?: string }) {
     return (
         <Stack direction="row" alignItems="center" spacing={2} sx={{ minWidth: 0 }}>
             <Box sx={{ width: 44, height: 44, borderRadius: 1.5, bgcolor: `${iconColor}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -65,7 +65,7 @@ function DetailItem({ icon, iconColor, label, value, isLink, href }: { icon: str
             </Box>
             <Box sx={{ minWidth: 0 }}>
                 <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block' }}>{label}</Typography>
-                {isLink ? (
+                {isLink && typeof value === 'string' ? (
                     <Link href={href} color="primary" variant="body2" sx={{ fontWeight: 800, mt: 0.1, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
                         {value}
                     </Link>
@@ -141,7 +141,23 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
             <DetailItem icon="solar:letter-bold" iconColor="#6366f1" label="Email" value={applicant.email_id} />
             <DetailItem icon="solar:phone-bold" iconColor="#10b981" label="Phone" value={applicant.phone_number || '-'} />
             <DetailItem icon="solar:share-bold" iconColor="#f59e0b" label="Source" value={applicant.source || '-'} />
-            <DetailItem icon="solar:wad-of-money-bold" iconColor="#8b5cf6" label="Expected Salary" value={applicant.lower_range ? `${applicant.currency || '₹'} ${applicant.lower_range} - ${applicant.upper_range}` : 'Not Disclosed'} />
+            <DetailItem
+                icon="solar:wad-of-money-bold"
+                iconColor="#8b5cf6"
+                label="Expected Salary"
+                value={
+                    applicant.lower_range ? (
+                        <>
+                            <Box component="span" sx={{ fontFamily: 'Arial' }}>
+                                {applicant.currency || '₹'}
+                            </Box>{' '}
+                            {applicant.lower_range} - {applicant.upper_range}
+                        </>
+                    ) : (
+                        'Not Disclosed'
+                    )
+                }
+            />
         </Box>
     );
 
@@ -205,22 +221,34 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
     );
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 1.5 } }}>
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>Job Applicant Details</Typography>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="md"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    boxShadow: (theme) => theme.customShadows.z24,
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }
+            }}
+        >
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>Job Applicant Details</Typography>
                 <IconButton onClick={onClose} sx={{ color: 'text.disabled' }}>
-                    <Iconify icon="mingcute:close-line" />
+                    <Iconify icon="mingcute:close-line" width={20} />
                 </IconButton>
             </DialogTitle>
 
-            <Scrollbar sx={{ maxHeight: '85vh' }}>
-                <DialogContent sx={{ p: 4 }}>
-                    {renderHeader}
-                    {renderDetails}
-                    <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
-                    {renderResume}
-                </DialogContent>
-            </Scrollbar>
+            <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
+                {renderHeader}
+                {renderDetails}
+                <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
+                {renderResume}
+            </DialogContent>
         </Dialog>
     );
 }

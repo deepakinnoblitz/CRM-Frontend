@@ -76,15 +76,29 @@ export default function ExpenseTrackerDialog({ open, onClose, onSubmit, currentD
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="sm"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    boxShadow: (themeVar) => themeVar.customShadows.z24,
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }
+            }}
+        >
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
                 {currentData ? 'Edit Record' : 'New Record'}
-                <IconButton onClick={onClose}>
+                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent dividers>
+            <DialogContent dividers sx={{ flexGrow: 1, overflowY: 'auto' }}>
                 <Box sx={{ display: 'grid', gap: 3, p: 2 }}>
                     <TextField
                         select
@@ -139,7 +153,7 @@ export default function ExpenseTrackerDialog({ open, onClose, onSubmit, currentD
                 </Box>
             </DialogContent>
 
-            <DialogActions>
+            <DialogActions sx={{ p: 1.5 }}>
                 <Button variant="contained" onClick={handleSubmit} color="primary">
                     {currentData ? 'Update' : 'Create'}
                 </Button>

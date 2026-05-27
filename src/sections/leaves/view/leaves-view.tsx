@@ -581,8 +581,8 @@ export function LeavesView() {
             </Card>
 
             {/* CREATE/EDIT DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24 } }}>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center',  }}>
                     New Leave Application
                     <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
                         <Iconify icon="mingcute:close-line" />
@@ -1002,7 +1002,7 @@ export function LeavesView() {
                     </Box>
                 </DialogContent>
 
-                <DialogActions>
+                <DialogActions sx={{ p: 1.5}}>
                     <Button
                         variant="contained"
                         onClick={handleCreate}

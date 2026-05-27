@@ -350,10 +350,10 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
         },
       }}
     >
-      <DialogTitle component="div" sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
-        <Typography variant="h6">Employee Overall Report - {employee?.employee_name || 'Loading...'}</Typography>
-        <IconButton onClick={onClose}>
-          <Iconify icon="mingcute:close-line" />
+      <DialogTitle component="div" sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>Employee Overall Report - {employee?.employee_name || 'Loading...'}</Typography>
+        <IconButton onClick={onClose} sx={{ color: 'text.disabled' }}>
+          <Iconify icon="mingcute:close-line" width={20} />
         </IconButton>
       </DialogTitle>
 
@@ -362,7 +362,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
         onChange={handleChangeTab}
         sx={{
           px: 3,
-          bgcolor: 'background.neutral',
+          bgcolor: 'background.paper',
           borderBottom: (t: any) => `1px solid ${t.palette.divider}`,
         }}
       >
@@ -375,7 +375,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
         <Tab label="Salary Slips" value="salaries" />
       </Tabs>
 
-      <DialogContent sx={{ p: 3, minHeight: 400 }}>
+      <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto', minHeight: 400 }}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
             <CircularProgress />
@@ -383,7 +383,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
         ) : (
           <>
             {currentTab === 'details' && employee && (
-              <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <Box sx={{ pt: 1, px: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {/* Header Info */}
                 <Box sx={{ p: 3, borderRadius: 2, bgcolor: (t: any) => alpha(t.palette.primary.main, 0.03), display: 'flex', alignItems: 'center', gap: 3 }}>
                   <Avatar
@@ -395,8 +395,18 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                       borderRadius: '50%',
                       fontSize: 40,
                       fontWeight: 'bold',
-                      bgcolor: 'primary.main',
-                      color: 'primary.contrastText',
+                      bgcolor: (themeVar) => {
+                        if (employee.profile_picture) return 'transparent';
+                        const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                        let hash = 0;
+                        const name = employee.employee_name || '';
+                        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                        return colors[Math.abs(hash) % colors.length];
+                      },
+                      color: (themeVar) => {
+                        const img = employee.profile_picture;
+                        return img ? 'inherit' : alpha(themeVar.palette.common.black, 0.6);
+                      },
                       border: (t: any) => `4px solid ${t.palette.background.paper}`,
                       boxShadow: (t: any) => t.customShadows?.z8,
                     }}
@@ -560,12 +570,12 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
 
             {currentTab === 'attendance' && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' } }}>
-                    <SummaryCard label="Total Days" value={stats.attendance.total} icon="solar:calendar-bold" color="info" />
-                    <SummaryCard label="Present" value={stats.attendance.present} icon="solar:check-circle-bold" color="success" />
-                    <SummaryCard label="Absent" value={stats.attendance.absent} icon="solar:close-circle-bold" color="error" />
-                    <SummaryCard label="Working Hours" value={`${stats.attendance.workingHours.toFixed(1)}h`} icon="solar:stopwatch-bold" color="secondary" />
-                  </Box>
+                <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' } }}>
+                  <SummaryCard label="Total Days" value={stats.attendance.total} icon="solar:calendar-bold" color="info" />
+                  <SummaryCard label="Present" value={stats.attendance.present} icon="solar:check-circle-bold" color="success" />
+                  <SummaryCard label="Absent" value={stats.attendance.absent} icon="solar:close-circle-bold" color="error" />
+                  <SummaryCard label="Working Hours" value={`${stats.attendance.workingHours.toFixed(1)}h`} icon="solar:stopwatch-bold" color="secondary" />
+                </Box>
 
                 <Card sx={{ border: (t: any) => `1px solid ${t.palette.divider}`, boxShadow: 'none' }}>
                   <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
@@ -677,7 +687,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
             {currentTab === 'leaves' && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' } }}>
-                  <SummaryCard label="Total Leaves" value={stats.leaves.total} icon="solar:palm-tree-bold" color="info" />
+                  <SummaryCard label="Total Leaves" value={stats.leaves.total} icon="solar:document-bold" color="info" />
                   <SummaryCard label="Approved" value={stats.leaves.approved} icon="solar:check-circle-bold" color="success" />
                   <SummaryCard label="Pending" value={stats.leaves.pending} icon="solar:clock-circle-bold" color="warning" />
                   <SummaryCard label="Rejected" value={stats.leaves.rejected} icon="solar:close-circle-bold" color="error" />
@@ -800,11 +810,11 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(2, 1fr)' } }}>
                   <SummaryCard label="Total Slips" value={stats.salaries.total} icon="solar:file-text-bold" color="info" />
-                  <SummaryCard 
-                    label="Total Net Paid" 
-                    value={`${hrSettings.currency_symbol}${fNumber(stats.salaries.totalNet, { locale: hrSettings.default_locale })}`} 
-                    icon="solar:wallet-money-bold" 
-                    color="success" 
+                  <SummaryCard
+                    label="Total Net Paid"
+                    value={`${hrSettings.currency_symbol}${fNumber(stats.salaries.totalNet, { locale: hrSettings.default_locale })}`}
+                    icon="solar:wallet-money-bold"
+                    color="success"
                   />
                 </Box>
 
@@ -859,7 +869,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
             {currentTab === 'dailylog' && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(2, 1fr)' } }}>
-                  <SummaryCard label="Total Logs" value={stats.dailylogs.total} icon="solar:clipboard-list-bold" color="info" />
+                  <SummaryCard label="Total Logs" value={stats.dailylogs.total} icon="solar:history-bold" color="info" />
                   <SummaryCard label="Total Work Hours" value={`${stats.dailylogs.totalHours.toFixed(1)}h`} icon="solar:clock-circle-bold" color="warning" />
                 </Box>
 

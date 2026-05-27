@@ -211,15 +211,40 @@ export function EvaluationAutomationRuleFormDialog({ open, onClose, onSuccess, s
     const selectedPointScore = selectedPoint?.default_score;
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {isEdit ? 'Edit Automation Rule' : 'New Automation Rule'}
-                <IconButton onClick={onClose}>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="md"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    boxShadow: (themeVar) => themeVar.customShadows.z24,
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }
+            }}
+        >
+            <DialogTitle
+                sx={{
+                    m: 0,
+                    p: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                }}
+            >
+                <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
+                    {isEdit ? 'Edit Automation Rule' : 'New Automation Rule'}
+                </Typography>
+                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent dividers>
+            <DialogContent dividers sx={{ flexGrow: 1, overflowY: 'auto', p: 3 }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Stack direction="row" spacing={3} sx={{ py: 1.5, pb: 3.5 }}>
                         <FormControlLabel
@@ -457,7 +482,7 @@ export function EvaluationAutomationRuleFormDialog({ open, onClose, onSuccess, s
                 </LocalizationProvider>
             </DialogContent>
 
-            <DialogActions>
+            <DialogActions sx={{ p: 1.5 }}>
                 <LoadingButton
                     variant="contained"
                     loading={loading}

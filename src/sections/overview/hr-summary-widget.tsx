@@ -75,7 +75,7 @@ export function HRSummaryWidget({ title, total, icon, color = 'primary', loading
                         background: `linear-gradient(150deg, ${alpha(mainColor, 0.06)} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
                     }),
                     ...(borderStyle === 'borderLeft' && {
-                        bgcolor: 'background.paper',
+                        bgcolor: alpha(mainColor, 0.025),
                         overflow: 'hidden',
                         '&::before': {
                             content: '""',

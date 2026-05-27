@@ -562,9 +562,9 @@ export function RequestsView() {
       </Card>
 
       {/* Create/Edit Dialog */}
-      <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
+      <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
 
-        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center',  }}>
           {isEdit ? 'Edit Request' : 'New Request'}
           <IconButton onClick={handleCloseCreate}>
             <Iconify icon="mingcute:close-line" />
@@ -647,7 +647,7 @@ export function RequestsView() {
           </Box>
         </DialogContent>
 
-        <DialogActions>
+        <DialogActions sx={{ p: 1.5 }}>
           <Button
             onClick={handleCreate}
             variant="contained"
