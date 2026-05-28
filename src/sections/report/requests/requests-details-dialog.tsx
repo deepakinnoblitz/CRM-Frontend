@@ -290,7 +290,7 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
+            <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto', mt: 3 }}>
                 {fetching ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
                         <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />

@@ -411,7 +411,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
+            <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto', mt:2 }}>
                 <Box sx={{ pt: 1 }}>
                     {/* Summary Section */}
                     <Box sx={{ mb: 5 }}>

@@ -43,6 +43,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { useAuth } from 'src/auth/auth-context';
 
 import { TimesheetDetailsDialog } from '../timesheets-details-dialog';
+import { TimesheetReportCalendar } from './timesheet-report-calendar';
 
 
 // ----------------------------------------------------------------------
@@ -58,18 +59,6 @@ export function TimesheetsReportView() {
     const { enqueueSnackbar } = useSnackbar();
 
     const [isHR, setIsHR] = useState(false);
-
-    useEffect(() => {
-        if (user && user.roles) {
-            const hrRoles = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
-            const hasHRRole = user.roles.some((role: string) => hrRoles.includes(role));
-            setIsHR(hasHRRole);
-            if (!hasHRRole && user.employee) {
-                setEmployee(user.employee);
-            }
-        }
-    }, [user]);
-
 
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
@@ -95,6 +84,25 @@ export function TimesheetsReportView() {
     const [openDetails, setOpenDetails] = useState(false);
     const [selectedTimesheet, setSelectedTimesheet] = useState<any>(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
+
+    const [currentView, setCurrentView] = useState<'list' | 'calendar'>('list');
+
+    useEffect(() => {
+        if (employee === 'all') {
+            setCurrentView('list');
+        }
+    }, [employee]);
+
+    useEffect(() => {
+        if (user && user.roles) {
+            const hrRoles = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
+            const hasHRRole = user.roles.some((role: string) => hrRoles.includes(role));
+            setIsHR(hasHRRole);
+            if (!hasHRRole && user.employee) {
+                setEmployee(user.employee);
+            }
+        }
+    }, [user, employee]);
 
     const handleViewDetails = async (name: string) => {
         setLoadingDetails(true);
@@ -700,7 +708,53 @@ export function TimesheetsReportView() {
                     <SummaryCard item={{ label: 'Total Hours', value: totalHours, indicator: 'green', suffix: 'hrs' }} />
                 </Box>
 
-                <Card>
+                {employee !== 'all' && (
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                        <Box
+                            sx={{
+                                display: 'inline-flex',
+                                bgcolor: alpha(theme.palette.grey[500], 0.06),
+                                p: 0.5,
+                                borderRadius: '24px',
+                                border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                            }}
+                        >
+                            {[
+                                { value: 'list', label: 'List View', icon: 'solar:list-bold' },
+                                { value: 'calendar', label: 'Calendar View', icon: 'solar:calendar-bold' }
+                            ].map((tab) => {
+                                const isActive = currentView === tab.value;
+                                return (
+                                    <Button
+                                        key={tab.value}
+                                        onClick={() => setCurrentView(tab.value as any)}
+                                        startIcon={<Iconify icon={tab.icon as any} width={16} />}
+                                        sx={{
+                                            borderRadius: '20px',
+                                            px: 3,
+                                            py: 0.75,
+                                            fontSize: '0.825rem',
+                                            fontWeight: isActive ? 700 : 600,
+                                            color: isActive ? '#fff' : theme.palette.text.secondary,
+                                            bgcolor: isActive ? '#08a3cd' : 'transparent',
+                                            boxShadow: isActive ? `0 2px 8px ${alpha('#08a3cd', 0.3)}` : 'none',
+                                            textTransform: 'capitalize',
+                                            transition: 'all 0.2s ease-in-out',
+                                            '&:hover': {
+                                                bgcolor: isActive ? '#08a3cd' : alpha(theme.palette.grey[500], 0.08),
+                                            }
+                                        }}
+                                    >
+                                        {tab.label}
+                                    </Button>
+                                );
+                            })}
+                        </Box>
+                    </Box>
+                )}
+
+                {currentView === 'list' ? (
+                    <Card>
                     <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
                         <Scrollbar>
                             <Table
@@ -803,6 +857,14 @@ export function TimesheetsReportView() {
                         rowsPerPageOptions={[10, 25, 50]}
                     />
                 </Card>
+                ) : (
+                    <TimesheetReportCalendar
+                        reportData={reportData}
+                        fromDate={fromDate}
+                        toDate={toDate}
+                        onEventClick={handleViewDetails}
+                    />
+                )}
             </Stack>
 
             <TimesheetDetailsDialog

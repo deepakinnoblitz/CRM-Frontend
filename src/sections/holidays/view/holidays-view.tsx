@@ -11,6 +11,7 @@ import Switch from '@mui/material/Switch';
 import Snackbar from '@mui/material/Snackbar';
 import { styled } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
+import MenuItem from '@mui/material/MenuItem';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
@@ -565,18 +566,17 @@ export function HolidaysView() {
                                     setMonth(e.target.value);
                                     if (formErrors.month) setFormErrors(prev => ({ ...prev, month: '' }));
                                 }}
-                                SelectProps={{ native: true }}
                                 InputLabelProps={{ shrink: true }}
                                 required
                                 error={!!formErrors.month}
                                 helperText={formErrors.month}
                                 sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
                             >
-                                <option value="" disabled>Select Month</option>
+                                <MenuItem value="" disabled>Select Month</MenuItem>
                                 {MONTH_OPTIONS.map((option) => (
-                                    <option key={option.value} value={option.value}>
+                                    <MenuItem key={option.value} value={option.value}>
                                         {option.label}
-                                    </option>
+                                    </MenuItem>
                                 ))}
                             </TextField>
 

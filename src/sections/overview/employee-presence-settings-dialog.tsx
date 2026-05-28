@@ -11,6 +11,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import { useTheme, alpha } from '@mui/material/styles';
 import DialogActions from '@mui/material/DialogActions';
@@ -130,12 +131,28 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
-          Daily Status Settings
+      <Dialog 
+        open={open} 
+        onClose={onClose} 
+        fullWidth 
+        maxWidth="sm"
+        PaperProps={{ 
+          sx: { 
+            borderRadius: 2, 
+            boxShadow: (themeVar) => themeVar.customShadows.z24, 
+          } 
+        }}
+      >
+        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
+          <Typography variant="h6" component="span" sx={{ fontWeight: 700 }}>
+            Daily Status Settings
+          </Typography>
+          <IconButton onClick={onClose} sx={{ color: (t) => t.palette.grey[500] }}>
+            <Iconify icon="mingcute:close-line" width={20} />
+          </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ px: 3, py: 2 }}>
+        <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto', mt: 2 }}>
           <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
             Configure global presence behavior for all employees.
           </Typography>
@@ -446,10 +463,7 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button variant="outlined" onClick={onClose} disabled={saving}>
-            Cancel
-          </Button>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button
             variant="contained"
             onClick={handleSave}

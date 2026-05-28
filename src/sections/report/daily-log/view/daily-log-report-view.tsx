@@ -23,10 +23,12 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
+import ToggleButton from '@mui/material/ToggleButton';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -42,6 +44,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 
 import { useAuth } from 'src/auth/auth-context';
 
+import { DailyLogCalendar } from './daily-log-calendar';
 import { EmployeeDailyLogDetailsDialog } from '../../../overview/employee-daily-log-details-dialog';
 
 // ----------------------------------------------------------------------
@@ -80,6 +83,8 @@ export function DailyLogReportView() {
     const [openDetails, setOpenDetails] = useState(false);
     const [selectedSession, setSelectedSession] = useState<any>(null);
 
+    const [currentView, setCurrentView] = useState<'list' | 'calendar'>('list');
+
     useEffect(() => {
         if (user && user.roles) {
             const hrRoles = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
@@ -95,7 +100,17 @@ export function DailyLogReportView() {
         getDoctypeList('Employee', ['name', 'employee_name']).then(setEmployeeOptions);
     }, []);
 
+    useEffect(() => {
+        if (employee === 'all') {
+            setCurrentView('list');
+        }
+    }, [employee]);
+
     const fetchReport = useCallback(async () => {
+        if (fromDate && toDate && toDate.isBefore(fromDate, 'day')) {
+            setReportData([]);
+            return;
+        }
         // We fetch a larger limit for the report view, or implement proper backend pagination if needed.
         // For now, let's fetch up to 1000 records if dates are selected.
         setLoading(true);
@@ -120,6 +135,13 @@ export function DailyLogReportView() {
             setLoading(false);
         }
     }, [fromDate, toDate, employee, status, sortBy, day]);
+
+    useEffect(() => {
+        if (fromDate && toDate && toDate.isBefore(fromDate, 'day')) {
+            enqueueSnackbar('To Date must be after From Date', { variant: 'error' });
+            setToDate(null);
+        }
+    }, [fromDate, toDate, enqueueSnackbar]);
 
     useEffect(() => {
         fetchReport();
@@ -707,99 +729,154 @@ export function DailyLogReportView() {
                     <SummaryCard item={{ label: 'Inactive', value: inactiveSessions, indicator: 'red' }} />
                 </Box>
 
-                <Card>
-                    <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
-                        <Scrollbar>
-                            <Table size="medium" stickyHeader sx={{ borderCollapse: 'collapse' }}>
-                                <TableHead>
-                                    <TableRow sx={{ bgcolor: '#f4f6f8' }}>
-                                        <TableCell padding="checkbox">
-                                            <Checkbox
-                                                indeterminate={selected.length > 0 && selected.length < reportData.length}
-                                                checked={reportData.length > 0 && selected.length === reportData.length}
-                                                onChange={handleSelectAllClick}
-                                            />
-                                        </TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Employee</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Login</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Logout</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Work Hours</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Break Hours</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
-                                        <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', position: 'sticky', right: 0, bgcolor: '#f4f6f8', zIndex: 11 }}>Actions</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {reportData
-                                        .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-                                        .map((row, index) => {
-                                            const isSelected = selected.indexOf(row.name) !== -1;
-                                            return (
-                                                <TableRow
-                                                    key={row.name}
-                                                    hover
-                                                    selected={isSelected}
-                                                    sx={{
-                                                        '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                        '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                    }}
-                                                >
-                                                    <TableCell padding="checkbox">
-                                                        <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
-                                                    </TableCell>
-                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.login_date, 'DD-MM-YYYY')}</TableCell>
-                                                    <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        <Typography variant="subtitle2">{row.employee_name}</Typography>
-                                                        <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
-                                                    </TableCell>
-                                                    <TableCell>{row.login_time ? dayjs(row.login_time).format('HH:mm:ss') : '---'}</TableCell>
-                                                    <TableCell>{row.logout_time ? dayjs(row.logout_time).format('HH:mm:ss') : '---'}</TableCell>
-                                                    <TableCell sx={{ fontWeight: 'bold' }}>{row.total_work_hours?.toFixed(2) || '0.00'} Hrs</TableCell>
-                                                    <TableCell>{row.total_break_hours?.toFixed(2) || '0.00'} Hrs</TableCell>
-                                                    <TableCell>
-                                                        <Label color={row.status === 'Active' ? 'success' : 'error'} variant="soft">
-                                                            {row.status}
-                                                        </Label>
-                                                    </TableCell>
-                                                    <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper' }}>
-                                                        <IconButton onClick={() => handleViewDetails(row)} sx={{ color: 'info.main' }}>
-                                                            <Iconify icon={"solar:eye-bold" as any} />
-                                                        </IconButton>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
+                {employee !== 'all' && (
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                        <Box
+                            sx={{
+                                display: 'inline-flex',
+                                bgcolor: alpha(theme.palette.grey[500], 0.06),
+                                p: 0.5,
+                                borderRadius: '24px',
+                                border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                            }}
+                        >
+                            {[
+                                { value: 'list', label: 'List View', icon: 'solar:list-bold' },
+                                { value: 'calendar', label: 'Calendar View', icon: 'solar:calendar-bold' }
+                            ].map((tab) => {
+                                const isActive = currentView === tab.value;
+                                return (
+                                    <Button
+                                        key={tab.value}
+                                        onClick={() => setCurrentView(tab.value as any)}
+                                        startIcon={<Iconify icon={tab.icon as any} width={16} />}
+                                        sx={{
+                                            borderRadius: '20px',
+                                            px: 3,
+                                            py: 0.75,
+                                            fontSize: '0.825rem',
+                                            fontWeight: isActive ? 700 : 600,
+                                            color: isActive ? '#fff' : theme.palette.text.secondary,
+                                            bgcolor: isActive ? '#08a3cd' : 'transparent',
+                                            boxShadow: isActive ? `0 2px 8px ${alpha('#08a3cd', 0.3)}` : 'none',
+                                            textTransform: 'capitalize',
+                                            transition: 'all 0.2s ease-in-out',
+                                            '&:hover': {
+                                                bgcolor: isActive ? '#08a3cd' : alpha(theme.palette.grey[500], 0.08),
+                                            }
+                                        }}
+                                    >
+                                        {tab.label}
+                                    </Button>
+                                );
+                            })}
+                        </Box>
+                    </Box>
+                )}
 
-                                    {reportData.length === 0 && !loading && (
-                                        <TableRow>
-                                            <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
-                                                <Stack spacing={1} alignItems="center">
-                                                    <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                        No data found
-                                                    </Typography>
-                                                </Stack>
+                {currentView === 'list' ? (
+                    <Card>
+                        <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                            <Scrollbar>
+                                <Table size="medium" stickyHeader sx={{ borderCollapse: 'collapse' }}>
+                                    <TableHead>
+                                        <TableRow sx={{ bgcolor: '#f4f6f8' }}>
+                                            <TableCell padding="checkbox">
+                                                <Checkbox
+                                                    indeterminate={selected.length > 0 && selected.length < reportData.length}
+                                                    checked={reportData.length > 0 && selected.length === reportData.length}
+                                                    onChange={handleSelectAllClick}
+                                                />
                                             </TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Employee</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Login</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Logout</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Work Hours</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Break Hours</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
+                                            <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', position: 'sticky', right: 0, bgcolor: '#f4f6f8', zIndex: 11 }}>Actions</TableCell>
                                         </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </Scrollbar>
-                    </TableContainer>
-                    <TablePagination
-                        component="div"
-                        count={reportData.length}
-                        page={page}
-                        onPageChange={(e, newPage) => setPage(newPage)}
-                        rowsPerPage={rowsPerPage}
-                        onRowsPerPageChange={(e) => {
-                            setRowsPerPage(parseInt(e.target.value, 10));
-                            setPage(0);
-                        }}
-                        rowsPerPageOptions={[10, 25, 50]}
+                                    </TableHead>
+                                    <TableBody>
+                                        {reportData
+                                            .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+                                            .map((row, index) => {
+                                                const isSelected = selected.indexOf(row.name) !== -1;
+                                                return (
+                                                    <TableRow
+                                                        key={row.name}
+                                                        hover
+                                                        selected={isSelected}
+                                                        sx={{
+                                                            '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                            '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                        }}
+                                                    >
+                                                        <TableCell padding="checkbox">
+                                                            <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                                                        </TableCell>
+                                                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.login_date, 'DD-MM-YYYY')}</TableCell>
+                                                        <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                            <Typography variant="subtitle2">{row.employee_name}</Typography>
+                                                            <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
+                                                        </TableCell>
+                                                        <TableCell>{row.login_time ? dayjs(row.login_time).format('HH:mm:ss') : '---'}</TableCell>
+                                                        <TableCell>{row.logout_time ? dayjs(row.logout_time).format('HH:mm:ss') : '---'}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 'bold' }}>{row.total_work_hours?.toFixed(2) || '0.00'} Hrs</TableCell>
+                                                        <TableCell>{row.total_break_hours?.toFixed(2) || '0.00'} Hrs</TableCell>
+                                                        <TableCell>
+                                                            <Label color={row.status === 'Active' ? 'success' : 'error'} variant="soft">
+                                                                {row.status}
+                                                            </Label>
+                                                        </TableCell>
+                                                        <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper' }}>
+                                                            <IconButton onClick={() => handleViewDetails(row)} sx={{ color: 'info.main' }}>
+                                                                <Iconify icon={"solar:eye-bold" as any} />
+                                                            </IconButton>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+
+                                        {reportData.length === 0 && !loading && (
+                                            <TableRow>
+                                                <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                                    <Stack spacing={1} alignItems="center">
+                                                        <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                        <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                            No data found
+                                                        </Typography>
+                                                    </Stack>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </Scrollbar>
+                        </TableContainer>
+                        <TablePagination
+                            component="div"
+                            count={reportData.length}
+                            page={page}
+                            onPageChange={(e, newPage) => setPage(newPage)}
+                            rowsPerPage={rowsPerPage}
+                            onRowsPerPageChange={(e) => {
+                                setRowsPerPage(parseInt(e.target.value, 10));
+                                setPage(0);
+                            }}
+                            rowsPerPageOptions={[10, 25, 50]}
+                        />
+                    </Card>
+                ) : (
+                    <DailyLogCalendar 
+                        reportData={reportData} 
+                        employee={employee} 
+                        fromDate={fromDate}
+                        toDate={toDate}
+                        onEventClick={handleViewDetails} 
                     />
-                </Card>
+                )}
             </Stack>
 
             <EmployeeDailyLogDetailsDialog
