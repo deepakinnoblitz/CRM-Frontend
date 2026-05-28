@@ -376,7 +376,7 @@ export function LeaveAllocationView() {
                 />
             </Card>
 
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2 } }}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {isEdit ? 'Edit Leave Allocation' : 'New Leave Allocation'}
                     <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>

@@ -166,7 +166,7 @@ export function UserDetailsDialog({ open, onClose, userId, onEdit }: Props) {
 
                         {/* Account Information */}
                         <Box sx={{ px: 2 }}>
-                            <SectionHeader title="Account Information" icon="solar:user-bold" />
+                            <SectionHeader title="Account Information"  />
                             <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
                                 <DetailItem
                                     label="Username"
@@ -205,8 +205,8 @@ export function UserDetailsDialog({ open, onClose, userId, onEdit }: Props) {
                             <>
                                 <Divider sx={{ borderStyle: 'dashed' }} />
                                 <Box sx={{ px: 2 }}>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mb: 2.5 }}>
-                                        Roles
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mb: 2, fontSize: '15px' }}>
+                                        ROLES:
                                     </Typography>
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                                         {user.roles.map((roleItem: any) => {
@@ -259,7 +259,7 @@ export function UserDetailsDialog({ open, onClose, userId, onEdit }: Props) {
                             <>
                                 <Divider sx={{ borderStyle: 'dashed' }} />
                                 <Box sx={{ px: 2 }}>
-                                    <SectionHeader title="Bio" icon="solar:document-text-bold" />
+                                    <SectionHeader title="Bio" />
                                     <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
                                         {user.bio}
                                     </Typography>
@@ -278,21 +278,20 @@ export function UserDetailsDialog({ open, onClose, userId, onEdit }: Props) {
     );
 }
 
-function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: string, noMargin?: boolean }) {
+function SectionHeader({ title, noMargin = false }: { title: string; noMargin?: boolean }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
-            <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '14px', letterSpacing: 0.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '13px' }}>
                 {title}
             </Typography>
         </Box>
     );
 }
 
-function DetailItem({ label, value, icon, color = 'text.primary', labelColor = 'text.disabled' }: { label: string; value?: string | null; icon: string; color?: string; labelColor?: string }) {
+function DetailItem({ label, value, icon, color = 'text.primary', labelColor = 'text.secondary' }: { label: string; value?: string | null; icon: string; color?: string; labelColor?: string }) {
     return (
         <Box>
-            <Typography variant="caption" sx={{ color: labelColor, fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block', fontSize: '11px', letterSpacing: 0.5 }}>
+            <Typography variant="caption" sx={{ color: labelColor, fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block', fontSize: '11px' }}>
                 {label}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>

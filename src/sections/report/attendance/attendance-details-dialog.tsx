@@ -135,7 +135,7 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
                                     <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.2, color: 'text.primary' }}>
                                         {attendance.employee_name}
                                     </Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, mt: 0.2, display: 'block', letterSpacing: 0.5 }}>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, mt: 0.2, display: 'block' }}>
                                         ID: {attendance.employee || attendance.employee_id || '-'}
                                     </Typography>
                                 </Box>
@@ -235,16 +235,16 @@ function DetailRow({ label, value, icon }: { label: string; value?: string | nul
         <Stack direction="row" spacing={2} alignItems="center">
             <Box
                 sx={{
-                    p: 1,
+                    p: 1.5,
                     borderRadius: 1.25,
                     bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                    color: 'primary.main',
+                    color: 'info.main',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                 }}
             >
-                <Iconify icon={icon as any} width={22} />
+                <Iconify icon={icon as any} width={20} />
             </Box>
             <Box>
                 <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.25 }}>

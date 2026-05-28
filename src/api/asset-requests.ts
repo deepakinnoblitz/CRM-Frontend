@@ -122,3 +122,10 @@ export async function approveDeclaration(payload: {
 
     return response.json();
 }
+
+export async function getAssetRequest(name: string) {
+    const response = await frappeRequest(`/api/resource/Asset Request/${name}`);
+    if (!response.ok) throw new Error('Failed to fetch Asset Request');
+    const data = await response.json();
+    return data.data;
+}

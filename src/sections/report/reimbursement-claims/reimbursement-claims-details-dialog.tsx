@@ -1,11 +1,12 @@
 import dayjs from 'dayjs';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
+import { alpha, useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -36,6 +37,7 @@ type Props = {
 };
 
 export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefresh }: Props) {
+    const theme = useTheme();
     const { user } = useAuth();
     const [submitting, setSubmitting] = useState<boolean>(false);
     const [commentDialogOpen, setCommentDialogOpen] = useState(false);
@@ -254,10 +256,10 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                         {/* Claim Details / Notes */}
                         {(claim.claim_details || claim.approver_comments) && (
                             <Box sx={{ pt: 3 }}>
-                                <SectionHeader title="Details & Notes" icon="solar:notes-bold" />
+                                <SectionHeader title="Details & Notes" icon="" />
                                 <Stack spacing={2}>
                                     {claim.claim_details && (
-                                        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                                        <Box sx={{ p: 3, bgcolor: alpha(theme.palette.primary.main, 0.04), borderRadius: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
                                             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, mb: 1, display: 'block', textTransform: 'uppercase' }}>
                                                 Claim Details
                                             </Typography>
@@ -311,8 +313,8 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                         )}
 
                         {/* Metadata */}
-                        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                            <SectionHeader title="Record Information" icon="solar:info-circle-bold" noMargin />
+                        <Box sx={{ p: 3, bgcolor: alpha(theme.palette.primary.main, 0.04), borderRadius: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
+                            <SectionHeader title="Record Information" icon="" noMargin />
                             <Box
                                 sx={{
                                     display: 'grid',
@@ -322,15 +324,15 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                                 }}
                             >
                                 <Box>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Created On</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Created On</Typography>
                                     <Typography variant="body2">{dayjs(claim.creation).format('DD/MM/YYYY HH:mm')}</Typography>
                                 </Box>
                                 <Box>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Last Modified</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5  }}>Last Modified</Typography>
                                     <Typography variant="body2">{dayjs(claim.modified).format('DD/MM/YYYY HH:mm')}</Typography>
                                 </Box>
                                 <Box>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Record ID</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5  }}>Record ID</Typography>
                                     <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 600 }}>{claim.name}</Typography>
                                 </Box>
                             </Box>
@@ -479,7 +481,7 @@ function SectionHeader({ title, icon, action, noMargin = false }: { title: strin
             <Box sx={{ display: 'flex', alignItems: 'center', mb: noMargin ? 0 : 2, gap: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Iconify icon={icon as any} width={20} sx={{ mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>
+                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.25, fontWeight: 700, fontSize: '13px' }}>
                         {title}
                     </Typography>
                 </Box>
@@ -497,21 +499,22 @@ function SectionHeader({ title, icon, action, noMargin = false }: { title: strin
 }
 
 function DetailItem({ label, value, icon }: { label: string; value: React.ReactNode; icon: string }) {
+    const theme = useTheme();
     return (
         <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
             <Box
                 sx={{
-                    p: 1,
+                    p: 1.3,
                     mr: 2,
                     borderRadius: 1,
-                    bgcolor: 'background.neutral',
-                    color: 'text.secondary',
+                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                    color: 'info.main',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                 }}
             >
-                <Iconify icon={icon as any} width={20} />
+                <Iconify icon={icon as any} width={18} />
             </Box>
             <Box>
                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>

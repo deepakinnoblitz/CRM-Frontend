@@ -8,7 +8,7 @@ import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
-import { alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -38,6 +38,7 @@ type Props = {
 };
 
 export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket }: Props) {
+    const theme = useTheme();
     const [leave, setLeave] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [actions, setActions] = useState<WorkflowAction[]>([]);
@@ -428,7 +429,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                                 <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.2, color: 'text.primary' }}>
                                                     {leave?.employee_name}
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, mt: 0.2, display: 'block', letterSpacing: 0.5 }}>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, mt: 0.2, display: 'block' }}>
                                                     ID: {leave?.employee || leave?.employee_id || '-'}
                                                 </Typography>
                                             </Box>
@@ -506,8 +507,8 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                     <Divider />
 
                                     {/* Reason Section */}
-                                    <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                    <Box sx={{ p: 3, bgcolor: alpha(theme.palette.primary.main, 0.04), borderRadius: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
                                             Reason
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
@@ -652,7 +653,7 @@ function DetailRow({ label, value, icon }: { label: string; value?: string | nul
                     p: 1,
                     borderRadius: 1.25,
                     bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                    color: 'primary.main',
+                    color: 'info.main',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
