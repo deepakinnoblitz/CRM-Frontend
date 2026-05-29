@@ -177,7 +177,7 @@ export const routesSection: RouteObject[] = [
       { path: 'leads', element: <LeadsPage /> },
       { path: 'users', element: <UsersPage /> },
       { path: 'user-permissions', element: <UserPermissionsPage /> },
-      { path: 'profile', element: <ProfilePage /> },
+      { path: 'user-profile', element: <ProfilePage /> },
       { path: 'my-profile', element: <MyProfilePage /> },
       { path: 'chat', element: <ChatPage /> },
 

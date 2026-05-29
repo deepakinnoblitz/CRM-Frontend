@@ -327,7 +327,7 @@ export function JobApplicantsView() {
 
   return (
     <DashboardContent maxWidth={false}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5, mt: 3 }}>
         <Typography variant="h4">Job Applicants</Typography>
         {permissions.write && (
           <Button

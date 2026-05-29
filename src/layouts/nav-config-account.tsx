@@ -16,7 +16,7 @@ export const _account: AccountPopoverProps['data'] = [
   },
   {
     label: 'Profile',
-    href: '/profile',
+    href: '/user-profile',
     icon: <FaUserTie size={16} />,
   },
   {
