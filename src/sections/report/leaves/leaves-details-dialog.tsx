@@ -399,11 +399,11 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                             <Avatar
                                                 src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || leave?.profile_picture || leave?.image}
                                                 sx={{
-                                                    width: 72,
-                                                    height: 72,
+                                                    width: 76,
+                                                    height: 76,
                                                     borderRadius: '50%',
-                                                    border: (theme: any) => `2px solid ${theme.palette.common.white}`,
-                                                    boxShadow: (theme: any) => `0 8px 24px -4px ${alpha(theme.palette.grey[500], 0.35)}`,
+                                                    border: '3px solid #FFFFFF',
+                                                    boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.12)',
                                                     bgcolor: (theme: any) => {
                                                         const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || leave?.profile_picture || leave?.image;
                                                         if (img) return 'transparent';
@@ -456,7 +456,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                             justifyContent="space-between"
                                         >
                                             <Stack spacing={0.5}>
-                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '10px', letterSpacing: 0.5 }}>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '11px' }}>
                                                     Leave Type
                                                 </Typography>
                                                 <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
@@ -470,8 +470,8 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                                 </Typography>
                                                 <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>
                                                     {leave?.leave_type?.toLowerCase() === 'permission'
-                                                        ? `${leave?.permission_hours} mins`
-                                                        : `${leave?.total_days} ${leave?.total_days === 1 ? 'day' : 'days'}`
+                                                        ? `${leave?.permission_hours} Mins`
+                                                        : `${leave?.total_days} ${leave?.total_days === 1 ? 'Day' : 'Days'}`
                                                     }
                                                 </Typography>
                                             </Stack>
@@ -492,7 +492,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
 
                                     {/* Reason Section */}
                                     <Box>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
+                                        <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
                                             Reason
                                         </Typography>
                                         <Box sx={{ p: 3, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04), borderRadius: 2, border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
@@ -505,7 +505,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                     {/* Attachments */}
                                     {leave?.attachment && (
                                         <Box>
-                                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
+                                            <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
                                                 Attachment
                                             </Typography>
                                             <Stack

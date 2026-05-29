@@ -308,110 +308,112 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
                         <Box sx={{ gridColumn: { lg: hasHistory ? 'span 8' : 'span 12' } }}>
                             <Stack spacing={3}>
                                 {/* Header Summary Card */}
-                                <Box
-                                    sx={{
-                                        p: 3,
-                                        borderRadius: 2,
-                                        bgcolor: 'background.paper',
-                                        border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.26)}`,
-                                        boxShadow: (theme) => theme.customShadows?.z4
-                                    }}
-                                >
-                                    <Stack direction="row" alignItems="center" spacing={2.5} sx={{ position: 'relative', zIndex: 1 }}>
-                                        <Avatar
-                                            src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image}
-                                            sx={{
-                                                width: 72,
-                                                height: 72,
-                                                borderRadius: '50%',
-                                                border: (theme: any) => `2px solid ${theme.palette.common.white}`,
-                                                boxShadow: (theme: any) => `0 8px 24px -4px ${alpha(theme.palette.primary.main, 0.15)}`,
-                                                bgcolor: (theme: any) => {
-                                                    const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image;
-                                                    if (img) return 'transparent';
-                                                    const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
-                                                    let hash = 0;
-                                                    const name = internalRequest?.employee_name || '';
-                                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                                    return colors[Math.abs(hash) % colors.length];
-                                                },
-                                                color: (theme: any) => {
-                                                    const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image;
-                                                    return img ? 'inherit' : alpha(theme.palette.common.black, 0.6);
-                                                },
-                                                fontSize: '1.75rem',
-                                                fontWeight: 900,
-                                            }}
-                                        >
-                                            {internalRequest?.employee_name?.charAt(0) || 'U'}
-                                        </Avatar>
-                                        <Box sx={{ flexGrow: 1 }}>
-                                            <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.2, color: 'text.primary' }}>
-                                                {internalRequest?.employee_name}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, mt: 0.5, display: 'block' }}>
-                                                Employee ID: {internalRequest?.employee || internalRequest?.employee_id || '-'}
-                                            </Typography>
-                                        </Box>
-                                        <Label
-                                            color={
-                                                (internalRequest.workflow_state === 'Approved' && 'success') ||
-                                                (internalRequest.workflow_state === 'Rejected' && 'error') ||
-                                                (internalRequest.workflow_state === 'Clarification Requested' && 'info') ||
-                                                'warning'
-                                            }
-                                            variant="soft"
-                                            sx={{
-                                                fontWeight: 700,
-                                                textTransform: 'uppercase',
-                                                letterSpacing: 0.25,
-                                                px: 1.5,
-                                                py: 2,
-                                                borderRadius: 1,
-                                                fontSize: '0.75rem'
-                                            }}
-                                        >
-                                            {internalRequest.workflow_state || 'Pending'}
-                                        </Label>
-                                    </Stack>
-
-                                    <Divider sx={{ borderStyle: 'dashed', my: 2.5 }} />
-
-                                    <Stack
-                                        direction="row"
-                                        alignItems="center"
-                                        justifyContent="space-between"
+                                <Box sx={{ px: 2 }}>
+                                    <Box
+                                        sx={{
+                                            p: 3,
+                                            borderRadius: 2,
+                                            bgcolor: 'background.paper',
+                                            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.26)}`,
+                                            boxShadow: (theme) => theme.customShadows?.z4
+                                        }}
                                     >
-                                        <Stack spacing={0.5}>
-                                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '11px' }}>
-                                                Request ID
-                                            </Typography>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
-                                                {internalRequest.name || 'N/A'}
-                                            </Typography>
+                                        <Stack direction="row" alignItems="center" spacing={2.5} sx={{ position: 'relative', zIndex: 1 }}>
+                                            <Avatar
+                                                src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image}
+                                                sx={{
+                                                    width: 72,
+                                                    height: 72,
+                                                    borderRadius: '50%',
+                                                    border: '3px solid #FFFFFF',
+                                                    boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.12)',
+                                                    bgcolor: (theme: any) => {
+                                                        const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image;
+                                                        if (img) return 'transparent';
+                                                        const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                                        let hash = 0;
+                                                        const name = internalRequest?.employee_name || '';
+                                                        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                                        return colors[Math.abs(hash) % colors.length];
+                                                    },
+                                                    color: (theme: any) => {
+                                                        const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image;
+                                                        return img ? 'inherit' : alpha(theme.palette.common.black, 0.6);
+                                                    },
+                                                    fontSize: '1.75rem',
+                                                    fontWeight: 900,
+                                                }}
+                                            >
+                                                {internalRequest?.employee_name?.charAt(0) || 'U'}
+                                            </Avatar>
+                                            <Box sx={{ flexGrow: 1 }}>
+                                                <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.2, color: 'text.primary' }}>
+                                                    {internalRequest?.employee_name}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, mt: 0.5, display: 'block' }}>
+                                                    Employee ID: {internalRequest?.employee || internalRequest?.employee_id || '-'}
+                                                </Typography>
+                                            </Box>
+                                            <Label
+                                                color={
+                                                    (internalRequest.workflow_state === 'Approved' && 'success') ||
+                                                    (internalRequest.workflow_state === 'Rejected' && 'error') ||
+                                                    (internalRequest.workflow_state === 'Clarification Requested' && 'info') ||
+                                                    'warning'
+                                                }
+                                                variant="soft"
+                                                sx={{
+                                                    fontWeight: 700,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: 0.25,
+                                                    px: 1.5,
+                                                    py: 2,
+                                                    borderRadius: 1,
+                                                    fontSize: '0.75rem'
+                                                }}
+                                            >
+                                                {internalRequest.workflow_state || 'Pending'}
+                                            </Label>
                                         </Stack>
 
-                                        <Stack spacing={0.5} alignItems="flex-end" sx={{ textAlign: 'right' }}>
-                                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '11px' }}>
-                                                Submitted On
-                                            </Typography>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                                                {internalRequest.creation ? dayjs(internalRequest.creation).format('DD/MM/YYYY, HH:mm:ss') : '-'}
-                                            </Typography>
+                                        <Divider sx={{ borderStyle: 'dashed', my: 2.5 }} />
+
+                                        <Stack
+                                            direction="row"
+                                            alignItems="center"
+                                            justifyContent="space-between"
+                                        >
+                                            <Stack spacing={0.5}>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '11px' }}>
+                                                    Request ID
+                                                </Typography>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                                                    {internalRequest.name || 'N/A'}
+                                                </Typography>
+                                            </Stack>
+
+                                            <Stack spacing={0.5} alignItems="flex-end" sx={{ textAlign: 'right' }}>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '11px' }}>
+                                                    Submitted On
+                                                </Typography>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                                                    {internalRequest.creation ? dayjs(internalRequest.creation).format('DD/MM/YYYY, HH:mm:ss') : '-'}
+                                                </Typography>
+                                            </Stack>
                                         </Stack>
-                                    </Stack>
+                                    </Box>
                                 </Box>
 
                                 {/* Subject Section */}
                                 <Box sx={{ px: 2, pt: 1.5 }}>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
+                                    <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
                                         Subject
                                     </Typography>
-                                    <Box 
-                                        sx={{ 
-                                            p: 2, 
-                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04), 
-                                            borderRadius: 1.5, 
+                                    <Box
+                                        sx={{
+                                            p: 2,
+                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                                            borderRadius: 1.5,
                                             border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
                                             borderRight: (theme) => `3px solid ${theme.palette.info.main}`,
                                             borderLeft: (theme) => `3px solid ${theme.palette.info.main}`,
@@ -425,7 +427,7 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
 
                                 {/* Message Section */}
                                 <Box sx={{ px: 2 }}>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
+                                    <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
                                         Message
                                     </Typography>
                                     <Box sx={{ p: 3, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04), borderRadius: 1.5, border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
