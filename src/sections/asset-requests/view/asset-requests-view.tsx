@@ -61,6 +61,8 @@ import { AssetRequestsTableFiltersDrawer } from 'src/sections/asset-requests/ass
 
 import { useAuth } from 'src/auth/auth-context';
 
+import { AssetRequestDetailsDialog } from '../asset-request-details-dialog';
+
 // ----------------------------------------------------------------------
 
 // Parses Frappe's raw _server_messages JSON into a readable string
@@ -171,6 +173,9 @@ export function AssetRequestsView() {
     const [processingHrAction, setProcessingHrAction] = useState(false);
     const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
     const [menuRow, setMenuRow] = useState<any>(null);
+
+    const [openDetails, setOpenDetails] = useState(false);
+    const [selectedRequestName, setSelectedRequestName] = useState<string | null>(null);
 
     // ── Snackbar ──
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -539,19 +544,20 @@ export function AssetRequestsView() {
                                         { id: 'priority', label: 'Priority' },
                                         { id: 'status', label: 'Status' },
                                         { id: 'creation', label: 'Date' },
+                                        { id: '', label: '' },
                                     ]}
                                 />
                                 <TableBody>
                                     {myLoading ? (
                                         <TableRow>
-                                            <TableCell colSpan={isHR ? 8 : 7} align="center" sx={{ py: 5 }}>
+                                            <TableCell colSpan={isHR ? 9 : 8} align="center" sx={{ py: 5 }}>
                                                 <CircularProgress size={32} />
                                             </TableCell>
                                         </TableRow>
                                     ) : (
                                         myRequests.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={isHR ? 8 : 7}>
+                                                <TableCell colSpan={isHR ? 9 : 8}>
                                                     <EmptyContent
                                                         title="No requests found"
                                                         description='Click "New Request" to submit your first asset request.'
@@ -565,6 +571,10 @@ export function AssetRequestsView() {
                                                     <TableRow
                                                         key={row.name}
                                                         hover
+                                                        onClick={() => {
+                                                            setSelectedRequestName(row.name);
+                                                            setOpenDetails(true);
+                                                        }}
                                                         sx={{
                                                             cursor: 'pointer',
                                                             '& td, & th': { borderBottom: (theme) => `1px solid ${theme.palette.divider}` },
@@ -690,6 +700,19 @@ export function AssetRequestsView() {
                                                         <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
                                                             {row.creation ? dayjs(row.creation).format('DD MMM YYYY · HH:mm') : '-'}
                                                         </TableCell>
+                                                        <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSelectedRequestName(row.name);
+                                                                    setOpenDetails(true);
+                                                                }}
+                                                                sx={{ color: 'primary.main' }}
+                                                            >
+                                                                <Iconify icon="solar:eye-bold" />
+                                                            </IconButton>
+                                                        </TableCell>
                                                     </TableRow>
                                                 ))}
 
@@ -782,6 +805,10 @@ export function AssetRequestsView() {
                                                     <TableRow
                                                         key={row.name}
                                                         hover
+                                                        onClick={() => {
+                                                            setSelectedRequestName(row.name);
+                                                            setOpenDetails(true);
+                                                        }}
                                                         sx={{
                                                             cursor: 'pointer',
                                                             '& td, & th': { borderBottom: (theme) => `1px solid ${theme.palette.divider}` },
@@ -903,16 +930,32 @@ export function AssetRequestsView() {
                                                         <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
                                                             {row.creation ? dayjs(row.creation).format('DD MMM YYYY · HH:mm') : '-'}
                                                         </TableCell>
-                                                        <TableCell>
-                                                            {row.status === 'Pending Approval' && (
+                                                        <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                                                            <Stack direction="row" spacing={0.5} justifyContent="flex-end" sx={{ display: 'inline-flex', verticalAlign: 'middle' }}>
                                                                 <IconButton
                                                                     size="small"
-                                                                    onClick={(e) => handleOpenMenu(e, row)}
-                                                                    sx={{ color: 'warning.main' }}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setSelectedRequestName(row.name);
+                                                                        setOpenDetails(true);
+                                                                    }}
+                                                                    sx={{ color: 'primary.main' }}
                                                                 >
-                                                                    <Iconify icon="eva:more-vertical-fill" />
+                                                                    <Iconify icon="solar:eye-bold" />
                                                                 </IconButton>
-                                                            )}
+                                                                {row.status === 'Pending Approval' && (
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleOpenMenu(e, row);
+                                                                        }}
+                                                                        sx={{ color: 'warning.main' }}
+                                                                    >
+                                                                        <Iconify icon="eva:more-vertical-fill" />
+                                                                    </IconButton>
+                                                                )}
+                                                            </Stack>
                                                         </TableCell>
                                                     </TableRow>
                                                 ))}
@@ -1177,7 +1220,7 @@ export function AssetRequestsView() {
 
             {/* ── HR ACTION DIALOG ── */}
             <Dialog open={openHrAction} onClose={() => setOpenHrAction(false)} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Stack spacing={0.5}>
                         <Typography variant="h6" fontWeight={700}>
                             {hrAction === 'approve' ? 'Approve Request' : 'Reject Request'}
@@ -1304,9 +1347,6 @@ export function AssetRequestsView() {
                     </Box>
                 </DialogContent>
                 <DialogActions sx={{ p: 2.5 }}>
-                    <Button onClick={() => setOpenHrAction(false)} color="inherit">
-                        Cancel
-                    </Button>
                     <LoadingButton
                         variant="contained"
                         loading={processingHrAction}
@@ -1378,6 +1418,19 @@ export function AssetRequestsView() {
                 canReset={hrFilters.type !== 'all' || hrFilters.category !== 'all' || hrFilters.status !== 'all' || hrFilters.priority !== 'all' || !!hrFilters.startDate || !!hrFilters.endDate}
                 onResetFilters={() => { setHrFilters({ type: 'all', category: 'all', status: 'all', priority: 'all', startDate: '', endDate: '' }); setHrPage(0); }}
                 categories={categories}
+            />
+
+            {/* ── Asset Request Details Dialog ── */}
+            <AssetRequestDetailsDialog
+                open={openDetails}
+                onClose={() => {
+                    setOpenDetails(false);
+                    setSelectedRequestName(null);
+                }}
+                requestName={selectedRequestName}
+                isHR={!!isHR}
+                onApprove={(req) => handleAction(req, 'approve')}
+                onReject={(req) => handleAction(req, 'reject')}
             />
         </DashboardContent>
     );

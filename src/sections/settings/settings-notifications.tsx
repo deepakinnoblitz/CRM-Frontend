@@ -51,6 +51,13 @@ export function SettingsNotifications({ data, onChange }: Props) {
       icon: 'solar:checklist-minimalistic-bold-duotone',
       color: '#08a3cd',
     },
+    {
+      label: 'Job Application Mail',
+      fieldname: 'job_notification',
+      description: 'Get notified when a new job application is submitted.',
+      icon: 'solar:bag-bold-duotone',
+      color: '#8E33FF',
+    },
   ];
 
   return (

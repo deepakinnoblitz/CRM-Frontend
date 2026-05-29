@@ -116,11 +116,7 @@ export function HRReminderDetailDialog({ row, open, onClose }: Props) {
                     direction="row" 
                     spacing={3} 
                     divider={<Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />}
-                    sx={{ 
-                        p: 2.5, 
-                        borderRadius: 2, 
-                        bgcolor: alpha(theme.palette.grey[500], 0.08),
-                    }}
+                    sx={{ p: 3, bgcolor: alpha(theme.palette.primary.main, 0.04), borderRadius: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}
                 >
                     <Stack spacing={1} sx={{ flex: 1 }}>
                         <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -147,12 +143,7 @@ export function HRReminderDetailDialog({ row, open, onClose }: Props) {
                 <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 800 }}>
                     MESSAGE CONTENT
                 </Typography>
-                <Box sx={{ 
-                    p: 2.5, 
-                    borderRadius: 2, 
-                    bgcolor: alpha(theme.palette.grey[500], 0.08),
-                    minHeight: 80
-                }}>
+                <Box sx={{ p: 3, bgcolor: alpha(theme.palette.primary.main, 0.04), borderRadius: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1.6 }}>
                         {row.message}
                     </Typography>
@@ -185,8 +176,8 @@ export function HRReminderDetailDialog({ row, open, onClose }: Props) {
                     >
                       <Avatar 
                         sx={{ 
-                            width: 28, 
-                            height: 28, 
+                            width: 32, 
+                            height: 32, 
                             fontSize: 11, 
                             fontWeight: 700,
                             bgcolor: stringToColor(emp.name) 
@@ -195,10 +186,10 @@ export function HRReminderDetailDialog({ row, open, onClose }: Props) {
                         {emp.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2)}
                       </Avatar>
                       <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 800, display: 'block' }} noWrap>
+                        <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', fontSize: 13 }} noWrap>
                             {emp.name}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: 10 }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: 11, fontWeight: 800, }}>
                             {emp.id}
                         </Typography>
                       </Box>

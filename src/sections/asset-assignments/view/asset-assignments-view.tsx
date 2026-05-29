@@ -1,4 +1,9 @@
 import dayjs from 'dayjs';
+import { FaUser } from "react-icons/fa";
+import { GoHash } from "react-icons/go";
+import { BsLaptop } from "react-icons/bs";
+import { IoMdReturnLeft } from "react-icons/io";
+import { MdOutlineAssignmentTurnedIn } from "react-icons/md";
 import { useState, useCallback, useEffect, useMemo } from 'react';
 
 import Box from '@mui/material/Box';
@@ -9,7 +14,6 @@ import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
-import { alpha } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
@@ -22,6 +26,7 @@ import InputLabel from '@mui/material/InputLabel';
 import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
+import { alpha, useTheme } from '@mui/material/styles';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
@@ -64,6 +69,8 @@ import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 export function AssetAssignmentsView() {
+    const theme = useTheme();
+
     const { user } = useAuth();
 
     const isHR = user?.roles?.some((role: string) =>
@@ -323,7 +330,7 @@ export function AssetAssignmentsView() {
     const empty = !data.length && !filterName;
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     {isHR ? 'Asset Assignments' : 'My Assets'}
@@ -462,10 +469,10 @@ export function AssetAssignmentsView() {
             />
 
             {/* Create/Edit Dialog */}
-            <Dialog 
-                open={openCreate} 
-                onClose={handleCloseCreate} 
-                fullWidth 
+            <Dialog
+                open={openCreate}
+                onClose={handleCloseCreate}
+                fullWidth
                 maxWidth="md"
                 PaperProps={{
                     sx: {
@@ -478,9 +485,9 @@ export function AssetAssignmentsView() {
                 }}
             >
                 <form onSubmit={handleCreate} noValidate style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
                         {isEdit ? 'Edit Assignment' : 'New Assignment'}
-                        <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
+                        <IconButton onClick={handleCloseCreate} sx={{ color: (t) => t.palette.grey[500] }}>
                             <Iconify icon="mingcute:close-line" />
                         </IconButton>
                     </DialogTitle>
@@ -600,7 +607,7 @@ export function AssetAssignmentsView() {
                         </Box>
                     </DialogContent>
 
-                    <DialogActions sx={{p:1.5}}>
+                    <DialogActions sx={{ p: 1.5 }}>
                         <Button type="submit" variant="contained">
                             {isEdit ? 'Update' : 'Create'}
                         </Button>
@@ -609,10 +616,10 @@ export function AssetAssignmentsView() {
             </Dialog>
 
             {/* View Dialog */}
-            <Dialog 
-                open={openView} 
-                onClose={() => setOpenView(false)} 
-                fullWidth 
+            <Dialog
+                open={openView}
+                onClose={() => setOpenView(false)}
+                fullWidth
                 maxWidth="md"
                 PaperProps={{
                     sx: {
@@ -624,11 +631,11 @@ export function AssetAssignmentsView() {
                     }
                 }}
             >
-                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
                     <Typography variant="h6" sx={{ fontWeight: 800 }}>Assignment Details</Typography>
                     <IconButton
                         onClick={() => setOpenView(false)}
-                        sx={{ color: (theme) => theme.palette.grey[500] }}
+                        sx={{ color: (t) => t.palette.grey[500] }}
                     >
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
@@ -648,7 +655,7 @@ export function AssetAssignmentsView() {
                                         justifyContent: 'center',
                                         bgcolor: 'info.lighter',
                                         color: 'info.main',
-                                        boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.info.main, 0.16)}`,
+                                        boxShadow: (t) => `0 8px 16px 0 ${alpha(t.palette.info.main, 0.16)}`,
                                     }}
                                 >
                                     <Iconify icon={"solar:laptop-bold-duotone" as any} width={40} />
@@ -681,36 +688,47 @@ export function AssetAssignmentsView() {
                                     sx={{
                                         display: 'grid',
                                         gap: 3,
-                                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+                                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(3, 1fr)' },
                                     }}
                                 >
                                     <DetailItem
                                         label="Employee"
                                         value={viewAssignment.employee_name}
-                                        icon="solar:user-bold"
+                                        icon={<FaUser size={18}/>}
                                     />
                                     <DetailItem
                                         label="Employee ID"
                                         value={viewAssignment.assigned_to}
-                                        icon="solar:hashtag-bold"
+                                        icon={<GoHash size={18}/>}
+                                    />
+                                    <DetailItem
+                                        label="Assest"
+                                        value={viewAssignment.asset_name}
+                                        icon={<BsLaptop size={18}/>}
                                     />
                                 </Box>
                             </Box>
 
-                            {/* Date Details */}
-                            <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                                <SectionHeader title="Lifecycle Details" noMargin />
-                                <Box sx={{ mt: 3, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+
+                            <Box>
+                                <SectionHeader title="Lifecycle Details" />
+                                <Box
+                                    sx={{
+                                        display: 'grid',
+                                        gap: 3,
+                                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(3, 1fr)' },
+                                    }}
+                                >
                                     <DetailItem
                                         label="Assigned On"
                                         value={dayjs(viewAssignment.assigned_on).format('DD MMM YYYY')}
-                                        icon="solar:calendar-line-duotone"
+                                        icon={<MdOutlineAssignmentTurnedIn size={18}/>}
                                     />
                                     {viewAssignment.returned_on && (
                                         <DetailItem
                                             label="Returned On"
                                             value={dayjs(viewAssignment.returned_on).format('DD MMM YYYY')}
-                                            icon="solar:calendar-check-bold"
+                                            icon={<IoMdReturnLeft  size={18}/>}
                                         />
                                     )}
                                 </Box>
@@ -720,7 +738,14 @@ export function AssetAssignmentsView() {
                             {viewAssignment.remarks && (
                                 <Box>
                                     <SectionHeader title="Remarks" />
-                                    <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                                    <Box                                     
+                                        sx={{
+                                            p: 3,
+                                            bgcolor: alpha(theme.palette.primary.main, 0.04),
+                                            borderRadius: 2,
+                                            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                                        }}
+                                    >
                                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                             {viewAssignment.remarks}
                                         </Typography>
@@ -768,22 +793,37 @@ export function AssetAssignmentsView() {
 function SectionHeader({ title, noMargin = false }: { title: string, noMargin?: boolean }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '14px' }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '13.5px' }}>
                 {title}
             </Typography>
         </Box>
     );
 }
 
-function DetailItem({ label, value, icon }: { label: string; value?: string | null; icon: string }) {
+function DetailItem({ label, value, icon }: { label: string; value?: React.ReactNode; icon: React.ReactNode }) {
+    const theme = useTheme();
     return (
-        <Box>
-            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
-                {label}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 50,
+                    height: 50,
+                    borderRadius: 1.5,
+                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                    color: 'info.main',
+                    flexShrink: 0,
+                }}
+            >
+                {icon}
+            </Box>
+            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', display: 'block', mb: 0.5, fontSize: 11 }}>
+                    {label}
+                </Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {value || '-'}
                 </Typography>
             </Box>

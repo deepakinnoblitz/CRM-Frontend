@@ -42,10 +42,12 @@ import { Scrollbar } from 'src/components/scrollbar';
 
 import { useAuth } from 'src/auth/auth-context';
 
+import { AttendanceCalendar } from './attendance-calendar';
 import { AttendanceDetailsDialog } from '../attendance-details-dialog';
 
 
 export function AttendanceReportView() {
+    const theme = useTheme();
     const { user } = useAuth();
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -61,6 +63,13 @@ export function AttendanceReportView() {
     const [employee, setEmployee] = useState('all');
     const [status, setStatus] = useState('all');
     const [sortBy, setSortBy] = useState('date_asc');
+    const [currentView, setCurrentView] = useState<'list' | 'calendar'>('list');
+
+    useEffect(() => {
+        if (employee === 'all') {
+            setCurrentView('list');
+        }
+    }, [employee]);
 
     useEffect(() => {
         if (user && user.roles) {
@@ -126,6 +135,10 @@ export function AttendanceReportView() {
             setReportData([]);
             return;
         }
+        if (toDate.isBefore(fromDate, 'day')) {
+            setReportData([]);
+            return;
+        }
         setLoading(true);
         try {
             const filters: any = {};
@@ -170,6 +183,13 @@ export function AttendanceReportView() {
             setLoading(false);
         }
     }, [fromDate, toDate, employee, status, sortBy]);
+
+    useEffect(() => {
+        if (fromDate && toDate && toDate.isBefore(fromDate, 'day')) {
+            enqueueSnackbar('To Date must be after From Date', { variant: 'error' });
+            setToDate(null);
+        }
+    }, [fromDate, toDate, enqueueSnackbar]);
 
     useEffect(() => {
         fetchReport();
@@ -624,109 +644,164 @@ export function AttendanceReportView() {
                     <SummaryCard item={{ label: 'Holiday', value: reportData.filter(d => d.status === 'Holiday').length, indicator: 'blue' }} />
                 </Box>
 
-                <Card>
-                    <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
-                        <Scrollbar>
-                            <Table
-                                size="medium"
-                                stickyHeader
-                                sx={{ borderCollapse: 'collapse' }}
-                            >
-                                <TableHead>
-                                    <TableRow sx={{ bgcolor: '#f4f6f8' }}>
-                                        <TableCell padding="checkbox">
-                                            <Checkbox
-                                                indeterminate={selected.length > 0 && selected.length < reportData.length}
-                                                checked={reportData.length > 0 && selected.length === reportData.length}
-                                                onChange={handleSelectAllClick}
-                                            />
-                                        </TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Employee</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>In Time</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Out Time</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Working Hours</TableCell>
-                                        <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', position: 'sticky', right: 0, bgcolor: '#f4f6f8', zIndex: 11 }}>Actions</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {reportData
-                                        .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-                                        .map((row, index) => {
-                                            const isSelected = selected.indexOf(row.name) !== -1;
-                                            return (
-                                                <TableRow
-                                                    key={`${row.employee}-${row.attendance_date}-${index}`}
-                                                    hover
-                                                    role="checkbox"
-                                                    aria-checked={isSelected}
-                                                    selected={isSelected}
-                                                    sx={{
-                                                        '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                        '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                    }}
-                                                >
-                                                    <TableCell padding="checkbox">
-                                                        <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
-                                                    </TableCell>
-                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.attendance_date, 'DD-MM-YYYY')}</TableCell>
-                                                    <TableCell>
-                                                        <Typography variant="subtitle2">{row.employee_name}</Typography>
-                                                        <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Label color={getStatusColor(row.status)} variant="soft">
-                                                            {row.status}
-                                                        </Label>
-                                                    </TableCell>
-                                                    <TableCell>{row.in_time || '---'}</TableCell>
-                                                    <TableCell>{row.out_time || '---'}</TableCell>
-                                                    <TableCell sx={{ fontWeight: 'bold' }}>{row.working_hours_display || '---'}</TableCell>
-                                                    <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
-                                                        {row.status !== 'Holiday' && (
-                                                            <IconButton onClick={() => handleViewDetails(row.name)} sx={{ color: 'info.main' }}>
-                                                                <Iconify icon={"solar:eye-bold" as any} />
-                                                            </IconButton>
-                                                        )}
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
+                {employee !== 'all' && (
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                        <Box
+                            sx={{
+                                display: 'inline-flex',
+                                bgcolor: alpha(theme.palette.grey[500], 0.06),
+                                p: 0.5,
+                                borderRadius: '24px',
+                                border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                            }}
+                        >
+                            {[
+                                { value: 'list', label: 'List View', icon: 'solar:list-bold' },
+                                { value: 'calendar', label: 'Calendar View', icon: 'solar:calendar-bold' }
+                            ].map((tab) => {
+                                const isActive = currentView === tab.value;
+                                return (
+                                    <Button
+                                        key={tab.value}
+                                        onClick={() => setCurrentView(tab.value as any)}
+                                        startIcon={<Iconify icon={tab.icon as any} width={16} />}
+                                        sx={{
+                                            borderRadius: '20px',
+                                            px: 3,
+                                            py: 0.75,
+                                            fontSize: '0.825rem',
+                                            fontWeight: isActive ? 700 : 600,
+                                            color: isActive ? '#fff' : theme.palette.text.secondary,
+                                            bgcolor: isActive ? '#08a3cd' : 'transparent',
+                                            boxShadow: isActive ? `0 2px 8px ${alpha('#08a3cd', 0.3)}` : 'none',
+                                            textTransform: 'capitalize',
+                                            transition: 'all 0.2s ease-in-out',
+                                            '&:hover': {
+                                                bgcolor: isActive ? '#08a3cd' : alpha(theme.palette.grey[500], 0.08),
+                                            }
+                                        }}
+                                    >
+                                        {tab.label}
+                                    </Button>
+                                );
+                            })}
+                        </Box>
+                    </Box>
+                )}
 
-                                    {reportData.length === 0 && !loading && (
-                                        <TableRow>
-                                            <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                                                {!fromDate || !toDate ? (
-                                                    <Stack spacing={1} alignItems="center">
-                                                        <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                        <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                            Please Select Filters
-                                                        </Typography>
-                                                    </Stack>
-                                                ) : (
-                                                    <Stack spacing={1} alignItems="center">
-                                                        <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                        <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
-                                                    </Stack>
-                                                )}
+                {currentView === 'list' ? (
+                    <Card>
+                        <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                            <Scrollbar>
+                                <Table
+                                    size="medium"
+                                    stickyHeader
+                                    sx={{ borderCollapse: 'collapse' }}
+                                >
+                                    <TableHead>
+                                        <TableRow sx={{ bgcolor: '#f4f6f8' }}>
+                                            <TableCell padding="checkbox">
+                                                <Checkbox
+                                                    indeterminate={selected.length > 0 && selected.length < reportData.length}
+                                                    checked={reportData.length > 0 && selected.length === reportData.length}
+                                                    onChange={handleSelectAllClick}
+                                                />
                                             </TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Employee</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>In Time</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Out Time</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Working Hours</TableCell>
+                                            <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', position: 'sticky', right: 0, bgcolor: '#f4f6f8', zIndex: 11 }}>Actions</TableCell>
                                         </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </Scrollbar>
-                    </TableContainer>
-                    <TablePagination
-                        component="div"
-                        count={reportData.length}
-                        page={page}
-                        onPageChange={onChangePage}
-                        rowsPerPage={rowsPerPage}
-                        onRowsPerPageChange={onChangeRowsPerPage}
-                        rowsPerPageOptions={[10, 25, 50]}
-                    />
-                </Card>
+                                    </TableHead>
+                                    <TableBody>
+                                        {reportData
+                                            .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+                                            .map((row, index) => {
+                                                const isSelected = selected.indexOf(row.name) !== -1;
+                                                return (
+                                                    <TableRow
+                                                        key={`${row.employee}-${row.attendance_date}-${index}`}
+                                                        hover
+                                                        role="checkbox"
+                                                        aria-checked={isSelected}
+                                                        selected={isSelected}
+                                                        sx={{
+                                                            '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                            '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                        }}
+                                                    >
+                                                        <TableCell padding="checkbox">
+                                                            <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                                                        </TableCell>
+                                                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.attendance_date, 'DD-MM-YYYY')}</TableCell>
+                                                        <TableCell>
+                                                            <Typography variant="subtitle2">{row.employee_name}</Typography>
+                                                            <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Label color={getStatusColor(row.status)} variant="soft">
+                                                                {row.status}
+                                                            </Label>
+                                                        </TableCell>
+                                                        <TableCell>{row.in_time || '---'}</TableCell>
+                                                        <TableCell>{row.out_time || '---'}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 'bold' }}>{row.working_hours_display || '---'}</TableCell>
+                                                        <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
+                                                            {row.status !== 'Holiday' && (
+                                                                <IconButton onClick={() => handleViewDetails(row.name)} sx={{ color: 'info.main' }}>
+                                                                    <Iconify icon={"solar:eye-bold" as any} />
+                                                                </IconButton>
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+
+                                        {reportData.length === 0 && !loading && (
+                                            <TableRow>
+                                                <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                                    {!fromDate || !toDate ? (
+                                                        <Stack spacing={1} alignItems="center">
+                                                            <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                Please Select Filters
+                                                            </Typography>
+                                                        </Stack>
+                                                    ) : (
+                                                        <Stack spacing={1} alignItems="center">
+                                                            <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
+                                                        </Stack>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </Scrollbar>
+                        </TableContainer>
+                        <TablePagination
+                            component="div"
+                            count={reportData.length}
+                            page={page}
+                            onPageChange={onChangePage}
+                            rowsPerPage={rowsPerPage}
+                            onRowsPerPageChange={onChangeRowsPerPage}
+                            rowsPerPageOptions={[10, 25, 50]}
+                        />
+                    </Card>
+                ) : (
+                    <AttendanceCalendar
+                         reportData={reportData}
+                         employee={employee}
+                         fromDate={fromDate}
+                         toDate={toDate}
+                         onEventClick={handleViewDetails}
+                     />
+                )}
             </Stack>
 
             <AttendanceDetailsDialog

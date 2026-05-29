@@ -6,6 +6,7 @@ import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
+import { alpha, useTheme } from '@mui/material/styles';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
@@ -23,18 +24,21 @@ type Props = {
 };
 
 export function JobOpeningDetailsDialog({ open, onClose, onRefer, job }: Props) {
-    if (!job) return null;
+    const theme =useTheme();
 
+    if (!job) return null;
+    
     const formatDate = (date: string) => {
         if (!date) return '-';
         return new Date(date).toLocaleDateString();
     };
 
     const renderHeader = (
-        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2, mb: 3 , mt: 3 }}>
+        
+        <Box sx={{ p: 3, bgcolor: alpha(theme.palette.primary.main, 0.04), borderRadius: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`, my: 3 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
                 <Box>
-                    <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700, fontSize: '22px' }}>
                         {job.job_title}
                     </Typography>
                     <Stack direction="row" spacing={1} alignItems="center">
@@ -84,8 +88,8 @@ export function JobOpeningDetailsDialog({ open, onClose, onRefer, job }: Props) 
     const renderDescription = (
         <Stack spacing={3} sx={{ mt: 2, mb: 5, ml: 2 }}>
             <Box>
-                <SectionHeader title="Small Description" icon="solar:notes-bold" />
-                <Box sx={{ mt: 2, color: 'text.secondary', whiteSpace: 'pre-wrap' }}>
+                <SectionHeader title="Small Description" icon="" />
+                <Box sx={{ p: 3, bgcolor: alpha(theme.palette.primary.main, 0.04), borderRadius: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
                     <Typography variant="body2">
                         {job.small_description || 'No small description provided.'}
                     </Typography>
@@ -93,8 +97,8 @@ export function JobOpeningDetailsDialog({ open, onClose, onRefer, job }: Props) 
             </Box>
 
             <Box>
-                <SectionHeader title="Job Description" icon="solar:notes-bold" />
-                <Box sx={{ mt: 2, color: 'text.secondary', whiteSpace: 'pre-wrap' }}>
+                <SectionHeader title="Job Description" icon="" />
+                <Box sx={{ p: 3, bgcolor: alpha(theme.palette.primary.main, 0.04), borderRadius: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
                     <Typography variant="body2">
                         {job.description || 'No description provided.'}
                     </Typography>
@@ -126,13 +130,13 @@ export function JobOpeningDetailsDialog({ open, onClose, onRefer, job }: Props) 
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                    borderBottom: `1px solid ${theme.palette.divider}`,
                 }}
             >
                 <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
                     Job Opening Details
                 </Typography>
-                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
+                <IconButton onClick={onClose} sx={{ color: theme.palette.grey[500] }}>
                     <Iconify icon={"mingcute:close-line" as any} />
                 </IconButton>
             </DialogTitle>
@@ -206,18 +210,33 @@ function SectionHeader({ title, icon }: { title: string; icon: string }) {
     );
 }
 
-function DetailItem({ icon, label, value }: { icon: string; label: string; value: React.ReactNode }) {
+function DetailItem({ label, value, icon }: { label: string; value: React.ReactNode; icon: string }) {
+    const theme = useTheme();
     return (
-        <Stack direction="row" spacing={1.5} alignItems="flex-start">
-            <Iconify icon={icon as any} width={20} sx={{ color: 'text.disabled', mt: 0.2 }} />
+        <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+            <Box
+                sx={{
+                    p: 1.3,
+                    mr: 2,
+                    borderRadius: 1,
+                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                    color: 'info.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}
+            >
+                <Iconify icon={icon as any} width={18} />
+            </Box>
             <Box>
                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
                     {label}
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {value}
+                    {value || '-'}
                 </Typography>
             </Box>
-        </Stack>
+        </Box>
     );
 }
+

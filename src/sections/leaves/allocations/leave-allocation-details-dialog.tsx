@@ -174,8 +174,8 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
                     <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.2, color: 'text.primary' }}>
                         {allocation.employee_name}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                        {allocation.employee}
+                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '12px', mt: 0.25 }}>
+                        ID: {allocation.employee}
                     </Typography>
                 </Box>
                 <Box sx={{ textAlign: 'right' }}>
@@ -195,7 +195,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
             <Divider sx={{ borderStyle: 'dashed' }} />
 
             {/* Information Grid */}
-            <Box sx={{px: 2}}>
+            <Box sx={{ px: 2 }}>
                 <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, mb: 2, display: 'block' }}>
                     Allocation Details
                 </Typography>
@@ -298,7 +298,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
                         const isReject = action.action.toLowerCase().includes('reject') || action.action.toLowerCase().includes('cancel');
                         const isApprove = action.action.toLowerCase().includes('approve');
                         const isPendingThis = actionPending === action.action;
-                        
+
                         let label = action.action;
                         if (isPendingThis) {
                             if (isApprove) label = 'Approving...';
@@ -346,7 +346,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
                     sx: { borderRadius: 2.5 },
                 }}
             >
-                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Typography variant="h6" sx={{ fontWeight: 800 }}>Allocation Profile</Typography>
 
                     <Stack direction="row" spacing={0.75} alignItems="center">

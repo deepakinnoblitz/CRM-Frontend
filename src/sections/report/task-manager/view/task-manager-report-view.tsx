@@ -47,6 +47,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 
 import { useAuth } from 'src/auth/auth-context';
 
+import { TaskReportCalendar } from './task-report-calendar';
 import { TaskNewEditForm } from '../../../task-manager/task-new-edit-form';
 import TaskDetailsDialog from '../../../task-manager/kanban/task-details-dialog';
 
@@ -88,6 +89,8 @@ export function TaskManagerReportView() {
     const [openDetail, setOpenDetail] = useState(false);
     const [openEdit, setOpenEdit] = useState(false);
     const [selectedTask, setSelectedTask] = useState<TaskManager | null>(null);
+
+    const [currentView, setCurrentView] = useState<'list' | 'calendar'>('list');
 
     useEffect(() => {
         if (user && user.roles) {
@@ -897,7 +900,51 @@ export function TaskManagerReportView() {
                     <SummaryCard item={{ label: 'Total Time', value: formatDurationDescriptive(totalTimeLogged), indicator: 'green' }} />
                 </Box>
 
-                <Card>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                    <Box
+                        sx={{
+                            display: 'inline-flex',
+                            bgcolor: alpha(theme.palette.grey[500], 0.06),
+                            p: 0.5,
+                            borderRadius: '24px',
+                            border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                        }}
+                    >
+                        {[
+                            { value: 'list', label: 'List View', icon: 'solar:list-bold' },
+                            { value: 'calendar', label: 'Calendar View', icon: 'solar:calendar-bold' }
+                        ].map((tab) => {
+                            const isActive = currentView === tab.value;
+                            return (
+                                <Button
+                                    key={tab.value}
+                                    onClick={() => setCurrentView(tab.value as any)}
+                                    startIcon={<Iconify icon={tab.icon as any} width={16} />}
+                                    sx={{
+                                        borderRadius: '20px',
+                                        px: 3,
+                                        py: 0.75,
+                                        fontSize: '0.825rem',
+                                        fontWeight: isActive ? 700 : 600,
+                                        color: isActive ? '#fff' : theme.palette.text.secondary,
+                                        bgcolor: isActive ? '#08a3cd' : 'transparent',
+                                        boxShadow: isActive ? `0 2px 8px ${alpha('#08a3cd', 0.3)}` : 'none',
+                                        textTransform: 'capitalize',
+                                        transition: 'all 0.2s ease-in-out',
+                                        '&:hover': {
+                                            bgcolor: isActive ? '#08a3cd' : alpha(theme.palette.grey[500], 0.08),
+                                        }
+                                    }}
+                                >
+                                    {tab.label}
+                                </Button>
+                            );
+                        })}
+                    </Box>
+                </Box>
+
+                {currentView === 'list' ? (
+                    <Card>
                     <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
                         <Scrollbar>
                             <Table size="medium" stickyHeader sx={{ borderCollapse: 'collapse' }}>
@@ -1041,6 +1088,15 @@ export function TaskManagerReportView() {
                         rowsPerPageOptions={[10, 25, 50]}
                     />
                 </Card>
+                ) : (
+                    <TaskReportCalendar
+                        reportData={reportData}
+                        employee={employee}
+                        fromDate={fromDate}
+                        toDate={toDate}
+                        onEventClick={handleViewDetails}
+                    />
+                )}
             </Stack>
 
             {openDetail && (

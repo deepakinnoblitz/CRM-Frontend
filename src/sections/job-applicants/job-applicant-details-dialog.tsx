@@ -88,6 +88,7 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
                 borderRadius: 3,
                 border: '1px solid',
                 borderColor: '#ebedf0',
+                my: 2,
                 mb: 4
             }}
         >
@@ -243,7 +244,7 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
+            <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto', mx: 1, my: 2 }}>
                 {renderHeader}
                 {renderDetails}
                 <Divider sx={{ my: 4, borderStyle: 'dashed' }} />

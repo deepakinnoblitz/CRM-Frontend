@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { FaRegCalendarAlt, FaClock, FaHistory, FaUserCheck, FaUserTimes } from 'react-icons/fa';
 
 import Box from '@mui/material/Box';
 import Dialog from '@mui/material/Dialog';
@@ -150,7 +151,7 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
                                 <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.2, color: 'text.primary' }}>
                                     {wfh.employee_name || wfh.employee}
                                 </Typography>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '12px', mt: 0.25 }}>
                                     ID: {wfh.employee}
                                 </Typography>
                             </Box>
@@ -174,19 +175,20 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
                                     gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
                                 }}
                             >
-                                <DetailCard label="Date" value={wfh.date} icon="solar:calendar-date-bold-duotone" />
-                                <DetailCard label="From Time" value={wfh.from_time ? fTime(wfh.from_time) : '-'} icon="solar:stopwatch-play-bold-duotone" />
-                                <DetailCard label="To Time" value={wfh.to_time ? fTime(wfh.to_time) : '-'} icon="solar:stopwatch-pause-bold-duotone" />
+                                <DetailCard label="Date" value={wfh.date} icon={<FaRegCalendarAlt size={20} />} />
+                                <DetailCard label="From Time" value={wfh.from_time ? fTime(wfh.from_time) : '-'} icon={<FaClock size={20} />} />
+                                <DetailCard label="To Time" value={wfh.to_time ? fTime(wfh.to_time) : '-'} icon={<FaClock size={20} />} />
                                 <DetailCard
                                     label="Total Hours"
                                     value={wfh.total_hours}
-                                    icon="solar:history-bold-duotone"
+                                    icon={<FaHistory size={18} />}
                                 />
                                 {wfh.approved_by && (
                                     <DetailCard
                                         label={wfh.workflow_state === 'Rejected' ? 'Rejected By' : 'Approved By'}
                                         value={wfh.approved_by}
-                                        icon={wfh.workflow_state === 'Rejected' ? 'solar:user-block-rounded-bold-duotone' : 'solar:user-check-rounded-bold-duotone'}
+                                        icon={wfh.workflow_state === 'Rejected' ? <FaUserTimes size={20} /> : <FaUserCheck size={20} />}
+                                        sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}
                                     />
                                 )}
                             </Box>
@@ -279,35 +281,127 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
 function SectionHeader({ title, icon }: { title: string; icon: string }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', fontSize: 12 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.25, color: 'text.secondary', fontSize: 12 }}>
                 {title}
             </Typography>
         </Box>
     );
 }
 
-function DetailCard({ label, value, icon, highlight = false }: { label: string; value?: string | null; icon: string; highlight?: boolean }) {
+function DetailCard({ label, value, icon, sx }: { label: string; value?: string | null; icon: React.ReactNode; sx?: any }) {
+    const theme = useTheme();
+
+    // Determine theme config based on label
+    const getThemeConfig = () => {
+        if (label === 'Date') {
+            return {
+                bg: alpha(theme.palette.info.main, 0.04),
+                border: theme.palette.info.main,
+                iconBg: alpha(theme.palette.info.main, 0.12),
+                iconColor: theme.palette.info.main,
+            };
+        }
+        if (label === 'From Time') {
+            return {
+                bg: alpha(theme.palette.info.main, 0.04),
+                border: theme.palette.info.main,
+                iconBg: alpha(theme.palette.info.main, 0.12),
+                iconColor: theme.palette.info.main,
+            };
+        }
+        if (label === 'To Time') {
+            const purpleColor = theme.palette.secondary?.main || '#722ed1';
+            return {
+                bg: alpha(theme.palette.info.main, 0.04),
+                border: theme.palette.info.main,
+                iconBg: alpha(theme.palette.info.main, 0.12),
+                iconColor: theme.palette.info.main,
+            };
+        }
+        if (label === 'Total Hours') {
+            return {
+                bg: alpha(theme.palette.info.main, 0.04),
+                border: theme.palette.info.main,
+                iconBg: alpha(theme.palette.info.main, 0.12),
+                iconColor: theme.palette.info.main,
+            };
+        }
+        if (label === 'Rejected By') {
+            return {
+                bg: alpha(theme.palette.error.main, 0.04),
+                border: theme.palette.error.main,
+                iconBg: alpha(theme.palette.error.main, 0.12),
+                iconColor: theme.palette.error.main,
+            };
+        }
+        // Approved By / default
+        return {
+            bg: alpha(theme.palette.success.main, 0.04),
+            border: theme.palette.success.main,
+            iconBg: alpha(theme.palette.success.main, 0.12),
+            iconColor: theme.palette.success.main,
+        };
+    };
+
+    const cfg = getThemeConfig();
+
     return (
         <Box
             sx={{
                 p: 2,
                 borderRadius: 2,
-                bgcolor: (theme) => highlight ? alpha(theme.palette.primary.main, 0.08) : 'background.neutral',
-                border: (theme) => highlight ? `1px solid ${alpha(theme.palette.primary.main, 0.2)}` : 'none',
+                bgcolor: cfg.bg,
+                border: `1px solid ${alpha(cfg.border, 0.12)}`,
                 display: 'flex',
-                flexDirection: 'column',
-                gap: 1.5
+                alignItems: 'center',
+                gap: 2,
+                minWidth: 0,
+                ...sx,
             }}
         >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={20} sx={{ color: highlight ? 'primary.main' : 'text.disabled' }} />
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase' }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 44,
+                    height: 44,
+                    borderRadius: 1.5,
+                    bgcolor: cfg.iconBg,
+                    color: cfg.iconColor,
+                    flexShrink: 0,
+                }}
+            >
+                {icon}
+            </Box>
+            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        color: 'text.secondary',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        display: 'block',
+                        fontSize: 11,
+                        mb: 0.2,
+                    }}
+                >
                     {label}
                 </Typography>
+                <Typography
+                    variant="subtitle1"
+                    sx={{
+                        fontWeight: 900,
+                        color: 'text.primary',
+                        fontSize: '15px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                    }}
+                >
+                    {value || '-'}
+                </Typography>
             </Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: highlight ? 'primary.main' : 'text.primary' }}>
-                {value || '-'}
-            </Typography>
         </Box>
     );
 }

@@ -1,15 +1,17 @@
 import type { CardProps } from '@mui/material/Card';
 
-import { useRef, useEffect } from 'react';
 import listPlugin from '@fullcalendar/list';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import { useRef, useEffect, useState } from 'react';
 import interactionPlugin from '@fullcalendar/interaction';
 
-import { Box } from '@mui/material';
 import Card from '@mui/material/Card';
 import CardHeader from '@mui/material/CardHeader';
 import { alpha, useTheme } from '@mui/material/styles';
+import { Box, Stack, Button, IconButton, Typography } from '@mui/material';
+
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -32,9 +34,46 @@ const shouldShowRedDayNumber = (title?: string) => {
     return status === 'absent' || status === 'holiday';
 };
 
+const isHoliday = (title?: string) => {
+    if (!title) return false;
+    const status = title.trim().toLowerCase();
+    const attendanceStatuses = [
+        'present',
+        'absent',
+        'offline',
+        'on leave',
+        'leave',
+        'half day',
+        'unmarked',
+        'available',
+        'missing'
+    ];
+    return !attendanceStatuses.includes(status);
+};
+
 export function EmployeeCalendar({ title, subheader, events, onDateChange, ...other }: Props) {
     const theme = useTheme();
     const calendarRef = useRef<HTMLDivElement>(null);
+    const fullCalendarRef = useRef<FullCalendar>(null);
+    const [calendarTitle, setCalendarTitle] = useState('');
+    const [activeView, setActiveView] = useState('dayGridMonth');
+
+    const handleToday = () => {
+        fullCalendarRef.current?.getApi().today();
+    };
+
+    const handlePrev = () => {
+        fullCalendarRef.current?.getApi().prev();
+    };
+
+    const handleNext = () => {
+        fullCalendarRef.current?.getApi().next();
+    };
+
+    const handleChangeView = (viewName: string) => {
+        fullCalendarRef.current?.getApi().changeView(viewName);
+        setActiveView(viewName);
+    };
 
     useEffect(() => {
         if (!calendarRef.current || !events.length) return;
@@ -42,18 +81,26 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
         // Apply colors to existing cells when events update
         events.forEach((event) => {
             const cell = calendarRef.current?.querySelector(`td[data-date="${event.start}"]`);
-            if (cell && event.color) {
-                (cell as HTMLElement).style.backgroundColor = 'transparent';
-                (cell as HTMLElement).style.boxShadow = `inset 0 0 0px 1px ${alpha(event.color, 0.44)}`;
-                (cell as HTMLElement).style.border = 'none';
-            }
+            if (cell) {
+                const isHolidayCell = isHoliday(event.title);
 
-            const dayNumber = cell?.querySelector('.fc-daygrid-day-number') as HTMLElement | null;
-            if (dayNumber) {
-                if (shouldShowRedDayNumber(event.title)) {
-                    dayNumber.style.color = theme.palette.error.main;
-                } else {
-                    dayNumber.style.removeProperty('color');
+                if (isHolidayCell) {
+                    (cell as HTMLElement).style.backgroundColor = alpha(theme.palette.error.main, 0.08);
+                    (cell as HTMLElement).style.removeProperty('box-shadow');
+                    (cell as HTMLElement).style.removeProperty('border');
+                } else if (event.color) {
+                    (cell as HTMLElement).style.backgroundColor = 'transparent';
+                    (cell as HTMLElement).style.boxShadow = `inset 0 0 0px 1px ${alpha(event.color, 0.44)}`;
+                    (cell as HTMLElement).style.border = 'none';
+                }
+
+                const dayNumber = cell?.querySelector('.fc-daygrid-day-number') as HTMLElement | null;
+                if (dayNumber) {
+                    if (isHolidayCell || shouldShowRedDayNumber(event.title)) {
+                        dayNumber.style.color = theme.palette.error.main;
+                    } else {
+                        dayNumber.style.removeProperty('color');
+                    }
                 }
             }
         });
@@ -85,7 +132,7 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                 sx={{
                     p: 2,
                     '& .fc': {
-                        '--fc-border-color': alpha(theme.palette.grey[500], 0.08),
+                        '--fc-border-color': 'rgb(117 117 117 / 23%)',
                         '--fc-today-bg-color': alpha(theme.palette.primary.main, 0.04),
                         '--fc-list-event-hover-bg-color': alpha(theme.palette.primary.lighter, 0.4),
                         fontFamily: theme.typography.fontFamily,
@@ -149,8 +196,9 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                         zIndex: 1,
                     },
                     '& .fc .fc-col-header-cell': {
-                        bgcolor: alpha('#87CEEB', 0.18), // Sky blue background
-                        py: 1,
+                        bgcolor: 'rgb(8 163 205)',
+                        borderBottom: `2px solid ${alpha('#87CEEB', 0.4)}`,
+                        py: 1.5,
                         '&:first-of-type': {
                             borderTopLeftRadius: 12,
                         },
@@ -163,17 +211,17 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                         fontWeight: 800,
                         textTransform: 'uppercase',
                         letterSpacing: 1,
-                        color: theme.palette.text.primary,
-                        padding: '8px 6px',
+                        color: '#ffffff',
+                        padding: '10px 8px',
                         display: 'inline-block',
                     },
                     '& .fc .fc-scrollgrid': {
-                        border: `1px solid ${alpha(theme.palette.grey[500], 0.22)}`,
+                        border: `1px solid ${alpha(theme.palette.grey[500], 0.32)}`,
                         borderRadius: 1.5,
                         overflow: 'hidden',
                     },
                     '& .fc .fc-theme-standard td, & .fc .fc-theme-standard th': {
-                        borderColor: alpha(theme.palette.grey[500], 0.12),
+                        borderColor: alpha(theme.palette.grey[500], 0.15),
                     },
                     '& .fc .fc-event': {
                         backgroundColor: 'transparent !important',
@@ -184,9 +232,28 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                             backgroundColor: 'transparent !important',
                         }
                     },
+                    '& .fc .fc-daygrid-day-frame': {
+                        minHeight: 80,
+                        padding: '4px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    },
+                    '& .fc .fc-daygrid-day-top': {
+                        display: 'flex',
+                        flexDirection: 'row',
+                        justifyContent: 'flex-end',
+                    },
                     '& .fc .fc-daygrid-day-events': {
+                        flexGrow: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
                         margin: 0,
                         padding: 0,
+                    },
+                    '& .fc .fc-daygrid-event-harness': {
+                        width: '100%',
                     },
                     '& .fc .fc-day-today': {
                         '& .fc-daygrid-day-number': {
@@ -205,19 +272,140 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                     },
                 }}
             >
+                {/* Custom Header Controls matching Report Calendar Style */}
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
+                    {/* Left side: Today Button */}
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                        <Button
+                            variant="outlined"
+                            onClick={handleToday}
+                            sx={{
+                                borderRadius: '8px',
+                                color: 'text.primary',
+                                borderColor: alpha(theme.palette.grey[500], 0.2),
+                                bgcolor: alpha(theme.palette.grey[500], 0.04),
+                                textTransform: 'capitalize',
+                                fontWeight: 600,
+                                px: 2,
+                                height: 32,
+                                fontSize: '0.825rem',
+                                '&:hover': {
+                                    bgcolor: alpha(theme.palette.grey[500], 0.08),
+                                }
+                            }}
+                        >
+                            Today
+                        </Button>
+                    </Stack>
+
+                    {/* Center: Prev Arrow + Title + Next Arrow */}
+                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                        <IconButton
+                            onClick={handlePrev}
+                            size="small"
+                            sx={{
+                                width: 32,
+                                height: 32,
+                                border: `1px solid ${theme.palette.divider}`,
+                                borderRadius: '8px',
+                                bgcolor: 'background.paper',
+                                color: 'text.secondary',
+                                transition: theme.transitions.create(['background-color', 'color', 'border-color', 'box-shadow'], {
+                                    duration: theme.transitions.duration.shorter,
+                                }),
+                                '&:hover': {
+                                    bgcolor: theme.palette.action.hover,
+                                    color: 'text.primary',
+                                    borderColor: alpha(theme.palette.grey[500], 0.32),
+                                }
+                            }}
+                        >
+                            <Iconify icon="solar:alt-arrow-left-bold" width={16} />
+                        </IconButton>
+
+                        <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: -0.5, minWidth: 180, textAlign: 'center' }}>
+                            {calendarTitle}
+                        </Typography>
+
+                        <IconButton
+                            onClick={handleNext}
+                            size="small"
+                            sx={{
+                                width: 32,
+                                height: 32,
+                                border: `1px solid ${theme.palette.divider}`,
+                                borderRadius: '8px',
+                                bgcolor: 'background.paper',
+                                color: 'text.secondary',
+                                transition: theme.transitions.create(['background-color', 'color', 'border-color', 'box-shadow'], {
+                                    duration: theme.transitions.duration.shorter,
+                                }),
+                                '&:hover': {
+                                    bgcolor: theme.palette.action.hover,
+                                    color: 'text.primary',
+                                    borderColor: alpha(theme.palette.grey[500], 0.32),
+                                }
+                            }}
+                        >
+                            <Iconify icon="solar:alt-arrow-right-bold" width={16} />
+                        </IconButton>
+                    </Stack>
+
+                    {/* Right side: Month / List Switcher */}
+                    <Box
+                        sx={{
+                            display: 'inline-flex',
+                            bgcolor: alpha(theme.palette.grey[500], 0.06),
+                            p: 0.5,
+                            borderRadius: '24px',
+                            border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                        }}
+                    >
+                        {[
+                            { value: 'dayGridMonth', label: 'Month' },
+                            { value: 'listMonth', label: 'List' }
+                        ].map((tab) => {
+                            const isActive = activeView === tab.value;
+                            return (
+                                <Button
+                                    key={tab.value}
+                                    onClick={() => handleChangeView(tab.value)}
+                                    sx={{
+                                        borderRadius: '20px',
+                                        px: 2.5,
+                                        height: 30,
+                                        fontSize: '0.825rem',
+                                        fontWeight: isActive ? 700 : 600,
+                                        color: isActive ? '#fff' : theme.palette.text.secondary,
+                                        bgcolor: isActive ? '#08a3cd' : 'transparent',
+                                        boxShadow: isActive ? `0 2px 8px ${alpha('#08a3cd', 0.3)}` : 'none',
+                                        textTransform: 'capitalize',
+                                        transition: theme.transitions.create(['background-color', 'color', 'box-shadow'], {
+                                            duration: theme.transitions.duration.shorter,
+                                        }),
+                                        '&:hover': {
+                                            bgcolor: isActive ? '#08a3cd' : alpha(theme.palette.grey[500], 0.08),
+                                        }
+                                    }}
+                                >
+                                    {tab.label}
+                                </Button>
+                            );
+                        })}
+                    </Box>
+                </Stack>
+
                 <FullCalendar
+                    ref={fullCalendarRef}
                     plugins={[dayGridPlugin, listPlugin, interactionPlugin]}
                     initialView="dayGridMonth"
                     events={events}
-                    headerToolbar={{
-                        left: 'prev,next today',
-                        center: 'title',
-                        right: 'dayGridMonth,listMonth',
-                    }}
+                    headerToolbar={false}
                     height={600}
                     stickyHeaderDates
                     displayEventTime={false}
                     datesSet={(arg) => {
+                        setCalendarTitle(arg.view.title);
                         if (onDateChange) {
                             onDateChange(arg.view.currentStart);
                         }
@@ -230,24 +418,31 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                         const dateStr = `${year}-${month}-${day}`;
 
                         const event = events.find((e) => e.start === dateStr);
-                        if (event && event.color) {
-                            arg.el.style.backgroundColor = 'transparent';
-                            arg.el.style.boxShadow = `inset 0 0 12px 2px ${alpha(event.color, 0.24)}`;
-                            arg.el.style.border = 'none';
-                        }
+                        if (event) {
+                            const isHolidayCell = isHoliday(event.title);
 
-                        const dayNumber = arg.el.querySelector('.fc-daygrid-day-number') as HTMLElement | null;
-                        if (dayNumber && shouldShowRedDayNumber(event?.title)) {
-                            dayNumber.style.color = theme.palette.error.main;
+                            if (isHolidayCell) {
+                                arg.el.style.backgroundColor = alpha(theme.palette.error.main, 0.08);
+                                arg.el.style.removeProperty('box-shadow');
+                                arg.el.style.removeProperty('border');
+                            } else if (event.color) {
+                                arg.el.style.backgroundColor = 'transparent';
+                                arg.el.style.boxShadow = `inset 0 0 12px 2px ${alpha(event.color, 0.24)}`;
+                                arg.el.style.border = 'none';
+                            }
+
+                            const dayNumber = arg.el.querySelector('.fc-daygrid-day-number') as HTMLElement | null;
+                            if (dayNumber && (isHolidayCell || shouldShowRedDayNumber(event?.title))) {
+                                dayNumber.style.color = theme.palette.error.main;
+                            }
                         }
                     }}
                     eventContent={(arg) => (
                         <Box sx={{
                             color: arg.event.backgroundColor,
-                            fontSize: '0.6rem',
+                            fontSize: '0.675rem',
                             fontWeight: 700,
                             textAlign: 'center',
-                            mt: 0.5,
                             whiteSpace: 'normal',
                             lineHeight: 1.2,
                             width: '100%',

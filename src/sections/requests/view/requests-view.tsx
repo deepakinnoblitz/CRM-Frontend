@@ -43,6 +43,7 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+import { RichTextEditor } from 'src/components/rich-text-editor/rich-text-editor';
 
 import { TableNoData } from 'src/sections/lead/table-no-data';
 import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
@@ -230,7 +231,14 @@ export function RequestsView() {
     const errors: Record<string, string> = {};
     if (!employeeId) errors.employeeId = 'Employee selection is required';
     if (!subject.trim()) errors.subject = 'Please provide a subject for your request';
-    if (!message.trim()) errors.message = 'Please enter the details of your request';
+    
+    // Check if rich text editor content is empty by extracting text content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = message;
+    const plainTextMessage = (tempDiv.textContent || tempDiv.innerText || '').trim();
+    if (!plainTextMessage) {
+      errors.message = 'Please enter the details of your request';
+    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -643,7 +651,34 @@ export function RequestsView() {
               />
             )}
             {renderField('subject', 'Subject', 'text', [], { placeholder: 'Enter request subject' }, true)}
-            {renderField('message', 'Message', 'textarea', [], { placeholder: 'Enter request details' }, true)}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography 
+                variant="subtitle2" 
+                sx={{ 
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  '&::after': {
+                    content: '" *"',
+                    color: 'error.main',
+                    ml: 0.5
+                  }
+                }}
+              >
+                Message
+              </Typography>
+              <RichTextEditor
+                value={message}
+                onChange={(val) => {
+                  setMessage(val);
+                  if (formErrors.message) setFormErrors((prev) => ({ ...prev, message: '' }));
+                }}
+                placeholder="Enter request details"
+                error={!!formErrors.message}
+                helperText={formErrors.message}
+              />
+            </Box>
           </Box>
         </DialogContent>
 

@@ -1,5 +1,7 @@
 import type { CardProps } from '@mui/material/Card';
 
+import { useState } from 'react';
+
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
@@ -14,6 +16,7 @@ import TableHead from '@mui/material/TableHead';
 import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
+import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { RouterLink } from 'src/routes/components';
@@ -35,6 +38,20 @@ type Props = CardProps & {
 };
 
 export function HRDashboardTable({ title, subheader, tableData, headLabel, emptyMessage, totalCount, viewAllPath, loading, ...other }: Props) {
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
+
+    const handleChangePage = (event: unknown, newPage: number) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    };
+
+    const paginatedData = tableData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
     return (
         <Card {...other}>
             <CardHeader 
@@ -81,7 +98,7 @@ export function HRDashboardTable({ title, subheader, tableData, headLabel, empty
                                         <CircularProgress />
                                     </TableCell>
                                 </TableRow>
-                            ) : tableData.length === 0 ? (
+                            ) : paginatedData.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={headLabel.length} align="center" sx={{ py: 3 }}>
                                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -90,7 +107,7 @@ export function HRDashboardTable({ title, subheader, tableData, headLabel, empty
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                tableData.map((row: any, index) => (
+                                paginatedData.map((row: any, index) => (
                                     <TableRow key={index}  sx={{'& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },'&:last-child td, &:last-child th': { borderBottom: 0 }}}>
                                         {headLabel.map((headCell) => (
                                             <TableCell key={headCell.id} sx={{ whiteSpace: 'nowrap' }}>
@@ -116,7 +133,7 @@ export function HRDashboardTable({ title, subheader, tableData, headLabel, empty
                                                             },
                                                         }}
                                                     >
-                                                        {index + 1}
+                                                        {page * rowsPerPage + index + 1}
                                                     </Box>
                                                 ) : (
                                                     <Typography 
@@ -139,6 +156,18 @@ export function HRDashboardTable({ title, subheader, tableData, headLabel, empty
                     </Table>
                 </Scrollbar>
             </TableContainer>
+
+            {tableData.length > 0 && (
+                <TablePagination
+                    rowsPerPageOptions={[5, 10, 25]}
+                    component="div"
+                    count={tableData.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                />
+            )}
         </Card>
     );
 }

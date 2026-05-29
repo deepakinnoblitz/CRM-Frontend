@@ -104,7 +104,7 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                 sx: { borderRadius: 2.5 },
             }}
         >
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Auto Allocate Monthly Leaves</Typography>
                 <IconButton onClick={handleClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
                     <Iconify icon="mingcute:close-line" />
@@ -251,7 +251,7 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
 
             <DialogActions sx={{ p: 2.5, pt: 2 }}>
                 {step === 'preview' && (
-                    <Button onClick={handleBack} sx={{ mr: 'auto' }}>
+                    <Button onClick={handleBack} variant='outlined' sx={{ mr: 'auto' }}>
                         Back
                     </Button>
                 )}
