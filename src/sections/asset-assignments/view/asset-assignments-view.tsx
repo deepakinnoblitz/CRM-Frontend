@@ -32,6 +32,7 @@ import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -103,7 +104,7 @@ export function AssetAssignmentsView() {
         employee: isHR ? filters.employee : (user?.employee || 'all'),
     }), [filters, isHR, user]);
 
-    const { data, total, refetch } = useAssetAssignments(page + 1, rowsPerPage, filterName, orderBy, order, effectiveFilters);
+    const { data, total, loading, refetch } = useAssetAssignments(page + 1, rowsPerPage, filterName, orderBy, order, effectiveFilters);
 
     const [openCreate, setOpenCreate] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -326,8 +327,8 @@ export function AssetAssignmentsView() {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const notFound = !data.length && !!filterName;
-    const empty = !data.length && !filterName;
+    const notFound = !loading && !data.length && !!filterName;
+    const empty = !loading && !data.length && !filterName;
 
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
@@ -400,46 +401,56 @@ export function AssetAssignmentsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <AssetAssignmentTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            asset_name: row.asset_name,
-                                            employee_name: row.employee_name,
-                                            assigned_to: row.assigned_to,
-                                            assigned_on: row.assigned_on,
-                                            returned_on: row.returned_on,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                        isHR={isHR}
-                                    />
-                                ))}
-
-                                {!empty && !notFound && (
-                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
-                                )}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={isHR ? 6 : 5}>
-                                            <EmptyContent
-                                                title={isHR ? "No assignments found" : "No assets assigned"}
-                                                description={isHR ? "You haven't created any asset assignments yet. Click 'New Assignment' to get started." : "You haven't been assigned any assets yet."}
-                                                icon={isHR ? "solar:clipboard-list-bold-duotone" : "solar:laptop-bold-duotone"}
-                                            />
+                                        <TableCell colSpan={isHR ? 6 : 5} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress />
                                         </TableCell>
                                     </TableRow>
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <AssetAssignmentTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    asset_name: row.asset_name,
+                                                    employee_name: row.employee_name,
+                                                    assigned_to: row.assigned_to,
+                                                    assigned_on: row.assigned_on,
+                                                    returned_on: row.returned_on,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row)}
+                                                onEdit={() => handleEditRow(row)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                                isHR={isHR}
+                                            />
+                                        ))}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        )}
+
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={isHR ? 6 : 5}>
+                                                    <EmptyContent
+                                                        title={isHR ? "No assignments found" : "No assets assigned"}
+                                                        description={isHR ? "You haven't created any asset assignments yet. Click 'New Assignment' to get started." : "You haven't been assigned any assets yet."}
+                                                        icon={isHR ? "solar:clipboard-list-bold-duotone" : "solar:laptop-bold-duotone"}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

@@ -30,6 +30,7 @@ import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -127,7 +128,7 @@ export function ReimbursementClaimsView() {
         employee: effectiveEmployee,
     }), [filters, isHR, effectiveEmployee]);
 
-    const { data, total, refetch } = useReimbursementClaims(
+    const { data, total, loading, refetch } = useReimbursementClaims(
         page + 1,
         rowsPerPage,
         filterName,
@@ -572,8 +573,8 @@ export function ReimbursementClaimsView() {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const notFound = !data.length && !!filterName;
-    const empty = !data.length && !filterName;
+    const notFound = !loading && !data.length && !!filterName;
+    const empty = !loading && !data.length && !filterName;
 
     const renderField = (fieldname: string, label: string, type: string = 'text', options: any[] = [], extraProps: any = {}, required: boolean = false) => {
         const commonProps = {
@@ -759,53 +760,63 @@ export function ReimbursementClaimsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <ReimbursementClaimTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            employee_name: row.employee_name,
-                                            employee_id: row.employee,
-                                            claim_type: row.claim_type,
-                                            date_of_expense: row.date_of_expense,
-                                            amount: row.amount,
-                                            paid: row.paid,
-                                            workflow_state: row.workflow_state,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        onApplyAction={(action) => handleApplyAction(row.name, action)}
-                                        canEdit={permissions.write && (
-                                            (isHR && row.employee !== user?.employee) ||
-                                            (row.workflow_state === 'Clarification Requested') ||
-                                            (row.workflow_state === 'Submitted' && row.employee === user?.employee)
-                                        )}
-                                        canDelete={permissions.delete}
-                                        isHR={isHR}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
-                                            <EmptyContent
-                                                title="No claims found"
-                                                description="You haven't submitted any reimbursement claims yet."
-                                                icon="solar:money-bag-bold-duotone"
-                                            />
+                                        <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <ReimbursementClaimTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    employee_name: row.employee_name,
+                                                    employee_id: row.employee,
+                                                    claim_type: row.claim_type,
+                                                    date_of_expense: row.date_of_expense,
+                                                    amount: row.amount,
+                                                    paid: row.paid,
+                                                    workflow_state: row.workflow_state,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row)}
+                                                onEdit={() => handleEditRow(row)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                onApplyAction={(action) => handleApplyAction(row.name, action)}
+                                                canEdit={permissions.write && (
+                                                    (isHR && row.employee !== user?.employee) ||
+                                                    (row.workflow_state === 'Clarification Requested') ||
+                                                    (row.workflow_state === 'Submitted' && row.employee === user?.employee)
+                                                )}
+                                                canDelete={permissions.delete}
+                                                isHR={isHR}
+                                            />
+                                        ))}
 
-                                 {!empty && !notFound && (
-                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={6}>
+                                                    <EmptyContent
+                                                        title="No claims found"
+                                                        description="You haven't submitted any reimbursement claims yet."
+                                                        icon="solar:money-bag-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

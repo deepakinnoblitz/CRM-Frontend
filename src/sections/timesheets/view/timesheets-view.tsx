@@ -24,6 +24,7 @@ import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -103,7 +104,7 @@ export function TimesheetsView() {
         employee: isHR ? (filters.employee || 'all') : (user?.employee || 'all'),
     }), [filters, isHR, user]);
 
-    const { data, total, refetch } = useTimesheets(page + 1, rowsPerPage, filterName, orderBy, order, timesheetFilters);
+    const { data, total, loading, refetch } = useTimesheets(page + 1, rowsPerPage, filterName, orderBy, order, timesheetFilters);
 
     const [openCreate, setOpenCreate] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -630,8 +631,8 @@ export function TimesheetsView() {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const notFound = !data.length && !!filterName;
-    const empty = !data.length && !filterName;
+    const notFound = !loading && !data.length && !!filterName;
+    const empty = !loading && !data.length && !filterName;
 
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
@@ -692,45 +693,55 @@ export function TimesheetsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <TimesheetTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            employee_name: row.employee_name,
-                                            employee_id: row.employee,
-                                            timesheet_date: row.timesheet_date,
-                                            total_hours: row.total_hours,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={12}>
-                                            <EmptyContent
-                                                title="No Timesheet Found"
-                                                description="You haven't recorded any timesheets yet."
-                                                icon="solar:clock-circle-bold-duotone"
-                                                sx={{ py: 16 }}
-                                            />
+                                        <TableCell colSpan={12} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <TimesheetTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    employee_name: row.employee_name,
+                                                    employee_id: row.employee,
+                                                    timesheet_date: row.timesheet_date,
+                                                    total_hours: row.total_hours,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row)}
+                                                onEdit={() => handleEditRow(row)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
 
-                                {!empty && !notFound && (
-                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={12}>
+                                                    <EmptyContent
+                                                        title="No Timesheet Found"
+                                                        description="You haven't recorded any timesheets yet."
+                                                        icon="solar:clock-circle-bold-duotone"
+                                                        sx={{ py: 16 }}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
