@@ -6,12 +6,12 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
-import { alpha, useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
+import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -190,11 +190,11 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                    borderBottom: (t) => `1px solid ${t.palette.divider}`,
                 }}
             >
                 Claim Details
-                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
+                <IconButton onClick={onClose} sx={{ color: (t) => t.palette.grey[500] }}>
                     <Iconify icon={"mingcute:close-line" as any} />
                 </IconButton>
             </DialogTitle>

@@ -195,7 +195,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
             <Divider sx={{ borderStyle: 'dashed' }} />
 
             {/* Information Grid */}
-            <Box sx={{px: 2}}>
+            <Box sx={{ px: 2 }}>
                 <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, mb: 2, display: 'block' }}>
                     Allocation Details
                 </Typography>
@@ -298,7 +298,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
                         const isReject = action.action.toLowerCase().includes('reject') || action.action.toLowerCase().includes('cancel');
                         const isApprove = action.action.toLowerCase().includes('approve');
                         const isPendingThis = actionPending === action.action;
-                        
+
                         let label = action.action;
                         if (isPendingThis) {
                             if (isApprove) label = 'Approving...';

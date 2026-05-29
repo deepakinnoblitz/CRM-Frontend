@@ -485,9 +485,9 @@ export function AssetAssignmentsView() {
                 }}
             >
                 <form onSubmit={handleCreate} noValidate style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
                         {isEdit ? 'Edit Assignment' : 'New Assignment'}
-                        <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
+                        <IconButton onClick={handleCloseCreate} sx={{ color: (t) => t.palette.grey[500] }}>
                             <Iconify icon="mingcute:close-line" />
                         </IconButton>
                     </DialogTitle>
@@ -631,11 +631,11 @@ export function AssetAssignmentsView() {
                     }
                 }}
             >
-                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
                     <Typography variant="h6" sx={{ fontWeight: 800 }}>Assignment Details</Typography>
                     <IconButton
                         onClick={() => setOpenView(false)}
-                        sx={{ color: (theme) => theme.palette.grey[500] }}
+                        sx={{ color: (t) => t.palette.grey[500] }}
                     >
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
@@ -655,7 +655,7 @@ export function AssetAssignmentsView() {
                                         justifyContent: 'center',
                                         bgcolor: 'info.lighter',
                                         color: 'info.main',
-                                        boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.info.main, 0.16)}`,
+                                        boxShadow: (t) => `0 8px 16px 0 ${alpha(t.palette.info.main, 0.16)}`,
                                     }}
                                 >
                                     <Iconify icon={"solar:laptop-bold-duotone" as any} width={40} />

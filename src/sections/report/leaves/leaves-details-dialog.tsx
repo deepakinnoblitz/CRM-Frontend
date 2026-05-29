@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { useSnackbar } from 'notistack';
 import { useState, useEffect, useCallback } from 'react';
+import { FaFileAlt, FaExternalLinkAlt } from 'react-icons/fa';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -8,11 +9,11 @@ import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
-import { alpha, useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
+import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 
@@ -38,7 +39,6 @@ type Props = {
 };
 
 export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket }: Props) {
-    const theme = useTheme();
     const [leave, setLeave] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [actions, setActions] = useState<WorkflowAction[]>([]);
@@ -110,8 +110,8 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
             setClarificationType('Employee');
             setOpenClarification(true);
         } else if (lowerAction.includes('approve')) {
-             // 🛡️ PREEMPTIVE OVERLAP CHECK
-             try {
+            // 🛡️ PREEMPTIVE OVERLAP CHECK
+            try {
                 setSubmitting(true);
                 const res = await checkLeaveOverlap({
                     employee: leave.employee,
@@ -126,10 +126,10 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                     return;
                 }
                 await handleApplyAction(action);
-             } catch (error) {
+            } catch (error) {
                 console.error("Overlap check failed", error);
                 await handleApplyAction(action); // Fallback to normal flow if check fails
-             }
+            }
         } else if (lowerAction.includes('reject')) {
             await handleApplyAction(action);
         } else {
@@ -253,7 +253,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
 
     const renderConversation = (
         <Box sx={{ height: 1, display: 'flex', flexDirection: 'column' }}>
-            <SectionHeader title="Clarification History" icon="solar:chat-round-dots-bold" />
+            <SectionHeader title="Clarification History" icon="" />
             <Box
                 sx={{
                     flexGrow: 1,
@@ -388,16 +388,14 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                     {/* Header Summary Card */}
                                     <Box
                                         sx={{
-                                            p: 3.5,
-                                            borderRadius: 3,
-                                            position: 'relative',
-                                            overflow: 'hidden',
-                                            bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.03),
-                                            border: (theme: any) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-                                            boxShadow: (theme: any) => `0 12px 24px -4px ${alpha(theme.palette.common.black, 0.04)}`,
+                                            p: 3,
+                                            borderRadius: 2,
+                                            bgcolor: 'background.paper',
+                                            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.26)}`,
+                                            boxShadow: (theme) => theme.customShadows?.z4,
                                         }}
                                     >
-                                        <Stack direction="row" alignItems="center" spacing={2.5} sx={{ mb: 3.5, position: 'relative', zIndex: 1 }}>
+                                        <Stack direction="row" alignItems="center" spacing={2.5} sx={{ position: 'relative', zIndex: 1 }}>
                                             <Avatar
                                                 src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || leave?.profile_picture || leave?.image}
                                                 sx={{
@@ -405,7 +403,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                                     height: 72,
                                                     borderRadius: '50%',
                                                     border: (theme: any) => `2px solid ${theme.palette.common.white}`,
-                                                    boxShadow: (theme: any) => `0 8px 24px -4px ${alpha(theme.palette.primary.main, 0.15)}`,
+                                                    boxShadow: (theme: any) => `0 8px 24px -4px ${alpha(theme.palette.grey[500], 0.35)}`,
                                                     bgcolor: (theme: any) => {
                                                         const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || leave?.profile_picture || leave?.image;
                                                         if (img) return 'transparent';
@@ -425,76 +423,62 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                             >
                                                 {leave?.employee_name?.charAt(0) || 'U'}
                                             </Avatar>
-                                            <Box>
-                                                <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.2, color: 'text.primary' }}>
+                                            <Box sx={{ flexGrow: 1 }}>
+                                                <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.2, color: 'text.primary' }}>
                                                     {leave?.employee_name}
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, mt: 0.2, display: 'block' }}>
-                                                    ID: {leave?.employee || leave?.employee_id || '-'}
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, mt: 0.5, display: 'block' }}>
+                                                    Employee ID: {leave?.employee || leave?.employee_id || '-'}
                                                 </Typography>
                                             </Box>
+                                            <Label
+                                                color={getStatusColor(leave?.workflow_state)}
+                                                variant="soft"
+                                                sx={{
+                                                    fontWeight: 700,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: 0.25,
+                                                    px: 1.5,
+                                                    py: 2,
+                                                    borderRadius: 1,
+                                                    fontSize: '0.75rem'
+                                                }}
+                                            >
+                                                {leave?.workflow_state || 'Pending'}
+                                            </Label>
                                         </Stack>
+
+                                        <Divider sx={{ borderStyle: 'dashed', my: 2.5 }} />
 
                                         <Stack
                                             direction="row"
                                             alignItems="center"
                                             justifyContent="space-between"
-                                            sx={{
-                                                p: 2.5,
-                                                borderRadius: 2,
-                                                bgcolor: 'background.paper',
-                                                boxShadow: (theme) => theme.customShadows?.z8,
-                                                position: 'relative',
-                                                zIndex: 1,
-                                                border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
-                                            }}
                                         >
-                                            <Stack spacing={0.5} flex={1}>
-                                                <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, textTransform: 'uppercase', fontSize: '11px' }}>
-                                                    TYPE
+                                            <Stack spacing={0.5}>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '10px', letterSpacing: 0.5 }}>
+                                                    Leave Type
                                                 </Typography>
-                                                <Typography variant="subtitle1" sx={{ fontWeight: 900, color: 'text.primary' }}>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
                                                     {leave?.leave_type || 'N/A'}
                                                 </Typography>
                                             </Stack>
 
-                                            <Divider orientation="vertical" flexItem sx={{ mx: 3, borderStyle: 'dashed' }} />
-
-                                            <Stack spacing={0.5} flex={1}>
-                                                <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, textTransform: 'uppercase', fontSize: '11px' }}>
-                                                    DURATION
+                                            <Stack spacing={0.5} alignItems="flex-end" sx={{ textAlign: 'right' }}>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '10px', letterSpacing: 0.5 }}>
+                                                    Duration
                                                 </Typography>
-                                                <Typography variant="subtitle1" sx={{ fontWeight: 900, color: 'primary.main' }}>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>
                                                     {leave?.leave_type?.toLowerCase() === 'permission'
                                                         ? `${leave?.permission_hours} mins`
-                                                        : `${leave?.total_days} days`
+                                                        : `${leave?.total_days} ${leave?.total_days === 1 ? 'day' : 'days'}`
                                                     }
                                                 </Typography>
                                             </Stack>
-
-                                            <Divider orientation="vertical" flexItem sx={{ mx: 3, borderStyle: 'dashed' }} />
-
-                                            <Stack spacing={0.5} flex={1}>
-                                                <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, textTransform: 'uppercase', fontSize: '11px' }}>
-                                                    STATUS
-                                                </Typography>
-                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                    <Label
-                                                        color={getStatusColor(leave?.workflow_state)}
-                                                        variant="soft"
-                                                        sx={{
-                                                            fontWeight: 900,
-                                                            textTransform: 'uppercase',
-                                                            letterSpacing: 0.5,
-                                                            px: 1.5
-                                                        }}
-                                                    >
-                                                        {leave?.workflow_state || 'Pending'}
-                                                    </Label>
-                                                </Box>
-                                            </Stack>
                                         </Stack>
                                     </Box>
+
+                                    <Divider />
 
                                     {/* Date Details */}
                                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3, px: 2 }}>
@@ -507,27 +491,72 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                     <Divider />
 
                                     {/* Reason Section */}
-                                    <Box sx={{ p: 3, bgcolor: alpha(theme.palette.primary.main, 0.04), borderRadius: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
                                             Reason
                                         </Typography>
-                                        <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
-                                            {leave?.reson || 'No reason specified'}
-                                        </Typography>
+                                        <Box sx={{ p: 3, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04), borderRadius: 2, border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
+                                            <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600, fontSize: '14.5px' }}>
+                                                {leave?.reson || 'No reason specified'}
+                                            </Typography>
+                                        </Box>
                                     </Box>
 
                                     {/* Attachments */}
                                     {leave?.attachment && (
-                                        <Button
-                                            href={leave.attachment}
-                                            target="_blank"
-                                            variant="outlined"
-                                            size="small"
-                                            startIcon={<Iconify icon={"solar:link-bold" as any} />}
-                                            sx={{ alignSelf: 'flex-start', borderRadius: 1.5 }}
-                                        >
-                                            View Attachment
-                                        </Button>
+                                        <Box>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
+                                                Attachment
+                                            </Typography>
+                                            <Stack
+                                                direction="row"
+                                                alignItems="center"
+                                                justifyContent="space-between"
+                                                sx={{
+                                                    p: 2,
+                                                    borderRadius: 1.5,
+                                                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.2)}`,
+                                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.02),
+                                                }}
+                                            >
+                                                <Stack direction="row" alignItems="center" spacing={2}>
+                                                    <Box
+                                                        sx={{
+                                                            width: 40,
+                                                            height: 40,
+                                                            borderRadius: 1,
+                                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                            color: 'info.main',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                        }}
+                                                    >
+                                                        <FaFileAlt size={20} />
+                                                    </Box>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                                        {decodeURIComponent(leave.attachment.split('/').pop()?.split('?')[0] || 'Attachment Document')}
+                                                    </Typography>
+                                                </Stack>
+                                                <Button
+                                                    href={leave.attachment}
+                                                    target="_blank"
+                                                    variant="text"
+                                                    color="primary"
+                                                    endIcon={<FaExternalLinkAlt size={14} />}
+                                                    sx={{
+                                                        fontWeight: 700,
+                                                        textTransform: 'none',
+                                                        fontSize: '0.875rem',
+                                                        '&:hover': {
+                                                            bgcolor: 'transparent',
+                                                        }
+                                                    }}
+                                                >
+                                                    View Attachment
+                                                </Button>
+                                            </Stack>
+                                        </Box>
                                     )}
                                 </Stack>
                             </Box>
@@ -550,12 +579,12 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                 {filteredActions.length > 0 && (
                     <>
                         <Divider />
-                        <DialogActions sx={{ p: 3, justifyContent: 'flex-end', gap: 1.5 }}>
+                        <DialogActions sx={{ p: 2, justifyContent: 'flex-end', gap: 1.5 }}>
                             {filteredActions.map((action) => {
                                 const isPendingThis = submitting && selectedAction?.action === action.action;
                                 const isApprove = action.action.toLowerCase().includes('approve');
                                 const isReject = action.action.toLowerCase().includes('reject');
-                                
+
                                 let label = action.action;
                                 if (isPendingThis) {
                                     if (isApprove) label = 'Approving...';
