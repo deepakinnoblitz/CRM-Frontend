@@ -198,7 +198,7 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                     '& .fc .fc-col-header-cell': {
                         bgcolor: 'rgb(8 163 205)',
                         borderBottom: `2px solid ${alpha('#87CEEB', 0.4)}`,
-                        py: 1.5,
+                        py: 1,
                         '&:first-of-type': {
                             borderTopLeftRadius: 12,
                         },
@@ -212,7 +212,7 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                         textTransform: 'uppercase',
                         letterSpacing: 1,
                         color: '#ffffff',
-                        padding: '10px 8px',
+                        padding: '7px 8px',
                         display: 'inline-block',
                     },
                     '& .fc .fc-scrollgrid': {

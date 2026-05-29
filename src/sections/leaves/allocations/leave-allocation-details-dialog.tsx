@@ -196,7 +196,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
 
             {/* Information Grid */}
             <Box sx={{ px: 2 }}>
-                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, mb: 2, display: 'block' }}>
+                <Typography variant="overline" sx={{ color: 'text.primary', fontWeight: 800, mb: 2, display: 'block' }}>
                     Allocation Details
                 </Typography>
                 <Box
@@ -341,9 +341,9 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
                 open={open}
                 onClose={onClose}
                 fullWidth
-                maxWidth="sm"
+                maxWidth="md"
                 PaperProps={{
-                    sx: { borderRadius: 2.5 },
+                    sx: { borderRadius: 2.5, maxWidth: 680 }
                 }}
             >
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
@@ -365,7 +365,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
                     </Stack>
                 </DialogTitle>
 
-                <DialogContent sx={{ p: 3 }}>
+                <DialogContent sx={{ p: 3, px: 5 }}>
                     {fetching || (loading && !allocation) ? (
                         <Stack alignItems="center" justifyContent="center" sx={{ py: 10, minHeight: 200 }}>
                             <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -434,7 +434,7 @@ export function LeaveAllocationDetailsDialog({ open, onClose, allocationId, onRe
 function DetailItem({ label, value, icon, color = 'text.primary' }: { label: string; value?: string | null; icon: string; color?: string }) {
     return (
         <Box>
-            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
+            <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
                 {label}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

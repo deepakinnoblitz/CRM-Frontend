@@ -394,6 +394,21 @@ export function LeaveAllocationView() {
                                 setEmployee(newValue ? newValue.name : '');
                                 if (formErrors.employee) setFormErrors((prev) => ({ ...prev, employee: '' }));
                             }}
+                            renderOption={(props, option) => {
+                                const { key, ...optionProps } = props as any;
+                                return (
+                                    <li key={key} {...optionProps}>
+                                        <Stack spacing={0.5}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                {option.employee_name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                ID: {option.name}
+                                            </Typography>
+                                        </Stack>
+                                    </li>
+                                );
+                            }}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
