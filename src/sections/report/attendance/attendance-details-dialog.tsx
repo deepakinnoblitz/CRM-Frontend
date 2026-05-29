@@ -94,24 +94,22 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
                         {/* Header Summary Card */}
                         <Box
                             sx={{
-                                p: 3.5,
-                                borderRadius: 3,
-                                position: 'relative',
-                                overflow: 'hidden',
-                                bgcolor: (theme: any) => alpha(theme.palette.primary.main, 0.03),
-                                border: (theme: any) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-                                boxShadow: (theme: any) => `0 12px 24px -4px ${alpha(theme.palette.common.black, 0.04)}`,
+                                p: 3,
+                                borderRadius: 2,
+                                bgcolor: 'background.paper',
+                                border: (theme: any) => `1px solid ${alpha(theme.palette.grey[500], 0.26)}`,
+                                boxShadow: (theme: any) => theme.customShadows?.z4,
                             }}
                         >
-                            <Stack direction="row" alignItems="center" spacing={2.5} sx={{ mb: 3.5, position: 'relative', zIndex: 1 }}>
+                            <Stack direction="row" alignItems="center" spacing={2.5} sx={{ position: 'relative', zIndex: 1 }}>
                                 <Avatar
                                     src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || attendance?.profile_picture || attendance?.image}
                                     sx={{
                                         width: 72,
                                         height: 72,
                                         borderRadius: '50%',
-                                        border: (theme: any) => `2px solid ${theme.palette.common.white}`,
-                                        boxShadow: (theme: any) => `0 8px 24px -4px ${alpha(theme.palette.primary.main, 0.15)}`,
+                                        border: '3px solid #FFFFFF',
+                                        boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.12)',
                                         bgcolor: (theme: any) => {
                                             const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || attendance?.profile_picture || attendance?.image;
                                             if (img) return 'transparent';
@@ -131,68 +129,52 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
                                 >
                                     {attendance?.employee_name?.charAt(0) || 'U'}
                                 </Avatar>
-                                <Box>
-                                    <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.2, color: 'text.primary' }}>
+                                <Box sx={{ flexGrow: 1 }}>
+                                    <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.2, color: 'text.primary' }}>
                                         {attendance.employee_name}
                                     </Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, mt: 0.2, display: 'block' }}>
-                                        ID: {attendance.employee || attendance.employee_id || '-'}
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, mt: 0.5, display: 'block' }}>
+                                        Employee ID: {attendance.employee || attendance.employee_id || '-'}
                                     </Typography>
                                 </Box>
+                                <Label
+                                    color={getStatusColor(attendance.status)}
+                                    variant="soft"
+                                    sx={{
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: 0.25,
+                                        px: 1.5,
+                                        py: 2,
+                                        borderRadius: 1,
+                                        fontSize: '0.75rem'
+                                    }}
+                                >
+                                    {attendance.status}
+                                </Label>
                             </Stack>
+
+                            <Divider sx={{ borderStyle: 'dashed', my: 2.5 }} />
 
                             <Stack
                                 direction="row"
                                 alignItems="center"
                                 justifyContent="space-between"
-                                sx={{
-                                    p: 2.5,
-                                    borderRadius: 2,
-                                    bgcolor: 'background.paper',
-                                    boxShadow: (theme: any) => theme.customShadows?.z8,
-                                    position: 'relative',
-                                    zIndex: 1,
-                                    border: (theme: any) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
-                                }}
                             >
-                                <Stack spacing={0.5} flex={1}>
-                                    <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, textTransform: 'uppercase', fontSize: '11px' }}>
-                                        DATE
+                                <Stack spacing={0.5}>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '11px' }}>
+                                        Date
                                     </Typography>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 900, color: 'text.primary' }}>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
                                         {dayjs(attendance.attendance_date).format('DD MMM YYYY')}
                                     </Typography>
                                 </Stack>
 
-                                <Divider orientation="vertical" flexItem sx={{ mx: 3, borderStyle: 'dashed' }} />
-
-                                <Stack spacing={0.5} flex={1}>
-                                    <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, textTransform: 'uppercase', fontSize: '11px' }}>
-                                        STATUS
+                                <Stack spacing={0.5} alignItems="flex-end" sx={{ textAlign: 'right' }}>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '11px' }}>
+                                        Working Hours
                                     </Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                        <Label
-                                            color={getStatusColor(attendance.status)}
-                                            variant="soft"
-                                            sx={{
-                                                fontWeight: 900,
-                                                textTransform: 'uppercase',
-                                                letterSpacing: 0.5,
-                                                px: 1.5
-                                            }}
-                                        >
-                                            {attendance.status}
-                                        </Label>
-                                    </Box>
-                                </Stack>
-
-                                <Divider orientation="vertical" flexItem sx={{ mx: 3, borderStyle: 'dashed' }} />
-
-                                <Stack spacing={0.5} flex={1}>
-                                    <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 800, textTransform: 'uppercase', fontSize: '11px' }}>
-                                        WORKING HOURS
-                                    </Typography>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 900, color: 'primary.main' }}>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>
                                         {attendance.working_hours_display || '00:00'}
                                     </Typography>
                                 </Stack>
