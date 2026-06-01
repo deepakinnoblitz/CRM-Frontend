@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
@@ -22,6 +23,7 @@ type Props = {
   onSubmit: () => void;
   onCancel: () => void;
   index: number;
+  hideActions?: boolean;
 };
 
 export function EmployeeEvaluationEventTableRow({
@@ -34,6 +36,7 @@ export function EmployeeEvaluationEventTableRow({
   onSubmit,
   onCancel,
   index,
+  hideActions,
 }: Props) {
   const { name, employee, employee_name, trait, evaluation_type, score_change, evaluation_date, hr_user, docstatus } = row;
 
@@ -49,24 +52,24 @@ export function EmployeeEvaluationEventTableRow({
       <TableCell align="center">
         <Box
           sx={{
-              width: 28,
-              height: 28,
-              display: 'flex',
-              borderRadius: '50%',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-              color: 'primary.main',
-              typography: 'subtitle2',
-              fontWeight: 800,
-              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
-              mx: 'auto',
-              transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
-              '&:hover': {
-                  bgcolor: 'primary.main',
-                  color: 'primary.contrastText',
-                  transform: 'scale(1.1)',
-              },
+            width: 28,
+            height: 28,
+            display: 'flex',
+            borderRadius: '50%',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+            color: 'primary.main',
+            typography: 'subtitle2',
+            fontWeight: 800,
+            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+            mx: 'auto',
+            transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+            '&:hover': {
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              transform: 'scale(1.1)',
+            },
           }}
         >
           {index + 1}
@@ -77,7 +80,7 @@ export function EmployeeEvaluationEventTableRow({
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
             {employee_name || 'Unknown'}
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             {employee}
           </Typography>
         </Box>
@@ -105,27 +108,31 @@ export function EmployeeEvaluationEventTableRow({
         </Label>
       </TableCell>
       <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
-        {docstatus === 0 && (
-          <>
-            <IconButton onClick={onSubmit} sx={{ color: 'success.main' }}>
-              <Iconify icon="solar:check-circle-bold" />
+        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+          {!hideActions && docstatus === 0 && (
+            <>
+              <IconButton size="small" onClick={onSubmit} sx={{ color: 'success.main' }}>
+                <Iconify icon="solar:check-circle-bold" />
+              </IconButton>
+              <IconButton size="small" onClick={onEdit} sx={{ color: 'primary.main' }}>
+                <Iconify icon="solar:pen-bold" />
+              </IconButton>
+            </>
+          )}
+          {!hideActions && docstatus === 1 && (
+            <IconButton size="small" onClick={onCancel} sx={{ color: 'error.main' }}>
+              <Iconify icon="solar:close-circle-bold" />
             </IconButton>
-            <IconButton onClick={onEdit} sx={{ color: 'warning.main' }}>
-              <Iconify icon="solar:pen-bold" />
-            </IconButton>
-          </>
-        )}
-        {docstatus === 1 && (
-          <IconButton onClick={onCancel} sx={{ color: 'error.main' }}>
-            <Iconify icon="solar:close-circle-bold" />
+          )}
+          <IconButton size="small" onClick={onView} sx={{ color: 'info.main' }}>
+            <Iconify icon="solar:eye-bold" />
           </IconButton>
-        )}
-        <IconButton onClick={onView} sx={{ color: 'primary.main' }}>
-          <Iconify icon="solar:eye-bold" />
-        </IconButton>
-        <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
-          <Iconify icon="solar:trash-bin-trash-bold" />
-        </IconButton>
+          {!hideActions && (
+            <IconButton size="small" onClick={onDelete} sx={{ color: 'error.main' }}>
+              <Iconify icon="solar:trash-bin-trash-bold" />
+            </IconButton>
+          )}
+        </Stack>
       </TableCell>
     </TableRow>
   );

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { IoMdCloudDownload } from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -12,6 +13,7 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useContacts } from 'src/hooks/useContacts';
 
@@ -139,7 +141,8 @@ export function ContactView() {
         filters.source_lead !== 'all' ||
         filters.country !== 'all' ||
         filters.state !== 'all' ||
-        filters.city !== 'all';
+        filters.city !== 'all' ||
+        !!filterName;
 
     useEffect(() => {
         getContactPermissions().then(setPermissions);
@@ -251,7 +254,7 @@ export function ContactView() {
         if (!deleteId) return;
         try {
             await deleteContact(deleteId);
-            setSnackbar({ open: true, message: 'Contact deleted successfully', severity: 'success' });
+            setSnackbar({ open: true, message: 'Clients deleted successfully', severity: 'success' });
             await refetch();
         } catch (e: any) {
             console.error(e);
@@ -361,10 +364,10 @@ export function ContactView() {
 
             if (currentContactId) {
                 await updateContact(currentContactId, contactData);
-                setSnackbar({ open: true, message: 'Contact updated successfully', severity: 'success' });
+                setSnackbar({ open: true, message: 'Clients updated successfully', severity: 'success' });
             } else {
                 await createContact(contactData);
-                setSnackbar({ open: true, message: 'Contact created successfully', severity: 'success' });
+                setSnackbar({ open: true, message: 'Clients created successfully', severity: 'success' });
             }
 
             await refetch();
@@ -413,19 +416,19 @@ export function ContactView() {
     const empty = !loading && !data.length && !filterName && !canReset;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
-                    Contacts
+                    Clients
                 </Typography>
 
                 {permissions.write && (
                     <Box sx={{ display: 'flex', gap: 2 }}>
                         <Button
-                            variant="outlined"
-                            startIcon={<Iconify icon={"solar:import-bold-duotone" as any} />}
+                            variant="contained"
+                            startIcon={<IoMdCloudDownload size={20} />}
                             onClick={() => setOpenImport(true)}
-                            sx={{ color: '#08a3cd', borderColor: '#08a3cd', '&:hover': { borderColor: '#068fb3', bgcolor: 'rgba(8, 163, 205, 0.04)' } }}
+                            sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
                         >
                             Import
                         </Button>
@@ -435,7 +438,7 @@ export function ContactView() {
                             onClick={handleOpenCreate}
                             sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
                         >
-                            New Contact
+                            New Client
                         </Button>
                     </Box>
                 )}
@@ -449,7 +452,7 @@ export function ContactView() {
                         setFilterName(e.target.value);
                         setPage(0);
                     }}
-                    searchPlaceholder="Search contacts..."
+                    searchPlaceholder="Search Clients..."
                     onOpenFilter={() => setOpenFilters(true)}
                     canReset={canReset}
                     sortBy={sortBy}
@@ -478,55 +481,66 @@ export function ContactView() {
                                     { id: 'sourceLead', label: 'Source Lead' },
                                     { id: 'phone', label: 'Phone' },
                                     { id: 'email', label: 'Email' },
-                                    { id: '' },
+                                    { id: 'actions', label: 'Actions', align: 'right' },
                                 ]}
                             />
 
                             <TableBody>
-                                {loading && (
-                                    <TableEmptyRows height={68} emptyRows={5} />
-                                )}
-
-                                {!loading && data.map((row, index) => (
-                                    <ContactTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            firstName: row.first_name,
-                                            companyName: getString(row.company_name) || '',
-                                            email: getString(row.email) || '',
-                                            phone: getString(row.phone) || '',
-                                            avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
-                                            sourceLead: row.source_lead ? `${getString(row.source_lead)} - ${leadOptions.find(l => l.name === getString(row.source_lead))?.lead_name || ''}` : '',
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row.name)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onDelete={() => handleDeleteClick(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={10}>
-                                            <EmptyContent
-                                                title="No contacts found"
-                                                description="Create a new contact to track your professional network."
-                                                icon="solar:users-group-rounded-bold-duotone"
-                                            />
+                                        <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <ContactTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    firstName: row.first_name,
+                                                    companyName: getString(row.company_name) || '',
+                                                    companyNames: row.company_names || [],
+                                                    email: getString(row.email) || '',
+                                                    phone: getString(row.phone) || '',
+                                                    avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
+                                                    sourceLeadId: row.source_lead ? getString(row.source_lead) : '',
+                                                    sourceLeadName: row.source_lead ? (leadOptions.find(l => l.name === getString(row.source_lead))?.lead_name || '') : '',
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row.name)}
+                                                onEdit={() => handleEditRow(row.name)}
+                                                onDelete={() => handleDeleteClick(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
 
-                                {!empty && (
-                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={10} sx={{py:10}}>
+                                                    <EmptyContent
+                                                        title="No contacts found"
+                                                        description="Create a new Client to track your professional network."
+                                                        icon="solar:users-group-rounded-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -573,7 +587,7 @@ export function ContactView() {
                 open={openDelete}
                 onClose={() => setOpenDelete(false)}
                 title="Confirm Delete"
-                content="Are you sure you want to delete this contact?"
+                content="Are you sure you want to delete this Clients?"
                 action={
                     <Button onClick={handleConfirmDelete} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
                         Delete

@@ -13,14 +13,18 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchUserPermissions, createUserPermission, deleteUserPermission } from 'src/api/user-permissions';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { TableNoData } from '../../user/table-no-data';
+import { TableEmptyRows } from '../../user/table-empty-rows';
 import { LeadTableToolbar } from '../../lead/lead-table-toolbar';
 import { UserPermissionTableRow } from '../user-permission-table-row';
 import { UserPermissionTableHead } from '../user-permission-table-head';
@@ -205,6 +209,9 @@ export const UserPermissionView = forwardRef(({ hideHeader = false, hideActionBu
 
     const canReset = !!filterName || !!filters.user || !!filters.allow || !!filters.for_value;
 
+    const notFound = !loading && data.length === 0 && (!!filterName || canReset);
+    const empty = !loading && data.length === 0 && !filterName && !canReset;
+
     const renderContent = (
         <>
             {!hideActionButton && (
@@ -256,26 +263,48 @@ export const UserPermissionView = forwardRef(({ hideHeader = false, hideActionBu
                             />
 
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <UserPermissionTableRow
-                                        key={row.name}
-                                        row={row}
-                                        selected={false}
-                                        index={page * rowsPerPage + index}
-                                        onSelectRow={() => { }}
-                                        onEditRow={() => handleEditRow(row)}
-                                        onDeleteRow={() => handleDeleteRow(row.name)}
-                                    />
-                                ))}
-
-                                {!loading && data.length === 0 && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-                                            <Typography variant="body2" color="text.secondary">
-                                                No user permissions found
-                                            </Typography>
+                                        <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <UserPermissionTableRow
+                                                key={row.name}
+                                                row={row}
+                                                selected={false}
+                                                index={page * rowsPerPage + index}
+                                                onSelectRow={() => { }}
+                                                onEditRow={() => handleEditRow(row)}
+                                                onDeleteRow={() => handleDeleteRow(row.name)}
+                                            />
+                                        ))}
+
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={5}>
+                                                    <EmptyContent
+                                                        title="No user permissions found"
+                                                        description="You haven't created any user permissions yet."
+                                                        icon="solar:lock-password-bold-duotone"
+                                                        sx={{ py: 5 }}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -347,7 +376,7 @@ export const UserPermissionView = forwardRef(({ hideHeader = false, hideActionBu
     }
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             {renderContent}
         </DashboardContent>
     );

@@ -23,6 +23,7 @@ import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -62,7 +63,7 @@ export function JobOpeningsView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('posted_on');
+    const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
     const [openFilters, setOpenFilters] = useState(false);
     const [locations, setLocations] = useState<string[]>([]);
@@ -73,7 +74,7 @@ export function JobOpeningsView() {
         endDate: null as string | null
     });
 
-    const { data, total, refetch } = useJobOpenings(
+    const { data, total, loading, refetch } = useJobOpenings(
         page + 1,
         rowsPerPage,
         filterName,
@@ -82,7 +83,7 @@ export function JobOpeningsView() {
         filters
     );
 
-    const empty = !data.length && !filterName;
+    const empty = !loading && !data.length && !filterName;
 
     const [permissions, setPermissions] = useState({ read: false, write: false, delete: false });
 
@@ -280,11 +281,11 @@ export function JobOpeningsView() {
         setPage(0);
     };
 
-    const canReset = filters.status !== 'all' || filters.location !== 'all' || filters.startDate !== null || filters.endDate !== null;
+    const canReset = filters.status !== 'all' || filters.location !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const handleSortChange = (value: string) => {
-        if (value === 'date_desc') { setOrderBy('posted_on'); setOrder('desc'); }
-        else if (value === 'date_asc') { setOrderBy('posted_on'); setOrder('asc'); }
+        if (value === 'date_desc') { setOrderBy('modified'); setOrder('desc'); }
+        else if (value === 'date_asc') { setOrderBy('modified'); setOrder('asc'); }
         else if (value === 'title_asc') { setOrderBy('job_title'); setOrder('asc'); }
         else if (value === 'title_desc') { setOrderBy('job_title'); setOrder('desc'); }
         else if (value === 'location_asc') { setOrderBy('location'); setOrder('asc'); }
@@ -293,7 +294,7 @@ export function JobOpeningsView() {
     };
 
     const getCurrentSortValue = () => {
-        if (orderBy === 'posted_on') return order === 'desc' ? 'date_desc' : 'date_asc';
+        if (orderBy === 'modified') return order === 'desc' ? 'date_desc' : 'date_asc';
         if (orderBy === 'job_title') return order === 'desc' ? 'title_desc' : 'title_asc';
         if (orderBy === 'location') return order === 'desc' ? 'location_desc' : 'location_asc';
         return 'date_desc';
@@ -303,10 +304,10 @@ export function JobOpeningsView() {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const notFound = !data.length && !!filterName;
+    const notFound = !loading && !data.length && !!filterName;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5 }}>
                 <Typography variant="h4">Job Openings</Typography>
                 {permissions.write && (
@@ -362,48 +363,55 @@ export function JobOpeningsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <JobOpeningTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            job_title: row.job_title,
-                                            designation: row.designation,
-                                            posted_on: row.posted_on,
-                                            status: row.status,
-                                            location: row.location,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
-                                            <EmptyContent
-                                                title="No job openings"
-                                                description="Create your first job opening to start hiring."
-                                                icon="solar:case-round-minimalistic-bold-duotone"
-                                            />
+                                        <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <JobOpeningTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    job_title: row.job_title,
+                                                    designation: row.designation,
+                                                    posted_on: row.posted_on,
+                                                    status: row.status,
+                                                    location: row.location,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row)}
+                                                onEdit={() => handleEditRow(row)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={6}>
+                                                    <EmptyContent
+                                                        title="No job openings"
+                                                        description="Create your first job opening to start hiring."
+                                                        icon="solar:case-round-minimalistic-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -422,37 +430,43 @@ export function JobOpeningsView() {
             </Card>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog
+                open={openCreate}
+                onClose={handleCloseCreate}
+                fullWidth
+                maxWidth="md"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }
+                }}
+            >
                 <DialogTitle
                     sx={{
                         m: 0,
-                        p: 2.5,
+                        p: 2,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        bgcolor: 'background.neutral',
+                        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
                     }}
                 >
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
                         {editJob ? 'Edit Job Opening' : 'New Job Opening'}
                     </Typography>
 
                     <IconButton
                         onClick={handleCloseCreate}
-                        sx={{
-                            p: 0.75,
-                            bgcolor: 'background.paper',
-                            boxShadow: (theme) => theme.customShadows.z8,
-                            '&:hover': {
-                                bgcolor: 'background.paper',
-                                color: 'error.main',
-                            },
-                        }}
+                        sx={{ color: (theme) => theme.palette.grey[500] }}
                     >
                         <Iconify icon="mingcute:close-line" width={20} />
                     </IconButton>
                 </DialogTitle>
-                <DialogContent>
+                <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <Stack spacing={3} sx={{ mt: 2 }}>
                             <TextField
@@ -611,7 +625,7 @@ export function JobOpeningsView() {
                         </Stack>
                     </LocalizationProvider>
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ p: 1.5 }}>
                     <Button variant="contained" onClick={handleSubmit}>
                         {editJob ? 'Update' : 'Create'}
                     </Button>

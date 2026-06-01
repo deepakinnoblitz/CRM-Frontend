@@ -5,11 +5,12 @@ export interface Deal {
     name: string;
     deal_title: string;
     account: string;
+    account_name?: string;
     contact?: string;
     contact_name?: string;
     value: number;
     expected_close_date?: string;
-    stage: 'Qualification' | 'Needs Analysis' | 'Meeting Scheduled' | 'Proposal Sent' | 'Negotiation' | 'Closed Won' | 'Closed Lost';
+    stage: 'Just In' | 'Working' | 'Estimation Created' | 'Estimation Sent' | 'Invoice Created' | 'Invoice Sent' | 'Special Approval' | 'Ready for Delivery' | 'Project Started' | 'Closed';
     probability?: number;
     type?: 'Existing Business' | 'New Business';
     source_lead?: string;

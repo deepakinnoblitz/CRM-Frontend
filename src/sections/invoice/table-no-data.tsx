@@ -7,13 +7,14 @@ import Typography from '@mui/material/Typography';
 
 type TableNoDataProps = {
     searchQuery: string;
+    colSpan?: number;
 };
 
-export function TableNoData({ searchQuery }: TableNoDataProps) {
+export function TableNoData({ searchQuery, colSpan = 12 }: TableNoDataProps) {
     return (
         <TableRow>
-            <TableCell align="center" colSpan={8}>
-                <Box sx={{ py: 15, textAlign: 'center' }}>
+            <TableCell align="center" colSpan={colSpan}>
+                <Box sx={{ py: 10, textAlign: 'center' }}>
                     <Typography variant="h6" sx={{ mb: 1 }}>
                         Not found
                     </Typography>

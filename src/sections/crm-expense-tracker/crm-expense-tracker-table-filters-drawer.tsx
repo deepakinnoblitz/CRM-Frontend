@@ -5,6 +5,7 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -128,7 +129,17 @@ export default function CRMExpenseTrackerTableFiltersDrawer({
                             fullWidth
                             value={filters.type}
                             onChange={handleFilterType}
-                            SelectProps={{ native: true }}
+                            SelectProps={{
+                                MenuProps: {
+                                    PaperProps: {
+                                        sx: {
+                                            maxHeight: 280,
+                                            borderRadius: 1.5,
+                                            boxShadow: (theme: any) => theme.customShadows?.z20 || theme.shadows[10],
+                                        },
+                                    },
+                                },
+                            }}
                             size="small"
                             sx={{
                                 '& .MuiOutlinedInput-root': {
@@ -140,9 +151,9 @@ export default function CRMExpenseTrackerTableFiltersDrawer({
                                 },
                             }}
                         >
-                            <option value="all">All Types</option>
-                            <option value="Income">Income</option>
-                            <option value="Expense">Expense</option>
+                            <MenuItem value="all">All Types</MenuItem>
+                            <MenuItem value="Income">Income</MenuItem>
+                            <MenuItem value="Expense">Expense</MenuItem>
                         </TextField>
                     </Stack>
 

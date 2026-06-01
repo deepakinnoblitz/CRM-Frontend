@@ -42,11 +42,11 @@ import { EstimationTableFiltersDrawer } from '../estimation-table-filters-drawer
 
 const TABLE_HEAD = [
     { id: 'ref_no', label: 'Ref No' },
-    { id: 'client_name', label: 'Customer ID' },
-    { id: 'customer_name', label: 'Customer' },
+    { id: 'billing_name', label: 'Billing Name' },
+    { id: 'client_name', label: 'Client' },
     { id: 'estimate_date', label: 'Date' },
     { id: 'grand_total', label: 'Amount', align: 'right' },
-    { id: '' },
+    { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
 // ----------------------------------------------------------------------
@@ -121,7 +121,7 @@ export function EstimationListView({ hideTitle }: Props) {
         table.onResetPage();
     };
 
-    const canReset = filters.client_name !== 'all' || !!filters.ref_no || !!filters.estimate_date;
+    const canReset = filters.client_name !== 'all' || !!filters.ref_no || !!filters.estimate_date || !!filterName;
 
     const handleFilterName = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -238,46 +238,60 @@ export function EstimationListView({ hideTitle }: Props) {
                                 headLabel={TABLE_HEAD}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <EstimationTableRow
-                                        key={row.name}
-                                        index={table.page * table.rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            ref_no: row.ref_no,
-                                            client_name: row.client_name || '',
-                                            customer_name: row.customer_name || '',
-                                            estimate_date: row.estimate_date,
-                                            grand_total: row.grand_total || 0,
-                                        }}
-                                        selected={table.selected.includes(row.name)}
-                                        onSelectRow={() => table.onSelectRow(row.name)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onView={() => handleViewRow(row.name)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        onPrint={() => handlePrintRow(row.name, row.ref_no)}
-                                        onPreview={() => handlePreviewRow(row.name)}
-                                    />
-                                ))}
-
-                                <TableEmptyRows
-                                    height={77}
-                                    emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                />
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
-                                            <EmptyContent
-                                                title="No estimations found"
-                                                description="Create a new estimation to track your sales pipeline."
-                                                icon="solar:document-text-bold-duotone"
-                                            />
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <EstimationTableRow
+                                                key={row.name}
+                                                index={table.page * table.rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    ref_no: row.ref_no,
+                                                    client_name: row.client_name || '',
+                                                    customer_name: row.customer_name || '',
+                                                    billing_name: row.billing_name || '',
+                                                    billing_account_name: row.billing_account_name || '',
+                                                    estimate_date: row.estimate_date,
+                                                    grand_total: row.grand_total || 0,
+                                                }}
+                                                selected={table.selected.includes(row.name)}
+                                                onSelectRow={() => table.onSelectRow(row.name)}
+                                                onEdit={() => handleEditRow(row.name)}
+                                                onView={() => handleViewRow(row.name)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                onPrint={() => handlePrintRow(row.name, row.ref_no)}
+                                                onPreview={() => handlePreviewRow(row.name)}
+                                            />
+                                        ))}
+
+                                        {notFound && <TableNoData colSpan={8} searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={8}>
+                                                    <EmptyContent
+                                                        title="No estimations found"
+                                                        description="Create a new estimation to track your sales pipeline."
+                                                        icon="solar:document-text-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -350,7 +364,7 @@ export function EstimationListView({ hideTitle }: Props) {
         return renderContent;
     }
 
-    return <DashboardContent maxWidth={false}>{renderContent}</DashboardContent>;
+    return <DashboardContent maxWidth={false} sx={{ mt: 2 }}>{renderContent}</DashboardContent>;
 }
 
 // ----------------------------------------------------------------------

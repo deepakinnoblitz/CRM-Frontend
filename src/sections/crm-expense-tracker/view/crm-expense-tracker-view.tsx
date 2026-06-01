@@ -12,6 +12,7 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
@@ -176,13 +177,13 @@ export default function CRMExpenseTrackerView() {
         });
     };
 
-    const canReset = filters.type !== 'all' || !!filters.startDate || !!filters.endDate;
+    const canReset = filters.type !== 'all' || !!filters.startDate || !!filters.endDate || !!filterName;
 
     const notFound = !loading && !data.length && (!!filterName || canReset);
     const empty = !loading && !data.length && !filterName && !canReset;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Expense Tracker
@@ -224,52 +225,63 @@ export default function CRMExpenseTrackerView() {
                                 hideCheckbox
                                 showIndex
                                 headLabel={[
-                                    { id: 'type', label: 'Type' },
                                     { id: 'titlenotes', label: 'Title (Notes)' },
+                                    { id: 'type', label: 'Type' },
+                                    { id: 'date_time', label: 'Date' },
                                     { id: 'amount', label: 'Amount' },
-                                    { id: '' },
+                                    { id: 'actions', label: 'Actions', align: 'right' },
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <CRMExpenseTrackerTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        row={{
-                                            id: row.name,
-                                            name: row.name,
-                                            type: row.type,
-                                            titlenotes: row.titlenotes,
-                                            amount: row.amount,
-                                            creation: row.creation,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onEdit={() => handleOpenDialog(row)}
-                                        onDelete={() => setConfirmDelete({ open: true, id: row.name })}
-                                        hideCheckbox
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={7}>
-                                            <EmptyContent
-                                                title="No records found"
-                                                description="You haven't added any expense tracker records yet. Click 'Add Expense Tracker' to get started."
-                                                icon="solar:wallet-money-bold-duotone"
-                                            />
+                                        <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <CRMExpenseTrackerTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                row={{
+                                                    id: row.name,
+                                                    name: row.name,
+                                                    type: row.type,
+                                                    titlenotes: row.titlenotes,
+                                                    amount: row.amount,
+                                                    date_time: row.date_time,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onEdit={() => handleOpenDialog(row)}
+                                                onDelete={() => setConfirmDelete({ open: true, id: row.name })}
+                                                hideCheckbox
+                                            />
+                                        ))}
 
-                                {!loading && data.length < rowsPerPage && !empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={7}>
+                                                    <EmptyContent
+                                                        title="No records found"
+                                                        description="You haven't added any expense tracker records yet. Click 'Add Expense Tracker' to get started."
+                                                        icon="solar:wallet-money-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {data.length < rowsPerPage && !empty && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

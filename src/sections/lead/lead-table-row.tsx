@@ -4,6 +4,7 @@ import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
+import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
 import { Label } from 'src/components/label';
@@ -171,18 +172,23 @@ export function LeadTableRow({
             alignItems: 'center',
           }}
         >
-
-          {row.name}
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, maxWidth: 240 }}>
+            {row.name}
+          </Typography>
         </Box>
       </TableCell>
 
-      <TableCell>{row.company}</TableCell>
-
-      <TableCell>{row.country || '-'}</TableCell>
+      <TableCell>
+        <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: 240 }}>
+          {row.company}
+        </Typography>
+      </TableCell>
 
       <TableCell>{row.phone}</TableCell>
 
       <TableCell>{row.email}</TableCell>
+
+      <TableCell>{row.country || '-'}</TableCell>
 
       <TableCell>
         <Label
@@ -199,6 +205,9 @@ export function LeadTableRow({
 
       <TableCell align="right">
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <IconButton onClick={onView} sx={{ color: 'info.main' }}>
+            <Iconify icon="solar:eye-bold" />
+          </IconButton>
           {canEdit && (
             <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
               <Iconify icon="solar:pen-bold" />
@@ -209,9 +218,6 @@ export function LeadTableRow({
               <Iconify icon="solar:trash-bin-trash-bold" />
             </IconButton>
           )}
-          <IconButton onClick={onView} sx={{ color: 'info.main' }}>
-            <Iconify icon="solar:eye-bold" />
-          </IconButton>
         </Box>
       </TableCell>
     </TableRow>

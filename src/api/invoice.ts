@@ -109,6 +109,7 @@ export async function fetchInvoices(params: {
             "ref_no",
             "client_name",
             "customer_name",
+            "billing_name",
             "invoice_date",
             "grand_total",
             "received_amount",
@@ -124,7 +125,7 @@ export async function fetchInvoices(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Invoice&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Invoice&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch invoices");

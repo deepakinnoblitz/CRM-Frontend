@@ -32,6 +32,7 @@ export async function fetchLeads(params: {
     const or_filters: any[] = [];
 
     if (params.search) {
+        or_filters.push(["Lead", "name", "like", `%${params.search}%`]);
         or_filters.push(["Lead", "lead_name", "like", `%${params.search}%`]);
         or_filters.push(["Lead", "email", "like", `%${params.search}%`]);
         or_filters.push(["Lead", "company_name", "like", `%${params.search}%`]);
@@ -92,7 +93,7 @@ export async function fetchLeads(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Lead&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Lead&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch leads");
@@ -122,6 +123,43 @@ export async function createLead(data: Partial<Lead>) {
     });
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create lead"));
+    return json.message;
+}
+
+export async function createLeadFrom(name: string) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: "Lead From",
+                lead_from: name,
+            }
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create Lead From"));
+    return json.message;
+}
+
+export async function createService(name: string) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: "Service",
+                service_id: name,
+                service_name: name,
+            }
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create Service"));
     return json.message;
 }
 

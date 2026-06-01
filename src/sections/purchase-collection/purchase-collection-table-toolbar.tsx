@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
+import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
 import { alpha } from '@mui/material/styles';
@@ -33,8 +34,8 @@ const SORT_OPTIONS = [
     { value: 'collection_date_asc', label: 'Date: Oldest First' },
     { value: 'amount_collected_desc', label: 'Amount: High to Low' },
     { value: 'amount_collected_asc', label: 'Amount: Low to High' },
-    { value: 'vendor_name_asc', label: 'Vendor: A to Z' },
-    { value: 'vendor_name_desc', label: 'Vendor: Z to A' },
+    { value: 'amount_to_pay_desc', label: 'Amount to Pay: High to Low' },
+    { value: 'amount_to_pay_asc', label: 'Amount to Pay: Low to High' },
 ];
 
 export default function PurchaseCollectionTableToolbar({
@@ -87,7 +88,7 @@ export default function PurchaseCollectionTableToolbar({
                 <OutlinedInput
                     value={filterName}
                     onChange={onFilterName}
-                    placeholder="Search by ID, Purchase, or Vendor..."
+                    placeholder="Search by ID or Purchase No..."
                     startAdornment={
                         <InputAdornment position="start">
                             <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
@@ -104,33 +105,29 @@ export default function PurchaseCollectionTableToolbar({
                     </IconButton>
                 ) : (
                     <>
-                        <Button
-                            disableRipple
-                            color="inherit"
-                            onClick={onOpenFilter}
-                            endIcon={
-                                <Iconify
-                                    icon="ic:round-filter-list"
-                                    width={20}
-                                    sx={canReset ? { color: 'error.main' } : undefined}
-                                />
-                            }
-                            sx={{
-                                color: 'text.primary',
-                                bgcolor: 'background.neutral',
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                height: 40,
-                                px: 2,
-                                fontWeight: 500,
-                                borderRadius: 1,
-                                '&:hover': {
-                                    bgcolor: 'action.hover',
-                                },
-                            }}
-                        >
-                            Filters
-                        </Button>
+                        {onOpenFilter && (
+                            <Button
+                                disableRipple
+                                color="inherit"
+                                onClick={onOpenFilter}
+                                startIcon={
+                                    <Badge color="error" variant="dot" invisible={!canReset}>
+                                        <Iconify icon="ic:round-filter-list" />
+                                    </Badge>
+                                }
+                                sx={{
+                                    height: 40,
+                                    px: 2,
+                                    bgcolor: 'background.neutral',
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    borderRadius: 1,
+                                    fontWeight: 500,
+                                }}
+                            >
+                                Filters
+                            </Button>
+                        )}
 
                         {onSortChange && (
                             <>

@@ -22,6 +22,7 @@ export interface DashboardStats {
 export interface PersonalityDashboardData {
     totalScore: number;
     status: string;
+    howToImprove?: string | string[] | null;
     lastUpdated?: string | null;
     traits: Array<{ trait: string; score: number }>;
 }
@@ -55,9 +56,15 @@ export interface TodayActivities {
     meetings: Meeting[];
 }
 
-export async function fetchDashboardStats(): Promise<DashboardStats> {
+export async function fetchDashboardStats(start_date?: string, end_date?: string): Promise<DashboardStats> {
     try {
-        const res = await frappeRequest('/api/method/company.company.frontend_api.get_dashboard_stats');
+        let url = '/api/method/company.company.frontend_api.get_dashboard_stats';
+        const params = new URLSearchParams();
+        if (start_date) params.append('start_date', start_date);
+        if (end_date) params.append('end_date', end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const res = await frappeRequest(url);
 
         if (!res.ok) {
             const error = await res.json();
@@ -120,6 +127,8 @@ export interface HRDashboardData {
     todays_leaves: Array<{ employee_name: string; employee: string }>;
     todays_birthdays: Array<{ employee_name: string; employee: string }>;
     holidays: Array<{ date: string; description: string }>;
+    pending_leaves_list: Array<{ name: string; employee_name: string; leave_type: string; from_date: string; to_date: string; total_days: number }>;
+    pending_requests_list: Array<{ name: string; employee_name: string; subject: string; creation: string }>;
 }
 
 export interface EmployeeDashboardData {
@@ -178,6 +187,8 @@ export interface EmployeeDashboardData {
     joining_date?: string | null;
     start_date?: string;
     end_date?: string;
+    weekly_chart_source?: 'Attendance' | 'Daily Log';
+    hide_missing?: boolean;
 }
 
 export async function fetchRecentAnnouncements(): Promise<any[]> {
@@ -332,7 +343,7 @@ export async function fetchEmployeeDashboardData(
 // Get total employee count
 export async function fetchTotalEmployeeCount(): Promise<number> {
     const res = await frappeRequest(
-        `/api/method/frappe.client.get_count?doctype=Employee&filters=${encodeURIComponent(JSON.stringify([]))}`
+        `/api/method/company.company.frontend_api.get_permitted_count?doctype=Employee&filters=${encodeURIComponent(JSON.stringify([]))}`
     );
     if (!res.ok) {
         const error = await res.json();
@@ -346,7 +357,21 @@ export async function fetchTotalEmployeeCount(): Promise<number> {
 export async function fetchPendingLeaveCount(): Promise<number> {
     const filters = [['Leave Application', 'workflow_state', '=', 'Pending']];
     const res = await frappeRequest(
-        `/api/method/frappe.client.get_count?doctype=Leave Application&filters=${encodeURIComponent(JSON.stringify(filters))}`
+        `/api/method/company.company.frontend_api.get_permitted_count?doctype=Leave Application&filters=${encodeURIComponent(JSON.stringify(filters))}`
+    );
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, 'Failed to fetch pending leave count'));
+    }
+    const data = await res.json();
+    return data.message || 0;
+}
+
+// Get pending leave applications count
+export async function fetchPendingRequestCount(): Promise<number> {
+    const filters = [['Request', 'workflow_state', '=', 'Pending']];
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_permitted_count?doctype=Request&filters=${encodeURIComponent(JSON.stringify(filters))}`
     );
     if (!res.ok) {
         const error = await res.json();
@@ -390,13 +415,13 @@ export async function fetchWeeklyPresentAbsentChartData(params?: {
     to_date?: string;
 }): Promise<Array<{ date: string; day: string; present: number; absent: number }>> {
     let url = '/api/method/company.company.frontend_api.get_weekly_present_absent_data';
-    
+
     if (params) {
         const queryParams = new URLSearchParams();
         if (params.filter_type) queryParams.append('filter_type', params.filter_type);
         if (params.from_date) queryParams.append('from_date', params.from_date);
         if (params.to_date) queryParams.append('to_date', params.to_date);
-        
+
         const queryString = queryParams.toString();
         if (queryString) {
             url += `?${queryString}`;
@@ -454,11 +479,15 @@ export interface SalesDashboardData {
     conversion_rate: number;
 }
 
-export async function fetchSalesDashboardData(): Promise<SalesDashboardData> {
+export async function fetchSalesDashboardData(start_date?: string, end_date?: string): Promise<SalesDashboardData> {
     try {
-        const res = await frappeRequest(
-            '/api/method/company.company.frontend_api.get_sales_dashboard_data'
-        );
+        let url = '/api/method/company.company.frontend_api.get_sales_dashboard_data';
+        const params = new URLSearchParams();
+        if (start_date) params.append('start_date', start_date);
+        if (end_date) params.append('end_date', end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const res = await frappeRequest(url);
 
         if (!res.ok) {
             const error = await res.json();
@@ -522,11 +551,15 @@ export interface FinancialTotals {
     categories: string[];
 }
 
-export async function fetchFinancialTotals(): Promise<FinancialTotals> {
+export async function fetchFinancialTotals(start_date?: string, end_date?: string): Promise<FinancialTotals> {
     try {
-        const res = await frappeRequest(
-            '/api/method/company.company.frontend_api.get_financial_totals'
-        );
+        let url = '/api/method/company.company.frontend_api.get_financial_totals';
+        const params = new URLSearchParams();
+        if (start_date) params.append('start_date', start_date);
+        if (end_date) params.append('end_date', end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const res = await frappeRequest(url);
 
         if (!res.ok) {
             const error = await res.json();
@@ -581,9 +614,13 @@ export async function fetchMonthlyEmployee(): Promise<any> {
     }
 }
 
-export async function fetchPersonalityDashboardData(): Promise<PersonalityDashboardData | null> {
+export async function fetchPersonalityDashboardData(employeeId?: string): Promise<PersonalityDashboardData | null> {
     try {
-        const res = await frappeRequest('/api/method/company.company.frontend_api.get_personality_dashboard_data');
+        let url = '/api/method/company.company.frontend_api.get_personality_dashboard_data';
+        if (employeeId) {
+            url += `?employee=${employeeId}`;
+        }
+        const res = await frappeRequest(url);
 
         if (!res.ok) {
             const error = await res.json();

@@ -8,7 +8,6 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import { IconButton } from '@mui/material';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
@@ -24,6 +23,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { IconButton, CircularProgress } from '@mui/material';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -35,7 +35,7 @@ import { getCurrentUserInfo } from 'src/api/auth';
 import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getHRPermissions } from 'src/api/hr-management';
-import { getWFHAttendance, createWFHAttendance, updateWFHAttendance, applyWorkflowAction } from 'src/api/wfh-attendance';
+import { getWFHAttendance, createWFHAttendance, updateWFHAttendance, applyWorkflowAction, handleWFHAction } from 'src/api/wfh-attendance';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -79,7 +79,7 @@ export function WFHAttendanceView() {
         endDate: null
     });
 
-    const canReset = filters.employee !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null;
+    const canReset = filters.employee !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const [openDetails, setOpenDetails] = useState(false);
     const [detailsId, setDetailsId] = useState<string | null>(null);
@@ -346,7 +346,11 @@ export function WFHAttendanceView() {
 
     const handleApplyAction = async (id: string, action: string) => {
         try {
-            await applyWorkflowAction(id, action);
+            if (action === 'Approve' || action === 'Reject') {
+                await handleWFHAction(id, action);
+            } else {
+                await applyWorkflowAction(id, action);
+            }
             setSnackbar({ open: true, message: `Record ${action}ed successfully`, severity: 'success' });
             await refetch();
         } catch (error: any) {
@@ -399,7 +403,20 @@ export function WFHAttendanceView() {
                             helperText={formErrors[fieldname]}
                             InputLabelProps={{ shrink: true }}
                             sx={commonProps.sx}
+                            disabled={!!currentId} // Locked in edit mode
                         />
+                    )}
+                    renderOption={(props, option) => (
+                        <li {...props} key={option.name}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                    {option.employee_name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    ID: {option.name}
+                                </Typography>
+                            </Box>
+                        </li>
                     )}
                 />
             );
@@ -407,7 +424,12 @@ export function WFHAttendanceView() {
 
         if (type === 'select' || type === 'link') {
             return (
-                <TextField {...commonProps} select SelectProps={{ native: true }}>
+                <TextField
+                    {...commonProps}
+                    select
+                    SelectProps={{ native: true }}
+                    disabled={!!currentId} // Locked in edit mode
+                >
                     <option value="">Select {label}</option>
                     {options.map((opt: any) => (
                         <option key={opt.name || opt} value={opt.name || opt}>
@@ -422,6 +444,7 @@ export function WFHAttendanceView() {
             return (
                 <DatePicker
                     label={label}
+                    format="DD-MM-YYYY"
                     value={formData[fieldname] ? dayjs(formData[fieldname]) : null}
                     onChange={(newValue) => handleInputChange(fieldname, newValue?.format('YYYY-MM-DD') || '')}
                     slotProps={{
@@ -434,6 +457,7 @@ export function WFHAttendanceView() {
                             sx: commonProps.sx
                         }
                     }}
+                    disabled={!!currentId}
                 />
             );
         }
@@ -454,18 +478,24 @@ export function WFHAttendanceView() {
                             sx: commonProps.sx
                         }
                     }}
+                    disabled={!!currentId && fieldname !== 'to_time'}
                 />
             );
         }
 
-        return <TextField {...commonProps} />;
+        return (
+            <TextField
+                {...commonProps}
+                disabled={!!currentId} // Locked in edit mode (Task Description)
+            />
+        );
     };
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
-                    WFH Attendance List
+                    WFH Attendance
                 </Typography>
 
                 {permissions.write && (
@@ -529,51 +559,61 @@ export function WFHAttendanceView() {
                             />
 
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <WFHAttendanceTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            employee: row.employee,
-                                            employeeName: row.employee_name,
-                                            date: row.date,
-                                            workflowState: row.workflow_state || 'Draft',
-                                            fromTime: row.from_time,
-                                            toTime: row.to_time,
-                                            totalHours: row.total_hours,
-                                            modified: row.modified,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row.name)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onApplyAction={(action) => handleApplyAction(row.name, action)}
-                                        canEdit={permissions.write}
-                                        isHR={isHR}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
-                                            <EmptyContent
-                                                title="No WFH records"
-                                                description="You haven't added any WFH entries yet."
-                                                icon="solar:calendar-date-bold-duotone"
-                                            />
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <WFHAttendanceTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    employee: row.employee,
+                                                    employeeName: row.employee_name,
+                                                    date: row.date,
+                                                    workflowState: row.workflow_state || 'Draft',
+                                                    fromTime: row.from_time,
+                                                    toTime: row.to_time,
+                                                    totalHours: row.total_hours,
+                                                    modified: row.modified,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row.name)}
+                                                onEdit={() => handleEditRow(row.name)}
+                                                onApplyAction={(action) => handleApplyAction(row.name, action)}
+                                                canEdit={permissions.write}
+                                                isHR={isHR}
+                                            />
+                                        ))}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={8}>
+                                                    <EmptyContent
+                                                        title="No WFH records"
+                                                        description="You haven't added any WFH entries yet."
+                                                        icon="solar:calendar-date-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -592,7 +632,7 @@ export function WFHAttendanceView() {
             </Card>
 
             {/* CREATE/EDIT DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2 } }}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {currentId ? 'Edit WFH Entry' : 'New WFH Entry'}
                     <IconButton onClick={handleCloseCreate} sx={{ color: theme.palette.grey[500] }}>

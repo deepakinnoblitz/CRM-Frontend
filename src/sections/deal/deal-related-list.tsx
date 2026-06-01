@@ -22,6 +22,7 @@ import { fCurrency } from 'src/utils/format-number';
 
 import { fetchInvoices } from 'src/api/invoice';
 import { fetchEstimations } from 'src/api/estimation';
+import { fetchRelatedProposals } from 'src/api/proposal';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -34,10 +35,11 @@ import { LeadTableHead as DataTableHead } from '../lead/lead-table-head';
 
 type Props = {
     dealId: string;
-    type: 'invoices' | 'estimations';
+    type: 'invoices' | 'estimations' | 'proposals' | 'stage_history';
+    deal?: any;
 };
 
-export function DealRelatedList({ dealId, type }: Props) {
+export function DealRelatedList({ dealId, type, deal }: Props) {
     const theme = useTheme();
     const router = useRouter();
     const [data, setData] = useState<any[]>([]);
@@ -68,6 +70,23 @@ export function DealRelatedList({ dealId, type }: Props) {
                     page_size: rowsPerPage,
                     filters: { deal_id: dealId },
                 });
+            } else if (type === 'proposals') {
+                const rows = await fetchRelatedProposals(dealId);
+                setData(rows);
+                setTotal(rows.length);
+                const s = rows.reduce((acc: any, curr: any) => {
+                    acc.total += 0;
+                    return acc;
+                }, { total: 0, paid: 0, balance: 0 });
+                setSummary(s);
+                setLoading(false);
+                return;
+            } else if (type === 'stage_history') {
+                const hist = deal?.stage_history || [];
+                setData(hist);
+                setTotal(hist.length);
+                setLoading(false);
+                return;
             }
 
             const records = res?.data || [];
@@ -91,7 +110,7 @@ export function DealRelatedList({ dealId, type }: Props) {
         } finally {
             setLoading(false);
         }
-    }, [dealId, type, page, rowsPerPage]);
+    }, [dealId, type, page, rowsPerPage, deal]);
 
     useEffect(() => {
         loadData();
@@ -107,6 +126,14 @@ export function DealRelatedList({ dealId, type }: Props) {
     };
 
     const getHeadLabel = () => {
+        if (type === 'stage_history') {
+            return [
+                { id: 'state_from', label: 'State From' },
+                { id: 'state_to', label: 'State To' },
+                { id: 'date_and_time', label: 'Date & Time' },
+                { id: 'change_by', label: 'Updated By' },
+            ];
+        }
         if (type === 'invoices') {
             return [
                 { id: 'ref_no', label: 'Ref No' },
@@ -114,6 +141,15 @@ export function DealRelatedList({ dealId, type }: Props) {
                 { id: 'grand_total', label: 'Total', align: 'right' },
                 { id: 'received_amount', label: 'Received', align: 'right' },
                 { id: 'balance_amount', label: 'Balance', align: 'right' },
+                { id: 'action', label: 'Actions', align: 'right' },
+            ];
+        }
+        if (type === 'proposals') {
+            return [
+                { id: 'reference_no', label: 'Reference No' },
+                { id: 'proposal_title', label: 'Title' },
+                { id: 'proposal_date', label: 'Date' },
+                { id: 'status', label: 'Status' },
                 { id: 'action', label: '' },
             ];
         }
@@ -121,7 +157,7 @@ export function DealRelatedList({ dealId, type }: Props) {
             { id: 'ref_no', label: 'Ref No' },
             { id: 'estimate_date', label: 'Date' },
             { id: 'grand_total', label: 'Total', align: 'right' },
-            { id: 'action', label: '' },
+            { id: 'action', label: 'Actions', align: 'right' },
         ];
     };
 
@@ -136,6 +172,8 @@ export function DealRelatedList({ dealId, type }: Props) {
     const handleCreate = () => {
         if (type === 'estimations') {
             router.push(`/estimations/new?deal_id=${dealId}`);
+        } else if (type === 'proposals') {
+            router.push(`/proposals/new?prospect_id=${dealId}`);
         } else {
             router.push(`/invoices/new?deal_id=${dealId}`);
         }
@@ -144,12 +182,62 @@ export function DealRelatedList({ dealId, type }: Props) {
     const renderRow = (row: any, index: number) => {
         const serialNumber = index + 1 + page * rowsPerPage;
 
+        const renderSNoCell = () => (
+            <TableCell align="center">
+                <Box
+                    sx={{
+                        width: 28,
+                        height: 28,
+                        display: 'flex',
+                        borderRadius: '50%',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: (themeVar) => alpha(themeVar.palette.primary.main, 0.08),
+                        color: 'primary.main',
+                        typography: 'subtitle2',
+                        fontWeight: 800,
+                        border: (themeVar) => `1px solid ${alpha(themeVar.palette.primary.main, 0.16)}`,
+                        mx: 'auto',
+                        transition: (themeVar) => themeVar.transitions.create(['all'], { duration: themeVar.transitions.duration.shorter }),
+                        '&:hover': {
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
+                            transform: 'scale(1.1)',
+                        },
+                    }}
+                >
+                    {serialNumber}
+                </Box>
+            </TableCell>
+        );
+
+        if (type === 'stage_history') {
+            return (
+                <TableRow key={index} hover>
+                    {renderSNoCell()}
+                    <TableCell sx={{ fontWeight: 600, color: 'text.secondary' }}>{row.state_from || 'Initial'}</TableCell>
+                    <TableCell sx={{ fontWeight: 800, color: 'primary.main' }}>{row.state_to}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{row.date_and_time ? fDate(row.date_and_time) : '—'}</TableCell>
+                    <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                            {row.change_by_name || row.change_by}
+                        </Typography>
+                        {row.change_by_name && row.change_by !== row.change_by_name && (
+                            <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>
+                                ID: {row.change_by}
+                            </Typography>
+                        )}
+                    </TableCell>
+                </TableRow>
+            );
+        }
+
         if (type === 'invoices') {
             return (
                 <TableRow key={row.name} hover>
-                    <TableCell align="center">{serialNumber}</TableCell>
+                    {renderSNoCell()}
                     <TableCell sx={{ fontWeight: 700 }}>{row.ref_no}</TableCell>
-                    <TableCell>{fDate(row.invoice_date)}</TableCell>
+                    <TableCell>{row.invoice_date ? fDate(row.invoice_date) : '-'}</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
                     <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.received_amount)}</TableCell>
                     <TableCell align="right" sx={{ color: 'error.main', fontWeight: 700 }}>{fCurrency(row.balance_amount)}</TableCell>
@@ -167,9 +255,9 @@ export function DealRelatedList({ dealId, type }: Props) {
         }
         return (
             <TableRow key={row.name} hover>
-                <TableCell align="center">{serialNumber}</TableCell>
+                {renderSNoCell()}
                 <TableCell sx={{ fontWeight: 700 }}>{row.ref_no}</TableCell>
-                <TableCell>{fDate(row.estimate_date)}</TableCell>
+                <TableCell>{row.estimate_date ? fDate(row.estimate_date) : '-'}</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
                 <TableCell align="right">
                     <IconButton
@@ -184,66 +272,122 @@ export function DealRelatedList({ dealId, type }: Props) {
         );
     };
 
+    const renderProposalRow = (row: any, index: number) => {
+        const serialNumber = index + 1 + page * rowsPerPage;
+        return (
+            <TableRow key={row.name} hover>
+                <TableCell align="center">
+                    <Box
+                        sx={{
+                            width: 28,
+                            height: 28,
+                            display: 'flex',
+                            borderRadius: '50%',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: (themeVar) => alpha(themeVar.palette.primary.main, 0.08),
+                            color: 'primary.main',
+                            typography: 'subtitle2',
+                            fontWeight: 800,
+                            border: (themeVar) => `1px solid ${alpha(themeVar.palette.primary.main, 0.16)}`,
+                            mx: 'auto',
+                            transition: (themeVar) => themeVar.transitions.create(['all'], { duration: themeVar.transitions.duration.shorter }),
+                            '&:hover': {
+                                bgcolor: 'primary.main',
+                                color: 'primary.contrastText',
+                                transform: 'scale(1.1)',
+                            },
+                        }}
+                    >
+                        {serialNumber}
+                    </Box>
+                </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{row.reference_no || row.name}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{row.proposal_title}</TableCell>
+                <TableCell>{row.proposal_date ? fDate(row.proposal_date) : '-'}</TableCell>
+                <TableCell>{row.status || 'Draft'}</TableCell>
+                <TableCell align="right">
+                    <IconButton
+                        color="primary"
+                        onClick={() => router.push(`/proposals/${encodeURIComponent(row.name)}/view`)}
+                        size="small"
+                    >
+                        <Iconify icon="solar:eye-bold" />
+                    </IconButton>
+                </TableCell>
+            </TableRow>
+        );
+    };
+
     return (
         <Stack spacing={3}>
             {/* Header with New Button */}
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Box
-                    sx={{
-                        display: 'grid',
-                        gap: 2,
-                        flexGrow: 1,
-                        gridTemplateColumns: {
-                            xs: 'repeat(1, 1fr)',
-                            sm: type === 'estimations' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-                            md: type === 'estimations' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-                        },
-                    }}
-                >
-                    <SummaryCard
-                        title="Total Volume"
-                        value={fCurrency(summary.total)}
-                        icon="solar:wad-of-money-bold"
-                        color={theme.palette.primary.main}
-                    />
-
-                    {type === 'estimations' ? (
+            {type !== 'stage_history' && (
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gap: 2,
+                            flexGrow: 1,
+                            gridTemplateColumns: {
+                                xs: 'repeat(1, 1fr)',
+                                sm: type === 'estimations' || type === 'proposals' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                                md: type === 'estimations' || type === 'proposals' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                            },
+                        }}
+                    >
                         <SummaryCard
-                            title="Total Count"
-                            value={String(total)}
-                            icon="solar:document-text-bold"
-                            color={theme.palette.info.main}
+                            title="Total Volume"
+                            value={fCurrency(summary.total)}
+                            icon="solar:wad-of-money-bold"
+                            color={theme.palette.primary.main}
                         />
-                    ) : (
-                        <>
-                            <SummaryCard
-                                title="Total Received"
-                                value={fCurrency(summary.paid)}
-                                icon="solar:check-circle-bold"
-                                color={theme.palette.success.main}
-                            />
 
+                        {type === 'estimations' ? (
                             <SummaryCard
-                                title="Outstanding"
-                                value={fCurrency(summary.balance)}
-                                icon="solar:info-circle-bold"
-                                color={theme.palette.error.main}
+                                title="Total Count"
+                                value={String(total)}
+                                icon="solar:document-text-bold"
+                                color={theme.palette.info.main}
                             />
-                        </>
-                    )}
-                </Box>
+                        ) : type === 'proposals' ? (
+                            <SummaryCard
+                                title="Total Proposals"
+                                value={String(total)}
+                                icon="solar:document-text-bold"
+                                color={theme.palette.secondary.main}
+                            />
+                        ) : (
+                            <>
+                                <SummaryCard
+                                    title="Total Received"
+                                    value={fCurrency(summary.paid)}
+                                    icon="solar:check-circle-bold"
+                                    color={theme.palette.success.main}
+                                />
 
-                <Button
-                    variant="contained"
-                    color={type === 'estimations' ? "info" : "success"}
-                    size="small"
-                    startIcon={<Iconify icon="mingcute:add-line" width={16} />}
-                    onClick={handleCreate}
-                    sx={{ height: 40, px: 2, ml: 3 }}
-                >
-                    New {type === 'estimations' ? 'Estimation' : 'Invoice'}
-                </Button>
-            </Stack>
+                                <SummaryCard
+                                    title="Outstanding"
+                                    value={fCurrency(summary.balance)}
+                                    icon="solar:info-circle-bold"
+                                    color={theme.palette.error.main}
+                                />
+                            </>
+                        )}
+                    </Box>
+
+                    <Button
+                        variant="contained"
+                        color={type === 'estimations' ? "info" : type === 'proposals' ? "secondary" : "success"}
+                        size="small"
+                        startIcon={<Iconify icon="mingcute:add-line" width={16} />}
+                        onClick={handleCreate}
+                        sx={{ height: 40, px: 2, ml: 3 }}
+                    >
+                        New {type === 'estimations' ? 'Estimation' : type === 'proposals' ? 'Proposal' : 'Invoice'}
+                    </Button>
+                </Stack>
+            )}
 
             <Card sx={{ border: `1px solid ${alpha(theme.palette.grey[500], 0.12)}`, borderRadius: 1.5 }}>
                 <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
@@ -266,7 +410,9 @@ export function DealRelatedList({ dealId, type }: Props) {
                                     </TableRow>
                                 ) : (
                                     <>
-                                        {data.map((row, index) => renderRow(row, index))}
+                                        {type === 'proposals'
+                                            ? data.map((row, index) => renderProposalRow(row, index))
+                                            : data.map((row, index) => renderRow(row, index))}
                                         {data.length === 0 && (
                                             <TableRow>
                                                 <TableCell colSpan={10}>
@@ -307,30 +453,48 @@ function SummaryCard({ title, value, icon, color }: { title: string; value: stri
             spacing={2}
             sx={{
                 p: 2,
+                pl: 1.5,
                 borderRadius: 2,
+                position: 'relative',
+                overflow: 'hidden',
                 bgcolor: alpha(color, 0.04),
                 border: `1px solid ${alpha(color, 0.1)}`,
             }}
         >
+            {/* Decorative circle */}
             <Box
                 sx={{
-                    width: 40,
-                    height: 40,
+                    position: 'absolute',
+                    top: -24,
+                    right: -24,
+                    width: 96,
+                    height: 96,
+                    borderRadius: '50%',
+                    bgcolor: alpha(color, 0.08),
+                    zIndex: 0,
+                }}
+            />
+            
+            <Box
+                sx={{
+                    width: 56,
+                    height: 56,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    borderRadius: 1.5,
-                    bgcolor: alpha(color, 0.1),
+                    borderRadius: 2,
+                    bgcolor: alpha(color, 0.12),
                     color,
+                    zIndex: 1,
                 }}
             >
-                <Iconify icon={icon as any} width={20} />
+                <Iconify icon={icon as any} width={28} />
             </Box>
-            <Box>
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', fontSize: 10 }}>
+            <Box sx={{ zIndex: 1 }}>
+                <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, mb: 0.5 }}>
                     {title}
                 </Typography>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                <Typography variant="h5" sx={{ fontWeight: 800 }}>
                     {value}
                 </Typography>
             </Box>

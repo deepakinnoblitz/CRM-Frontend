@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { 
+    IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags, 
+    IoMdWallet, IoMdPrint, IoMdTrash, IoMdCreate, IoMdPerson, 
+    IoMdCalendar, IoMdCash, IoMdList, IoMdLink, IoMdDownload,
+    IoMdCheckmarkCircle, IoMdAlert
+} from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -18,10 +24,11 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { handleDirectPrint } from 'src/utils/print';
 import { fCurrency } from 'src/utils/format-number';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getPurchase, deletePurchase } from 'src/api/purchase';
+import { getPurchase, deletePurchase, getPurchasePrintUrl, getDoctypeList } from 'src/api/purchase';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -31,10 +38,13 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 export function PurchaseDetailsView() {
     const { id } = useParams();
     const router = useRouter();
+    const navigate = useNavigate();
 
     const [purchase, setPurchase] = useState<any>(null);
+    const [contactDetails, setContactDetails] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
     const [deleting, setDeleting] = useState(false);
+    const [printing, setPrinting] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
     useEffect(() => {
@@ -45,6 +55,18 @@ export function PurchaseDetailsView() {
                 .finally(() => setFetching(false));
         }
     }, [id]);
+
+    useEffect(() => {
+        if (purchase?.vendor_id || purchase?.vendor || purchase?.vendor_name) {
+            const vid = purchase.vendor_id || purchase.vendor || purchase.vendor_name;
+            getDoctypeList('Contacts', ['name', 'first_name', 'company_name'])
+                .then((contacts) => {
+                    const found = contacts.find((c: any) => c.name === vid);
+                    if (found) setContactDetails(found);
+                })
+                .catch(err => console.error('Failed to fetch contact details', err));
+        }
+    }, [purchase]);
 
     if (fetching) {
         return (
@@ -58,7 +80,7 @@ export function PurchaseDetailsView() {
         return (
             <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Purchase not found</Typography>
-                <Button onClick={() => router.push('/purchase')} sx={{ mt: 3 }}>
+                <Button onClick={() => navigate(-1)} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
             </DashboardContent>
@@ -66,6 +88,8 @@ export function PurchaseDetailsView() {
     }
 
     const {
+        vendor_id,
+        vendor,
         vendor_name,
         bill_date,
         bill_no,
@@ -101,6 +125,13 @@ export function PurchaseDetailsView() {
     const subTotal = total_amount + totalTax;
     const discountAmount = overall_discount_type === 'Flat' ? overall_discount : (subTotal * overall_discount) / 100;
 
+    const parts = (vendor_name || '').split(' - ');
+    const fallbackCompanyName = parts.length > 1 ? parts[1] : parts[0];
+    const fallbackContactName = parts.length > 1 ? parts[0] : '';
+
+    const companyName = contactDetails?.company_name || fallbackCompanyName;
+    const contactName = contactDetails?.first_name || fallbackContactName;
+    const displayId = vendor_id || vendor || contactDetails?.name || fallbackCompanyName;
 
 
     const handleDelete = async () => {
@@ -119,23 +150,34 @@ export function PurchaseDetailsView() {
 
     return (
         <DashboardContent maxWidth={false}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} className="no-print">
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3} className="no-print">
                 <Typography variant="h4">Purchase: {id}</Typography>
                 <Stack direction="row" spacing={2}>
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/purchase')}
-                        startIcon={<Iconify icon={"solar:arrow-left-bold" as any} />}
+                        onClick={() => navigate(-1)}
+                        startIcon={<IoMdArrowBack size={20} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 2.5,
+                            '&:hover': {
+                                bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
+                                borderColor: 'text.primary',
+                            }
+                        }}
                     >
-                        Back to List
+                        Go Back
                     </Button>
                     {paid_amount === 0 && (
                         <Button
                             variant="contained"
                             color="error"
                             onClick={() => setConfirmDeleteOpen(true)}
-                            startIcon={<Iconify icon={"solar:trash-bin-trash-bold" as any} />}
+                            startIcon={<IoMdTrash size={20} />}
+                            sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none' }}
                         >
                             Delete
                         </Button>
@@ -145,7 +187,15 @@ export function PurchaseDetailsView() {
                             variant="contained"
                             color="primary"
                             onClick={() => router.push(`/purchase/edit/${encodeURIComponent(id || '')}`)}
-                            startIcon={<Iconify icon={"solar:pen-bold" as any} />}
+                            startIcon={<IoMdCreate size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#068fb3' }
+                            }}
                         >
                             Edit Purchase
                         </Button>
@@ -167,19 +217,30 @@ export function PurchaseDetailsView() {
                         {/* Vendor Section */}
                         <Stack spacing={1.5}>
                             <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                                <Iconify icon={"solar:user-rounded-bold-duotone" as any} width={20} />
+                                <IoMdPerson size={20} />
                                 <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Vendor Details</Typography>
                             </Stack>
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                                <Typography variant="subtitle1" color="primary.main">{vendor_name}</Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{payment_type} | {payment_terms}</Typography>
+                                <Stack spacing={0.5}>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                        {companyName || '-'}
+                                    </Typography>
+                                    {contactName && (
+                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                            {contactName}
+                                        </Typography>
+                                    )}
+                                    <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600, pt: 0.5 }}>
+                                        ID: {displayId}
+                                    </Typography>
+                                </Stack>
                             </Box>
                         </Stack>
 
                         {/* Document Logistics Section */}
                         <Stack spacing={1.5}>
                             <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                                <Iconify icon={"solar:calendar-bold-duotone" as any} width={20} />
+                                <IoMdCalendar size={20} />
                                 <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Doc Logistics</Typography>
                             </Stack>
                             <Stack spacing={2} sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
@@ -195,22 +256,40 @@ export function PurchaseDetailsView() {
                                     <Typography variant="caption" color="text.disabled">Due Date</Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold', color: 'error.main' }}>{due_date || '-'}</Typography>
                                 </Stack>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="caption" color="text.disabled">Payment Type</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{payment_type || '-'}</Typography>
+                                </Stack>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="caption" color="text.disabled">Payment Terms</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{payment_terms || '-'}</Typography>
+                                </Stack>
                             </Stack>
                         </Stack>
 
                         {/* Summary Stats Section */}
                         <Stack spacing={1.5}>
                             <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                                <Iconify icon={"solar:wad-of-money-bold-duotone" as any} width={20} />
+                                <IoMdCash size={20} />
                                 <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Financial Status</Typography>
                             </Stack>
                             <Stack spacing={2} sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha((balance_amount || 0) > 0 ? theme.palette.error.main : theme.palette.success.main, 0.04), border: (theme) => `1px solid ${alpha((balance_amount || 0) > 0 ? theme.palette.error.main : theme.palette.success.main, 0.12)}` }}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary">Grand Total</Typography>
+                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                        <IoMdWallet size={18} style={{ color: '#08a3cd' }} />
+                                        <Typography variant="caption" color="text.secondary">Grand Total</Typography>
+                                    </Stack>
                                     <Typography variant="subtitle1" color="primary.main">{fCurrency(grand_total)}</Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary">Balance Due</Typography>
+                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                        {(balance_amount || 0) > 0 ? (
+                                            <IoMdAlert size={18} style={{ color: '#FF5630' }} />
+                                        ) : (
+                                            <IoMdCheckmarkCircle size={18} style={{ color: '#02c281' }} />
+                                        )}
+                                        <Typography variant="caption" color="text.secondary">Balance Due</Typography>
+                                    </Stack>
                                     <Typography variant="h6" color={(balance_amount || 0) > 0 ? "error.main" : "success.main"}>{fCurrency(balance_amount)}</Typography>
                                 </Stack>
                             </Stack>
@@ -220,7 +299,7 @@ export function PurchaseDetailsView() {
                     {/* Table Section */}
                     <Box>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2, color: 'text.secondary' }}>
-                            <Iconify icon={"solar:list-bold-duotone" as any} width={20} />
+                            <IoMdList size={20} />
                             <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Purchase Items</Typography>
                         </Stack>
                         <TableContainer sx={{
@@ -333,9 +412,9 @@ export function PurchaseDetailsView() {
                                                     },
                                                 }}
                                             >
-                                                <Iconify icon={"solar:link-bold" as any} width={18} sx={{ mr: 1, color: 'primary.main', flexShrink: 0 }} />
+                                                <IoMdLink size={18} style={{ marginRight: 8, color: '#08a3cd' }} />
                                                 <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>{file.name || file.url.split('/').pop()}</Typography>
-                                                <Iconify icon={"solar:download-bold" as any} width={16} sx={{ ml: 1, color: 'text.disabled' }} />
+                                                <IoMdDownload size={16} style={{ marginLeft: 8, color: '#919EAB' }} />
                                             </Stack>
                                         ))}
                                     </Stack>
@@ -346,33 +425,49 @@ export function PurchaseDetailsView() {
                         {/* Totals Breakdown */}
                         <Stack spacing={2} sx={{ p: 3, borderRadius: 2, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
+                                    <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
+                                </Stack>
                                 <Typography variant="subtitle2">{fCurrency(table_qecz.reduce((sum: number, row: any) => sum + (row.sub_total - row.tax_amount), 0))}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography variant="body2" color="text.secondary">Total Tax</Typography>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <IoMdCalculator size={18} style={{ color: '#7e7e7e' }} />
+                                    <Typography variant="body2" color="text.secondary">Total Tax</Typography>
+                                </Stack>
                                 <Typography variant="subtitle2" color="error.main">+{fCurrency(totalTax)}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography variant="body2" color="text.secondary">Discount ({overall_discount_type === 'Flat' ? 'Flat' : `${overall_discount}%`})</Typography>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <IoMdPricetags size={18} style={{ color: '#7e7e7e' }} />
+                                    <Typography variant="body2" color="text.secondary">Discount ({overall_discount_type === 'Flat' ? 'Flat' : `${overall_discount}%`})</Typography>
+                                </Stack>
                                 <Typography variant="subtitle2" color="success.main">-{fCurrency(discountAmount)}</Typography>
                             </Stack>
                             <Divider sx={{ borderStyle: 'dashed' }} />
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography variant="subtitle1">Grand Total</Typography>
+                                <Stack direction="row" alignItems="center" spacing={1.5}>
+                                    <IoMdWallet size={24} style={{ color: '#08a3cd' }} />
+                                    <Typography variant="subtitle1" sx={{ color: 'primary.main' }}>Grand Total</Typography>
+                                </Stack>
                                 <Typography variant="h6">{fCurrency(grand_total)}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                    <Iconify icon={"solar:hand-money-bold-duotone" as any} width={16} sx={{ color: 'success.main' }} />
+                                <Stack direction="row" spacing={1.5} alignItems="center">
+                                    <IoMdCash size={20} style={{ color: '#02c281' }} />
                                     <Typography variant="body2" color="text.secondary">Paid Amount</Typography>
                                 </Stack>
                                 <Typography variant="subtitle2" color="success.main">{fCurrency(paid_amount)}</Typography>
                             </Stack>
                             <Divider sx={{ borderStyle: 'dashed' }} />
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                    <Iconify icon={"solar:wallet-2-bold-duotone" as any} width={20} sx={{ color: (balance_amount || 0) > 0 ? 'error.main' : 'success.main' }} />
+                                <Stack direction="row" spacing={1.5} alignItems="center">
+                                    {(balance_amount || 0) > 0 ? (
+                                        <IoMdAlert size={24} style={{ color: '#FF5630' }} />
+                                    ) : (
+                                        <IoMdCheckmarkCircle size={24} style={{ color: '#02c281' }} />
+                                    )}
                                     <Typography variant="subtitle1" sx={{ color: (balance_amount || 0) > 0 ? 'error.main' : 'success.main' }}>Balance Due</Typography>
                                 </Stack>
                                 <Typography variant="h5" color={(balance_amount || 0) > 0 ? "error.main" : "success.main"}>{fCurrency(balance_amount)}</Typography>

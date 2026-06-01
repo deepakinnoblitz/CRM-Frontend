@@ -1,10 +1,11 @@
 import dayjs from 'dayjs';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags, IoMdWallet, IoMdPrint, IoMdSwap } from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
@@ -12,13 +13,11 @@ import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
-import AlertTitle from '@mui/material/AlertTitle';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -37,12 +36,15 @@ import { useRouter } from 'src/routes/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
 
+import { getContact } from 'src/api/contacts';
 import { uploadFile } from 'src/api/data-import';
 import { getDoc, getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getInvoice, createItem, updateInvoice } from 'src/api/invoice';
 
 import { Iconify } from 'src/components/iconify';
+
+import { PaymentTermsDialog } from 'src/sections/master/payment-terms/payment-terms-dialog';
 
 import { TaxTypeFormDialog } from '../tax-type-form-dialog';
 import { ContactFormDialog } from '../../contact/contact-form-dialog';
@@ -76,10 +78,12 @@ export function InvoiceEditView() {
     const [customerOptions, setCustomerOptions] = useState<any[]>([]);
     const [itemOptions, setItemOptions] = useState<any[]>([]);
     const [taxOptions, setTaxOptions] = useState<any[]>([]);
+    const [paymentTermsOptions, setPaymentTermsOptions] = useState<any[]>([]);
 
     const [customerId, setCustomerId] = useState('');
     const [customerName, setCustomerName] = useState('');
     const [billingName, setBillingName] = useState('');
+    const [billingNameOptions, setBillingNameOptions] = useState<{ name: string; account_name: string }[]>([]);
     const [invoiceDate, setInvoiceDate] = useState('');
     const [dueDate, setDueDate] = useState('');
     const [paymentTerms, setPaymentTerms] = useState('');
@@ -98,11 +102,7 @@ export function InvoiceEditView() {
 
     const [fetching, setFetching] = useState(true);
     const [loading, setLoading] = useState(false);
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-        open: false,
-        message: '',
-        severity: 'success',
-    });
+    const { enqueueSnackbar } = useSnackbar();
 
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
     const [newItem, setNewItem] = useState({ item_name: '', item_code: '', rate: 0 });
@@ -114,14 +114,31 @@ export function InvoiceEditView() {
 
     const [contactDialogOpen, setContactDialogOpen] = useState(false);
 
+    const [paymentTermsDialogOpen, setPaymentTermsDialogOpen] = useState(false);
+
+    const fetchPaymentTermsOptions = async () => {
+        try {
+            const opts = await getDoctypeList('Payment Terms', ['name', 'payment_terms', 'creation', 'modified']);
+            setPaymentTermsOptions(opts);
+            return opts;
+        } catch (error) {
+            console.error('Failed to fetch payment terms options:', error);
+            return [];
+        }
+    };
+    const [customerError, setCustomerError] = useState(false);
+    const [itemError, setItemError] = useState(false);
+    const [paymentTermsError, setPaymentTermsError] = useState(false);
+
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'address']).then(setCustomerOptions);
         getDoctypeList('Item', ['name', 'item_name', 'rate', 'item_code']).then(setItemOptions);
         getDoctypeList('Tax Types', ['name', 'tax_name', 'tax_percentage', 'tax_type']).then(setTaxOptions);
+        fetchPaymentTermsOptions();
 
         if (id) {
             getInvoice(id)
-                .then((data) => {
+                .then(async (data) => {
                     setCustomerId(data.customer_id || data.client_name || '');
                     setCustomerName(data.customer_name || '');
                     setBillingName(data.billing_name || '');
@@ -131,6 +148,20 @@ export function InvoiceEditView() {
                     setPoNo(data.po_no || '');
                     setPoDate(data.po_date || '');
                     setBillingAddress(data.billing_address || '');
+                    // Fetch contact to populate billing name options
+                    const clientId = data.customer_id || data.client_name;
+                    if (clientId) {
+                        try {
+                            const contact = await getContact(clientId);
+                            const mappedOptions = contact.company_names?.map((cid: string, idx: number) => ({
+                                name: cid,
+                                account_name: contact.company_name_list?.[idx] || cid
+                            })) || [];
+                            setBillingNameOptions(mappedOptions);
+                        } catch (err) {
+                            console.error('Failed to fetch contact details for invoice initial load:', err);
+                        }
+                    }
                     setDescription(data.description || '');
                     setRemarks(data.terms_and_conditions || '');
                     if (data.attachments) {
@@ -160,20 +191,48 @@ export function InvoiceEditView() {
         }
     }, [id]);
 
+    type BillingNameOption = {
+        name: string;
+        account_name: string;
+    };
+
     const handleCustomerChange = async (name: string) => {
         setCustomerId(name);
+
         if (name) {
+            setCustomerError(false);
+
             try {
-                const contact = await getDoc('Contacts', name);
+                const contact = await getContact(name);
+
                 setCustomerName(contact.first_name || '');
-                setBillingName(contact.company_name || '');
                 setBillingAddress(contact.address || '');
+
+                // Explicitly type the mapped array so TypeScript can infer the type of `opt`
+                const mappedOptions: BillingNameOption[] =
+                    contact.company_names?.map((cid: string, idx: number) => ({
+                        name: cid,
+                        account_name: contact.company_name_list?.[idx] || cid,
+                    })) || [];
+
+                setBillingNameOptions(mappedOptions);
+
+                // Auto-select if only one billing option is available
+                if (mappedOptions.length === 1) {
+                    setBillingName(mappedOptions[0].name);
+                }
+                // Clear current billing name if it does not exist in the new options
+                else if (!mappedOptions.find((opt) => opt.name === billingName)) {
+                    setBillingName('');
+                }
             } catch (error) {
                 console.error('Failed to fetch contact details:', error);
             }
         } else {
+            // Reset all related fields when customer is cleared
             setCustomerName('');
             setBillingName('');
+            setBillingNameOptions([]);
             setBillingAddress('');
         }
     };
@@ -210,6 +269,7 @@ export function InvoiceEditView() {
         const item = { ...newItems[index], [field]: value };
 
         if (field === 'service') {
+            setItemError(false);
             const selectedItem = itemOptions.find((opt) => opt.name === value);
             if (selectedItem) {
                 item.price = selectedItem.rate || 0;
@@ -270,7 +330,7 @@ export function InvoiceEditView() {
 
     const handleCreateItem = async () => {
         if (!newItem.item_name) {
-            setSnackbar({ open: true, message: 'Please enter Item Name', severity: 'error' });
+            enqueueSnackbar('Please enter Item Name', { variant: 'error' });
             return;
         }
 
@@ -311,9 +371,9 @@ export function InvoiceEditView() {
 
             setItemDialogOpen(false);
             setNewItem({ item_name: '', item_code: '', rate: 0 });
-            setSnackbar({ open: true, message: 'Item created successfully', severity: 'success' });
+            enqueueSnackbar('Item created successfully', { variant: 'success' });
         } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Failed to create item', severity: 'error' });
+            enqueueSnackbar(error.message || 'Failed to create item', { variant: 'error' });
         } finally {
             setCreatingItem(false);
         }
@@ -345,13 +405,28 @@ export function InvoiceEditView() {
     };
 
     const handleSave = async () => {
-        if (!id || !customerId) return;
+        if (!id) return;
+        if (!customerId) {
+            setCustomerError(true);
+            enqueueSnackbar('Please select a Client', { variant: 'error' });
+            return;
+        }
+        setCustomerError(false);
+
+        if (!paymentTerms || paymentTerms === 'Select Payment terms') {
+            setPaymentTermsError(true);
+            enqueueSnackbar('Please select Payment Terms', { variant: 'error' });
+            return;
+        }
+        setPaymentTermsError(false);
 
         const validItems = items.filter((item) => item.service !== '');
         if (validItems.length === 0) {
-            setSnackbar({ open: true, message: 'Please add at least one item', severity: 'error' });
+            setItemError(true);
+            enqueueSnackbar('Please add at least one item', { variant: 'error' });
             return;
         }
+        setItemError(false);
 
         try {
             setLoading(true);
@@ -409,11 +484,11 @@ export function InvoiceEditView() {
             };
 
             await updateInvoice(id, invoiceData);
-            setSnackbar({ open: true, message: 'Invoice updated successfully', severity: 'success' });
+            enqueueSnackbar('Invoice updated successfully', { variant: 'success' });
             setTimeout(() => router.push('/deals?tab=invoices'), 1500);
         } catch (err: any) {
             console.error(err);
-            setSnackbar({ open: true, message: err.message || 'Failed to update invoice', severity: 'error' });
+            enqueueSnackbar(err.message || 'Failed to update invoice', { variant: 'error' });
         } finally {
             setLoading(false);
         }
@@ -429,13 +504,23 @@ export function InvoiceEditView() {
 
     return (
         <DashboardContent maxWidth="xl">
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3}>
                 <Typography variant="h4">Edit Invoice: {id}</Typography>
                 <Stack direction="row" spacing={2}>
-                    <Button variant="outlined" color="inherit" onClick={() => router.push('/deals?tab=invoices')}>
-                        Cancel
+                    <Button variant="outlined" color="inherit" startIcon={<IoMdArrowBack size={20} />} onClick={() => router.push('/deals?tab=invoices')}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 2.5,
+                            '&:hover': {
+                                bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
+                                borderColor: 'text.primary',
+                            }
+                        }}>
+                        Go Back
                     </Button>
-                    <Button variant="contained" color="primary" onClick={handleSave} loading={loading}>
+                    <Button variant="contained" color="primary" onClick={handleSave} loading={loading} sx={{ borderRadius: 1.5, bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}>
                         Update Invoice
                     </Button>
                 </Stack>
@@ -461,9 +546,23 @@ export function InvoiceEditView() {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="Customer ID"
+                                        label="Client ID"
                                         required
+                                        error={customerError}
+                                        helperText={customerError ? 'Please select a Client' : ''}
                                     />
+                                )}
+                                renderOption={(props, option) => (
+                                    <li {...props} key={option.name}>
+                                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                {option.first_name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                ID: {option.name}
+                                            </Typography>
+                                        </Stack>
+                                    </li>
                                 )}
                             />
                             {customerId && (
@@ -471,8 +570,7 @@ export function InvoiceEditView() {
                                     variant="contained"
                                     color="primary"
                                     onClick={() => setContactDialogOpen(true)}
-                                    sx={{ height: 35, px: 2 }}
-                                >
+                                    sx={{ height: 35, px: 2, bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}                                >
                                     Edit
                                 </Button>
                             )}
@@ -480,30 +578,38 @@ export function InvoiceEditView() {
 
                         <TextField
                             fullWidth
-                            label="Customer Name"
+                            label="Client Name"
                             value={customerName}
                             InputProps={{
                                 readOnly: true,
                             }}
-                            sx={{
-                                '& .MuiInputBase-root': {
-                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                },
-                            }}
+                            sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}
                         />
 
-                        <TextField
+                        <Autocomplete
                             fullWidth
-                            label="Billing Name"
-                            value={billingName}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            sx={{
-                                '& .MuiInputBase-root': {
-                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                },
-                            }}
+                            options={billingNameOptions}
+                            getOptionLabel={(option) => option.account_name || option.name || ''}
+                            value={billingNameOptions.find((opt) => opt.name === billingName) || null}
+                            onChange={(_e, newValue) => setBillingName(newValue?.name || '')}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Billing Name"
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.name}>
+                                    <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                            {option.account_name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                </li>
+                            )}
                         />
 
                         <TextField
@@ -517,27 +623,82 @@ export function InvoiceEditView() {
                             }}
                             sx={{
                                 gridColumn: 'span 2',
-                                '& .MuiInputBase-root': {
-                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                },
+                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
                             }}
                         />
 
                         <Divider sx={{ my: 2, gridColumn: 'span 2' }} />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="Payment Terms"
-                            value={paymentTerms}
-                            onChange={(e) => setPaymentTerms(e.target.value)}
-                        >
-                            {['Next day Payment', 'Due On Receipt', '15 days', '30 days', '60 days', '1 Year'].map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </TextField>
+                            options={paymentTermsOptions}
+                            getOptionLabel={(option) => {
+                                if (typeof option === 'string') return option;
+                                return option.payment_terms || option.name || '';
+                            }}
+                            filterOptions={(options, params) => {
+                                const filtered = filter(options, params);
+                                // Always add "+ Create Payment Terms" option at the end
+                                filtered.push({
+                                    name: 'create_payment_term_custom_option',
+                                    payment_terms: 'Create Payment Terms',
+                                    isNew: true,
+                                });
+                                return filtered;
+                            }}
+                            value={paymentTermsOptions.find((opt) => opt.name === paymentTerms) || (paymentTerms ? { name: paymentTerms, payment_terms: paymentTerms } : null)}
+                            onChange={(_e, newValue) => {
+                                if (newValue?.isNew) {
+                                    setPaymentTermsDialogOpen(true);
+                                } else {
+                                    setPaymentTerms(newValue?.name || '');
+                                }
+                            }}
+                            ListboxProps={{
+                                sx: {
+                                    maxHeight: '300px',
+                                }
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Payment Terms"
+                                    error={paymentTermsError}
+                                    helperText={paymentTermsError ? 'Payment Terms is required' : ''}
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <Box
+                                    component="li"
+                                    {...props}
+                                    sx={{
+                                        ...(option.isNew && {
+                                            color: 'primary.main',
+                                            fontWeight: 600,
+                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                            py: '8px !important',
+                                            px: '16px !important',
+                                            mt: 0.5,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            '&:hover': {
+                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                            }
+                                        })
+                                    }}
+                                >
+                                    {option.isNew ? (
+                                        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ width: '100%' }}>
+                                            <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Create Payment Terms</Typography>
+                                        </Stack>
+                                    ) : (
+                                        option.payment_terms || option.name
+                                    )}
+                                </Box>
+                            )}
+                        />
 
                         <DatePicker
                             label="Due Date"
@@ -592,13 +753,17 @@ export function InvoiceEditView() {
 
                     <TableContainer sx={{
                         overflow: 'unset',
-                        border: (theme) => `1px solid ${theme.palette.divider}`,
+                        border: (theme) => itemError ? `2px solid ${theme.palette.error.main}` : `1px solid ${theme.palette.divider}`,
                         borderRadius: 1.5,
                         bgcolor: 'background.paper',
                         boxShadow: (theme) => theme.customShadows.z8,
                     }}>
                         <Table sx={{ minWidth: 960 }}>
-                            <TableHead sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}>
+                            <TableHead sx={{ 
+                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                '& th:first-of-type': { borderTopLeftRadius: 11 },
+                                '& th:last-of-type': { borderTopRightRadius: 11 }
+                            }}>
                                 <TableRow>
                                     <TableCell width={180} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Service</TableCell>
                                     <TableCell width={80} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>HSN</TableCell>
@@ -962,10 +1127,10 @@ export function InvoiceEditView() {
                     <Divider sx={{ my: 4 }} />
 
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Stack spacing={2} sx={{ width: 400, mt: 3 }}>
+                        <Stack spacing={2} sx={{ width: 500, mt: 3 }}>
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Iconify icon={"solar:box-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdCube size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Quantity</Typography>
                                 </Stack>
                                 <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{totalQty}</Typography>
@@ -973,7 +1138,7 @@ export function InvoiceEditView() {
 
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Iconify icon={"solar:bill-list-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
                                 </Stack>
                                 <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(itemsTotalTaxable)}</Typography>
@@ -981,7 +1146,7 @@ export function InvoiceEditView() {
 
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Iconify icon={"solar:calculator-minimalistic-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdCalculator size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Tax</Typography>
                                 </Stack>
                                 <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(totalTax)}</Typography>
@@ -989,7 +1154,7 @@ export function InvoiceEditView() {
 
                             <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end">
                                 <Stack direction="row" alignItems="center" spacing={1} sx={{ flexGrow: 1 }}>
-                                    <Iconify icon={"solar:tag-horizontal-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdPricetags size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Overall Discount</Typography>
                                 </Stack>
                                 <ToggleButtonGroup
@@ -1003,6 +1168,7 @@ export function InvoiceEditView() {
                                     }}
                                     sx={{
                                         height: 32,
+                                        mr: 6,
                                         '& .MuiToggleButton-root': {
                                             px: 1,
                                             py: 0,
@@ -1025,12 +1191,12 @@ export function InvoiceEditView() {
                                     onChange={(e) => setDiscountValue(Number(e.target.value))}
                                     onFocus={(e) => e.target.select()}
                                     sx={{
-                                        width: 100,
+                                        width: 150,
                                         '& .MuiInputBase-root': {
                                             bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
                                             borderRadius: 0.75,
-                                            px: 1,
-                                            '&:hover': {
+                                            px: 1.25,
+                                            py: 0.4, '&:hover': {
                                                 bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
                                             },
                                             '&.Mui-focused': {
@@ -1045,7 +1211,7 @@ export function InvoiceEditView() {
                             <Divider />
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1.5}>
-                                    <Iconify icon={"solar:wad-of-money-bold-duotone" as any} sx={{ color: 'primary.main', width: 24, height: 24 }} />
+                                    <IoMdWallet size={24} style={{ color: '#08a3cd' }} />
                                     <Typography variant="subtitle1" sx={{ color: 'primary.main' }}>Grand Total</Typography>
                                 </Stack>
                                 <Typography variant="h6" color="primary" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(grandTotal)}</Typography>
@@ -1096,7 +1262,7 @@ export function InvoiceEditView() {
                                 <Button
                                     variant="contained"
                                     component="label"
-                                    color="primary"
+                                    sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
                                     size="small"
                                     startIcon={<Iconify icon={"solar:upload-bold" as any} />}
                                     disabled={uploading}
@@ -1179,27 +1345,17 @@ export function InvoiceEditView() {
                 }}
             />
 
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={6000}
-                onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-                <Alert
-                    severity={snackbar.severity}
-                    sx={{
-                        width: '100%',
-                        boxShadow: (theme) => theme.customShadows.z20
-                    }}
-                >
-                    <AlertTitle>{snackbar.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
-
             <Dialog open={itemDialogOpen} onClose={() => !creatingItem && setItemDialogOpen(false)} fullWidth maxWidth="xs">
-                <DialogTitle>Create item</DialogTitle>
-                <DialogContent>
+                <DialogTitle sx={{ pb: 2, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+                    Create Item
+                    <IconButton
+                        onClick={() => !creatingItem && setItemDialogOpen(false)}
+                        sx={{ position: 'absolute', right: 8, top: 8 }}
+                    >
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2 }}>
                     <Stack spacing={3} sx={{ pt: 1 }}>
                         <TextField
                             fullWidth
@@ -1224,14 +1380,25 @@ export function InvoiceEditView() {
                     </Stack>
                 </DialogContent>
                 <DialogActions>
-                    <Button color="inherit" onClick={() => setItemDialogOpen(false)} disabled={creatingItem}>
-                        Cancel
-                    </Button>
-                    <Button variant="contained" onClick={handleCreateItem} disabled={creatingItem}>
+                    <Button variant="contained" onClick={handleCreateItem} disabled={creatingItem} sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}>
                         {creatingItem ? <CircularProgress size={24} /> : 'Create'}
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <PaymentTermsDialog
+                open={paymentTermsDialogOpen}
+                onClose={() => setPaymentTermsDialogOpen(false)}
+                onSuccess={async () => {
+                    const opts = await fetchPaymentTermsOptions();
+                    if (opts && opts.length > 0) {
+                        const newest = [...opts].sort((a, b) => (b.creation || '').localeCompare(a.creation || ''))[0];
+                        if (newest) {
+                            setPaymentTerms(newest.name);
+                        }
+                    }
+                }}
+            />
         </DashboardContent>
     );
 }

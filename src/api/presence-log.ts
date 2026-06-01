@@ -9,7 +9,11 @@ export async function fetchDetailedSessions(
     dateSearch: string = '',
     status: string = 'all',
     sortBy: string = 'login_date_desc',
-    employee?: string
+    employee?: string,
+    day?: string,
+    date?: string,
+    fromDate?: string,
+    toDate?: string
 ) {
     const params = new URLSearchParams();
     params.append('limit_start', limitStart.toString());
@@ -17,7 +21,11 @@ export async function fetchDetailedSessions(
     if (dateSearch) params.append('date_search', dateSearch);
     if (status !== 'all') params.append('status', status);
     if (sortBy) params.append('sort_by', sortBy);
-    if (employee) params.append('employee', employee);
+    if (employee && employee !== 'all') params.append('employee', employee);
+    if (day && day !== 'all') params.append('day', day);
+    if (date) params.append('date', date);
+    if (fromDate) params.append('from_date', fromDate);
+    if (toDate) params.append('to_date', toDate);
 
     const res = await frappeRequest(`/api/method/company.company.presence_api.get_detailed_sessions?${params.toString()}`);
 

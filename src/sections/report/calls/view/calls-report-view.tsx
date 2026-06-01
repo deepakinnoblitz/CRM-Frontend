@@ -14,15 +14,20 @@ import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import FormControl from '@mui/material/FormControl';
+import Autocomplete from '@mui/material/Autocomplete';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+
+import { usePdfExport } from 'src/hooks/use-pdf-export';
 
 import { runReport } from 'src/api/reports';
 import { getDoctypeList } from 'src/api/leads';
@@ -30,6 +35,7 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { generateCallsPdf } from 'src/components/export/pdf/calls-pdf-generator';
 
 import { useAuth } from 'src/auth/auth-context';
 
@@ -44,16 +50,17 @@ export function CallsReportView() {
     const [loading, setLoading] = useState(false);
 
     const { user } = useAuth();
+    const { exportingPdf, handleExportPdf } = usePdfExport();
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [callFor, setCallFor] = useState('all');
     const [status, setStatus] = useState('all');
-    const [owner, setOwner] = useState(user?.name || 'all');
+    const [owner, setOwner] = useState('all');
 
     useEffect(() => {
         if (user?.name) {
-            setOwner(user.name);
+            setOwner(user.has_crm_permission ? user.name : 'all');
         }
     }, [user]);
     const [reminder, setReminder] = useState('all');
@@ -203,7 +210,7 @@ export function CallsReportView() {
         setStatus('all');
         setReminder('all');
         if (user?.name) {
-            setOwner(user.name);
+            setOwner(user.has_crm_permission ? user.name : 'all');
         }
     };
 
@@ -212,7 +219,7 @@ export function CallsReportView() {
     }, []);
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
                     <Typography variant="h4">Calls Report</Typography>
@@ -238,9 +245,11 @@ export function CallsReportView() {
 
                 <Card
                     sx={{
-                        p: 2.5,
+                        py: 3,
+                        px: 2,
                         display: 'flex',
-                        gap: 2,
+                        columnGap: 2,
+                        rowGap: 1.5,
                         flexWrap: 'wrap',
                         alignItems: 'center',
                         bgcolor: 'background.neutral',
@@ -250,15 +259,27 @@ export function CallsReportView() {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="From Date"
+                            format="DD-MM-YYYY"
                             value={fromDate}
                             onChange={(newValue) => setFromDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 160, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                         <DatePicker
                             label="To Date"
+                            format="DD-MM-YYYY"
                             value={toDate}
                             onChange={(newValue) => setToDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 160, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                     </LocalizationProvider>
                     <FormControl size="small" sx={{ minWidth: 160 }}>
@@ -289,25 +310,37 @@ export function CallsReportView() {
                             ))}
                         </Select>
                     </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 160 }} disabled>
-                        <Select
-                            value={owner}
-                            onChange={(e) => setOwner(e.target.value)}
-                            displayEmpty
-                            inputProps={{ readOnly: true }}
-                        >
-                            <MenuItem value="all">Owner</MenuItem>
-                            <MenuItem value="Administrator">Administrator</MenuItem>
-                            {ownerOptions
-                                .filter((opt) => opt !== 'Administrator')
-                                .map((opt) => (
-                                    <MenuItem key={opt} value={opt}>
-                                        {opt}
-                                    </MenuItem>
-                                ))}
-                        </Select>
-                    </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 160 }}>
+                    <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 250 }}
+                        disabled={user?.has_crm_permission}
+                        options={['All Owners', ...ownerOptions.filter((opt) => opt !== 'Administrator')]}
+                        getOptionLabel={(option) => option || 'All Owners'}
+                        value={owner === 'all' || !owner ? 'All Owners' : owner}
+                        onChange={(event, newValue) => {
+                            if (newValue === 'All Owners' || !newValue) {
+                                setOwner('all');
+                            } else {
+                                setOwner(newValue);
+                            }
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="All Owners"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                    />
+                    <FormControl size="small" sx={{ minWidth: 150 }}>
                         <Select
                             value={reminder}
                             onChange={(e) => setReminder(e.target.value)}
@@ -323,8 +356,34 @@ export function CallsReportView() {
                         variant="contained"
                         startIcon={<Iconify icon={"solar:export-bold" as any} />}
                         onClick={() => setOpenExportFields(true)}
+                        disabled={reportData.length === 0}
+                        sx={{ mr: 1 }}
                     >
-                        Export
+                        Export Excel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                        onClick={() => handleExportPdf(() => generateCallsPdf({
+                            reportData,
+                            selected,
+                            summary: summaryData.length > 0 ? summaryData : [
+                                { label: 'Total Calls', value: reportData.length },
+                                { label: 'Scheduled', value: reportData.filter((r: any) => r.status === 'Scheduled').length },
+                                { label: 'Completed', value: reportData.filter((r: any) => r.status === 'Completed').length },
+                                { label: 'With Reminder', value: reportData.filter((r: any) => r.remind_before).length },
+                            ]
+                        }))}
+                        disabled={exportingPdf || reportData.length === 0}
+                        sx={{
+                            bgcolor: '#f43f5e',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#e11d48' },
+                            height: 37,
+                            px: 3,
+                        }}
+                    >
+                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
                     </Button>
                 </Card>
 
@@ -376,49 +435,59 @@ export function CallsReportView() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
-                                        const isSelected = selected.indexOf(row.name) !== -1;
-                                        return (
-                                            <TableRow
-                                                key={index}
-                                                hover
-                                                role="checkbox"
-                                                aria-checked={isSelected}
-                                                selected={isSelected}
-                                                sx={{
-                                                    '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                    '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                }}
-                                            >
-                                                <TableCell padding="checkbox">
-                                                    <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
-                                                </TableCell>
-                                                <TableCell sx={{ fontWeight: 600 }}>{row.title}</TableCell>
-                                                <TableCell>{row.call_for}</TableCell>
-                                                <TableCell>{row.lead_name || row.contact_name || '-'}</TableCell>
-                                                <TableCell>{row.account_name || '-'}</TableCell>
-                                                <TableCell>{row.outgoing_call_status}</TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2">{row.call_start_time ? dayjs(row.call_start_time).format('DD MMM YYYY HH:mm') : '-'}</Typography>
-                                                </TableCell>
-                                                <TableCell>{row.owner_name}</TableCell>
-                                                <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
-                                                    <IconButton onClick={() => handleViewCall(row.name)} sx={{ color: 'info.main' }}>
-                                                        <Iconify icon="solar:eye-bold" />
-                                                    </IconButton>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                    {reportData.length === 0 && !loading && (
+                                    {loading ? (
                                         <TableRow>
                                             <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
-                                                <Stack spacing={1} alignItems="center">
-                                                    <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
-                                                </Stack>
+                                                <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
+                                    ) : (
+                                        <>
+                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                                const isSelected = selected.indexOf(row.name) !== -1;
+                                                return (
+                                                    <TableRow
+                                                        key={index}
+                                                        hover
+                                                        role="checkbox"
+                                                        aria-checked={isSelected}
+                                                        selected={isSelected}
+                                                        sx={{
+                                                            '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                            '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                        }}
+                                                    >
+                                                        <TableCell padding="checkbox">
+                                                            <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                                                        </TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>{row.title}</TableCell>
+                                                        <TableCell>{row.call_for}</TableCell>
+                                                        <TableCell>{row.lead_name || row.contact_name || '-'}</TableCell>
+                                                        <TableCell>{row.account_name || '-'}</TableCell>
+                                                        <TableCell>{row.outgoing_call_status}</TableCell>
+                                                        <TableCell>
+                                                            <Typography variant="body2">{row.call_start_time ? dayjs(row.call_start_time).format('DD MMM YYYY HH:mm') : '-'}</Typography>
+                                                        </TableCell>
+                                                        <TableCell>{row.owner_name}</TableCell>
+                                                        <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
+                                                            <IconButton onClick={() => handleViewCall(row.name)} sx={{ color: 'info.main' }}>
+                                                                <Iconify icon="solar:eye-bold" />
+                                                            </IconButton>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                            {reportData.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                                        <Stack spacing={1} alignItems="center">
+                                                            <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
+                                                        </Stack>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </>
                                     )}
                                 </TableBody>
                             </Table>

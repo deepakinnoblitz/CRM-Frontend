@@ -78,7 +78,8 @@ export function handleFrappeError(json: any, defaultMessage: string = "An error 
 
     // Handle case where we accidentally get a string (e.g. from a failed JSON.parse earlier)
     if (typeof json === 'string') {
-        if (json.trim().startsWith('<!DOCTYPE html>') || json.trim().startsWith('<html')) {
+        const trimmed = json.trim().toLowerCase();
+        if (trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html')) {
             return "Internal Server Error. Please contact administrator.";
         }
         return json || defaultMessage;

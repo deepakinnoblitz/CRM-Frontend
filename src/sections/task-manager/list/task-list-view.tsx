@@ -152,6 +152,7 @@ export default function TaskListView({
     }, []);
 
     const canReset =
+        !!filterName ||
         filters.status !== 'all' ||
         filters.project !== 'all' ||
         filters.priority !== 'all' ||
@@ -160,7 +161,12 @@ export default function TaskListView({
         filters.department !== 'all';
 
     const dataFiltered = tasks.filter((task) => {
-        if (filterName && !task.title.toLowerCase().includes(filterName.toLowerCase())) return false;
+        if (filterName) {
+            const searchStr = filterName.toLowerCase();
+            const titleMatch = task.title?.toLowerCase().includes(searchStr);
+            const nameMatch = task.name?.toLowerCase().includes(searchStr);
+            if (!titleMatch && !nameMatch) return false;
+        }
         if (filters.status !== 'all' && task.status !== filters.status) return false;
         if (filters.project !== 'all' && task.project !== filters.project) return false;
         if (filters.priority !== 'all' && task.priority !== filters.priority) return false;
@@ -175,14 +181,6 @@ export default function TaskListView({
 
     const isNotFound = !dataFiltered.length && (!!filterName || canReset);
     const isEmpty = !tasks.length && !loading;
-
-    if (loading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                <CircularProgress sx={{ color: '#08a3cd' }} />
-            </Box>
-        );
-    }
 
     return (
         <>
@@ -209,219 +207,230 @@ export default function TaskListView({
                             />
 
                             <TableBody>
-                                {dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((task, index) => (
-                                    <TableRow
-                                        key={task.name}
-                                        hover
-                                        onClick={() => onViewDetails(task)}
-                                        sx={{
-                                            cursor: 'pointer',
-                                            '&:last-child td': { borderBottom: 0 },
-                                            '& td': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                        }}
-                                    >
-                                        {/* Row Number */}
-                                        <TableCell align="center">
-                                            <Box
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    <>
+                                        {dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((task, index) => (
+                                            <TableRow
+                                                key={task.name}
+                                                hover
+                                                onClick={() => onViewDetails(task)}
                                                 sx={{
-                                                    width: 28,
-                                                    height: 28,
-                                                    display: 'flex',
-                                                    borderRadius: '50%',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                                                    color: 'primary.main',
-                                                    typography: 'subtitle2',
-                                                    fontWeight: 800,
-                                                    border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
-                                                    mx: 'auto',
-                                                    transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
-                                                    '&:hover': {
-                                                        bgcolor: 'primary.main',
-                                                        color: 'primary.contrastText',
-                                                        transform: 'scale(1.1)',
-                                                    },
+                                                    cursor: 'pointer',
+                                                    '&:last-child td': { borderBottom: 0 },
+                                                    '& td': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
                                                 }}
                                             >
-                                                {index + 1}
-                                            </Box>
-                                        </TableCell>
+                                                {/* Row Number */}
+                                                <TableCell align="center">
+                                                    <Box
+                                                        sx={{
+                                                            width: 28,
+                                                            height: 28,
+                                                            display: 'flex',
+                                                            borderRadius: '50%',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                            color: 'primary.main',
+                                                            typography: 'subtitle2',
+                                                            fontWeight: 800,
+                                                            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                                                            mx: 'auto',
+                                                            transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+                                                            '&:hover': {
+                                                                bgcolor: 'primary.main',
+                                                                color: 'primary.contrastText',
+                                                                transform: 'scale(1.1)',
+                                                            },
+                                                        }}
+                                                    >
+                                                        {page * rowsPerPage + index + 1}
+                                                    </Box>
+                                                </TableCell>
 
-                                        {/* Title & Name (ID) */}
-                                        <TableCell sx={{ maxWidth: 280 }}>
-                                            <Box>
-                                                <Typography
-                                                    variant="subtitle2"
-                                                    sx={{
-                                                        fontWeight: 700,
-                                                        textTransform: 'capitalize',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap'
-                                                    }}
-                                                >
-                                                    {task.title}
-                                                </Typography>
-                                                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem' }} noWrap>
-                                                    {task.name}
-                                                </Typography>
-                                            </Box>
-                                        </TableCell>
-
-                                        {/* Project */}
-                                        <TableCell sx={{ minWidth: 120 }}>
-                                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }} noWrap>
-                                                {task.project || '—'}
-                                            </Typography>
-                                        </TableCell>
-
-                                        {/* Priority */}
-                                        <TableCell sx={{ width: 100 }}>
-                                            {task.priority && (
-                                                <Stack direction="row" alignItems="center" spacing={0.5}>
-                                                    <Iconify
-                                                        icon={(PRIORITY_MAP[task.priority]?.icon || 'solar:flag-bold') as any}
-                                                        width={18}
-                                                        sx={{ color: PRIORITY_MAP[task.priority]?.color }}
-                                                    />
-                                                    <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
-                                                        {task.priority}
-                                                    </Typography>
-                                                </Stack>
-                                            )}
-                                        </TableCell>
-
-                                        {/* Status */}
-                                        <TableCell sx={{ width: 120 }}>
-                                            <Label
-                                                variant="soft"
-                                                color={STATUS_LABEL_COLOR[task.status] || 'default'}
-                                                sx={{ textTransform: 'uppercase' }}
-                                            >
-                                                {task.status}
-                                            </Label>
-                                        </TableCell>
-
-                                        {/* Due Date */}
-                                        <TableCell sx={{ width: 110 }}>
-                                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }} noWrap>
-                                                {task.due_date ? fDate(task.due_date) : '—'}
-                                            </Typography>
-                                        </TableCell>
-
-                                        {/* Assignee */}
-                                        <TableCell sx={{ minWidth: 100 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                                                {task.assignees?.length === 1 ? (
-                                                    <>
-                                                        <Avatar
-                                                            alt={task.assignees[0].employee_name}
-                                                            src={task.assignees[0].profile_pic}
+                                                {/* Title & Name (ID) */}
+                                                <TableCell sx={{ maxWidth: 280 }}>
+                                                    <Box>
+                                                        <Typography
+                                                            variant="subtitle2"
                                                             sx={{
-                                                                width: 28,
-                                                                height: 28,
-                                                                fontSize: 11,
-                                                                bgcolor: stringToColor(task.assignees[0].employee_name || task.assignees[0].user || task.assignees[0].employee),
-                                                                color: stringToDarkColor(task.assignees[0].employee_name || task.assignees[0].user || task.assignees[0].employee),
-                                                                fontWeight: 800,
+                                                                fontWeight: 700,
+                                                                textTransform: 'capitalize',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                whiteSpace: 'nowrap'
                                                             }}
                                                         >
-                                                            {getInitials(task.assignees[0].employee_name || task.assignees[0].user || task.assignees[0].employee)}
-                                                        </Avatar>
-                                                        <Box sx={{ minWidth: 0 }}>
-                                                            <Typography
-                                                                variant="body2"
-                                                                sx={{
-                                                                    fontWeight: 600,
-                                                                    fontSize: '0.825rem',
-                                                                    whiteSpace: 'nowrap',
-                                                                    overflow: 'hidden',
-                                                                    textOverflow: 'ellipsis',
-                                                                    maxWidth: 100,
-                                                                    color: 'text.primary'
-                                                                }}
-                                                            >
-                                                                {task.assignees[0].employee_name}
+                                                            {task.title}
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem' }} noWrap>
+                                                            {task.name}
+                                                        </Typography>
+                                                    </Box>
+                                                </TableCell>
+
+                                                {/* Project */}
+                                                <TableCell sx={{ minWidth: 120 }}>
+                                                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }} noWrap>
+                                                        {task.project || '—'}
+                                                    </Typography>
+                                                </TableCell>
+
+                                                {/* Priority */}
+                                                <TableCell sx={{ width: 100 }}>
+                                                    {task.priority && (
+                                                        <Stack direction="row" alignItems="center" spacing={0.5}>
+                                                            <Iconify
+                                                                icon={(PRIORITY_MAP[task.priority]?.icon || 'solar:flag-bold') as any}
+                                                                width={18}
+                                                                sx={{ color: PRIORITY_MAP[task.priority]?.color }}
+                                                            />
+                                                            <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
+                                                                {task.priority}
                                                             </Typography>
-                                                        </Box>
-                                                    </>
-                                                ) : (
-                                                    <AvatarGroup max={3} sx={{ '& .MuiAvatar-root': { width: 24, height: 24, fontSize: 10, border: 'none' } }}>
-                                                        {(task.assignees || []).map((a) => (
-                                                            <Avatar
-                                                                key={a.employee}
-                                                                alt={a.employee_name}
-                                                                src={a.profile_pic}
-                                                                sx={{
-                                                                    bgcolor: stringToColor(a.employee_name || a.user || a.employee),
-                                                                    color: stringToDarkColor(a.employee_name || a.user || a.employee),
-                                                                    fontWeight: 'bold',
-                                                                }}
+                                                        </Stack>
+                                                    )}
+                                                </TableCell>
+
+                                                {/* Status */}
+                                                <TableCell sx={{ width: 120 }}>
+                                                    <Label
+                                                        variant="soft"
+                                                        color={STATUS_LABEL_COLOR[task.status] || 'default'}
+                                                        sx={{ textTransform: 'uppercase' }}
+                                                    >
+                                                        {task.status}
+                                                    </Label>
+                                                </TableCell>
+
+                                                {/* Due Date */}
+                                                <TableCell sx={{ width: 110 }}>
+                                                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }} noWrap>
+                                                        {task.due_date ? fDate(task.due_date) : '—'}
+                                                    </Typography>
+                                                </TableCell>
+
+                                                {/* Assignee */}
+                                                <TableCell sx={{ minWidth: 100 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                                                        {task.assignees?.length === 1 ? (
+                                                            <>
+                                                                <Avatar
+                                                                    alt={task.assignees[0].employee_name}
+                                                                    src={task.assignees[0].profile_pic}
+                                                                    sx={{
+                                                                        width: 28,
+                                                                        height: 28,
+                                                                        fontSize: 11,
+                                                                        bgcolor: stringToColor(task.assignees[0].employee_name || task.assignees[0].user || task.assignees[0].employee),
+                                                                        color: stringToDarkColor(task.assignees[0].employee_name || task.assignees[0].user || task.assignees[0].employee),
+                                                                        fontWeight: 800,
+                                                                    }}
+                                                                >
+                                                                    {getInitials(task.assignees[0].employee_name || task.assignees[0].user || task.assignees[0].employee)}
+                                                                </Avatar>
+                                                                <Box sx={{ minWidth: 0 }}>
+                                                                    <Typography
+                                                                        variant="body2"
+                                                                        sx={{
+                                                                            fontWeight: 600,
+                                                                            fontSize: '0.825rem',
+                                                                            whiteSpace: 'nowrap',
+                                                                            overflow: 'hidden',
+                                                                            textOverflow: 'ellipsis',
+                                                                            maxWidth: 100,
+                                                                            color: 'text.primary'
+                                                                        }}
+                                                                    >
+                                                                        {task.assignees[0].employee_name}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </>
+                                                        ) : (
+                                                            <AvatarGroup max={3} sx={{ '& .MuiAvatar-root': { width: 24, height: 24, fontSize: 10, border: 'none' } }}>
+                                                                {(task.assignees || []).map((a) => (
+                                                                    <Avatar
+                                                                        key={a.employee}
+                                                                        alt={a.employee_name}
+                                                                        src={a.profile_pic}
+                                                                        sx={{
+                                                                            bgcolor: stringToColor(a.employee_name || a.user || a.employee),
+                                                                            color: stringToDarkColor(a.employee_name || a.user || a.employee),
+                                                                            fontWeight: 'bold',
+                                                                        }}
+                                                                    >
+                                                                        {getInitials(a.employee_name || a.user || a.employee)}
+                                                                    </Avatar>
+                                                                ))}
+                                                            </AvatarGroup>
+                                                        )}
+                                                    </Box>
+                                                </TableCell>
+
+                                                {/* Actions */}
+                                                <TableCell onClick={(e) => e.stopPropagation()} align="right">
+                                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => onViewDetails(task)}
+                                                            sx={{ color: 'info.main' }}
+                                                        >
+                                                            <Iconify icon="solar:eye-bold" />
+                                                        </IconButton>
+                                                        {permissions.create && (
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => onEditTask(task)}
+                                                                sx={{ color: 'primary.main' }}
                                                             >
-                                                                {getInitials(a.employee_name || a.user || a.employee)}
-                                                            </Avatar>
-                                                        ))}
-                                                    </AvatarGroup>
-                                                )}
-                                            </Box>
-                                        </TableCell>
+                                                                <Iconify icon="solar:pen-bold" />
+                                                            </IconButton>
+                                                        )}
+                                                        {permissions.delete && (
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => onDeleteTask(task)}
+                                                                sx={{ color: 'error.main' }}
+                                                            >
+                                                                <Iconify icon="solar:trash-bin-trash-bold" />
+                                                            </IconButton>
+                                                        )}
+                                                    </Box>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
 
-                                        {/* Actions */}
-                                        <TableCell onClick={(e) => e.stopPropagation()} align="right">
-                                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => onViewDetails(task)}
-                                                    sx={{ color: 'info.main' }}
-                                                >
-                                                    <Iconify icon="solar:eye-bold" />
-                                                </IconButton>
-                                                {permissions.create && (
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() => onEditTask(task)}
-                                                        sx={{ color: 'primary.main' }}
-                                                    >
-                                                        <Iconify icon="solar:pen-bold" />
-                                                    </IconButton>
-                                                )}
-                                                {permissions.delete && (
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() => onDeleteTask(task)}
-                                                        sx={{ color: 'error.main' }}
-                                                    >
-                                                        <Iconify icon="solar:trash-bin-trash-bold" />
-                                                    </IconButton>
-                                                )}
-                                            </Box>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
+                                        <TableNoData
+                                            notFound={isNotFound}
+                                            searchQuery={filterName}
+                                        />
 
-                                <TableNoData
-                                    notFound={isNotFound}
-                                    searchQuery={filterName}
-                                />
+                                        {isEmpty && (
+                                            <TableRow>
+                                                <TableCell colSpan={8}>
+                                                    <EmptyContent
+                                                        title="No tasks found"
+                                                        description="Create your first task to get started."
+                                                        icon="solar:clipboard-list-bold-duotone"
+                                                        sx={{ py: 5 }}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
 
-                                {isEmpty && (
-                                    <TableRow>
-                                        <TableCell colSpan={8}>
-                                            <EmptyContent
-                                                title="No tasks found"
-                                                description="Create your first task to get started."
-                                                icon="solar:clipboard-list-bold-duotone"
+                                        {!isEmpty && !isNotFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).length < 5 ? 5 - dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).length : 0}
                                             />
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-
-                                {!isEmpty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).length < 5 ? 5 - dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).length : 0}
-                                    />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

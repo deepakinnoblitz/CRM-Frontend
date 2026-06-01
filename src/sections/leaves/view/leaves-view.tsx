@@ -24,8 +24,8 @@ import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { Checkbox, IconButton, FormControlLabel } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { Checkbox, IconButton, FormControlLabel, CircularProgress } from '@mui/material';
 
 import { useSocket } from 'src/hooks/use-socket';
 import { useLeaveApplications } from 'src/hooks/useLeaveApplications';
@@ -35,7 +35,7 @@ import { uploadFile } from 'src/api/data-import';
 import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getHRPermissions, getHRDoc } from 'src/api/hr-management';
-import { applyLeaveWorkflowAction, checkLeaveBalance, createLeaveApplication, deleteLeaveApplication, getEmployeeProbationInfo, updateLeaveStatus } from 'src/api/leaves';
+import { applyLeaveWorkflowAction, checkLeaveBalance, checkLeaveOverlap, createLeaveApplication, deleteLeaveApplication, getEmployeeProbationInfo, updateLeaveStatus } from 'src/api/leaves';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -359,6 +359,24 @@ export function LeavesView() {
 
     const handleApplyAction = async (id: string, action: string) => {
         try {
+            // 🛡️ PREEMPTIVE OVERLAP CHECK
+            if (action.toLowerCase().includes('approve')) {
+                const leaveRecord = data.find(r => r.name === id);
+                if (leaveRecord) {
+                    const res = await checkLeaveOverlap({
+                        employee: leaveRecord.employee,
+                        from_date: leaveRecord.from_date,
+                        to_date: leaveRecord.to_date,
+                        exclude_doc: id
+                    });
+
+                    if (res.overlap) {
+                        setSnackbar({ open: true, message: res.message, severity: 'error' });
+                        return;
+                    }
+                }
+            }
+
             await applyLeaveWorkflowAction(id, action);
             setSnackbar({ open: true, message: `Leave application ${action}ed successfully`, severity: 'success' });
             await refetch();
@@ -367,10 +385,10 @@ export function LeavesView() {
         }
     };
 
-    const handleClarify = async (id: string, message: string) => {
+    const handleClarify = async (id: string, action: string, message: string) => {
         try {
             const leave = await getHRDoc('Leave Application', id);
-            const fields = ['hr_query', 'hr_query_2', 'hr_query_3', 'hr_query_4', 'hr_query_5'];
+            const fields = ['hr_query', 'hr_query_2', 'hr_query_3', 'hr_query_4', 'hr_query_5', 'employee_reply', 'employee_reply_2', 'employee_reply_3', 'employee_reply_4', 'employee_reply_5'];
             const nextField = fields.find(f => !leave[f]);
 
             if (!nextField) {
@@ -378,7 +396,7 @@ export function LeavesView() {
             }
 
             const updateData = { [nextField]: message };
-            await updateLeaveStatus(id, 'Clarification Requested', updateData);
+            await applyLeaveWorkflowAction(id, action, undefined, updateData);
 
             setSnackbar({ open: true, message: 'Clarification requested successfully', severity: 'success' });
             await refetch();
@@ -432,7 +450,7 @@ export function LeavesView() {
     };
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Leave Applications
@@ -488,63 +506,73 @@ export function LeavesView() {
                             />
 
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <LeavesTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            employee: row.employee,
-                                            employeeName: row.employee_name,
-                                            leaveType: row.leave_type,
-                                            fromDate: row.from_date,
-                                            toDate: row.to_date,
-                                            totalDays: row.total_days,
-                                            reason: row.reson,
-                                            status: row.workflow_state || row.status || 'Pending',
-                                            halfDay: row.half_day,
-                                            permissionHours: row.permission_hours,
-                                            modified: row.modified,
-                                            hrQueryCount: [1, 2, 3, 4, 5].filter(i => {
-                                                const field = i === 1 ? 'hr_query' : `hr_query_${i}`;
-                                                return row[field] && String(row[field]).trim();
-                                            }).length,
-                                            empReplyCount: [1, 2, 3, 4, 5].filter(i => {
-                                                const field = i === 1 ? 'employee_reply' : `employee_reply_${i}`;
-                                                return row[field] && String(row[field]).trim();
-                                            }).length,
-                                        }}
-                                        selected={false}
-                                        onSelectRow={() => { }}
-                                        onView={() => handleOpenDetails(row.name)}
-                                        onDelete={() => handleDeleteClick(row.name)}
-                                        onApplyAction={(action) => handleApplyAction(row.name, action)}
-                                        onClarify={(message) => handleClarify(row.name, message)}
-                                        canDelete={permissions.delete}
-                                        isHR={isHR}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
-                                            <EmptyContent
-                                                title="No leave applications"
-                                                description="You haven't submitted any leave requests yet."
-                                                icon="solar:calendar-add-bold-duotone"
-                                            />
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <LeavesTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    employee: row.employee,
+                                                    employeeName: row.employee_name,
+                                                    leaveType: row.leave_type,
+                                                    fromDate: row.from_date,
+                                                    toDate: row.to_date,
+                                                    totalDays: row.total_days,
+                                                    reason: row.reson,
+                                                    status: row.workflow_state || row.status || 'Pending',
+                                                    halfDay: row.half_day,
+                                                    permissionHours: row.permission_hours,
+                                                    modified: row.modified,
+                                                    hrQueryCount: [1, 2, 3, 4, 5].filter(i => {
+                                                        const field = i === 1 ? 'hr_query' : `hr_query_${i}`;
+                                                        return row[field] && String(row[field]).trim();
+                                                    }).length,
+                                                    empReplyCount: [1, 2, 3, 4, 5].filter(i => {
+                                                        const field = i === 1 ? 'employee_reply' : `employee_reply_${i}`;
+                                                        return row[field] && String(row[field]).trim();
+                                                    }).length,
+                                                }}
+                                                selected={false}
+                                                onSelectRow={() => { }}
+                                                onView={() => handleOpenDetails(row.name)}
+                                                onDelete={() => handleDeleteClick(row.name)}
+                                                onApplyAction={(action) => handleApplyAction(row.name, action)}
+                                                onClarify={(action, message) => handleClarify(row.name, action, message)}
+                                                canDelete={permissions.delete}
+                                                isHR={isHR}
+                                            />
+                                        ))}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={8}>
+                                                    <EmptyContent
+                                                        title="No leave applications"
+                                                        description="You haven't submitted any leave requests yet."
+                                                        icon="solar:calendar-add-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -563,8 +591,8 @@ export function LeavesView() {
             </Card>
 
             {/* CREATE/EDIT DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24 } }}>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center',  }}>
                     New Leave Application
                     <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
                         <Iconify icon="mingcute:close-line" />
@@ -693,10 +721,10 @@ export function LeavesView() {
                                     return (
                                         <li key={key} {...optionProps}>
                                             <Stack spacing={0.5}>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                                                     {option.employee_name}
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                                     ID: {option.name}
                                                 </Typography>
                                             </Stack>
@@ -720,35 +748,42 @@ export function LeavesView() {
                             />
                         )}
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="Leave Type"
-                            value={leaveType}
-                            onChange={(e) => {
-                                setLeaveType(e.target.value);
+                            options={leaveTypeOptions}
+                            getOptionLabel={(option) => (typeof option === 'string' ? option : option.name)}
+                            value={leaveTypeOptions.find((o) => o.name === leaveType) || null}
+                            onChange={(event, newValue) => {
+                                setLeaveType(newValue ? newValue.name : '');
                                 if (formErrors.leaveType) setFormErrors(prev => ({ ...prev, leaveType: '' }));
                             }}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            required
-                            error={!!formErrors.leaveType}
-                            helperText={formErrors.leaveType}
-                            sx={{
-                                '& .MuiFormLabel-asterisk': { color: 'red' },
+                            getOptionDisabled={(option) => !!(probationInfo?.is_probation && probationInfo.restricted_types.includes(option.name))}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Leave Type"
+                                    required
+                                    error={!!formErrors.leaveType}
+                                    helperText={formErrors.leaveType}
+                                    InputLabelProps={{ shrink: true }}
+                                    placeholder="Select Leave Type"
+                                    sx={{
+                                        '& .MuiFormLabel-asterisk': { color: 'red' },
+                                    }}
+                                />
+                            )}
+                            renderOption={(props, option) => {
+                                const { key, ...optionProps } = props as any;
+                                const isDisabled = probationInfo?.is_probation && probationInfo.restricted_types.includes(option.name);
+                                return (
+                                    <li key={key} {...optionProps}>
+                                        <Typography variant="body1">
+                                            {option.name} {isDisabled ? '(Restricted during probation)' : ''}
+                                        </Typography>
+                                    </li>
+                                );
                             }}
-                        >
-                            <option value="">Select Leave Type</option>
-                            {leaveTypeOptions.map((option) => (
-                                <option
-                                    key={option.name}
-                                    value={option.name}
-                                    disabled={probationInfo?.is_probation && probationInfo.restricted_types.includes(option.name)}
-                                >
-                                    {option.name} {probationInfo?.is_probation && probationInfo.restricted_types.includes(option.name) ? '(Restricted during probation)' : ''}
-                                </option>
-                            ))}
-                        </TextField>
+                        />
 
                         {/* Show other fields only if Employee and Leave Type are selected */}
                         {employee && leaveType && (
@@ -977,7 +1012,7 @@ export function LeavesView() {
                     </Box>
                 </DialogContent>
 
-                <DialogActions>
+                <DialogActions sx={{ p: 1.5}}>
                     <Button
                         variant="contained"
                         onClick={handleCreate}

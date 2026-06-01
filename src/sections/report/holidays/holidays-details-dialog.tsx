@@ -1,6 +1,10 @@
+import { FaRegCalendarAlt } from 'react-icons/fa';
+import { LuList, LuClock, LuCalendarDays } from 'react-icons/lu';
+
 import Box from '@mui/material/Box';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
+import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -18,8 +22,8 @@ type Props = {
 
 export function HolidayDetailsDialog({ open, onClose, holidayList }: Props) {
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}`, }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Holiday List Details</Typography>
                 <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500], bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows?.z1 }}>
                     <Iconify icon="mingcute:close-line" />
@@ -50,7 +54,7 @@ export function HolidayDetailsDialog({ open, onClose, holidayList }: Props) {
                                     {holidayList.holiday_list_name}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                    {holidayList.year} – {holidayList.month_year || 'All Months'}
+                                    {holidayList.month_year} – {holidayList.year || 'All Months'}
                                 </Typography>
                             </Box>
 
@@ -68,7 +72,7 @@ export function HolidayDetailsDialog({ open, onClose, holidayList }: Props) {
 
                         {/* Holiday List Information */}
                         <Box>
-                            <SectionHeader title="HOLIDAY LIST INFORMATION" icon="solar:list-bold" isPremium />
+                            <SectionHeader title="HOLIDAY LIST INFORMATION" icon="" />
                             <Box
                                 sx={{
                                     display: 'grid',
@@ -77,14 +81,13 @@ export function HolidayDetailsDialog({ open, onClose, holidayList }: Props) {
                                     gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
                                 }}
                             >
-                                <InfoCard label="LIST NAME" value={holidayList.holiday_list_name} icon="solar:list-bold" />
-                                <InfoCard label="YEAR" value={holidayList.year?.toString()} icon="solar:calendar-bold" />
-                                <InfoCard label="MONTH" value={holidayList.month_year || 'All Months'} icon="solar:calendar-minimalistic-bold" />
+                                <InfoCard label="LIST NAME" value={holidayList.holiday_list_name} icon={<LuList size={18} />} />
+                                <InfoCard label="YEAR" value={holidayList.year?.toString()} icon={<FaRegCalendarAlt size={18} />} />
+                                <InfoCard label="MONTH" value={holidayList.month_year || 'All Months'} icon={<LuCalendarDays size={18} />} />
                                 <InfoCard
                                     label="WORKING DAYS"
                                     value={`${holidayList.working_days || 0} days`}
-                                    icon="solar:clock-circle-bold"
-                                    variant="info"
+                                    icon={<LuClock size={18} />}
                                 />
                             </Box>
                         </Box>
@@ -92,7 +95,7 @@ export function HolidayDetailsDialog({ open, onClose, holidayList }: Props) {
                         {/* Holidays */}
                         {holidayList.holidays && holidayList.holidays.length > 0 && (
                             <Box>
-                                <SectionHeader title="Holidays" icon="solar:calendar-mark-bold" />
+                                <SectionHeader title="Holidays" icon="" />
                                 <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
                                     <Box sx={{ overflowX: 'auto' }}>
                                         <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -144,20 +147,19 @@ export function HolidayDetailsDialog({ open, onClose, holidayList }: Props) {
                         )}
 
                         {/* Metadata */}
-                        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                            <SectionHeader title="Record Information" icon="solar:info-circle-bold" noMargin />
-                            <Box sx={{ mt: 3, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                                <DetailItem
-                                    label="Created On"
-                                    value={holidayList.creation ? new Date(holidayList.creation).toLocaleString() : '-'}
-                                    icon="solar:calendar-bold"
-                                />
-                                <DetailItem
-                                    label="Last Modified"
-                                    value={holidayList.modified ? new Date(holidayList.modified).toLocaleString() : '-'}
-                                    icon="solar:calendar-bold"
-                                />
-                            </Box>
+                        <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                            <DetailItem
+                                label="Created On"
+                                value={holidayList.creation ? new Date(holidayList.creation).toLocaleString() : '-'}
+                                icon="solar:calendar-bold"
+                                color="warning"
+                            />
+                            <DetailItem
+                                label="Last Modified"
+                                value={holidayList.modified ? new Date(holidayList.modified).toLocaleString() : '-'}
+                                icon="solar:clock-circle-bold"
+                                color="warning"
+                            />
                         </Box>
                     </Box>
                 ) : (
@@ -189,7 +191,7 @@ function SectionHeader({ title, icon, noMargin = false, isPremium = false }: { t
                 >
                     <Iconify icon={icon as any} width={18} sx={{ color: 'common.white' }} />
                 </Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1c355e', letterSpacing: 0.5 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1c355e' }}>
                     {title}
                 </Typography>
             </Box>
@@ -198,50 +200,130 @@ function SectionHeader({ title, icon, noMargin = false, isPremium = false }: { t
 
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
-            <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Iconify icon={icon as any} width={18} sx={{ color: 'primary.main' }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '14px' }}>
                 {title}
             </Typography>
         </Box>
     );
 }
 
-function InfoCard({ label, value, icon, variant = 'neutral' }: { label: string; value?: string | null; icon: string, variant?: 'neutral' | 'info' }) {
+function InfoCard({ label, value, icon, variant = 'neutral' }: { label: string; value?: string | null; icon: React.ReactNode, variant?: 'neutral' | 'info' }) {
     const isInfo = variant === 'info';
     return (
         <Box
             sx={{
                 p: 2,
                 borderRadius: 2,
-                bgcolor: isInfo ? '#f0f7ff' : '#f4f6f8',
-                border: isInfo ? '1.5px solid #d0e9ff' : '1px solid transparent',
+                bgcolor: (theme) => isInfo ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.info.main, 0.04),
+                border: (theme) => `1px solid ${isInfo ? alpha(theme.palette.primary.main, 0.15) : alpha(theme.palette.info.main, 0.12)}`,
                 display: 'flex',
-                flexDirection: 'column',
-                gap: 1.5,
+                alignItems: 'center',
+                gap: 2,
+                minWidth: 0,
             }}
         >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={18} sx={{ color: isInfo ? '#1877f2' : '#919eab' }} />
-                <Typography variant="caption" sx={{ color: isInfo ? '#1877f2' : '#919eab', fontWeight: 700, letterSpacing: 0.5 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 40,
+                    height: 40,
+                    borderRadius: 1.5,
+                    bgcolor: (theme) => isInfo ? alpha(theme.palette.primary.main, 0.12) : alpha(theme.palette.info.main, 0.12),
+                    color: isInfo ? 'primary.main' : 'info.main',
+                    flexShrink: 0,
+                }}
+            >
+                {icon}
+            </Box>
+            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        color: 'text.secondary',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        display: 'block',
+                        fontSize: 11,
+                        mb: 0.2,
+                    }}
+                >
                     {label}
                 </Typography>
+                <Typography
+                    variant="subtitle1"
+                    sx={{
+                        fontWeight: 900,
+                        color: 'text.primary',
+                        fontSize: '15px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                    }}
+                >
+                    {value || '-'}
+                </Typography>
             </Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: isInfo ? '#1877f2' : '#1c355e', lineHeight: 1 }}>
-                {value || '-'}
-            </Typography>
         </Box>
     );
 }
 
-function DetailItem({ label, value, icon }: { label: string; value?: string | null; icon: string }) {
+function DetailItem({ label, value, icon, color = 'info' }: { label: string; value?: string | null; icon: string; color?: 'info' | 'warning' | 'primary' | 'success' | 'secondary' }) {
     return (
-        <Box>
-            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
-                {label}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+        <Box
+            sx={{
+                p: 2,
+                borderRadius: 2,
+                bgcolor: (theme) => alpha(theme.palette[color].main, 0.04),
+                border: (theme) => `1px solid ${alpha(theme.palette[color].main, 0.12)}`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                minWidth: 0,
+            }}
+        >
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 40,
+                    height: 40,
+                    borderRadius: 1.5,
+                    bgcolor: (theme) => alpha(theme.palette[color].main, 0.12),
+                    color: (theme) => theme.palette[color].main,
+                    flexShrink: 0,
+                }}
+            >
+                <Iconify icon={icon as any} width={20} />
+            </Box>
+            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        color: 'text.secondary',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        display: 'block',
+                        fontSize: 11,
+                        mb: 0.2,
+                    }}
+                >
+                    {label}
+                </Typography>
+                <Typography
+                    variant="subtitle2"
+                    sx={{
+                        fontWeight: 800,
+                        color: 'text.primary',
+                        fontSize: '14px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                    }}
+                >
                     {value || '-'}
                 </Typography>
             </Box>

@@ -1,7 +1,14 @@
+import { CONFIG } from 'src/config-global';
+
 import CRMExpenseTrackerView from 'src/sections/crm-expense-tracker/view/crm-expense-tracker-view';
 
 // ----------------------------------------------------------------------
 
 export default function CRMExpenseTrackerPage() {
-    return <CRMExpenseTrackerView />;
+    return (
+        <>
+            <title>{`Expense Tracker - ${CONFIG.appName}`}</title>
+            <CRMExpenseTrackerView />
+        </>
+    );
 }

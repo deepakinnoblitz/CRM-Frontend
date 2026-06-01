@@ -37,7 +37,7 @@ export default function PurchaseCollectionTableRow({
     hideCheckbox = false,
     index,
 }: Props) {
-    const { name, purchase, vendor_name, collection_date, amount_collected, amount_pending, mode_of_payment } = row;
+    const { name, purchase, amount_to_pay, collection_date, amount_collected, amount_pending, mode_of_payment } = row;
 
     return (
         <TableRow
@@ -86,22 +86,22 @@ export default function PurchaseCollectionTableRow({
             )}
 
             <TableCell component="th" scope="row">
-                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center', fontWeight: 700 }}>
                     {name}
                 </Box>
             </TableCell>
 
-            <TableCell>{purchase}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 500 }}>{purchase}</TableCell>
 
-            <TableCell>{vendor_name}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 500 }}>{fDate(collection_date)}</TableCell>
 
-            <TableCell>{fDate(collection_date)}</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 500 }}>{mode_of_payment}</TableCell>
 
-            <TableCell>{mode_of_payment}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(amount_to_pay)}</TableCell>
 
-            <TableCell align="right">{fCurrency(amount_collected)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{fCurrency(amount_collected)}</TableCell>
 
-            <TableCell align="right">{fCurrency(amount_pending || 0)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>{fCurrency(amount_pending || 0)}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

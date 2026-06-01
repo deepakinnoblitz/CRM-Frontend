@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import {  IoMdTrash } from "react-icons/io";
 import { useState, useEffect } from 'react';
 
 import Dialog from '@mui/material/Dialog';
@@ -84,6 +85,7 @@ const INITIAL_CALL_STATE: Partial<Call> = {
 
 export default function CallDialog({ open, onClose, selectedCall, initialData, onSuccess }: Props) {
     const [callData, setCallData] = useState<Partial<Call>>(INITIAL_CALL_STATE);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
@@ -158,6 +160,7 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
         }
 
         try {
+            setIsSubmitting(true);
             const formattedData = {
                 ...callData,
                 call_start_time: callData.call_start_time?.replace('T', ' '),
@@ -175,6 +178,8 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
         } catch (error: any) {
             console.error('Failed to save call:', error);
             setSnackbar({ open: true, message: error.message || 'Failed to save call', severity: 'error' });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -193,8 +198,8 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
 
     return (
         <>
-            <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (theme) => theme.customShadows.z24,}}}>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Typography variant="h6" sx={{ fontWeight: 700 }}>
                             {selectedCall ? 'Edit Call' : 'New Call'}
@@ -205,7 +210,7 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent dividers sx={{ borderBottom: 'none', px: 3, pb: 0 }}>
+                <DialogContent dividers sx={{ borderBottom: 'none', px: 4, pb: 0 }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <Box sx={{ py: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
                             {/* General Section */}
@@ -250,8 +255,8 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                                                     })}
                                                 >
                                                     <MenuItem value="Lead">Lead</MenuItem>
-                                                    <MenuItem value="Contact">Contact</MenuItem>
-                                                    <MenuItem value="Accounts">Accounts</MenuItem>
+                                                    <MenuItem value="Contact">Client</MenuItem>
+                                                    <MenuItem value="Accounts">Company</MenuItem>
                                                     <MenuItem value="Others">Others</MenuItem>
                                                 </Select>
                                             </FormControl>
@@ -296,6 +301,20 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                                                             helperText={formErrors.lead_name ? 'Lead is required' : ''}
                                                         />
                                                     )}
+                                                    renderOption={(props, option) => (
+                                                        <li {...props} key={typeof option === 'string' ? option : option.name}>
+                                                            <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                                                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                                    {typeof option === 'string' ? option : option.lead_name}
+                                                                </Typography>
+                                                                {typeof option !== 'string' && option.name && (
+                                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                                        ID: {option.name}
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
+                                                        </li>
+                                                    )}
                                                 />
                                             </Grid>
                                         )}
@@ -314,11 +333,25 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                                                     renderInput={(params) => (
                                                         <TextField
                                                             {...params}
-                                                            label="Select Contact"
+                                                            label="Select Client"
                                                             required
                                                             error={!!formErrors.contact_name}
-                                                            helperText={formErrors.contact_name ? 'Contact is required' : ''}
+                                                            helperText={formErrors.contact_name ? 'Client is required' : ''}
                                                         />
+                                                    )}
+                                                    renderOption={(props, option) => (
+                                                        <li {...props} key={typeof option === 'string' ? option : option.name}>
+                                                            <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                                                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                                    {typeof option === 'string' ? option : `${option.first_name || ''} ${option.last_name || ''}`.trim()}
+                                                                </Typography>
+                                                                {typeof option !== 'string' && option.name && (
+                                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                                        ID: {option.name}
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
+                                                        </li>
                                                     )}
                                                 />
                                             </Grid>
@@ -338,11 +371,25 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                                                     renderInput={(params) => (
                                                         <TextField
                                                             {...params}
-                                                            label="Select Account"
+                                                            label="Select Company"
                                                             required
                                                             error={!!formErrors.account_name}
-                                                            helperText={formErrors.account_name ? 'Account is required' : ''}
+                                                            helperText={formErrors.account_name ? 'Company is required' : ''}
                                                         />
+                                                    )}
+                                                    renderOption={(props, option) => (
+                                                        <li {...props} key={typeof option === 'string' ? option : option.name}>
+                                                            <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                                                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                                    {typeof option === 'string' ? option : option.account_name}
+                                                                </Typography>
+                                                                {typeof option !== 'string' && option.name && (
+                                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                                        ID: {option.name}
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
+                                                        </li>
                                                     )}
                                                 />
                                             </Grid>
@@ -369,51 +416,46 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
 
                                         {callData.outgoing_call_status === 'Completed' && (
                                             <Grid size={{ xs: 12, md: 6 }}>
-                                                <FormControl fullWidth>
-                                                    <InputLabel>Call Status</InputLabel>
-                                                    <Select
-                                                        label="Call Status"
-                                                        value={callData.completed_call_status}
-                                                        onChange={(e) => setCallData({ ...callData, completed_call_status: e.target.value as string })}
-                                                    >
-                                                        {[
-                                                            'Called – No Response',
-                                                            'Called – Phone Switched Off',
-                                                            'Called – Number Not Reachable',
-                                                            'Called – Wrong Number',
-                                                            'Called – Left Voicemail',
-                                                            'Called – Asked to Call Later',
-                                                            'Called – Spoke Briefly',
-                                                            'Spoke to Prospect – Not Available',
-                                                            'Spoke to Prospect – Confirmed Interest',
-                                                            'Spoke to Prospect – Needs More Time',
-                                                            'Spoke to Prospect – Will Revert Soon',
-                                                            'Spoke to Prospect – Awaiting Internal Discussion',
-                                                            'Demo Scheduled',
-                                                            'Demo Completed',
-                                                            'Demo Rescheduled',
-                                                            'Prospect Did Not Attend Demo',
-                                                            'Proposal / Quotation Sent',
-                                                            'Pricing Discussion Ongoing',
-                                                            'Negotiation in Progress',
-                                                            'Awaiting Prospect Approval',
-                                                            'Deal Won – Order Confirmed',
-                                                            'Deal Lost – Price Issue',
-                                                            'Deal Lost – No Requirement',
-                                                            'Deal Lost – Competitor Chosen',
-                                                            'Order Processing Started',
-                                                            'Payment Received',
-                                                            'Delivery / Implementation Started',
-                                                            'Post-Sales Follow-up Scheduled',
-                                                            'Lead Not Interested',
-                                                            'Lead Invalid',
-                                                            'Lead Closed – No Response',
-                                                            'Others'
-                                                        ].map((opt) => (
-                                                            <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
+                                                <Autocomplete
+                                                    fullWidth
+                                                    options={[
+                                                        'Called – No Response',
+                                                        'Called – Phone Switched Off',
+                                                        'Called – Number Not Reachable',
+                                                        'Called – Wrong Number',
+                                                        'Called – Left Voicemail',
+                                                        'Called – Asked to Call Later',
+                                                        'Called – Spoke Briefly',
+                                                        'Spoke to Prospect – Not Available',
+                                                        'Spoke to Prospect – Confirmed Interest',
+                                                        'Spoke to Prospect – Needs More Time',
+                                                        'Spoke to Prospect – Will Revert Soon',
+                                                        'Spoke to Prospect – Awaiting Internal Discussion',
+                                                        'Demo Scheduled',
+                                                        'Demo Completed',
+                                                        'Demo Rescheduled',
+                                                        'Prospect Did Not Attend Demo',
+                                                        'Proposal / Quotation Sent',
+                                                        'Pricing Discussion Ongoing',
+                                                        'Negotiation in Progress',
+                                                        'Awaiting Prospect Approval',
+                                                        'Deal Won – Order Confirmed',
+                                                        'Deal Lost – Price Issue',
+                                                        'Deal Lost – No Requirement',
+                                                        'Deal Lost – Competitor Chosen',
+                                                        'Order Processing Started',
+                                                        'Payment Received',
+                                                        'Delivery / Implementation Started',
+                                                        'Post-Sales Follow-up Scheduled',
+                                                        'Lead Not Interested',
+                                                        'Lead Invalid',
+                                                        'Lead Closed – No Response',
+                                                        'Others'
+                                                    ]}
+                                                    value={callData.completed_call_status || null}
+                                                    onChange={(_, newValue) => setCallData({ ...callData, completed_call_status: newValue || '' })}
+                                                    renderInput={(params) => <TextField {...params} label="Call Status" />}
+                                                />
                                             </Grid>
                                         )}
                                     </Grid>
@@ -426,18 +468,22 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                                     Time Schedule
                                 </Typography>
                                 <Grid container spacing={2}>
-                                    <Grid size={{ xs: 12, md: 6 }}>
+                                    <Grid size={{ md: 12, lg: 6 }}>
                                         <DateTimePicker
                                             label="Start Time"
+                                            format="DD-MM-YYYY hh:mm A"
                                             value={callData.call_start_time ? dayjs(callData.call_start_time) : null}
                                             onChange={(newValue) => setCallData({ ...callData, call_start_time: newValue ? newValue.format('YYYY-MM-DD HH:mm:ss') : '' })}
+                                            sx={{ width: '100%' }}
                                         />
                                     </Grid>
-                                    <Grid size={{ xs: 12, md: 6 }}>
+                                    <Grid size={{ md: 12, lg: 6 }}>
                                         <DateTimePicker
                                             label="End Time"
+                                            format="DD-MM-YYYY hh:mm A"
                                             value={callData.call_end_time ? dayjs(callData.call_end_time) : null}
                                             onChange={(newValue) => setCallData({ ...callData, call_end_time: newValue ? newValue.format('YYYY-MM-DD HH:mm:ss') : '' })}
+                                            sx={{ width: '100%' }}
                                         />
                                     </Grid>
                                 </Grid>
@@ -547,13 +593,14 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                     </LocalizationProvider>
                 </DialogContent>
 
-                <DialogActions sx={{ p: 3, pt: 2, gap: 1.5 }}>
+                <DialogActions sx={{ p: 2.5, pt: 2, gap: 1.5 }}>
                     {selectedCall && (
                         <Button
                             color="error"
-                            variant="outlined"
+                            variant="contained"
                             onClick={() => setConfirmDelete(true)}
-                            sx={{ mr: 'auto', borderRadius: 1 }}
+                            startIcon={<IoMdTrash size={20} />}
+                            sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', mr:'auto' }}
                         >
                             Delete
                         </Button>
@@ -562,9 +609,12 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                         variant="contained"
                         color="info"
                         onClick={handleSaveCall}
+                        disabled={isSubmitting}
                         sx={{ borderRadius: 1, px: 3 }}
                     >
-                        {selectedCall ? 'Save Changes' : 'Create Call'}
+                        {isSubmitting 
+                            ? (selectedCall ? 'Saving...' : 'Creating...') 
+                            : (selectedCall ? 'Save Changes' : 'Create Call')}
                     </Button>
                 </DialogActions>
             </Dialog>

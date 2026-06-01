@@ -3,9 +3,11 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Autocomplete from '@mui/material/Autocomplete';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -119,7 +121,17 @@ export function LeadTableFiltersDrawer({
                 fullWidth
                 value={filters.workflow_state}
                 onChange={(e) => handleFilterChange('workflow_state', e.target.value)}
-                SelectProps={{ native: true }}
+                SelectProps={{
+                    MenuProps: {
+                        PaperProps: {
+                            sx: {
+                                maxHeight: 280,
+                                borderRadius: 1.5,
+                                boxShadow: (theme) => theme.customShadows?.z20 || theme.shadows[10],
+                            },
+                        },
+                    },
+                }}
                 size="small"
                 sx={{
                     '& .MuiOutlinedInput-root': {
@@ -131,11 +143,11 @@ export function LeadTableFiltersDrawer({
                     },
                 }}
             >
-                <option value="all">All States</option>
+                <MenuItem value="all">All States</MenuItem>
                 {options.workflow_states.map((option) => (
-                    <option key={option} value={option}>
+                    <MenuItem key={option} value={option}>
                         {option}
-                    </option>
+                    </MenuItem>
                 ))}
             </TextField>
         </Stack>
@@ -146,30 +158,29 @@ export function LeadTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Lead Source
             </Typography>
-            <TextField
-                select
+            <Autocomplete
                 fullWidth
-                value={filters.leads_from}
-                onChange={(e) => handleFilterChange('leads_from', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">All Sources</option>
-                {options.leads_from.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
+                options={['all', ...options.leads_from]}
+                getOptionLabel={(option) => (option === 'all' ? 'All Sources' : option)}
+                value={filters.leads_from || 'all'}
+                onChange={(e, newValue) => handleFilterChange('leads_from', newValue || 'all')}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Select Lead Source"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+            />
         </Stack>
     );
 
@@ -183,7 +194,17 @@ export function LeadTableFiltersDrawer({
                 fullWidth
                 value={filters.leads_type}
                 onChange={(e) => handleFilterChange('leads_type', e.target.value)}
-                SelectProps={{ native: true }}
+                SelectProps={{
+                    MenuProps: {
+                        PaperProps: {
+                            sx: {
+                                maxHeight: 280,
+                                borderRadius: 1.5,
+                                boxShadow: (theme) => theme.customShadows?.z20 || theme.shadows[10],
+                            },
+                        },
+                    },
+                }}
                 size="small"
                 sx={{
                     '& .MuiOutlinedInput-root': {
@@ -195,9 +216,9 @@ export function LeadTableFiltersDrawer({
                     },
                 }}
             >
-                <option value="all">All Types</option>
-                <option value="Incoming">Incoming</option>
-                <option value="Outgoing">Outgoing</option>
+                <MenuItem value="all">All Types</MenuItem>
+                <MenuItem value="Incoming">Incoming</MenuItem>
+                <MenuItem value="Outgoing">Outgoing</MenuItem>
             </TextField>
         </Stack>
     );
@@ -207,30 +228,29 @@ export function LeadTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Service
             </Typography>
-            <TextField
-                select
+            <Autocomplete
                 fullWidth
-                value={filters.service}
-                onChange={(e) => handleFilterChange('service', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">All Services</option>
-                {options.services.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
+                options={['all', ...options.services]}
+                getOptionLabel={(option) => (option === 'all' ? 'All Services' : option)}
+                value={filters.service || 'all'}
+                onChange={(e, newValue) => handleFilterChange('service', newValue || 'all')}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Select Service"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+            />
         </Stack>
     );
 
@@ -239,30 +259,29 @@ export function LeadTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Country
             </Typography>
-            <TextField
-                select
+            <Autocomplete
                 fullWidth
-                value={filters.country}
-                onChange={(e) => handleFilterChange('country', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            >
-                <option value="all">All Countries</option>
-                {options.countries.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
+                options={['all', ...options.countries]}
+                getOptionLabel={(option) => (option === 'all' ? 'All Countries' : option)}
+                value={filters.country || 'all'}
+                onChange={(e, newValue) => handleFilterChange('country', newValue || 'all')}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Select Country"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+            />
         </Stack>
     );
 
@@ -271,31 +290,35 @@ export function LeadTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 State
             </Typography>
-            <TextField
-                select
+            <Autocomplete
                 fullWidth
-                value={filters.state}
-                onChange={(e) => handleFilterChange('state', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
                 disabled={!filters.country || filters.country === 'all'}
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
+                options={['all', ...options.states]}
+                getOptionLabel={(option) => {
+                    if (option === 'all') {
+                        return !filters.country || filters.country === 'all' ? 'Select Country First' : 'All States';
+                    }
+                    return option;
                 }}
-            >
-                <option value="all">{!filters.country || filters.country === 'all' ? 'Select Country First' : 'All States'}</option>
-                {options.states.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
+                value={filters.state || 'all'}
+                onChange={(e, newValue) => handleFilterChange('state', newValue || 'all')}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Select State"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+            />
         </Stack>
     );
 
@@ -304,31 +327,35 @@ export function LeadTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 City
             </Typography>
-            <TextField
-                select
+            <Autocomplete
                 fullWidth
-                value={filters.city}
-                onChange={(e) => handleFilterChange('city', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
                 disabled={!filters.state || filters.state === 'all'}
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
+                options={['all', ...options.cities]}
+                getOptionLabel={(option) => {
+                    if (option === 'all') {
+                        return !filters.state || filters.state === 'all' ? 'Select State First' : 'All Cities';
+                    }
+                    return option;
                 }}
-            >
-                <option value="all">{!filters.state || filters.state === 'all' ? 'Select State First' : 'All Cities'}</option>
-                {options.cities.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </TextField>
+                value={filters.city || 'all'}
+                onChange={(e, newValue) => handleFilterChange('city', newValue || 'all')}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Select City"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                },
+                            },
+                        }}
+                    />
+                )}
+            />
         </Stack>
     );
 
@@ -354,8 +381,8 @@ export function LeadTableFiltersDrawer({
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3 }}>
                     {renderWorkflowState}
-                    {renderLeadsFrom}
                     {renderLeadsType}
+                    {renderLeadsFrom}
                     {renderService}
                     {renderCountry}
                     {renderState}

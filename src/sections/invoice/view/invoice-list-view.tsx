@@ -42,12 +42,13 @@ import { InvoiceTableFiltersDrawer } from '../invoice-table-filters-drawer';
 
 const TABLE_HEAD = [
     { id: 'ref_no', label: 'Ref No' },
-    { id: 'customer_name', label: 'Customer' },
+    { id: 'billing_name', label: 'Billing Name' },
+    { id: 'customer_name', label: 'Client' },
     { id: 'invoice_date', label: 'Date' },
     { id: 'grand_total', label: 'Amount', align: 'right' },
     { id: 'received_amount', label: 'Received', align: 'right' },
     { id: 'balance_amount', label: 'Balance', align: 'right' },
-    { id: '' },
+    { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
 // ----------------------------------------------------------------------
@@ -110,7 +111,7 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
         table.onResetPage();
     };
 
-    const canReset = filters.client_name !== 'all' || !!filters.ref_no || !!filters.invoice_date;
+    const canReset = filters.client_name !== 'all' || !!filters.ref_no || !!filters.invoice_date || !!filterName;
 
     const handleFilterName = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -231,47 +232,61 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
                                 headLabel={TABLE_HEAD}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <InvoiceTableRow
-                                        key={row.name}
-                                        index={table.page * table.rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            ref_no: row.ref_no,
-                                            customer_name: row.customer_name || '',
-                                            invoice_date: row.invoice_date,
-                                            grand_total: row.grand_total || 0,
-                                            received_amount: row.received_amount || 0,
-                                            balance_amount: row.balance_amount || 0,
-                                        }}
-                                        selected={table.selected.includes(row.name)}
-                                        onSelectRow={() => table.onSelectRow(row.name)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onView={() => handleViewRow(row.name)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        onPrint={() => handlePrintRow(row.name, row.ref_no)}
-                                        onPreview={() => handlePreviewRow(row.name)}
-                                    />
-                                ))}
-
-                                    <TableEmptyRows
-                                        height={77}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
-                                            <EmptyContent
-                                                title="No invoices found"
-                                                description="Create a new invoice to track your sales pipeline."
-                                                icon="solar:bill-list-bold-duotone"
-                                            />
+                                        <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <InvoiceTableRow
+                                                key={row.name}
+                                                index={table.page * table.rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    ref_no: row.ref_no,
+                                                    client_name: row.client_name || '',
+                                                    customer_name: row.customer_name || '',
+                                                    billing_name: row.billing_name || '',
+                                                    invoice_date: row.invoice_date,
+                                                    grand_total: row.grand_total || 0,
+                                                    received_amount: row.received_amount || 0,
+                                                    balance_amount: row.balance_amount || 0,
+                                                }}
+                                                selected={table.selected.includes(row.name)}
+                                                onSelectRow={() => table.onSelectRow(row.name)}
+                                                onEdit={() => handleEditRow(row.name)}
+                                                onView={() => handleViewRow(row.name)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                onPrint={() => handlePrintRow(row.name, row.ref_no)}
+                                                onPreview={() => handlePreviewRow(row.name)}
+                                            />
+                                        ))}
+
+                                        {notFound && <TableNoData colSpan={10} searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={10}>
+                                                    <EmptyContent
+                                                        title="No invoices found"
+                                                        description="Create a new invoice to track your sales pipeline."
+                                                        icon="solar:bill-list-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

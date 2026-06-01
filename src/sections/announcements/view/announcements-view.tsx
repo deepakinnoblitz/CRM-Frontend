@@ -20,6 +20,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { useAnnouncements } from 'src/hooks/useAnnouncements';
@@ -85,8 +86,8 @@ const Android12Switch = styled(Switch)(({ theme }: { theme: Theme }) => ({
 // ----------------------------------------------------------------------
 
 const ANNOUNCEMENT_SORT_OPTIONS = [
-    { value: 'creation_desc', label: 'Newest First' },
-    { value: 'creation_asc', label: 'Oldest First' },
+    { value: 'modified_desc', label: 'Newest First' },
+    { value: 'modified_asc', label: 'Oldest First' },
     { value: 'announcement_name_asc', label: 'Title: A to Z' },
     { value: 'announcement_name_desc', label: 'Title: Z to A' },
 ];
@@ -96,7 +97,7 @@ export function AnnouncementsView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('creation');
+    const [orderBy, setOrderBy] = useState('modified');
     const [openFilters, setOpenFilters] = useState(false);
     const [filters, setFilters] = useState<{
         startDate: string | null;
@@ -107,7 +108,7 @@ export function AnnouncementsView() {
     });
     const [selected, setSelected] = useState<string[]>([]);
 
-    const { data, total, refetch } = useAnnouncements(page + 1, rowsPerPage, filterName, filters, orderBy, order);
+    const { data, total, loading, refetch } = useAnnouncements(page + 1, rowsPerPage, filterName, filters, orderBy, order);
 
     const [openCreate, setOpenCreate] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -118,6 +119,7 @@ export function AnnouncementsView() {
     const [announcementName, setAnnouncementName] = useState('');
     const [announcement, setAnnouncement] = useState('');
     const [isActive, setIsActive] = useState(true);
+    const [errors, setErrors] = useState<{ announcementName?: string; announcement?: string }>({});
 
     // View dialog state
     const [openView, setOpenView] = useState(false);
@@ -192,6 +194,7 @@ export function AnnouncementsView() {
         setAnnouncementName('');
         setAnnouncement('');
         setIsActive(true);
+        setErrors({});
         setOpenCreate(true);
     };
 
@@ -202,6 +205,7 @@ export function AnnouncementsView() {
         setAnnouncementName('');
         setAnnouncement('');
         setIsActive(true);
+        setErrors({});
     };
 
     const handleEditRow = useCallback((row: any) => {
@@ -237,6 +241,23 @@ export function AnnouncementsView() {
 
     const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+
+        const newErrors: { announcementName?: string; announcement?: string } = {};
+
+        if (!announcementName.trim()) {
+            newErrors.announcementName = 'Title is required';
+        }
+        if (!announcement.trim()) {
+            newErrors.announcement = 'Announcement details are required';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            setSnackbar({ open: true, message: 'Please fill out all required fields', severity: 'error' });
+            return;
+        }
+
+        setErrors({});
 
         const announcementData: Partial<Announcement> = {
             announcement_name: announcementName.trim(),
@@ -277,11 +298,11 @@ export function AnnouncementsView() {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const notFound = !data.length && !!filterName;
-    const empty = !data.length && !filterName;
+    const notFound = !loading && !data.length && !!filterName;
+    const empty = !loading && !data.length && !filterName;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Announcements
@@ -333,47 +354,54 @@ export function AnnouncementsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <AnnouncementTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            announcement_name: row.announcement_name,
-                                            announcement: row.announcement,
-                                            is_active: row.is_active,
-                                            creation: row.creation,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={4}>
-                                            <EmptyContent
-                                                title="No announcements"
-                                                description="There are no announcements to display at this time."
-                                                icon="solar:bell-bold-duotone"
-                                            />
+                                        <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <AnnouncementTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    announcement_name: row.announcement_name,
+                                                    announcement: row.announcement,
+                                                    is_active: row.is_active,
+                                                    creation: row.creation,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row)}
+                                                onEdit={() => handleEditRow(row)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={6}>
+                                                    <EmptyContent
+                                                        title="No announcements"
+                                                        description="There are no announcements to display at this time."
+                                                        icon="solar:bell-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -392,16 +420,30 @@ export function AnnouncementsView() {
             </Card>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
-                <form onSubmit={handleCreate}>
-                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Dialog 
+                open={openCreate} 
+                onClose={handleCloseCreate} 
+                fullWidth 
+                maxWidth="sm" 
+                PaperProps={{ 
+                    sx: { 
+                        borderRadius: 2, 
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    } 
+                }}
+            >
+                <form onSubmit={handleCreate} noValidate style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}`, }}>
                         {isEdit ? 'Edit Announcement' : 'New Announcement'}
                         <IconButton onClick={handleCloseCreate}>
                             <Iconify icon="mingcute:close-line" />
                         </IconButton>
                     </DialogTitle>
 
-                    <DialogContent dividers>
+                    <DialogContent dividers sx={{ flexGrow: 1, overflowY: 'auto' }}>
 
                         <Box sx={{ display: 'grid', gap: 3, margin: '1rem' }}>
 
@@ -420,7 +462,14 @@ export function AnnouncementsView() {
                                 fullWidth
                                 label="Title"
                                 value={announcementName}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAnnouncementName(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                    setAnnouncementName(e.target.value);
+                                    if (errors.announcementName) {
+                                        setErrors((prev) => ({ ...prev, announcementName: undefined }));
+                                    }
+                                }}
+                                error={!!errors.announcementName}
+                                helperText={errors.announcementName}
                                 required
                                 placeholder="Enter announcement title"
                             />
@@ -429,7 +478,14 @@ export function AnnouncementsView() {
                                 fullWidth
                                 label="Announcement"
                                 value={announcement}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAnnouncement(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                    setAnnouncement(e.target.value);
+                                    if (errors.announcement) {
+                                        setErrors((prev) => ({ ...prev, announcement: undefined }));
+                                    }
+                                }}
+                                error={!!errors.announcement}
+                                helperText={errors.announcement}
                                 multiline
                                 rows={6}
                                 placeholder="Enter announcement details"
@@ -439,7 +495,7 @@ export function AnnouncementsView() {
                         </Box>
                     </DialogContent>
 
-                    <DialogActions>
+                    <DialogActions sx={{p:1.5}}>
                         <Button type="submit" variant="contained">
                             {isEdit ? 'Update' : 'Create'}
                         </Button>

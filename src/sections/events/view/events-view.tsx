@@ -26,6 +26,7 @@ import { Box, Card, Grid, Stack, Alert, Button, Snackbar, IconButton, Typography
 import { stripHtml } from 'src/utils/string';
 
 import { CONFIG } from 'src/config-global';
+import { getToDo, type ToDo } from 'src/api/todo';
 import { getCall, type Call } from 'src/api/calls';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getMeeting, type Meeting } from 'src/api/meetings';
@@ -73,6 +74,7 @@ export function EventsView() {
 
     const [selectedCallDoc, setSelectedCallDoc] = useState<Call | null>(null);
     const [selectedMeetingDoc, setSelectedMeetingDoc] = useState<Meeting | null>(null);
+    const [selectedTodoDoc, setSelectedTodoDoc] = useState<ToDo | null>(null);
 
     const loadEvents = useCallback(async (start?: Date, end?: Date) => {
         try {
@@ -127,6 +129,11 @@ export function EventsView() {
         setSelectedMeetingDoc(null);
     };
 
+    const handleCloseTodoDialog = () => {
+        setOpenTodoDialog(false);
+        setSelectedTodoDoc(null);
+    };
+
     const handleEventClick = async (info: any) => {
         const eventId = info.event.id;
         const event = events.find(e => e.name === eventId);
@@ -151,6 +158,18 @@ export function EventsView() {
                 } catch (error) {
                     console.error('Failed to fetch meeting:', error);
                     setSnackbar({ open: true, message: 'Failed to fetch meeting details', severity: 'error' });
+                }
+                return;
+            }
+
+            if (event.reference_doctype === 'ToDo' && event.reference_docname) {
+                try {
+                    const todo = await getToDo(event.reference_docname);
+                    setSelectedTodoDoc(todo);
+                    setOpenTodoDialog(true);
+                } catch (error) {
+                    console.error('Failed to fetch todo:', error);
+                    setSnackbar({ open: true, message: 'Failed to fetch task details', severity: 'error' });
                 }
                 return;
             }
@@ -279,7 +298,7 @@ export function EventsView() {
 
     return (
         <DashboardContent maxWidth="xl">
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3} mt={2}>
                 <Box>
                     <Typography variant="h4">Events Calendar</Typography>
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -478,7 +497,7 @@ export function EventsView() {
                                 </Box>
                             );
                         }}
-                        height="auto"
+                        aspectRatio={1.5}
                         eventDisplay="block"
                         eventTimeFormat={{
                             hour: 'numeric',
@@ -500,8 +519,8 @@ export function EventsView() {
                 </Box>
             </Card>
 
-            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2, boxShadow: (t) => t.customShadows.z24, } }}>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Typography variant="h6" sx={{ fontWeight: 700 }}>
                             {selectedEvent ? 'Edit Event' : 'New Event'}
@@ -656,7 +675,7 @@ export function EventsView() {
             </Snackbar>
 
             {/* Event Type Selection Dialog */}
-            <Dialog open={openTypeDialog} onClose={() => setOpenTypeDialog(false)} maxWidth="sm" fullWidth>
+            <Dialog open={openTypeDialog} onClose={() => setOpenTypeDialog(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2, boxShadow: (t) => t.customShadows.z24, } }}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     Choose Event Type
                     <IconButton onClick={() => setOpenTypeDialog(false)} sx={{ color: 'text.secondary' }}>
@@ -762,7 +781,8 @@ export function EventsView() {
 
             <TodoDialog
                 open={openTodoDialog}
-                onClose={() => setOpenTodoDialog(false)}
+                onClose={handleCloseTodoDialog}
+                selectedTodo={selectedTodoDoc}
                 initialData={selectedDate ? { date: selectedDate.split('T')[0] } : undefined}
                 onSuccess={loadEvents}
             />

@@ -1,7 +1,9 @@
+import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
@@ -14,6 +16,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
+import { getEmployee } from 'src/api/employees';
 import { getRequest, updateRequestStatus } from 'src/api/requests';
 
 import { Label } from 'src/components/label';
@@ -35,21 +38,38 @@ type Props = {
 
 export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket }: Props) {
     const { user } = useAuth();
-    const [loading, setLoading] = useState<string | null>(null);
     const [openClarification, setOpenClarification] = useState(false);
     const [clarificationType, setClarificationType] = useState<'HR' | 'Employee'>('HR');
     const [internalRequest, setInternalRequest] = useState<any>(request);
+    const [employeeDetails, setEmployeeDetails] = useState<any>(null);
+    const [loading, setLoading] = useState<string | null>(null);
+    const [fetching, setFetching] = useState(false);
 
     useEffect(() => {
-        setInternalRequest(request);
-    }, [request]);
+        if (open && request?.name) {
+            setFetching(true);
+            setInternalRequest(request);
+            setEmployeeDetails(null);
 
-    useEffect(() => {
-        if (open && internalRequest?.name) {
-            // Fetch fresh data when dialog opens
-            getRequest(internalRequest.name).then(setInternalRequest).catch(console.error);
+            getRequest(request.name)
+                .then((data) => {
+                    setInternalRequest(data);
+                    const empId = data.employee || data.employee_id;
+                    if (empId) {
+                        getEmployee(empId)
+                            .then(setEmployeeDetails)
+                            .catch(console.error)
+                            .finally(() => setFetching(false));
+                    } else {
+                        setFetching(false);
+                    }
+                })
+                .catch((err) => {
+                    console.error(err);
+                    setFetching(false);
+                });
         }
-    }, [open, internalRequest?.name]);
+    }, [open, request?.name, request]);
 
     // Real-time: refresh when this specific request changes
     useEffect(() => {
@@ -152,7 +172,7 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
 
     const renderConversation = (
         <Box sx={{ height: 1, display: 'flex', flexDirection: 'column' }}>
-            <SectionHeader title="Clarification History" icon="solar:chat-round-dots-bold" />
+            <SectionHeader title="Clarification History" icon="" />
             <Box
                 sx={{
                     flexGrow: 1,
@@ -262,17 +282,21 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
                 }
             }}
         >
-            <DialogTitle sx={{ m: 0, p: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}`, }}>
                 <Stack direction="row" alignItems="center" spacing={1.5}>
-                    <Typography variant="h5" sx={{ fontWeight: 800 }}>Request Details</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>Request Details</Typography>
                 </Stack>
-                <IconButton onClick={onClose} sx={{ color: 'text.disabled', '&:hover': { color: 'error.main', bgcolor: (theme) => alpha(theme.palette.error.main, 0.08) } }}>
-                    <Iconify icon="mingcute:close-line" width={24} />
+                <IconButton onClick={onClose} sx={{ color: 'text.disabled' }}>
+                    <Iconify icon="mingcute:close-line" width={20} />
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 4, pt: 0 }}>
-                {internalRequest ? (
+            <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto', mt: 3 }}>
+                {fetching ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
+                        <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
+                    </Box>
+                ) : internalRequest ? (
                     <Box
                         sx={{
                             display: 'grid',
@@ -284,83 +308,141 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
                         <Box sx={{ gridColumn: { lg: hasHistory ? 'span 8' : 'span 12' } }}>
                             <Stack spacing={3}>
                                 {/* Header Summary Card */}
-                                <Box
-                                    sx={{
-                                        p: 3,
-                                        borderRadius: 2,
-                                        bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
-                                        boxShadow: (theme) => theme.customShadows?.z12,
-                                        border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.12)}`,
-                                        position: 'relative',
-                                        overflow: 'hidden',
-                                    }}
-                                >
-                                    <Stack direction="row" alignItems="center" spacing={2.5} sx={{ mb: 3 }}>
-                                        <Box
-                                            sx={{
-                                                width: 54,
-                                                height: 54,
-                                                borderRadius: 1.5,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: 'common.white',
-                                                background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.info.main} 100%)`,
-                                                boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.primary.main, 0.24)}`,
-                                            }}
-                                        >
-                                            <Iconify icon={"solar:user-bold-duotone" as any} width={32} />
-                                        </Box>
-                                        <Box>
-                                            <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-                                                {internalRequest?.employee_name}
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                                {internalRequest?.employee}
-                                            </Typography>
-                                        </Box>
-                                    </Stack>
-
-                                    <Stack
-                                        direction="row"
-                                        spacing={4}
+                                <Box sx={{ px: 2 }}>
+                                    <Box
                                         sx={{
-                                            p: 2,
-                                            borderRadius: 1.5,
-                                            bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                            p: 3,
+                                            borderRadius: 2,
+                                            bgcolor: 'background.paper',
+                                            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.26)}`,
+                                            boxShadow: (theme) => theme.customShadows?.z4
                                         }}
                                     >
-                                        <Stack spacing={0.5}>
-                                            <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800 }}>STATUS</Typography>
-                                            {renderStatus(internalRequest.workflow_state)}
+                                        <Stack direction="row" alignItems="center" spacing={2.5} sx={{ position: 'relative', zIndex: 1 }}>
+                                            <Avatar
+                                                src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image}
+                                                sx={{
+                                                    width: 72,
+                                                    height: 72,
+                                                    borderRadius: '50%',
+                                                    border: '3px solid #FFFFFF',
+                                                    boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.12)',
+                                                    bgcolor: (theme: any) => {
+                                                        const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image;
+                                                        if (img) return 'transparent';
+                                                        const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                                        let hash = 0;
+                                                        const name = internalRequest?.employee_name || '';
+                                                        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                                        return colors[Math.abs(hash) % colors.length];
+                                                    },
+                                                    color: (theme: any) => {
+                                                        const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image;
+                                                        return img ? 'inherit' : alpha(theme.palette.common.black, 0.6);
+                                                    },
+                                                    fontSize: '1.75rem',
+                                                    fontWeight: 900,
+                                                }}
+                                            >
+                                                {internalRequest?.employee_name?.charAt(0) || 'U'}
+                                            </Avatar>
+                                            <Box sx={{ flexGrow: 1 }}>
+                                                <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.2, color: 'text.primary' }}>
+                                                    {internalRequest?.employee_name}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, mt: 0.5, display: 'block' }}>
+                                                    Employee ID: {internalRequest?.employee || internalRequest?.employee_id || '-'}
+                                                </Typography>
+                                            </Box>
+                                            <Label
+                                                color={
+                                                    (internalRequest.workflow_state === 'Approved' && 'success') ||
+                                                    (internalRequest.workflow_state === 'Rejected' && 'error') ||
+                                                    (internalRequest.workflow_state === 'Clarification Requested' && 'info') ||
+                                                    'warning'
+                                                }
+                                                variant="soft"
+                                                sx={{
+                                                    fontWeight: 700,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: 0.25,
+                                                    px: 1.5,
+                                                    py: 2,
+                                                    borderRadius: 1,
+                                                    fontSize: '0.75rem'
+                                                }}
+                                            >
+                                                {internalRequest.workflow_state || 'Pending'}
+                                            </Label>
                                         </Stack>
-                                        <Stack spacing={0.5}>
-                                            <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800 }}>ID</Typography>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{internalRequest.name}</Typography>
+
+                                        <Divider sx={{ borderStyle: 'dashed', my: 2.5 }} />
+
+                                        <Stack
+                                            direction="row"
+                                            alignItems="center"
+                                            justifyContent="space-between"
+                                        >
+                                            <Stack spacing={0.5}>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '11px' }}>
+                                                    Request ID
+                                                </Typography>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                                                    {internalRequest.name || 'N/A'}
+                                                </Typography>
+                                            </Stack>
+
+                                            <Stack spacing={0.5} alignItems="flex-end" sx={{ textAlign: 'right' }}>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '11px' }}>
+                                                    Submitted On
+                                                </Typography>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                                                    {internalRequest.creation ? dayjs(internalRequest.creation).format('DD/MM/YYYY, HH:mm:ss') : '-'}
+                                                </Typography>
+                                            </Stack>
                                         </Stack>
-                                    </Stack>
+                                    </Box>
                                 </Box>
 
-                                {/* Request Info */}
-                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
-                                    <DetailItem label="Subject" value={internalRequest.subject} icon="solar:document-text-bold" />
-                                    <DetailItem label="Created On" value={internalRequest.creation ? new Date(internalRequest.creation).toLocaleString() : '-'} icon="solar:calendar-bold" />
+                                {/* Subject Section */}
+                                <Box sx={{ px: 2, pt: 1.5 }}>
+                                    <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
+                                        Subject
+                                    </Typography>
+                                    <Box
+                                        sx={{
+                                            p: 2,
+                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                                            borderRadius: 1.5,
+                                            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                                            borderRight: (theme) => `3px solid ${theme.palette.info.main}`,
+                                            borderLeft: (theme) => `3px solid ${theme.palette.info.main}`,
+                                        }}
+                                    >
+                                        <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600, fontSize: '14.5px' }}>
+                                            {internalRequest.subject || 'No subject specified'}
+                                        </Typography>
+                                    </Box>
                                 </Box>
 
                                 {/* Message Section */}
-                                <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                <Box sx={{ px: 2 }}>
+                                    <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
                                         Message
                                     </Typography>
-                                    <Typography
-                                        variant="body2"
-                                        sx={{
-                                            fontWeight: 500,
-                                            '& p': { margin: 0, marginBottom: 1 },
-                                            '& p:last-child': { marginBottom: 0 }
-                                        }}
-                                        dangerouslySetInnerHTML={{ __html: internalRequest.message || '-' }}
-                                    />
+                                    <Box sx={{ p: 3, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04), borderRadius: 1.5, border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                color: 'text.primary',
+                                                fontWeight: 500,
+                                                fontSize: '14.5px',
+                                                '& p': { margin: 0, marginBottom: 1 },
+                                                '& p:last-child': { marginBottom: 0 }
+                                            }}
+                                            dangerouslySetInnerHTML={{ __html: internalRequest.message || '-' }}
+                                        />
+                                    </Box>
                                 </Box>
                             </Stack>
                         </Box>
@@ -381,61 +463,66 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
             </DialogContent>
 
             {internalRequest && (
-                <DialogActions sx={{ p: 3, justifyContent: 'flex-end', gap: 1.5 }}>
-                    {/* HR Actions */}
-                    {!isEmployee && (internalRequest.workflow_state === 'Pending' || internalRequest.workflow_state === 'Clarification Requested' || !internalRequest.workflow_state) && (
-                        <>
-                            <LoadingButton
-                                color="success"
-                                variant="contained"
-                                loading={loading === 'Approved'}
-                                onClick={() => handleUpdateStatus('Approved')}
-                                startIcon={<Iconify icon={"solar:check-circle-bold" as any} />}
-                            >
-                                Approve
-                            </LoadingButton>
+                <>
+                    <Divider />
+                    <DialogActions sx={{ p: 2, justifyContent: 'flex-end', gap: 1.5 }}>
+                        {/* HR Actions */}
+                        {!isEmployee && (internalRequest.workflow_state === 'Pending' || internalRequest.workflow_state === 'Clarification Requested' || !internalRequest.workflow_state) && (
+                            <>
+                                <LoadingButton
+                                    color="success"
+                                    variant="contained"
+                                    loading={loading === 'Approved'}
+                                    disabled={!!loading}
+                                    onClick={() => handleUpdateStatus('Approved')}
+                                    sx={{ fontWeight: 800, px: 3 }}
+                                >
+                                    Approve
+                                </LoadingButton>
 
-                            <LoadingButton
-                                color="error"
-                                variant="contained"
-                                loading={loading === 'Rejected'}
-                                onClick={() => handleUpdateStatus('Rejected')}
-                                startIcon={<Iconify icon={"solar:close-circle-bold" as any} />}
-                            >
-                                Reject
-                            </LoadingButton>
+                                <LoadingButton
+                                    color="error"
+                                    variant="contained"
+                                    loading={loading === 'Rejected'}
+                                    disabled={!!loading}
+                                    onClick={() => handleUpdateStatus('Rejected')}
+                                    sx={{ fontWeight: 800, px: 3 }}
+                                >
+                                    Reject
+                                </LoadingButton>
 
+                                <Button
+                                    color="info"
+                                    variant="contained"
+                                    disabled={hrLimitReached || !!loading}
+                                    onClick={() => {
+                                        setClarificationType('HR');
+                                        setOpenClarification(true);
+                                    }}
+                                    sx={{ fontWeight: 800, px: 3 }}
+                                >
+                                    Ask Clarification
+                                </Button>
+                            </>
+                        )}
+
+                        {/* Employee Actions */}
+                        {isEmployee && internalRequest.workflow_state === 'Clarification Requested' && (
                             <Button
                                 color="info"
                                 variant="contained"
-                                disabled={hrLimitReached}
+                                disabled={employeeLimitReached || !!loading}
                                 onClick={() => {
-                                    setClarificationType('HR');
+                                    setClarificationType('Employee');
                                     setOpenClarification(true);
                                 }}
-                                startIcon={<Iconify icon={"solar:question-square-bold" as any} />}
+                                sx={{ fontWeight: 800, px: 3 }}
                             >
-                                Ask Clarification
+                                Reply
                             </Button>
-                        </>
-                    )}
-
-                    {/* Employee Actions */}
-                    {isEmployee && internalRequest.workflow_state === 'Clarification Requested' && (
-                        <Button
-                            color="info"
-                            variant="contained"
-                            disabled={employeeLimitReached}
-                            onClick={() => {
-                                setClarificationType('Employee');
-                                setOpenClarification(true);
-                            }}
-                            startIcon={<Iconify icon={"solar:forward-bold" as any} />}
-                        >
-                            Reply
-                        </Button>
-                    )}
-                </DialogActions>
+                        )}
+                    </DialogActions>
+                </>
             )}
 
             <ClarificationDialog
@@ -454,7 +541,7 @@ function SectionHeader({ title, icon, noMargin = false }: { title: string; icon:
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
             <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: 16 }}>
                 {title}
             </Typography>
         </Box>
@@ -463,8 +550,8 @@ function SectionHeader({ title, icon, noMargin = false }: { title: string; icon:
 
 function DetailItem({ label, value, icon }: { label: string; value?: string | null; icon: string }) {
     return (
-        <Box>
-            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
+        <Box sx={{ m: 3 }}>
+            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block', py: 1, fontSize: '13px' }}>
                 {label}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

@@ -206,11 +206,9 @@ export default function SalarySlipAutoAllocateDialog({ open, onClose, onSuccess,
             onClose={onClose}
             fullWidth
             maxWidth="md"
-            PaperProps={{
-                sx: { borderRadius: 2.5 },
-            }}
+            PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}
         >
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}`, }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>
                     Auto Allocate Salary Slips {step === 2 && `- Step ${step} of 2`}
                 </Typography>
@@ -219,7 +217,7 @@ export default function SalarySlipAutoAllocateDialog({ open, onClose, onSuccess,
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 3 }}>
+            <DialogContent sx={{ p: 3, mt:2 }}>
                 {step === 1 ? (
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <Box sx={{ mt: 2 }}>

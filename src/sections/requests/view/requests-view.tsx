@@ -27,6 +27,7 @@ import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -43,6 +44,7 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+import { RichTextEditor } from 'src/components/rich-text-editor/rich-text-editor';
 
 import { TableNoData } from 'src/sections/lead/table-no-data';
 import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
@@ -71,9 +73,9 @@ export function RequestsView() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-  const [orderBy, setOrderBy] = useState('creation');
+  const [orderBy, setOrderBy] = useState('modified');
   const [selected, setSelected] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState('creation_desc');
+  const [sortBy, setSortBy] = useState('modified_desc');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterEmployee, setFilterEmployee] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<string | null>(null);
@@ -83,7 +85,7 @@ export function RequestsView() {
 
   const effectiveEmployee = isHR ? (filterEmployee || 'all') : (user?.employee || 'all');
 
-  const { data, total, refetch } = useRequests(
+  const { data, total, loading, refetch } = useRequests(
     page + 1,
     rowsPerPage,
     filterName,
@@ -124,6 +126,8 @@ export function RequestsView() {
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const [submitting, setSubmitting] = useState(false);
 
   // Load permissions and employees
   useEffect(() => {
@@ -228,7 +232,14 @@ export function RequestsView() {
     const errors: Record<string, string> = {};
     if (!employeeId) errors.employeeId = 'Employee selection is required';
     if (!subject.trim()) errors.subject = 'Please provide a subject for your request';
-    if (!message.trim()) errors.message = 'Please enter the details of your request';
+    
+    // Check if rich text editor content is empty by extracting text content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = message;
+    const plainTextMessage = (tempDiv.textContent || tempDiv.innerText || '').trim();
+    if (!plainTextMessage) {
+      errors.message = 'Please enter the details of your request';
+    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -363,15 +374,6 @@ export function RequestsView() {
   };
 
   const handleCreate = async () => {
-
-
-
-    const requestData = {
-      employee_id: employeeId.trim(),
-      subject: subject.trim(),
-      message: message.trim(),
-    };
-
     if (!validateForm()) {
       setSnackbar({
         open: true,
@@ -382,6 +384,14 @@ export function RequestsView() {
     }
 
     try {
+      setSubmitting(true);
+
+      const requestData = {
+        employee_id: employeeId.trim(),
+        subject: subject.trim(),
+        message: message.trim(),
+      };
+
       if (isEdit && currentRequest) {
         await updateRequest(currentRequest.name, requestData);
         setSnackbar({ open: true, message: 'Request updated successfully', severity: 'success' });
@@ -393,6 +403,8 @@ export function RequestsView() {
       refetch();
     } catch (error: any) {
       setSnackbar({ open: true, message: error.message || 'Operation failed', severity: 'error' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -414,11 +426,11 @@ export function RequestsView() {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const notFound = !data.length && !!filterName;
-  const empty = !data.length && !filterName;
+  const notFound = !loading && !data.length && !!filterName;
+  const empty = !loading && !data.length && !filterName;
 
   return (
-    <DashboardContent maxWidth={false}>
+    <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
       <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           Request List
@@ -446,8 +458,8 @@ export function RequestsView() {
           sortBy={sortBy}
           onSortChange={handleSortChange}
           sortOptions={[
-            { value: 'creation_desc', label: 'Newest First' },
-            { value: 'creation_asc', label: 'Oldest First' },
+            { value: 'modified_desc', label: 'Newest First' },
+            { value: 'modified_asc', label: 'Oldest First' },
             { value: 'employee_id_asc', label: 'Employee ID: Low to High' },
             { value: 'employee_id_desc', label: 'Employee ID: High to Low' },
             { value: 'employee_name_asc', label: 'Employee Name: A to Z' },
@@ -471,76 +483,84 @@ export function RequestsView() {
 
 
                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
-                onSort={handleSort}
 
                 hideCheckbox
                 showIndex
                 headLabel={[
                   { id: 'employee_name', label: 'Employee Name' },
-                  { id: 'subject', label: 'Subject', sx: { display: { xs: 'none', md: 'table-cell' } } },
+                  { id: 'subject', label: 'Subject', width: 500, sx: { display: { xs: 'none', md: 'table-cell' } } },
                   { id: 'workflow_state', label: 'Status' },
                   { id: '', label: '' },
                 ]}
               />
               <TableBody>
-                {data.map((row, index) => (
-                  <RequestTableRow
-                    key={row.name}
-                    index={page * rowsPerPage + index}
-                    hideCheckbox
-                    row={{
-                      id: row.name,
-                      name: row.name,
-                      employee_id: row.employee_id,
-                      employee_name: row.employee_name,
-                      subject: row.subject,
-                      workflow_state: row.workflow_state,
-                      creation: row.creation,
-                      modified: row.modified,
-                      owner: row.owner,
-                      hrQueryCount: [1, 2, 3, 4, 5].filter(i => {
-                        const field = i === 1 ? 'hr_query' : `hr_query_${i}`;
-                        return row[field] && String(row[field]).trim();
-                      }).length,
-                      empReplyCount: [1, 2, 3, 4, 5].filter(i => {
-                        const field = i === 1 ? 'employee_reply' : `employee_reply_${i}`;
-                        return row[field] && String(row[field]).trim();
-                      }).length,
-                    }}
-                    selected={selected.includes(row.name)}
-                    onSelectRow={() => handleSelectRow(row.name)}
-                    onView={() => handleViewRow(row)}
-                    onEdit={() => handleEditRow(row)}
-                    onDelete={() => handleDeleteRow(row.name)}
-                    canEdit={permissions.write}
-                    canDelete={permissions.delete}
-                    onApplyAction={(action) => handleApplyAction(row.name, action)}
-                    onClarify={(clarificationMessage) => handleClarify(row.name, clarificationMessage)}
-                    isHR={isHR}
-                  />
-
-
-                ))}
-
-                {notFound && <TableNoData searchQuery={filterName} />}
-
-                {empty && (
+                {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5}>
-                      <EmptyContent
-                        title="No requests found"
-                        description="You haven't submitted any requests yet."
-                        icon="solar:document-text-bold-duotone"
-                      />
+                    <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
+                      <CircularProgress />
                     </TableCell>
                   </TableRow>
-                )}
+                ) : (
+                  <>
+                    {data.map((row, index) => (
+                      <RequestTableRow
+                        key={row.name}
+                        index={page * rowsPerPage + index}
+                        hideCheckbox
+                        row={{
+                          id: row.name,
+                          name: row.name,
+                          employee_id: row.employee_id,
+                          employee_name: row.employee_name,
+                          subject: row.subject,
+                          workflow_state: row.workflow_state,
+                          creation: row.creation,
+                          modified: row.modified,
+                          owner: row.owner,
+                          hrQueryCount: [1, 2, 3, 4, 5].filter(i => {
+                            const field = i === 1 ? 'hr_query' : `hr_query_${i}`;
+                            return row[field] && String(row[field]).trim();
+                          }).length,
+                          empReplyCount: [1, 2, 3, 4, 5].filter(i => {
+                            const field = i === 1 ? 'employee_reply' : `employee_reply_${i}`;
+                            return row[field] && String(row[field]).trim();
+                          }).length,
+                        }}
+                        selected={selected.includes(row.name)}
+                        onSelectRow={() => handleSelectRow(row.name)}
+                        onView={() => handleViewRow(row)}
+                        onEdit={() => handleEditRow(row)}
+                        onDelete={() => handleDeleteRow(row.name)}
+                        canEdit={permissions.write}
+                        canDelete={permissions.delete}
+                        onApplyAction={(action) => handleApplyAction(row.name, action)}
+                        onClarify={(clarificationMessage) => handleClarify(row.name, clarificationMessage)}
+                        isHR={isHR}
+                      />
+                    ))}
 
-                {!empty && (
-                  <TableEmptyRows
-                    height={68}
-                    emptyRows={data.length < 5 ? 5 - data.length : 0}
-                  />
+                    {notFound && <TableNoData searchQuery={filterName} />}
+
+                    {empty && (
+                      <TableRow>
+                        <TableCell colSpan={5}>
+                          <EmptyContent
+                            title="No Request Found"
+                            description="You haven't submitted any requests yet."
+                            icon="solar:document-text-bold-duotone"
+                            sx={{ py: 16 }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )}
+
+                    {!empty && !notFound && (
+                      <TableEmptyRows
+                        height={68}
+                        emptyRows={data.length < 5 ? 5 - data.length : 0}
+                      />
+                    )}
+                  </>
                 )}
               </TableBody>
             </Table>
@@ -559,9 +579,9 @@ export function RequestsView() {
       </Card>
 
       {/* Create/Edit Dialog */}
-      <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
+      <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
 
-        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center',  }}>
           {isEdit ? 'Edit Request' : 'New Request'}
           <IconButton onClick={handleCloseCreate}>
             <Iconify icon="mingcute:close-line" />
@@ -640,13 +660,45 @@ export function RequestsView() {
               />
             )}
             {renderField('subject', 'Subject', 'text', [], { placeholder: 'Enter request subject' }, true)}
-            {renderField('message', 'Message', 'textarea', [], { placeholder: 'Enter request details' }, true)}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography 
+                variant="subtitle2" 
+                sx={{ 
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  '&::after': {
+                    content: '" *"',
+                    color: 'error.main',
+                    ml: 0.5
+                  }
+                }}
+              >
+                Message
+              </Typography>
+              <RichTextEditor
+                value={message}
+                onChange={(val) => {
+                  setMessage(val);
+                  if (formErrors.message) setFormErrors((prev) => ({ ...prev, message: '' }));
+                }}
+                placeholder="Enter request details"
+                error={!!formErrors.message}
+                helperText={formErrors.message}
+              />
+            </Box>
           </Box>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={handleCreate} variant="contained" sx={{ bgcolor: "#08a3cd", "&": { bgcolor: "#068fb3" } }}>
-            {isEdit ? 'Update' : 'Submit'}
+        <DialogActions sx={{ p: 1.5 }}>
+          <Button
+            onClick={handleCreate}
+            variant="contained"
+            disabled={submitting}
+            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            {submitting ? 'Submitting...' : (isEdit ? 'Update' : 'Submit')}
           </Button>
         </DialogActions>
 

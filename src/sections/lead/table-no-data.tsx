@@ -5,6 +5,8 @@ import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 
+import { Iconify } from 'src/components/iconify';
+
 // ----------------------------------------------------------------------
 
 type TableNoDataProps = TableRowProps & {
@@ -14,8 +16,10 @@ type TableNoDataProps = TableRowProps & {
 export function TableNoData({ searchQuery, ...other }: TableNoDataProps) {
   return (
     <TableRow {...other}>
-      <TableCell align="center" colSpan={7}>
-        <Box sx={{ py: 15, textAlign: 'center' }}>
+      <TableCell align="center" colSpan={12}>
+        <Box sx={{ py: 16, textAlign: 'center' }}>
+
+
           <Typography variant="h6" sx={{ mb: 1 }}>
             Not found
           </Typography>

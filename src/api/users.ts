@@ -126,7 +126,7 @@ export async function fetchUsers(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=User&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=User&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch users");
@@ -286,7 +286,8 @@ export async function getRoleProfiles() {
 }
 
 export async function getRoles() {
-    const res = await frappeRequest('/api/method/frappe.client.get_list?doctype=Role&fields=["name"]&limit_page_length=999');
+    const filters = JSON.stringify([["Role", "display_in_frontend", "=", 1]]);
+    const res = await frappeRequest(`/api/method/frappe.client.get_list?doctype=Role&fields=["name"]&filters=${filters}&limit_page_length=999`);
     if (!res.ok) throw new Error("Failed to fetch roles");
     return (await res.json()).message;
 }

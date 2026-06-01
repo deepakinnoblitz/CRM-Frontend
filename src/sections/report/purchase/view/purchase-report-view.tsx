@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
+import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -20,8 +21,11 @@ import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+
+import { usePdfExport } from 'src/hooks/use-pdf-export';
 
 import { runReport } from 'src/api/reports';
 import { getDoctypeList } from 'src/api/purchase';
@@ -29,16 +33,22 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { generatePurchasePdf } from 'src/components/export/pdf/purchase-pdf-generator';
+
+import { useAuth } from 'src/auth/auth-context';
 
 import { ExportFieldsDialog } from '../../export-fields-dialog';
-import { PurchaseDetailsDialog } from '../../purchase-details-dialog';
 
 // ----------------------------------------------------------------------
 
 export function PurchaseReportView() {
+    const { user } = useAuth();
+    const navigate = useNavigate();
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [summaryData, setSummaryData] = useState<any[]>([]);
+
+    const { exportingPdf, handleExportPdf } = usePdfExport();
 
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
@@ -52,9 +62,7 @@ export function PurchaseReportView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
-    // View Details
-    const [openView, setOpenView] = useState(false);
-    const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null);
+
 
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
@@ -100,6 +108,7 @@ export function PurchaseReportView() {
                 if (fromDate) filters.push(['Purchase', 'bill_date', '>=', fromDate.format('YYYY-MM-DD')]);
                 if (toDate) filters.push(['Purchase', 'bill_date', '<=', toDate.format('YYYY-MM-DD')]);
                 if (vendor) filters.push(['Purchase', 'vendor_name', '=', vendor.name]);
+                if (user?.has_crm_permission) filters.push(['Purchase', 'owner', '=', user.name]);
             }
 
             const query = new URLSearchParams({
@@ -138,9 +147,8 @@ export function PurchaseReportView() {
     };
 
     const handleViewPurchase = useCallback((id: string) => {
-        setSelectedPurchaseId(id);
-        setOpenView(true);
-    }, []);
+        navigate(`/purchase/${encodeURIComponent(id)}`);
+    }, [navigate]);
 
     const onChangePage = useCallback((event: unknown, newPage: number) => {
         setPage(newPage);
@@ -158,6 +166,7 @@ export function PurchaseReportView() {
             if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
             if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
             if (vendor) filters.vendor = vendor.name;
+            if (user?.has_crm_permission) filters.owner = user.name;
 
             console.log('Fetching Purchase Report with filters:', filters);
             const result = await runReport('Purchase Report', filters);
@@ -179,7 +188,7 @@ export function PurchaseReportView() {
         } finally {
             setLoading(false);
         }
-    }, [fromDate, toDate, vendor]);
+    }, [fromDate, toDate, vendor, user]);
 
     useEffect(() => {
         fetchReport();
@@ -198,7 +207,7 @@ export function PurchaseReportView() {
     }, []);
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
                     <Typography variant="h4">Purchase Report</Typography>
@@ -224,9 +233,11 @@ export function PurchaseReportView() {
 
                 <Card
                     sx={{
-                        p: 2.5,
+                        py: 2.5,
+                        px: 2,
                         display: 'flex',
-                        gap: 2,
+                        columnGap: 2,
+                        rowGap: 1.5,
                         flexWrap: 'wrap',
                         alignItems: 'center',
                         bgcolor: 'background.neutral',
@@ -236,33 +247,97 @@ export function PurchaseReportView() {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="From Date"
+                            format="DD-MM-YYYY"
                             value={fromDate}
                             onChange={(newValue) => setFromDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 190, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                         <DatePicker
                             label="To Date"
+                            format="DD-MM-YYYY"
                             value={toDate}
                             onChange={(newValue) => setToDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 190, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                     </LocalizationProvider>
                     <Autocomplete
                         size="small"
                         sx={{ minWidth: 240 }}
                         options={vendorOptions}
-                        getOptionLabel={(option) => option ? `${option.name} - ${option.first_name}` : ''}
+                        getOptionLabel={(option) => option ? `${option.first_name} (${option.name})` : ''}
                         value={vendor}
                         onChange={(event, newValue) => setVendor(newValue)}
-                        renderInput={(params) => <TextField {...params} label="Vendor" placeholder="All Vendors" />}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="Search vendors..."
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                        renderOption={(props, option) => (
+                            <li {...props} key={option.name}>
+                                <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                        {option.first_name}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                        ID: {option.name}
+                                    </Typography>
+                                </Stack>
+                            </li>
+                        )}
                     />
                     <Box sx={{ flexGrow: 1 }} />
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon={"solar:export-bold" as any} />}
                         onClick={() => setOpenExportFields(true)}
+                        disabled={reportData.length === 0}
+                        sx={{ mr: 1 }}
                     >
-                        Export
+                        Export Excel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                        onClick={() => handleExportPdf(() => generatePurchasePdf({
+                            reportData,
+                            selected,
+                            summary: summaryData.length > 0 ? summaryData : [
+                                { label: 'Total Purchase Bills', value: reportData.length },
+                                { label: 'Sub Total Amount', value: reportData.reduce((acc, curr) => acc + (curr.sub_total || 0), 0) },
+                                { label: 'Tax Amount', value: reportData.reduce((acc, curr) => acc + (curr.tax_amount || 0), 0) },
+                                { label: 'Grand Total Amount', value: reportData.reduce((acc, curr) => acc + (curr.grand_total || 0), 0) }
+                            ]
+                        }))}
+                        disabled={exportingPdf || reportData.length === 0}
+                        sx={{
+                            bgcolor: '#f43f5e',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#e11d48' },
+                            height: 37,
+                            px: 3,
+                        }}
+                    >
+                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
                     </Button>
                 </Card>
 
@@ -317,47 +392,57 @@ export function PurchaseReportView() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
-                                        const isSelected = selected.indexOf(row.name) !== -1;
-                                        return (
-                                            <TableRow
-                                                key={index}
-                                                hover
-                                                role="checkbox"
-                                                aria-checked={isSelected}
-                                                selected={isSelected}
-                                                sx={{
-                                                    '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                    '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                }}
-                                            >
-                                                <TableCell padding="checkbox">
-                                                    <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
-                                                </TableCell>
-                                                <TableCell>{row.name}</TableCell>
-                                                <TableCell>{row.vendor_name}{row.vendor_real_name ? ` - ${row.vendor_real_name}` : ''}</TableCell>
-                                                <TableCell>{row.bill_no}</TableCell>
-                                                <TableCell>{row.bill_date ? dayjs(row.bill_date).format('DD MMM YYYY') : '-'}</TableCell>
-                                                <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
-                                                <TableCell>{row.quantity}</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>₹{row.grand_total?.toLocaleString() || 0}</TableCell>
-                                                <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
-                                                    <IconButton onClick={() => handleViewPurchase(row.name)} sx={{ color: 'info.main' }}>
-                                                        <Iconify icon="solar:eye-bold" />
-                                                    </IconButton>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                    {reportData.length === 0 && !loading && (
+                                    {loading ? (
                                         <TableRow>
                                             <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
-                                                <Stack spacing={1} alignItems="center">
-                                                    <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
-                                                </Stack>
+                                                <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
+                                    ) : (
+                                        <>
+                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                                const isSelected = selected.indexOf(row.name) !== -1;
+                                                return (
+                                                    <TableRow
+                                                        key={index}
+                                                        hover
+                                                        role="checkbox"
+                                                        aria-checked={isSelected}
+                                                        selected={isSelected}
+                                                        sx={{
+                                                            '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                            '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                        }}
+                                                    >
+                                                        <TableCell padding="checkbox">
+                                                            <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                                                        </TableCell>
+                                                        <TableCell>{row.name}</TableCell>
+                                                        <TableCell>{row.vendor_name}{row.vendor_real_name ? ` - ${row.vendor_real_name}` : ''}</TableCell>
+                                                        <TableCell>{row.bill_no}</TableCell>
+                                                        <TableCell>{row.bill_date ? dayjs(row.bill_date).format('DD MMM YYYY') : '-'}</TableCell>
+                                                        <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
+                                                        <TableCell>{row.quantity}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 700 }}>₹{row.grand_total?.toLocaleString() || 0}</TableCell>
+                                                        <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
+                                                            <IconButton onClick={() => handleViewPurchase(row.name)} sx={{ color: 'info.main' }}>
+                                                                <Iconify icon="solar:eye-bold" />
+                                                            </IconButton>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                            {reportData.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                                        <Stack spacing={1} alignItems="center">
+                                                            <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
+                                                        </Stack>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </>
                                     )}
                                 </TableBody>
                             </Table>
@@ -375,14 +460,6 @@ export function PurchaseReportView() {
                 </Card>
             </Stack>
 
-            <PurchaseDetailsDialog
-                open={openView}
-                purchaseId={selectedPurchaseId}
-                onClose={() => {
-                    setOpenView(false);
-                    setSelectedPurchaseId(null);
-                }}
-            />
 
             <ExportFieldsDialog
                 open={openExportFields}

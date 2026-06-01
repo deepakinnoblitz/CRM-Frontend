@@ -1,11 +1,38 @@
-import { useState, useEffect, useCallback } from 'react';
+import type { IconType } from 'react-icons';
+
+import { IoCall } from "react-icons/io5";
+import { FaPhoneVolume } from "react-icons/fa6";
+import { useState, useEffect, useCallback } from 'react'
+import {
+    FaAward,
+    FaBriefcase,
+    FaBuilding,
+    FaCalendarAlt,
+    FaCamera,
+    FaChartLine,
+    FaChartPie,
+    FaCreditCard,
+    FaDollarSign,
+    FaEnvelope,
+    FaFileAlt,
+    FaGhost,
+    FaGlobeAmericas,
+    FaHeartbeat,
+    FaInfoCircle,
+    FaMapMarkerAlt,
+    FaMedal,
+    FaUser,
+    FaWallet, 
+} from 'react-icons/fa';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
+import { alpha } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
@@ -14,9 +41,10 @@ import CardContent from '@mui/material/CardContent';
 
 import { fDate } from 'src/utils/format-time';
 import { frappeRequest } from 'src/utils/csrf';
+import { fNumber } from 'src/utils/format-number';
 
-import { getHRDoc } from 'src/api/hr-management';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { getHRDoc, getHRSettings } from 'src/api/hr-management';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -38,6 +66,15 @@ export function MyProfileView() {
         message: '',
         severity: 'success',
     });
+    const [hrSettings, setHRSettings] = useState<{ default_currency: string; currency_symbol: string; default_locale: string }>({
+        default_currency: 'INR',
+        currency_symbol: '₹',
+        default_locale: 'en-IN'
+    });
+
+    useEffect(() => {
+        getHRSettings().then(setHRSettings).catch(console.error);
+    }, []);
 
     const handleCloseSnackbar = () => setSnackbar((prev) => ({ ...prev, open: false }));
 
@@ -110,7 +147,7 @@ export function MyProfileView() {
 
     return (
         <DashboardContent maxWidth={false}>
-            <Container maxWidth="lg">
+            <Container maxWidth="xl">
                 <Typography variant="h4" sx={{ mb: 5 }}>
                     My Profile
                 </Typography>
@@ -147,10 +184,14 @@ export function MyProfileView() {
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            background: (theme) => employee.profile_picture
-                                                ? 'transparent'
-                                                : `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
-                                            color: 'white',
+                                            bgcolor: (theme) => {
+                                                if (employee.profile_picture) return 'transparent';
+                                                const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                                let hash = 0;
+                                                const name = employee.employee_name || '';
+                                                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                                return colors[Math.abs(hash) % colors.length];
+                                            },
                                             overflow: 'hidden',
                                             border: (theme) => `4px solid ${theme.palette.background.paper}`,
                                             boxShadow: (theme) => `0 8px 32px ${theme.palette.mode === 'light' ? 'rgba(0,0,0,0.12)' : 'rgba(0,0,0,0.4)'}`,
@@ -160,8 +201,20 @@ export function MyProfileView() {
                                         {employee.profile_picture ? (
                                             <Box component="img" src={employee.profile_picture} sx={{ width: 1, height: 1, objectFit: 'cover' }} />
                                         ) : (
-                                            <Iconify icon={"solar:user-bold" as any} width={60} />
+                                            <Typography variant="h2" sx={{
+                                                fontWeight: 800,
+                                                color: (theme) => {
+                                                    const name = employee.employee_name || '';
+                                                    let hash = 0;
+                                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
+                                                    return textColors[Math.abs(hash) % textColors.length];
+                                                }
+                                            }}>
+                                                {(employee.employee_name || '?').charAt(0).toUpperCase()}
+                                            </Typography>
                                         )}
+
 
                                         {uploading && (
                                             <Box
@@ -203,7 +256,7 @@ export function MyProfileView() {
                                                 },
                                             }}
                                         >
-                                            <Iconify icon={"solar:camera-bold" as any} width={18} />
+                                            <ReactIcon icon={FaCamera} size={18} />
                                             <input type="file" hidden accept="image/*" onChange={handleFileUpload} />
                                         </IconButton>
                                     </Tooltip>
@@ -224,7 +277,7 @@ export function MyProfileView() {
 
                             {/* Contact Information */}
                             <Box>
-                                <SectionHeader title="Contact Information" icon="solar:phone-calling-bold" />
+                                <SectionHeader title="Contact Information" icon={FaPhoneVolume} />
                                 <Box
                                     sx={{
                                         display: 'grid',
@@ -232,11 +285,11 @@ export function MyProfileView() {
                                         gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                     }}
                                 >
-                                    <DetailItem label="Official Email" value={employee.email} icon="solar:letter-bold" />
-                                    <DetailItem label="Personal Email" value={employee.personal_email} icon="solar:letter-bold" />
-                                    <DetailItem label="Personal Phone" value={employee.phone} icon="solar:phone-bold" />
-                                    <DetailItem label="Office Phone" value={employee.office_phone_number} icon="solar:phone-bold" />
-                                    <DetailItem label="User Login" value={employee.user} icon="solar:user-bold" />
+                                    <DetailItem label="Official Email" value={employee.email} icon={FaEnvelope} />
+                                    <DetailItem label="Personal Email" value={employee.personal_email} icon={FaEnvelope} />
+                                    <DetailItem label="Personal Phone" value={employee.phone} icon={IoCall} />
+                                    <DetailItem label="Office Phone" value={employee.office_phone_number} icon={IoCall} />
+                                    <DetailItem label="User Login" value={employee.user} icon={FaUser} />
                                 </Box>
                             </Box>
 
@@ -244,7 +297,7 @@ export function MyProfileView() {
 
                             {/* Employment Details */}
                             <Box>
-                                <SectionHeader title="Employment Details" icon="solar:case-bold" />
+                                <SectionHeader title="Employment Details" icon={FaBriefcase} />
                                 <Box
                                     sx={{
                                         display: 'grid',
@@ -252,11 +305,11 @@ export function MyProfileView() {
                                         gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                     }}
                                 >
-                                    <DetailItem label="Department" value={employee.department} icon="solar:buildings-bold" />
-                                    <DetailItem label="Designation" value={employee.designation} icon="solar:medal-star-bold" />
-                                    <DetailItem label="Joining Date" value={fDate(employee.date_of_joining, 'DD-MM-YYYY')} icon="solar:calendar-bold" />
-                                    <DetailItem label="Status" value={employee.status} icon="solar:info-circle-bold" />
-                                    <DetailItem label="Date of Birth" value={fDate(employee.dob, 'DD-MM-YYYY')} icon="solar:calendar-bold" />
+                                    <DetailItem label="Department" value={employee.department} icon={FaBuilding} />
+                                    <DetailItem label="Designation" value={employee.designation} icon={FaAward} />
+                                    <DetailItem label="Joining Date" value={fDate(employee.date_of_joining, 'DD-MM-YYYY')} icon={FaCalendarAlt} />
+                                    <DetailItem label="Status" value={employee.status} icon={FaInfoCircle} />
+                                    <DetailItem label="Date of Birth" value={fDate(employee.dob, 'DD-MM-YYYY')} icon={FaCalendarAlt} />
                                 </Box>
                             </Box>
 
@@ -264,7 +317,7 @@ export function MyProfileView() {
 
                             {/* Location Details */}
                             <Box>
-                                <SectionHeader title="Location Details" icon="solar:earth-bold" />
+                                <SectionHeader title="Location Details" icon={FaGlobeAmericas} />
                                 <Box
                                     sx={{
                                         display: 'grid',
@@ -272,9 +325,9 @@ export function MyProfileView() {
                                         gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                     }}
                                 >
-                                    <DetailItem label="Country" value={employee.country} icon="solar:earth-bold" />
-                                    <DetailItem label="State" value={employee.state} icon="solar:map-point-bold" />
-                                    <DetailItem label="City" value={employee.city} icon="solar:map-point-bold" />
+                                    <DetailItem label="Country" value={employee.country} icon={FaGlobeAmericas} />
+                                    <DetailItem label="State" value={employee.state} icon={FaMapMarkerAlt} />
+                                    <DetailItem label="City" value={employee.city} icon={FaMapMarkerAlt} />
                                 </Box>
                             </Box>
 
@@ -282,7 +335,7 @@ export function MyProfileView() {
 
                             {/* Bank & Identification */}
                             <Box>
-                                <SectionHeader title="Bank & Identification" icon="solar:card-bold" />
+                                <SectionHeader title="Bank & Identification" icon={FaCreditCard} />
                                 <Box
                                     sx={{
                                         display: 'grid',
@@ -290,10 +343,10 @@ export function MyProfileView() {
                                         gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                     }}
                                 >
-                                    <DetailItem label="Bank Name" value={employee.bank_name} icon="solar:buildings-bold" />
-                                    <DetailItem label="Bank Account" value={employee.bank_account} icon="solar:card-bold" />
-                                    <DetailItem label="PF Number" value={employee.pf_number} icon="solar:document-bold" />
-                                    <DetailItem label="ESI No" value={employee.esi_no} icon="solar:health-bold" />
+                                    <DetailItem label="Bank Name" value={employee.bank_name} icon={FaBuilding} />
+                                    <DetailItem label="Bank Account" value={employee.bank_account} icon={FaCreditCard} />
+                                    <DetailItem label="PF Number" value={employee.pf_number} icon={FaFileAlt} />
+                                    <DetailItem label="ESI No" value={employee.esi_no} icon={FaHeartbeat} />
                                 </Box>
                             </Box>
 
@@ -309,7 +362,7 @@ export function MyProfileView() {
 
                             {/* Badges & Achievements */}
                             <Box>
-                                <SectionHeader title="Badges & Achievements" icon="solar:medal-ribbon-bold" />
+                                <SectionHeader title="Badges & Achievements" icon={FaMedal} />
                                 <ProfileBadges employeeId={employee.name} />
                             </Box>
 
@@ -317,7 +370,7 @@ export function MyProfileView() {
 
                             {/* Salary & Finance */}
                             <Box>
-                                <SectionHeader title="Financial Summary" icon="solar:wallet-money-bold" />
+                                <SectionHeader title="Financial Summary" icon={FaWallet} />
 
                                 {/* CTC Card */}
                                 <Box sx={{
@@ -328,18 +381,19 @@ export function MyProfileView() {
                                     border: (theme) => `1px solid ${theme.palette.divider}`,
                                 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                        <Iconify icon={"solar:dollar-minimalistic-bold" as any} width={20} sx={{ color: 'primary.main' }} />
+                                        <ReactIcon icon={FaDollarSign} size={20} sx={{ color: 'primary.main' }} />
                                         <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}>
                                             Cost to Company (Monthly)
                                         </Typography>
                                     </Box>
-                                    <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                                        {employee.ctc ? `₹${parseFloat(employee.ctc).toLocaleString()}` : '-'}
+                                    <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main', display: 'flex', alignItems: 'center' }}>
+                                        <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mr: 1, fontSize: '0.8em', color: 'primary.main' }}>{hrSettings.currency_symbol}</Box>
+                                        {employee.ctc ? fNumber(parseFloat(employee.ctc), { locale: hrSettings.default_locale }) : '-'}
                                     </Typography>
                                 </Box>
 
                                 {/* Earnings & Deductions Grid */}
-                                <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={3}>
+                                <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={3} sx={{ mb: 3 }}>
                                     {/* Earnings Card */}
                                     <Box sx={{
                                         p: 3,
@@ -358,18 +412,19 @@ export function MyProfileView() {
                                                 bgcolor: 'success.main',
                                                 color: 'white'
                                             }}>
-                                                <Iconify icon={"solar:chart-2-bold" as any} width={18} />
+                                                <ReactIcon icon={FaChartLine} size={18} />
                                             </Box>
                                             <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'success.darker' }}>
                                                 Earnings
                                             </Typography>
                                         </Box>
                                         <Box display="flex" flexDirection="column" gap={1.5}>
-                                            <SalaryItem label="Basic Pay" value={employee.basic_pay} />
-                                            <SalaryItem label="HRA" value={employee.hra} />
-                                            <SalaryItem label="Conveyance" value={employee.conveyance_allowances} />
-                                            <SalaryItem label="Medical" value={employee.medical_allowances} />
-                                            <SalaryItem label="Other Allowances" value={employee.other_allowances} />
+                                            {(employee.earnings || []).map((item: any, idx: number) => (
+                                                <SalaryItem key={idx} label={item.component_name} value={item.amount} hrSettings={hrSettings} />
+                                            ))}
+                                            {(!employee.earnings || employee.earnings.length === 0) && (
+                                                <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>No earnings defined</Typography>
+                                            )}
                                         </Box>
                                     </Box>
 
@@ -391,25 +446,61 @@ export function MyProfileView() {
                                                 bgcolor: 'warning.main',
                                                 color: 'white'
                                             }}>
-                                                <Iconify icon={"solar:chart-square-bold" as any} width={18} />
+                                                <ReactIcon icon={FaChartPie} size={18} />
                                             </Box>
                                             <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'warning.darker' }}>
                                                 Deductions
                                             </Typography>
                                         </Box>
                                         <Box display="flex" flexDirection="column" gap={1.5}>
-                                            <SalaryItem label="PF Deduction" value={employee.pf} />
-                                            <SalaryItem label="ESI/Health Insurance" value={employee.health_insurance} />
-                                            <SalaryItem label="Professional Tax" value={employee.professional_tax} />
-                                            <SalaryItem label="Loan Recovery" value={employee.loan_recovery} />
+                                            {(employee.deductions || []).map((item: any, idx: number) => (
+                                                <SalaryItem key={idx} label={item.component_name} value={item.amount} hrSettings={hrSettings} />
+                                            ))}
+                                            {(!employee.deductions || employee.deductions.length === 0) && (
+                                                <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>No deductions defined</Typography>
+                                            )}
                                         </Box>
                                     </Box>
+                                </Box>
+
+                                {/* Net Salary Summary */}
+                                <Box sx={{
+                                    p: 3,
+                                    borderRadius: 2,
+                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
+                                    border: (theme) => `1px dashed ${alpha(theme.palette.primary.main, 0.3)}`
+                                }}>
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                        <Box>
+                                            <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>Net Salary (Monthly)</Typography>
+                                            <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 800, display: 'flex', alignItems: 'center' }}>
+                                                <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mr: 1, fontSize: '0.8em', color: 'primary.main' }}>{hrSettings.currency_symbol}</Box>
+                                                {fNumber(employee.net_salary || 0, { locale: hrSettings.default_locale })}
+                                            </Typography>
+                                        </Box>
+                                        <Stack direction="row" spacing={4}>
+                                            <Box sx={{ textAlign: 'right' }}>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Earnings</Typography>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'success.main', display: 'flex', alignItems: 'center' }}>
+                                                    + <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mx: 0.5, color: 'success.main' }}>{hrSettings.currency_symbol}</Box>
+                                                    {fNumber(employee.total_earnings || 0, { locale: hrSettings.default_locale })}
+                                                </Typography>
+                                            </Box>
+                                            <Box sx={{ textAlign: 'right' }}>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Deductions</Typography>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'error.main', display: 'flex', alignItems: 'center' }}>
+                                                    - <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mx: 0.5, color: 'error.main' }}>{hrSettings.currency_symbol}</Box>
+                                                    {fNumber(employee.total_deductions || 0, { locale: hrSettings.default_locale })}
+                                                </Typography>
+                                            </Box>
+                                        </Stack>
+                                    </Stack>
                                 </Box>
                             </Box>
                         </Box>
                     ) : (
                         <Box sx={{ py: 10, textAlign: 'center' }}>
-                            <Iconify icon={"solar:ghost-bold" as any} width={64} sx={{ color: 'text.disabled', mb: 2 }} />
+                            <ReactIcon icon={FaGhost} size={64} sx={{ color: 'text.disabled', mb: 2 }} />
                             <Typography variant="h6" sx={{ color: 'text.secondary' }}>No Employee Profile Found</Typography>
                             <Typography variant="body2" sx={{ color: 'text.disabled' }}>Please ensure your account is linked to an Employee record.</Typography>
                         </Box>
@@ -431,25 +522,39 @@ export function MyProfileView() {
     );
 }
 
-function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: string, noMargin?: boolean }) {
+function ReactIcon({ icon: Icon, size, sx }: { icon: IconType; size: number; sx?: any }) {
+    return (
+        <Box
+            component={Icon as any}
+            sx={{
+                width: size,
+                height: size,
+                flexShrink: 0,
+                ...sx,
+            }}
+        />
+    );
+}
+
+function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: IconType, noMargin?: boolean }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
-            <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <ReactIcon icon={icon} size={16} sx={{ color: 'primary.main' }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '14px' }}>
                 {title}
             </Typography>
         </Box>
     );
 }
 
-function DetailItem({ label, value, icon, color = 'text.primary' }: { label: string; value?: string | null; icon: string; color?: string }) {
+function DetailItem({ label, value, icon, color = 'text.primary' }: { label: string; value?: string | null; icon: IconType; color?: string }) {
     return (
         <Box>
             <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
                 {label}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
+                <ReactIcon icon={icon} size={16} sx={{ color: 'text.disabled' }} />
                 <Typography variant="body2" sx={{ fontWeight: 700, color }}>
                     {value || '-'}
                 </Typography>
@@ -458,14 +563,15 @@ function DetailItem({ label, value, icon, color = 'text.primary' }: { label: str
     );
 }
 
-function SalaryItem({ label, value }: { label: string; value?: string | number | null }) {
+function SalaryItem({ label, value, hrSettings }: { label: string; value?: string | number | null, hrSettings: any }) {
     return (
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
                 {label}
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                {value ? `₹${parseFloat(value.toString()).toLocaleString()}` : '-'}
+            <Typography variant="body2" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center' }}>
+                <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mr: 0.5, fontSize: '0.9em', color: 'text.primary' }}>{hrSettings.currency_symbol}</Box>
+                {value ? fNumber(parseFloat(value.toString()), { locale: hrSettings.default_locale }) : '-'}
             </Typography>
         </Box>
     );

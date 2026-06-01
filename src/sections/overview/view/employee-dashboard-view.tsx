@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
 
+import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
+import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
+
+import { usePresence } from 'src/hooks/use-presence';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
@@ -10,6 +15,8 @@ import {
     fetchEmployeeDashboardData,
     type EmployeeDashboardData,
 } from 'src/api/dashboard';
+
+import { Loader } from 'src/components/loader';
 
 import { useAuth } from 'src/auth/auth-context';
 
@@ -19,7 +26,9 @@ import { HRDashboardTable } from '../hr-dashboard-table';
 import { LeaveStatusCards } from '../leave-status-cards';
 import { DashboardEomCard } from '../dashboard-eom-card';
 import { MissingTimesheets } from '../missing-timesheets';
+import { HRTaskSummaryCards } from '../hr-task-summary-cards';
 import { PremiumWorkingHours } from '../premium-working-hours';
+import { TodayPresenceWidget } from '../today-presence-widget';
 import { PersonalityManagement } from '../personality-management';
 import { CalendarAttendanceChart } from '../calendar-attendance-chart';
 
@@ -27,20 +36,34 @@ import { CalendarAttendanceChart } from '../calendar-attendance-chart';
 
 export function EmployeeDashboardView() {
     const { user } = useAuth();
+    const { status: currentStatus } = usePresence();
+    const [loading, setLoading] = useState(true);
     const [data, setData] = useState<EmployeeDashboardData | null>(null);
 
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                const dashboardData = await fetchEmployeeDashboardData();
-                setData(dashboardData);
-            } catch (error) {
-                console.error('Failed to load employee dashboard data:', error);
-            }
-        };
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const dashboardData = await fetchEmployeeDashboardData();
+            setData(dashboardData);
+        } catch (error) {
+            console.error('Failed to load employee dashboard data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         loadData();
     }, []);
+
+    const handleRefresh = async () => {
+        try {
+            const dashboardData = await fetchEmployeeDashboardData(data?.attendance_range);
+            setData(dashboardData);
+        } catch (error) {
+            console.error('Failed to refresh dashboard data:', error);
+        }
+    };
 
     const handleAttendanceRangeChange = async (range: string) => {
         try {
@@ -72,17 +95,35 @@ export function EmployeeDashboardView() {
         }
     };
 
-    if (!data) {
-        return null;
+    if (loading || !data) {
+        return (
+            <DashboardContent maxWidth="xl">
+                <Box
+                    sx={{
+                        height: '70vh',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'column',
+                    }}
+                >
+                    <Loader />
+                </Box>
+            </DashboardContent>
+        );
     }
 
     return (
         <DashboardContent maxWidth="xl">
-            <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
+            <Typography variant="h4" sx={{ mb: { xs: 3, md: 2 } }}>
                 Hi, {data.employee_name || user?.full_name || 'Employee'}, Welcome back 👋
             </Typography>
 
             <DashboardEomCard />
+
+            {/* <Box sx={{ mt: 3 }}>
+                <TodayPresenceWidget />
+            </Box> */}
 
             <Grid container spacing={3} sx={{ mt: 3 }}>
                 {/* 1. Latest Announcements */}
@@ -96,11 +137,18 @@ export function EmployeeDashboardView() {
                     />
                 </Grid>
 
+                {/* Task Analytics Overview */}
+                <Grid size={{ xs: 12 }}>
+                    <HRTaskSummaryCards employeeFilter={data.employee} />
+                </Grid>
+
                 {/* 2. Last Seven Days Working Hours (Premium Widget) */}
                 <Grid size={{ xs: 12 }}>
                     <PremiumWorkingHours
-                        data={(data.weekly_attendance || []).slice(0, 6)}
+                        data={(data.weekly_attendance || []).slice(0, 7)}
                         weeklyTarget={45}
+                        source={data.weekly_chart_source}
+                        onRefreshData={handleRefresh}
                     />
                 </Grid>
 
@@ -125,6 +173,7 @@ export function EmployeeDashboardView() {
                         calendarData={data.monthly_attendance_list || []}
                         joiningDate={data.joining_date}
                         breakdown={data.monthly_attendance_breakdown} // Pass backend breakdown
+                        hideMissing={data.hide_missing} // Hide missing for Daily Log
                         sx={{ pt: 5 }}
                     />
                 </Grid>
@@ -171,15 +220,27 @@ export function EmployeeDashboardView() {
                                         const hasOutTime = !!record.check_out;
                                         const isIncomplete = (hasInTime && !hasOutTime) || (!hasInTime && hasOutTime);
 
-                                        if (isIncomplete && (isPast || isToday)) {
+                                        if (isToday && currentStatus !== 'Offline') {
+                                            eventTitle = currentStatus === 'Available' ? 'Available' : currentStatus;
+                                            if (currentStatus === 'Available') {
+                                                bgColor = '#22C55E'; // Green
+                                            } else if (currentStatus === 'Busy' || currentStatus === 'Do Not Disturb') {
+                                                bgColor = '#FF5630'; // Red
+                                            } else {
+                                                bgColor = '#FFAB00'; // Orange for Break/Away
+                                            }
+                                        } else if (isIncomplete && (isPast || isToday) && !data.hide_missing) {
                                             eventTitle = 'Missing';
                                             bgColor = '#FFC107'; // Amber/Yellow for Missing
                                         } else if (record.status === 'Present') {
                                             eventTitle = 'Present';
                                             bgColor = '#22C55E'; // Green
-                                        } else if (record.status === 'Absent') {
+                                        } else if (record.status === 'Absent' && isPast) {
                                             eventTitle = 'Absent';
                                             bgColor = '#FF5630'; // Red
+                                        } else if (record.status === 'Absent' && isToday) {
+                                            eventTitle = 'Offline';
+                                            bgColor = '#9E9E9E'; // Gray for Offline today
                                         } else if (record.status === 'On Leave' || record.status === 'Leave') {
                                             eventTitle = 'On Leave';
                                             bgColor = '#00B8D9'; // Blue/Cyan for Leave
@@ -204,8 +265,9 @@ export function EmployeeDashboardView() {
                                                 eventTitle = 'Present';
                                                 bgColor = '#22C55E';
                                             } else {
-                                                // Today unmarked
-                                                return null;
+                                                // Today unmarked/offline
+                                                eventTitle = 'Offline';
+                                                bgColor = '#9E9E9E';
                                             }
                                         } else if (isHoliday) {
                                             // Future Working Holiday
@@ -234,7 +296,7 @@ export function EmployeeDashboardView() {
                         title="Today's Birthdays"
                         tableData={data.todays_birthdays || []}
                         headLabel={[
-                            { id: 'index', label: '#' },
+                            { id: 'index', label: 'S.No' },
                             { id: 'employee_name', label: 'Employee Name' },
                         ]}
                         emptyMessage="No birthday today"
@@ -247,7 +309,7 @@ export function EmployeeDashboardView() {
                         title="Today's Leave"
                         tableData={data.todays_leaves || []}
                         headLabel={[
-                            { id: 'index', label: '#' },
+                            { id: 'index', label: 'S.No' },
                             { id: 'employee_name', label: 'Employee Name' },
                             { id: 'employee', label: 'Employee ID' },
                         ]}

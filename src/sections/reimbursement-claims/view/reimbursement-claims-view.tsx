@@ -30,6 +30,7 @@ import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -38,6 +39,7 @@ import { useSocket } from 'src/hooks/use-socket';
 import { useReimbursementClaims } from 'src/hooks/useReimbursementClaims';
 
 import { fetchEmployees } from 'src/api/employees';
+import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
     applyReimbursementClaimWorkflowAction,
@@ -126,7 +128,7 @@ export function ReimbursementClaimsView() {
         employee: effectiveEmployee,
     }), [filters, isHR, effectiveEmployee]);
 
-    const { data, total, refetch } = useReimbursementClaims(
+    const { data, total, loading, refetch } = useReimbursementClaims(
         page + 1,
         rowsPerPage,
         filterName,
@@ -288,6 +290,11 @@ export function ReimbursementClaimsView() {
             const fullData = await getReimbursementClaim(row.name);
             setViewClaim(fullData);
             setOpenView(true);
+            
+            // Mark as read for HR
+            markAsRead('Reimbursement Claim', row.name).then(() => {
+                window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+            });
         } catch (error: any) {
             setSnackbar({
                 open: true,
@@ -296,6 +303,7 @@ export function ReimbursementClaimsView() {
             });
         }
     }, []);
+
 
     const handleDeleteRow = useCallback(
         async (name: string) => {
@@ -322,11 +330,18 @@ export function ReimbursementClaimsView() {
         try {
             await applyReimbursementClaimWorkflowAction(id, action);
             setSnackbar({ open: true, message: `Claim ${action}ed successfully`, severity: 'success' });
+            
+            // Mark as read for HR
+            markAsRead('Reimbursement Claim', id).then(() => {
+                window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+            });
+
             await refetch();
         } catch (error: any) {
             setSnackbar({ open: true, message: error.message || `Failed to ${action} claim`, severity: 'error' });
         }
     };
+
 
     const isApprovedOrPaid = isEdit && currentClaim && (currentClaim.workflow_state === 'Approved' || currentClaim.workflow_state === 'Paid');
 
@@ -518,7 +533,7 @@ export function ReimbursementClaimsView() {
         setPage(0);
     };
 
-    const canReset = filters.employee !== null || filters.paid !== 'all' || filters.claim_type !== 'all' || filters.startDate !== null || filters.endDate !== null;
+    const canReset = filters.employee !== null || filters.paid !== 'all' || filters.claim_type !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const handleSortChange = (value: string) => {
         if (value === 'newest') { setOrderBy('modified'); setOrder('desc'); }
@@ -558,8 +573,8 @@ export function ReimbursementClaimsView() {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const notFound = !data.length && !!filterName;
-    const empty = !data.length && !filterName;
+    const notFound = !loading && !data.length && !!filterName;
+    const empty = !loading && !data.length && !filterName;
 
     const renderField = (fieldname: string, label: string, type: string = 'text', options: any[] = [], extraProps: any = {}, required: boolean = false) => {
         const commonProps = {
@@ -646,6 +661,7 @@ export function ReimbursementClaimsView() {
                     <DatePicker
                         label={label}
                         value={dateValue}
+                        format="DD-MM-YYYY"
                         onChange={(newValue) => {
                             const val = newValue && dayjs(newValue).isValid() ? dayjs(newValue).format('YYYY-MM-DD') : '';
                             if (fieldname === 'date_of_expense') {
@@ -678,7 +694,7 @@ export function ReimbursementClaimsView() {
     };
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Reimbursement Claims
@@ -744,56 +760,63 @@ export function ReimbursementClaimsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <ReimbursementClaimTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            employee_name: row.employee_name,
-                                            employee_id: row.employee,
-                                            claim_type: row.claim_type,
-                                            date_of_expense: row.date_of_expense,
-                                            amount: row.amount,
-                                            paid: row.paid,
-                                            workflow_state: row.workflow_state,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        onApplyAction={(action) => handleApplyAction(row.name, action)}
-                                        canEdit={permissions.write && (
-                                            (isHR && row.employee !== user?.employee) ||
-                                            (row.workflow_state === 'Clarification Requested') ||
-                                            (row.workflow_state === 'Submitted' && row.employee === user?.employee)
-                                        )}
-                                        canDelete={permissions.delete}
-                                        isHR={isHR}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
-                                            <EmptyContent
-                                                title="No claims found"
-                                                description="You haven't submitted any reimbursement claims yet."
-                                                icon="solar:money-bag-bold-duotone"
-                                            />
+                                        <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <ReimbursementClaimTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    employee_name: row.employee_name,
+                                                    employee_id: row.employee,
+                                                    claim_type: row.claim_type,
+                                                    date_of_expense: row.date_of_expense,
+                                                    amount: row.amount,
+                                                    paid: row.paid,
+                                                    workflow_state: row.workflow_state,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row)}
+                                                onEdit={() => handleEditRow(row)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                onApplyAction={(action) => handleApplyAction(row.name, action)}
+                                                canEdit={permissions.write && (
+                                                    (isHR && row.employee !== user?.employee) ||
+                                                    (row.workflow_state === 'Clarification Requested') ||
+                                                    (row.workflow_state === 'Submitted' && row.employee === user?.employee)
+                                                )}
+                                                canDelete={permissions.delete}
+                                                isHR={isHR}
+                                            />
+                                        ))}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={6}>
+                                                    <EmptyContent
+                                                        title="No claims found"
+                                                        description="You haven't submitted any reimbursement claims yet."
+                                                        icon="solar:money-bag-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -812,15 +835,29 @@ export function ReimbursementClaimsView() {
             </Card>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
+            <Dialog
+                open={openCreate}
+                onClose={handleCloseCreate}
+                fullWidth
+                maxWidth="md"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }
+                }}
+            >
                 <DialogTitle
                     sx={{
                         m: 0,
-                        p: 2.5,
+                        p: 2,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        bgcolor: 'background.neutral',
+                        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
                     }}
                 >
                     <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
@@ -829,21 +866,13 @@ export function ReimbursementClaimsView() {
 
                     <IconButton
                         onClick={handleCloseCreate}
-                        sx={{
-                            p: 0.75,
-                            bgcolor: 'background.paper',
-                            boxShadow: (theme) => theme.customShadows.z8,
-                            '&:hover': {
-                                bgcolor: 'background.paper',
-                                color: 'error.main',
-                            },
-                        }}
+                        sx={{ color: (theme) => theme.palette.grey[500] }}
                     >
                         <Iconify icon="mingcute:close-line" width={20} />
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent dividers>
+                <DialogContent dividers sx={{ flexGrow: 1, overflowY: 'auto', p: 3 }}>
                     <Box sx={{ display: 'grid', gap: 3, p: 2 }}>
                         <Autocomplete
                             fullWidth
@@ -915,7 +944,7 @@ export function ReimbursementClaimsView() {
                     </Box>
                 </DialogContent>
 
-                <DialogActions sx={{ px: 3, pb: 2, pt: 2 }}>
+                <DialogActions sx={{ p: 1.5 }}>
                     <LoadingButton
                         onClick={handleCreate}
                         variant="contained"

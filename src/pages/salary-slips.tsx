@@ -1,4 +1,4 @@
-
+import { CONFIG } from 'src/config-global';
 
 import { SalarySlipsView } from 'src/sections/salary-slips/view/salary-slips-view';
 
@@ -6,6 +6,9 @@ import { SalarySlipsView } from 'src/sections/salary-slips/view/salary-slips-vie
 
 export default function SalarySlipsPage() {
     return (
-        <SalarySlipsView />
+        <>
+            <title>{`Salary Slip - ${CONFIG.appName}`}</title>
+            <SalarySlipsView />
+        </>
     );
 }

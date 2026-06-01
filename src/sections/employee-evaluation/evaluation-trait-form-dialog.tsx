@@ -46,11 +46,13 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
         trait_name: string;
         category: string;
         description: string;
+        how_to_improve: string;
         evaluation_scores: { evaluation_point: string; score: number }[];
     }>({
         trait_name: '',
         category: 'Behavior',
         description: '',
+        how_to_improve: '',
         evaluation_scores: [],
     });
 
@@ -62,6 +64,7 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
                 trait_name: selectedTrait.trait_name || '',
                 category: selectedTrait.category || 'Behavior',
                 description: selectedTrait.description || '',
+                how_to_improve: selectedTrait.how_to_improve || '',
                 evaluation_scores: selectedTrait.evaluation_scores || [],
             });
         } else {
@@ -69,6 +72,7 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
                 trait_name: '',
                 category: 'Behavior',
                 description: '',
+                how_to_improve: '',
                 evaluation_scores: evaluationPoints.map(p => ({
                     evaluation_point: p.name,
                     score: p.default_score
@@ -111,15 +115,40 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
 
     return (
         <>
-            <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {selectedTrait ? 'Edit Performance Criteria' : 'New Performance Criteria'}
-                    <IconButton onClick={onClose}>
+            <Dialog
+                open={open}
+                onClose={onClose}
+                fullWidth
+                maxWidth="sm"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }
+                }}
+            >
+                <DialogTitle
+                    sx={{
+                        m: 0,
+                        p: 2,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                    }}
+                >
+                    <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
+                        {selectedTrait ? 'Edit Performance Criteria' : 'New Performance Criteria'}
+                    </Typography>
+                    <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent dividers>
+                <DialogContent dividers sx={{ flexGrow: 1, overflowY: 'auto', p: 3 }}>
                     <Stack spacing={3} sx={{ pt: 1 }}>
                         <TextField
                             fullWidth
@@ -259,10 +288,19 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         />
+
+                        <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            label="How to Improve"
+                            value={formData.how_to_improve}
+                            onChange={(e) => setFormData({ ...formData, how_to_improve: e.target.value })}
+                        />
                     </Stack>
                 </DialogContent>
 
-                <DialogActions>
+                <DialogActions sx={{ p: 1.5 }}>
                     <LoadingButton
                         variant="contained"
                         onClick={handleSave}

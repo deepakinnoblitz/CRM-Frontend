@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { IoMdTrash } from "react-icons/io";
 import { useState, useEffect } from 'react';
 
 import Dialog from '@mui/material/Dialog';
@@ -15,9 +16,10 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { Box, Grid, Alert, Button, Snackbar, IconButton, Typography } from '@mui/material';
 
-import { type ToDo, createToDo, updateToDo } from 'src/api/todo';
+import { type ToDo, createToDo, updateToDo, deleteToDo } from 'src/api/todo';
 
 import { Iconify } from 'src/components/iconify';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -38,6 +40,8 @@ const INITIAL_TODO_STATE: Partial<ToDo> = {
 
 export default function TodoDialog({ open, onClose, selectedTodo, initialData, onSuccess }: Props) {
     const [todoData, setTodoData] = useState<Partial<ToDo>>(INITIAL_TODO_STATE);
+    const [formErrors, setFormErrors] = useState({ description: false });
+    const [confirmDelete, setConfirmDelete] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
@@ -45,6 +49,7 @@ export default function TodoDialog({ open, onClose, selectedTodo, initialData, o
     });
 
     useEffect(() => {
+        setFormErrors({ description: false });
         if (selectedTodo) {
             setTodoData({
                 description: selectedTodo.description,
@@ -64,6 +69,15 @@ export default function TodoDialog({ open, onClose, selectedTodo, initialData, o
     }, [selectedTodo, initialData, open]);
 
     const handleSaveToDo = async () => {
+        const errors = {
+            description: !todoData.description?.trim(),
+        };
+        setFormErrors(errors);
+
+        if (errors.description) {
+            return;
+        }
+
         try {
             if (selectedTodo) {
                 await updateToDo(selectedTodo.name, todoData);
@@ -78,13 +92,26 @@ export default function TodoDialog({ open, onClose, selectedTodo, initialData, o
         }
     };
 
+    const handleDeleteToDo = async () => {
+        if (!selectedTodo) return;
+        try {
+            await deleteToDo(selectedTodo.name);
+            setConfirmDelete(false);
+            onClose();
+            if (onSuccess) onSuccess();
+        } catch (error: any) {
+            console.error('Failed to delete todo:', error);
+            setSnackbar({ open: true, message: error.message || 'Failed to delete todo', severity: 'error' });
+        }
+    };
+
     return (
         <>
-            <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2, boxShadow: (theme) => theme.customShadows.z24,}}}>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                            {selectedTodo ? 'Edit Task' : 'New Task'}
+                            {selectedTodo ? 'Edit Todo' : 'New Todo'}
                         </Typography>
                     </Box>
                     <IconButton onClick={onClose} sx={{ color: 'text.secondary' }}>
@@ -104,10 +131,16 @@ export default function TodoDialog({ open, onClose, selectedTodo, initialData, o
                                     fullWidth
                                     multiline
                                     rows={4}
+                                    required
                                     label="What needs to be done?"
                                     placeholder="Enter task details..."
                                     value={todoData.description}
-                                    onChange={(e) => setTodoData({ ...todoData, description: e.target.value })}
+                                    onChange={(e) => {
+                                        setTodoData({ ...todoData, description: e.target.value });
+                                        if (e.target.value.trim()) setFormErrors(prev => ({ ...prev, description: false }));
+                                    }}
+                                    error={formErrors.description}
+                                    helperText={formErrors.description ? 'Task description is required' : ''}
                                 />
                             </Box>
 
@@ -164,7 +197,18 @@ export default function TodoDialog({ open, onClose, selectedTodo, initialData, o
                     </LocalizationProvider>
                 </DialogContent>
 
-                <DialogActions sx={{ p: 3, pt: 2, gap: 1.5 }}>
+                <DialogActions sx={{ p: 2.5, pt: 2, gap: 1.5 }}>
+                    {selectedTodo && (
+                        <Button
+                            color="error"
+                            variant="contained"
+                            onClick={() => setConfirmDelete(true)}
+                            startIcon={<IoMdTrash size={20} />}
+                            sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', mr:'auto' }}
+                        >
+                            Delete
+                        </Button>
+                    )}
                     <Button
                         variant="contained"
                         color="info"
@@ -175,6 +219,18 @@ export default function TodoDialog({ open, onClose, selectedTodo, initialData, o
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <ConfirmDialog
+                open={confirmDelete}
+                onClose={() => setConfirmDelete(false)}
+                title="Confirm Delete"
+                content="Are you sure you want to delete this todo?"
+                action={
+                    <Button variant="contained" color="error" onClick={handleDeleteToDo} sx={{ borderRadius: 1.5, minWidth: 100 }}>
+                        Delete
+                    </Button>
+                }
+            />
 
             <Snackbar
                 open={snackbar.open}

@@ -1,9 +1,13 @@
+import { FaLaptop, FaBarcode, FaFolder, FaRegCalendarAlt, FaRupeeSign } from 'react-icons/fa';
+
 import Box from '@mui/material/Box';
 import Dialog from '@mui/material/Dialog';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
+import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 
 import { Label } from 'src/components/label';
@@ -34,10 +38,10 @@ export function AssetDetailsDialog({ open, onClose, asset }: Props) {
     );
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Asset Details</Typography>
-                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500], bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows?.z1 }}>
+                <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
             </DialogTitle>
@@ -79,34 +83,39 @@ export function AssetDetailsDialog({ open, onClose, asset }: Props) {
 
                         {/* Asset Information */}
                         <Box>
-                            <SectionHeader title="Asset Information" icon="solar:document-bold" />
+                            <SectionHeader title="Asset Information" />
                             <Box
                                 sx={{
                                     display: 'grid',
                                     gap: 3,
-                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(3, 1fr)' },
                                 }}
                             >
-                                <DetailItem label="Asset Name" value={asset.asset_name} icon="solar:tag-bold" />
-                                <DetailItem label="Asset Tag" value={asset.asset_tag} icon="solar:hashtag-bold" />
-                                <DetailItem label="Category" value={asset.category} icon="solar:folder-bold" />
-                                <DetailItem label="Status" value={asset.current_status} icon="solar:flag-bold" />
+                                <DetailItem label="Asset Name" value={asset.asset_name} icon={<FaLaptop size={18} />} />
+                                <DetailItem label="Asset Tag" value={asset.asset_tag} icon={<FaBarcode size={18} />} />
+                                <DetailItem label="Category" value={asset.category} icon={<FaFolder size={18} />} />
                             </Box>
                         </Box>
 
                         {/* Purchase Details */}
-                        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                            <SectionHeader title="Purchase Details" icon="solar:wallet-bold" noMargin />
-                            <Box sx={{ mt: 3, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                        <Box>
+                            <SectionHeader title="Purchase Details" />
+                            <Box
+                                sx={{
+                                    display: 'grid',
+                                    gap: 3,
+                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(3, 1fr)' },
+                                }}
+                            >
                                 <DetailItem
                                     label="Purchase Date"
                                     value={asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString() : '-'}
-                                    icon="solar:calendar-bold"
+                                    icon={<FaRegCalendarAlt size={18} />}
                                 />
                                 <DetailItem
                                     label="Purchase Cost"
                                     value={asset.purchase_cost ? `₹${asset.purchase_cost.toLocaleString()}` : '-'}
-                                    icon="solar:dollar-bold"
+                                    icon={<FaRupeeSign size={18} />}
                                 />
                             </Box>
                         </Box>
@@ -114,11 +123,27 @@ export function AssetDetailsDialog({ open, onClose, asset }: Props) {
                         {/* Description */}
                         {asset.description && (
                             <Box>
-                                <SectionHeader title="Description" icon="solar:notes-bold" />
+                                <SectionHeader title="Description" />
                                 <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                         {asset.description}
                                     </Typography>
+                                </Box>
+                            </Box>
+                        )}
+
+                        {/* Attachment */}
+                        {asset.asset_attachment && (
+                            <Box>
+                                <SectionHeader title="Attachment" />
+                                <Box sx={{ p: 2, bgcolor: 'background.neutral', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Iconify icon={"solar:file-bold" as any} width={24} sx={{ color: 'text.secondary' }} />
+                                    <Typography variant="body2" sx={{ fontWeight: 600, flexGrow: 1 }} noWrap>
+                                        {asset.asset_attachment.split('/').pop() || 'Attached File'}
+                                    </Typography>
+                                    <Button size="small" variant="outlined" component="a" href={asset.asset_attachment} target="_blank" rel="noopener noreferrer">
+                                        View File
+                                    </Button>
                                 </Box>
                             </Box>
                         )}
@@ -134,26 +159,40 @@ export function AssetDetailsDialog({ open, onClose, asset }: Props) {
     );
 }
 
-function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: string, noMargin?: boolean }) {
+function SectionHeader({ title, noMargin = false }: { title: string, noMargin?: boolean }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
-            <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '14px' }}>
                 {title}
             </Typography>
         </Box>
     );
 }
 
-function DetailItem({ label, value, icon }: { label: string; value?: string | null; icon: string }) {
+function DetailItem({ label, value, icon }: { label: string; value?: React.ReactNode; icon: React.ReactNode }) {
+    const theme = useTheme();
     return (
-        <Box>
-            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
-                {label}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 50,
+                    height: 50,
+                    borderRadius: 1.5,
+                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                    color: 'info.main',
+                    flexShrink: 0,
+                }}
+            >
+                {icon}
+            </Box>
+            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', display: 'block', mb: 0.5, fontSize: 11 }}>
+                    {label}
+                </Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {value || '-'}
                 </Typography>
             </Box>

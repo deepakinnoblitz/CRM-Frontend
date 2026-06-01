@@ -1,23 +1,22 @@
 import dayjs from 'dayjs';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags, IoMdWallet, IoMdPrint, IoMdSwap } from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
-import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
-import AlertTitle from '@mui/material/AlertTitle';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -38,6 +37,7 @@ import { fCurrency } from 'src/utils/format-number';
 import { handleDirectPrint } from 'src/utils/print';
 
 import { createItem } from 'src/api/invoice';
+import { getContact } from 'src/api/contacts';
 import { uploadFile } from 'src/api/data-import';
 import { getDoc, getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -84,6 +84,7 @@ export function EstimationEditView() {
     const [clientName, setClientName] = useState('');
     const [customerName, setCustomerName] = useState('');
     const [billingName, setBillingName] = useState('');
+    const [billingNameOptions, setBillingNameOptions] = useState<{ name: string; account_name: string }[]>([]);
     const [estimateDate, setEstimateDate] = useState('');
     const [billingAddress, setBillingAddress] = useState('');
     const [description, setDescription] = useState('');
@@ -100,11 +101,8 @@ export function EstimationEditView() {
     const [loading, setLoading] = useState(false);
     const [converting, setConverting] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-        open: false,
-        message: '',
-        severity: 'success',
-    });
+
+    const { enqueueSnackbar } = useSnackbar();
 
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
     const [contactDialogOpen, setContactDialogOpen] = useState(false);
@@ -114,6 +112,9 @@ export function EstimationEditView() {
 
     const [taxTypeDialogOpen, setTaxTypeDialogOpen] = useState(false);
     const [newTaxInitialName, setNewTaxInitialName] = useState('');
+
+    const [clientError, setClientError] = useState(false);
+    const [itemError, setItemError] = useState(false);
 
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'address']).then(setCustomerOptions);
@@ -130,13 +131,26 @@ export function EstimationEditView() {
     useEffect(() => {
         if (id) {
             getEstimation(id)
-                .then((data) => {
+                .then(async (data) => {
                     setClientName(data.client_name || '');
                     setDeal(data.deal || '');
                     setCustomerName(data.customer_name || '');
                     setBillingName(data.billing_name || '');
                     setEstimateDate(data.estimate_date || '');
                     setBillingAddress(data.billing_address || '');
+                    // Fetch contact to populate billing name options
+                    if (data.client_name) {
+                        try {
+                            const contact = await getContact(data.client_name);
+                            const mappedOptions = contact.company_names?.map((cid: string, idx: number) => ({
+                                name: cid,
+                                account_name: contact.company_name_list?.[idx] || cid
+                            })) || [];
+                            setBillingNameOptions(mappedOptions);
+                        } catch (err) {
+                            console.error('Failed to fetch contact details for estimation initial load:', err);
+                        }
+                    }
                     setDescription(data.description || '');
                     setRemarks(data.terms_and_conditions || '');
                     if (data.attachments) {
@@ -163,20 +177,48 @@ export function EstimationEditView() {
         }
     }, [id]);
 
+    type BillingNameOption = {
+        name: string;
+        account_name: string;
+    };
+
     const handleCustomerChange = async (name: string) => {
         setClientName(name);
+
         if (name) {
+            setClientError(false);
+
             try {
-                const contact = await getDoc('Contacts', name);
+                const contact = await getContact(name);
+
                 setCustomerName(contact.first_name || '');
-                setBillingName(contact.company_name || '');
                 setBillingAddress(contact.address || '');
+
+                // Explicitly type the array so TypeScript can infer `opt`
+                const mappedOptions: BillingNameOption[] =
+                    contact.company_names?.map((cid: string, idx: number) => ({
+                        name: cid,
+                        account_name: contact.company_name_list?.[idx] || cid,
+                    })) || [];
+
+                setBillingNameOptions(mappedOptions);
+
+                // Auto-select if there is only one billing option
+                if (mappedOptions.length === 1) {
+                    setBillingName(mappedOptions[0].name);
+                }
+                // Clear the selected billing name if it is not present in the new options
+                else if (!mappedOptions.find((opt) => opt.name === billingName)) {
+                    setBillingName('');
+                }
             } catch (error) {
                 console.error('Failed to fetch contact details:', error);
             }
         } else {
+            // Reset related fields when customer is cleared
             setCustomerName('');
             setBillingName('');
+            setBillingNameOptions([]);
             setBillingAddress('');
         }
     };
@@ -213,6 +255,7 @@ export function EstimationEditView() {
         const item = { ...newItems[index], [field]: value };
 
         if (field === 'service') {
+            setItemError(false);
             const selectedItem = itemOptions.find((opt) => opt.name === value);
             if (selectedItem) {
                 item.price = selectedItem.rate || 0;
@@ -273,7 +316,7 @@ export function EstimationEditView() {
 
     const handleCreateItem = async () => {
         if (!newItem.item_name) {
-            setSnackbar({ open: true, message: 'Please enter Item Name', severity: 'error' });
+            enqueueSnackbar('Please enter Item Name', { variant: 'error' });
             return;
         }
 
@@ -314,9 +357,9 @@ export function EstimationEditView() {
 
             setItemDialogOpen(false);
             setNewItem({ item_name: '', item_code: '', rate: 0 });
-            setSnackbar({ open: true, message: 'Item created successfully', severity: 'success' });
+            enqueueSnackbar('Item created successfully', { variant: 'success' });
         } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Failed to create item', severity: 'error' });
+            enqueueSnackbar(error.message || 'Failed to create item', { variant: 'error' });
         } finally {
             setCreatingItem(false);
         }
@@ -348,13 +391,21 @@ export function EstimationEditView() {
     };
 
     const handleSave = async () => {
-        if (!id || !clientName) return;
+        if (!id) return;
+        if (!clientName) {
+            setClientError(true);
+            enqueueSnackbar('Please select a Client', { variant: 'error' });
+            return;
+        }
+        setClientError(false);
 
         const validItems = items.filter((item) => item.service !== '');
         if (validItems.length === 0) {
-            setSnackbar({ open: true, message: 'Please add at least one item', severity: 'error' });
+            setItemError(true);
+            enqueueSnackbar('Please add at least one item', { variant: 'error' });
             return;
         }
+        setItemError(false);
 
         try {
             setLoading(true);
@@ -409,11 +460,11 @@ export function EstimationEditView() {
             };
 
             await updateEstimation(id, estimationData);
-            setSnackbar({ open: true, message: 'Estimation updated successfully', severity: 'success' });
+            enqueueSnackbar('Estimation updated successfully', { variant: 'success' });
             setTimeout(() => router.push('/estimations'), 1500);
         } catch (err: any) {
             console.error(err);
-            setSnackbar({ open: true, message: err.message || 'Failed to update estimation', severity: 'error' });
+            enqueueSnackbar(err.message || 'Failed to update estimation', { variant: 'error' });
         } finally {
             setLoading(false);
         }
@@ -437,11 +488,16 @@ export function EstimationEditView() {
         if (!id) return;
         try {
             setConverting(true);
-            const invoiceName = await convertEstimationToInvoice(id);
-            router.push(`/invoices/${encodeURIComponent(invoiceName)}/view`, { converted: true });
-        } catch (error) {
+            const result = await convertEstimationToInvoice(id);
+            if (result.alreadyCreated) {
+                enqueueSnackbar(result.message || `Invoice ${result.invoiceName} already created for this estimation.`, { variant: 'info' });
+                router.push(`/invoices/${encodeURIComponent(result.invoiceName)}/view`);
+            } else {
+                router.push(`/invoices/${encodeURIComponent(result.invoiceName)}/view`, { converted: true });
+            }
+        } catch (error: any) {
             console.error('Failed to convert estimation:', error);
-            setSnackbar({ open: true, message: 'Failed to convert estimation', severity: 'error' });
+            enqueueSnackbar(error.message || 'Failed to convert estimation', { variant: 'error' });
         } finally {
             setConverting(false);
             setConfirmOpen(false);
@@ -450,17 +506,34 @@ export function EstimationEditView() {
 
     return (
         <DashboardContent maxWidth="xl">
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} className="no-print">
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3} className="no-print">
                 <Typography variant="h4">Edit Estimation</Typography>
                 <Stack direction="row" spacing={2}>
-                    <Button variant="outlined" color="inherit" onClick={() => router.push('/estimations')}>
-                        Cancel
+                    <Button variant="outlined" color="inherit" startIcon={<IoMdArrowBack size={20} />} onClick={() => router.push('/estimations')}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 2.5,
+                            '&:hover': {
+                                bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
+                                borderColor: 'text.primary',
+                            }
+                        }}>
+                        Go Back
                     </Button>
-                    <Button
+                    {/* <Button
                         variant="outlined"
-                        color="primary"
                         onClick={handlePrint}
-                        startIcon={<Iconify icon={"solar:printer-bold" as any} />}
+                        startIcon={<IoMdPrint size={20} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            bgcolor: '#2065D1',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#103996' }
+                        }}
                     >
                         Print
                     </Button>
@@ -468,13 +541,21 @@ export function EstimationEditView() {
                         variant="contained"
                         color="warning"
                         onClick={() => setConfirmOpen(true)}
-                        startIcon={<Iconify icon={"solar:transfer-horizontal-bold" as any} />}
+                        startIcon={<IoMdSwap size={20} />}
                         disabled={converting}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            bgcolor: '#02c281',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#007850' }
+                        }}
                     >
                         {converting ? 'Converting...' : 'Convert to Invoice'}
-                    </Button>
-                    <Button variant="contained" color="primary" onClick={handleSave} loading={loading}>
-                        Save Changes
+                    </Button> */}
+                    <Button variant="contained" color="primary" onClick={handleSave} loading={loading} sx={{ borderRadius: 1.5, bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}>
+                        Update Estimation
                     </Button>
                 </Stack>
             </Stack>
@@ -497,7 +578,25 @@ export function EstimationEditView() {
                                 value={customerOptions.find((opt) => opt.name === clientName) || null}
                                 onChange={(_e, newValue) => handleCustomerChange(newValue?.name || '')}
                                 renderInput={(params) => (
-                                    <TextField {...params} label="Customer ID" required />
+                                    <TextField
+                                        {...params}
+                                        label="Client ID"
+                                        required
+                                        error={clientError}
+                                        helperText={clientError ? 'Please select a Client' : ''}
+                                    />
+                                )}
+                                renderOption={(props, option) => (
+                                    <li {...props} key={option.name}>
+                                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                {option.first_name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                ID: {option.name}
+                                            </Typography>
+                                        </Stack>
+                                    </li>
                                 )}
                             />
                             {clientName && (
@@ -505,7 +604,7 @@ export function EstimationEditView() {
                                     variant="contained"
                                     color="primary"
                                     onClick={() => setContactDialogOpen(true)}
-                                    sx={{ height: 35, px: 2 }}
+                                    sx={{ height: 35, px: 2, bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
                                 >
                                     Edit
                                 </Button>
@@ -519,26 +618,59 @@ export function EstimationEditView() {
                             value={dealOptions.find((opt) => opt.name === deal) || null}
                             onChange={(_e, newValue) => setDeal(newValue?.name || '')}
                             renderInput={(params) => (
-                                <TextField {...params} label="Link Deal" />
+                                <TextField
+                                    {...params}
+                                    label="Link Deal"
+                                />
                             )}
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.name}>
+                                    <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                            {option.deal_title}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                </li>
+                            )}
+                            sx={{ display: 'none' }}
                         />
 
                         <TextField
                             fullWidth
-                            label="Customer Name"
+                            label="Client Name"
                             value={customerName}
                             onChange={(e) => setCustomerName(e.target.value)}
                             slotProps={{ input: { readOnly: true } }}
                             sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}
                         />
 
-                        <TextField
+                        <Autocomplete
                             fullWidth
-                            label="Billing Name"
-                            value={billingName}
-                            onChange={(e) => setBillingName(e.target.value)}
-                            slotProps={{ input: { readOnly: true } }}
-                            sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}
+                            options={billingNameOptions}
+                            getOptionLabel={(option) => option.account_name || option.name || ''}
+                            value={billingNameOptions.find((opt) => opt.name === billingName) || null}
+                            onChange={(_e, newValue) => setBillingName(newValue?.name || '')}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Billing Name"
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.name}>
+                                    <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                            {option.account_name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                </li>
+                            )}
                         />
 
                         <DatePicker
@@ -574,13 +706,17 @@ export function EstimationEditView() {
 
                     <TableContainer sx={{
                         overflow: 'unset',
-                        border: (theme) => `1px solid ${theme.palette.divider}`,
+                        border: (theme) => itemError ? `2px solid ${theme.palette.error.main}` : `1px solid ${theme.palette.divider}`,
                         borderRadius: 1.5,
                         bgcolor: 'background.paper',
                         boxShadow: (theme) => theme.customShadows.z8,
                     }}>
                         <Table sx={{ minWidth: 960 }}>
-                            <TableHead sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}>
+                            <TableHead sx={{ 
+                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                '& th:first-of-type': { borderTopLeftRadius: 11 },
+                                '& th:last-of-type': { borderTopRightRadius: 11 }
+                            }}>
                                 <TableRow>
                                     <TableCell width={180} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Service</TableCell>
                                     <TableCell width={80} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>HSN</TableCell>
@@ -944,10 +1080,10 @@ export function EstimationEditView() {
                     <Divider sx={{ my: 4 }} />
 
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Stack spacing={2} sx={{ width: 400, mt: 3 }}>
+                        <Stack spacing={2} sx={{ width: 500, mt: 3 }}>
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Iconify icon={"solar:box-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdCube size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Quantity</Typography>
                                 </Stack>
                                 <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{totalQty}</Typography>
@@ -955,7 +1091,7 @@ export function EstimationEditView() {
 
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Iconify icon={"solar:bill-list-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
                                 </Stack>
                                 <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(itemsTotalTaxable)}</Typography>
@@ -963,7 +1099,7 @@ export function EstimationEditView() {
 
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Iconify icon={"solar:calculator-minimalistic-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdCalculator size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Tax</Typography>
                                 </Stack>
                                 <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(totalTax)}</Typography>
@@ -971,7 +1107,7 @@ export function EstimationEditView() {
 
                             <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end">
                                 <Stack direction="row" alignItems="center" spacing={1} sx={{ flexGrow: 1 }}>
-                                    <Iconify icon={"solar:tag-horizontal-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdPricetags size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Overall Discount</Typography>
                                 </Stack>
                                 <ToggleButtonGroup
@@ -985,6 +1121,7 @@ export function EstimationEditView() {
                                     }}
                                     sx={{
                                         height: 32,
+                                        mr: 6,
                                         '& .MuiToggleButton-root': {
                                             px: 1,
                                             py: 0,
@@ -1007,11 +1144,12 @@ export function EstimationEditView() {
                                     onChange={(e) => setDiscountValue(Number(e.target.value))}
                                     onFocus={(e) => e.target.select()}
                                     sx={{
-                                        width: 100,
+                                        width: 150,
                                         '& .MuiInputBase-root': {
                                             bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
                                             borderRadius: 0.75,
-                                            px: 1,
+                                            px: 1.25,
+                                            py: 0.4,
                                             '&:hover': {
                                                 bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
                                             },
@@ -1027,7 +1165,7 @@ export function EstimationEditView() {
                             <Divider />
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1.5}>
-                                    <Iconify icon={"solar:wad-of-money-bold-duotone" as any} sx={{ color: 'primary.main', width: 24, height: 24 }} />
+                                    <IoMdWallet size={24} style={{ color: '#08a3cd' }} />
                                     <Typography variant="subtitle1" sx={{ color: 'primary.main' }}>Grand Total</Typography>
                                 </Stack>
                                 <Typography variant="h6" color="primary" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(grandTotal)}</Typography>
@@ -1078,7 +1216,7 @@ export function EstimationEditView() {
                                 <Button
                                     variant="contained"
                                     component="label"
-                                    color="primary"
+                                    sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
                                     size="small"
                                     startIcon={<Iconify icon={"solar:upload-bold" as any} />}
                                     disabled={uploading}
@@ -1161,27 +1299,17 @@ export function EstimationEditView() {
                 }}
             />
 
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={6000}
-                onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-                <Alert
-                    severity={snackbar.severity}
-                    sx={{
-                        width: '100%',
-                        boxShadow: (theme) => theme.customShadows.z20
-                    }}
-                >
-                    <AlertTitle>{snackbar.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
-
             <Dialog open={itemDialogOpen} onClose={() => !creatingItem && setItemDialogOpen(false)} fullWidth maxWidth="xs">
-                <DialogTitle>Create item</DialogTitle>
-                <DialogContent>
+                <DialogTitle sx={{ pb: 2, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+                    Create Item
+                    <IconButton
+                        onClick={() => !creatingItem && setItemDialogOpen(false)}
+                        sx={{ position: 'absolute', right: 8, top: 8 }}
+                    >
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2 }}>
                     <Stack spacing={3} sx={{ pt: 1 }}>
                         <TextField
                             fullWidth
@@ -1206,10 +1334,7 @@ export function EstimationEditView() {
                     </Stack>
                 </DialogContent>
                 <DialogActions>
-                    <Button color="inherit" onClick={() => setItemDialogOpen(false)} disabled={creatingItem}>
-                        Cancel
-                    </Button>
-                    <Button variant="contained" onClick={handleCreateItem} disabled={creatingItem}>
+                    <Button variant="contained" onClick={handleCreateItem} disabled={creatingItem} sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}>
                         {creatingItem ? <CircularProgress size={24} /> : 'Create'}
                     </Button>
                 </DialogActions>

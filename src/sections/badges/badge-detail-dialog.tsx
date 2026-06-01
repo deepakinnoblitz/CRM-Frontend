@@ -21,16 +21,41 @@ export function BadgeDetailDialog({ open, onClose, badge }: Props) {
   if (!badge) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 2 }}>
-        Badge Details
-        <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary' }}>
-          <Iconify icon="mingcute:close-line" width={24} />
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="xs"
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          boxShadow: (themeVar) => themeVar.customShadows.z24,
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+        }
+      }}
+    >
+      <DialogTitle
+        sx={{
+          m: 0,
+          p: 2,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
+          Badge Details
+        </Typography>
+        <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
+          <Iconify icon="mingcute:close-line" />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ pb: 3 }}>
-        <Stack spacing={3} alignItems="center">
+      <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
+        <Stack spacing={3} alignItems="center" sx={{mt: 2}}>
           <Box
             sx={{
               width: 200,

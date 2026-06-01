@@ -8,10 +8,13 @@ import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
 import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useUploadAttendance } from 'src/hooks/useUploadAttendance';
 
@@ -25,6 +28,7 @@ import {
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { TableNoData, TableEmptyRows, TableHeadCustom, TableSelectedAction } from 'src/components/table/index';
 
@@ -52,7 +56,7 @@ export function UploadAttendanceView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
-    const [sortBy, setSortBy] = useState('upload_date_desc');
+    const [sortBy, setSortBy] = useState('modified_desc');
     const [filters, setFilters] = useState<any>({
         startDate: null,
         endDate: null,
@@ -177,10 +181,11 @@ export function UploadAttendanceView() {
     }, [currentRecord, refetch]);
 
     const emptyRows = data.length < 5 ? 5 - data.length : 0;
-    const notFound = !loading && data.length === 0;
+    const notFound = !loading && data.length === 0 && !!filterName;
+    const empty = !loading && data.length === 0 && !filterName;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box display="flex" alignItems="center" mb={5}>
                 <Typography variant="h4" flexGrow={1}>
                     Import Attendance
@@ -209,8 +214,8 @@ export function UploadAttendanceView() {
                     onSortChange={setSortBy}
                     searchPlaceholder="Search attendance..."
                     sortOptions={[
-                        { value: 'upload_date_desc', label: 'Newest Upload' },
-                        { value: 'upload_date_asc', label: 'Oldest Upload' },
+                        { value: 'modified_desc', label: 'Newest First' },
+                        { value: 'modified_asc', label: 'Oldest First' },
                         { value: 'att_fr_date_desc', label: 'Latest From Date' },
                         { value: 'att_fr_date_asc', label: 'Earliest From Date' },
                     ]}
@@ -230,24 +235,47 @@ export function UploadAttendanceView() {
                             />
 
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <UploadAttendanceTableRow
-                                        key={row.name}
-                                        row={row}
-                                        index={page * rowsPerPage + index}
-                                        onEditRow={() => handleEditRow(row)}
-                                        onDeleteRow={() => handleDeleteRow(row.name)}
-                                        onImport={() => handleImport(row.name)}
-                                        importing={importing === row.name}
-                                    />
-                                ))}
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <UploadAttendanceTableRow
+                                                key={row.name}
+                                                row={row}
+                                                index={page * rowsPerPage + index}
+                                                onEditRow={() => handleEditRow(row)}
+                                                onDeleteRow={() => handleDeleteRow(row.name)}
+                                                onImport={() => handleImport(row.name)}
+                                                importing={importing === row.name}
+                                            />
+                                        ))}
 
-                                <TableEmptyRows
-                                    height={52}
-                                    emptyRows={emptyRows}
-                                />
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={52}
+                                                emptyRows={emptyRows}
+                                            />
+                                        )}
 
-                                {notFound && <TableNoData />}
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={8}>
+                                                    <EmptyContent
+                                                        title="No Attendance Uploaded"
+                                                        description="You haven't uploaded any attendance records yet."
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </>
+                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>

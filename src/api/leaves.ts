@@ -148,7 +148,7 @@ export async function getLeaveWorkflowActions(currentState: string): Promise<Wor
     return data.actions || [];
 }
 
-export async function applyLeaveWorkflowAction(name: string, action: string, comment?: string) {
+export async function applyLeaveWorkflowAction(name: string, action: string, comment?: string, updateData?: any) {
     const headers = await getAuthHeaders();
 
     const res = await frappeRequest("/api/method/company.company.frontend_api.apply_workflow_action", {
@@ -158,7 +158,8 @@ export async function applyLeaveWorkflowAction(name: string, action: string, com
             doctype: "Leave Application",
             name,
             action,
-            comment
+            comment,
+            update_data: updateData
         })
     });
 
@@ -186,5 +187,26 @@ export async function updateLeaveStatus(name: string, workflowState: string, upd
         throw new Error(handleFrappeError(error, "Failed to update leave status"));
     }
 
+    return (await res.json()).message;
+}
+
+export async function checkLeaveOverlap(params: {
+    employee: string;
+    from_date: string;
+    to_date: string;
+    exclude_doc?: string;
+}) {
+    const query = new URLSearchParams({
+        employee: params.employee,
+        from_date: params.from_date,
+        to_date: params.to_date,
+    });
+    if (params.exclude_doc) query.append("exclude_doc", params.exclude_doc);
+
+    const res = await frappeRequest(`/api/method/company.company.frontend_api.check_leave_overlap?${query.toString()}`);
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to check leave overlap"));
+    }
     return (await res.json()).message;
 }

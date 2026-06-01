@@ -1,21 +1,25 @@
 import dayjs from 'dayjs';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect, useCallback } from 'react';
+import { FaFileAlt, FaExternalLinkAlt } from 'react-icons/fa';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
-import { alpha } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
+import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 
+import { getEmployee } from 'src/api/employees';
 import { getHRDoc } from 'src/api/hr-management';
-import { type WorkflowAction, getLeaveWorkflowActions, updateLeaveStatus } from 'src/api/leaves';
+import { type WorkflowAction, getLeaveWorkflowActions, updateLeaveStatus, applyLeaveWorkflowAction, checkLeaveOverlap } from 'src/api/leaves';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -45,6 +49,9 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
 
     const [openClarification, setOpenClarification] = useState(false);
     const [clarificationType, setClarificationType] = useState<'HR' | 'Employee'>('HR');
+    const [employeeDetails, setEmployeeDetails] = useState<any>(null);
+    const [fetching, setFetching] = useState(false);
+    const { enqueueSnackbar } = useSnackbar();
 
     const { user } = useAuth();
     const userRoles = user?.roles || [];
@@ -57,6 +64,10 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
         try {
             const data = await getHRDoc('Leave Application', leaveId);
             setLeave(data);
+            const empId = data.employee || data.employee_id;
+            if (empId) {
+                getEmployee(empId).then(setEmployeeDetails).catch(console.error);
+            }
             if (data?.workflow_state) {
                 const availableActions = await getLeaveWorkflowActions(data.workflow_state);
                 setActions(availableActions);
@@ -88,7 +99,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
         return () => socket.off('leave_application_updated', handleUpdate);
     }, [socket, open, leaveId, fetchData]);
 
-    const handleActionClick = (action: WorkflowAction) => {
+    const handleActionClick = async (action: WorkflowAction) => {
         setSelectedAction(action);
         const lowerAction = action.action.toLowerCase();
 
@@ -98,8 +109,29 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
         } else if (lowerAction.includes('reply')) {
             setClarificationType('Employee');
             setOpenClarification(true);
-        } else if (lowerAction.includes('approve') || lowerAction.includes('reject')) {
-            handleApplyAction(action);
+        } else if (lowerAction.includes('approve')) {
+            // 🛡️ PREEMPTIVE OVERLAP CHECK
+            try {
+                setSubmitting(true);
+                const res = await checkLeaveOverlap({
+                    employee: leave.employee,
+                    from_date: leave.from_date,
+                    to_date: leave.to_date,
+                    exclude_doc: leave.name
+                });
+
+                if (res.overlap) {
+                    enqueueSnackbar(res.message, { variant: 'error' });
+                    setSubmitting(false);
+                    return;
+                }
+                await handleApplyAction(action);
+            } catch (error) {
+                console.error("Overlap check failed", error);
+                await handleApplyAction(action); // Fallback to normal flow if check fails
+            }
+        } else if (lowerAction.includes('reject')) {
+            await handleApplyAction(action);
         } else {
             setCommentDialogOpen(true);
         }
@@ -130,7 +162,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                 // If there's a generic comment, we could handle it too, but here we focus on clarifications
             }
 
-            await updateLeaveStatus(leaveId, status, updateData);
+            await applyLeaveWorkflowAction(leaveId, actionToApply.action, comment, updateData);
 
             setComment('');
             setCommentDialogOpen(false);
@@ -221,7 +253,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
 
     const renderConversation = (
         <Box sx={{ height: 1, display: 'flex', flexDirection: 'column' }}>
-            <SectionHeader title="Clarification History" icon="solar:chat-round-dots-bold" />
+            <SectionHeader title="Clarification History" icon="" />
             <Box
                 sx={{
                     flexGrow: 1,
@@ -325,15 +357,10 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                 onClose={onClose}
                 fullWidth
                 maxWidth={hasHistory ? 'lg' : 'md'}
-                PaperProps={{
-                    sx: {
-                        borderRadius: 2,
-                        boxShadow: (theme) => theme.customShadows?.z24,
-                    }
-                }}
+                PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24 } }}
                 TransitionProps={{ onExited: () => { setLeave(null); setActions([]); } }}
             >
-                <DialogTitle sx={{ m: 0, p: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
                     <Stack direction="row" alignItems="center" spacing={1.5}>
                         <Typography variant="h5" sx={{ fontWeight: 800 }}>Application Details</Typography>
                     </Stack>
@@ -342,8 +369,8 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent sx={{ p: { xs: 2.5, sm: 4 }, pt: 0 }}>
-                    {loading && !leave ? (
+                <DialogContent sx={{ p: { xs: 2.5, sm: 4 }, mt: 3 }}>
+                    {fetching || (loading && !leave) ? (
                         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
                             <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
                         </Box>
@@ -363,83 +390,100 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                         sx={{
                                             p: 3,
                                             borderRadius: 2,
-                                            bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
-                                            boxShadow: (theme) => theme.customShadows?.z12,
-                                            border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.12)}`,
-                                            position: 'relative',
-                                            overflow: 'hidden',
+                                            bgcolor: 'background.paper',
+                                            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.26)}`,
+                                            boxShadow: (theme) => theme.customShadows?.z4,
                                         }}
                                     >
-                                        <Stack direction="row" alignItems="center" spacing={{ xs: 1.5, sm: 2.5 }} sx={{ mb: 3 }}>
-                                            <Box
+                                        <Stack direction="row" alignItems="center" spacing={2.5} sx={{ position: 'relative', zIndex: 1 }}>
+                                            <Avatar
+                                                src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || leave?.profile_picture || leave?.image}
                                                 sx={{
-                                                    width: 54,
-                                                    height: 54,
-                                                    borderRadius: 1.5,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: 'common.white',
-                                                    background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.info.main} 100%)`,
-                                                    boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.primary.main, 0.24)}`,
+                                                    width: 76,
+                                                    height: 76,
+                                                    borderRadius: '50%',
+                                                    border: '3px solid #FFFFFF',
+                                                    boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.12)',
+                                                    bgcolor: (theme: any) => {
+                                                        const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || leave?.profile_picture || leave?.image;
+                                                        if (img) return 'transparent';
+                                                        const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                                        let hash = 0;
+                                                        const name = leave?.employee_name || '';
+                                                        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                                        return colors[Math.abs(hash) % colors.length];
+                                                    },
+                                                    color: (theme: any) => {
+                                                        const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || leave?.profile_picture || leave?.image;
+                                                        return img ? 'inherit' : alpha(theme.palette.common.black, 0.6);
+                                                    },
+                                                    fontSize: '1.75rem',
+                                                    fontWeight: 900,
                                                 }}
                                             >
-                                                <Iconify icon={"solar:user-bold-duotone" as any} width={32} />
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+                                                {leave?.employee_name?.charAt(0) || 'U'}
+                                            </Avatar>
+                                            <Box sx={{ flexGrow: 1 }}>
+                                                <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.2, color: 'text.primary' }}>
                                                     {leave?.employee_name}
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                                    {leave?.employee}
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, mt: 0.5, display: 'block' }}>
+                                                    Employee ID: {leave?.employee || leave?.employee_id || '-'}
                                                 </Typography>
                                             </Box>
+                                            <Label
+                                                color={getStatusColor(leave?.workflow_state)}
+                                                variant="soft"
+                                                sx={{
+                                                    fontWeight: 700,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: 0.25,
+                                                    px: 1.5,
+                                                    py: 2,
+                                                    borderRadius: 1,
+                                                    fontSize: '0.75rem'
+                                                }}
+                                            >
+                                                {leave?.workflow_state || 'Pending'}
+                                            </Label>
                                         </Stack>
+
+                                        <Divider sx={{ borderStyle: 'dashed', my: 2.5 }} />
 
                                         <Stack
                                             direction="row"
-                                            spacing={{ xs: 1, sm: 4 }}
-                                            sx={{
-                                                p: { xs: 1.5, sm: 2 },
-                                                borderRadius: 1.5,
-                                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
-                                            }}
+                                            alignItems="center"
+                                            justifyContent="space-between"
                                         >
                                             <Stack spacing={0.5}>
-                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, fontSize: { xs: 8, sm: 10 }, lineHeight: 1.2 }}>TYPE</Typography>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: { xs: 11, sm: 14 } }}>{leave?.leave_type || 'N/A'}</Typography>
-                                            </Stack>
-                                            <Stack spacing={0.5}>
-                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, fontSize: { xs: 8, sm: 10 }, lineHeight: 1.2 }}>DURATION</Typography>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main', fontSize: { xs: 11, sm: 14 } }}>
-                                                    {leave?.leave_type?.toLowerCase() === 'permission'
-                                                        ? `${leave?.permission_hours} mins`
-                                                        : `${leave?.total_days} days`
-                                                    }
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '11px' }}>
+                                                    Leave Type
+                                                </Typography>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                                                    {leave?.leave_type || 'N/A'}
                                                 </Typography>
                                             </Stack>
-                                            <Stack spacing={0.5}>
-                                                <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, fontSize: { xs: 8, sm: 10 }, lineHeight: 1.2 }}>STATUS</Typography>
-                                                <Label
-                                                    color={getStatusColor(leave?.workflow_state)}
-                                                    variant="filled"
-                                                    sx={{
-                                                        textTransform: 'uppercase',
-                                                        height: { xs: 20, sm: 22 },
-                                                        px: { xs: 0.75, sm: 1 },
-                                                        fontSize: { xs: 8, sm: 10 }
-                                                    }}
-                                                >
-                                                    {leave?.workflow_state || 'Pending'}
-                                                </Label>
+
+                                            <Stack spacing={0.5} alignItems="flex-end" sx={{ textAlign: 'right' }}>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '10px', letterSpacing: 0.5 }}>
+                                                    Duration
+                                                </Typography>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                                                    {leave?.leave_type?.toLowerCase() === 'permission'
+                                                        ? `${leave?.permission_hours} Mins`
+                                                        : `${leave?.total_days} ${leave?.total_days === 1 ? 'Day' : 'Days'}`
+                                                    }
+                                                </Typography>
                                             </Stack>
                                         </Stack>
                                     </Box>
 
+                                    <Divider />
+
                                     {/* Date Details */}
-                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3 }}>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3, px: 2 }}>
                                         <DetailRow label="Applied On" value={dayjs(leave?.creation).format('DD MMM YYYY HH:mm')} icon="solar:calendar-bold" />
-                                        <DetailRow label="Half Day" value={leave?.half_day === 1 ? `Yes (${dayjs(leave?.half_day_date).format('DD MMM YYYY')})` : 'No'} icon="solar:history-bold" />
+                                        <DetailRow label="Half Day" value={leave?.half_day === 1 ? 'Yes' : 'No'} icon="solar:history-bold" />
                                         <DetailRow label="From Date" value={dayjs(leave?.from_date).format('DD MMM YYYY')} icon="solar:calendar-date-bold" />
                                         <DetailRow label="To Date" value={dayjs(leave?.to_date).format('DD MMM YYYY')} icon="solar:calendar-date-bold" />
                                     </Box>
@@ -447,27 +491,72 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                     <Divider />
 
                                     {/* Reason Section */}
-                                    <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
                                             Reason
                                         </Typography>
-                                        <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
-                                            {leave?.reson || 'No reason specified'}
-                                        </Typography>
+                                        <Box sx={{ p: 3, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04), borderRadius: 2, border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
+                                            <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600, fontSize: '14.5px' }}>
+                                                {leave?.reson || 'No reason specified'}
+                                            </Typography>
+                                        </Box>
                                     </Box>
 
                                     {/* Attachments */}
                                     {leave?.attachment && (
-                                        <Button
-                                            href={leave.attachment}
-                                            target="_blank"
-                                            variant="outlined"
-                                            size="small"
-                                            startIcon={<Iconify icon={"solar:link-bold" as any} />}
-                                            sx={{ alignSelf: 'flex-start', borderRadius: 1.5 }}
-                                        >
-                                            View Attachment
-                                        </Button>
+                                        <Box>
+                                            <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
+                                                Attachment
+                                            </Typography>
+                                            <Stack
+                                                direction="row"
+                                                alignItems="center"
+                                                justifyContent="space-between"
+                                                sx={{
+                                                    p: 2,
+                                                    borderRadius: 1.5,
+                                                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.2)}`,
+                                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.02),
+                                                }}
+                                            >
+                                                <Stack direction="row" alignItems="center" spacing={2}>
+                                                    <Box
+                                                        sx={{
+                                                            width: 40,
+                                                            height: 40,
+                                                            borderRadius: 1,
+                                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                            color: 'info.main',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                        }}
+                                                    >
+                                                        <FaFileAlt size={20} />
+                                                    </Box>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                                        {decodeURIComponent(leave.attachment.split('/').pop()?.split('?')[0] || 'Attachment Document')}
+                                                    </Typography>
+                                                </Stack>
+                                                <Button
+                                                    href={leave.attachment}
+                                                    target="_blank"
+                                                    variant="text"
+                                                    color="primary"
+                                                    endIcon={<FaExternalLinkAlt size={14} />}
+                                                    sx={{
+                                                        fontWeight: 700,
+                                                        textTransform: 'none',
+                                                        fontSize: '0.875rem',
+                                                        '&:hover': {
+                                                            bgcolor: 'transparent',
+                                                        }
+                                                    }}
+                                                >
+                                                    View Attachment
+                                                </Button>
+                                            </Stack>
+                                        </Box>
                                     )}
                                 </Stack>
                             </Box>
@@ -490,20 +579,33 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                 {filteredActions.length > 0 && (
                     <>
                         <Divider />
-                        <DialogActions sx={{ p: 3, justifyContent: 'flex-end', gap: 1.5 }}>
-                            {filteredActions.map((action) => (
-                                <Button
-                                    key={action.action}
-                                    variant="contained"
-                                    color={getActionColor(action.action)}
-                                    onClick={() => handleActionClick(action)}
-                                    disabled={submitting}
-                                    sx={{ fontWeight: 800, px: 3 }}
-                                    startIcon={submitting && selectedAction?.action === action.action ? <Iconify icon={"svg-spinners:18-dots-indicator" as any} /> : null}
-                                >
-                                    {action.action}
-                                </Button>
-                            ))}
+                        <DialogActions sx={{ p: 2, justifyContent: 'flex-end', gap: 1.5 }}>
+                            {filteredActions.map((action) => {
+                                const isPendingThis = submitting && selectedAction?.action === action.action;
+                                const isApprove = action.action.toLowerCase().includes('approve');
+                                const isReject = action.action.toLowerCase().includes('reject');
+
+                                let label = action.action;
+                                if (isPendingThis) {
+                                    if (isApprove) label = 'Approving...';
+                                    else if (isReject) label = 'Rejecting...';
+                                    else label = 'Processing...';
+                                }
+
+                                return (
+                                    <Button
+                                        key={action.action}
+                                        variant="contained"
+                                        color={getActionColor(action.action)}
+                                        onClick={() => handleActionClick(action)}
+                                        disabled={submitting}
+                                        sx={{ fontWeight: 800, px: 3 }}
+                                        startIcon={isPendingThis ? <Iconify icon={"svg-spinners:18-dots-indicator" as any} /> : null}
+                                    >
+                                        {label}
+                                    </Button>
+                                );
+                            })}
                         </DialogActions>
                     </>
                 )}
@@ -538,7 +640,13 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                         disabled={submitting}
                         startIcon={submitting ? <Iconify icon={"svg-spinners:18-dots-indicator" as any} /> : null}
                     >
-                        {submitting ? 'Processing...' : 'Confirm'}
+                        {submitting ? (
+                            selectedAction?.action.toLowerCase().includes('approve')
+                                ? 'Approving...'
+                                : (selectedAction?.action.toLowerCase().includes('reject')
+                                    ? 'Rejecting...'
+                                    : 'Processing...')
+                        ) : 'Confirm'}
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -574,7 +682,7 @@ function DetailRow({ label, value, icon }: { label: string; value?: string | nul
                     p: 1,
                     borderRadius: 1.25,
                     bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                    color: 'primary.main',
+                    color: 'info.main',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

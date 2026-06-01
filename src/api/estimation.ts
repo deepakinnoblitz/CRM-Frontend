@@ -24,6 +24,7 @@ export interface Estimation {
     client_name: string;
     customer_name?: string;
     billing_name?: string;
+    billing_account_name?: string;
     billing_address?: string;
     phone_number?: string;
     estimate_date: string;
@@ -75,18 +76,29 @@ export async function fetchEstimations(params: {
         }
     }
 
-    // Convert sort_by format (e.g., "estimate_date_desc") to Frappe order_by format
+
     let orderBy = "creation desc";
+
     if (params.sort_by) {
-        const [field, direction] = params.sort_by.split('_').reduce((acc, part) => {
-            if (part === 'asc' || part === 'desc') {
-                acc[1] = part;
-            } else {
-                acc[0] = acc[0] ? `${acc[0]}_${part}` : part;
-            }
-            return acc;
-        }, ['', 'desc']);
-        orderBy = `${field} ${direction}`;
+        const [field, direction] = params.sort_by.split('_').reduce(
+            (acc, part) => {
+                if (part === 'asc' || part === 'desc') {
+                    acc[1] = part;
+                } else {
+                    acc[0] = acc[0] ? `${acc[0]}_${part}` : part;
+                }
+                return acc;
+            },
+            ['', 'desc'] as [string, string]
+        );
+
+        const ambiguousFields = ['modified', 'creation', 'owner'];
+
+        if (ambiguousFields.includes(field)) {
+            orderBy = `tabEstimation.${field} ${direction}`;
+        } else {
+            orderBy = `${field} ${direction}`;
+        }
     }
 
     const query = new URLSearchParams({
@@ -96,6 +108,8 @@ export async function fetchEstimations(params: {
             "ref_no",
             "client_name",
             "customer_name",
+            "billing_name",
+            "billing_name.account_name as billing_account_name",
             "estimate_date",
             "grand_total",
             "creation"
@@ -109,7 +123,7 @@ export async function fetchEstimations(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Estimation&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Estimation&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch estimations");
@@ -211,7 +225,22 @@ export async function convertEstimationToInvoice(name: string) {
 
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to convert estimation"));
-    return json.message;
+
+    let alreadyCreated = false;
+    let message = "";
+    if (json._server_messages) {
+        const msgStr = handleFrappeError(json);
+        if (msgStr.toLowerCase().includes("already created")) {
+            alreadyCreated = true;
+            message = msgStr;
+        }
+    }
+
+    return {
+        invoiceName: json.message,
+        alreadyCreated,
+        message
+    };
 }
 
 export async function fetchRelatedEstimations(dealId: string) {

@@ -104,14 +104,14 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                 sx: { borderRadius: 2.5 },
             }}
         >
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Auto Allocate Monthly Leaves</Typography>
                 <IconButton onClick={handleClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 3, mt: 2 }}>
+            <DialogContent sx={{ p: 3,}}>
                 {step === 'input' ? (
                     <Box sx={{ mt: 2 }}>
                         <Stack direction="row" spacing={2}>
@@ -159,7 +159,7 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                                         <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', mr: 1 }} />
                                     ),
                                 }}
-                                sx={{ mt: 5, mb: 2 }}
+                                sx={{ mt: 5, mb: 2, width: 380 }}
                             />
                         </Stack>
                         <TableContainer sx={{ border: 1, borderColor: 'divider', borderRadius: 2 }}>
@@ -251,7 +251,7 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
 
             <DialogActions sx={{ p: 2.5, pt: 2 }}>
                 {step === 'preview' && (
-                    <Button onClick={handleBack} sx={{ mr: 'auto' }}>
+                    <Button onClick={handleBack} variant='outlined' sx={{ mr: 'auto' }}>
                         Back
                     </Button>
                 )}

@@ -47,8 +47,8 @@ type Props = {
     onSelectRow: VoidFunction;
     onView: VoidFunction;
     onDelete: VoidFunction;
-    onApplyAction: (action: string) => void;
-    onClarify: (message: string) => Promise<void>;
+    onApplyAction: (action: string) => Promise<void>;
+    onClarify: (action: string, message: string) => Promise<void>;
     canDelete?: boolean;
     isHR?: boolean;
     hideCheckbox?: boolean;
@@ -87,7 +87,10 @@ export function LeavesTableRow({
 
     const [openClarification, setOpenClarification] = useState(false);
 
+    const [selectedAction, setSelectedAction] = useState<string | null>(null);
     const [submittingClarification, setSubmittingClarification] = useState(false);
+    const [actionPending, setActionPending] = useState<string | null>(null);
+    const [actionLoading, setActionLoading] = useState<'approve' | 'reject' | null>(null);
 
     const [actions, setActions] = useState<WorkflowAction[]>([]);
 
@@ -107,6 +110,7 @@ export function LeavesTableRow({
     };
 
     const handleCloseMenu = () => {
+        if (actionPending || actionLoading) return;
         setOpenMenu(null);
     };
 
@@ -124,8 +128,10 @@ export function LeavesTableRow({
         return true;
     });
 
-    const handleAction = (action: string) => {
+    const handleAction = async (action: string) => {
         const lowerAction = action.toLowerCase();
+        const isApprove = lowerAction.includes('approve');
+        const isReject = lowerAction.includes('reject');
 
         // Mark as read when action is taken
         markAsRead('Leave Application', row.id).then(() => {
@@ -133,11 +139,27 @@ export function LeavesTableRow({
         });
 
         if (lowerAction.includes('clarification') || lowerAction.includes('query') || lowerAction.includes('reply')) {
+            setSelectedAction(action);
             setOpenClarification(true);
+            handleCloseMenu();
         } else {
-            onApplyAction(action);
+            try {
+                if (isApprove) {
+                    setActionLoading('approve');
+                } else if (isReject) {
+                    setActionLoading('reject');
+                } else {
+                    setActionPending(action);
+                }
+                await onApplyAction(action);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setActionLoading(null);
+                setActionPending(null);
+                setOpenMenu(null);
+            }
         }
-        handleCloseMenu();
     };
 
     const getActionColor = (action: string) => {
@@ -161,8 +183,9 @@ export function LeavesTableRow({
     const handleClarifyConfirm = async (message: string) => {
         try {
             setSubmittingClarification(true);
-            await onClarify(message);
+            await onClarify(selectedAction || '', message);
             setOpenClarification(false);
+            setSelectedAction(null);
         } catch (error) {
             console.error(error);
         } finally {
@@ -291,7 +314,12 @@ export function LeavesTableRow({
                         </IconButton>
 
                         {showActions && (
-                            <IconButton size="small" onClick={handleOpenMenu} sx={{ color: 'warning.main' }}>
+                            <IconButton
+                                size="small"
+                                onClick={handleOpenMenu}
+                                sx={{ color: 'warning.main' }}
+                                disabled={!!actionLoading || !!actionPending}
+                            >
                                 <Iconify icon="eva:more-vertical-fill" />
                             </IconButton>
                         )}
@@ -315,12 +343,33 @@ export function LeavesTableRow({
                     </Box>
                 ) : (
                     <>
-                        {filteredActions.map((action) => (
-                            <MenuItem key={action.action} onClick={() => handleAction(action.action)} sx={{ color: getActionColor(action.action) }}>
-                                <Iconify icon={getActionIcon(action.action)} sx={{ mr: 2 }} />
-                                {action.action}
-                            </MenuItem>
-                        ))}
+                        {filteredActions.map((action) => {
+                            const isApprove = action.action.toLowerCase().includes('approve');
+                            const isReject = action.action.toLowerCase().includes('reject');
+                            const isPendingThis = (isApprove && actionLoading === 'approve') || (isReject && actionLoading === 'reject') || (actionPending === action.action);
+                            
+                            let label = action.action;
+                            if (isPendingThis) {
+                                if (isApprove) label = 'Approving...';
+                                else if (isReject) label = 'Rejecting...';
+                                else label = 'Processing...';
+                            }
+
+                            return (
+                                <MenuItem
+                                    key={action.action}
+                                    onClick={() => !actionLoading && !actionPending && handleAction(action.action)}
+                                    disabled={!!actionLoading || !!actionPending}
+                                    sx={{ color: getActionColor(action.action) }}
+                                >
+                                    <Iconify
+                                        icon={isPendingThis ? "svg-spinners:18-dots-indicator" : getActionIcon(action.action)}
+                                        sx={{ mr: 2 }}
+                                    />
+                                    {label}
+                                </MenuItem>
+                            );
+                        })}
                         {actions.length === 0 && (
                             <Typography variant="caption" sx={{ p: 1, color: 'text.disabled', textAlign: 'center', display: 'block' }}>
                                 No actions available

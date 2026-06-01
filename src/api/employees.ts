@@ -30,10 +30,16 @@ export const fetchEmployees = (params: any) => {
         ["Employee", "status", "like", `%${search}%`],
     ] : undefined;
 
+    // Merge search-based or_filters with any existing or_filters from params
+    const combined_or_filters = [
+        ...(params.or_filters || []),
+        ...(or_filters || [])
+    ];
+
     return fetchFrappeList("Employee", {
         ...restParams,
-        search: undefined, // Remove search param since we're using or_filters
-        or_filters
+        search: undefined,
+        or_filters: combined_or_filters.length > 0 ? combined_or_filters : undefined
     });
 };
 
@@ -53,10 +59,16 @@ export async function createEmployee(data: Partial<Employee>) {
 export async function updateEmployee(name: string, data: Partial<Employee>) {
     const headers = await getAuthHeaders();
 
-    const res = await frappeRequest("/api/method/frappe.client.set_value", {
+    const res = await frappeRequest("/api/method/frappe.client.save", {
         method: "POST",
         headers,
-        body: JSON.stringify({ doctype: "Employee", name, fieldname: data })
+        body: JSON.stringify({
+            doc: {
+                doctype: "Employee",
+                ...data,
+                name
+            }
+        })
     });
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update employee"));

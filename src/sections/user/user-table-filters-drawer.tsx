@@ -5,6 +5,8 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -56,11 +58,11 @@ export function UserTableFiltersDrawer({
         onFilters({ user_type: event.target.value });
     };
 
-    const handleFilterStatus = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFilterStatus = (event: any) => {
         onFilters({ enabled: event.target.value });
     };
 
-    const handleFilterPermission = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFilterPermission = (event: any) => {
         onFilters({ permission: event.target.value });
     };
 
@@ -137,85 +139,44 @@ export function UserTableFiltersDrawer({
                 <Stack spacing={3} sx={{ p: 3 }}>
                     <Stack spacing={1.5}>
                         <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                            User Type
-                        </Typography>
-                        <TextField
-                            select
-                            fullWidth
-                            value={filters.user_type}
-                            onChange={handleFilterUserType}
-                            SelectProps={{ native: true }}
-                            size="small"
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    borderRadius: 1.5,
-                                    bgcolor: 'background.neutral',
-                                    '&:hover': {
-                                        bgcolor: 'action.hover',
-                                    },
-                                },
-                            }}
-                        >
-                            <option value="all">All Types</option>
-                            <option value="System User">System User</option>
-                            <option value="Website User">Website User</option>
-                        </TextField>
-                    </Stack>
-
-
-
-                    <Stack spacing={1.5}>
-                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                             Status
                         </Typography>
-                        <TextField
-                            select
+                        <Select
                             fullWidth
                             value={filters.enabled}
                             onChange={handleFilterStatus}
-                            SelectProps={{ native: true }}
                             size="small"
                             sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    borderRadius: 1.5,
-                                    bgcolor: 'background.neutral',
-                                    '&:hover': {
-                                        bgcolor: 'action.hover',
-                                    },
-                                },
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': { bgcolor: 'action.hover' },
                             }}
                         >
-                            <option value="all">All Status</option>
-                            <option value="1">Enabled</option>
-                            <option value="0">Disabled</option>
-                        </TextField>
+                            <MenuItem value="all">All Status</MenuItem>
+                            <MenuItem value="1">Enabled</MenuItem>
+                            <MenuItem value="0">Disabled</MenuItem>
+                        </Select>
                     </Stack>
 
                     <Stack spacing={1.5}>
                         <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                             Permission
                         </Typography>
-                        <TextField
-                            select
+                        <Select
                             fullWidth
                             value={filters.permission}
                             onChange={handleFilterPermission}
-                            SelectProps={{ native: true }}
                             size="small"
                             sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    borderRadius: 1.5,
-                                    bgcolor: 'background.neutral',
-                                    '&:hover': {
-                                        bgcolor: 'action.hover',
-                                    },
-                                },
+                                borderRadius: 1.5,
+                                bgcolor: 'background.neutral',
+                                '&:hover': { bgcolor: 'action.hover' },
                             }}
                         >
-                            <option value="all">All Permission</option>
-                            <option value="added">Added</option>
-                            <option value="not_added">Not Added</option>
-                        </TextField>
+                            <MenuItem value="all">All Permission</MenuItem>
+                            <MenuItem value="added">Added</MenuItem>
+                            <MenuItem value="not_added">Not Added</MenuItem>
+                        </Select>
                     </Stack>
 
                     <Stack spacing={1.5}>

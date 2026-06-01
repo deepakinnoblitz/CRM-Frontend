@@ -10,6 +10,7 @@ import Dialog from '@mui/material/Dialog';
 import Rating from '@mui/material/Rating';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -57,22 +58,49 @@ export function InterviewDetailsDialog({ open, onClose, interview }: Props) {
 
     const fmt = (val: any) => (val != null && val !== '') ? String(val) : '—';
 
-    /** Read-only TextField that looks identical to the edit-dialog fields */
+    /** Read-only block that displays details as text instead of an input field with an icon */
     const readField = (
         label: string,
         value: any,
+        icon?: string,
         opts?: { colSpan?: boolean; multiline?: boolean; rows?: number }
     ) => (
-        <TextField
-            fullWidth
-            label={label}
-            value={fmt(value)}
-            InputProps={{ readOnly: true }}
-            InputLabelProps={{ shrink: true }}
-            multiline={opts?.multiline}
-            rows={opts?.multiline ? (opts.rows ?? 4) : undefined}
-            sx={opts?.colSpan ? { gridColumn: 'span 2' } : {}}
-        />
+        <Stack
+            direction="row"
+            spacing={2}
+            alignItems={opts?.multiline ? 'flex-start' : 'center'}
+            sx={{
+                width: 1,
+                ...(opts?.colSpan && { gridColumn: 'span 2' })
+            }}
+        >
+            {icon && (
+                <Box
+                    sx={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 1.25,
+                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.06),
+                        color: '#08a3cd',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        ...(opts?.multiline && { mt: 0.5 })
+                    }}
+                >
+                    <Iconify icon={icon as any} width={22} />
+                </Box>
+            )}
+            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.25 }}>
+                    {label}
+                </Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', whiteSpace: 'pre-wrap' }}>
+                    {fmt(value)}
+                </Typography>
+            </Box>
+        </Stack>
     );
 
     // ── Header card ────────────────────────────────────────────────────────
@@ -124,90 +152,89 @@ export function InterviewDetailsDialog({ open, onClose, interview }: Props) {
             {/* Job info */}
             <Divider sx={{ borderStyle: 'dashed' }}>Job Applicant Details</Divider>
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                {readField('Job Applicant', interview.job_applicant)}
-                {readField('Job Applied', interview.job_applied)}
-                {readField('Designation', interview.designation)}
-                {readField('Overall Status', interview.overall_status)}
+                {readField('Job Applicant', interview.job_applicant, 'solar:user-bold')}
+                {readField('Job Applied', interview.job_applied, 'solar:case-bold')}
+                {readField('Designation', interview.designation, 'solar:user-id-bold')}
+                {readField('Overall Status', interview.overall_status, 'solar:info-circle-bold')}
             </Box>
 
             {/* Contact */}
             <Divider sx={{ borderStyle: 'dashed' }}>Contact Information</Divider>
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                {readField('Email Address', interview.email_id)}
-                {readField('Phone Number', interview.phone_number)}
-                {readField('Country', interview.country)}
-                {readField('State', interview.state)}
-                {readField('City', interview.city)}
+                {readField('Email Address', interview.email_id, 'solar:letter-bold')}
+                {readField('Phone Number', interview.phone_number, 'solar:phone-bold')}
+                {readField('Country', interview.country, 'solar:global-bold')}
+                {readField('State', interview.state, 'solar:map-point-bold')}
+                {readField('City', interview.city, 'solar:city-bold')}
             </Box>
 
             {/* Notes */}
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: '1fr' }}>
-                {readField('Notes', interview.notes, { multiline: true, rows: 3 })}
+                {readField('Notes', interview.notes, 'solar:notes-bold', { multiline: true, rows: 3 })}
             </Box>
 
             {/* Resume */}
             <Divider sx={{ borderStyle: 'dashed' }}>Resume</Divider>
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                {readField('Resume Link', interview.resume_link)}
+                {readField('Resume Link', interview.resume_link, 'solar:link-bold')}
 
-                {/* Resume Attachment — styled like a read-only outlined field */}
-                <Box sx={{ position: 'relative' }}>
-                    <Typography
-                        component="label"
-                        variant="caption"
-                        sx={{
-                            position: 'absolute', top: -9, left: 10, px: 0.5,
-                            bgcolor: 'background.paper', color: 'text.secondary',
-                            fontSize: '0.75rem', lineHeight: 1, zIndex: 1, pointerEvents: 'none',
-                        }}
-                    >
-                        Resume Attachment
-                    </Typography>
+                {/* Resume Attachment — styled consistent with other text details blocks */}
+                <Stack direction="row" spacing={2} alignItems="center" sx={{ width: 1 }}>
                     <Box
                         sx={{
-                            border: (theme) => `1px solid ${theme.vars.palette.divider}`,
-                            borderRadius: 1, px: 1.5, py: 1,
-                            display: 'flex', alignItems: 'center', gap: 1, minHeight: 56,
+                            width: 44,
+                            height: 44,
+                            borderRadius: 1.25,
+                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.06),
+                            color: '#08a3cd',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
                         }}
                     >
-                        {interview.resume_attachment ? (
-                            <>
-                                <Iconify icon="solar:file-text-bold" width={18} sx={{ color: 'primary.main', flexShrink: 0 }} />
-                                <Typography variant="body2" noWrap sx={{ flex: 1, fontWeight: 500 }}>
-                                    {interview.resume_attachment.split('/').pop()}
-                                </Typography>
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    startIcon={<Iconify icon="solar:download-bold" width={14} />}
-                                    href={interview.resume_attachment}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    download
-                                    component="a"
-                                    sx={{ flexShrink: 0 }}
-                                >
-                                    Download
-                                </Button>
-                            </>
-                        ) : (
-                            <>
-                                <Iconify icon={"solar:file-text-linear" as any} width={18} sx={{ color: 'text.disabled', flexShrink: 0 }} />
-                                <Typography variant="body2" sx={{ flex: 1, color: 'text.disabled' }}>No file attached</Typography>
-                            </>
-                        )}
+                        <Iconify icon="solar:document-bold" width={22} />
                     </Box>
-                </Box>
+                    <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.25 }}>
+                            Resume Attachment
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            {interview.resume_attachment ? (
+                                <>
+                                    <Typography variant="subtitle2" noWrap sx={{ flex: 1, fontWeight: 800 }}>
+                                        {interview.resume_attachment.split('/').pop()}
+                                    </Typography>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        startIcon={<Iconify icon="solar:download-bold" width={14} />}
+                                        href={interview.resume_attachment}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        download
+                                        component="a"
+                                        sx={{ flexShrink: 0 }}
+                                    >
+                                        Download
+                                    </Button>
+                                </>
+                            ) : (
+                                <Typography variant="body2" sx={{ color: 'text.disabled' }}>No file attached</Typography>
+                            )}
+                        </Box>
+                    </Box>
+                </Stack>
 
-                {readField('Cover Letter', interview.cover_letter, { colSpan: true, multiline: true, rows: 3 })}
+                {readField('Cover Letter', interview.cover_letter, 'solar:document-text-bold', { colSpan: true, multiline: true, rows: 3 })}
             </Box>
 
             {/* Salary */}
             <Divider sx={{ borderStyle: 'dashed' }}>Salary Expectation</Divider>
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' } }}>
-                {readField('Currency', interview.currency)}
-                {readField('Lower Range', interview.lower_range)}
-                {readField('Upper Range', interview.upper_range)}
+                {readField('Currency', interview.currency, 'solar:dollar-bold')}
+                {readField('Lower Range', interview.lower_range, 'solar:wad-of-money-bold')}
+                {readField('Upper Range', interview.upper_range, 'solar:wad-of-money-bold')}
             </Box>
         </Stack>
     );
@@ -219,15 +246,15 @@ export function InterviewDetailsDialog({ open, onClose, interview }: Props) {
             {/* Schedule */}
             <Divider sx={{ borderStyle: 'dashed' }}>Schedule</Divider>
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                {readField('Scheduled On', interview.scheduled_on ? new Date(interview.scheduled_on).toLocaleDateString('en-GB') : '')}
+                {readField('Scheduled On', interview.scheduled_on ? new Date(interview.scheduled_on).toLocaleDateString('en-GB') : '', 'solar:calendar-bold')}
                 <Box />
-                {readField('From Time', interview.from_time)}
-                {readField('To Time', interview.to_time)}
+                {readField('From Time', interview.from_time, 'solar:clock-circle-bold')}
+                {readField('To Time', interview.to_time, 'solar:clock-circle-bold')}
             </Box>
 
             {/* Summary */}
             <Divider sx={{ borderStyle: 'dashed' }}>Interview Summary</Divider>
-            {readField('Interview Summary', interview.interview_summary, { multiline: true, rows: 5 })}
+            {readField('Interview Summary', interview.interview_summary, 'solar:clipboard-bold', { multiline: true, rows: 5 })}
         </Stack>
     );
 
@@ -235,7 +262,7 @@ export function InterviewDetailsDialog({ open, onClose, interview }: Props) {
 
     const renderPerformance = (
         <Stack spacing={3}>
-            {readField('Overall Performance', interview.overall_performance, { multiline: true, rows: 3 })}
+            {readField('Overall Performance', interview.overall_performance, 'solar:chart-bold', { multiline: true, rows: 3 })}
 
             <Divider sx={{ borderStyle: 'dashed' }}>Feedbacks</Divider>
 
@@ -268,9 +295,9 @@ export function InterviewDetailsDialog({ open, onClose, interview }: Props) {
 
                         {/* Card body */}
                         <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, p: 2 }}>
-                            {readField('Interview Type', fb.interview_type)}
-                            {readField('Interviewer', fb.interviewer)}
-                            {readField('Notes', fb.notes, { colSpan: true, multiline: true, rows: 2 })}
+                            {readField('Interview Type', fb.interview_type, 'solar:dialog-bold')}
+                            {readField('Interviewer', fb.interviewer, 'solar:user-bold')}
+                            {readField('Notes', fb.notes, 'solar:notes-bold', { colSpan: true, multiline: true, rows: 2 })}
                         </Box>
                     </Box>
                 ))
@@ -286,20 +313,39 @@ export function InterviewDetailsDialog({ open, onClose, interview }: Props) {
     // ── Render ────────────────────────────────────────────────────────────
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="md"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    boxShadow: (themeVar) => themeVar.customShadows.z24,
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }
+            }}
+        >
             <DialogTitle
-                sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                sx={{
+                    m: 0,
+                    p: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                }}
             >
-                Interview Details
-                <IconButton onClick={onClose}>
-                    <Iconify icon="mingcute:close-line" />
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>Interview Details</Typography>
+                <IconButton onClick={onClose} sx={{ color: 'text.disabled' }}>
+                    <Iconify icon="mingcute:close-line" width={20} />
                 </IconButton>
             </DialogTitle>
 
-            <Scrollbar sx={{ maxHeight: '85vh' }}>
-                <DialogContent sx={{ p: 3, pt: 2 }}>
-                    {/* {renderHeader} */}
-
+            <DialogContent sx={{ p: 0, flexGrow: 1, overflowY: 'auto' }}>
+                <Box sx={{ px: 3 }}>
                     <Tabs
                         value={tab}
                         onChange={(_, val) => setTab(val)}
@@ -312,12 +358,14 @@ export function InterviewDetailsDialog({ open, onClose, interview }: Props) {
                         <Tab label="Interview Details" />
                         <Tab label="Performance" />
                     </Tabs>
+                </Box>
 
+                <Box sx={{ px: { xs: 3, sm: 5 }, pb: 5 }}>
                     {tab === 0 && renderApplicantDetails}
                     {tab === 1 && renderInterviewDetails}
                     {tab === 2 && renderPerformance}
-                </DialogContent>
-            </Scrollbar>
+                </Box>
+            </DialogContent>
         </Dialog>
     );
 }

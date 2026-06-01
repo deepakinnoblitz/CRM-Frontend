@@ -7,6 +7,7 @@ import Dialog from '@mui/material/Dialog';
 import { styled } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
+import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
@@ -21,13 +22,28 @@ const Android12Button = styled(Button)(({ theme }) => ({
     borderRadius: 20,
     textTransform: 'none',
     fontWeight: 500,
-    padding: '4px 12px',
-    fontSize: '0.875rem',
+    padding: '8px 20px',
+    fontSize: '0.925rem',
     boxShadow: 'none',
     '&:hover': {
         boxShadow: 'none',
     },
 }));
+
+// Android 12 Loading Button Style
+const Android12LoadingButton = styled(LoadingButton)(({ theme }) => ({
+    borderRadius: 20,
+    textTransform: 'none',
+    fontWeight: 500,
+    padding: '8px 20px',
+    fontSize: '0.925rem',
+
+    boxShadow: 'none',
+    '&:hover': {
+        boxShadow: 'none',
+    },
+}));
+
 
 // ----------------------------------------------------------------------
 
@@ -37,9 +53,11 @@ type Props = {
     formData: any;
     setFormData: (data: any) => void;
     onSubmit: VoidFunction;
+    isSubmitting?: boolean;
     isEdit?: boolean;
     hideUserField?: boolean;
 };
+
 
 export function UserPermissionFormDialog({
     open,
@@ -47,9 +65,11 @@ export function UserPermissionFormDialog({
     formData,
     setFormData,
     onSubmit,
+    isSubmitting = false,
     isEdit = false,
     hideUserField = false,
 }: Props) {
+
     const [docTypes, setDocTypes] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
     const [forValueOptions, setForValueOptions] = useState<any[]>([]);
@@ -163,15 +183,18 @@ export function UserPermissionFormDialog({
             </DialogContent>
 
             <DialogActions>
-                <Android12Button
+                <Android12LoadingButton
                     variant="contained"
                     color="primary"
                     onClick={onSubmit}
+                    loading={isSubmitting}
                     disabled={!formData.user || !formData.allow || !formData.for_value}
                 >
                     {isEdit ? 'Update' : 'Create'}
-                </Android12Button>
+                </Android12LoadingButton>
             </DialogActions>
+
+
         </Dialog>
     );
 }

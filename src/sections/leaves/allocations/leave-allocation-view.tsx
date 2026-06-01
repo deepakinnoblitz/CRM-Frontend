@@ -24,6 +24,7 @@ import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -42,6 +43,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { useAuth } from 'src/auth/auth-context';
 
+import { TableNoData } from '../../lead/table-no-data';
 import AutoAllocateDialog from './auto-allocate-dialog';
 import AutoAllocateResultDialog from './auto-allocate-result-dialog';
 import { LeaveAllocationTableRow } from './leave-allocation-table-row';
@@ -50,12 +52,11 @@ import { LeaveAllocationDetailsDialog } from './leave-allocation-details-dialog'
 import { LeaveAllocationFiltersDrawer } from './leave-allocation-filters-drawer';
 import { LeadTableToolbar as LeavesTableToolbar } from '../../lead/lead-table-toolbar';
 
-
 // ----------------------------------------------------------------------
 
 const SORT_OPTIONS = [
-    { value: 'creation_desc', label: 'Newest First' },
-    { value: 'creation_asc', label: 'Oldest First' },
+    { value: 'modified_desc', label: 'Newest First' },
+    { value: 'modified_asc', label: 'Oldest First' },
     { value: 'employee_name_asc', label: 'Employee: A to Z' },
     { value: 'employee_name_desc', label: 'Employee: Z to A' },
 ];
@@ -72,7 +73,7 @@ export function LeaveAllocationView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('creation');
+    const [orderBy, setOrderBy] = useState('modified');
     const [openFilters, setOpenFilters] = useState(false);
     const [filters, setFilters] = useState<{
         status: string;
@@ -99,6 +100,7 @@ export function LeaveAllocationView() {
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
     const [totalLeaves, setTotalLeaves] = useState('');
+    const [leavesTaken, setLeavesTaken] = useState('');
     const [status, setStatus] = useState('Approved');
 
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
@@ -131,11 +133,13 @@ export function LeaveAllocationView() {
         rowsPerPage,
         filterName,
         {
-            ...(filters.status !== 'all' ? { workflow_state: filters.status } : {}),
+            ...(filters.status !== 'all' ? { status: filters.status } : {}),
             ...(filters.leave_type !== 'all' ? { leave_type: filters.leave_type } : {}),
             ...(filters.employee ? { employee: filters.employee } : {}),
-            ...(filters.startDate ? { from_date: ['>=', filters.startDate] } : {}),
-            ...(filters.endDate ? { to_date: ['<=', filters.endDate] } : {}),
+            // Show allocations that overlap with the selected range:
+            // Allocation's 'to_date' must be after or on 'startDate' AND 'from_date' must be before or on 'endDate'
+            ...(filters.startDate ? { to_date: ['>=', filters.startDate] } : {}),
+            ...(filters.endDate ? { from_date: ['<=', filters.endDate] } : {}),
         },
         orderBy,
         order,
@@ -173,6 +177,7 @@ export function LeaveAllocationView() {
                 from_date: fromDate,
                 to_date: toDate,
                 total_leaves_allocated: Number(totalLeaves),
+                total_leaves_taken: Number(leavesTaken || 0),
                 status,
             };
 
@@ -199,6 +204,7 @@ export function LeaveAllocationView() {
         setFromDate(row.from_date);
         setToDate(row.to_date);
         setTotalLeaves(String(row.total_leaves_allocated));
+        setLeavesTaken(String(row.total_leaves_taken || 0));
         setStatus(row.status || 'Approved');
         setIsEdit(true);
         setOpenCreate(true);
@@ -224,6 +230,7 @@ export function LeaveAllocationView() {
         setFromDate('');
         setToDate('');
         setTotalLeaves('');
+        setLeavesTaken('');
         setStatus('Approved');
         setFormErrors({});
         setIsEdit(false);
@@ -231,7 +238,7 @@ export function LeaveAllocationView() {
     };
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: { xs: 3, md: 5 } }}>
                 <Stack spacing={1}>
                     <Typography variant="h4" sx={{ fontWeight: 800 }}>
@@ -288,7 +295,7 @@ export function LeaveAllocationView() {
 
                     sortOptions={SORT_OPTIONS}
                     onOpenFilter={() => setOpenFilters(true)}
-                    canReset={filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== null || filters.startDate !== null || filters.endDate !== null}
+                    canReset={filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== null || filters.startDate !== null || filters.endDate !== null || !!filterName}
                 />
 
                 <Scrollbar>
@@ -314,41 +321,55 @@ export function LeaveAllocationView() {
                             />
 
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <LeaveAllocationTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            employee: row.employee,
-                                            employeeName: row.employee_name,
-                                            leaveType: row.leave_type,
-                                            fromDate: row.from_date,
-                                            toDate: row.to_date,
-                                            totalLeaves: row.total_leaves_allocated,
-                                            leavesTaken: row.total_leaves_taken,
-                                            status: row.workflow_state || row.status,
-                                        }}
-                                        selected={false}
-                                        onSelectRow={() => { }}
-                                        onView={() => {
-                                            setSelectedAllocationId(row.name);
-                                            setOpenDetails(true);
-                                        }}
-                                        onEdit={() => handleEdit(row)}
-                                        onDelete={() => setConfirmDelete({ open: true, id: row.name })}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {!data.length && !loading && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
-                                            <EmptyContent title="No allocations found" />
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <LeaveAllocationTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    employee: row.employee,
+                                                    employeeName: row.employee_name,
+                                                    leaveType: row.leave_type,
+                                                    fromDate: row.from_date,
+                                                    toDate: row.to_date,
+                                                    totalLeaves: row.total_leaves_allocated,
+                                                    leavesTaken: row.total_leaves_taken,
+                                                    status: row.workflow_state || row.status,
+                                                }}
+                                                selected={false}
+                                                onSelectRow={() => { }}
+                                                onView={() => {
+                                                    setSelectedAllocationId(row.name);
+                                                    setOpenDetails(true);
+                                                }}
+                                                onEdit={() => handleEdit(row)}
+                                                onDelete={() => setConfirmDelete({ open: true, id: row.name })}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
+
+                                        {filterName && !data.length && (
+                                            <TableNoData searchQuery={filterName} />
+                                        )}
+
+                                        {!data.length && !filterName && (
+                                            <TableRow>
+                                                <TableCell colSpan={8}>
+                                                    <EmptyContent title="No Leave Allocation Found" sx={{ py: 16 }} />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -366,7 +387,7 @@ export function LeaveAllocationView() {
                 />
             </Card>
 
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2 } }}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {isEdit ? 'Edit Leave Allocation' : 'New Leave Allocation'}
                     <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
@@ -383,6 +404,21 @@ export function LeaveAllocationView() {
                             onChange={(event, newValue) => {
                                 setEmployee(newValue ? newValue.name : '');
                                 if (formErrors.employee) setFormErrors((prev) => ({ ...prev, employee: '' }));
+                            }}
+                            renderOption={(props, option) => {
+                                const { key, ...optionProps } = props as any;
+                                return (
+                                    <li key={key} {...optionProps}>
+                                        <Stack spacing={0.5}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                {option.employee_name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                ID: {option.name}
+                                            </Typography>
+                                        </Stack>
+                                    </li>
+                                );
                             }}
                             renderInput={(params) => (
                                 <TextField
@@ -462,20 +498,32 @@ export function LeaveAllocationView() {
                             </Box>
                         </LocalizationProvider>
 
-                        <TextField
-                            fullWidth
-                            label="Total Leaves Allocated"
-                            type="number"
-                            value={totalLeaves}
-                            onChange={(e) => {
-                                setTotalLeaves(e.target.value);
-                                if (formErrors.totalLeaves) setFormErrors(prev => ({ ...prev, totalLeaves: '' }));
-                            }}
-                            required
-                            error={!!formErrors.totalLeaves}
-                            helperText={formErrors.totalLeaves}
-                            sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
-                        />
+                        <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                            <TextField
+                                fullWidth
+                                label="Total Leaves Allocated"
+                                type="number"
+                                value={totalLeaves}
+                                onChange={(e) => {
+                                    setTotalLeaves(e.target.value);
+                                    if (formErrors.totalLeaves) setFormErrors(prev => ({ ...prev, totalLeaves: '' }));
+                                }}
+                                required
+                                error={!!formErrors.totalLeaves}
+                                helperText={formErrors.totalLeaves}
+                                sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
+                            />
+                            
+                            <TextField
+                                fullWidth
+                                label="Total Leaves Taken"
+                                type="number"
+                                value={leavesTaken}
+                                onChange={(e) => {
+                                    setLeavesTaken(e.target.value);
+                                }}
+                            />
+                        </Box>
 
                         <TextField
                             select

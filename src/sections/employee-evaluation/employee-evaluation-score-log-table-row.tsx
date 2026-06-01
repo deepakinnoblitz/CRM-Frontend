@@ -59,7 +59,7 @@ export function EmployeeEvaluationScoreLogTableRow({
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
             {employee_name || 'Unknown'}
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             {employee}
           </Typography>
         </Box>
@@ -69,7 +69,7 @@ export function EmployeeEvaluationScoreLogTableRow({
         {change > 0 ? `+${change}` : change}
       </TableCell>
       <TableCell sx={{ fontWeight: 'bold' }}>{new_score}</TableCell>
-      <TableCell>{reason}</TableCell>
+      <TableCell sx={{ maxWidth: 400 }}>{reason}</TableCell>
       <TableCell>{fDate(date, 'DD-MM-YYYY')}</TableCell>
     </TableRow>
   );

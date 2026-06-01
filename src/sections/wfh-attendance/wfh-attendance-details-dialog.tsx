@@ -1,20 +1,26 @@
 import { useState, useEffect } from 'react';
+import { FaRegCalendarAlt, FaClock, FaHistory, FaUserCheck, FaUserTimes } from 'react-icons/fa';
 
 import Box from '@mui/material/Box';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
+import { Button, Stack, DialogActions, Avatar } from '@mui/material';
 
 import { fTime } from 'src/utils/format-time';
 
-import { getWFHAttendance } from 'src/api/wfh-attendance';
+import { getEmployee } from 'src/api/employees';
+import { handleWFHAction, getWFHAttendance } from 'src/api/wfh-attendance';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+
+import { useAuth } from 'src/auth/auth-context';
 
 // ----------------------------------------------------------------------
 
@@ -27,14 +33,35 @@ type Props = {
 
 export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Props) {
     const [wfh, setWfh] = useState<any>(null);
+    const [employeeDetails, setEmployeeDetails] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(false);
+
+    const { user } = useAuth();
+    const [actionLoading, setActionLoading] = useState(false);
+    const [actionPending, setActionPending] = useState<'Approve' | 'Reject' | null>(null);
+
+    const hrRoles = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
+    const isHR = user?.roles?.some((role: string) => hrRoles.includes(role));
 
     useEffect(() => {
         if (open && wfhId) {
             setLoading(true);
+            setFetching(true);
             getWFHAttendance(wfhId)
-                .then(setWfh)
-                .catch((err) => console.error('Failed to fetch WFH details:', err))
+                .then((data) => {
+                    setWfh(data);
+                    const empId = data.employee || data.employee_id;
+                    if (empId) {
+                        getEmployee(empId).then(setEmployeeDetails).catch(console.error).finally(() => setFetching(false));
+                    } else {
+                        setFetching(false);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch WFH details:', err);
+                    setFetching(false);
+                })
                 .finally(() => setLoading(false));
         }
     }, [open, wfhId]);
@@ -75,6 +102,7 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
             fullWidth
             maxWidth="md"
             TransitionProps={{ onExited: () => setWfh(null) }}
+            PaperProps={{ sx: { borderRadius: 2 } }}
         >
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>WFH Entry Details</Typography>
@@ -84,7 +112,7 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
             </DialogTitle>
 
             <DialogContent dividers sx={{ p: 4 }}>
-                {loading ? (
+                {fetching || (loading && !wfh) ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
                         <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
                     </Box>
@@ -92,26 +120,39 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {/* Header Info */}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
-                            <Box
+                            <Avatar
+                                src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || wfh?.profile_picture || wfh?.image}
                                 sx={{
-                                    width: 64,
-                                    height: 64,
-                                    borderRadius: 1.5,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                                    color: 'primary.main',
+                                    width: 72,
+                                    height: 72,
+                                    borderRadius: '50%',
+                                    border: (theme: any) => `2px solid ${theme.palette.common.white}`,
+                                    boxShadow: (theme: any) => `0 8px 24px -4px ${alpha(theme.palette.primary.main, 0.15)}`,
+                                    bgcolor: (theme: any) => {
+                                        const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || wfh?.profile_picture || wfh?.image;
+                                        if (img) return 'transparent';
+                                        const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                        let hash = 0;
+                                        const name = wfh?.employee_name || '';
+                                        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                        return colors[Math.abs(hash) % colors.length];
+                                    },
+                                    color: (theme: any) => {
+                                        const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || wfh?.profile_picture || wfh?.image;
+                                        return img ? 'inherit' : alpha(theme.palette.common.black, 0.6);
+                                    },
+                                    fontSize: '1.75rem',
+                                    fontWeight: 900,
                                 }}
                             >
-                                <Iconify icon={"solar:user-rounded-bold-duotone" as any} width={32} />
-                            </Box>
+                                {wfh?.employee_name?.charAt(0) || 'U'}
+                            </Avatar>
                             <Box sx={{ flexGrow: 1 }}>
-                                <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                                <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.2, color: 'text.primary' }}>
                                     {wfh.employee_name || wfh.employee}
                                 </Typography>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                    Employee ID: {wfh.employee}
+                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '12px', mt: 0.25 }}>
+                                    ID: {wfh.employee}
                                 </Typography>
                             </Box>
                             <Box sx={{ textAlign: 'right' }}>
@@ -134,15 +175,22 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
                                     gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
                                 }}
                             >
-                                <DetailCard label="Date" value={wfh.date} icon="solar:calendar-date-bold-duotone" />
-                                <DetailCard label="From Time" value={wfh.from_time ? fTime(wfh.from_time) : '-'} icon="solar:stopwatch-play-bold-duotone" />
-                                <DetailCard label="To Time" value={wfh.to_time ? fTime(wfh.to_time) : '-'} icon="solar:stopwatch-pause-bold-duotone" />
+                                <DetailCard label="Date" value={wfh.date} icon={<FaRegCalendarAlt size={20} />} />
+                                <DetailCard label="From Time" value={wfh.from_time ? fTime(wfh.from_time) : '-'} icon={<FaClock size={20} />} />
+                                <DetailCard label="To Time" value={wfh.to_time ? fTime(wfh.to_time) : '-'} icon={<FaClock size={20} />} />
                                 <DetailCard
                                     label="Total Hours"
                                     value={wfh.total_hours}
-                                    icon="solar:history-bold-duotone"
-                                    highlight
+                                    icon={<FaHistory size={18} />}
                                 />
+                                {wfh.approved_by && (
+                                    <DetailCard
+                                        label={wfh.workflow_state === 'Rejected' ? 'Rejected By' : 'Approved By'}
+                                        value={wfh.approved_by}
+                                        icon={wfh.workflow_state === 'Rejected' ? <FaUserTimes size={20} /> : <FaUserCheck size={20} />}
+                                        sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}
+                                    />
+                                )}
                             </Box>
                         </Box>
 
@@ -170,8 +218,62 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
                     </Box>
                 )}
             </DialogContent>
+
+            {isHR && wfh?.workflow_state === 'Pending' && (
+                <DialogActions sx={{ px: 4, py: 3, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04) }}>
+                    <Stack direction="row" spacing={1.5} sx={{ width: 1 }}>
+                        <LoadingButton
+                            fullWidth
+                            variant="outlined"
+                            color="error"
+                            size="large"
+                            startIcon={<Iconify icon="mingcute:close-line" />}
+                            onClick={() => onAction('Reject')}
+                            loading={actionPending === 'Reject'}
+                            disabled={actionLoading}
+                            sx={{ fontWeight: 800 }}
+                        >
+                            {actionPending === 'Reject' ? 'Rejecting...' : 'Reject'}
+                        </LoadingButton>
+                        <LoadingButton
+                            fullWidth
+                            variant="contained"
+                            color="success"
+                            size="large"
+                            startIcon={<Iconify icon="solar:check-circle-bold" />}
+                            onClick={() => onAction('Approve')}
+                            loading={actionPending === 'Approve'}
+                            disabled={actionLoading}
+                            sx={{
+                                fontWeight: 800,
+                                bgcolor: 'success.main',
+                                '&:hover': { bgcolor: 'success.dark' },
+                                boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.success.main, 0.24)}`,
+                            }}
+                        >
+                            {actionPending === 'Approve' ? 'Approving...' : 'Approve Request'}
+                        </LoadingButton>
+                    </Stack>
+                </DialogActions>
+            )}
         </Dialog>
     );
+
+    async function onAction(action: 'Approve' | 'Reject') {
+        if (!wfhId) return;
+        try {
+            setActionPending(action);
+            setActionLoading(true);
+            await handleWFHAction(wfhId, action);
+            const updatedWfh = await getWFHAttendance(wfhId);
+            setWfh(updatedWfh);
+        } catch (error) {
+            console.error(`Failed to ${action} WFH:`, error);
+        } finally {
+            setActionLoading(false);
+            setActionPending(null);
+        }
+    }
 }
 
 // ----------------------------------------------------------------------
@@ -179,35 +281,127 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
 function SectionHeader({ title, icon }: { title: string; icon: string }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', fontSize: 12 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.25, color: 'text.secondary', fontSize: 12 }}>
                 {title}
             </Typography>
         </Box>
     );
 }
 
-function DetailCard({ label, value, icon, highlight = false }: { label: string; value?: string | null; icon: string; highlight?: boolean }) {
+function DetailCard({ label, value, icon, sx }: { label: string; value?: string | null; icon: React.ReactNode; sx?: any }) {
+    const theme = useTheme();
+
+    // Determine theme config based on label
+    const getThemeConfig = () => {
+        if (label === 'Date') {
+            return {
+                bg: alpha(theme.palette.info.main, 0.04),
+                border: theme.palette.info.main,
+                iconBg: alpha(theme.palette.info.main, 0.12),
+                iconColor: theme.palette.info.main,
+            };
+        }
+        if (label === 'From Time') {
+            return {
+                bg: alpha(theme.palette.info.main, 0.04),
+                border: theme.palette.info.main,
+                iconBg: alpha(theme.palette.info.main, 0.12),
+                iconColor: theme.palette.info.main,
+            };
+        }
+        if (label === 'To Time') {
+            const purpleColor = theme.palette.secondary?.main || '#722ed1';
+            return {
+                bg: alpha(theme.palette.info.main, 0.04),
+                border: theme.palette.info.main,
+                iconBg: alpha(theme.palette.info.main, 0.12),
+                iconColor: theme.palette.info.main,
+            };
+        }
+        if (label === 'Total Hours') {
+            return {
+                bg: alpha(theme.palette.info.main, 0.04),
+                border: theme.palette.info.main,
+                iconBg: alpha(theme.palette.info.main, 0.12),
+                iconColor: theme.palette.info.main,
+            };
+        }
+        if (label === 'Rejected By') {
+            return {
+                bg: alpha(theme.palette.error.main, 0.04),
+                border: theme.palette.error.main,
+                iconBg: alpha(theme.palette.error.main, 0.12),
+                iconColor: theme.palette.error.main,
+            };
+        }
+        // Approved By / default
+        return {
+            bg: alpha(theme.palette.success.main, 0.04),
+            border: theme.palette.success.main,
+            iconBg: alpha(theme.palette.success.main, 0.12),
+            iconColor: theme.palette.success.main,
+        };
+    };
+
+    const cfg = getThemeConfig();
+
     return (
         <Box
             sx={{
                 p: 2,
                 borderRadius: 2,
-                bgcolor: (theme) => highlight ? alpha(theme.palette.primary.main, 0.08) : 'background.neutral',
-                border: (theme) => highlight ? `1px solid ${alpha(theme.palette.primary.main, 0.2)}` : 'none',
+                bgcolor: cfg.bg,
+                border: `1px solid ${alpha(cfg.border, 0.12)}`,
                 display: 'flex',
-                flexDirection: 'column',
-                gap: 1.5
+                alignItems: 'center',
+                gap: 2,
+                minWidth: 0,
+                ...sx,
             }}
         >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={20} sx={{ color: highlight ? 'primary.main' : 'text.disabled' }} />
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase' }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 44,
+                    height: 44,
+                    borderRadius: 1.5,
+                    bgcolor: cfg.iconBg,
+                    color: cfg.iconColor,
+                    flexShrink: 0,
+                }}
+            >
+                {icon}
+            </Box>
+            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        color: 'text.secondary',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        display: 'block',
+                        fontSize: 11,
+                        mb: 0.2,
+                    }}
+                >
                     {label}
                 </Typography>
+                <Typography
+                    variant="subtitle1"
+                    sx={{
+                        fontWeight: 900,
+                        color: 'text.primary',
+                        fontSize: '15px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                    }}
+                >
+                    {value || '-'}
+                </Typography>
             </Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: highlight ? 'primary.main' : 'text.primary' }}>
-                {value || '-'}
-            </Typography>
         </Box>
     );
 }

@@ -13,7 +13,7 @@ type TableNoDataProps = {
 export function TableNoData({ query }: TableNoDataProps) {
     return (
         <TableRow>
-            <TableCell align="center" colSpan={9} sx={{ py: 3 }}>
+            <TableCell align="center" colSpan={9} sx={{ py: 15 }}>
                 <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h6" paragraph>
                         Not found

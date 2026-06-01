@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
+import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -19,26 +20,35 @@ import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+
+import { usePdfExport } from 'src/hooks/use-pdf-export';
 
 import { runReport } from 'src/api/reports';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { generateInvoicePdf } from 'src/components/export/pdf/invoice-pdf-generator';
+
+import { useAuth } from 'src/auth/auth-context';
 
 import { ExportFieldsDialog } from '../../export-fields-dialog';
-import { InvoiceDetailsDialog } from '../../invoice-details-dialog';
+
 
 // ----------------------------------------------------------------------
 
 export function InvoiceReportView() {
+    const { user } = useAuth();
     const theme = useTheme();
 
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState<any[]>([]);
     const [summaryData, setSummaryData] = useState<any[]>([]);
+
+    const { exportingPdf, handleExportPdf } = usePdfExport();
 
     // Filters
     const [customerName, setCustomerName] = useState('');
@@ -49,9 +59,8 @@ export function InvoiceReportView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
-    // View Details
-    const [openView, setOpenView] = useState(false);
-    const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+    // Navigation
+    const navigate = useNavigate();
 
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
@@ -121,6 +130,7 @@ export function InvoiceReportView() {
             if (customerName) filters.client_name = customerName;
             if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
             if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
+            if (user?.has_crm_permission) filters.owner = user.name;
 
             const result = await runReport('Invoice Report', filters);
             setReportData(result.result || []);
@@ -130,7 +140,7 @@ export function InvoiceReportView() {
         } finally {
             setLoading(false);
         }
-    }, [customerName, fromDate, toDate]);
+    }, [customerName, fromDate, toDate, user]);
 
     useEffect(() => {
         fetchReport();
@@ -176,7 +186,7 @@ export function InvoiceReportView() {
                     </Stack>
                 </Stack>
 
-                <Card sx={{ p: 2.5, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', bgcolor: 'background.neutral', border: (t) => `1px solid ${t.palette.divider}` }}>
+                <Card sx={{ py: 2.2, px: 2, display: 'flex', columnGap: 2, rowGap: 1.5, flexWrap: 'wrap', alignItems: 'center', bgcolor: 'background.neutral', border: (t) => `1px solid ${t.palette.divider}` }}>
                     <TextField
                         label="Customer Name"
                         value={customerName}
@@ -188,15 +198,27 @@ export function InvoiceReportView() {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="From Date"
+                            format="DD-MM-YYYY"
                             value={fromDate}
                             onChange={(newValue) => setFromDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 190, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                         <DatePicker
                             label="To Date"
+                            format="DD-MM-YYYY"
                             value={toDate}
                             onChange={(newValue) => setToDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 190, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                     </LocalizationProvider>
                     <Box sx={{ flexGrow: 1 }} />
@@ -204,8 +226,33 @@ export function InvoiceReportView() {
                         variant="contained"
                         startIcon={<Iconify icon={"solar:export-bold" as any} />}
                         onClick={() => setOpenExportFields(true)}
+                        disabled={reportData.length === 0}
+                        sx={{ mr: 1 }}
                     >
-                        Export
+                        Export Excel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                        onClick={() => handleExportPdf(() => generateInvoicePdf({
+                            reportData,
+                            selected,
+                            summary: summaryData.length > 0 ? summaryData : [
+                                { label: 'Total Invoices', value: reportData.length },
+                                { label: 'Total Quantity', value: reportData.reduce((acc, curr) => acc + (curr.quantity || 0), 0) },
+                                { label: 'Grand Total Amount', value: reportData.reduce((acc, curr) => acc + (curr.grand_total || 0), 0) }
+                            ]
+                        }))}
+                        disabled={exportingPdf || reportData.length === 0}
+                        sx={{
+                            bgcolor: '#f43f5e',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#e11d48' },
+                            height: 37,
+                            px: 3,
+                        }}
+                    >
+                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
                     </Button>
                 </Card>
 
@@ -255,60 +302,67 @@ export function InvoiceReportView() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {reportData
-                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                        .map((row, index) => {
-                                            const isSelected = selected.indexOf(row.name) !== -1;
-                                            return (
-                                                <TableRow
-                                                    key={index}
-                                                    hover
-                                                    role="checkbox"
-                                                    aria-checked={isSelected}
-                                                    selected={isSelected}
-                                                    sx={{
-                                                        '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                        '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                    }}
-                                                >
-                                                    <TableCell padding="checkbox">
-                                                        <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
-                                                    </TableCell>
-                                                    <TableCell>{row.name}</TableCell>
-                                                    <TableCell>{row.customer_name}</TableCell>
-                                                    <TableCell>{row.invoice_date ? dayjs(row.invoice_date).format('DD MMM YYYY') : '-'}</TableCell>
-                                                    <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
-                                                    <TableCell align="center">{row.quantity}</TableCell>
-                                                    <TableCell align="right">₹{row.price?.toLocaleString() || 0}</TableCell>
-                                                    <TableCell align="right">₹{row.tax_amount?.toLocaleString() || 0}</TableCell>
-                                                    <TableCell align="right">₹{row.sub_total?.toLocaleString() || 0}</TableCell>
-                                                    <TableCell align="right" sx={{ fontWeight: 700 }}>₹{row.grand_total?.toLocaleString() || 0}</TableCell>
-                                                    <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
-                                                        <IconButton
-                                                            onClick={() => {
-                                                                setSelectedInvoiceId(row.name);
-                                                                setOpenView(true);
-                                                            }}
-                                                            sx={{ color: 'info.main' }}
-                                                        >
-                                                            <Iconify icon="solar:eye-bold" />
-                                                        </IconButton>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-
-                                    {reportData.length === 0 && !loading && (
+                                    {loading ? (
                                         <TableRow>
                                             <TableCell colSpan={11} align="center" sx={{ py: 10 }}>
-                                                <Stack spacing={1} alignItems="center">
-                                                    <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>
-                                                        No data found
-                                                    </Typography>
-                                                </Stack>
+                                                <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
+                                    ) : (
+                                        <>
+                                            {reportData
+                                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                                .map((row, index) => {
+                                                    const isSelected = selected.indexOf(row.name) !== -1;
+                                                    return (
+                                                        <TableRow
+                                                            key={index}
+                                                            hover
+                                                            role="checkbox"
+                                                            aria-checked={isSelected}
+                                                            selected={isSelected}
+                                                            sx={{
+                                                                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                                '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                            }}
+                                                        >
+                                                            <TableCell padding="checkbox">
+                                                                <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                                                            </TableCell>
+                                                            <TableCell>{row.name}</TableCell>
+                                                            <TableCell>{row.customer_name}</TableCell>
+                                                            <TableCell>{row.invoice_date ? dayjs(row.invoice_date).format('DD MMM YYYY') : '-'}</TableCell>
+                                                            <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
+                                                            <TableCell align="center">{row.quantity}</TableCell>
+                                                            <TableCell align="right">₹{row.price?.toLocaleString() || 0}</TableCell>
+                                                            <TableCell align="right">₹{row.tax_amount?.toLocaleString() || 0}</TableCell>
+                                                            <TableCell align="right">₹{row.sub_total?.toLocaleString() || 0}</TableCell>
+                                                            <TableCell align="right" sx={{ fontWeight: 700 }}>₹{row.grand_total?.toLocaleString() || 0}</TableCell>
+                                                            <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
+                                                                <IconButton
+                                                                    onClick={() => navigate(`/invoices/${encodeURIComponent(row.name)}/view`)}
+                                                                    sx={{ color: 'info.main' }}
+                                                                >
+                                                                    <Iconify icon="solar:eye-bold" />
+                                                                </IconButton>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
+
+                                            {reportData.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={11} align="center" sx={{ py: 10 }}>
+                                                        <Stack spacing={1} alignItems="center">
+                                                            <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled' }}>
+                                                                No data found
+                                                            </Typography>
+                                                        </Stack>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </>
                                     )}
                                 </TableBody>
                             </Table>
@@ -325,15 +379,6 @@ export function InvoiceReportView() {
                     />
                 </Card>
             </Stack>
-
-            <InvoiceDetailsDialog
-                open={openView}
-                invoiceId={selectedInvoiceId}
-                onClose={() => {
-                    setOpenView(false);
-                    setSelectedInvoiceId(null);
-                }}
-            />
 
             <ExportFieldsDialog
                 open={openExportFields}

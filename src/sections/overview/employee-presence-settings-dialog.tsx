@@ -11,6 +11,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import { useTheme, alpha } from '@mui/material/styles';
 import DialogActions from '@mui/material/DialogActions';
@@ -42,6 +43,7 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
   const [idleThreshold, setIdleThreshold] = useState(60);
   const [awayThreshold, setAwayThreshold] = useState(300);
   const [breakThreshold, setBreakThreshold] = useState(900);
+  const [offlineThreshold, setOfflineThreshold] = useState(3600);
   const [enableAutoResumeBreak, setEnableAutoResumeBreak] = useState(true);
   const [events, setEvents] = useState({
     mousemove: true,
@@ -82,6 +84,7 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
       setIdleThreshold(settings.idle_threshold || 60);
       setAwayThreshold(settings.away_threshold || 300);
       setBreakThreshold(settings.break_threshold || 900);
+      setOfflineThreshold(settings.offline_threshold || 3600);
       setEnableAutoResumeBreak(!!settings.enable_auto_resume_break);
       setEvents({
         mousemove: !!settings.event_mousemove,
@@ -105,6 +108,7 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
         idle_threshold: idleThreshold,
         away_threshold: awayThreshold,
         break_threshold: breakThreshold,
+        offline_threshold: offlineThreshold,
         enable_auto_resume_break: enableAutoResumeBreak,
         event_mousemove: events.mousemove,
         event_keydown: events.keydown,
@@ -127,12 +131,28 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
-          Daily Status Settings
+      <Dialog 
+        open={open} 
+        onClose={onClose} 
+        fullWidth 
+        maxWidth="sm"
+        PaperProps={{ 
+          sx: { 
+            borderRadius: 2, 
+            boxShadow: (themeVar) => themeVar.customShadows.z24, 
+          } 
+        }}
+      >
+        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
+          <Typography variant="h6" component="span" sx={{ fontWeight: 700 }}>
+            Daily Status Settings
+          </Typography>
+          <IconButton onClick={onClose} sx={{ color: (t) => t.palette.grey[500] }}>
+            <Iconify icon="mingcute:close-line" width={20} />
+          </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ px: 3, py: 2 }}>
+        <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto', mt: 2 }}>
           <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
             Configure global presence behavior for all employees.
           </Typography>
@@ -160,7 +180,7 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                     Enable Auto Status
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                    Automatically switch users to &apos;Away&apos; or &apos;Break&apos; after inactivity.
+                    Automatically switch users to &apos;Break&apos; or &apos;Lunch Break&apos; after inactivity.
                   </Typography>
                 </Stack>
                 <Switch
@@ -180,9 +200,9 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                     value={unit}
                     onChange={(e) => setUnit(e.target.value as any)}
                     size="small"
-                    sx={{ 
-                      typography: 'caption', 
-                      fontWeight: 700, 
+                    sx={{
+                      typography: 'caption',
+                      fontWeight: 700,
                       minWidth: 100,
                       bgcolor: 'background.neutral',
                     }}
@@ -202,8 +222,9 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                             fullWidth
                             label="Idle Threshold"
                             type="number"
-                            value={parseFloat((idleThreshold / multiplier).toFixed(2))}
-                            onChange={(e) => setIdleThreshold(Number(e.target.value) * multiplier)}
+                            value={idleThreshold === 0 ? '' : parseFloat((idleThreshold / multiplier).toFixed(2))}
+                            onChange={(e) => setIdleThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
+                            onFocus={(event) => event.target.select()}
                             helperText="System detects inactivity"
                             disabled={!enableAutoStatus || loading}
                             InputProps={{
@@ -218,11 +239,12 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                           />
                           <TextField
                             fullWidth
-                            label="Away Threshold"
+                            label="Break Threshold"
                             type="number"
-                            value={parseFloat((awayThreshold / multiplier).toFixed(2))}
-                            onChange={(e) => setAwayThreshold(Number(e.target.value) * multiplier)}
-                            helperText="Transitions to Away status"
+                            value={awayThreshold === 0 ? '' : parseFloat((awayThreshold / multiplier).toFixed(2))}
+                            onChange={(e) => setAwayThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
+                            onFocus={(event) => event.target.select()}
+                            helperText="Transitions to Break status"
                             disabled={!enableAutoStatus || loading}
                             InputProps={{
                               endAdornment: (
@@ -237,11 +259,32 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                         </Stack>
                         <TextField
                           fullWidth
-                          label="Break Threshold"
+                          label="Lunch Break Threshold"
                           type="number"
-                          value={parseFloat((breakThreshold / multiplier).toFixed(2))}
-                          onChange={(e) => setBreakThreshold(Number(e.target.value) * multiplier)}
-                          helperText="Transitions to Break status"
+                          value={breakThreshold === 0 ? '' : parseFloat((breakThreshold / multiplier).toFixed(2))}
+                          onChange={(e) => setBreakThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
+                          onFocus={(event) => event.target.select()}
+                          helperText="Transitions to Lunch Break status"
+                          disabled={!enableAutoStatus || loading}
+                          InputProps={{
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                                  {unit === 'min' ? 'mins' : 'secs'}
+                                </Typography>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                        <TextField
+                          fullWidth
+                          label="Auto-Offline Threshold"
+                          type="number"
+                          value={offlineThreshold === 0 ? '' : parseFloat((offlineThreshold / multiplier).toFixed(2))}
+                          onChange={(e) => setOfflineThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
+                          onFocus={(event) => event.target.select()}
+                          error={offlineThreshold <= breakThreshold}
+                          helperText={offlineThreshold <= breakThreshold ? "Offline time must be greater than Break time" : "Automatically log out inactive users"}
                           disabled={!enableAutoStatus || loading}
                           InputProps={{
                             endAdornment: (
@@ -272,10 +315,10 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
               >
                 <Stack spacing={0.5}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                    Auto-resume from Break
+                    Auto-resume from Lunch Break
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                    If off, users must click &apos;Return&apos; manually after a Break.
+                    If off, users must click &apos;Return&apos; manually after a Lunch Break.
                   </Typography>
                 </Stack>
                 <Switch
@@ -420,15 +463,12 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button variant="outlined" onClick={onClose} disabled={saving}>
-            Cancel
-          </Button>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button
             variant="contained"
             onClick={handleSave}
             loading={saving}
-            disabled={loading}
+            disabled={loading || offlineThreshold <= breakThreshold || breakThreshold <= awayThreshold || awayThreshold <= idleThreshold}
             sx={{ fontWeight: 700 }}
           >
             Save Changes

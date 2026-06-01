@@ -12,7 +12,8 @@ export function useHRMSSettings() {
     const [loading, setLoading] = useState(!settings);
 
     const fetchSettings = useCallback(async () => {
-        if (!settings) setLoading(true);
+        // Initial fetch only if not already loaded (or if forced)
+        setLoading(true);
         try {
             const result = await getHRMSSettings();
             if (result) {
@@ -24,7 +25,7 @@ export function useHRMSSettings() {
         } finally {
             setLoading(false);
         }
-    }, [settings]);
+    }, []);
 
     useEffect(() => {
         fetchSettings();

@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import { SelectChangeEvent } from '@mui/material/Select';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useSocket } from 'src/hooks/use-socket';
 import { usePresenceLog } from 'src/hooks/use-presence-log';
@@ -27,6 +28,7 @@ import { TableNoData } from '../../lead/table-no-data';
 import { LeadTableHead } from '../../lead/lead-table-head';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { EmployeeDailyLogTableRow } from '../employee-daily-log-table-row';
+import { EmployeeDailyLogEditDialog } from '../employee-daily-log-edit-dialog';
 import { EmployeeDailyLogTableToolbar } from './employee-daily-log-table-toolbar';
 import { EmployeeDailyLogDetailsDialog } from '../employee-daily-log-details-dialog';
 import { EmployeePresenceSettingsDialog } from '../employee-presence-settings-dialog';
@@ -55,17 +57,57 @@ export function EmployeeDailyLogView() {
 
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    
+
     const [filterName, setFilterName] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [filterEmployee, setFilterEmployee] = useState('all');
+    const [filterDay, setFilterDay] = useState('all');
+    const [filterStartDate, setFilterStartDate] = useState<string>('');
+    const [filterEndDate, setFilterEndDate] = useState<string>('');
     const [sortBy, setSortBy] = useState('login_date_desc');
+
+    const [employees, setEmployees] = useState<{ value: string; label: string }[]>([]);
+
+    useEffect(() => {
+        if (isHR) {
+            const fetchEmployees = async () => {
+                try {
+                    const res = await fetch('/api/method/frappe.client.get_list', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            doctype: 'Employee',
+                            fields: ['name', 'employee_name'],
+                            filters: { status: 'Active' },
+                            limit_page_length: 1000
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.message) {
+                        setEmployees(data.message.map((emp: any) => ({
+                            value: emp.name,
+                            label: `${emp.employee_name} (${emp.name})`
+                        })));
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch employees:', error);
+                }
+            };
+            fetchEmployees();
+        }
+    }, [isHR]);
 
     const { data: sessions, totalCount, loading, refetch } = usePresenceLog(
         page * rowsPerPage,
         rowsPerPage,
         filterName,
         filterStatus,
-        sortBy
+        sortBy,
+        filterEmployee,
+        filterDay,
+        '',
+        filterStartDate,
+        filterEndDate
     );
 
     useEffect(() => {
@@ -87,6 +129,7 @@ export function EmployeeDailyLogView() {
     }, [socket, refetch]);
 
     const [openDetails, setOpenDetails] = useState(false);
+    const [openEdit, setOpenEdit] = useState(false);
     const [selectedSession, setSelectedSession] = useState<any>(null);
 
     const [openSettings, setOpenSettings] = useState(false);
@@ -97,8 +140,18 @@ export function EmployeeDailyLogView() {
         setOpenDetails(true);
     };
 
+    const handleOpenEdit = (session: any) => {
+        setSelectedSession(session);
+        setOpenEdit(true);
+    };
+
     const handleCloseDetails = () => {
         setOpenDetails(false);
+        setSelectedSession(null);
+    };
+
+    const handleCloseEdit = () => {
+        setOpenEdit(false);
         setSelectedSession(null);
     };
 
@@ -112,12 +165,36 @@ export function EmployeeDailyLogView() {
         setPage(0);
     };
 
-    const handleResetFilters = () => {
-        setFilterStatus('all');
+    const handleFilterEmployee = (value: string) => {
+        setFilterEmployee(value);
         setPage(0);
     };
 
-    const canReset = filterStatus !== 'all';
+    const handleFilterDay = (value: string) => {
+        setFilterDay(value);
+        setPage(0);
+    };
+
+    const handleFilterStartDate = (value: string) => {
+        setFilterStartDate(value);
+        setPage(0);
+    };
+
+    const handleFilterEndDate = (value: string) => {
+        setFilterEndDate(value);
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilterStatus('all');
+        setFilterEmployee('all');
+        setFilterDay('all');
+        setFilterStartDate('');
+        setFilterEndDate('');
+        setPage(0);
+    };
+
+    const canReset = filterStatus !== 'all' || filterEmployee !== 'all' || filterDay !== 'all' || !!filterStartDate || !!filterEndDate || !!filterName;
 
     const handleSortChange = (value: string) => {
         setSortBy(value);
@@ -127,7 +204,7 @@ export function EmployeeDailyLogView() {
     const emptyRows = (!loading && sessions.length > 0) ? (sessions.length < 5 ? 5 - sessions.length : 0) : 0;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Employee Daily Log
@@ -145,24 +222,24 @@ export function EmployeeDailyLogView() {
                     onOpenSettings={() => setOpenSettings(true)}
                     canReset={canReset}
                     sortOptions={SORT_OPTIONS}
-                    searchPlaceholder="Search by date..."
+                    searchPlaceholder="Search by date or employee..."
                 />
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
                         <Table sx={{ minWidth: 800 }}>
-                                <LeadTableHead
+                            <LeadTableHead
                                 order="desc"
                                 orderBy="login_date"
                                 rowCount={sessions.length}
                                 numSelected={0}
                                 hideCheckbox
                                 showIndex
-                                onSelectAllRows={() => {}}
+                                onSelectAllRows={() => { }}
                                 headLabel={[
-                                    { id: 'login_date', label: 'Date', minWidth: 150 },
                                     ...(isHR ? [{ id: 'employee', label: 'Employee', minWidth: 200 }] : []),
-                                    { id: 'status', label: 'Status', minWidth: 120 },
+                                    { id: 'login_date', label: 'Date', minWidth: 150 },
+                                    // { id: 'status', label: 'Status', minWidth: 120 },
                                     { id: 'login_time', label: 'Login', minWidth: 120 },
                                     { id: 'logout_time', label: 'Logout', minWidth: 120 },
                                     { id: 'total_work_hours', label: 'Working Hours', minWidth: 150 },
@@ -173,13 +250,17 @@ export function EmployeeDailyLogView() {
 
                             <TableBody>
                                 {loading ? (
-                                    null
+                                    <TableRow>
+                                        <TableCell colSpan={12} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
+                                        </TableCell>
+                                    </TableRow>
                                 ) : (
                                     sessions.map((row, index) => (
                                         <EmployeeDailyLogTableRow
                                             key={row.name}
                                             index={page * rowsPerPage + index}
-                                            row={row}
+                                            row={{ ...row, onEdit: () => handleOpenEdit(row) }}
                                             isHR={isHR}
                                             onView={() => handleOpenDetails(row)}
                                         />
@@ -190,7 +271,7 @@ export function EmployeeDailyLogView() {
                                 {notFound && <TableNoData searchQuery={filterName} />}
                                 {!loading && sessions.length === 0 && !filterName && !canReset && (
                                     <TableRow>
-                                        <TableCell align="center" colSpan={7}>
+                                        <TableCell align="center" colSpan={12}>
                                             <EmptyContent
                                                 title="No Data Available"
                                                 description="There is no activity list created yet."
@@ -223,6 +304,12 @@ export function EmployeeDailyLogView() {
                 session={selectedSession}
             />
 
+            <EmployeeDailyLogEditDialog
+                open={openEdit}
+                onClose={handleCloseEdit}
+                session={selectedSession}
+            />
+
             <EmployeePresenceSettingsDialog
                 open={openSettings}
                 onClose={() => setOpenSettings(false)}
@@ -234,9 +321,29 @@ export function EmployeeDailyLogView() {
                 onClose={() => setOpenFilters(false)}
                 filterStatus={filterStatus}
                 onFilterStatus={handleFilterStatus}
+                filterEmployee={filterEmployee}
+                onFilterEmployee={handleFilterEmployee}
+                filterDay={filterDay}
+                onFilterDay={handleFilterDay}
+                filterStartDate={filterStartDate}
+                onFilterStartDate={handleFilterStartDate}
+                filterEndDate={filterEndDate}
+                onFilterEndDate={handleFilterEndDate}
                 canReset={canReset}
                 onResetFilters={handleResetFilters}
-                options={{ status: STATUS_OPTIONS }}
+                options={{
+                    status: STATUS_OPTIONS,
+                    employees: employees,
+                    days: [
+                        { value: 'Monday', label: 'Monday' },
+                        { value: 'Tuesday', label: 'Tuesday' },
+                        { value: 'Wednesday', label: 'Wednesday' },
+                        { value: 'Thursday', label: 'Thursday' },
+                        { value: 'Friday', label: 'Friday' },
+                        { value: 'Saturday', label: 'Saturday' },
+                        { value: 'Sunday', label: 'Sunday' },
+                    ]
+                }}
             />
         </DashboardContent>
     );

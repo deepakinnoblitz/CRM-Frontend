@@ -1,4 +1,9 @@
 import dayjs from 'dayjs';
+import { FaUser } from "react-icons/fa";
+import { GoHash } from "react-icons/go";
+import { BsLaptop } from "react-icons/bs";
+import { IoMdReturnLeft } from "react-icons/io";
+import { MdOutlineAssignmentTurnedIn } from "react-icons/md";
 import { useState, useCallback, useEffect, useMemo } from 'react';
 
 import Box from '@mui/material/Box';
@@ -9,7 +14,6 @@ import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
-import { alpha } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
@@ -22,11 +26,13 @@ import InputLabel from '@mui/material/InputLabel';
 import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
+import { alpha, useTheme } from '@mui/material/styles';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -64,6 +70,8 @@ import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 export function AssetAssignmentsView() {
+    const theme = useTheme();
+
     const { user } = useAuth();
 
     const isHR = user?.roles?.some((role: string) =>
@@ -73,7 +81,7 @@ export function AssetAssignmentsView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('assigned_on');
+    const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
 
     const [filters, setFilters] = useState<{
@@ -89,14 +97,14 @@ export function AssetAssignmentsView() {
     });
 
     const [openFilters, setOpenFilters] = useState(false);
-    const canReset = filters.employee !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null;
+    const canReset = filters.employee !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
 
     const effectiveFilters = useMemo(() => ({
         ...filters,
         employee: isHR ? filters.employee : (user?.employee || 'all'),
     }), [filters, isHR, user]);
 
-    const { data, total, refetch } = useAssetAssignments(page + 1, rowsPerPage, filterName, orderBy, order, effectiveFilters);
+    const { data, total, loading, refetch } = useAssetAssignments(page + 1, rowsPerPage, filterName, orderBy, order, effectiveFilters);
 
     const [openCreate, setOpenCreate] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -114,6 +122,7 @@ export function AssetAssignmentsView() {
     const [assignedOn, setAssignedOn] = useState('');
     const [returnedOn, setReturnedOn] = useState('');
     const [remarks, setRemarks] = useState('');
+    const [touched, setTouched] = useState(false);
 
     // Dropdown options
     const [assets, setAssets] = useState<Array<{ name: string; asset_name: string }>>([]);
@@ -152,8 +161,8 @@ export function AssetAssignmentsView() {
     };
 
     const handleSortChange = (value: string) => {
-        if (value === 'date_desc') { setOrderBy('assigned_on'); setOrder('desc'); }
-        else if (value === 'date_asc') { setOrderBy('assigned_on'); setOrder('asc'); }
+        if (value === 'date_desc') { setOrderBy('modified'); setOrder('desc'); }
+        else if (value === 'date_asc') { setOrderBy('modified'); setOrder('asc'); }
         else if (value === 'employee_asc') { setOrderBy('employee_name'); setOrder('asc'); }
         else if (value === 'employee_desc') { setOrderBy('employee_name'); setOrder('desc'); }
         else if (value === 'asset_asc') { setOrderBy('asset_name'); setOrder('asc'); }
@@ -162,7 +171,7 @@ export function AssetAssignmentsView() {
     };
 
     const getCurrentSortValue = () => {
-        if (orderBy === 'assigned_on') return order === 'desc' ? 'date_desc' : 'date_asc';
+        if (orderBy === 'modified') return order === 'desc' ? 'date_desc' : 'date_asc';
         if (orderBy === 'employee_name') return order === 'desc' ? 'employee_desc' : 'employee_asc';
         if (orderBy === 'asset_name') return order === 'desc' ? 'asset_desc' : 'asset_asc';
         return 'date_desc';
@@ -201,6 +210,7 @@ export function AssetAssignmentsView() {
         setAssignedOn('');
         setReturnedOn('');
         setRemarks('');
+        setTouched(false);
         setOpenCreate(true);
     };
 
@@ -213,15 +223,17 @@ export function AssetAssignmentsView() {
         setAssignedOn('');
         setReturnedOn('');
         setRemarks('');
+        setTouched(false);
     };
 
     const handleEditRow = useCallback((row: any) => {
         setCurrentAssignment(row);
-        setSelectedAsset(assets.find(a => a.name === row.asset) || null);
+        setSelectedAsset(assets.find(a => a.name === row.asset) || { name: row.asset, asset_name: row.asset_name });
         setSelectedEmployee(employees.find(e => e.name === row.assigned_to) || null);
         setAssignedOn(row.assigned_on || '');
         setReturnedOn(row.returned_on || '');
         setRemarks(row.remarks || '');
+        setTouched(false);
         setIsEdit(true);
         setOpenCreate(true);
     }, [assets, employees]);
@@ -250,9 +262,9 @@ export function AssetAssignmentsView() {
 
     const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        setTouched(true);
 
         if (!selectedAsset || !selectedEmployee || !assignedOn) {
-            setSnackbar({ open: true, message: 'Please fill in all required fields', severity: 'error' });
             return;
         }
 
@@ -278,7 +290,7 @@ export function AssetAssignmentsView() {
             asset: selectedAsset.name,
             assigned_to: selectedEmployee.name,
             assigned_on: assignedOn,
-            returned_on: returnedOn || undefined,
+            returned_on: returnedOn || '',
             remarks: remarks.trim(),
         };
 
@@ -315,14 +327,14 @@ export function AssetAssignmentsView() {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const notFound = !data.length && !!filterName;
-    const empty = !data.length && !filterName;
+    const notFound = !loading && !data.length && !!filterName;
+    const empty = !loading && !data.length && !filterName;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
-                    Asset Assignments
+                    {isHR ? 'Asset Assignments' : 'My Assets'}
                 </Typography>
 
                 {permissions.write && (
@@ -351,7 +363,7 @@ export function AssetAssignmentsView() {
                     numSelected={selected.length}
                     filterName={filterName}
                     onFilterName={handleFilterByName}
-                    searchPlaceholder="Search assignments..."
+                    searchPlaceholder={isHR ? "Search assignments..." : "Search my assets..."}
                     onDelete={selected.length > 0 ? handleBulkDelete : undefined}
                     onOpenFilter={() => setOpenFilters(true)}
                     canReset={canReset}
@@ -360,8 +372,10 @@ export function AssetAssignmentsView() {
                     sortOptions={[
                         { value: 'date_desc', label: 'Newest First' },
                         { value: 'date_asc', label: 'Oldest First' },
-                        { value: 'employee_asc', label: 'Employee: A to Z' },
-                        { value: 'employee_desc', label: 'Employee: Z to A' },
+                        ...(isHR ? [
+                            { value: 'employee_asc', label: 'Employee: A to Z' },
+                            { value: 'employee_desc', label: 'Employee: Z to A' },
+                        ] : []),
                         { value: 'asset_asc', label: 'Asset: A to Z' },
                         { value: 'asset_desc', label: 'Asset: Z to A' },
                     ]}
@@ -380,54 +394,63 @@ export function AssetAssignmentsView() {
                                 showIndex
                                 headLabel={[
                                     { id: 'asset_name', label: 'Asset' },
-                                    { id: 'employee_name', label: 'Employee' },
+                                    ...(isHR ? [{ id: 'employee_name', label: 'Employee' }] : []),
                                     { id: 'assigned_on', label: 'Assigned On', sx: { display: { xs: 'none', md: 'table-cell' } } },
                                     { id: 'returned_on', label: 'Returned On', sx: { display: { xs: 'none', md: 'table-cell' } } },
                                     { id: '', label: '' },
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <AssetAssignmentTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            asset_name: row.asset_name,
-                                            employee_name: row.employee_name,
-                                            assigned_on: row.assigned_on,
-                                            returned_on: row.returned_on,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
-                                )}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
-                                            <EmptyContent
-                                                title="No assignments found"
-                                                description="You haven't created any asset assignments yet. Click 'New Assignment' to get started."
-                                                icon="solar:clipboard-list-bold-duotone"
-                                            />
+                                        <TableCell colSpan={isHR ? 6 : 5} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <AssetAssignmentTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    asset_name: row.asset_name,
+                                                    employee_name: row.employee_name,
+                                                    assigned_to: row.assigned_to,
+                                                    assigned_on: row.assigned_on,
+                                                    returned_on: row.returned_on,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row)}
+                                                onEdit={() => handleEditRow(row)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                                isHR={isHR}
+                                            />
+                                        ))}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        )}
+
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={isHR ? 6 : 5}>
+                                                    <EmptyContent
+                                                        title={isHR ? "No assignments found" : "No assets assigned"}
+                                                        description={isHR ? "You haven't created any asset assignments yet. Click 'New Assignment' to get started." : "You haven't been assigned any assets yet."}
+                                                        icon={isHR ? "solar:clipboard-list-bold-duotone" : "solar:laptop-bold-duotone"}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -457,16 +480,30 @@ export function AssetAssignmentsView() {
             />
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-                <form onSubmit={handleCreate}>
-                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Dialog
+                open={openCreate}
+                onClose={handleCloseCreate}
+                fullWidth
+                maxWidth="md"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }
+                }}
+            >
+                <form onSubmit={handleCreate} noValidate style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
                         {isEdit ? 'Edit Assignment' : 'New Assignment'}
-                        <IconButton onClick={handleCloseCreate}>
+                        <IconButton onClick={handleCloseCreate} sx={{ color: (t) => t.palette.grey[500] }}>
                             <Iconify icon="mingcute:close-line" />
                         </IconButton>
                     </DialogTitle>
 
-                    <DialogContent dividers>
+                    <DialogContent dividers sx={{ flexGrow: 1, overflowY: 'auto' }}>
                         <Box sx={{ display: 'grid', gap: 3, margin: '1rem', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
                             <Autocomplete
                                 fullWidth
@@ -490,7 +527,14 @@ export function AssetAssignmentsView() {
                                     );
                                 }}
                                 renderInput={(params) => (
-                                    <TextField {...params} label="Asset" required placeholder="Select asset" />
+                                    <TextField
+                                        {...params}
+                                        label="Asset"
+                                        required
+                                        placeholder="Select asset"
+                                        error={touched && !selectedAsset}
+                                        helperText={touched && !selectedAsset ? 'Asset is required' : ''}
+                                    />
                                 )}
                                 disabled={isEdit}
                             />
@@ -517,7 +561,14 @@ export function AssetAssignmentsView() {
                                     );
                                 }}
                                 renderInput={(params) => (
-                                    <TextField {...params} label="Employee" required placeholder="Select employee" />
+                                    <TextField
+                                        {...params}
+                                        label="Employee"
+                                        required
+                                        placeholder="Select employee"
+                                        error={touched && !selectedEmployee}
+                                        helperText={touched && !selectedEmployee ? 'Employee is required' : ''}
+                                    />
                                 )}
                             />
 
@@ -532,6 +583,8 @@ export function AssetAssignmentsView() {
                                             fullWidth: true,
                                             required: true,
                                             InputLabelProps: { shrink: true },
+                                            error: touched && !assignedOn,
+                                            helperText: touched && !assignedOn ? 'Assignment date is required' : ''
                                         },
                                     }}
                                 />
@@ -565,7 +618,7 @@ export function AssetAssignmentsView() {
                         </Box>
                     </DialogContent>
 
-                    <DialogActions>
+                    <DialogActions sx={{ p: 1.5 }}>
                         <Button type="submit" variant="contained">
                             {isEdit ? 'Update' : 'Create'}
                         </Button>
@@ -574,20 +627,26 @@ export function AssetAssignmentsView() {
             </Dialog>
 
             {/* View Dialog */}
-            <Dialog open={openView} onClose={() => setOpenView(false)} fullWidth maxWidth="md">
-                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+            <Dialog
+                open={openView}
+                onClose={() => setOpenView(false)}
+                fullWidth
+                maxWidth="md"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }
+                }}
+            >
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
                     <Typography variant="h6" sx={{ fontWeight: 800 }}>Assignment Details</Typography>
                     <IconButton
                         onClick={() => setOpenView(false)}
-                        sx={{
-                            color: 'text.disabled',
-                            bgcolor: 'background.paper',
-                            boxShadow: (theme) => theme.customShadows?.z1,
-                            '&:hover': {
-                                color: 'error.main',
-                                bgcolor: (theme) => alpha(theme.palette.error.main, 0.08)
-                            }
-                        }}
+                        sx={{ color: (t) => t.palette.grey[500] }}
                     >
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
@@ -607,7 +666,7 @@ export function AssetAssignmentsView() {
                                         justifyContent: 'center',
                                         bgcolor: 'info.lighter',
                                         color: 'info.main',
-                                        boxShadow: (theme) => `0 8px 16px 0 ${alpha(theme.palette.info.main, 0.16)}`,
+                                        boxShadow: (t) => `0 8px 16px 0 ${alpha(t.palette.info.main, 0.16)}`,
                                     }}
                                 >
                                     <Iconify icon={"solar:laptop-bold-duotone" as any} width={40} />
@@ -635,41 +694,52 @@ export function AssetAssignmentsView() {
 
                             {/* Assignment Information */}
                             <Box>
-                                <SectionHeader title="Assignment Information" icon="solar:user-id-bold" />
+                                <SectionHeader title="Assignment Information" />
                                 <Box
                                     sx={{
                                         display: 'grid',
                                         gap: 3,
-                                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+                                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(3, 1fr)' },
                                     }}
                                 >
                                     <DetailItem
                                         label="Employee"
                                         value={viewAssignment.employee_name}
-                                        icon="solar:user-bold"
+                                        icon={<FaUser size={18}/>}
                                     />
                                     <DetailItem
                                         label="Employee ID"
                                         value={viewAssignment.assigned_to}
-                                        icon="solar:hashtag-bold"
+                                        icon={<GoHash size={18}/>}
+                                    />
+                                    <DetailItem
+                                        label="Assest"
+                                        value={viewAssignment.asset_name}
+                                        icon={<BsLaptop size={18}/>}
                                     />
                                 </Box>
                             </Box>
 
-                            {/* Date Details */}
-                            <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                                <SectionHeader title="Lifecycle Details" icon="solar:calendar-bold" noMargin />
-                                <Box sx={{ mt: 3, display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+
+                            <Box>
+                                <SectionHeader title="Lifecycle Details" />
+                                <Box
+                                    sx={{
+                                        display: 'grid',
+                                        gap: 3,
+                                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(3, 1fr)' },
+                                    }}
+                                >
                                     <DetailItem
                                         label="Assigned On"
                                         value={dayjs(viewAssignment.assigned_on).format('DD MMM YYYY')}
-                                        icon="solar:calendar-line-duotone"
+                                        icon={<MdOutlineAssignmentTurnedIn size={18}/>}
                                     />
                                     {viewAssignment.returned_on && (
                                         <DetailItem
                                             label="Returned On"
                                             value={dayjs(viewAssignment.returned_on).format('DD MMM YYYY')}
-                                            icon="solar:calendar-check-bold"
+                                            icon={<IoMdReturnLeft  size={18}/>}
                                         />
                                     )}
                                 </Box>
@@ -678,8 +748,15 @@ export function AssetAssignmentsView() {
                             {/* Remarks Section */}
                             {viewAssignment.remarks && (
                                 <Box>
-                                    <SectionHeader title="Remarks" icon="solar:notes-bold" />
-                                    <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                                    <SectionHeader title="Remarks" />
+                                    <Box                                     
+                                        sx={{
+                                            p: 3,
+                                            bgcolor: alpha(theme.palette.primary.main, 0.04),
+                                            borderRadius: 2,
+                                            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                                        }}
+                                    >
                                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                             {viewAssignment.remarks}
                                         </Typography>
@@ -724,26 +801,40 @@ export function AssetAssignmentsView() {
     );
 }
 
-function SectionHeader({ title, icon, noMargin = false }: { title: string; icon: string, noMargin?: boolean }) {
+function SectionHeader({ title, noMargin = false }: { title: string, noMargin?: boolean }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: noMargin ? 0 : 2.5 }}>
-            <Iconify icon={icon as any} width={20} sx={{ color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '13.5px' }}>
                 {title}
             </Typography>
         </Box>
     );
 }
 
-function DetailItem({ label, value, icon }: { label: string; value?: string | null; icon: string }) {
+function DetailItem({ label, value, icon }: { label: string; value?: React.ReactNode; icon: React.ReactNode }) {
+    const theme = useTheme();
     return (
-        <Box>
-            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
-                {label}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 50,
+                    height: 50,
+                    borderRadius: 1.5,
+                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                    color: 'info.main',
+                    flexShrink: 0,
+                }}
+            >
+                {icon}
+            </Box>
+            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', display: 'block', mb: 0.5, fontSize: 11 }}>
+                    {label}
+                </Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {value || '-'}
                 </Typography>
             </Box>

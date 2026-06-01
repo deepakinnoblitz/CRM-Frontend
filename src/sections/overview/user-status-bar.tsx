@@ -1,14 +1,19 @@
+import { GiAlarmClock } from "react-icons/gi";
+import { TbBellSearch } from "react-icons/tb";
+import { IoCalendarNumberOutline } from "react-icons/io5";
 import { useRef, useEffect, useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
+import Snackbar from '@mui/material/Snackbar';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -33,6 +38,9 @@ import { Iconify } from 'src/components/iconify';
 
 import { useAuth } from 'src/auth/auth-context';
 
+import { ReminderDialog } from './reminder-dialog';
+import { MyRemindersDialog } from './my-reminders-dialog';
+
 // ----------------------------------------------------------------------
 
 export function UserStatusBar() {
@@ -53,6 +61,10 @@ export function UserStatusBar() {
     } = usePresence();
     const router = useRouter();
 
+    const isHR = user?.roles.some((role: string) =>
+        ['HR', 'System Manager', 'Administrator'].includes(role)
+    );
+
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [infoDialogOpen, setInfoDialogOpen] = useState(false);
     const [isLogoutDialog, setIsLogoutDialog] = useState(false);
@@ -65,6 +77,13 @@ export function UserStatusBar() {
     const [isCheckingTimesheet, setIsCheckingTimesheet] = useState(false);
     const [idlePermissionDialogOpen, setIdlePermissionDialogOpen] = useState(false);
     const [idleSupportError, setIdleSupportError] = useState<string | null>(null);
+    const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
+    const [myRemindersDialogOpen, setMyRemindersDialogOpen] = useState(false);
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
 
     const hasAutoChecked = useRef(false);
 
@@ -249,12 +268,12 @@ export function UserStatusBar() {
     useEffect(() => {
         let interval: any;
         let lastTick = Date.now();
-        
+
         if (statusName && statusName !== 'Offline' && session) {
             interval = setInterval(() => {
                 const now = Date.now();
                 const delta = Math.floor((now - lastTick) / 1000);
-                
+
                 if (delta >= 1) {
                     if (statusName === 'Break') {
                         setBreakTimer((prev) => prev + delta);
@@ -296,19 +315,27 @@ export function UserStatusBar() {
 
     const statusOptions = [
         { label: 'Available - Logged In', value: 'Available', color: '#22c55e', icon: 'ph:check-circle-fill', buttonIcon: 'ph:check-circle-fill' },
-        { label: 'Busy', value: 'Busy', color: '#ef4444', icon: 'ph:minus-circle-fill', buttonIcon: 'ph:minus-circle-fill' },
-        { label: 'Do not disturb', value: 'Do Not Disturb', color: '#b91c1c', icon: 'ph:prohibit-fill', buttonIcon: 'ph:prohibit-fill' },
-        { label: 'Break', value: 'Break', color: '#f59e0b', icon: 'ph:coffee-fill', buttonIcon: 'ph:coffee-fill' },
-        { label: 'Away', value: 'Away', color: '#d97706', icon: 'ph:moon-fill', buttonIcon: 'ph:moon-fill' },
+        { label: 'In Client Meeting', value: 'Busy', color: '#ef4444', icon: 'ph:minus-circle-fill', buttonIcon: 'ph:minus-circle-fill' },
+        { label: 'Team Discussion', value: 'Do Not Disturb', color: '#b91c1c', icon: 'ph:prohibit-fill', buttonIcon: 'ph:prohibit-fill' },
+        { label: 'Lunch Break', value: 'Break', color: '#f59e0b', icon: 'ph:coffee-fill', buttonIcon: 'ph:coffee-fill' },
+        { label: 'Break', value: 'Away', color: '#d97706', icon: 'ph:moon-fill', buttonIcon: 'ph:moon-fill' },
         { label: 'Offline - Logout', value: 'Offline', color: '#9ca3af', icon: 'ph:power-fill', buttonIcon: 'ph:power-fill' },
     ];
 
     const STATUS_DISPLAY_MAP: Record<string, string> = {
-        Available: 'Available - Logged In',
-        Offline: 'Offline - Logout',
+        'Available': 'Available - Logged In',
+        'Busy': 'In Client Meeting',
+        'Do Not Disturb': 'Team Discussion',
+        'Break': 'Lunch Break',
+        'Away': 'Break',
+        'Offline': 'Offline - Logout',
     };
 
     const currentStatus = statusOptions.find(opt => opt.value === statusName) || statusOptions[5];
+
+    if (isHR) {
+        return null;
+    }
 
     return (
         <>
@@ -336,7 +363,7 @@ export function UserStatusBar() {
                     </>
                 ) : (
                     <>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, fontSize:'14px' }}>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, fontSize: '14px' }}>
                             Today Active Time:
                         </Typography>
                         <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 600 }}>
@@ -403,17 +430,17 @@ export function UserStatusBar() {
                         },
                         animation: 'pulseGlow 2s infinite ease-in-out',
                         '@keyframes pulseGlow': {
-                            '0%': { 
+                            '0%': {
                                 transform: 'scale(1)',
-                                boxShadow: `0 0 0 0 ${alpha(theme.palette.success.main, 0.4)}` 
+                                boxShadow: `0 0 0 0 ${alpha(theme.palette.success.main, 0.4)}`
                             },
-                            '50%': { 
+                            '50%': {
                                 transform: 'scale(1.04)',
-                                boxShadow: `0 0 20px 4px ${alpha(theme.palette.success.main, 0.2)}` 
+                                boxShadow: `0 0 20px 4px ${alpha(theme.palette.success.main, 0.2)}`
                             },
-                            '100%': { 
+                            '100%': {
                                 transform: 'scale(1)',
-                                boxShadow: `0 0 0 0 ${alpha(theme.palette.success.main, 0)}` 
+                                boxShadow: `0 0 0 0 ${alpha(theme.palette.success.main, 0)}`
                             },
                         },
                     }}
@@ -599,7 +626,7 @@ export function UserStatusBar() {
                     }}
                 >
                     <Stack direction="row" alignItems="center" spacing={1}>
-                        <Iconify icon="solar:calendar-bold" width={20} sx={{ color: 'text.secondary' }} />
+                        <IoCalendarNumberOutline size={20} color="#656565" />
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
                             My Timesheet
                         </Typography>
@@ -607,8 +634,61 @@ export function UserStatusBar() {
                     <Iconify icon="eva:chevron-right-fill" width={20} sx={{ color: 'text.secondary' }} />
                 </MenuItem>
 
+                {/* Set Reminder */}
+                <MenuItem
+                    onClick={() => {
+                        handleClose();
+                        setReminderDialogOpen(true);
+                    }}
+                    sx={{
+                        mx: 1,
+                        mb: 1,
+                        borderRadius: 1,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        '&:hover': {
+                            backgroundColor: alpha(theme.palette.grey[500], 0.08),
+                        },
+                    }}
+                >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                        <GiAlarmClock size={22} color="#262626" />
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            Set Reminder
+                        </Typography>
+                    </Stack>
+                    <Iconify icon="eva:chevron-right-fill" width={20} sx={{ color: 'text.secondary' }} />
+                </MenuItem>
+
+                {/* My Reminders */}
+                <MenuItem
+                    onClick={() => {
+                        handleClose();
+                        setMyRemindersDialogOpen(true);
+                    }}
+                    sx={{
+                        mx: 1,
+                        mb: 1,
+                        borderRadius: 1,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        '&:hover': {
+                            backgroundColor: alpha(theme.palette.grey[500], 0.08),
+                        },
+                    }}
+                >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                        <TbBellSearch size={20} color="#494949" />
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            My Reminders
+                        </Typography>
+                    </Stack>
+                    <Iconify icon="eva:chevron-right-fill" width={20} sx={{ color: 'text.secondary' }} />
+                </MenuItem>
+
                 <Divider />
             </Menu>
+
 
             {/* ── Check-In Dialog (Redesigned) ── */}
             <Dialog
@@ -750,10 +830,10 @@ export function UserStatusBar() {
                         {statusName !== 'Available' && statusName !== 'Offline' && (
                             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                 Default for <b>{STATUS_DISPLAY_MAP[statusName] || statusName}</b>: &quot;{{
-                                    Busy: 'In a meeting',
-                                    'Do Not Disturb': 'Do not disturb',
-                                    Break: 'On a break',
-                                    Away: 'Stepped away',
+                                    Busy: 'In client meeting',
+                                    'Do Not Disturb': 'Team discussion',
+                                    Break: 'On lunch break',
+                                    Away: 'Break',
                                 }[statusName] || ''}&quot;
                             </Typography>
                         )}
@@ -1148,6 +1228,35 @@ export function UserStatusBar() {
                     </Box>
                 </Box>
             </Dialog>
+
+            <ReminderDialog
+                open={reminderDialogOpen}
+                onClose={() => setReminderDialogOpen(false)}
+                onSuccess={(msg) => setSnackbar({ open: true, message: msg, severity: 'success' })}
+                onError={(msg) => setSnackbar({ open: true, message: msg, severity: 'error' })}
+            />
+
+            <MyRemindersDialog
+                open={myRemindersDialogOpen}
+                onClose={() => setMyRemindersDialogOpen(false)}
+                onSuccess={(msg) => setSnackbar({ open: true, message: msg, severity: 'success' })}
+                onError={(msg) => setSnackbar({ open: true, message: msg, severity: 'error' })}
+            />
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert
+                    onClose={() => setSnackbar({ ...snackbar, open: false })}
+                    severity={snackbar.severity}
+                    sx={{ width: '100%', borderRadius: 1.5 }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </>
     );
 }

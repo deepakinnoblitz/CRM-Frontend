@@ -13,7 +13,10 @@ export function useEmployees(
     filterStatus?: string,
     filterCountry?: string,
     filterState?: string,
-    filterCity?: string
+    filterCity?: string,
+    joiningDateFrom?: string | null,
+    joiningDateTo?: string | null,
+    filterEmployee?: string
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
@@ -23,20 +26,39 @@ export function useEmployees(
         setLoading(true);
         try {
             const filters: any[] = [];
+            const or_filters: any[] = [];
 
             // Add department filter
             if (filterDepartment && filterDepartment !== 'all') {
                 filters.push(['Employee', 'department', '=', filterDepartment]);
             }
+ 
+            // Add employee filter
+            if (filterEmployee && filterEmployee !== 'all') {
+                or_filters.push(['Employee', 'name', '=', filterEmployee]);
+                or_filters.push(['Employee', 'employee_id', '=', filterEmployee]);
+            }
 
             // Add designation filter
             if (filterDesignation && filterDesignation !== 'all') {
-                filters.push(['Employee', 'designation', '=', filterDesignation]);
+                if (filterDesignation.length >= 2) {
+                    filters.push(['Employee', 'designation', 'like', `%${filterDesignation}%`]);
+                } else {
+                    filters.push(['Employee', 'designation', '=', filterDesignation]);
+                }
             }
 
             // Add status filter
             if (filterStatus && filterStatus !== 'all') {
                 filters.push(['Employee', 'status', '=', filterStatus]);
+            }
+
+            // Add joining date filters
+            if (joiningDateFrom) {
+                filters.push(['Employee', 'date_of_joining', '>=', joiningDateFrom]);
+            }
+            if (joiningDateTo) {
+                filters.push(['Employee', 'date_of_joining', '<=', joiningDateTo]);
             }
 
             // Add country filter (text search)
@@ -60,7 +82,8 @@ export function useEmployees(
                 search,
                 orderBy,
                 order,
-                filters: filters.length > 0 ? filters : undefined
+                filters: filters.length > 0 ? filters : undefined,
+                or_filters: or_filters.length > 0 ? or_filters : undefined
             });
             setData(result.data);
             setTotal(result.total);
@@ -69,7 +92,7 @@ export function useEmployees(
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, search, orderBy, order, filterDepartment, filterDesignation, filterStatus, filterCountry, filterState, filterCity]);
+    }, [page, pageSize, search, orderBy, order, filterDepartment, filterDesignation, filterStatus, filterCountry, filterState, filterCity, joiningDateFrom, joiningDateTo, filterEmployee]);
 
     useEffect(() => {
         refetch();

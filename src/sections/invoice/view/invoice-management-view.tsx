@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { HiOutlineClipboardDocumentList, HiOutlineDocumentCheck } from "react-icons/hi2";
 
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -18,8 +19,8 @@ import { InvoiceCollectionListView } from '../../invoice-collection/view/invoice
 // ----------------------------------------------------------------------
 
 const TABS = [
-    { value: 'invoices', label: 'Invoices', icon: <Iconify icon={"solar:bill-list-bold-duotone" as any} width={20} /> },
-    { value: 'collections', label: 'Invoice Collection', icon: <Iconify icon={"solar:bill-check-bold-duotone" as any} width={20} /> },
+    { value: 'invoices', label: 'Invoices', icon: <HiOutlineClipboardDocumentList size={22} /> },
+    { value: 'collections', label: 'Invoice Collection', icon: <HiOutlineDocumentCheck size={22} /> },
 ];
 
 // ----------------------------------------------------------------------
@@ -118,7 +119,7 @@ export function InvoiceManagementView({ hideHeader = false }: { hideHeader?: boo
     }
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             {content}
         </DashboardContent>
     );

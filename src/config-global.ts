@@ -9,7 +9,7 @@ export type ConfigValue = {
 };
 
 export const CONFIG: ConfigValue = {
-  appName: 'Innoblitz CRM',
+  appName: 'Innoblitz',
   appVersion: packageJson.version,
   assetsDir: import.meta.env.PROD ? '/assets/company/crm/assets' : '/assets',
 };

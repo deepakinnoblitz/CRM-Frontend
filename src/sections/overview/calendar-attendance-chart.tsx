@@ -39,9 +39,10 @@ type Props = CardProps & {
     calendarData: CalendarDay[];
     joiningDate?: string | null;
     breakdown?: AttendanceBreakdown; // NEW: Accept pre-calculated breakdown
+    hideMissing?: boolean; // NEW: Flag to hide missing for Daily Log
 };
 
-export function CalendarAttendanceChart({ title, subheader, calendarData, joiningDate, breakdown: manualBreakdown, sx, ...other }: Props) {
+export function CalendarAttendanceChart({ title, subheader, calendarData, joiningDate, breakdown: manualBreakdown, hideMissing, sx, ...other }: Props) {
     const theme = useTheme();
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -93,7 +94,7 @@ export function CalendarAttendanceChart({ title, subheader, calendarData, joinin
             const isIncomplete = (hasInTime && !hasOutTime) || (!hasInTime && hasOutTime);
 
             // Handle incomplete attendance as "Missing" 
-            if (isIncomplete && (isPast || isToday)) {
+            if (isIncomplete && (isPast || isToday) && !hideMissing) {
                 missing += 1;
                 return;
             }
@@ -179,7 +180,7 @@ export function CalendarAttendanceChart({ title, subheader, calendarData, joinin
             { id: 'absent', label: 'Absent', value: breakdown.absent, color: statusColors.absent },
             { id: 'missing', label: 'Missing', value: breakdown.missing, color: statusColors.missing },
             { id: 'half_day', label: 'Half Day', value: breakdown.half_day, color: statusColors.half_day },
-        ].filter(item => item.value > 0);
+        ].filter(item => item.value > 0 && !(item.id === 'missing' && hideMissing));
 
         const total = breakdown.present + breakdown.absent + breakdown.missing + breakdown.half_day || 1;
         const cx = 250;
@@ -411,9 +412,9 @@ export function CalendarAttendanceChart({ title, subheader, calendarData, joinin
         const labelItems = [
             { id: 'present', label: 'Present', value: breakdown.present, color: '#36B37E' },
             { id: 'absent', label: 'Absent', value: breakdown.absent, color: '#FF5630' },
-            { id: 'missing', label: 'Missing', value: breakdown.missing, color: '#FFAB00' },
             { id: 'half_day', label: 'Half Day', value: breakdown.half_day, color: '#FFAB00' },
-        ].filter(item => item.value > 0);
+            { id: 'missing', label: 'Missing', value: breakdown.missing, color: '#FFAB00' },
+        ].filter(item => item.value > 0 && !(item.id === 'missing' && hideMissing));
 
         let currentAngle = startAngle;
         const leftLabels: any[] = [];
@@ -533,7 +534,7 @@ export function CalendarAttendanceChart({ title, subheader, calendarData, joinin
                                 { label: 'Absent', value: breakdown.absent, color: '#FF5630' },
                                 { label: 'Half Day', value: breakdown.half_day, color: '#FFAB00' },
                                 { label: 'Missing', value: breakdown.missing, color: '#FFAB00' },
-                            ].map((kpi) => (
+                            ].filter(kpi => !(kpi.label === 'Missing' && hideMissing)).map((kpi) => (
                                 <Stack key={kpi.label} spacing={0.5} alignItems="center" sx={{ minWidth: 70 }}>
                                     <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, fontSize: '0.7rem' }}>
                                         {kpi.label}

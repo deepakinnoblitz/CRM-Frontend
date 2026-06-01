@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import {  IoMdTrash } from "react-icons/io";
 import { useState, useEffect } from 'react';
 
 import Dialog from '@mui/material/Dialog';
@@ -85,6 +86,7 @@ const INITIAL_MEETING_STATE: Partial<Meeting> = {
 
 export default function MeetingDialog({ open, onClose, selectedMeeting, initialData, onSuccess }: Props) {
     const [meetingData, setMeetingData] = useState<Partial<Meeting>>(INITIAL_MEETING_STATE);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
@@ -160,6 +162,7 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
         }
 
         try {
+            setIsSubmitting(true);
             const formattedData = {
                 ...meetingData,
                 from: meetingData.from?.replace('T', ' '),
@@ -177,6 +180,8 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
         } catch (error: any) {
             console.error('Failed to save meeting:', error);
             setSnackbar({ open: true, message: error.message || 'Failed to save meeting', severity: 'error' });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -195,8 +200,8 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
 
     return (
         <>
-            <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (theme) => theme.customShadows.z24,}}}>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Typography variant="h6" sx={{ fontWeight: 700 }}>
                             {selectedMeeting ? 'Edit Meeting' : 'New Meeting'}
@@ -207,7 +212,7 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent dividers sx={{ borderBottom: 'none', px: 3, pb: 0 }}>
+                <DialogContent dividers sx={{ borderBottom: 'none', px: 4, pb: 0 }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <Box sx={{ py: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
                             {/* General Section */}
@@ -252,8 +257,8 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                                     })}
                                                 >
                                                     <MenuItem value="Lead">Lead</MenuItem>
-                                                    <MenuItem value="Contact">Contact</MenuItem>
-                                                    <MenuItem value="Accounts">Account</MenuItem>
+                                                    <MenuItem value="Contact">Client</MenuItem>
+                                                    <MenuItem value="Accounts">Company</MenuItem>
                                                     <MenuItem value="Others">Others</MenuItem>
                                                 </Select>
                                             </FormControl>
@@ -298,6 +303,20 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                                             helperText={formErrors.lead_name ? 'Lead is required' : ''}
                                                         />
                                                     )}
+                                                    renderOption={(props, option) => (
+                                                        <li {...props} key={typeof option === 'string' ? option : option.name}>
+                                                            <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                                                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                                    {typeof option === 'string' ? option : option.lead_name}
+                                                                </Typography>
+                                                                {typeof option !== 'string' && option.name && (
+                                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                                        ID: {option.name}
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
+                                                        </li>
+                                                    )}
                                                 />
                                             </Grid>
                                         )}
@@ -316,11 +335,25 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                                     renderInput={(params) => (
                                                         <TextField
                                                             {...params}
-                                                            label="Select Contact"
+                                                            label="Select Client"
                                                             required
                                                             error={!!formErrors.contact_name}
-                                                            helperText={formErrors.contact_name ? 'Contact is required' : ''}
+                                                            helperText={formErrors.contact_name ? 'Client is required' : ''}
                                                         />
+                                                    )}
+                                                    renderOption={(props, option) => (
+                                                        <li {...props} key={typeof option === 'string' ? option : option.name}>
+                                                            <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                                                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                                    {typeof option === 'string' ? option : `${option.first_name || ''} ${option.last_name || ''}`.trim()}
+                                                                </Typography>
+                                                                {typeof option !== 'string' && option.name && (
+                                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                                        ID: {option.name}
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
+                                                        </li>
                                                     )}
                                                 />
                                             </Grid>
@@ -340,11 +373,25 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                                     renderInput={(params) => (
                                                         <TextField
                                                             {...params}
-                                                            label="Select Account"
+                                                            label="Select Company"
                                                             required
                                                             error={!!formErrors.accounts_name}
-                                                            helperText={formErrors.accounts_name ? 'Account is required' : ''}
+                                                            helperText={formErrors.accounts_name ? 'Company is required' : ''}
                                                         />
+                                                    )}
+                                                    renderOption={(props, option) => (
+                                                        <li {...props} key={typeof option === 'string' ? option : option.name}>
+                                                            <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                                                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                                    {typeof option === 'string' ? option : option.account_name}
+                                                                </Typography>
+                                                                {typeof option !== 'string' && option.name && (
+                                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                                        ID: {option.name}
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
+                                                        </li>
                                                     )}
                                                 />
                                             </Grid>
@@ -371,51 +418,46 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
 
                                         {meetingData.outgoing_call_status === 'Completed' && (
                                             <Grid size={{ xs: 12, md: 6 }}>
-                                                <FormControl fullWidth>
-                                                    <InputLabel>Meeting Status</InputLabel>
-                                                    <Select
-                                                        label="Meeting Status"
-                                                        value={meetingData.completed_meet_status}
-                                                        onChange={(e) => setMeetingData({ ...meetingData, completed_meet_status: e.target.value as string })}
-                                                    >
-                                                        {[
-                                                            'Called – No Response',
-                                                            'Called – Phone Switched Off',
-                                                            'Called – Number Not Reachable',
-                                                            'Called – Wrong Number',
-                                                            'Called – Left Voicemail',
-                                                            'Called – Asked to Call Later',
-                                                            'Called – Spoke Briefly',
-                                                            'Spoke to Prospect – Not Available',
-                                                            'Spoke to Prospect – Confirmed Interest',
-                                                            'Spoke to Prospect – Needs More Time',
-                                                            'Spoke to Prospect – Will Revert Soon',
-                                                            'Spoke to Prospect – Awaiting Internal Discussion',
-                                                            'Demo Scheduled',
-                                                            'Demo Completed',
-                                                            'Demo Rescheduled',
-                                                            'Prospect Did Not Attend Demo',
-                                                            'Proposal / Quotation Sent',
-                                                            'Pricing Discussion Ongoing',
-                                                            'Negotiation in Progress',
-                                                            'Awaiting Prospect Approval',
-                                                            'Deal Won – Order Confirmed',
-                                                            'Deal Lost – Price Issue',
-                                                            'Deal Lost – No Requirement',
-                                                            'Deal Lost – Competitor Chosen',
-                                                            'Order Processing Started',
-                                                            'Payment Received',
-                                                            'Delivery / Implementation Started',
-                                                            'Post-Sales Follow-up Scheduled',
-                                                            'Lead Not Interested',
-                                                            'Lead Invalid',
-                                                            'Lead Closed – No Response',
-                                                            'Others'
-                                                        ].map((opt) => (
-                                                            <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
+                                                <Autocomplete
+                                                    fullWidth
+                                                    options={[
+                                                        'Called – No Response',
+                                                        'Called – Phone Switched Off',
+                                                        'Called – Number Not Reachable',
+                                                        'Called – Wrong Number',
+                                                        'Called – Left Voicemail',
+                                                        'Called – Asked to Call Later',
+                                                        'Called – Spoke Briefly',
+                                                        'Spoke to Prospect – Not Available',
+                                                        'Spoke to Prospect – Confirmed Interest',
+                                                        'Spoke to Prospect – Needs More Time',
+                                                        'Spoke to Prospect – Will Revert Soon',
+                                                        'Spoke to Prospect – Awaiting Internal Discussion',
+                                                        'Demo Scheduled',
+                                                        'Demo Completed',
+                                                        'Demo Rescheduled',
+                                                        'Prospect Did Not Attend Demo',
+                                                        'Proposal / Quotation Sent',
+                                                        'Pricing Discussion Ongoing',
+                                                        'Negotiation in Progress',
+                                                        'Awaiting Prospect Approval',
+                                                        'Deal Won – Order Confirmed',
+                                                        'Deal Lost – Price Issue',
+                                                        'Deal Lost – No Requirement',
+                                                        'Deal Lost – Competitor Chosen',
+                                                        'Order Processing Started',
+                                                        'Payment Received',
+                                                        'Delivery / Implementation Started',
+                                                        'Post-Sales Follow-up Scheduled',
+                                                        'Lead Not Interested',
+                                                        'Lead Invalid',
+                                                        'Lead Closed – No Response',
+                                                        'Others'
+                                                    ]}
+                                                    value={meetingData.completed_meet_status || null}
+                                                    onChange={(_, newValue) => setMeetingData({ ...meetingData, completed_meet_status: newValue || '' })}
+                                                    renderInput={(params) => <TextField {...params} label="Meeting Status" />}
+                                                />
                                             </Grid>
                                         )}
                                     </Grid>
@@ -431,15 +473,19 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                     <Grid size={{ xs: 12, md: 6 }}>
                                         <DateTimePicker
                                             label="From"
+                                            format="DD-MM-YYYY hh:mm A"
                                             value={meetingData.from ? dayjs(meetingData.from) : null}
                                             onChange={(newValue) => setMeetingData({ ...meetingData, from: newValue ? newValue.format('YYYY-MM-DD HH:mm:ss') : '' })}
+                                            sx={{ width: '100%' }}
                                         />
                                     </Grid>
                                     <Grid size={{ xs: 12, md: 6 }}>
                                         <DateTimePicker
                                             label="To"
+                                            format="DD-MM-YYYY hh:mm A"
                                             value={meetingData.to ? dayjs(meetingData.to) : null}
                                             onChange={(newValue) => setMeetingData({ ...meetingData, to: newValue ? newValue.format('YYYY-MM-DD HH:mm:ss') : '' })}
+                                            sx={{ width: '100%' }}
                                         />
                                     </Grid>
                                 </Grid>
@@ -572,13 +618,14 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                     </LocalizationProvider>
                 </DialogContent>
 
-                <DialogActions sx={{ p: 3, pt: 2, gap: 1.5 }}>
+                <DialogActions sx={{ p: 2.5, pt: 2, gap: 1.5 }}>
                     {selectedMeeting && (
                         <Button
                             color="error"
-                            variant="outlined"
+                            variant="contained"
                             onClick={() => setConfirmDelete(true)}
-                            sx={{ mr: 'auto', borderRadius: 1 }}
+                            startIcon={<IoMdTrash size={20} />}
+                            sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', mr:'auto' }}
                         >
                             Delete
                         </Button>
@@ -587,9 +634,12 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                         variant="contained"
                         color="info"
                         onClick={handleSaveMeeting}
+                        disabled={isSubmitting}
                         sx={{ borderRadius: 1, px: 3 }}
                     >
-                        {selectedMeeting ? 'Save Changes' : 'Create Meeting'}
+                        {isSubmitting 
+                            ? (selectedMeeting ? 'Saving...' : 'Creating...') 
+                            : (selectedMeeting ? 'Save Changes' : 'Create Meeting')}
                     </Button>
                 </DialogActions>
             </Dialog>

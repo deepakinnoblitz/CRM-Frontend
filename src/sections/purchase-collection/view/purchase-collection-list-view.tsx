@@ -14,6 +14,7 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -38,12 +39,12 @@ import { PurchaseCollectionTableFiltersDrawer } from '../purchase-collection-tab
 const TABLE_HEAD = [
     { id: 'name', label: 'ID' },
     { id: 'purchase', label: 'Purchase ID' },
-    { id: 'vendor_name', label: 'Vendor' },
     { id: 'collection_date', label: 'Date' },
     { id: 'mode_of_payment', label: 'Mode' },
+    { id: 'amount_to_pay', label: 'Amount to Pay', align: 'right' },
     { id: 'amount_collected', label: 'Amount', align: 'right' },
     { id: 'amount_pending', label: 'Pending', align: 'right' },
-    { id: '' },
+    { id: '', label: 'Actions', align: 'right' },
 ];
 
 // ----------------------------------------------------------------------
@@ -142,7 +143,7 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
         setPage(0);
     }, []);
 
-    const canReset = filters.vendor_name !== 'all' || filters.mode_of_payment !== 'all';
+    const canReset = filters.vendor_name !== 'all' || filters.mode_of_payment !== 'all' || !!filterName;
 
     useEffect(() => {
         getCollections();
@@ -336,42 +337,52 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
                             />
 
                             <TableBody>
-                                {tableData.map((row, index) => (
-                                    <PurchaseCollectionTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={row}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onEditRow={() => router.push(`/purchase-collections/${row.name}/edit`)}
-                                        onDeleteRow={() => handleDeleteRow(row.name)}
-                                        onViewRow={() => router.push(`/purchase-collections/${row.name}/view`)}
-                                        isLatest={(row as any).isLatest}
-                                    />
-                                ))}
-
-                                    {tableData.length > 0 && (
-                                        <TableEmptyRows
-                                            height={77}
-                                            emptyRows={tableData.length < 5 ? 5 - tableData.length : 0}
-                                        />
-                                    )}
-
-                                {notFound && (
-                                    <TableNoData searchQuery={filterName} />
-                                )}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={totalHeadCols}>
-                                            <EmptyContent
-                                                title="No purchase settlements found"
-                                                description="Track your purchase payments to vendors here."
-                                                icon="solar:bill-check-bold-duotone"
-                                            />
+                                        <TableCell colSpan={totalHeadCols} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
+                                ) : (
+                                    <>
+                                        {tableData.map((row, index) => (
+                                            <PurchaseCollectionTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={row}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onEditRow={() => router.push(`/purchase-collections/${row.name}/edit`)}
+                                                onDeleteRow={() => handleDeleteRow(row.name)}
+                                                onViewRow={() => router.push(`/purchase-collections/${row.name}/view`)}
+                                                isLatest={(row as any).isLatest}
+                                            />
+                                        ))}
+
+                                        {tableData.length > 0 && (
+                                            <TableEmptyRows
+                                                height={77}
+                                                emptyRows={tableData.length < 5 ? 5 - tableData.length : 0}
+                                            />
+                                        )}
+
+                                        {notFound && (
+                                            <TableNoData searchQuery={filterName} />
+                                        )}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={totalHeadCols}>
+                                                    <EmptyContent
+                                                        title="No purchase settlements found"
+                                                        description="Track your purchase payments to vendors here."
+                                                        icon="solar:bill-check-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -423,5 +434,5 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
         return content;
     }
 
-    return <DashboardContent maxWidth={false}>{content}</DashboardContent>;
+    return <DashboardContent maxWidth={false} sx={{mt: 2}}>{content}</DashboardContent>;
 }

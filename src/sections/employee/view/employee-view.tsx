@@ -1,18 +1,26 @@
 import dayjs from 'dayjs';
 import { MuiTelInput } from 'mui-tel-input';
-import { useState, useEffect } from 'react';
+import { LuUserCheck } from 'react-icons/lu';
+import { TbMoneybagPlus } from "react-icons/tb";
+import { GrDocumentLocked } from "react-icons/gr";
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 
+import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
+import Tabs from '@mui/material/Tabs';
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
+import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TextField from '@mui/material/TextField';
@@ -30,14 +38,18 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useRouter } from 'src/routes/hooks';
+
 import { useEmployees } from 'src/hooks/useEmployees';
+
+import { fNumber, fCurrency } from 'src/utils/format-number';
 
 import { getDoctypeList } from 'src/api/leads';
 import { uploadFile } from 'src/api/data-import';
 import { getStates, getCities } from 'src/api/location';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { createEmployee, updateEmployee, deleteEmployee } from 'src/api/employees';
-import { getHRPermissions, getDocTypeMetadata, fetchSalaryComponents } from 'src/api/hr-management';
+import { createEmployee, updateEmployee, deleteEmployee, getEmployee } from 'src/api/employees';
+import { getHRPermissions, getDocTypeMetadata, fetchSalaryComponents, getHRSettings } from 'src/api/hr-management';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -59,12 +71,107 @@ import { LeadTableToolbar as EmployeeTableToolbar } from '../../lead/lead-table-
 
 // ----------------------------------------------------------------------
 
+const SalaryRow = memo(({
+    index,
+    type,
+    row,
+    componentOptions,
+    hrSettings,
+    onRowChange,
+    onRowRemove,
+    hasError
+}: {
+    index: number;
+    type: 'Earning' | 'Deduction';
+    row: any;
+    componentOptions: string[];
+    hrSettings: any;
+    onRowChange: (index: number, type: 'Earning' | 'Deduction', field: string, value: any) => void;
+    onRowRemove: (index: number, type: 'Earning' | 'Deduction') => void;
+    hasError: boolean;
+}) => (
+    <TableRow
+        sx={{
+            '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) },
+            borderBottom: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.1)}`
+        }}
+    >
+        <TableCell sx={{ py: 1 }}>
+            <Autocomplete
+                fullWidth
+                size="small"
+                options={componentOptions}
+                value={row.component_name || ''}
+                onChange={(e, newValue) => onRowChange(index, type, 'component_name', newValue || '')}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        variant="standard"
+                        placeholder="Select Component"
+                        error={!row.component_name && hasError}
+                        InputProps={{
+                            ...params.InputProps,
+                            disableUnderline: true,
+                            sx: {
+                                typography: 'body2',
+                                fontWeight: 500,
+                                color: !row.component_name ? 'error.main' : 'inherit'
+                            }
+                        }}
+                    />
+                )}
+            />
+        </TableCell>
+        <TableCell align="right" sx={{ py: 1, px: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: 140 }}>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: 'text.primary',
+                            fontWeight: 600,
+                            fontFamily: "Arial, 'sans-serif'",
+                            mr: 0.5
+                        }}
+                    >
+                        {hrSettings.currency_symbol}
+                    </Typography>
+                    <TextField
+                        size="small"
+                        type="number"
+                        variant="standard"
+                        value={row.amount || ''}
+                        placeholder="0"
+                        onChange={(e) => onRowChange(index, type, 'amount', parseFloat(e.target.value) || 0)}
+                        inputProps={{ sx: { textAlign: 'right', typography: 'body2', fontWeight: 600, p: 0, width: 110 } }}
+                        InputProps={{ disableUnderline: true }}
+                    />
+                </Stack>
+            </Box>
+        </TableCell>
+        <TableCell align="center" sx={{ py: 1 }}>
+            <IconButton
+                size="small"
+                onClick={() => onRowRemove(index, type)}
+                sx={{ color: 'text.disabled', '&:hover': { color: 'error.main' } }}
+            >
+                <Iconify icon="solar:trash-bin-trash-bold" width={18} />
+            </IconButton>
+        </TableCell>
+    </TableRow>
+));
+
+SalaryRow.displayName = 'SalaryRow';
+
+// ----------------------------------------------------------------------
+
 export function EmployeeView() {
+    const router = useRouter();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [orderBy, setOrderBy] = useState('creation');
+    const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
 
     // Department Create Dialog State
@@ -106,6 +213,12 @@ export function EmployeeView() {
     });
 
 
+    const [hrSettings, setHRSettings] = useState<{ default_currency: string; currency_symbol: string; default_locale: string }>({
+        default_currency: 'INR',
+        currency_symbol: '₹',
+        default_locale: 'en-IN'
+    });
+
     // Alert & Dialog State
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
@@ -115,6 +228,7 @@ export function EmployeeView() {
     });
     const [uploading, setUploading] = useState(false);
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+    const [currentTab, setCurrentTab] = useState(0);
 
     // Permissions State
     const [permissions, setPermissions] = useState<{ read: boolean; write: boolean; delete: boolean }>({
@@ -142,6 +256,8 @@ export function EmployeeView() {
 
     useEffect(() => {
         getHRPermissions('Employee').then(setPermissions);
+        getHRSettings().then(setHRSettings);
+        fetchSalaryComponents().then(setSalaryComponents);
 
         getDocTypeMetadata('Employee').then((meta) => {
             // Create a lookup map for fields and pre-compile visibility functions
@@ -175,6 +291,13 @@ export function EmployeeView() {
                 }
             });
 
+            // Explicitly fetch rich options for bank_account
+            getDoctypeList('Bank Account', ['name', 'bank_account_name', 'account_number'])
+                .then((options) => {
+                    setFieldOptions(prev => ({ ...prev, 'bank_account': options }));
+                })
+                .catch(console.error);
+
             // Fallback for designation if metadata hasn't synced yet
             if (!meta.fields.find((f: any) => f.fieldname === 'designation' && f.fieldtype === 'Link')) {
                 getDoctypeList('Designation', ['name'])
@@ -185,6 +308,30 @@ export function EmployeeView() {
             }
         }).catch(console.error);
     }, []);
+
+    // Memoized component lists to avoid filtering during render
+    const earningComponents = useMemo(() =>
+        salaryComponents.filter(c => c.type === 'Earning').map(c => c.component_name),
+        [salaryComponents]);
+
+    const deductionComponents = useMemo(() =>
+        salaryComponents.filter(c => c.type === 'Deduction').map(c => c.component_name),
+        [salaryComponents]);
+
+    // Memoized totals calculation
+    const totals = useMemo(() => {
+        const earnings = formData.earnings || [];
+        const deductions = formData.deductions || [];
+
+        const total_earnings = earnings.reduce((sum: number, item: any) => sum + (parseFloat(item.amount) || 0), 0);
+        const total_deductions = deductions.reduce((sum: number, item: any) => sum + (parseFloat(item.amount) || 0), 0);
+
+        return {
+            total_earnings,
+            total_deductions,
+            net_salary: total_earnings - total_deductions
+        };
+    }, [formData.earnings, formData.deductions]);
 
 
     // Integrated into handleInputChange for performance and consistency
@@ -250,28 +397,152 @@ export function EmployeeView() {
         if (ctcValue <= 0) return;
 
         try {
-            const components = await fetchSalaryComponents();
-            setSalaryComponents(components);
+            const components = salaryComponents; // Use pre-fetched components
 
-            setFormData(prev => {
-                const next = { ...prev };
-                components.forEach((comp: any) => {
-                    const field = comp.field_name;
-                    if (!field) return;
+            const earnings: any[] = [];
+            const deductions: any[] = [];
 
-                    let val = 0;
-                    const percent = parseFloat(comp.percentage) || 0;
-                    if (percent > 0) {
-                        val = (ctcValue * percent) / 100;
-                    } else {
-                        val = parseFloat(comp.static_amount) || 0;
-                    }
-                    next[field] = val;
-                });
-                return next;
+            components.forEach((comp: any) => {
+                let val = 0;
+                const percent = parseFloat(comp.percentage) || 0;
+                if (percent > 0) {
+                    val = (ctcValue * percent) / 100;
+                } else {
+                    val = parseFloat(comp.static_amount) || 0;
+                }
+
+                const row = {
+                    component_name: comp.component_name,
+                    amount: val,
+                    type: comp.type
+                };
+
+                if (comp.type === 'Earning') {
+                    earnings.push(row);
+                } else {
+                    deductions.push(row);
+                }
             });
+
+            setFormData(prev => ({
+                ...prev,
+                earnings,
+                deductions,
+                total_earnings: earnings.reduce((sum, item) => sum + item.amount, 0),
+                total_deductions: deductions.reduce((sum, item) => sum + item.amount, 0),
+                net_salary: earnings.reduce((sum, item) => sum + item.amount, 0) - deductions.reduce((sum, item) => sum + item.amount, 0)
+            }));
         } catch (error) {
             console.error('Failed to fetch salary components on blur:', error);
+        }
+    };
+
+    const handleAddSalaryRow = (type: 'Earning' | 'Deduction') => {
+        const field = type === 'Earning' ? 'earnings' : 'deductions';
+        const newRow = { component_name: '', amount: 0, type };
+
+        setFormData(prev => {
+            const currentRows = prev[field] || [];
+            return {
+                ...prev,
+                [field]: [...currentRows, newRow]
+            };
+        });
+    };
+
+    const handleRemoveSalaryRow = (index: number, type: 'Earning' | 'Deduction') => {
+        const field = type === 'Earning' ? 'earnings' : 'deductions';
+        setFormData(prev => {
+            const currentRows = [...(prev[field] || [])];
+            currentRows.splice(index, 1);
+            return {
+                ...prev,
+                [field]: currentRows
+            };
+        });
+    };
+
+    const handleSalaryRowChange = useCallback((index: number, type: 'Earning' | 'Deduction', field: string, value: any) => {
+        const dataField = type === 'Earning' ? 'earnings' : 'deductions';
+        setFormData(prev => {
+            const currentRows = [...(prev[dataField] || [])];
+            currentRows[index] = { ...currentRows[index], [field]: value };
+            return {
+                ...prev,
+                [dataField]: currentRows
+            };
+        });
+
+        // Clear component error when typing
+        if (formErrors.salary_components) {
+            setFormErrors(prev => ({ ...prev, salary_components: '' }));
+        }
+    }, [formErrors.salary_components]);
+
+
+    const handleDefaultSplitting = async () => {
+        const ctcValue = parseFloat(formData.ctc) || 0;
+        if (ctcValue <= 0) {
+            setSnackbar({ open: true, message: 'Please enter a valid CTC amount first', severity: 'warning' });
+            return;
+        }
+
+        try {
+            const defaults = salaryComponents.filter(comp => comp.is_default);
+
+            if (defaults.length === 0) {
+                setSnackbar({ open: true, message: 'No default salary components found. Please configure them in Masters.', severity: 'warning' });
+                return;
+            }
+
+            const totalEarningPercent = defaults
+                .filter(comp => comp.type === 'Earning')
+                .reduce((sum, comp) => sum + (parseFloat(comp.percentage) || 0), 0);
+
+            if (totalEarningPercent !== 100) {
+                setSnackbar({
+                    open: true,
+                    message: `Invalid configuration: Total Default Earning percentage must be exactly 100%. (Current total: ${totalEarningPercent.toFixed(2)}%)`,
+                    severity: 'error'
+                });
+                return;
+            }
+
+            const earnings: any[] = [];
+            const deductions: any[] = [];
+
+            defaults.forEach((comp: any) => {
+                let val = 0;
+                const percent = parseFloat(comp.percentage) || 0;
+                if (percent > 0) {
+                    val = (ctcValue * percent) / 100;
+                } else {
+                    val = parseFloat(comp.static_amount) || 0;
+                }
+
+                const row = {
+                    component_name: comp.component_name,
+                    amount: val,
+                    type: comp.type
+                };
+
+                if (comp.type === 'Earning') {
+                    earnings.push(row);
+                } else {
+                    deductions.push(row);
+                }
+            });
+
+            setFormData(prev => ({
+                ...prev,
+                earnings,
+                deductions
+            }));
+
+            setSnackbar({ open: true, message: 'Default splitting applied successfully', severity: 'success' });
+        } catch (error) {
+            console.error('Failed to apply default splitting:', error);
+            setSnackbar({ open: true, message: 'Failed to apply splitting', severity: 'error' });
         }
     };
 
@@ -294,11 +565,11 @@ export function EmployeeView() {
             setUploading(false);
         }
     };
-
     const handleOpenCreate = async () => {
-        setFormData({ status: 'Active', ctc: 0, skip_probation: 0, country: 'India' });
+        setFormData({ status: 'Active', ctc: 0, skip_probation: 0, country: 'India', documents: [] });
         setFormErrors({});
         setOpenCreate(true);
+        setCurrentTab(0);
 
         // Load states for India by default
         const states = await getStates('India');
@@ -309,16 +580,16 @@ export function EmployeeView() {
         setOpenCreate(false);
         setFormErrors({});
         setCurrentEmployeeId(null);
-        setFormData({ status: 'Active', ctc: 0, skip_probation: 0, country: 'India' });
+        setFormData({ status: 'Active', ctc: 0, skip_probation: 0, country: 'India', documents: [] });
         setServerAlert({ message: '', severity: 'info' });
         setStateOptions([]);
         setCityOptions([]);
+        setCurrentTab(0);
     };
 
 
     const handleOpenDetails = (id: string) => {
-        setDetailsId(id);
-        setOpenDetails(true);
+        router.push(`/employee/${id}/view`);
     };
 
     const handleCloseDetails = () => {
@@ -394,7 +665,7 @@ export function EmployeeView() {
         });
     };
 
-    const canReset = filters.department !== 'all' || filters.designation !== 'all' || filters.status !== 'all' || filters.country !== '' || filters.state !== '' || filters.city !== '';
+    const canReset = !!filterName || filters.department !== 'all' || filters.designation !== 'all' || filters.status !== 'all' || filters.country !== '' || filters.state !== '' || filters.city !== '';
 
     const handleBulkDelete = async () => {
         try {
@@ -407,10 +678,11 @@ export function EmployeeView() {
         }
     };
 
-    const validateForm = (): { isValid: boolean; firstErrorField?: string; firstErrorMessage?: string } => {
+    const validateForm = (): { isValid: boolean; firstErrorField?: string; firstErrorMessage?: string; errorTab?: number } => {
         const errors: Record<string, string> = {};
+        let errorTab = 0;
+
         const requiredFields = [
-            // { name: 'employee_id', label: 'Employee ID' },
             { name: 'employee_name', label: 'Employee Name' },
             { name: 'email', label: 'Email' },
             { name: 'date_of_joining', label: 'Joining Date' },
@@ -433,31 +705,59 @@ export function EmployeeView() {
             errors.personal_email = 'Invalid email format';
         }
 
+        // Check if any error in Tab 0
+        if (Object.keys(errors).length > 0) {
+            errorTab = 0;
+        }
+
+        // Salary Table Validation (Tab 1)
+        const incompleteEarnings = (formData.earnings || []).some((row: any) => !row.component_name);
+        const incompleteDeductions = (formData.deductions || []).some((row: any) => !row.component_name);
+
+        if (incompleteEarnings || incompleteDeductions) {
+            if (Object.keys(errors).length === 0) errorTab = 1;
+            errors.salary_components = 'Please select a Component Name for all salary rows';
+        }
+
+        // Document Table Validation (Tab 2)
+        const documents = formData.documents || [];
+        for (let i = 0; i < documents.length; i++) {
+            const doc = documents[i];
+            if (!doc.title || (!doc.attachment && !doc.pendingFile)) {
+                if (Object.keys(errors).length === 0) errorTab = 2;
+                errors.documents = `Please complete Title and Attachment for all document rows (Row ${i + 1})`;
+                break;
+            }
+        }
+
         setFormErrors(errors);
 
         const isValid = Object.keys(errors).length === 0;
         const firstErrorField = Object.keys(errors)[0];
         const firstErrorMessage = errors[firstErrorField];
 
-        return { isValid, firstErrorField, firstErrorMessage };
+        return { isValid, firstErrorField, firstErrorMessage, errorTab };
     };
 
     const handleCreate = async () => {
         const validationResult = validateForm();
         if (!validationResult.isValid) {
-            // Scroll to the first error field
-            if (validationResult.firstErrorField) {
-                const errorElement = document.querySelector(`[name="${validationResult.firstErrorField}"]`);
-                if (errorElement) {
-                    errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    // Focus the field after scrolling
-                    setTimeout(() => {
-                        (errorElement as HTMLElement).focus();
-                    }, 500);
-                }
+            // Switch to the tab containing the error
+            if (validationResult.errorTab !== undefined) {
+                setCurrentTab(validationResult.errorTab);
             }
 
-            // Show specific error message
+            // Scroll to the first error field (if on current tab)
+            setTimeout(() => {
+                if (validationResult.firstErrorField) {
+                    const errorElement = document.querySelector(`[name="${validationResult.firstErrorField}"]`);
+                    if (errorElement) {
+                        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        (errorElement as HTMLElement).focus();
+                    }
+                }
+            }, 300);
+
             const errorMessage = validationResult.firstErrorMessage || 'Please correct the errors in the form';
             setSnackbar({ open: true, message: errorMessage, severity: 'error' });
             return;
@@ -467,24 +767,44 @@ export function EmployeeView() {
             setCreating(true);
             setServerAlert({ message: '', severity: 'info' });
 
-            const dataToSave = { ...formData };
+            const dataToSave: any = { ...formData, ...totals };
             if (dataToSave.employee_name) dataToSave.employee_name = dataToSave.employee_name.trim();
             if (dataToSave.employee_id) dataToSave.employee_id = dataToSave.employee_id.trim();
             if (dataToSave.email) dataToSave.email = dataToSave.email.trim();
 
+            // Handle pending document uploads
+            const documents = [...(dataToSave.documents || [])];
+
+            for (let i = 0; i < documents.length; i++) {
+                if (documents[i].pendingFile) {
+                    try {
+                        const uploaded = await uploadFile(
+                            documents[i].pendingFile,
+                            'Employee',
+                            currentEmployeeId || 'new',
+                            'documents'
+                        );
+                        documents[i].attachment = uploaded.file_url;
+                        delete documents[i].pendingFile;
+                    } catch (uploadErr: any) {
+                        console.error('File upload failed for row', i, uploadErr);
+                        throw new Error(`Failed to upload ${documents[i].title || 'document'}: ${uploadErr.message}`);
+                    }
+                }
+            }
+
+            dataToSave.documents = documents;
+
             if (currentEmployeeId) {
                 await updateEmployee(currentEmployeeId, dataToSave as any);
-                setServerAlert({ message: 'Employee updated successfully', severity: 'success' });
+                handleCloseCreate();
+                setSnackbar({ open: true, message: 'Employee updated successfully', severity: 'success' });
             } else {
                 await createEmployee(dataToSave as any);
-                setServerAlert({ message: 'Employee created successfully', severity: 'success' });
+                handleCloseCreate();
+                setSnackbar({ open: true, message: 'Employee created successfully', severity: 'success' });
             }
             await refetch();
-
-            // Keep the alert visible for a moment before closing, or just close if user prefers
-            setTimeout(() => {
-                handleCloseCreate();
-            }, 1500);
 
         } catch (err: any) {
             console.error(err);
@@ -494,16 +814,31 @@ export function EmployeeView() {
         }
     };
 
-    const handleEditRow = (id: string) => {
-        setCurrentEmployeeId(id);
-        const fullRow = data.find((item: any) => item.name === id);
-        if (fullRow) {
-            const cleanedRow = { ...fullRow };
-            if (cleanedRow.phone) cleanedRow.phone = cleanPhoneNumber(cleanedRow.phone);
-            if (cleanedRow.office_phone_number) cleanedRow.office_phone_number = cleanPhoneNumber(cleanedRow.office_phone_number);
-            setFormData(cleanedRow);
+    const handleEditRow = async (id: string) => {
+        try {
+            setCurrentEmployeeId(id);
+            const fullDoc = await getEmployee(id);
+            if (fullDoc) {
+                const cleanedRow = { ...fullDoc };
+                if (cleanedRow.phone) cleanedRow.phone = cleanPhoneNumber(cleanedRow.phone);
+                if (cleanedRow.office_phone_number) cleanedRow.office_phone_number = cleanPhoneNumber(cleanedRow.office_phone_number);
+                setFormData(cleanedRow);
+
+                // Fetch states if country exists
+                if (cleanedRow.country) {
+                    const states = await getStates(cleanedRow.country);
+                    setStateOptions(['', ...states, 'Others']);
+                    if (cleanedRow.state) {
+                        const cities = await getCities(cleanedRow.country, cleanedRow.state);
+                        setCityOptions(['', ...cities, 'Others']);
+                    }
+                }
+            }
+            setOpenCreate(true);
+        } catch (error) {
+            console.error('Failed to load employee details:', error);
+            setSnackbar({ open: true, message: 'Failed to load employee details', severity: 'error' });
         }
-        setOpenCreate(true);
     };
 
 
@@ -541,6 +876,9 @@ export function EmployeeView() {
             error: !!formErrors[fieldname],
             helperText: formErrors[fieldname],
             ...extraProps,
+            InputProps: {
+                ...extraProps.InputProps,
+            },
             sx: {
                 '& .MuiFormLabel-asterisk': {
                     color: 'red',
@@ -561,6 +899,70 @@ export function EmployeeView() {
         }
 
 
+
+        if (fieldname === 'bank_account') {
+            return (
+                <Autocomplete
+                    fullWidth
+                    options={options}
+                    value={formData[fieldname] || ''}
+                    onChange={(event, newValue) => {
+                        const value = typeof newValue === 'object' && newValue?.name ? newValue.name : newValue;
+                        handleInputChange(fieldname, value || '');
+                    }}
+                    getOptionLabel={(option) => {
+                        if (typeof option === 'string') return option;
+                        if (option?.name) return option.name;
+                        return '';
+                    }}
+                    filterOptions={(listOptions, params) => {
+                        const { inputValue } = params;
+                        return listOptions.filter((option: any) => {
+                            const searchStr = (typeof option === 'string'
+                                ? option
+                                : `${option.bank_account_name} ${option.account_number} ${option.name}`
+                            ).toLowerCase();
+                            return searchStr.includes(inputValue.toLowerCase());
+                        });
+                    }}
+                    renderOption={(props, option: any) => (
+                        <Box component="li" {...props} sx={{ py: '6px !important' }}>
+                            <Stack spacing={0.5}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                    {typeof option === 'string' ? option : (option.bank_account_name || option.name)}
+                                </Typography>
+                                {typeof option === 'object' && option.account_number && (
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                        Account: {option.account_number}
+                                    </Typography>
+                                )}
+                            </Stack>
+                        </Box>
+                    )}
+                    isOptionEqualToValue={(option, value) => {
+                        const optionValue = typeof option === 'string' ? option : option?.name;
+                        return optionValue === value;
+                    }}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label={label}
+                            placeholder={`Select ${label}`}
+                            required={required}
+                            error={!!formErrors[fieldname]}
+                            helperText={formErrors[fieldname]}
+                            InputLabelProps={{ shrink: true }}
+                            sx={{
+                                '& .MuiFormLabel-asterisk': {
+                                    color: 'red',
+                                },
+                                ...extraProps.sx
+                            }}
+                        />
+                    )}
+                />
+            );
+        }
 
         if (type === 'autocomplete') {
             // Determine if field should be disabled based on dependencies
@@ -787,6 +1189,265 @@ export function EmployeeView() {
         return <TextField {...commonProps} />;
     };
 
+    const renderSalaryTable = (type: 'Earning' | 'Deduction') => {
+        const rows = type === 'Earning' ? (formData.earnings || []) : (formData.deductions || []);
+
+        return (
+            <Box sx={{ mt: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{
+                        fontWeight: 700,
+                        color: type === 'Earning' ? 'success.main' : 'error.main',
+                        textTransform: 'uppercase',
+                        letterSpacing: 1
+                    }}>
+                        {type === 'Earning' ? 'Earnings' : 'Deductions'}
+                    </Typography>
+                    <Button
+                        size="small"
+                        color="info"
+                        variant="text"
+                        startIcon={<Iconify icon="solar:add-circle-bold" />}
+                        onClick={() => handleAddSalaryRow(type)}
+                        sx={{ fontWeight: 700 }}
+                    >
+                        Add Row
+                    </Button>
+                </Box>
+                <TableContainer sx={{
+                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.2)}`,
+                    borderRadius: 1.25,
+                    overflow: 'hidden',
+                    bgcolor: 'background.paper',
+                    boxShadow: (theme) => theme.customShadows.z1
+                }}>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ py: 1.5, bgcolor: '#08a3cd', color: 'common.white', fontWeight: 700, width: '60%' }}>
+                                    Component Name *
+                                </TableCell>
+                                <TableCell align="right" sx={{ py: 1.5, bgcolor: '#08a3cd', color: 'common.white', fontWeight: 700, width: '35%' }}>
+                                    Amount
+                                </TableCell>
+                                <TableCell width={48} sx={{ py: 1.5, bgcolor: '#08a3cd' }} />
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {rows.map((row: any, index: number) => (
+                                <SalaryRow
+                                    key={index}
+                                    index={index}
+                                    type={type}
+                                    row={row}
+                                    componentOptions={type === 'Earning' ? earningComponents : deductionComponents}
+                                    hrSettings={hrSettings}
+                                    onRowChange={handleSalaryRowChange}
+                                    onRowRemove={handleRemoveSalaryRow}
+                                    hasError={formData.earnings?.length > 0 || formData.deductions?.length > 0}
+                                />
+                            ))}
+                            {rows.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={3} align="center" sx={{ py: 3, typography: 'body2', color: 'text.disabled' }}>
+                                        No data available
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Box>
+        );
+    };
+
+    const handleAddDocumentRow = () => {
+        setFormData(prev => {
+            const currentRows = prev.documents || [];
+            return {
+                ...prev,
+                documents: [...currentRows, { title: '', attachment: '', description: '' }]
+            };
+        });
+    };
+
+    const handleRemoveDocumentRow = (index: number) => {
+        setFormData(prev => {
+            const currentRows = [...(prev.documents || [])];
+            currentRows.splice(index, 1);
+            return {
+                ...prev,
+                documents: currentRows
+            };
+        });
+    };
+
+    const handleDocumentRowChange = (index: number, field: string, value: any) => {
+        setFormData(prev => {
+            const currentRows = [...(prev.documents || [])];
+            currentRows[index] = { ...currentRows[index], [field]: value };
+            return {
+                ...prev,
+                documents: currentRows
+            };
+        });
+    };
+
+    const renderDocumentsTable = () => {
+        const rows = formData.documents || [];
+
+        return (
+            <Box sx={{ mt: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                    <Typography variant="h6" sx={{ color: 'primary.main' }}>Documents</Typography>
+                    <Button
+                        size="small"
+                        color="info"
+                        variant="text"
+                        startIcon={<Iconify icon="solar:add-circle-bold" />}
+                        onClick={handleAddDocumentRow}
+                        sx={{ fontWeight: 700 }}
+                    >
+                        Add Document
+                    </Button>
+                </Box>
+                <TableContainer sx={{
+                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.2)}`,
+                    borderRadius: 1.25,
+                    overflow: 'hidden',
+                    bgcolor: 'background.paper',
+                    boxShadow: (theme) => theme.customShadows.z1
+                }}>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ py: 1.5, bgcolor: '#08a3cd', color: 'common.white', fontWeight: 700, width: '30%' }}>
+                                    Title *
+                                </TableCell>
+                                <TableCell sx={{ py: 1.5, bgcolor: '#08a3cd', color: 'common.white', fontWeight: 700, width: '30%' }}>
+                                    Attachment *
+                                </TableCell>
+                                <TableCell sx={{ py: 1.5, bgcolor: '#08a3cd', color: 'common.white', fontWeight: 700, width: '35%' }}>
+                                    Description
+                                </TableCell>
+                                <TableCell width={48} sx={{ py: 1.5, bgcolor: '#08a3cd' }} />
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {rows.map((row: any, index: number) => (
+                                <TableRow key={index} sx={{ borderBottom: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.1)}` }}>
+                                    <TableCell sx={{ py: 1 }}>
+                                        <TextField
+                                            fullWidth
+                                            size="small"
+                                            variant="standard"
+                                            placeholder="Enter title"
+                                            value={row.title || ''}
+                                            onChange={(e) => handleDocumentRowChange(index, 'title', e.target.value)}
+                                            InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
+                                        />
+                                    </TableCell>
+                                    <TableCell
+                                        sx={{
+                                            py: 1,
+                                            cursor: 'pointer',
+                                            transition: (theme) => theme.transitions.create('background-color'),
+                                            '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) }
+                                        }}
+                                    >
+                                        <Box component="label" sx={{ display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer' }}>
+                                            <input
+                                                type="file"
+                                                hidden
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        handleDocumentRowChange(index, 'pendingFile', file);
+                                                        if (!row.title) {
+                                                            handleDocumentRowChange(index, 'title', file.name.split('.')[0]);
+                                                        }
+                                                    }
+                                                }}
+                                            />
+                                            <Stack direction="row" spacing={1} alignItems="center" sx={{ flexGrow: 1, minWidth: 0 }}>
+                                                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                                    {row.attachment || row.pendingFile ? (
+                                                        <Typography
+                                                            variant="body2"
+                                                            noWrap
+                                                            sx={{
+                                                                color: 'primary.main',
+                                                                fontWeight: 600,
+                                                                textDecoration: 'underline'
+                                                            }}
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                if (row.attachment) {
+                                                                    window.open(row.attachment);
+                                                                } else if (row.pendingFile) {
+                                                                    const url = URL.createObjectURL(row.pendingFile);
+                                                                    window.open(url);
+                                                                }
+                                                            }}
+                                                        >
+                                                            {row.attachment ? row.attachment.split('/').pop() : row.pendingFile.name}
+                                                        </Typography>
+                                                    ) : (
+                                                        <Typography variant="body2" color="text.disabled">Click to select file</Typography>
+                                                    )}
+                                                </Box>
+                                                {(row.attachment || row.pendingFile) ? (
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            handleDocumentRowChange(index, 'attachment', '');
+                                                            handleDocumentRowChange(index, 'pendingFile', null);
+                                                        }}
+                                                        sx={{ color: 'error.main', p: 0.5 }}
+                                                    >
+                                                        <Iconify icon="solar:close-circle-bold" width={16} />
+                                                    </IconButton>
+                                                ) : (
+                                                    <Iconify icon="solar:upload-minimalistic-bold" width={18} sx={{ color: 'text.disabled' }} />
+                                                )}
+                                            </Stack>
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell sx={{ py: 1 }}>
+                                        <TextField
+                                            fullWidth
+                                            size="small"
+                                            variant="standard"
+                                            placeholder="Enter description"
+                                            value={row.description || ''}
+                                            onChange={(e) => handleDocumentRowChange(index, 'description', e.target.value)}
+                                            InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        <IconButton size="small" onClick={() => handleRemoveDocumentRow(index)} sx={{ color: 'text.disabled', '&:hover': { color: 'error.main' } }}>
+                                            <Iconify icon="solar:trash-bin-trash-bold" width={18} />
+                                        </IconButton>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                            {rows.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={4} align="center" sx={{ py: 3, typography: 'body2', color: 'text.disabled' }}>
+                                        No documents added
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Box>
+        );
+    };
+
     const sortOptions = [
         { value: 'newest', label: 'Newest First' },
         { value: 'oldest', label: 'Oldest First' },
@@ -795,7 +1456,7 @@ export function EmployeeView() {
     ];
 
     const getSortByValue = () => {
-        if (orderBy === 'creation') {
+        if (orderBy === 'modified') {
             return order === 'desc' ? 'newest' : 'oldest';
         }
         if (orderBy === 'employee_name') {
@@ -806,10 +1467,10 @@ export function EmployeeView() {
 
     const handleSortChange = (value: string) => {
         if (value === 'newest') {
-            setOrderBy('creation');
+            setOrderBy('modified');
             setOrder('desc');
         } else if (value === 'oldest') {
-            setOrderBy('creation');
+            setOrderBy('modified');
             setOrder('asc');
         } else if (value === 'name_asc') {
             setOrderBy('employee_name');
@@ -821,7 +1482,7 @@ export function EmployeeView() {
     };
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Employees
@@ -880,48 +1541,59 @@ export function EmployeeView() {
                             />
 
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <EmployeeTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            employeeId: row.employee_id,
-                                            name: row.employee_name,
-                                            department: row.department,
-                                            designation: row.designation,
-                                            status: row.status,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleOpenDetails(row.name)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onDelete={() => handleDeleteClick(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
-                                            <EmptyContent
-                                                title="No employees found"
-                                                description="Click 'New Employee' to add your first team member."
-                                                icon="solar:users-group-rounded-bold-duotone"
-                                            />
+                                        <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <EmployeeTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    employeeId: row.employee_id,
+                                                    name: row.employee_name,
+                                                    department: row.department,
+                                                    designation: row.designation,
+                                                    status: row.status,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleOpenDetails(row.name)}
+                                                onEdit={() => handleEditRow(row.name)}
+                                                onDelete={() => handleDeleteClick(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={6}>
+                                                    <EmptyContent
+                                                        title="No employees found"
+                                                        description="Click 'New Employee' to add your first team member."
+                                                        icon="solar:users-group-rounded-bold-duotone"
+                                                        sx={{ py: 5 }}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -940,100 +1612,208 @@ export function EmployeeView() {
             </Card>
 
             {/* CREATE/EDIT DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="lg" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
+                <DialogTitle sx={{ m: 0, p: 2, px: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {currentEmployeeId ? 'Edit Employee' : 'New Employee'}
                     <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
                         <Iconify icon="mingcute:close-line" />
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent dividers>
+                <DialogContent dividers sx={{ p: 0 }}>
+                    <Tabs
+                        value={currentTab}
+                        onChange={(e, newValue) => setCurrentTab(newValue)}
+                        sx={{
+                            px: 4,
+                            bgcolor: 'transparent',
+                            borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                            '& .MuiTabs-indicator': {
+                                height: 3,
+                                borderRadius: '3px 3px 0 0',
+                            },
+                            '& .MuiTab-root': {
+                                py: 2,
+                                minHeight: 48,
+                                fontWeight: 700,
+                                fontSize: '0.875rem',
+                                color: 'text.secondary',
+                                '&.Mui-selected': {
+                                    color: 'primary.main',
+                                },
+                                '& .MuiTab-iconWrapper': {
+                                    mr: '10px !important',
+                                }
+                            }
+                        }}
+                    >
+                        <Tab
+                            label="Employee Info"
+                            icon={<LuUserCheck size={20} />}
+                            iconPosition="start"
+                        />
+                        <Tab
+                            label="Salary Info"
+                            icon={<TbMoneybagPlus size={20} />}
+                            iconPosition="start"
+                        />
+                        <Tab
+                            label="Documents"
+                            icon={<GrDocumentLocked size={20} />}
+                            iconPosition="start"
+                        />
+                    </Tabs>
+
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <Box sx={{ p: 2 }}>
-                            {/* Section 1: Personal Information */}
-                            <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Personal Information</Typography>
-                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
-                                {renderField('employee_id', 'Employee ID', 'text', [], {}, false)}
-                                {renderField('employee_name', 'Employee Name', 'text', [], {}, true)}
-                                {renderField('email', 'Email', 'text', [], {}, true)}
-                                {renderField('personal_email', 'Personal Email')}
-                                {renderField('phone', 'Personal Phone Number', 'phone')}
-                                {renderField('office_phone_number', 'Office Phone', 'phone')}
-                                {renderField('dob', 'Date of Birth', 'date')}
-                                {renderField('country', 'Country', 'autocomplete', fieldOptions['country'] || [])}
-                                {renderField('state', 'State', 'autocomplete', stateOptions)}
-                                {renderField('city', 'City', 'autocomplete', cityOptions)}
-                                {renderField('profile_picture', 'Profile Picture', 'file')}
-                            </Box>
-
-                            {/* Section 2: Employment Details */}
-                            <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Employment Details</Typography>
-                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
-                                {renderField('department', 'Department', 'link', fieldOptions['department'] || [])}
-                                {renderField('designation', 'Designation', 'text')}
-                                {renderField('date_of_joining', 'Joining Date', 'date', [], {}, true)}
-                                {renderField('user', 'User Login (Email)', 'autocomplete', fieldOptions['user'] || [], {}, true)}
-                                {renderField('status', 'Status', 'select', ['Active', 'Inactive'], {}, true)}
-                                {renderField('skip_probation', 'Skip Probation', 'checkbox')}
-                            </Box>
-
-                            {/* Section 3: Financial & Bank Details */}
-                            <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Financial & Bank Details</Typography>
-                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
-                                {renderField('bank_name', 'Bank Name')}
-                                {renderField('bank_account', 'Bank Account', 'autocomplete', fieldOptions['bank_account'] || [])}
-                                {renderField('pf_number', 'PF Number')}
-                                {renderField('esi_no', 'ESI No')}
-                            </Box>
-
-
-                            {/* Section 4: Salary & breakdown */}
-                            <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Salary Details (Auto-calculated)</Typography>
-
-                            {/* CTC Field - Full Width */}
-                            <Box sx={{ mb: 3 }}>
-                                {renderField('ctc', 'CTC (Monthly)', 'number', [], { onBlur: handleCTCOnBlur }, false)}
-                            </Box>
-
-                            {/* Two Column Layout: Earnings and Deductions */}
-                            <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3}>
-                                {/* Left Column - Earnings */}
+                        <Box sx={{ p: 4, pt: 3 }}>
+                            {currentTab === 0 && (
                                 <Box>
-                                    {/* <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: 'success.main' }}>
-                                        Earnings
-                                    </Typography> */}
-                                    <Box display="flex" flexDirection="column" gap={2}>
-                                        {renderField('basic_pay', 'Basic Pay', 'number')}
-                                        {renderField('hra', 'HRA', 'number')}
-                                        {renderField('conveyance_allowances', 'Conveyance Allowances', 'number')}
-                                        {renderField('medical_allowances', 'Medical Allowances', 'number')}
-                                        {renderField('other_allowances', 'Other Allowances', 'number')}
+                                    {/* Section 1: Personal Information */}
+                                    <>
+                                        <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Personal Information</Typography>
+                                        <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
+                                            {renderField('employee_id', 'Employee ID', 'text', [], {}, false)}
+                                            {renderField('employee_name', 'Employee Name', 'text', [], {}, true)}
+                                            {renderField('email', 'Email', 'text', [], {}, true)}
+                                            {renderField('personal_email', 'Personal Email')}
+                                            {renderField('phone', 'Personal Phone Number', 'phone')}
+                                            {renderField('office_phone_number', 'Office Phone', 'phone')}
+                                            {renderField('dob', 'Date of Birth', 'date')}
+                                            {renderField('country', 'Country', 'autocomplete', fieldOptions['country'] || [])}
+                                            {renderField('state', 'State', 'autocomplete', stateOptions)}
+                                            {renderField('city', 'City', 'autocomplete', cityOptions)}
+                                            {renderField('profile_picture', 'Profile Picture', 'file')}
+                                        </Box>
+                                    </>
+
+                                    {/* Section 2: Employment Details */}
+                                    <>
+                                        <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Employment Details</Typography>
+                                        <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
+                                            {renderField('department', 'Department', 'link', fieldOptions['department'] || [])}
+                                            {renderField('designation', 'Designation', 'text')}
+                                            {renderField('date_of_joining', 'Joining Date', 'date', [], {}, true)}
+                                            {renderField('user', 'User Login (Email)', 'autocomplete', fieldOptions['user'] || [], {}, true)}
+                                            {renderField('status', 'Status', 'select', ['Active', 'Inactive'], {}, true)}
+                                            {renderField('skip_probation', 'Skip Probation', 'checkbox')}
+                                        </Box>
+                                    </>
+
+                                    {/* Section 3: Financial & Bank Details */}
+                                    <>
+                                        <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Financial & Bank Details</Typography>
+                                        <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3} sx={{ mb: 4 }}>
+                                            {renderField('bank_account', 'Bank Account', 'autocomplete', fieldOptions['bank_account'] || [])}
+                                            {renderField('pf_number', 'PF Number')}
+                                            {renderField('esi_no', 'ESI No')}
+                                        </Box>
+                                    </>
+                                </Box>
+                            )}
+
+                            {currentTab === 1 && (
+                                <Box>
+                                    {/* Section 4: Salary & breakdown */}
+                                    <Typography variant="h6" sx={{ mb: 3, color: 'primary.main' }}>Salary Details</Typography>
+
+                                    {/* CTC Field - Full Width */}
+                                    <Box sx={{ mb: 3 }}>
+                                        {renderField('ctc', 'CTC (Monthly)', 'number', [], {
+                                            onBlur: handleCTCOnBlur,
+                                            InputProps: {
+                                                endAdornment: (
+                                                    <Button
+                                                        size="small"
+                                                        variant="contained"
+                                                        onClick={handleDefaultSplitting}
+                                                        sx={{
+                                                            whiteSpace: 'nowrap',
+                                                            mx: 1,
+                                                            py: 1.5,
+                                                            px: 3,
+                                                            height: 32,
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 700,
+                                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 1),
+                                                            color: 'common.white',
+                                                            boxShadow: (theme) => theme.customShadows.z8,
+                                                            '&:hover': {
+                                                                bgcolor: (theme) => theme.palette.primary.dark,
+                                                                boxShadow: (theme) => theme.customShadows.z16,
+                                                            }
+                                                        }}
+                                                        startIcon={<Iconify icon={"solar:magic-stick-bold" as any} width={16} />}
+                                                    >
+                                                        Default Splitting
+                                                    </Button>
+                                                )
+                                            }
+                                        }, false)}
+                                    </Box>
+
+                                    {/* Two Column Layout: Earnings and Deductions */}
+                                    <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3}>
+                                        {/* Left Column - Earnings */}
+                                        <Box>
+                                            {renderSalaryTable('Earning')}
+                                        </Box>
+
+                                        {/* Right Column - Deductions */}
+                                        <Box>
+                                            {renderSalaryTable('Deduction')}
+                                        </Box>
+                                    </Box>
+
+                                    {/* Net Salary Summary */}
+                                    <Box sx={{ mt: 4, p: 3, borderRadius: 2, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05), border: (theme) => `1px dashed ${alpha(theme.palette.primary.main, 0.3)}` }}>
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                            <Box>
+                                                <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>Net Salary (Monthly)</Typography>
+                                                <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 800, display: 'flex', alignItems: 'center' }}>
+                                                    <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mr: 1, fontSize: '0.8em' }}>{hrSettings.currency_symbol}</Box>
+                                                    {fNumber(totals.net_salary || 0, { locale: hrSettings.default_locale })}
+                                                </Typography>
+                                            </Box>
+                                            <Stack direction="row" spacing={4}>
+                                                <Box sx={{ textAlign: 'right' }}>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Earnings</Typography>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'success.main', display: 'flex', alignItems: 'center' }}>
+                                                        + <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mx: 0.5 }}>{hrSettings.currency_symbol}</Box>
+                                                        {fNumber(totals.total_earnings || 0, { locale: hrSettings.default_locale })}
+                                                    </Typography>
+                                                </Box>
+                                                <Box sx={{ textAlign: 'right' }}>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Deductions</Typography>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'error.main', display: 'flex', alignItems: 'center' }}>
+                                                        - <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mx: 0.5 }}>{hrSettings.currency_symbol}</Box>
+                                                        {fNumber(totals.total_deductions || 0, { locale: hrSettings.default_locale })}
+                                                    </Typography>
+                                                </Box>
+                                            </Stack>
+                                        </Stack>
                                     </Box>
                                 </Box>
+                            )}
 
-                                {/* Right Column - Deductions */}
+                            {currentTab === 2 && (
                                 <Box>
-                                    {/* <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: 'error.main' }}>
-                                        Deductions
-                                    </Typography> */}
-                                    <Box display="flex" flexDirection="column" gap={2}>
-                                        {renderField('pf', 'PF Deduction', 'number')}
-                                        {renderField('health_insurance', 'ESI/Health Insurance', 'number')}
-                                        {renderField('professional_tax', 'Professional Tax', 'number')}
-                                        {renderField('loan_recovery', 'Loan Recovery', 'number')}
-                                    </Box>
+                                    {renderDocumentsTable()}
                                 </Box>
-                            </Box>
+                            )}
                         </Box>
                     </LocalizationProvider>
                 </DialogContent>
 
 
-                <DialogActions>
-                    <Button variant="contained" onClick={handleCreate} disabled={creating} sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}>
-                        {creating ? 'Saving...' : (currentEmployeeId ? 'Update Employee' : 'Create Employee')}
-                    </Button>
+                <DialogActions sx={{ px: 4, py: 2 }}>
+                    <LoadingButton
+                        variant="contained"
+                        onClick={handleCreate}
+                        loading={creating}
+                        sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
+                        {currentEmployeeId ? 'Update Employee' : 'Create Employee'}
+                    </LoadingButton>
                 </DialogActions>
             </Dialog>
 

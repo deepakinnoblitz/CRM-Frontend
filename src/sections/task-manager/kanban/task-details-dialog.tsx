@@ -18,13 +18,15 @@ import TimelineSeparator from '@mui/lab/TimelineSeparator';
 import TimelineConnector from '@mui/lab/TimelineConnector';
 import TimelineItem, { timelineItemClasses } from '@mui/lab/TimelineItem';
 
-import { fDate } from 'src/utils/format-time';
+import { fDate, fDateTime } from 'src/utils/format-time';
 
 import {
     TaskManager,
     acceptTaskManager,
     closeTaskManager,
     reopenTaskManager,
+    putOnHoldTaskManager,
+    resumeTaskManager,
     getTaskManager
 } from 'src/api/task-manager';
 
@@ -34,6 +36,8 @@ import { useAuth } from 'src/auth/auth-context';
 
 import { TaskCloseDialog } from './task-close-dialog';
 import { TaskReopenDialog } from './task-reopen-dialog';
+import { TaskResumeDialog } from './task-resume-dialog';
+import { TaskOnHoldDialog } from './task-on-hold-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -53,6 +57,7 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string;
     'In Progress': { color: '#f97316', bg: '#fff7ed', border: '#fed7aa', icon: 'solar:refresh-bold' },
     'Completed': { color: '#22c55e', bg: '#f0fdf4', border: '#bbf7d0', icon: 'solar:check-circle-bold' },
     'Reopened': { color: '#ef4444', bg: '#fef2f2', border: '#fecaca', icon: 'solar:restart-bold' },
+    'On Hold': { color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', icon: 'solar:pause-bold' },
 };
 
 // ── Priority config ──
@@ -102,6 +107,8 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
     const [task, setTask] = useState<TaskManager | null>(null);
     const [closeTaskOpen, setCloseTaskOpen] = useState(false);
     const [reopenTaskOpen, setReopenTaskOpen] = useState(false);
+    const [onHoldOpen, setOnHoldOpen] = useState(false);
+    const [resumeOpen, setResumeOpen] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
     useEffect(() => {
@@ -126,6 +133,7 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
             await action();
             setSnackbar({ open: true, message: successMessage || 'Action completed successfully', severity: 'success' });
             if (onSuccess) onSuccess();
+            setTimeout(() => onClose(), 1000); // Small delay to show snackbar before closing
         } catch (error: any) {
             console.error(error);
             setSnackbar({ open: true, message: error?.message || 'Failed to complete action', severity: 'error' });
@@ -141,6 +149,7 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
             setCloseTaskOpen(false);
             setSnackbar({ open: true, message: 'Task closed successfully', severity: 'success' });
             if (onSuccess) onSuccess();
+            setTimeout(() => onClose(), 1000);
         } catch (error: any) {
             console.error(error);
             setSnackbar({ open: true, message: error?.message || 'Failed to close task', severity: 'error' });
@@ -156,9 +165,42 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
             setReopenTaskOpen(false);
             setSnackbar({ open: true, message: 'Task reopened successfully', severity: 'success' });
             if (onSuccess) onSuccess();
+            setTimeout(() => onClose(), 1000);
         } catch (error: any) {
             console.error(error);
             setSnackbar({ open: true, message: error?.message || 'Failed to reopen task', severity: 'error' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleConfirmOnHold = async (remarks: string) => {
+        setLoading(true);
+        try {
+            await putOnHoldTaskManager(task.name, remarks);
+            setOnHoldOpen(false);
+            setSnackbar({ open: true, message: 'Task put on hold', severity: 'success' });
+            if (onSuccess) onSuccess();
+            setTimeout(() => onClose(), 1000);
+        } catch (error: any) {
+            console.error(error);
+            setSnackbar({ open: true, message: error?.message || 'Failed to put task on hold', severity: 'error' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleConfirmResume = async (remarks: string) => {
+        setLoading(true);
+        try {
+            await resumeTaskManager(task.name, remarks);
+            setResumeOpen(false);
+            setSnackbar({ open: true, message: 'Task resumed successfully', severity: 'success' });
+            if (onSuccess) onSuccess();
+            setTimeout(() => onClose(), 1000);
+        } catch (error: any) {
+            console.error(error);
+            setSnackbar({ open: true, message: error?.message || 'Failed to resume task', severity: 'error' });
         } finally {
             setLoading(false);
         }
@@ -176,7 +218,6 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        bgcolor: 'background.neutral',
                         borderBottom: '1px solid',
                         borderColor: 'divider'
                     }}
@@ -208,9 +249,11 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                                         <Box sx={{ width: 44, height: 44, borderRadius: 1.5, bgcolor: '#1877f214', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                             <Iconify icon={"solar:clipboard-list-bold" as any} width={24} sx={{ color: '#14b8a6' }} />
                                         </Box>
-                                        <Box>
-                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block' }}>Task Title</Typography>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.3 }}>{task.title}</Typography>
+                                        <Box sx={{ minWidth: 0, maxWidth: 480 }}>
+                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block', pb: 0.5 }}>Task Title</Typography>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.3, wordWrap: 'break-word' }}>
+                                                {task.title}
+                                            </Typography>
                                         </Box>
                                     </Stack>
 
@@ -232,25 +275,30 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                             </Box>
 
                             {/* Info rows — Custom grid */}
-                            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1 }}>
-                                <InfoRow icon="solar:folder-favourite-bookmark-bold" iconColor="#6366f1" label="Project" value={task.project || 'N/A'} />
-                                <InfoRow icon="solar:buildings-bold" iconColor="#8b5cf6" label="Department" value={task.department || 'N/A'} />
-                                <InfoRow icon="solar:calendar-date-bold" iconColor="#f97316" label="Due Date"
-                                    value={
-                                        task.due_date ? (
-                                            <>
-                                                {fDate(task.due_date)}
-                                                {task.due_time ? <><br />{task.due_time}</> : null}
-                                            </>
-                                        ) : (
-                                            '—'
-                                        )
-                                    }
-                                />
-                                {task.creation && (
-                                    <InfoRow icon="solar:clock-circle-bold" iconColor="#14b8a6" label="Created On" value={fDate(task.creation)} />
-                                )}
-                            </Box>
+                            <Stack spacing={2.5}>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, py: 1 }}>
+                                    <InfoRow icon="solar:folder-favourite-bookmark-bold" iconColor="#6366f1" label="Project" value={task.project || 'N/A'} />
+                                    <InfoRow icon="solar:buildings-bold" iconColor="#8b5cf6" label="Department" value={task.department || 'N/A'} />
+                                    <InfoRow icon="solar:calendar-date-bold" iconColor="#f97316" label="Due Date"
+                                        value={
+                                            task.due_date ? (
+                                                fDateTime(`${task.due_date} ${task.due_time || '00:00:00'}`)
+                                            ) : (
+                                                '—'
+                                            )
+                                        }
+                                    />
+                                </Box>
+
+                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, py: 1 }}>
+                                    {task.creation && (
+                                        <InfoRow icon="solar:clock-circle-bold" iconColor="#14b8a6" label="Created On" value={fDateTime(task.creation)} />
+                                    )}
+                                    
+                                    <InfoRow icon="solar:user-bold" iconColor="#0ea5e9" label="Created By" value={task.owner || 'N/A'} />
+
+                                </Box>
+                            </Stack>
 
                             {/* Description */}
                             {task.description && (
@@ -346,16 +394,16 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                         </Box>
 
                         {/* Action Buttons Toolbar */}
-                        <Box sx={{ px: 3, pb: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.neutral' }}>
+                        <Box sx={{ px: 3, pb: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.neutral', borderRadius: 2, borderlefttopRadius: 0 }}>
                             <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
-                                {/* Accept */}
+                                {/* Accept — Open or Reopened */}
                                 {(task.status === 'Open' || task.status === 'Reopened') && (
                                     <Button
                                         variant="contained"
                                         color="info"
                                         size="medium"
                                         disabled={loading}
-                                        startIcon={<Iconify icon="solar:play-bold" />}
+                                        startIcon={<Iconify icon="solar:play-bold" width={16} />}
                                         onClick={() => handleAction(() => acceptTaskManager(task.name), 'Task Accepted')}
                                         sx={{ fontWeight: 800, px: 2, borderRadius: 1.25 }}
                                     >
@@ -363,9 +411,8 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                                     </Button>
                                 )}
 
-
-                                {/* Close Task */}
-                                {task.status === 'In Progress' && (
+                                {/* Close Task — In Progress or On Hold */}
+                                {(task.status === 'In Progress' || task.status === 'On Hold') && (
                                     <Button
                                         variant="contained"
                                         color="success"
@@ -376,6 +423,47 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                                         sx={{ fontWeight: 800, px: 2, borderRadius: 1.25 }}
                                     >
                                         Close Task
+                                    </Button>
+                                )}
+
+                                {/* On Hold — Open, In Progress, or Reopened */}
+                                {(task.status === 'Open' || task.status === 'In Progress' || task.status === 'Reopened') && (
+                                    <Button
+                                        variant="contained"
+                                        size="medium"
+                                        disabled={loading}
+                                        startIcon={<Iconify icon="solar:pause-bold" width={16} />}
+                                        onClick={() => setOnHoldOpen(true)}
+                                        sx={{
+                                            fontWeight: 800,
+                                            px: 2,
+                                            borderRadius: 1.25,
+                                            bgcolor: '#f59e0b',
+                                            color: '#fff',
+                                            '&:hover': { bgcolor: '#d97706' },
+                                        }}
+                                    >
+                                        Put On Hold
+                                    </Button>
+                                )}
+
+                                {/* Resume — only when On Hold */}
+                                {task.status === 'On Hold' && (
+                                    <Button
+                                        variant="contained"
+                                        size="medium"
+                                        disabled={loading}
+                                        startIcon={<Iconify icon={"solar:play-circle-bold" as any} />}
+                                        onClick={() => setResumeOpen(true)}
+                                        sx={{
+                                            fontWeight: 800,
+                                            px: 2,
+                                            borderRadius: 1.25,
+                                            bgcolor: '#0891b2',
+                                            '&:hover': { bgcolor: '#0e7490' },
+                                        }}
+                                    >
+                                        Resume Task
                                     </Button>
                                 )}
 
@@ -517,6 +605,20 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                 open={reopenTaskOpen}
                 onClose={() => setReopenTaskOpen(false)}
                 onConfirmed={handleConfirmReopen}
+                loading={loading}
+            />
+
+            <TaskOnHoldDialog
+                open={onHoldOpen}
+                onClose={() => setOnHoldOpen(false)}
+                onConfirmed={handleConfirmOnHold}
+                loading={loading}
+            />
+
+            <TaskResumeDialog
+                open={resumeOpen}
+                onClose={() => setResumeOpen(false)}
+                onConfirmed={handleConfirmResume}
                 loading={loading}
             />
 

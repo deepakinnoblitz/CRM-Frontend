@@ -8,7 +8,6 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import { IconButton } from '@mui/material';
 import Popover from '@mui/material/Popover';
 import Snackbar from '@mui/material/Snackbar';
 import Checkbox from '@mui/material/Checkbox';
@@ -25,6 +24,7 @@ import TableContainer from '@mui/material/TableContainer';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import TablePagination from '@mui/material/TablePagination';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { IconButton, CircularProgress } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -515,14 +515,14 @@ export function AttendanceView() {
     };
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Attendance
                 </Typography>
 
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                    {permissions.write && (
+                    {isHR && permissions.write && (
                         <>
                             <Button
                                 variant="outlined"
@@ -567,7 +567,7 @@ export function AttendanceView() {
                     onClose={handleCloseFilters}
                     filters={{ startDate, endDate, status: filterStatus, employee: filterEmployee }}
                     onFilters={handleFilters}
-                    canReset={!!startDate || !!endDate || filterStatus !== 'all' || !!filterEmployee}
+                    canReset={!!startDate || !!endDate || filterStatus !== 'all' || !!filterEmployee || !!filterName}
                     onResetFilters={handleResetFilters}
                     employeeOptions={employeeOptions}
                     isHR={isHR}
@@ -596,51 +596,61 @@ export function AttendanceView() {
                             />
 
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <AttendanceTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            employee: row.employee,
-                                            employeeName: row.employee_name,
-                                            attendanceDate: row.attendance_date,
-                                            status: row.status,
-                                            inTime: row.in_time,
-                                            out_time: row.out_time,
-                                            working_hours_display: row.working_hours_display,
-                                            modified: row.modified,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleOpenDetails(row.name)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onDelete={() => handleDeleteClick(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
-                                            <EmptyContent
-                                                title="No attendance records"
-                                                description="You haven't marked any attendance yet."
-                                                icon="solar:calendar-date-bold-duotone"
-                                            />
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <AttendanceTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    employee: row.employee,
+                                                    employeeName: row.employee_name,
+                                                    attendanceDate: row.attendance_date,
+                                                    status: row.status,
+                                                    inTime: row.in_time,
+                                                    out_time: row.out_time,
+                                                    working_hours_display: row.working_hours_display,
+                                                    modified: row.modified,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleOpenDetails(row.name)}
+                                                onEdit={() => handleEditRow(row.name)}
+                                                onDelete={() => handleDeleteClick(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={8}>
+                                                    <EmptyContent
+                                                        title="No attendance records"
+                                                        description="You haven't marked any attendance yet."
+                                                        icon="solar:calendar-date-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -659,7 +669,7 @@ export function AttendanceView() {
             </Card>
 
             {/* CREATE/EDIT DIALOG */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24 } }}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {currentAttendanceId ? 'Edit Attendance' : 'Mark Attendance'}
                     <IconButton onClick={handleCloseCreate} sx={{ color: (theme) => theme.palette.grey[500] }}>
@@ -715,7 +725,7 @@ export function AttendanceView() {
                     </LocalizationProvider>
                 </DialogContent>
 
-                <DialogActions>
+                <DialogActions sx={{ p: 2}}>
                     <Button variant="contained" onClick={handleCreate} disabled={creating} sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}>
                         {creating ? 'Saving...' : (currentAttendanceId ? 'Update Record' : 'Save Record')}
                     </Button>

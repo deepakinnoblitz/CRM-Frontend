@@ -59,7 +59,7 @@ export function SalesDashboardView() {
 
     return (
         <DashboardContent maxWidth="xl">
-            <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
+            <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 }, mt: 5  }}>
                 Hi, {user?.full_name || 'User'}, Welcome back 👋
             </Typography>
 

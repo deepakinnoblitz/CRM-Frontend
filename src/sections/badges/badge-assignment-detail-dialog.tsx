@@ -23,16 +23,41 @@ export function BadgeAssignmentDetailDialog({ open, onClose, assignment }: Props
   if (!assignment) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 2 }}>
-        Assignment Details
-        <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary' }}>
-          <Iconify icon="mingcute:close-line" width={24} />
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="xs"
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          boxShadow: (themeVar) => themeVar.customShadows.z24,
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+        }
+      }}
+    >
+      <DialogTitle
+        sx={{
+          m: 0,
+          p: 2,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
+          Assignment Details
+        </Typography>
+        <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
+          <Iconify icon="mingcute:close-line" />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ pb: 3, pt: 1 }}>
-        <Stack spacing={3}>
+      <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
+        <Stack spacing={3} sx={{mt: 2}}>
           {/* Badge Preview */}
           <Stack direction="row" spacing={2} alignItems="center">
             <Box

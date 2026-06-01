@@ -1,3 +1,4 @@
+import type {} from '@mui/x-date-pickers/themeAugmentation';
 import type { Theme, Components } from '@mui/material/styles';
 
 import { varAlpha } from 'minimal-shared/utils';
@@ -172,6 +173,12 @@ const MuiAutocomplete: Components<Theme>['MuiAutocomplete'] = {
   },
 };
 
+const MuiDatePicker: Components<Theme>['MuiDatePicker'] = {
+  defaultProps: {
+    format: 'DD-MM-YYYY',
+  },
+};
+
 // ----------------------------------------------------------------------
 
 export const components = {
@@ -188,4 +195,5 @@ export const components = {
   MuiOutlinedInput,
   MuiAutocomplete,
   MuiFormControlLabel,
+  MuiDatePicker,
 };

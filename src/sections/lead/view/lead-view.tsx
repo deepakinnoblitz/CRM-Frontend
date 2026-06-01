@@ -1,5 +1,6 @@
 import { MuiTelInput } from 'mui-tel-input';
 import { useSearchParams } from 'react-router-dom';
+import { IoMdCloudDownload } from "react-icons/io";
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -14,6 +15,7 @@ import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
 import { IconButton } from '@mui/material';
 import Divider from '@mui/material/Divider';
+import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
@@ -27,6 +29,8 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 
 import { useLeads } from 'src/hooks/useLeads';
 
@@ -36,7 +40,7 @@ import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 import { CONFIG } from 'src/config-global';
 import { DashboardContent } from 'src/layouts/dashboard';
 import locationData from 'src/assets/data/location_data.json';
-import { getLead, createLead, updateLead, deleteLead, convertLead, getDoctypeList, getWorkflowStates, getWorkflowActions, applyWorkflowAction, type ConvertLeadResponse } from 'src/api/leads';
+import { getLead, createLead, updateLead, deleteLead, convertLead, getDoctypeList, getWorkflowStates, getWorkflowActions, applyWorkflowAction, createLeadFrom, createService, type ConvertLeadResponse } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -59,6 +63,7 @@ import { ContactDetailsDialog } from '../../report/contact/contact-details-dialo
 
 
 // ----------------------------------------------------------------------
+const filter = createFilterOptions<any>();
 
 export function LeadView() {
   const table = useTable();
@@ -139,6 +144,16 @@ export function LeadView() {
   const [converting, setConverting] = useState(false);
   const [convertResult, setConvertResult] = useState<ConvertLeadResponse | null>(null);
 
+  // Lead From Dialog State
+  const [createLeadFromOpen, setCreateLeadFromOpen] = useState(false);
+  const [newLeadFromName, setNewLeadFromName] = useState('');
+  const [creatingLeadFrom, setCreatingLeadFrom] = useState(false);
+
+  // Service Dialog State
+  const [createServiceOpen, setCreateServiceOpen] = useState(false);
+  const [newServiceName, setNewServiceName] = useState('');
+  const [creatingService, setCreatingService] = useState(false);
+
   // Alert & Dialog State
   const [openDelete, setOpenDelete] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -208,7 +223,8 @@ export function LeadView() {
     filters.service !== 'all' ||
     filters.country !== 'all' ||
     filters.state !== 'all' ||
-    filters.city !== 'all';
+    filters.city !== 'all' ||
+    !!filterName;
 
   useEffect(() => {
     // Fetch dropdown options on mount
@@ -377,6 +393,42 @@ export function LeadView() {
 
   // Validation State
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
+
+  const handleCreateServiceSubmit = async () => {
+    if (!newServiceName.trim()) return;
+    try {
+      setCreatingService(true);
+      await createService(newServiceName.trim());
+      setServiceOptions(prev => [...prev, newServiceName.trim()]);
+      setService(newServiceName.trim());
+      setCreateServiceOpen(false);
+      setSnackbar({ open: true, message: 'Service created successfully', severity: 'success' });
+    } catch (err: any) {
+      console.error(err);
+      const friendlyMsg = getFriendlyErrorMessage(err);
+      setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
+    } finally {
+      setCreatingService(false);
+    }
+  };
+
+  const handleCreateLeadFromSubmit = async () => {
+    if (!newLeadFromName.trim()) return;
+    try {
+      setCreatingLeadFrom(true);
+      await createLeadFrom(newLeadFromName.trim());
+      setLeadsFromOptions(prev => [...prev, newLeadFromName.trim()]);
+      setLeadsFrom(newLeadFromName.trim());
+      setCreateLeadFromOpen(false);
+      setSnackbar({ open: true, message: 'Lead From created successfully', severity: 'success' });
+    } catch (err: any) {
+      console.error(err);
+      const friendlyMsg = getFriendlyErrorMessage(err);
+      setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
+    } finally {
+      setCreatingLeadFrom(false);
+    }
+  };
 
   const handleCreate = async () => {
     // Validation
@@ -550,8 +602,17 @@ export function LeadView() {
   return (
     <>
       {/* CREATE LEAD DIALOG */}
-      <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
-        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Dialog
+        open={openCreate}
+        onClose={handleCloseCreate}
+        fullWidth maxWidth="lg"
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: (theme) => theme.customShadows.z24,
+          }
+        }}>
+        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
           {viewOnly ? 'Lead Details' : (currentLeadId ? 'Edit Lead' : 'New Lead')}
           <IconButton
             aria-label="close"
@@ -564,17 +625,19 @@ export function LeadView() {
           </IconButton>
         </DialogTitle>
 
-        <Box sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs
-            value={currentTab}
-            onChange={(e, newValue) => setCurrentTab(newValue)}
-          >
-            <Tab label="General" value="general" />
-            {currentLeadId && <Tab label="Pipeline" value="pipeline" />}
-            {currentLeadId && <Tab label="Followups" value="followups" />}
-            {currentLeadId && <Tab label="Convert Lead" value="convert" disabled={viewOnly} />}
-          </Tabs>
-        </Box>
+        {currentLeadId && (
+          <Box sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs
+              value={currentTab}
+              onChange={(e, newValue) => setCurrentTab(newValue)}
+            >
+              <Tab label="General" value="general" />
+              {currentLeadId && <Tab label="Pipeline" value="pipeline" />}
+              {currentLeadId && <Tab label="Followups" value="followups" />}
+              {currentLeadId && <Tab label="Convert Lead" value="convert" disabled={viewOnly} />}
+            </Tabs>
+          </Box>
+        )}
 
         <DialogContent dividers>
           {currentTab === 'general' && (
@@ -597,6 +660,7 @@ export function LeadView() {
                 }}
                 required
                 error={!!validationErrors.leadName}
+                helperText={validationErrors.leadName ? 'Lead Name is required' : ''}
                 slotProps={{ input: { readOnly: viewOnly } }}
               />
 
@@ -610,6 +674,7 @@ export function LeadView() {
                 }}
                 required
                 error={!!validationErrors.companyName}
+                helperText={validationErrors.companyName ? 'Company Name is required' : ''}
                 slotProps={{ input: { readOnly: viewOnly } }}
               />
 
@@ -634,6 +699,7 @@ export function LeadView() {
                 required
                 disabled={viewOnly}
                 error={!!validationErrors.phoneNumber}
+                helperText={validationErrors.phoneNumber ? 'Phone Number is required' : ''}
                 sx={{
                   "& .MuiInputBase-input.Mui-disabled": {
                     WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
@@ -666,130 +732,218 @@ export function LeadView() {
                 required
                 disabled={viewOnly}
                 error={!!validationErrors.leadsType}
-                SelectProps={{ native: true }}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
+                helperText={validationErrors.leadsType ? 'Leads Type is required' : ''}
+                SelectProps={{
+                  MenuProps: {
+                    PaperProps: {
+                      sx: {
+                        marginTop: 0.5,
+                        boxShadow: (theme) => theme.customShadows.z20,
+                        borderRadius: 1.5,
+                      }
+                    }
+                  }
                 }}
               >
-                <option value="" disabled>Select</option>
-                <option value="Incoming">Incoming</option>
-                <option value="Outgoing">Outgoing</option>
+                <MenuItem value="Incoming">Incoming</MenuItem>
+                <MenuItem value="Outgoing">Outgoing</MenuItem>
               </TextField>
 
 
-              <TextField
-                select
+              <Autocomplete
                 fullWidth
-                label="Leads From"
+                disabled={viewOnly}
+                options={leadsFromOptions}
                 value={leadsFrom}
-                onChange={(e) => {
-                  setLeadsFrom(e.target.value);
-                  if (e.target.value) setValidationErrors(prev => ({ ...prev, leadsFrom: false }));
+                onChange={(e, newValue: any) => {
+                  if (typeof newValue === 'string') {
+                    setLeadsFrom(newValue);
+                  } else if (newValue && newValue.isNew) {
+                    setNewLeadFromName(newValue.inputValue);
+                    setCreateLeadFromOpen(true);
+                  } else {
+                    setLeadsFrom(newValue || '');
+                  }
+                  if (newValue) setValidationErrors(prev => ({ ...prev, leadsFrom: false }));
                 }}
-                required
-                disabled={viewOnly}
-                error={!!validationErrors.leadsFrom}
-                SelectProps={{ native: true }}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
+                filterOptions={(options, params) => {
+                  const filtered = filter(options, params) as any[];
+                  const { inputValue } = params;
+                  const isExisting = options.some((option) => inputValue === option);
+
+                  if (inputValue !== '' && !isExisting) {
+                    filtered.push({
+                      inputValue,
+                      label: `+ Create "${inputValue}"`,
+                      isNew: true,
+                    });
+                  } else if (inputValue === '') {
+                    filtered.push({
+                      inputValue: '',
+                      label: '+ Create Lead From',
+                      isNew: true,
+                    });
+                  }
+                  return filtered;
                 }}
-              >
-                <option value="" disabled>Select</option>
-                {leadsFromOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </TextField>
+                getOptionLabel={(option: any) => {
+                  if (typeof option === 'string') return option;
+                  if (option.inputValue) return option.inputValue;
+                  return option.label || '';
+                }}
+                renderOption={(props, option: any) => {
+                  const { key, ...optionProps } = props as any;
+                  return (
+                    <Box component="li" key={key || (typeof option === 'string' ? option : option.label)} {...optionProps} sx={{
+                      typography: 'body2',
+                      ...(option.isNew && {
+                        color: 'primary.main',
+                        fontWeight: 600,
+                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                        borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                        mt: 0.5,
+                        '&:hover': {
+                          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                        }
+                      })
+                    }}>
+                      {option.isNew ? (
+                        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 0.5 }}>
+                          <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                            {option.inputValue ? `Create "${option.inputValue}"` : 'Create Lead From'}
+                          </Typography>
+                        </Stack>
+                      ) : (
+                        option.label || option
+                      )}
+                    </Box>
+                  );
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Leads From"
+                    required
+                    error={!!validationErrors.leadsFrom}
+                    helperText={validationErrors.leadsFrom ? 'Leads From is required' : ''}
+                  />
+                )}
+              />
 
 
-              <TextField
-                select
+              <Autocomplete
                 fullWidth
-                label="Service"
+                disabled={viewOnly}
+                options={serviceOptions}
                 value={service}
-                onChange={(e) => setService(e.target.value)}
-                disabled={viewOnly}
-                SelectProps={{ native: true }}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
+                onChange={(e, newValue: any) => {
+                  if (typeof newValue === 'string') {
+                    setService(newValue);
+                  } else if (newValue && newValue.isNew) {
+                    setNewServiceName(newValue.inputValue);
+                    setCreateServiceOpen(true);
+                  } else {
+                    setService(newValue?.label || newValue || '');
+                  }
                 }}
-              >
-                <option value="" disabled>Select</option>
-                {serviceOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </TextField>
+                filterOptions={(options, params) => {
+                  const filtered = filter(options, params) as any[];
+                  const { inputValue } = params;
+                  const isExisting = options.some((option) => inputValue === option);
 
-              <TextField
-                select
+                  if (inputValue !== '' && !isExisting) {
+                    filtered.push({
+                      inputValue,
+                      label: `+ Create "${inputValue}"`,
+                      isNew: true,
+                    });
+                  } else if (inputValue === '') {
+                    filtered.push({
+                      inputValue: '',
+                      label: '+ Create Service',
+                      isNew: true,
+                    });
+                  }
+                  return filtered;
+                }}
+                getOptionLabel={(option: any) => {
+                  if (typeof option === 'string') return option;
+                  if (option.inputValue) return option.inputValue;
+                  return option.label || '';
+                }}
+                renderOption={(props, option: any) => {
+                  const { key, ...optionProps } = props as any;
+                  return (
+                    <Box component="li" key={key || (typeof option === 'string' ? option : option.label)} {...optionProps} sx={{
+                      typography: 'body2',
+                      ...(option.isNew && {
+                        color: 'primary.main',
+                        fontWeight: 600,
+                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                        borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                        mt: 0.5,
+                        '&:hover': {
+                          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                        }
+                      })
+                    }}>
+                      {option.isNew ? (
+                        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 0.5 }}>
+                          <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                            {option.inputValue ? `Create "${option.inputValue}"` : 'Create Service'}
+                          </Typography>
+                        </Stack>
+                      ) : (
+                        option.label || option
+                      )}
+                    </Box>
+                  );
+                }}
+                renderInput={(params) => <TextField {...params} label="Service" />}
+              />
+
+              <Autocomplete
                 fullWidth
-                label="Country"
+                disabled={viewOnly}
+                options={countryOptions.filter(o => o !== '')}
                 value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                disabled={viewOnly}
-                SelectProps={{ native: true }}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
-                }}
-              >
-                <option value="" disabled>Select</option>
-                {countryOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </TextField>
+                onChange={(e, newValue) => setCountry(newValue || '')}
+                renderInput={(params) => <TextField {...params} label="Country" />}
+              />
 
-              <TextField
-                select
+              <Autocomplete
                 fullWidth
-                label="State"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
                 disabled={viewOnly || !country}
-                SelectProps={{ native: true }}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
-                }}
-              >
-                <option value="" disabled>{!country ? 'Select Country First' : 'Select'}</option>
-                {stateOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </TextField>
+                options={stateOptions.filter(o => o !== '' && o !== 'Select Country First')}
+                value={state}
+                onChange={(e, newValue) => setState(newValue || '')}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="State"
+                    placeholder={!country ? "Select Country First" : ""}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
+              />
 
-              <TextField
-                select
+              <Autocomplete
                 fullWidth
-                label="City"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
                 disabled={viewOnly || !state}
-                SelectProps={{ native: true }}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
-                }}
-              >
-                <option value="" disabled>{!state ? 'Select State First' : 'Select'}</option>
-                {cityOptions.map((option: string) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </TextField>
+                options={cityOptions.filter(o => o !== '' && o !== 'Select State First')}
+                value={city}
+                onChange={(e, newValue) => setCity(newValue || '')}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="City"
+                    placeholder={!state ? "Select State First" : ""}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
+              />
 
               <TextField
                 fullWidth
@@ -817,13 +971,13 @@ export function LeadView() {
                 <>
                   <TextField
                     fullWidth
-                    label="Converted Account"
+                    label="Converted Company"
                     value={convertedAccount}
                     InputProps={{ readOnly: true }}
                   />
                   <TextField
                     fullWidth
-                    label="Converted Contact"
+                    label="Converted Client"
                     value={convertedContact}
                     InputProps={{ readOnly: true }}
                   />
@@ -897,7 +1051,7 @@ export function LeadView() {
           {currentTab === 'convert' && (
             <Box sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ mb: 3 }}>
-                Convert Lead to Account and Contact
+                Convert Lead to Client and Company
               </Typography>
 
               {/* Check if already converted */}
@@ -910,13 +1064,13 @@ export function LeadView() {
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <TextField
                       fullWidth
-                      label="Converted Account"
+                      label="Converted Company"
                       value={convertedAccount}
                       InputProps={{ readOnly: true }}
                     />
                     <TextField
                       fullWidth
-                      label="Converted Contact"
+                      label="Converted Client"
                       value={convertedContact}
                       InputProps={{ readOnly: true }}
                     />
@@ -939,7 +1093,7 @@ export function LeadView() {
                             display: 'block',
                           }}
                         >
-                          Converted Account
+                          Converted Company
                         </Typography>
                         <Typography
                           variant="subtitle1"
@@ -972,7 +1126,7 @@ export function LeadView() {
                             display: 'block',
                           }}
                         >
-                          Converted Contact
+                          Converted Client
                         </Typography>
                         <Typography
                           variant="subtitle1"
@@ -1013,7 +1167,7 @@ export function LeadView() {
               ) : (
                 <Box>
                   <Alert severity="info" sx={{ mb: 3 }}>
-                    This will create an Account and Contact from this lead&apos;s information.
+                    This will create an Company and Client from this lead&apos;s information.
                   </Alert>
 
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
@@ -1045,7 +1199,7 @@ export function LeadView() {
                     />
                     {!email && !phoneNumber && (
                       <Alert severity="warning">
-                        Email or Phone Number is required to create a Contact
+                        Email or Phone Number is required to create a Client
                       </Alert>
                     )}
                   </Box>
@@ -1064,7 +1218,7 @@ export function LeadView() {
           )}
         </DialogContent>
 
-        <DialogActions>
+        <DialogActions sx={{ m: 1 }}>
           {!viewOnly && currentTab === 'general' && (
             <Button variant="contained" onClick={handleCreate} disabled={creating}>
               {creating ? (currentLeadId ? 'Updating...' : 'Creating...') : (currentLeadId ? 'Update Lead' : 'Create Lead')}
@@ -1074,7 +1228,7 @@ export function LeadView() {
       </Dialog>
 
       {/* MAIN CONTENT */}
-      <DashboardContent maxWidth={false}>
+      <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
         <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
           <Typography variant="h4" sx={{ flexGrow: 1 }}>
             Leads
@@ -1083,10 +1237,10 @@ export function LeadView() {
           {permissions.write && (
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
-                variant="outlined"
-                startIcon={<Iconify icon={"solar:import-bold-duotone" as any} />}
+                variant="contained"
+                startIcon={<IoMdCloudDownload size={20} />}
                 onClick={() => setOpenImport(true)}
-                sx={{ color: '#08a3cd', borderColor: '#08a3cd', '&:hover': { borderColor: '#068fb3', bgcolor: 'rgba(8, 163, 205, 0.04)' } }}
+                sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
               >
                 Import
               </Button>
@@ -1134,63 +1288,71 @@ export function LeadView() {
                   headLabel={[
                     { id: 'lead_name', label: 'Name' },
                     { id: 'company_name', label: 'Company' },
-                    { id: 'country', label: 'Country' },
                     { id: 'phone_number', label: 'Phone' },
                     { id: 'email', label: 'Email' },
+                    { id: 'country', label: 'Country' },
                     { id: 'workflow_state', label: 'Status' },
-                    { id: '' },
+                    { id: 'actions', label: 'Actions', align: 'right' },
                   ]}
                 />
 
                 <TableBody>
-                  {loading && (
-                    <TableEmptyRows height={68} emptyRows={5} />
-                  )}
-
-                  {!loading &&
-                    data.map((row, index) => (
-                      <LeadTableRow
-                        key={row.name}
-                        index={table.page * table.rowsPerPage + index}
-                        hideCheckbox
-                        row={{
-                          id: row.name,
-                          name: getString(row.lead_name) ?? '-',
-                          company: getString(row.company_name) ?? '-',
-                          phone: getString(row.phone_number) ?? '-',
-                          email: getString(row.email) ?? '-',
-                          status: getString(row.status) ?? '-',
-                          workflow_state: getString(row.workflow_state) ?? '-',
-                          avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
-                          isVerified: true,
-                          country: getString(row.country) ?? '-',
-                        }}
-                        selected={table.selected.includes(row.name)}
-                        onSelectRow={() => table.onSelectRow(row.name)}
-                        onEdit={() => handleEditRow({ id: row.name })}
-                        onDelete={() => onDeleteRow(row.name)}
-                        onView={() => handleViewRow({ id: row.name })}
-                        canEdit={permissions.write}
-                        canDelete={permissions.delete}
-                      />
-                    ))}
-
-                  {notFound && <TableNoData searchQuery={filterName} />}
-
-                  {empty && (
+                  {loading ? (
                     <TableRow>
                       <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                        <EmptyContent
-                          title="No leads found"
-                          description="Start capturing leads to boost your sales."
-                          icon="solar:flag-checkered-bold-duotone"
-                        />
+                        <CircularProgress sx={{ color: '#08a3cd' }} />
                       </TableCell>
                     </TableRow>
-                  )}
+                  ) : (
+                    <>
+                      {data.map((row, index) => (
+                        <LeadTableRow
+                          key={row.name}
+                          index={table.page * table.rowsPerPage + index}
+                          hideCheckbox
+                          row={{
+                            id: row.name,
+                            name: getString(row.lead_name) ?? '-',
+                            phone: getString(row.phone_number) ?? '-',
+                            email: getString(row.email) ?? '-',
+                            company: getString(row.company_name) ?? '-',
+                            status: getString(row.status) ?? '-',
+                            workflow_state: getString(row.workflow_state) ?? '-',
+                            avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
+                            isVerified: true,
+                            country: getString(row.country) ?? '-',
+                          }}
+                          selected={table.selected.includes(row.name)}
+                          onSelectRow={() => table.onSelectRow(row.name)}
+                          onEdit={() => handleEditRow({ id: row.name })}
+                          onDelete={() => onDeleteRow(row.name)}
+                          onView={() => handleViewRow({ id: row.name })}
+                          canEdit={permissions.write}
+                          canDelete={permissions.delete}
+                        />
+                      ))}
 
-                  {!empty && !loading && (
-                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                      {notFound && <TableNoData searchQuery={filterName} />}
+
+                      {empty && (
+                        <TableRow>
+                          <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                            <EmptyContent
+                              title="No leads found"
+                              description="Start capturing leads to boost your sales."
+                              icon="solar:user-plus-bold-duotone"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      )}
+
+                      {!empty && !notFound && (
+                        <TableEmptyRows
+                          height={68}
+                          emptyRows={data.length < 5 ? 5 - data.length : 0}
+                        />
+                      )}
+                    </>
                   )}
                 </TableBody>
               </Table>
@@ -1309,7 +1471,7 @@ export function LeadView() {
         open={openConvertConfirm}
         onClose={() => setOpenConvertConfirm(false)}
         title="Convert Lead"
-        content="Are you sure you want to convert this lead? This will create a permanent Account and Contact record."
+        content="Are you sure you want to convert this lead? This will create a permanent Company and Client record."
         action={
           <Button
             variant="contained"
@@ -1392,6 +1554,88 @@ export function LeadView() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      <Dialog
+        open={createLeadFromOpen}
+        onClose={() => !creatingLeadFrom && setCreateLeadFromOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, pb: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>Create Lead From</Typography>
+          <IconButton
+            onClick={() => !creatingLeadFrom && setCreateLeadFromOpen(false)}
+            sx={{ color: 'text.secondary' }}
+          >
+            <Iconify icon="mingcute:close-line" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ px: 3, pb: 2, pt: 1 }}>
+          <TextField
+            fullWidth
+            label="Lead From"
+            value={newLeadFromName}
+            onChange={(e) => setNewLeadFromName(e.target.value)}
+            required
+            autoFocus
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            variant="contained"
+            onClick={handleCreateLeadFromSubmit}
+            disabled={creatingLeadFrom || !newLeadFromName.trim()}
+            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' }, borderRadius: 1 }}
+          >
+            {creatingLeadFrom ? <CircularProgress size={24} color="inherit" /> : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={createServiceOpen}
+        onClose={() => !creatingService && setCreateServiceOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, pb: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>Create Service</Typography>
+          <IconButton
+            onClick={() => !creatingService && setCreateServiceOpen(false)}
+            sx={{ color: 'text.secondary' }}
+          >
+            <Iconify icon="mingcute:close-line" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ px: 3, pb: 2, pt: 1 }}>
+          <TextField
+            fullWidth
+            label="Service Name"
+            value={newServiceName}
+            onChange={(e) => setNewServiceName(e.target.value)}
+            required
+            autoFocus
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            variant="contained"
+            onClick={handleCreateServiceSubmit}
+            disabled={creatingService || !newServiceName.trim()}
+            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' }, borderRadius: 1 }}
+          >
+            {creatingService ? <CircularProgress size={24} color="inherit" /> : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

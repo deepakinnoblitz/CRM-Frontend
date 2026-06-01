@@ -1,12 +1,46 @@
+import { useNavigate } from 'react-router-dom';
+import { BsFillSendPlusFill } from "react-icons/bs";
+import { GrDocumentTime, GrDocumentVerified } from "react-icons/gr";
+
 import Box from '@mui/material/Box';
-import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
+import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import { alpha, styled } from '@mui/material/styles';
+import Tooltip, { tooltipClasses, TooltipProps } from '@mui/material/Tooltip';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+
+// ----------------------------------------------------------------------
+
+const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
+    <Tooltip {...props} classes={{ popper: className }} />
+))(({ theme }) => ({
+    [`& .${tooltipClasses.tooltip}`]: {
+        backgroundColor: theme.palette.common.white,
+        color: theme.palette.text.primary,
+        boxShadow: theme.customShadows.z24,
+        borderRadius: 10,
+        padding: '10px 14px',
+        fontSize: 12,
+        fontWeight: theme.typography.fontWeightBold,
+        fontFamily: theme.typography.fontFamily,
+        backdropFilter: 'blur(10px)',
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.4)}`,
+        borderTop: `3px solid ${theme.palette.primary.main}`,
+        marginTop: '10px !important',
+        textTransform: 'uppercase',
+    },
+    [`& .${tooltipClasses.arrow}`]: {
+        color: theme.palette.common.white,
+        '&:before': {
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.4)}`,
+        }
+    },
+}));
 
 // ----------------------------------------------------------------------
 
@@ -15,6 +49,7 @@ type Props = {
         id: string;
         title: string;
         account: string;
+        accountName?: string;
         contact: string;
         contactName: string;
         value: number;
@@ -45,6 +80,8 @@ export function DealTableRow({
     hideCheckbox = false,
     index,
 }: Props) {
+    const navigate = useNavigate();
+
     const getStageColor = (stage: string) => {
         switch (stage) {
             case 'Closed Won':
@@ -105,22 +142,39 @@ export function DealTableRow({
                 </TableCell>
             )}
 
-            <TableCell component="th" scope="row">
-                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center' }}>
+            <TableCell component="th" scope="row" sx={{ maxWidth: 260 }}>
+                <Typography
+                    variant="subtitle2"
+                    sx={{
+                        fontWeight: 700,
+                        fontSize: '14px',
+                        color: 'text.primary',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: 'block'
+                    }}
+                >
                     {row.title}
-                </Box>
+                </Typography>
             </TableCell>
 
-            <TableCell>{row.account}</TableCell>
-
             <TableCell>
-                {row.contactName ? `${row.contactName} (${row.contact})` : row.contact}
+                <Typography variant="subtitle2" sx={{ fontSize: '14px', maxWidth: 320 }}>
+                    {row.accountName || row.account}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
+                    {row.account}
+                </Typography>
             </TableCell>
 
-            <TableCell>{row.value ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(row.value) : '-'}</TableCell>
-
             <TableCell>
-                <Label color={getStageColor(row.stage)}>{row.stage}</Label>
+                <Typography variant="subtitle2" sx={{ fontSize: '14px', maxWidth: 240 }}>
+                    {row.contactName || row.contact || '-'}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
+                    {row.contact}
+                </Typography>
             </TableCell>
 
             <TableCell>{row.expectedCloseDate || '-'}</TableCell>
@@ -128,32 +182,74 @@ export function DealTableRow({
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
                     <IconButton
-                        onClick={() => window.location.href = `/estimations/new?deal_id=${encodeURIComponent(row.id)}&client_id=${encodeURIComponent(row.contact)}`}
-                        sx={{ color: 'secondary.main' }}
-                        title="Create Estimation"
+                        onClick={onView}
+                        sx={{
+                            color: 'info.main',
+                        }}
                     >
-                        <Iconify icon={"solar:document-add-bold" as any} />
+                        <Iconify icon="solar:eye-bold" />
                     </IconButton>
-                    <IconButton
-                        onClick={() => window.location.href = `/invoices/new?deal_id=${encodeURIComponent(row.id)}`}
-                        sx={{ color: 'success.main' }}
-                        title="Create Invoice"
-                    >
-                        <Iconify icon={"solar:bill-list-bold" as any} />
-                    </IconButton>
+
+                    <StyledTooltip title="Create Proposal" placement="top" arrow>
+                        <IconButton
+                            onClick={() => navigate(`/proposals/new?deal_id=${encodeURIComponent(row.id)}`)}
+                            sx={{
+                                color: '#8B5CF6',
+                                transition: (theme) => theme.transitions.create(['transform'], { duration: theme.transitions.duration.shorter }),
+                                '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#8B5CF6', 0.08) }
+                            }}
+                        >
+                            <BsFillSendPlusFill size={20}/>
+                        </IconButton>
+                    </StyledTooltip>
+
+                    <StyledTooltip title="Create Estimation" placement="top" arrow>
+                        <IconButton
+                            onClick={() => navigate(`/estimations/new?deal_id=${encodeURIComponent(row.id)}`)}
+                            sx={{
+                                color: '#10B981',
+                                transition: (theme) => theme.transitions.create(['transform'], { duration: theme.transitions.duration.shorter }),
+                                '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#10B981', 0.08) }
+                            }}
+                        >
+                            <GrDocumentTime size={20}/>
+                        </IconButton>
+                    </StyledTooltip>
+
+                    <StyledTooltip title="Create Invoice" placement="top" arrow>
+                        <IconButton
+                            onClick={() => navigate(`/invoices/new?deal_id=${encodeURIComponent(row.id)}`)}
+                            sx={{
+                                color: '#D97706',
+                                transition: (theme) => theme.transitions.create(['transform'], { duration: theme.transitions.duration.shorter }),
+                                '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#D97706', 0.08) }
+                            }}
+                        >
+                            <GrDocumentVerified size={20}/>
+                        </IconButton>
+                    </StyledTooltip>
+
                     {canEdit && (
-                        <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
+                        <IconButton
+                            onClick={onEdit}
+                            sx={{
+                                color: 'primary.main',
+                            }}
+                        >
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
+
                     {canDelete && (
-                        <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
+                        <IconButton
+                            onClick={onDelete}
+                            sx={{
+                                color: 'error.main',
+                            }}
+                        >
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>
                     )}
-                    <IconButton onClick={onView} sx={{ color: 'info.main' }}>
-                        <Iconify icon="solar:eye-bold" />
-                    </IconButton>
                 </Box>
             </TableCell>
         </TableRow>

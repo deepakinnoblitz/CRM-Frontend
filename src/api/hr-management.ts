@@ -43,13 +43,17 @@ export async function fetchFrappeList(doctype: string, params: {
         or_filters: params.or_filters ? JSON.stringify(params.or_filters) : "[]",
         limit_start: String((params.page - 1) * params.page_size),
         limit_page_length: String(params.page_size),
-        order_by: orderByParam
+        order_by: orderByParam,
+        _: String(Date.now())
     });
+
+    const fullUrl = `/api/method/frappe.client.get_list?${query.toString()}`;
+    console.log(`[API] Fetching ${doctype}: ${fullUrl}`);
 
     // Fetch data and count in parallel
     const [res, countRes] = await Promise.all([
-        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=${doctype}&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${params.or_filters ? encodeURIComponent(JSON.stringify(params.or_filters)) : "[]"}`)
+        frappeRequest(fullUrl),
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=${doctype}&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${params.or_filters ? encodeURIComponent(JSON.stringify(params.or_filters)) : "[]"}`)
     ]);
 
     if (!res.ok) {
@@ -90,7 +94,7 @@ export async function getDocTypeMetadata(doctype: string) {
 
 // Salary Component API
 export async function fetchSalaryComponents() {
-    const res = await frappeRequest(`/api/method/frappe.client.get_list?doctype=Salary Structure Component&fields=${JSON.stringify(["component_name", "field_name", "type", "percentage", "static_amount"])}&limit_page_length=100`);
+    const res = await frappeRequest(`/api/method/frappe.client.get_list?doctype=Salary Structure Component&fields=${JSON.stringify(["component_name", "type", "percentage", "static_amount", "is_default"])}&limit_page_length=100`);
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to fetch salary components"));
     return json.message || [];
@@ -146,4 +150,22 @@ export async function createDesignation(data: { designation_name: string; depart
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create designation"));
     return json.message;
+}
+
+// Fetch HR Settings
+export async function getHRSettings() {
+    const res = await frappeRequest("/api/method/company.company.api.get_hrms_settings");
+    if (!res.ok) {
+        return {
+            default_currency: "INR",
+            currency_symbol: "₹",
+            default_locale: "en-IN"
+        };
+    }
+    const json = await res.json();
+    return json.message || {
+        default_currency: "INR",
+        currency_symbol: "₹",
+        default_locale: "en-IN"
+    };
 }

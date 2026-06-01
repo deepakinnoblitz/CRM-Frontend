@@ -176,13 +176,13 @@ export default function ExpenseTrackerView() {
         });
     };
 
-    const canReset = filters.type !== 'all' || !!filters.startDate || !!filters.endDate;
+    const canReset = filters.type !== 'all' || !!filters.startDate || !!filters.endDate || !!filterName;
 
     const notFound = !loading && !data.length && (!!filterName || canReset);
     const empty = !loading && !data.length && !filterName && !canReset;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Company Expenses
@@ -228,7 +228,7 @@ export default function ExpenseTrackerView() {
                                     { id: 'date_time', label: 'Date & Time' },
                                     { id: 'type', label: 'Type' },
                                     { id: 'amount', label: 'Amount' },
-                                    { id: '' },
+                                    { id: 'actions', label: 'Actions', align: 'right' },
                                 ]}
                             />
                             <TableBody>
@@ -267,11 +267,8 @@ export default function ExpenseTrackerView() {
                                     </TableRow>
                                 )}
 
-                                {!loading && data.length < rowsPerPage && !empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                 {!empty && !notFound && (
+                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
                                 )}
                             </TableBody>
                         </Table>

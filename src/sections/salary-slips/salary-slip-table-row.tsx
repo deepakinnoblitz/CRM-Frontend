@@ -7,6 +7,8 @@ import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
+import { fNumber } from 'src/utils/format-number';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
@@ -28,6 +30,7 @@ type Props = {
     onSelectRow: () => void;
     onView: () => void;
     onEdit: () => void;
+    onSubmit: () => void;
     onDelete: () => void;
 
     hideCheckbox?: boolean;
@@ -41,6 +44,7 @@ export function SalarySlipTableRow({
     onSelectRow,
     onView,
     onEdit,
+    onSubmit,
     onDelete,
     hideCheckbox = false,
     index,
@@ -115,11 +119,12 @@ export function SalarySlipTableRow({
 
             <TableCell>{periodLabel}</TableCell>
 
-            <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>₹{row.gross_pay?.toLocaleString() || 0}</TableCell>
-
+            <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                ₹{fNumber(row.gross_pay)}
+            </TableCell>
             <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                 <Typography variant="subtitle2" sx={{ color: 'success.main', fontWeight: 700 }}>
-                    ₹{row.net_pay?.toLocaleString() || 0}
+                    ₹{fNumber(row.net_pay)}
                 </Typography>
             </TableCell>
 
@@ -147,12 +152,18 @@ export function SalarySlipTableRow({
                     </IconButton>
                     {isHR && (
                         <>
-                            {/* {row.docstatus === 0 && (
+                            {row.docstatus === 0 && (
+                                <IconButton onClick={onSubmit} sx={{ color: 'success.main' }} title="Submit Slip">
+                                    <Iconify icon={"solar:check-circle-bold" as any} />
+                                </IconButton>
+                            )}
+                            {row.docstatus === 0 && (
                                 <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
                                     <Iconify icon={"solar:pen-bold" as any} />
                                 </IconButton>
-                            )} */}
+                            )}
                             {row.docstatus === 0 && (
+
                                 <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
                                     <Iconify icon={"solar:trash-bin-trash-bold" as any} />
                                 </IconButton>

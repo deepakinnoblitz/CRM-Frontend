@@ -31,6 +31,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -397,13 +398,13 @@ export function InterviewsView() {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const canReset = filters.status !== 'all' || filters.job_applied !== 'all' || !!filters.startDate || !!filters.endDate;
+    const canReset = filters.status !== 'all' || filters.job_applied !== 'all' || !!filters.startDate || !!filters.endDate || !!filterName;
 
-    const notFound = !data.length && !!filterName;
-    const empty = !data.length && !filterName && !canReset;
+    const notFound = !loading && !data.length && !!filterName;
+    const empty = !loading && !data.length && !filterName && !canReset;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5 }}>
                 <Typography variant="h4">Interviews</Typography>
                 {permissions.write && (
@@ -457,60 +458,67 @@ export function InterviewsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <InterviewTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            job_applicant: row.job_applicant,
-                                            job_applied: row.job_applied,
-                                            designation: row.designation,
-                                            scheduled_on: row.scheduled_on,
-                                            from_time: row.from_time,
-                                            overall_status: row.overall_status,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {!data.length && !loading && !notFound && canReset && (
+                                {loading ? (
                                     <TableRow>
                                         <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
-                                            <Stack spacing={1} alignItems="center">
-                                                <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                <Typography variant="body2" sx={{ color: 'text.disabled' }}>No interviews found matching your filters</Typography>
-                                            </Stack>
+                                            <CircularProgress />
                                         </TableCell>
                                     </TableRow>
-                                )}
-
-                                {empty && (
-                                    <TableRow>
-                                        <TableCell colSpan={6}>
-                                            <EmptyContent
-                                                title="No interviews scheduled"
-                                                description="Start scheduling interviews for your shortlisted candidates."
-                                                icon="solar:video-library-bold-duotone"
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <InterviewTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    job_applicant: row.job_applicant,
+                                                    job_applied: row.job_applied,
+                                                    designation: row.designation,
+                                                    scheduled_on: row.scheduled_on,
+                                                    from_time: row.from_time,
+                                                    overall_status: row.overall_status,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row)}
+                                                onEdit={() => handleEditRow(row)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
                                             />
-                                        </TableCell>
-                                    </TableRow>
-                                )}
+                                        ))}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {!data.length && !loading && !notFound && canReset && (
+                                            <TableRow>
+                                                <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                                                    <Stack spacing={1} alignItems="center">
+                                                        <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                        <Typography variant="body2" sx={{ color: 'text.disabled' }}>No interviews found matching your filters</Typography>
+                                                    </Stack>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={6}>
+                                                    <EmptyContent
+                                                        title="No interviews scheduled"
+                                                        description="Start scheduling interviews for your shortlisted candidates."
+                                                        icon="solar:video-library-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -529,14 +537,29 @@ export function InterviewsView() {
             </Card>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md">
+            <Dialog
+                open={openCreate}
+                onClose={handleCloseCreate}
+                fullWidth
+                maxWidth="md"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z24,
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }
+                }}
+            >
                 <DialogTitle
                     sx={{
                         m: 0,
-                        p: 2.5,
+                        p: 2,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
+                        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
                     }}
                 >
                     <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -545,15 +568,7 @@ export function InterviewsView() {
 
                     <IconButton
                         onClick={handleCloseCreate}
-                        sx={{
-                            p: 0.75,
-                            bgcolor: 'background.paper',
-                            boxShadow: (theme) => theme.customShadows.z8,
-                            '&:hover': {
-                                bgcolor: 'background.paper',
-                                color: 'error.main',
-                            },
-                        }}
+                        sx={{ color: (theme) => theme.palette.grey[500] }}
                     >
                         <Iconify icon="mingcute:close-line" width={20} />
                     </IconButton>
@@ -571,7 +586,7 @@ export function InterviewsView() {
                     <Tab label="Interview Details" />
                     <Tab label="Performance" />
                 </Tabs>
-                <DialogContent sx={{ mt: 0, pt: 3 }}>
+                <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
 
                     {/* ── Tab 0: Applicant Details ── */}
                     {dialogTab === 0 && (
@@ -1084,7 +1099,7 @@ export function InterviewsView() {
                     )}
 
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ p: 1.5 }}>
                     <Button variant="contained" onClick={handleSubmit}>
                         {editInterview ? 'Update' : 'Schedule'}
                     </Button>

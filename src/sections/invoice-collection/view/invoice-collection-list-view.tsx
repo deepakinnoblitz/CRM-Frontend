@@ -38,12 +38,12 @@ import { InvoiceCollectionTableFiltersDrawer } from '../invoice-collection-table
 const TABLE_HEAD = [
     { id: 'name', label: 'ID' },
     { id: 'invoice', label: 'Invoice No' },
-    { id: 'customer', label: 'Customer' },
     { id: 'collection_date', label: 'Date' },
     { id: 'mode_of_payment', label: 'Mode' },
+    { id: 'amount_to_pay', label: 'Amount to Pay', align: 'right' },
     { id: 'amount_collected', label: 'Amount', align: 'right' },
     { id: 'amount_pending', label: 'Pending', align: 'right' },
-    { id: '' },
+    { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
 
@@ -84,7 +84,7 @@ export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?:
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name']).then((res) => {
             const options = res.map((c: any) => ({
                 name: c.name,
-                customer_name: c.first_name + (c.company_name ? ` - ${c.company_name}` : '')
+                customer_name: c.first_name || c.name
             }));
             setCustomerOptions(options);
         });
@@ -161,7 +161,7 @@ export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?:
         setPage(0);
     };
 
-    const canReset = filters.customer !== 'all' || !!filters.invoice || !!filters.collection_date || filters.mode_of_payment !== 'all';
+    const canReset = filters.customer !== 'all' || !!filters.invoice || !!filters.collection_date || filters.mode_of_payment !== 'all' || !!search;
 
     const handleSort = (id: string) => {
         const isAsc = orderBy === id && order === 'asc';
@@ -321,18 +321,13 @@ export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?:
                                     />
                                 ))}
 
-                                    <TableEmptyRows
-                                        height={77}
-                                        emptyRows={tableData.length < 5 ? 5 - tableData.length : 0}
-                                    />
-
                                 {notFound && (
-                                    <TableNoData searchQuery={search} />
+                                    <TableNoData colSpan={10} searchQuery={search} />
                                 )}
 
                                 {empty && (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
+                                        <TableCell colSpan={10}>
                                             <EmptyContent
                                                 title="No invoice collections found"
                                                 description="Track your invoice payments and collections here."
@@ -340,6 +335,13 @@ export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?:
                                             />
                                         </TableCell>
                                     </TableRow>
+                                )}
+
+                                {!empty && !notFound && (
+                                    <TableEmptyRows
+                                        height={68}
+                                        emptyRows={tableData.length < 5 ? 5 - tableData.length : 0}
+                                    />
                                 )}
                             </TableBody>
                         </Table>
@@ -406,5 +408,5 @@ export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?:
         return content;
     }
 
-    return <DashboardContent maxWidth={false}>{content}</DashboardContent>;
+    return <DashboardContent maxWidth={false} sx={{mt: 2}}>{content}</DashboardContent>;
 }

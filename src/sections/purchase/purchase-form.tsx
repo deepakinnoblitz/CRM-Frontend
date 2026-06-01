@@ -35,6 +35,7 @@ export function PurchaseForm({ id }: Props) {
 
     const [vendorOptions, setVendorOptions] = useState<{ name: string; first_name: string; company_name: string }[]>([]);
     const [itemOptions, setItemOptions] = useState<any[]>([]);
+    const [paymentTermsOptions, setPaymentTermsOptions] = useState<any[]>([]);
 
     const paymentTypeOptions = ['Bank Transfer', 'Cash', 'Credit Card', 'Debit Card', 'E-coins'];
 
@@ -74,12 +75,14 @@ export function PurchaseForm({ id }: Props) {
 
     const fetchData = useCallback(async () => {
         try {
-            const [vendors, items, services] = await Promise.all([
+            const [vendors, items, services, paymentTerms] = await Promise.all([
                 getDoctypeList('Contacts', ['name', 'first_name', 'company_name'], { customer_type: 'Purchase' }),
                 getDoctypeList('Item', ['item_code', 'item_name', 'rate']),
-                getDoctypeList('Service', ['service_id', 'service_name'])
+                getDoctypeList('Service', ['service_id', 'service_name']),
+                getDoctypeList('Payment Terms', ['name', 'payment_terms'])
             ]);
             setVendorOptions(vendors);
+            setPaymentTermsOptions(paymentTerms);
 
             // Merge Item and Service lists for the items table
             const combinedItems = [
@@ -225,7 +228,7 @@ export function PurchaseForm({ id }: Props) {
                         options={vendorOptions}
                         getOptionLabel={(option) => {
                             if (typeof option === 'string') return option;
-                            return option ? `${option.name} - ${option.first_name}` : '';
+                            return option?.first_name || option?.name || '';
                         }}
                         value={
                             vendorOptions.find((opt) => opt.name === formData.vendor_name) ||
@@ -265,33 +268,72 @@ export function PurchaseForm({ id }: Props) {
                         onChange={(e) => setFormData({ ...formData, bill_date: e.target.value })}
                     />
 
-                    <TextField
+                    <Autocomplete
                         fullWidth
-                        label="Payment Terms"
-                        select
-                        value={formData.payment_terms}
-                        onChange={(e) => setFormData({ ...formData, payment_terms: e.target.value })}
-                    >
-                        {['Next day Payment', 'Due On Receipt', '15 days', '30 days', '60 days', '1 Year'].map((opt) => (
-                            <MenuItem key={opt} value={opt}>
-                                {opt}
-                            </MenuItem>
-                        ))}
-                    </TextField>
+                        options={paymentTermsOptions.filter((opt) => opt.name !== formData.payment_terms)}
+                        getOptionLabel={(option) => {
+                            if (typeof option === 'string') return option;
+                            return option.payment_terms || option.name || '';
+                        }}
+                        value={paymentTermsOptions.find((opt) => opt.name === formData.payment_terms) || (formData.payment_terms ? { name: formData.payment_terms, payment_terms: formData.payment_terms } : null)}
+                        onChange={(event, newValue) => {
+                            setFormData({
+                                ...formData,
+                                payment_terms: newValue?.name || ''
+                            });
+                        }}
+                        ListboxProps={{
+                            sx: {
+                                maxHeight: '300px',
+                                '& .MuiAutocomplete-option': {
+                                    fontSize: '14px !important',
+                                }
+                            }
+                        }}
+                        sx={{
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px !important',
+                            }
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Payment Terms"
+                            />
+                        )}
+                    />
 
-                    <TextField
+                    <Autocomplete
                         fullWidth
-                        label="Payment Type"
-                        select
-                        value={formData.payment_type}
-                        onChange={(e) => setFormData({ ...formData, payment_type: e.target.value })}
-                    >
-                        {paymentTypeOptions.map((opt) => (
-                            <MenuItem key={opt} value={opt}>
-                                {opt}
-                            </MenuItem>
-                        ))}
-                    </TextField>
+                        options={paymentTypeOptions}
+                        getOptionLabel={(option) => option}
+                        value={formData.payment_type || null}
+                        onChange={(_e, newValue) => {
+                            setFormData({
+                                ...formData,
+                                payment_type: newValue || ''
+                            });
+                        }}
+                        ListboxProps={{
+                            sx: {
+                                maxHeight: '300px',
+                                '& .MuiAutocomplete-option': {
+                                    fontSize: '14px !important',
+                                }
+                            }
+                        }}
+                        sx={{
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px !important',
+                            }
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Payment Type"
+                            />
+                        )}
+                    />
 
                     <TextField
                         fullWidth

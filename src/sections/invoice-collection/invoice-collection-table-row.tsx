@@ -38,7 +38,16 @@ export function InvoiceCollectionTableRow({
     index,
 }: Props) {
     return (
-        <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
+        <TableRow
+            hover
+            tabIndex={-1}
+            role="checkbox"
+            selected={selected}
+            sx={{
+                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                '&:last-child td, &:last-child th': { borderBottom: 0 },
+            }}
+        >
             {!hideCheckbox && (
                 <TableCell padding="checkbox">
                     <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
@@ -75,18 +84,18 @@ export function InvoiceCollectionTableRow({
             )}
 
             <TableCell component="th" scope="row">
-                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center',fontWeight: 700 }}>
+                <Box sx={{ gap: 2, display: 'flex', alignItems: 'center', fontWeight: 700 }}>
                     {row.name}
                 </Box>
             </TableCell>
 
             <TableCell align="left" sx={{ fontWeight: 500 }}>{row.invoice}</TableCell>
 
-            <TableCell align="left" sx={{ fontWeight: 500 }}>{row.customer_name || row.customer}</TableCell>
-
             <TableCell align="left" sx={{ fontWeight: 500 }}>{fDate(row.collection_date)}</TableCell>
 
             <TableCell align="left" sx={{ fontWeight: 500 }}>{row.mode_of_payment}</TableCell>
+
+            <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.amount_to_pay)}</TableCell>
 
             <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{fCurrency(row.amount_collected)}</TableCell>
 

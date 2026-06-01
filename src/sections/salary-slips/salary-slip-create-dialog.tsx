@@ -129,7 +129,15 @@ export default function SalarySlipCreateDialog({ open, onClose, onSuccess, onErr
             const year = formData.pay_period_start.year();
             const month = formData.pay_period_start.month() + 1; // dayjs months are 0-indexed
 
-            const result = await generateSalarySlipFromEmployee(formData.employee, year, month);
+            const result = await generateSalarySlipFromEmployee(
+                formData.employee,
+                year,
+                month,
+                formData.pay_period_start.format('YYYY-MM-DD'),
+                formData.pay_period_end.format('YYYY-MM-DD')
+            );
+
+
             onSuccess(result || 'Salary slip generated successfully');
             handleClose();
         } catch (error: any) {
@@ -160,7 +168,16 @@ export default function SalarySlipCreateDialog({ open, onClose, onSuccess, onErr
                 // For new slips, use the generation API to calculate salary
                 const year = formData.pay_period_start.year();
                 const month = formData.pay_period_start.month() + 1;
-                const result = await generateSalarySlipFromEmployee(formData.employee, year, month);
+
+                const result = await generateSalarySlipFromEmployee(
+                    formData.employee,
+                    year,
+                    month,
+                    formData.pay_period_start.format('YYYY-MM-DD'),
+                    formData.pay_period_end.format('YYYY-MM-DD')
+                );
+
+
                 onSuccess(result || 'Salary slip generated successfully');
             }
 
@@ -187,11 +204,9 @@ export default function SalarySlipCreateDialog({ open, onClose, onSuccess, onErr
             onClose={handleClose}
             fullWidth
             maxWidth="sm"
-            PaperProps={{
-                sx: { borderRadius: 2.5 },
-            }}
+            PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24 } }}
         >
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (theme) => `1px solid ${theme.palette.divider}`, }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>{slip ? 'Edit Salary Slip' : 'Create New Salary Slip'}</Typography>
                 <IconButton onClick={handleClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
                     <Iconify icon="mingcute:close-line" />
@@ -200,7 +215,7 @@ export default function SalarySlipCreateDialog({ open, onClose, onSuccess, onErr
 
 
             <DialogContent sx={{ p: 3 }}>
-                <Stack spacing={3} sx={{ mt: 2 }}>
+                <Stack spacing={3} sx={{ mt: 3 }}>
                     <Autocomplete
                         fullWidth
                         options={employees}
@@ -291,7 +306,7 @@ export default function SalarySlipCreateDialog({ open, onClose, onSuccess, onErr
                     onClick={handleSubmit}
                     disabled={!formData.employee}
                 >
-                    {slip ? 'Update' : 'Create'}
+                    {slip ? 'Update' : 'Generate'}
                 </LoadingButton>
             </DialogActions>
 

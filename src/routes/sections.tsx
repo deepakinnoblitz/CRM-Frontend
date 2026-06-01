@@ -42,6 +42,7 @@ export const UsersPage = lazy(() => import('src/pages/users'));
 export const ContactPage = lazy(() => import('src/pages/contact'));
 export const AccountsPage = lazy(() => import('src/pages/accounts'));
 export const DealsPage = lazy(() => import('src/pages/deals'));
+export const DealDetailsPage = lazy(() => import('src/pages/deals/details'));
 export const EventsPage = lazy(() => import('src/pages/events'));
 export const CallsPage = lazy(() => import('src/pages/calls'));
 export const MeetingsPage = lazy(() => import('src/pages/meetings'));
@@ -56,6 +57,10 @@ export const EstimationListPage = lazy(() => import('src/pages/estimation/list')
 export const EstimationCreatePage = lazy(() => import('src/pages/estimation/new'));
 export const EstimationEditPage = lazy(() => import('src/pages/estimation/edit'));
 export const EstimationDetailsPage = lazy(() => import('src/pages/estimation/details'));
+export const ProposalListPage = lazy(() => import('src/pages/proposals/list'));
+export const ProposalCreatePage = lazy(() => import('src/pages/proposals/new'));
+export const ProposalEditPage = lazy(() => import('src/pages/proposals/edit'));
+export const ProposalDetailsPage = lazy(() => import('src/pages/proposals/details'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 
 export const LeadReportPage = lazy(() => import('src/pages/reports/lead'));
@@ -71,7 +76,11 @@ export const InvoiceCollectionReportPage = lazy(() => import('src/pages/reports/
 export const PurchaseCollectionReportPage = lazy(() => import('src/pages/reports/purchase-settlement-report'));
 export const TimesheetReportPage = lazy(() => import('src/pages/reports/timesheet'));
 export const AttendanceReportPage = lazy(() => import('src/pages/reports/attendance'));
+export const DailyLogReportPage = lazy(() => import('src/pages/reports/daily-log'));
+export const TaskReportPage = lazy(() => import('src/pages/reports/task-manager'));
+export const SalarySlipReportPage = lazy(() => import('src/pages/reports/salary-slip'));
 export const EmployeePage = lazy(() => import('src/pages/employee'));
+export const EmployeeDetailsPage = lazy(() => import('src/pages/employee/details'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
 export const LeavesPage = lazy(() => import('src/pages/leaves'));
 export const LeaveAllocationsPage = lazy(() => import('src/pages/leave-allocations'));
@@ -80,6 +89,7 @@ export const RequestsPage = lazy(() => import('src/pages/requests'));
 export const AnnouncementsPage = lazy(() => import('src/pages/announcements'));
 export const AssetsPage = lazy(() => import('src/pages/assets'));
 export const AssetAssignmentsPage = lazy(() => import('src/pages/asset-assignments'));
+export const AssetRequestsPage = lazy(() => import('src/pages/asset-requests'));
 export const TimesheetsPage = lazy(() => import('src/pages/timesheets'));
 export const ExpensesListPage = lazy(() => import('src/pages/expenses/list'));
 export const ExpensesNewPage = lazy(() => import('src/pages/expenses/new'));
@@ -103,6 +113,8 @@ export const AccessDeniedPage = lazy(() => import('src/pages/access-denied'));
 export const EmployeeEvaluationPage = lazy(() => import('src/pages/employee-evaluation'));
 export const BadgesPage = lazy(() => import('src/pages/badges'));
 export const EmployeeMonthlyAwardPage = lazy(() => import('src/pages/employee-monthly-award'));
+export const EmployeeReferralsPage = lazy(() => import('src/pages/employee-referrals'));
+export const RemindersPage = lazy(() => import('src/pages/reminders'));
 
 export const PurchaseListPage = lazy(() => import('src/pages/purchase/list'));
 export const PurchaseNewPage = lazy(() => import('src/pages/purchase/new'));
@@ -119,6 +131,23 @@ export const PurchaseCollectionDetailsPage = lazy(() => import('src/pages/purcha
 export const UserPermissionsPage = lazy(() => import('src/pages/user-permissions'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 export const DailyLogPage = lazy(() => import('src/pages/daily-log'));
+export const SettingsPage = lazy(() => import('src/pages/settings'));
+export const DepartmentPage = lazy(() => import('src/pages/department'));
+export const ProjectPage = lazy(() => import('src/pages/project'));
+export const ActivityTypePage = lazy(() => import('src/pages/activity-type'));
+export const ClaimTypePage = lazy(() => import('src/pages/claim-type'));
+export const BankAccountPage = lazy(() => import('src/pages/bank-account'));
+export const AssetCategoryPage = lazy(() => import('src/pages/asset-category'));
+export const PerformanceCriteriaCategoryPage = lazy(() => import('src/pages/performance-criteria-category'));
+export const DesignationPage = lazy(() => import('src/pages/designation'));
+export const SalaryStructureComponentPage = lazy(() => import('src/pages/salary-structure-component'));
+export const LeaveTypePage = lazy(() => import('src/pages/leave-type'));
+export const LeadFromPage = lazy(() => import('src/pages/lead-from'));
+export const ServicePage = lazy(() => import('src/pages/service'));
+export const ItemPage = lazy(() => import('src/pages/item'));
+export const PaymentTermsPage = lazy(() => import('../pages/payment-terms'));
+export const PaymentTypePage = lazy(() => import('../pages/payment-type'));
+export const EmployeeOverallReportPage = lazy(() => import('src/pages/employee-overall-report'));
 
 
 const renderFallback = () => (
@@ -129,16 +158,7 @@ const renderFallback = () => (
       alignItems: 'center',
       justifyContent: 'center',
     }}
-  >
-    <LinearProgress
-      sx={{
-        width: 1,
-        maxWidth: 320,
-        bgcolor: (theme) => varAlpha(theme.vars.palette.text.primaryChannel, 0.16),
-        [`& .${linearProgressClasses.bar}`]: { bgcolor: 'text.primary' },
-      }}
-    />
-  </Box>
+  />
 );
 
 export const routesSection: RouteObject[] = [
@@ -157,13 +177,19 @@ export const routesSection: RouteObject[] = [
       { path: 'leads', element: <LeadsPage /> },
       { path: 'users', element: <UsersPage /> },
       { path: 'user-permissions', element: <UserPermissionsPage /> },
-      { path: 'profile', element: <ProfilePage /> },
+      { path: 'user-profile', element: <ProfilePage /> },
       { path: 'my-profile', element: <MyProfilePage /> },
       { path: 'chat', element: <ChatPage /> },
 
       { path: 'contacts', element: <ContactPage /> },
       { path: 'accounts', element: <AccountsPage /> },
-      { path: 'deals', element: <DealsPage /> },
+      {
+        path: 'deals',
+        children: [
+          { index: true, element: <DealsPage /> },
+          { path: ':id/view', element: <DealDetailsPage /> },
+        ],
+      },
       { path: 'events', element: <EventsPage /> },
       { path: 'calls', element: <CallsPage /> },
       { path: 'meetings', element: <MeetingsPage /> },
@@ -188,21 +214,59 @@ export const routesSection: RouteObject[] = [
           { path: ':id/view', element: <EstimationDetailsPage /> },
         ],
       },
+      {
+        path: 'proposals',
+        children: [
+          { index: true, element: <ProposalListPage /> },
+          { path: 'new', element: <ProposalCreatePage /> },
+          { path: ':id/edit', element: <ProposalEditPage /> },
+          { path: ':id/view', element: <ProposalDetailsPage /> },
+        ],
+      },
       { path: 'blog', element: <BlogPage /> },
 
-      { path: 'employee', element: <EmployeePage /> },
+      {
+        path: 'employee',
+        children: [
+          { index: true, element: <EmployeePage /> },
+          { path: ':id/view', element: <EmployeeDetailsPage /> },
+        ]
+      },
       { path: 'attendance', element: <AttendancePage /> },
       { path: 'leaves', element: <LeavesPage /> },
       { path: 'leave-allocations', element: <LeaveAllocationsPage /> },
       { path: 'payroll', element: <PayrollPage /> },
       { path: 'requests', element: <RequestsPage /> },
       { path: 'announcements', element: <AnnouncementsPage /> },
-      { path: 'assets', element: <AssetsPage /> },
-      { path: 'asset-assignments', element: <AssetAssignmentsPage /> },
+      {
+        path: 'assets',
+        children: [
+          { index: true, element: <AssetsPage /> },
+          { path: 'list', element: <AssetsPage /> },
+          { path: 'assignments', element: <AssetAssignmentsPage /> },
+          { path: 'requests', element: <AssetRequestsPage /> },
+        ],
+      },
       { path: 'timesheets', element: <TimesheetsPage /> },
       { path: 'wfh-attendance', element: <WFHAttendancePage /> },
       { path: 'daily-log', element: <DailyLogPage /> },
       { path: 'import-attendance', element: <ImportAttendancePage /> },
+      { path: 'department', element: <DepartmentPage /> },
+      { path: 'project', element: <ProjectPage /> },
+      { path: 'activity-type', element: <ActivityTypePage /> },
+      { path: 'claim-type', element: <ClaimTypePage /> },
+      { path: 'bank-account', element: <BankAccountPage /> },
+      { path: 'asset-category', element: <AssetCategoryPage /> },
+      { path: 'performance-criteria-category', element: <PerformanceCriteriaCategoryPage /> },
+      { path: 'designation', element: <DesignationPage /> },
+      { path: 'salary-structure-component', element: <SalaryStructureComponentPage /> },
+      { path: 'leave-type', element: <LeaveTypePage /> },
+      { path: 'master/lead-from', element: <LeadFromPage /> },
+      { path: 'master/service', element: <ServicePage /> },
+      { path: 'master/item', element: <ItemPage /> },
+      { path: 'master/payment-terms', element: <PaymentTermsPage /> },
+      { path: 'master/payment-type', element: <PaymentTypePage /> },
+      { path: 'employee-overall-report', element: <EmployeeOverallReportPage /> },
       { path: 'timesheet-reports', element: <TimesheetReportPage /> },
       {
         path: 'expenses',
@@ -222,6 +286,7 @@ export const routesSection: RouteObject[] = [
       { path: 'job-openings', element: <JobOpeningsPage /> },
       { path: 'job-applicants', element: <JobApplicantsPage /> },
       { path: 'interviews', element: <InterviewPage /> },
+      { path: 'employee-referrals', element: <EmployeeReferralsPage /> },
       {
         path: 'purchase',
         children: [
@@ -268,11 +333,16 @@ export const routesSection: RouteObject[] = [
           { path: 'purchase-settlement', element: <PurchaseCollectionReportPage /> },
           { path: 'timesheet', element: <TimesheetReportPage /> },
           { path: 'attendance', element: <AttendanceReportPage /> },
+          { path: 'daily-log', element: <DailyLogReportPage /> },
+          { path: 'task-manager', element: <TaskReportPage /> },
+          { path: 'salary-slip', element: <SalarySlipReportPage /> },
         ],
       },
       { path: 'employee-evaluation', element: <EmployeeEvaluationPage /> },
       { path: 'badges', element: <BadgesPage /> },
       { path: 'employee-monthly-award', element: <EmployeeMonthlyAwardPage /> },
+      { path: 'reminders', element: <RemindersPage /> },
+      { path: 'settings', element: <SettingsPage /> },
     ],
   },
   {

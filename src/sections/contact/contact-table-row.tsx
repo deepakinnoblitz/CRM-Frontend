@@ -1,8 +1,10 @@
 import Box from '@mui/material/Box';
+import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
+import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
 import { Iconify } from 'src/components/iconify';
@@ -13,6 +15,7 @@ export type ContactProps = {
     id: string;
     firstName: string;
     companyName: string;
+    companyNames?: string[];
     email: string;
     phone: string;
     designation?: string;
@@ -21,6 +24,8 @@ export type ContactProps = {
     state?: string;
     city?: string;
     sourceLead?: string;
+    sourceLeadId?: string;
+    sourceLeadName?: string;
 };
 
 type ContactTableRowProps = {
@@ -102,14 +107,71 @@ export function ContactTableRow({
                         alignItems: 'center',
                     }}
                 >
-                    {row.firstName}
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, maxWidth: 260 }}>
+                        {row.firstName}
+                    </Typography>
                 </Box>
             </TableCell>
 
-            <TableCell>{row.companyName}</TableCell>
+            <TableCell>
+                <Box sx={{ maxWidth: 260 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500, display: 'inline' }}>
+                        {(() => {
+                            const names = row.companyNames && row.companyNames.length > 0
+                                ? row.companyNames
+                                : (row.companyName ? row.companyName.split(',').map(s => s.trim()) : []);
+                            return names[0] || '-';
+                        })()}
+                    </Typography>
+                    {(() => {
+                        const names = row.companyNames && row.companyNames.length > 0
+                            ? row.companyNames
+                            : (row.companyName ? row.companyName.split(',').map(s => s.trim()) : []);
+                        if (names.length <= 1) return null;
+                        const remaining = names.slice(1);
+                        return (
+                            <Tooltip title={remaining.join(', ')} arrow placement="top">
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        cursor: 'pointer',
+                                        px: 0.8,
+                                        py: 0.2,
+                                        ml: 0.75,
+                                        fontSize: '10px',
+                                        fontWeight: 800,
+                                        borderRadius: '6px',
+                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                        color: 'primary.main',
+                                        border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.25)}`,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        verticalAlign: 'middle',
+                                        transition: (theme) => theme.transitions.create(['background-color', 'transform', 'box-shadow']),
+                                        '&:hover': {
+                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                            transform: 'scale(1.08)',
+                                            boxShadow: (theme) => `0 2px 4px ${alpha(theme.palette.primary.main, 0.2)}`,
+                                        },
+                                    }}
+                                >
+                                    +{names.length - 1}
+                                </Box>
+                            </Tooltip>
+                        );
+                    })()}
+                </Box>
+            </TableCell>
 
+            <TableCell>
+                <Typography variant="subtitle2" sx={{ fontSize: '14px', maxWidth: 320 }}>
+                    {row.sourceLeadName || '-'}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
+                    {row.sourceLeadId}
+                </Typography>
+            </TableCell>
 
-            <TableCell>{row.sourceLead || '-'}</TableCell>
 
             <TableCell>{row.phone}</TableCell>
 
@@ -117,6 +179,9 @@ export function ContactTableRow({
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <IconButton onClick={onView} sx={{ color: 'info.main' }}>
+                        <Iconify icon="solar:eye-bold" />
+                    </IconButton>
                     {canEdit && (
                         <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
                             <Iconify icon="solar:pen-bold" />
@@ -127,9 +192,6 @@ export function ContactTableRow({
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>
                     )}
-                    <IconButton onClick={onView} sx={{ color: 'info.main' }}>
-                        <Iconify icon="solar:eye-bold" />
-                    </IconButton>
                 </Box>
             </TableCell>
         </TableRow>

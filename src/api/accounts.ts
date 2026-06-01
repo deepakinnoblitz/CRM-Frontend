@@ -32,6 +32,7 @@ export async function fetchAccounts(params: {
     }
 
     const or_filters: any[] = params.search ? [
+        ["Accounts", "name", "like", `%${params.search}%`],
         ["Accounts", "account_name", "like", `%${params.search}%`],
         ["Accounts", "account_owner", "like", `%${params.search}%`],
         ["Accounts", "phone_number", "like", `%${params.search}%`],
@@ -76,7 +77,7 @@ export async function fetchAccounts(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Accounts&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Accounts&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch accounts");
@@ -156,7 +157,7 @@ export async function getAccountPermissions() {
 
 
 export async function getAccount(name: string) {
-    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Accounts&name=${name}`);
+    const res = await frappeRequest(`/api/method/company.company.frontend_api.get_account_details?name=${name}`);
 
     if (!res.ok) {
         throw new Error("Failed to fetch account details");

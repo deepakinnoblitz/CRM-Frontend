@@ -144,7 +144,6 @@ export function ContactRelatedList({ contactId, type }: Props) {
             return [
                 { id: 'deal_title', label: 'Title' },
                 { id: 'stage', label: 'Stage', align: 'center' },
-                { id: 'value', label: 'Value', align: 'right' },
                 { id: 'expected_close_date', label: 'Expected Close' },
                 { id: 'action', label: '' },
             ];
@@ -177,13 +176,42 @@ export function ContactRelatedList({ contactId, type }: Props) {
     const renderRow = (row: any, index: number) => {
         const serialNumber = index + 1 + page * rowsPerPage;
 
+        const renderSNoCell = () => (
+            <TableCell align="center">
+                <Box
+                    sx={{
+                        width: 28,
+                        height: 28,
+                        display: 'flex',
+                        borderRadius: '50%',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: (themeVar) => alpha(themeVar.palette.primary.main, 0.08),
+                        color: 'primary.main',
+                        typography: 'subtitle2',
+                        fontWeight: 800,
+                        border: (themeVar) => `1px solid ${alpha(themeVar.palette.primary.main, 0.16)}`,
+                        mx: 'auto',
+                        transition: (themeVar) => themeVar.transitions.create(['all'], { duration: themeVar.transitions.duration.shorter }),
+                        '&:hover': {
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
+                            transform: 'scale(1.1)',
+                        },
+                    }}
+                >
+                    {serialNumber}
+                </Box>
+            </TableCell>
+        );
+
         if (type === 'invoices') {
             return (
                 <TableRow key={row.name} hover>
-                    <TableCell align="center">{serialNumber}</TableCell>
+                    {renderSNoCell()}
                     <TableCell sx={{ fontWeight: 700 }}>{row.ref_no}</TableCell>
-                    <TableCell>{fDate(row.invoice_date)}</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
+                    <TableCell>{row.invoice_date ? fDate(row.invoice_date) : '-'}</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600}}>{fCurrency(row.grand_total)}</TableCell>
                     <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.received_amount)}</TableCell>
                     <TableCell align="right" sx={{ color: 'error.main', fontWeight: 700 }}>{fCurrency(row.balance_amount)}</TableCell>
                     <TableCell align="right">
@@ -201,9 +229,9 @@ export function ContactRelatedList({ contactId, type }: Props) {
         if (type === 'purchases') {
             return (
                 <TableRow key={row.name} hover>
-                    <TableCell align="center">{serialNumber}</TableCell>
+                    {renderSNoCell()}
                     <TableCell sx={{ fontWeight: 700 }}>{row.bill_no}</TableCell>
-                    <TableCell>{fDate(row.bill_date)}</TableCell>
+                    <TableCell>{row.bill_date ? fDate(row.bill_date) : '-'}</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
                     <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.paid_amount)}</TableCell>
                     <TableCell align="right" sx={{ color: 'error.main', fontWeight: 700 }}>{fCurrency(row.balance_amount)}</TableCell>
@@ -222,11 +250,10 @@ export function ContactRelatedList({ contactId, type }: Props) {
         if (type === 'deals') {
             return (
                 <TableRow key={row.name} hover>
-                    <TableCell align="center">{serialNumber}</TableCell>
+                    {renderSNoCell()}
                     <TableCell sx={{ fontWeight: 700 }}>{row.deal_title}</TableCell>
                     <TableCell align="center">{getStatusLabel(row)}</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600, color: 'primary.main' }}>{fCurrency(row.value)}</TableCell>
-                    <TableCell>{fDate(row.expected_close_date)}</TableCell>
+                    <TableCell>{row.expected_close_date ? fDate(row.expected_close_date) : '-'}</TableCell>
                     <TableCell align="right">
                         <IconButton
                             color="primary"
@@ -241,9 +268,9 @@ export function ContactRelatedList({ contactId, type }: Props) {
         }
         return (
             <TableRow key={row.name} hover>
-                <TableCell align="center">{serialNumber}</TableCell>
+                {renderSNoCell()}
                 <TableCell sx={{ fontWeight: 700 }}>{row.ref_no}</TableCell>
-                <TableCell>{fDate(row.estimate_date)}</TableCell>
+                <TableCell>{row.estimate_date ? fDate(row.estimate_date) : '-'}</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
                 <TableCell align="right">
                     <IconButton
@@ -267,17 +294,19 @@ export function ContactRelatedList({ contactId, type }: Props) {
                     gap: 2,
                     gridTemplateColumns: {
                         xs: 'repeat(1, 1fr)',
-                        sm: ['estimations', 'deals'].includes(type) ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-                        md: ['estimations', 'deals'].includes(type) ? 'repeat(3, 1fr)' : 'repeat(3, 1fr)',
+                        sm: type === 'deals' ? 'repeat(3, 1fr)' : (['estimations'].includes(type) ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'),
+                        md: 'repeat(3, 1fr)',
                     },
                 }}
             >
-                <SummaryCard
-                    title="Total Volume"
-                    value={fCurrency(summary.total)}
-                    icon="solar:wad-of-money-bold"
-                    color={theme.palette.primary.main}
-                />
+                {type !== 'deals' && (
+                    <SummaryCard
+                        title="Total Volume"
+                        value={fCurrency(summary.total)}
+                        icon="solar:wad-of-money-bold"
+                        color={theme.palette.primary.main}
+                    />
+                )}
 
                 {['estimations', 'deals'].includes(type) ? (
                     <SummaryCard
@@ -366,31 +395,49 @@ function SummaryCard({ title, value, icon, color }: { title: string; value: stri
             alignItems="center"
             spacing={2}
             sx={{
-                p: 2.5,
+                p: 2,
+                pl: 1.5,
                 borderRadius: 2,
+                position: 'relative',
+                overflow: 'hidden',
                 bgcolor: alpha(color, 0.04),
                 border: `1px solid ${alpha(color, 0.1)}`,
             }}
         >
+            {/* Decorative circle */}
             <Box
                 sx={{
-                    width: 48,
-                    height: 48,
+                    position: 'absolute',
+                    top: -24,
+                    right: -24,
+                    width: 96,
+                    height: 96,
+                    borderRadius: '50%',
+                    bgcolor: alpha(color, 0.08),
+                    zIndex: 0,
+                }}
+            />
+            
+            <Box
+                sx={{
+                    width: 56,
+                    height: 56,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    borderRadius: 1.5,
-                    bgcolor: alpha(color, 0.1),
+                    borderRadius: 2,
+                    bgcolor: alpha(color, 0.12),
                     color,
+                    zIndex: 1,
                 }}
             >
-                <Iconify icon={icon as any} width={24} />
+                <Iconify icon={icon as any} width={28} />
             </Box>
-            <Box>
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase' }}>
+            <Box sx={{ zIndex: 1 }}>
+                <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, mb: 0.5 }}>
                     {title}
                 </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                <Typography variant="h5" sx={{ fontWeight: 800 }}>
                     {value}
                 </Typography>
             </Box>

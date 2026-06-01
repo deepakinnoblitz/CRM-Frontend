@@ -182,7 +182,7 @@ export function LeaveAllocationTableRow({
                         onClick={(e) => handleClick(e, onView)}
                         color="info"
                     >
-                        <Iconify icon="solar:eye-bold" width={22} />
+                        <Iconify icon="solar:eye-bold" width={20} />
                     </IconButton>
 
                     {canEdit && (
@@ -191,7 +191,7 @@ export function LeaveAllocationTableRow({
                             onClick={(e) => handleClick(e, onEdit)}
                             color="primary"
                         >
-                            <Iconify icon={"solar:pen-bold" as any} width={22} />
+                            <Iconify icon={"solar:pen-bold" as any} width={20} />
                         </IconButton>
                     )}
 
@@ -201,7 +201,7 @@ export function LeaveAllocationTableRow({
                             onClick={(e) => handleClick(e, onDelete)}
                             color="error"
                         >
-                            <Iconify icon="solar:trash-bin-trash-bold" width={22} />
+                            <Iconify icon="solar:trash-bin-trash-bold" width={20} />
                         </IconButton>
                     )}
                 </Stack>

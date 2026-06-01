@@ -1,5 +1,11 @@
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+    IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags,
+    IoMdWallet, IoMdPrint, IoMdSwap, IoMdTrash, IoMdCreate,
+    IoMdPerson, IoMdCalendar, IoMdCash, IoMdList, IoMdLink, IoMdDownload
+} from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -33,6 +39,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 export function EstimationDetailsView() {
     const { id } = useParams();
     const router = useRouter();
+    const navigate = useNavigate();
 
     const [estimation, setEstimation] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
@@ -41,6 +48,8 @@ export function EstimationDetailsView() {
     const [printing, setPrinting] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
+
+    const { enqueueSnackbar } = useSnackbar();
 
     useEffect(() => {
         if (id) {
@@ -62,7 +71,7 @@ export function EstimationDetailsView() {
         return (
             <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Estimation not found</Typography>
-                <Button onClick={() => router.push('/estimations')} sx={{ mt: 3 }}>
+                <Button onClick={() => navigate(-1)} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
             </DashboardContent>
@@ -71,6 +80,8 @@ export function EstimationDetailsView() {
 
     const {
         client_name,
+        customer_name,
+        billing_name,
         deal,
         estimate_date,
         billing_address,
@@ -117,11 +128,16 @@ export function EstimationDetailsView() {
         if (!id) return;
         try {
             setConverting(true);
-            const invoiceName = await convertEstimationToInvoice(id);
-            router.push(`/invoices/${encodeURIComponent(invoiceName)}/view`, { converted: true });
-        } catch (error) {
+            const result = await convertEstimationToInvoice(id);
+            if (result.alreadyCreated) {
+                enqueueSnackbar(result.message || `Invoice ${result.invoiceName} already created for this estimation.`, { variant: 'info' });
+                router.push(`/invoices/${encodeURIComponent(result.invoiceName)}/view`);
+            } else {
+                router.push(`/invoices/${encodeURIComponent(result.invoiceName)}/view`, { converted: true });
+            }
+        } catch (error: any) {
             console.error('Failed to convert estimation:', error);
-            // You might want to add a snackbar here for error notification
+            enqueueSnackbar(error.message || 'Failed to convert estimation', { variant: 'error' });
         } finally {
             setConverting(false);
             setConfirmOpen(false);
@@ -144,31 +160,55 @@ export function EstimationDetailsView() {
 
     return (
         <DashboardContent maxWidth={false}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} className="no-print">
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3} className="no-print">
                 <Typography variant="h4">Estimation: {id}</Typography>
                 <Stack direction="row" spacing={2}>
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/estimations')}
-                        startIcon={<Iconify icon={"solar:arrow-left-bold" as any} />}
+                        onClick={() => navigate(-1)}
+                        startIcon={<IoMdArrowBack size={20} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 2.5,
+                            '&:hover': {
+                                bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
+                                borderColor: 'text.primary',
+                            }
+                        }}
                     >
-                        Back
+                        Go Back
                     </Button>
                     <Button
-                        variant="outlined"
-                        color="primary"
+                        variant="contained"
                         onClick={handlePrint}
-                        startIcon={<Iconify icon={"solar:printer-bold" as any} />}
+                        startIcon={<IoMdPrint size={20} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            bgcolor: '#2065D1',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#103996' }
+                        }}
                     >
                         Print
                     </Button>
                     <Button
                         variant="contained"
-                        color="warning"
                         onClick={() => setConfirmOpen(true)}
-                        startIcon={<Iconify icon={"solar:transfer-horizontal-bold" as any} />}
+                        startIcon={<IoMdSwap size={20} />}
                         disabled={converting}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            bgcolor: '#02c281',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#007850' }
+                        }}
                     >
                         {converting ? 'Converting...' : 'Convert to Invoice'}
                     </Button>
@@ -176,15 +216,23 @@ export function EstimationDetailsView() {
                         variant="contained"
                         color="error"
                         onClick={() => setConfirmDeleteOpen(true)}
-                        startIcon={<Iconify icon={"solar:trash-bin-trash-bold" as any} />}
+                        startIcon={<IoMdTrash size={20} />}
+                        sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none' }}
                     >
                         Delete
                     </Button>
                     <Button
                         variant="contained"
-                        color="primary"
                         onClick={() => router.push(`/estimations/${encodeURIComponent(id || '')}/edit`)}
-                        startIcon={<Iconify icon={"solar:pen-bold" as any} />}
+                        startIcon={<IoMdCreate size={20} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            bgcolor: '#08a3cd',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#068fb3' }
+                        }}
                     >
                         Edit
                     </Button>
@@ -204,21 +252,29 @@ export function EstimationDetailsView() {
                     >
                         {/* Customer Section */}
                         <Stack spacing={1.5}>
-                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                                <Iconify icon={"solar:user-rounded-bold-duotone" as any} width={20} />
-                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Customer Details</Typography>
+                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#08a3cd' }}>
+                                <IoMdPerson size={20} />
+                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>Client Details</Typography>
                             </Stack>
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                                <Typography variant="subtitle1" color="primary.main">{client_name}</Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>{billing_address || 'No address provided'}</Typography>
+                                <Typography variant="subtitle1" color="text.primary" sx={{ fontWeight: 700, fontSize: '16px' }}>
+                                    {billing_name || 'No Company Name'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+                                    {customer_name || 'No Contact Name'}
+                                </Typography>
+                                <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
+                                    ID: {client_name}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, whiteSpace: 'pre-wrap' }}>{billing_address || 'No address provided'}</Typography>
                             </Box>
                         </Stack>
 
                         {/* Document Logistics Section */}
                         <Stack spacing={1.5}>
-                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                                <Iconify icon={"solar:calendar-bold-duotone" as any} width={20} />
-                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Doc Logistics</Typography>
+                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#08a3cd' }}>
+                                <IoMdCalendar size={20} />
+                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>Doc Logistics</Typography>
                             </Stack>
                             <Stack spacing={2} sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -240,17 +296,23 @@ export function EstimationDetailsView() {
 
                         {/* Summary Stats Section */}
                         <Stack spacing={1.5}>
-                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                                <Iconify icon={"solar:wad-of-money-bold-duotone" as any} width={20} />
-                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Financial Summary</Typography>
+                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#08a3cd' }}>
+                                <IoMdCash size={20} />
+                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>Financial Summary</Typography>
                             </Stack>
                             <Stack spacing={2} sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04), border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}` }}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary">Grand Total</Typography>
+                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                        <IoMdWallet size={18} style={{ color: '#7e7e7e' }} />
+                                        <Typography variant="caption" color="text.secondary">Grand Total</Typography>
+                                    </Stack>
                                     <Typography variant="h6" color="primary.main">{fCurrency(grand_total)}</Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary">Items / Qty</Typography>
+                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                        <IoMdCube size={18} style={{ color: '#7e7e7e' }} />
+                                        <Typography variant="caption" color="text.secondary">Items / Qty</Typography>
+                                    </Stack>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{table_qecz.length} / {total_qty || 0}</Typography>
                                 </Stack>
                             </Stack>
@@ -259,9 +321,9 @@ export function EstimationDetailsView() {
 
                     {/* Table Section */}
                     <Box>
-                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2, color: 'text.secondary' }}>
-                            <Iconify icon={"solar:list-bold-duotone" as any} width={20} />
-                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Line Items</Typography>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2, color: '#08a3cd' }}>
+                            <IoMdList size={20} />
+                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>Line Items</Typography>
                         </Stack>
                         <TableContainer sx={{
                             overflow: 'unset',
@@ -387,9 +449,9 @@ export function EstimationDetailsView() {
                                                     },
                                                 }}
                                             >
-                                                <Iconify icon={"solar:link-bold" as any} width={18} sx={{ mr: 1, color: 'primary.main', flexShrink: 0 }} />
+                                                <IoMdLink size={18} style={{ marginRight: 8, color: '#08a3cd', flexShrink: 0 }} />
                                                 <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>{file.name || file.url.split('/').pop()}</Typography>
-                                                <Iconify icon={"solar:download-bold" as any} width={16} sx={{ ml: 1, color: 'text.disabled' }} />
+                                                <IoMdDownload size={16} style={{ marginLeft: 8, color: '#919EAB' }} />
                                             </Stack>
                                         ))}
                                     </Stack>
@@ -400,20 +462,32 @@ export function EstimationDetailsView() {
                         {/* Totals Breakdown */}
                         <Stack spacing={2} sx={{ p: 3, borderRadius: 2, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
+                                    <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
+                                </Stack>
                                 <Typography variant="subtitle2">{fCurrency(table_qecz.reduce((sum: number, row: any) => sum + (row.sub_total - row.tax_amount), 0))}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography variant="body2" color="text.secondary">Total Tax</Typography>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <IoMdCalculator size={18} style={{ color: '#7e7e7e' }} />
+                                    <Typography variant="body2" color="text.secondary">Total Tax</Typography>
+                                </Stack>
                                 <Typography variant="subtitle2" color="error.main">+{fCurrency(totalTax)}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography variant="body2" color="text.secondary">Discount ({overall_discount_type === 'Flat' ? 'Flat' : `${overall_discount}%`})</Typography>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <IoMdPricetags size={18} style={{ color: '#7e7e7e' }} />
+                                    <Typography variant="body2" color="text.secondary">Discount ({overall_discount_type === 'Flat' ? 'Flat' : `${overall_discount}%`})</Typography>
+                                </Stack>
                                 <Typography variant="subtitle2" color="success.main">-{fCurrency(discountAmount)}</Typography>
                             </Stack>
                             <Divider sx={{ borderStyle: 'dashed' }} />
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography variant="subtitle1">Grand Total</Typography>
+                                <Stack direction="row" alignItems="center" spacing={1.5}>
+                                    <IoMdWallet size={24} style={{ color: '#08a3cd' }} />
+                                    <Typography variant="subtitle1" sx={{ color: '#08a3cd' }}>Grand Total</Typography>
+                                </Stack>
                                 <Typography variant="h5" color="primary.main">{fCurrency(grand_total)}</Typography>
                             </Stack>
                         </Stack>
@@ -426,8 +500,10 @@ export function EstimationDetailsView() {
                 onClose={() => !converting && setConfirmOpen(false)}
                 title="Confirm Conversion"
                 content="Are you sure you want to convert this estimation into an invoice? This will create a new invoice document."
+                icon="solar:transfer-horizontal-bold"
+                iconColor="#02c281"
                 action={
-                    <Button onClick={handleConvertToInvoice} color="warning" variant="contained" disabled={converting} sx={{ borderRadius: 1.5, minWidth: 100 }}>
+                    <Button onClick={handleConvertToInvoice} variant="contained" disabled={converting} sx={{ borderRadius: 1.5, minWidth: 100, bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#007850' } }}>
                         {converting ? 'Converting...' : 'Confirm'}
                     </Button>
                 }

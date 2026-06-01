@@ -1,10 +1,11 @@
 import dayjs from 'dayjs';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags, IoMdWallet } from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
@@ -12,13 +13,11 @@ import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
-import AlertTitle from '@mui/material/AlertTitle';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -44,6 +43,9 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { getPurchase, updatePurchase, getPurchasePrintUrl } from 'src/api/purchase';
 
 import { Iconify } from 'src/components/iconify';
+
+import { PaymentTypeDialog } from 'src/sections/master/payment-type/payment-type-dialog';
+import { PaymentTermsDialog } from 'src/sections/master/payment-terms/payment-terms-dialog';
 
 import { TaxTypeFormDialog } from '../../invoice/tax-type-form-dialog';
 
@@ -74,6 +76,7 @@ export function PurchaseEditView() {
     const [itemOptions, setItemOptions] = useState<any[]>([]);
     const [taxOptions, setTaxOptions] = useState<any[]>([]);
     const [paymentTypeOptions, setPaymentTypeOptions] = useState<any[]>([]);
+    const [paymentTermsOptions, setPaymentTermsOptions] = useState<any[]>([]);
 
     const [vendorName, setVendorName] = useState('');
     const [billNo, setBillNo] = useState('');
@@ -106,11 +109,8 @@ export function PurchaseEditView() {
 
     const [loading, setLoading] = useState(false);
     const [dataLoading, setDataLoading] = useState(true);
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-        open: false,
-        message: '',
-        severity: 'success',
-    });
+    const { enqueueSnackbar } = useSnackbar();
+    const [errors, setErrors] = useState<{ vendor?: boolean; billNo?: boolean; items?: boolean; paymentType?: boolean; paymentTerms?: boolean }>({});
 
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
     const [newItem, setNewItem] = useState({ item_name: '', item_code: '', rate: 0 });
@@ -119,15 +119,40 @@ export function PurchaseEditView() {
 
     const [taxTypeDialogOpen, setTaxTypeDialogOpen] = useState(false);
     const [newTaxInitialName, setNewTaxInitialName] = useState('');
+    const [paymentTermsDialogOpen, setPaymentTermsDialogOpen] = useState(false);
+    const [paymentTypeDialogOpen, setPaymentTypeDialogOpen] = useState(false);
+
+    const fetchPaymentTermsOptions = async () => {
+        try {
+            const opts = await getDoctypeList('Payment Terms', ['name', 'payment_terms', 'creation', 'modified']);
+            setPaymentTermsOptions(opts);
+            return opts;
+        } catch (error) {
+            console.error('Failed to load Payment Terms data:', error);
+            return [];
+        }
+    };
+
+    const fetchPaymentTypeOptions = async () => {
+        try {
+            const opts = await getDoctypeList('Payment Type', ['name', 'payment_type', 'creation', 'modified']);
+            setPaymentTypeOptions(opts);
+            return opts;
+        } catch (error) {
+            console.error('Failed to load Payment Type data:', error);
+            return [];
+        }
+    };
 
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [vendors, itemsList, taxes, paymentTypes, purchaseData] = await Promise.all([
+                const [vendors, itemsList, taxes, paymentTypes, paymentTermsList, purchaseData] = await Promise.all([
                     getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'customer_type']),
                     getDoctypeList('Item', ['name', 'item_name', 'rate', 'item_code']),
                     getDoctypeList('Tax Types', ['name', 'tax_name', 'tax_percentage', 'tax_type']),
-                    getDoctypeList('Payment Type', ['name', 'payment_type']),
+                    getDoctypeList('Payment Type', ['name', 'payment_type', 'creation', 'modified']),
+                    getDoctypeList('Payment Terms', ['name', 'payment_terms', 'creation', 'modified']),
                     id ? getPurchase(id) : null,
                 ]);
 
@@ -137,6 +162,7 @@ export function PurchaseEditView() {
                 setItemOptions(itemsList);
                 setTaxOptions(taxes);
                 setPaymentTypeOptions(paymentTypes);
+                setPaymentTermsOptions(paymentTermsList);
 
                 if (purchaseData) {
                     setVendorName(purchaseData.vendor_name || '');
@@ -172,7 +198,7 @@ export function PurchaseEditView() {
                 }
             } catch (error) {
                 console.error('Failed to load data:', error);
-                setSnackbar({ open: true, message: 'Failed to load purchase data', severity: 'error' });
+                enqueueSnackbar('Failed to load purchase data', { variant: 'error' });
             } finally {
                 setDataLoading(false);
             }
@@ -249,7 +275,7 @@ export function PurchaseEditView() {
 
     const handleCreateItem = async () => {
         if (!newItem.item_name) {
-            setSnackbar({ open: true, message: 'Please enter Item Name', severity: 'error' });
+            enqueueSnackbar('Please enter Item Name', { variant: 'error' });
             return;
         }
 
@@ -287,9 +313,9 @@ export function PurchaseEditView() {
 
             setItemDialogOpen(false);
             setNewItem({ item_name: '', item_code: '', rate: 0 });
-            setSnackbar({ open: true, message: 'Item created successfully', severity: 'success' });
+            enqueueSnackbar('Item created successfully', { variant: 'success' });
         } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Failed to create item', severity: 'error' });
+            enqueueSnackbar(error.message || 'Failed to create item', { variant: 'error' });
         } finally {
             setCreatingItem(false);
         }
@@ -321,19 +347,38 @@ export function PurchaseEditView() {
     };
 
     const handleSave = async () => {
-        if (!vendorName) {
-            setSnackbar({ open: true, message: 'Please select a vendor', severity: 'error' });
-            return;
-        }
-
-        if (!billNo) {
-            setSnackbar({ open: true, message: 'Please enter bill number', severity: 'error' });
-            return;
-        }
-
+        const newErrors: { vendor?: boolean; billNo?: boolean; items?: boolean; paymentType?: boolean; paymentTerms?: boolean } = {};
+        if (!vendorName) newErrors.vendor = true;
+        if (!billNo) newErrors.billNo = true;
+        if (!paymentType) newErrors.paymentType = true;
+        if (!paymentTerms) newErrors.paymentTerms = true;
         const validItems = items.filter((item) => item.service !== '');
-        if (validItems.length === 0) {
-            setSnackbar({ open: true, message: 'Please add at least one item', severity: 'error' });
+        if (validItems.length === 0) newErrors.items = true;
+
+        setErrors(newErrors);
+
+        if (newErrors.vendor) {
+            enqueueSnackbar('Please select a vendor', { variant: 'error' });
+            return;
+        }
+
+        if (newErrors.billNo) {
+            enqueueSnackbar('Please enter bill number', { variant: 'error' });
+            return;
+        }
+
+        if (newErrors.paymentType) {
+            enqueueSnackbar('Please select payment type', { variant: 'error' });
+            return;
+        }
+
+        if (newErrors.paymentTerms) {
+            enqueueSnackbar('Please select payment terms', { variant: 'error' });
+            return;
+        }
+
+        if (newErrors.items) {
+            enqueueSnackbar('Please add at least one item', { variant: 'error' });
             return;
         }
 
@@ -355,6 +400,9 @@ export function PurchaseEditView() {
             } else if (attachments.length > 0) {
                 attachmentUrl = attachments[0].url || '';
             }
+
+            const selectedVendor = vendorOptions.find((opt) => opt.name === vendorName);
+            const actualVendorName = selectedVendor ? (selectedVendor.first_name || selectedVendor.name) : vendorName;
 
             const purchaseData = {
                 vendor_name: vendorName,
@@ -387,11 +435,11 @@ export function PurchaseEditView() {
             };
 
             await updatePurchase(id!, purchaseData);
-            setSnackbar({ open: true, message: 'Purchase updated successfully', severity: 'success' });
+            enqueueSnackbar('Purchase updated successfully', { variant: 'success' });
             setTimeout(() => router.push('/purchase'), 1500);
         } catch (err: any) {
             console.error(err);
-            setSnackbar({ open: true, message: err.message || 'Failed to update purchase', severity: 'error' });
+            enqueueSnackbar(err.message || 'Failed to update purchase', { variant: 'error' });
         } finally {
             setLoading(false);
         }
@@ -420,14 +468,29 @@ export function PurchaseEditView() {
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DashboardContent maxWidth="xl">
-                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3}>
                     <Typography variant="h4">Edit Purchase</Typography>
                     <Stack direction="row" spacing={2}>
-                        <Button variant="outlined" color="inherit" onClick={handleCancel}>
-                            Cancel
+                        <Button
+                            variant="outlined"
+                            color="inherit"
+                            onClick={handleCancel}
+                            startIcon={<IoMdArrowBack size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                px: 2.5,
+                                '&:hover': {
+                                    bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
+                                    borderColor: 'text.primary',
+                                }
+                            }}
+                        >
+                            Go Back
                         </Button>
-                        <Button variant="contained" color="primary" onClick={handleSave} disabled={loading}>
-                            {loading ? <CircularProgress size={24} /> : 'Update Purchase'}
+                        <Button variant="contained" color="primary" onClick={handleSave} loading={loading} sx={{ borderRadius: 1.5, bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}>
+                            Update Purchase
                         </Button>
                     </Stack>
                 </Stack>
@@ -445,11 +508,32 @@ export function PurchaseEditView() {
                         <Autocomplete
                             fullWidth
                             options={vendorOptions}
-                            getOptionLabel={(option) => (option.first_name ? `${option.name} - ${option.first_name}` : option.name || '')}
+                            getOptionLabel={(option) => (option.first_name ? `${option.first_name} (${option.name})` : option.name || '')}
                             value={vendorOptions.find((opt) => opt.name === vendorName) || null}
-                            onChange={(_e, newValue) => setVendorName(newValue?.name || '')}
+                            onChange={(_e, newValue) => {
+                                setVendorName(newValue?.name || '');
+                                if (newValue?.name) setErrors((prev) => ({ ...prev, vendor: false }));
+                            }}
                             renderInput={(params) => (
-                                <TextField {...params} label="Vendor" required />
+                                <TextField 
+                                    {...params} 
+                                    label="Vendor" 
+                                    required 
+                                    error={errors.vendor} 
+                                    helperText={errors.vendor ? 'Please select a vendor' : ''}
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.name}>
+                                    <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                            {option.first_name || option.name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                </li>
                             )}
                         />
 
@@ -457,8 +541,13 @@ export function PurchaseEditView() {
                             fullWidth
                             label="Bill No"
                             value={billNo}
-                            onChange={(e) => setBillNo(e.target.value)}
+                            onChange={(e) => {
+                                setBillNo(e.target.value);
+                                if (e.target.value) setErrors((prev) => ({ ...prev, billNo: false }));
+                            }}
                             required
+                            error={errors.billNo}
+                            helperText={errors.billNo ? 'Please enter bill number' : ''}
                         />
 
                         <DatePicker
@@ -473,33 +562,165 @@ export function PurchaseEditView() {
                             }}
                         />
 
-                        <TextField
+                        <Autocomplete
                             fullWidth
-                            select
-                            label="Payment Type"
-                            value={paymentType}
-                            onChange={(e) => setPaymentType(e.target.value)}
-                        >
-                            {paymentTypeOptions.map((opt) => (
-                                <MenuItem key={opt.name} value={opt.name}>
-                                    {opt.payment_type || opt.name}
-                                </MenuItem>
-                            ))}
-                        </TextField>
+                            options={paymentTypeOptions.filter((opt) => opt.name !== paymentType)}
+                            getOptionLabel={(option) => {
+                                if (typeof option === 'string') return option;
+                                return option.payment_type || option.name || '';
+                            }}
+                            filterOptions={(options, params) => {
+                                const filtered = options.filter((opt) => opt.name !== paymentType);
+                                filtered.push({
+                                    name: 'create_payment_type_custom_option',
+                                    payment_type: 'Create Payment Type',
+                                    isNew: true,
+                                });
+                                return filtered;
+                            }}
+                            value={paymentTypeOptions.find((opt) => opt.name === paymentType) || (paymentType ? { name: paymentType, payment_type: paymentType } : null)}
+                            onChange={(_e, newValue) => {
+                                if (newValue?.isNew) {
+                                    setPaymentTypeDialogOpen(true);
+                                } else {
+                                    setPaymentType(newValue?.name || '');
+                                    if (newValue?.name) setErrors((prev) => ({ ...prev, paymentType: false }));
+                                }
+                            }}
+                            ListboxProps={{
+                                sx: {
+                                    maxHeight: '300px',
+                                    '& .MuiAutocomplete-option': {
+                                        fontSize: '14px !important',
+                                    }
+                                }
+                            }}
+                            sx={{
+                                '& .MuiInputBase-input': {
+                                    fontSize: '14px !important',
+                                }
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Payment Type"
+                                    required
+                                    error={errors.paymentType}
+                                    helperText={errors.paymentType ? 'Please select payment type' : ''}
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <Box
+                                    component="li"
+                                    {...props}
+                                    sx={{
+                                        ...(option.isNew && {
+                                            color: 'primary.main',
+                                            fontWeight: 600,
+                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                            py: '8px !important',
+                                            px: '16px !important',
+                                            mt: 0.5,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            '&:hover': {
+                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                            }
+                                        })
+                                    }}
+                                >
+                                    {option.isNew ? (
+                                        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ width: '100%' }}>
+                                            <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Create Payment Type</Typography>
+                                        </Stack>
+                                    ) : (
+                                        option.payment_type || option.name
+                                    )}
+                                </Box>
+                            )}
+                        />
 
-                        <TextField
+                        <Autocomplete
                             fullWidth
-                            select
-                            label="Payment Terms"
-                            value={paymentTerms}
-                            onChange={(e) => setPaymentTerms(e.target.value)}
-                        >
-                            {['Next day Payment', 'Due On Receipt', '15 days', '30 days', '60 days', '1 Year'].map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </TextField>
+                            options={paymentTermsOptions.filter((opt) => opt.name !== paymentTerms)}
+                            getOptionLabel={(option) => {
+                                if (typeof option === 'string') return option;
+                                return option.payment_terms || option.name || '';
+                            }}
+                            filterOptions={(options, params) => {
+                                const filtered = options.filter((opt) => opt.name !== paymentTerms);
+                                filtered.push({
+                                    name: 'create_payment_term_custom_option',
+                                    payment_terms: 'Create Payment Terms',
+                                    isNew: true,
+                                });
+                                return filtered;
+                            }}
+                            value={paymentTermsOptions.find((opt) => opt.name === paymentTerms) || (paymentTerms ? { name: paymentTerms, payment_terms: paymentTerms } : null)}
+                            onChange={(_e, newValue) => {
+                                if (newValue?.isNew) {
+                                    setPaymentTermsDialogOpen(true);
+                                } else {
+                                    setPaymentTerms(newValue?.name || '');
+                                    if (newValue?.name) setErrors((prev) => ({ ...prev, paymentTerms: false }));
+                                }
+                            }}
+                            ListboxProps={{
+                                sx: {
+                                    maxHeight: '300px',
+                                    '& .MuiAutocomplete-option': {
+                                        fontSize: '14px !important',
+                                    }
+                                }
+                            }}
+                            sx={{
+                                '& .MuiInputBase-input': {
+                                    fontSize: '14px !important',
+                                }
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Payment Terms"
+                                    required
+                                    error={errors.paymentTerms}
+                                    helperText={errors.paymentTerms ? 'Please select payment terms' : ''}
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <Box
+                                    component="li"
+                                    {...props}
+                                    sx={{
+                                        ...(option.isNew && {
+                                            color: 'primary.main',
+                                            fontWeight: 600,
+                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                            py: '8px !important',
+                                            px: '16px !important',
+                                            mt: 0.5,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            '&:hover': {
+                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                            }
+                                        })
+                                    }}
+                                >
+                                    {option.isNew ? (
+                                        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ width: '100%' }}>
+                                            <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Create Payment Terms</Typography>
+                                        </Stack>
+                                    ) : (
+                                        option.payment_terms || option.name
+                                    )}
+                                </Box>
+                            )}
+                        />
 
                         <DatePicker
                             label="Due Date"
@@ -523,13 +744,17 @@ export function PurchaseEditView() {
                     {/* Same table structure as create view - keeping it concise for brevity */}
                     <TableContainer sx={{
                         overflow: 'unset',
-                        border: (theme) => `1px solid ${theme.palette.divider}`,
+                        border: (theme) => errors.items ? `2px solid ${theme.palette.error.main}` : `1px solid ${theme.palette.divider}`,
                         borderRadius: 1.5,
                         bgcolor: 'background.paper',
                         boxShadow: (theme) => theme.customShadows.z8,
                     }}>
                         <Table sx={{ minWidth: 960 }}>
-                            <TableHead sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08) }}>
+                            <TableHead sx={{ 
+                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                '& th:first-of-type': { borderTopLeftRadius: 11 },
+                                '& th:last-of-type': { borderTopRightRadius: 11 }
+                            }}>
                                 <TableRow>
                                     <TableCell width={180} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Service</TableCell>
                                     <TableCell width={80} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>HSN</TableCell>
@@ -895,7 +1120,7 @@ export function PurchaseEditView() {
                         <Stack spacing={2} sx={{ width: 400, mt: 3 }}>
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Iconify icon={"solar:box-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdCube size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Quantity</Typography>
                                 </Stack>
                                 <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{totalQty}</Typography>
@@ -903,7 +1128,7 @@ export function PurchaseEditView() {
 
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Iconify icon={"solar:bill-list-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
                                 </Stack>
                                 <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(itemsTotalTaxable)}</Typography>
@@ -911,7 +1136,7 @@ export function PurchaseEditView() {
 
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Iconify icon={"solar:calculator-minimalistic-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdCalculator size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Tax</Typography>
                                 </Stack>
                                 <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(totalTax)}</Typography>
@@ -919,7 +1144,7 @@ export function PurchaseEditView() {
 
                             <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end">
                                 <Stack direction="row" alignItems="center" spacing={1} sx={{ flexGrow: 1 }}>
-                                    <Iconify icon={"solar:tag-horizontal-bold-duotone" as any} sx={{ color: 'text.secondary' }} />
+                                    <IoMdPricetags size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Overall Discount</Typography>
                                 </Stack>
                                 <ToggleButtonGroup
@@ -933,6 +1158,7 @@ export function PurchaseEditView() {
                                     }}
                                     sx={{
                                         height: 32,
+                                        mr: 6,
                                         '& .MuiToggleButton-root': {
                                             px: 1,
                                             py: 0,
@@ -940,6 +1166,9 @@ export function PurchaseEditView() {
                                             '&.Mui-selected': {
                                                 bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
                                                 color: 'primary.main',
+                                                '&:hover': {
+                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
+                                                }
                                             }
                                         }
                                     }}
@@ -955,11 +1184,12 @@ export function PurchaseEditView() {
                                     onChange={(e) => setDiscountValue(Number(e.target.value))}
                                     onFocus={(e) => e.target.select()}
                                     sx={{
-                                        width: 100,
+                                        width: 150,
                                         '& .MuiInputBase-root': {
                                             bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
                                             borderRadius: 0.75,
-                                            px: 1,
+                                            px: 1.25,
+                                            py: 0.4,
                                             '&:hover': {
                                                 bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
                                             },
@@ -975,7 +1205,7 @@ export function PurchaseEditView() {
                             <Divider />
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1.5}>
-                                    <Iconify icon={"solar:wad-of-money-bold-duotone" as any} sx={{ color: 'primary.main', width: 24, height: 24 }} />
+                                    <IoMdWallet size={24} style={{ color: '#08a3cd' }} />
                                     <Typography variant="subtitle1" sx={{ color: 'primary.main' }}>Grand Total</Typography>
                                 </Stack>
                                 <Typography variant="h6" color="primary" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(grandTotal)}</Typography>
@@ -1015,6 +1245,7 @@ export function PurchaseEditView() {
                                 <Button
                                     variant="contained"
                                     component="label"
+                                    sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
                                     color="primary"
                                     size="small"
                                     startIcon={<Iconify icon={"solar:upload-bold" as any} />}
@@ -1076,27 +1307,17 @@ export function PurchaseEditView() {
                     </Box>
                 </Card>
 
-                <Snackbar
-                    open={snackbar.open}
-                    autoHideDuration={6000}
-                    onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                >
-                    <Alert
-                        severity={snackbar.severity}
-                        sx={{
-                            width: '100%',
-                            boxShadow: (theme) => theme.customShadows.z20
-                        }}
-                    >
-                        <AlertTitle>{snackbar.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
-                        {snackbar.message}
-                    </Alert>
-                </Snackbar>
-
                 <Dialog open={itemDialogOpen} onClose={() => !creatingItem && setItemDialogOpen(false)} fullWidth maxWidth="xs">
-                    <DialogTitle>Create Item</DialogTitle>
-                    <DialogContent>
+                    <DialogTitle sx={{ pb: 2, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+                        Create Item
+                        <IconButton
+                            onClick={() => !creatingItem && setItemDialogOpen(false)}
+                            sx={{ position: 'absolute', right: 8, top: 8 }}
+                        >
+                            <Iconify icon="mingcute:close-line" />
+                        </IconButton>
+                    </DialogTitle>
+                    <DialogContent sx={{ mt: 2 }}>
                         <Stack spacing={3} sx={{ pt: 1 }}>
                             <TextField
                                 fullWidth
@@ -1121,10 +1342,7 @@ export function PurchaseEditView() {
                         </Stack>
                     </DialogContent>
                     <DialogActions>
-                        <Button color="inherit" onClick={() => setItemDialogOpen(false)} disabled={creatingItem}>
-                            Cancel
-                        </Button>
-                        <Button variant="contained" onClick={handleCreateItem} disabled={creatingItem}>
+                        <Button variant="contained" onClick={handleCreateItem} disabled={creatingItem} sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}>
                             {creatingItem ? <CircularProgress size={24} /> : 'Create'}
                         </Button>
                     </DialogActions>
@@ -1137,6 +1355,32 @@ export function PurchaseEditView() {
                         setTaxOptions((prev) => [...prev, newTax]);
                         if (activeRowIndex !== null) {
                             handleItemChange(activeRowIndex, 'tax_type', newTax.name);
+                        }
+                    }}
+                />
+                <PaymentTermsDialog
+                    open={paymentTermsDialogOpen}
+                    onClose={() => setPaymentTermsDialogOpen(false)}
+                    onSuccess={async () => {
+                        const opts = await fetchPaymentTermsOptions();
+                        if (opts && opts.length > 0) {
+                            const newest = [...opts].sort((a, b) => (b.creation || '').localeCompare(a.creation || ''))[0];
+                            if (newest) {
+                                setPaymentTerms(newest.name);
+                            }
+                        }
+                    }}
+                />
+                <PaymentTypeDialog
+                    open={paymentTypeDialogOpen}
+                    onClose={() => setPaymentTypeDialogOpen(false)}
+                    onSuccess={async () => {
+                        const opts = await fetchPaymentTypeOptions();
+                        if (opts && opts.length > 0) {
+                            const newest = [...opts].sort((a, b) => (b.creation || '').localeCompare(a.creation || ''))[0];
+                            if (newest) {
+                                setPaymentType(newest.name);
+                            }
                         }
                     }}
                 />

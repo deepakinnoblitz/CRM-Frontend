@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { IoMdSettings } from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
@@ -138,7 +139,7 @@ export function EmployeeDailyLogTableToolbar({
               onClick={handleSortClick}
               sx={{
                 flexGrow: { xs: 1, md: 0 },
-                minWidth: { xs: '0', md: 160 },
+                minWidth: { xs: '0', md: 180 },
                 height: 40,
                 px: 2,
                 color: 'text.primary',
@@ -147,6 +148,7 @@ export function EmployeeDailyLogTableToolbar({
                 borderColor: 'divider',
                 borderRadius: 1,
                 fontWeight: 500,
+                whiteSpace: 'nowrap',
                 '&:hover': {
                   bgcolor: 'action.hover',
                 },
@@ -195,7 +197,7 @@ export function EmployeeDailyLogTableToolbar({
           <Button
             disableRipple
             color="inherit"
-            startIcon={<Iconify icon={"solar:settings-bold-duotone" as any} sx={{ color: 'dark.main' }} />}
+            startIcon={<IoMdSettings />}
             onClick={onOpenSettings}
             sx={{
               height: 40,

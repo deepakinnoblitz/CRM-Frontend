@@ -17,6 +17,7 @@ export interface PurchaseItem {
 
 export interface Purchase {
     name: string;
+    vendor?: string;
     vendor_name: string;
     vendor_id?: string;
     bill_no: string;
@@ -113,7 +114,7 @@ export async function fetchPurchases(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Purchase&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Purchase&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch purchases");

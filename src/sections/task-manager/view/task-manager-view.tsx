@@ -10,6 +10,7 @@ import Snackbar from '@mui/material/Snackbar';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import ToggleButton from '@mui/material/ToggleButton';
+import { alpha, useTheme } from '@mui/material/styles';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 import { useSocket } from 'src/hooks/use-socket';
@@ -53,6 +54,7 @@ const defaultKanbanFilters: TaskFiltersProps = {
 };
 
 export default function TaskManagerView() {
+    const theme = useTheme();
     const { user } = useAuth();
     const { socket } = useSocket(user?.email);
     const [searchParams] = useSearchParams();
@@ -170,7 +172,7 @@ export default function TaskManagerView() {
 
     const sortTasks = useCallback((data: TaskManager[]) => [...data].sort((a, b) => {
         if (sortBy === 'latest') return new Date(b.modified).getTime() - new Date(a.modified).getTime();
-        if (sortBy === 'oldest') return new Date(a.creation).getTime() - new Date(b.creation).getTime();
+        if (sortBy === 'oldest') return new Date(a.modified).getTime() - new Date(b.modified).getTime();
 
         if (sortBy === 'due_date_asc') {
             if (!a.due_date && !b.due_date) return 0;
@@ -191,6 +193,7 @@ export default function TaskManagerView() {
     }), [sortBy]);
 
     const kanbanCanReset =
+        !!filterName ||
         kanbanFilters.status !== 'all' ||
         kanbanFilters.project !== 'all' ||
         kanbanFilters.priority !== 'all' ||
@@ -230,7 +233,7 @@ export default function TaskManagerView() {
     const listTasks = sortTasks(baseTasks);
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Container maxWidth="xl" sx={{ height: 1, display: 'flex', flexDirection: 'column', px: { xs: 2, md: 1 } }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                     <Box>
@@ -246,31 +249,39 @@ export default function TaskManagerView() {
                             sx={{
                                 p: 0.5,
                                 gap: 0.5,
-                                borderRadius: 1.25,
-                                bgcolor: 'background.neutral',
-                                border: (theme) => `solid 1px ${theme.palette.divider}`,
+                                borderRadius: '24px',
+                                bgcolor: alpha(theme.palette.grey[500], 0.06),
+                                border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
                                 '& .MuiToggleButton-root': {
-                                    px: 1.5,
-                                    height: 32,
-                                    border: 0,
-                                    borderRadius: 1,
+                                    px: 2.5,
+                                    height: 30,
+                                    border: '0 !important',
+                                    borderRadius: '20px !important',
                                     typography: 'subtitle2',
-                                    color: 'text.secondary',
+                                    color: theme.palette.text.secondary,
+                                    textTransform: 'capitalize',
+                                    transition: 'all 0.2s ease-in-out',
+                                    '&:hover': {
+                                        bgcolor: alpha(theme.palette.grey[500], 0.08),
+                                    },
                                     '&.Mui-selected': {
-                                        color: 'text.primary',
-                                        bgcolor: 'background.paper',
-                                        boxShadow: (theme) => theme.customShadows.z1,
-                                        '&:hover': { bgcolor: 'background.paper' },
+                                        color: '#fff !important',
+                                        bgcolor: '#08a3cd !important',
+                                        boxShadow: `0 2px 8px ${alpha('#08a3cd', 0.3)}`,
+                                        fontWeight: 700,
+                                        '&:hover': {
+                                            bgcolor: '#08a3cd !important',
+                                        },
                                     },
                                 },
                             }}
                         >
                             <ToggleButton value="list">
-                                <Iconify icon="solar:list-bold-duotone" width={20} sx={{ mr: 1 }} />
+                                <Iconify icon="solar:list-bold-duotone" width={18} sx={{ mr: 1 }} />
                                 List View
                             </ToggleButton>
                             <ToggleButton value="kanban">
-                                <Iconify icon="solar:widget-5-bold-duotone" width={20} sx={{ mr: 1 }} />
+                                <Iconify icon="solar:widget-5-bold-duotone" width={18} sx={{ mr: 1 }} />
                                 Kanban View
                             </ToggleButton>
                         </ToggleButtonGroup>
@@ -291,7 +302,7 @@ export default function TaskManagerView() {
                 {/* ── Kanban toolbar — same as List ── */}
                 {view === 'kanban' && (
                     <>
-                        <Card sx={{ mb: 3, boxShadow: 'none', border: (theme) => `solid 1px ${theme.palette.divider}` }}>
+                        <Card sx={{ mb: 3, boxShadow: 'none', border: `solid 1px ${theme.palette.divider}` }}>
                             <TaskTableToolbar
                                 filterName={filterName}
                                 onFilterName={(e) => setFilterName(e.target.value)}

@@ -19,12 +19,16 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import FormControl from '@mui/material/FormControl';
+import Autocomplete from '@mui/material/Autocomplete';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+
+import { usePdfExport } from 'src/hooks/use-pdf-export';
 
 import { runReport } from 'src/api/reports';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -32,6 +36,7 @@ import { getStates, getCities, getDoctypeList } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { generateAccountPdf } from 'src/components/export/pdf/account-pdf-generator';
 
 import { useAuth } from 'src/auth/auth-context';
 
@@ -46,17 +51,18 @@ export function AccountReportView() {
     const [loading, setLoading] = useState(false);
 
     const { user } = useAuth();
+    const { exportingPdf, handleExportPdf } = usePdfExport();
     // Filters
     const [accountName, setAccountName] = useState('');
     const [country, setCountry] = useState('all');
     const [state, setState] = useState('all');
     const [city, setCity] = useState('all');
-    const [owner, setOwner] = useState(user?.name || 'all');
+    const [owner, setOwner] = useState('all');
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
 
     useEffect(() => {
         if (user?.name) {
-            setOwner(user.name);
+            setOwner(user.has_crm_permission ? user.name : 'all');
         }
     }, [user]);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
@@ -216,7 +222,7 @@ export function AccountReportView() {
         setState('all');
         setCity('all');
         if (user?.name) {
-            setOwner(user.name);
+            setOwner(user.has_crm_permission ? user.name : 'all');
         }
     };
 
@@ -254,10 +260,10 @@ export function AccountReportView() {
     }, [country, state]);
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Typography variant="h4">Account Report</Typography>
+                    <Typography variant="h4">Company Report</Typography>
                     <Stack direction="row" spacing={1}>
                         <Button
                             variant="outlined"
@@ -280,9 +286,11 @@ export function AccountReportView() {
 
                 <Card
                     sx={{
-                        p: 2.5,
+                        py: 2.5,
+                        px: 2,
                         display: 'flex',
-                        gap: 2,
+                        columnGap: 2,
+                        rowGap: 1.5,
                         flexWrap: 'wrap',
                         alignItems: 'center',
                         bgcolor: 'background.neutral',
@@ -292,37 +300,44 @@ export function AccountReportView() {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="From Date"
+                            format="DD-MM-YYYY"
                             value={fromDate}
                             onChange={(newValue) => setFromDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 160, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                         <DatePicker
                             label="To Date"
+                            format="DD-MM-YYYY"
                             value={toDate}
                             onChange={(newValue) => setToDate(newValue)}
-                            slotProps={{ textField: { size: 'small' } }}
+                            slotProps={{
+                                textField: {
+                                    size: 'small',
+                                    sx: { width: 160, '& .MuiInputBase-root': { height: 48, alignItems: 'center' } }
+                                }
+                            }}
                         />
                     </LocalizationProvider>
                     <TextField
-                        label="Account Name"
+                        label="Company Name"
                         size="small"
                         sx={{ minWidth: 160 }}
                         value={accountName}
                         onChange={(e) => setAccountName(e.target.value)}
                     />
                     <FormControl size="small" sx={{ minWidth: 160 }}>
-                        <Select
-                            value={country}
-                            onChange={(e) => setCountry(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">Country</MenuItem>
-                            {countryOptions.map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </Select>
+                        <Autocomplete
+                            size="small"
+                            options={countryOptions}
+                            value={country === 'all' ? null : country}
+                            onChange={(e, newValue) => setCountry(newValue || 'all')}
+                            renderInput={(params) => <TextField {...params} placeholder="Country" />}
+                        />
                     </FormControl>
                     <FormControl size="small" sx={{ minWidth: 160 }} disabled={country === 'all'}>
                         <Select
@@ -352,31 +367,69 @@ export function AccountReportView() {
                             ))}
                         </Select>
                     </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 160 }} disabled>
-                        <Select
-                            value={owner}
-                            onChange={(e) => setOwner(e.target.value)}
-                            displayEmpty
-                            inputProps={{ readOnly: true }}
-                        >
-                            <MenuItem value="all">Owner</MenuItem>
-                            <MenuItem value="Administrator">Administrator</MenuItem>
-                            {ownerOptions
-                                .filter((opt) => opt !== 'Administrator')
-                                .map((opt) => (
-                                    <MenuItem key={opt} value={opt}>
-                                        {opt}
-                                    </MenuItem>
-                                ))}
-                        </Select>
-                    </FormControl>
+                    <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 250 }}
+                        disabled={user?.has_crm_permission}
+                        options={['All Owners', ...ownerOptions.filter((opt) => opt !== 'Administrator')]}
+                        getOptionLabel={(option) => option || 'All Owners'}
+                        value={owner === 'all' || !owner ? 'All Owners' : owner}
+                        onChange={(event, newValue) => {
+                            if (newValue === 'All Owners' || !newValue) {
+                                setOwner('all');
+                            } else {
+                                setOwner(newValue);
+                            }
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="All Owners"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                    />
                     <Box sx={{ flexGrow: 1 }} />
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon={"solar:export-bold" as any} />}
                         onClick={() => setOpenExportFields(true)}
+                        disabled={reportData.length === 0}
+                        sx={{ mr: 1 }}
                     >
-                        Export
+                        Export Excel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                        onClick={() => handleExportPdf(() => generateAccountPdf({
+                            reportData,
+                            selected,
+                            summary: summaryData.length > 0 ? summaryData : [
+                                { label: 'Total Accounts', value: reportData.length },
+                                { label: 'With GSTIN', value: reportData.filter((r: any) => r.gstin).length },
+                                { label: 'With Website', value: reportData.filter((r: any) => r.website).length },
+                                { label: 'With Phone', value: reportData.filter((r: any) => r.phone_number).length },
+                            ]
+                        }))}
+                        disabled={exportingPdf || reportData.length === 0}
+                        sx={{
+                            bgcolor: '#f43f5e',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#e11d48' },
+                            height: 37,
+                            px: 3,
+                        }}
+                    >
+                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
                     </Button>
                 </Card>
 
@@ -431,50 +484,60 @@ export function AccountReportView() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
-                                        const isSelected = selected.indexOf(row.name) !== -1;
-                                        return (
-                                            <TableRow
-                                                key={index}
-                                                hover
-                                                role="checkbox"
-                                                aria-checked={isSelected}
-                                                selected={isSelected}
-                                                sx={{
-                                                    '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                    '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                }}
-                                            >
-                                                <TableCell padding="checkbox">
-                                                    <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
-                                                </TableCell>
-                                                <TableCell sx={{ fontWeight: 600 }}>{row.account_name}</TableCell>
-                                                <TableCell>{row.phone_number}</TableCell>
-                                                <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {row.website}
-                                                </TableCell>
-                                                <TableCell>{row.gstin}</TableCell>
-                                                <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {[row.city, row.state, row.country].filter(Boolean).join(', ')}
-                                                </TableCell>
-                                                <TableCell>{row.owner_name}</TableCell>
-                                                <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
-                                                    <IconButton onClick={() => handleViewAccount(row.name)} sx={{ color: 'info.main' }}>
-                                                        <Iconify icon="solar:eye-bold" />
-                                                    </IconButton>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                    {reportData.length === 0 && !loading && (
+                                    {loading ? (
                                         <TableRow>
                                             <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                                                <Stack spacing={1} alignItems="center">
-                                                    <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
-                                                </Stack>
+                                                <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
+                                    ) : (
+                                        <>
+                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                                const isSelected = selected.indexOf(row.name) !== -1;
+                                                return (
+                                                    <TableRow
+                                                        key={index}
+                                                        hover
+                                                        role="checkbox"
+                                                        aria-checked={isSelected}
+                                                        selected={isSelected}
+                                                        sx={{
+                                                            '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                            '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                        }}
+                                                    >
+                                                        <TableCell padding="checkbox">
+                                                            <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                                                        </TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>{row.account_name}</TableCell>
+                                                        <TableCell>{row.phone_number}</TableCell>
+                                                        <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                            {row.website}
+                                                        </TableCell>
+                                                        <TableCell>{row.gstin}</TableCell>
+                                                        <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                            {[row.city, row.state, row.country].filter(Boolean).join(', ')}
+                                                        </TableCell>
+                                                        <TableCell>{row.owner_name}</TableCell>
+                                                        <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
+                                                            <IconButton onClick={() => handleViewAccount(row.name)} sx={{ color: 'info.main' }}>
+                                                                <Iconify icon="solar:eye-bold" />
+                                                            </IconButton>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                            {reportData.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                                        <Stack spacing={1} alignItems="center">
+                                                            <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
+                                                        </Stack>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </>
                                     )}
                                 </TableBody>
                             </Table>

@@ -47,6 +47,7 @@ export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, se
         evaluation_type: '',
         evaluation_date: dayjs().format('YYYY-MM-DD'),
         remarks: '',
+        how_to_improve: '',
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -59,6 +60,7 @@ export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, se
                 evaluation_type: selectedEvent.evaluation_type || 'Neutral',
                 evaluation_date: selectedEvent.evaluation_date || dayjs().format('YYYY-MM-DD'),
                 remarks: selectedEvent.remarks || '',
+                how_to_improve: selectedEvent.how_to_improve || '',
             });
         } else {
             setFormData({
@@ -67,6 +69,7 @@ export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, se
                 evaluation_type: '',
                 evaluation_date: dayjs().format('YYYY-MM-DD'),
                 remarks: '',
+                how_to_improve: '',
             });
         }
     }, [selectedEvent, open]);
@@ -102,7 +105,10 @@ export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, se
             if (selectedEvent) {
                 await updateEmployeeEvaluationEvent(selectedEvent.name, formData);
             } else {
-                await createEmployeeEvaluationEvent(formData);
+                await createEmployeeEvaluationEvent({
+                    ...formData,
+                    auto_submit: 1,
+                });
             }
             onSuccess();
             onClose();
@@ -114,15 +120,40 @@ export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, se
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {selectedEvent ? 'Edit Employee Evaluation' : 'New Employee Evaluation'}
-                <IconButton onClick={onClose}>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="sm"
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    boxShadow: (themeVar: any) => themeVar.customShadows.z24,
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }
+            }}
+        >
+            <DialogTitle
+                sx={{
+                    m: 0,
+                    p: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: (theme: any) => `1px solid ${theme.palette.divider}`,
+                }}
+            >
+                <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
+                    {selectedEvent ? 'Edit Employee Evaluation' : 'New Employee Evaluation'}
+                </Typography>
+                <IconButton onClick={onClose} sx={{ color: (theme: any) => theme.palette.grey[500] }}>
                     <Iconify icon="mingcute:close-line" />
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent dividers>
+            <DialogContent dividers sx={{ flexGrow: 1, overflowY: 'auto', p: 3 }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Stack spacing={3} sx={{ pt: 1 }}>
                         <Autocomplete
@@ -200,6 +231,21 @@ export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, se
                             )}
                         />
 
+                        <DatePicker
+                            label="Evaluation Date"
+                            format="DD-MM-YYYY"
+                            value={dayjs(formData.evaluation_date)}
+                            onChange={(newValue) => setFormData({ ...formData, evaluation_date: newValue?.format('YYYY-MM-DD') || '' })}
+                            slotProps={{
+                                textField: {
+                                    fullWidth: true,
+                                    required: true,
+                                    error: !!errors.evaluation_date,
+                                    helperText: errors.evaluation_date,
+                                },
+                            }}
+                        />
+
                         <Autocomplete
                             fullWidth
                             options={evaluationPoints}
@@ -230,20 +276,24 @@ export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, se
                             )}
                         />
 
-                        <DatePicker
-                            label="Evaluation Date"
-                            format="DD-MM-YYYY"
-                            value={dayjs(formData.evaluation_date)}
-                            onChange={(newValue) => setFormData({ ...formData, evaluation_date: newValue?.format('YYYY-MM-DD') || '' })}
-                            slotProps={{
-                                textField: {
-                                    fullWidth: true,
-                                    required: true,
-                                    error: !!errors.evaluation_date,
-                                    helperText: errors.evaluation_date,
-                                },
-                            }}
-                        />
+                        {(() => {
+                            const selectedPoint = evaluationPoints?.find((p: any) => p.name === formData.evaluation_type);
+                            const isNegative = selectedPoint ? selectedPoint.default_score < 0 : false;
+
+                            if (isNegative) {
+                                return (
+                                    <TextField
+                                        fullWidth
+                                        multiline
+                                        rows={3}
+                                        label="How to Improve"
+                                        value={formData.how_to_improve}
+                                        onChange={(e) => setFormData({ ...formData, how_to_improve: e.target.value })}
+                                    />
+                                );
+                            }
+                            return null;
+                        })()}
 
                         <TextField
                             fullWidth
@@ -253,11 +303,13 @@ export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, se
                             value={formData.remarks}
                             onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
                         />
+
+                        
                     </Stack>
                 </LocalizationProvider>
             </DialogContent>
 
-            <DialogActions>
+            <DialogActions sx={{ p: 1.5 }}>
                 <LoadingButton
                     variant="contained"
                     onClick={handleSave}

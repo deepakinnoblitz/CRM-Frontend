@@ -6,6 +6,7 @@ export interface EmployeeEvaluationTrait {
     trait_name: string;
     category?: string;
     description?: string;
+    how_to_improve?: string;
     evaluation_scores?: {
         evaluation_point: string;
         score: number;
@@ -23,7 +24,9 @@ export interface EmployeeEvaluationEvent {
     score_change: number;
     hr_user: string;
     remarks?: string;
+    how_to_improve?: string;
     docstatus: number;
+    auto_submit?: number;
     modified_by: string;
     modified: string;
 }
@@ -79,7 +82,7 @@ export async function fetchEmployeeEvaluationTraits(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Evaluation Trait&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Evaluation Trait&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch evaluation traits");
@@ -109,8 +112,10 @@ export async function createEmployeeEvaluationTrait(data: Partial<EmployeeEvalua
     });
 
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to create evaluation trait"));
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to create evaluation trait"));
     }
     return (await res.json()).message;
 }
@@ -127,8 +132,10 @@ export async function updateEmployeeEvaluationTrait(name: string, data: Partial<
     });
 
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to update evaluation trait"));
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to update evaluation trait"));
     }
     return (await res.json()).message;
 }
@@ -144,8 +151,10 @@ export async function deleteEmployeeEvaluationTrait(name: string) {
     });
 
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to delete evaluation trait"));
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to delete evaluation trait"));
     }
     return (await res.json()).message;
 }
@@ -181,8 +190,10 @@ export async function createEmployeeEvaluationTraitCategory(data: Partial<Evalua
     });
 
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to create evaluation trait category"));
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to create evaluation trait category"));
     }
     return (await res.json()).message;
 }
@@ -199,8 +210,10 @@ export async function updateEmployeeEvaluationTraitCategory(name: string, data: 
     });
 
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to update evaluation trait category"));
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to update evaluation trait category"));
     }
     return (await res.json()).message;
 }
@@ -216,8 +229,10 @@ export async function deleteEmployeeEvaluationTraitCategory(name: string) {
     });
 
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to delete evaluation trait category"));
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to delete evaluation trait category"));
     }
     return (await res.json()).message;
 }
@@ -289,7 +304,7 @@ export async function fetchEmployeeEvaluationEvents(params: {
 
     const query = new URLSearchParams({
         doctype: "Employee Evaluation",
-        fields: JSON.stringify(["name", "employee", "employee_name", "trait", "evaluation_type", "evaluation_date", "score_change", "hr_user", "remarks", "docstatus", "modified_by", "modified"]),
+        fields: JSON.stringify(["name", "employee", "employee_name", "trait", "evaluation_type", "evaluation_date", "score_change", "hr_user", "remarks", "how_to_improve", "docstatus", "modified_by", "modified"]),
         filters: JSON.stringify(filters),
         or_filters: JSON.stringify(or_filters),
         limit_start: String((params.page - 1) * params.page_size),
@@ -299,7 +314,7 @@ export async function fetchEmployeeEvaluationEvents(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Employee Evaluation&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Employee Evaluation&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch employee evaluations");
@@ -358,7 +373,7 @@ export async function fetchEmployeeEvaluationScoreLogs(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/frappe.client.get_count?doctype=Employee Evaluation Score Log&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Employee Evaluation Score Log&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch employee evaluation score logs");
@@ -382,8 +397,10 @@ export async function createEmployeeEvaluationEvent(data: Partial<EmployeeEvalua
     });
 
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to create employee evaluation"));
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to create employee evaluation"));
     }
     return (await res.json()).message;
 }
@@ -398,8 +415,10 @@ export async function submitEmployeeEvaluationEvent(doc: Partial<EmployeeEvaluat
     });
 
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to submit employee evaluation"));
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to submit employee evaluation"));
     }
     return (await res.json()).message;
 }
@@ -415,8 +434,10 @@ export async function cancelEmployeeEvaluationEvent(name: string) {
     });
 
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to cancel employee evaluation"));
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to cancel employee evaluation"));
     }
     return (await res.json()).message;
 }
@@ -431,8 +452,10 @@ export async function deleteEmployeeEvaluationEvent(name: string) {
     });
 
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to delete employee evaluation"));
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to delete employee evaluation"));
     }
     return (await res.json()).message;
 }
@@ -449,8 +472,10 @@ export async function updateEmployeeEvaluationEvent(name: string, data: Partial<
     });
 
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to update employee evaluation"));
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to update employee evaluation"));
     }
     return (await res.json()).message;
 }
@@ -466,8 +491,129 @@ export async function resetEmployeeScores(password: string, employees?: string[]
     });
 
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to reset scores"));
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to reset scores"));
+    }
+    return (await res.json()).message;
+}
+
+// ─── Evaluation Automation Rules ─────────────────────────────────────────────
+
+export interface EvaluationAutomationRule {
+    name: string;
+    rule_name: string;
+    event_type: 'Late Login' | 'Early Exit' | 'Task Delayed' | 'Milestone Achieved' | 'Continuous Presence' | 'Daily Log Submission' | 'Specific Day Leave' | 'Specific Date Leave';
+    enabled: number;
+    auto_submit: number;
+    trait: string;
+    evaluation_point: string;
+    late_login_after?: string;
+    early_exit_before?: string;
+    break_duration_after?: number;
+    specific_day?: string;
+    specific_date?: string;
+    description?: string;
+    how_to_improve?: string;
+}
+
+export async function fetchEvaluationAutomationRules(params: {
+    page: number;
+    page_size: number;
+    search?: string;
+    sort_by?: string;
+    event_type?: string;
+    enabled?: number;
+}) {
+    const filters: any[] = [];
+    if (params.event_type && params.event_type !== 'all') {
+        filters.push(["Evaluation Automation Rule", "event_type", "=", params.event_type]);
+    }
+    if (params.enabled !== undefined && params.enabled !== null) {
+        filters.push(["Evaluation Automation Rule", "enabled", "=", params.enabled]);
+    }
+
+    const or_filters: any[] = [];
+
+    if (params.search) {
+        or_filters.push(["Evaluation Automation Rule", "rule_name", "like", `%${params.search}%`]);
+        or_filters.push(["Evaluation Automation Rule", "event_type", "like", `%${params.search}%`]);
+        or_filters.push(["Evaluation Automation Rule", "trait", "like", `%${params.search}%`]);
+    }
+
+    let orderBy = "modified desc";
+    if (params.sort_by) {
+        const parts = params.sort_by.split('_');
+        const direction = parts.pop();
+        const field = parts.join('_');
+        orderBy = `${field} ${direction}, name ${direction}`;
+    }
+
+    const query = new URLSearchParams({
+        doctype: "Evaluation Automation Rule",
+        fields: JSON.stringify(["name", "rule_name", "event_type", "enabled", "auto_submit", "trait", "evaluation_point", "late_login_after", "early_exit_before", "break_duration_after", "specific_day", "specific_date", "description", "how_to_improve"]),
+        filters: JSON.stringify(filters),
+        or_filters: JSON.stringify(or_filters),
+        limit_start: String((params.page - 1) * params.page_size),
+        limit_page_length: String(params.page_size),
+        order_by: orderBy
+    });
+
+    const [res, countRes] = await Promise.all([
+        frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Evaluation Automation Rule&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
+    ]);
+
+    if (!res.ok) throw new Error("Failed to fetch automation rules");
+
+    return {
+        data: (await res.json()).message || [],
+        total: (await countRes.json()).message || 0
+    };
+}
+
+export async function createEvaluationAutomationRule(data: Partial<EvaluationAutomationRule>) {
+    const res = await frappeRequest('/api/method/frappe.client.insert', {
+        method: 'POST',
+        headers: await getAuthHeaders(),
+        body: JSON.stringify({ doc: { doctype: 'Evaluation Automation Rule', ...data } })
+    });
+    if (!res.ok) {
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to create automation rule"));
+    }
+    return (await res.json()).message;
+}
+
+export async function updateEvaluationAutomationRule(name: string, data: Partial<EvaluationAutomationRule>) {
+    const res = await frappeRequest('/api/method/frappe.client.set_value', {
+        method: 'POST',
+        headers: await getAuthHeaders(),
+        body: JSON.stringify({ doctype: 'Evaluation Automation Rule', name, fieldname: data })
+    });
+    if (!res.ok) {
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to update automation rule"));
+    }
+    return (await res.json()).message;
+}
+
+export async function deleteEvaluationAutomationRule(name: string) {
+    const res = await frappeRequest('/api/method/frappe.client.delete', {
+        method: 'POST',
+        headers: await getAuthHeaders(),
+        body: JSON.stringify({ doctype: 'Evaluation Automation Rule', name })
+    });
+    if (!res.ok) {
+        const errorText = await res.text();
+        let errorData;
+        try { errorData = JSON.parse(errorText); } catch { errorData = errorText; }
+        throw new Error(handleFrappeError(errorData, "Failed to delete automation rule"));
     }
     return (await res.json()).message;
 }

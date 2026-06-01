@@ -169,10 +169,10 @@ export function EmployeeEvaluationTableFiltersDrawer({
                                         return (
                                             <li key={key} {...optionProps}>
                                                 <Stack spacing={0.5}>
-                                                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                                                         {option.employee_name || option.name}
                                                     </Typography>
-                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                                         ID: {option.name}
                                                     </Typography>
                                                 </Stack>
@@ -349,6 +349,62 @@ export function EmployeeEvaluationTableFiltersDrawer({
                                     }}
                                 />
                             </Stack>
+                        )}
+
+                        {currentTab === 'automation' && (
+                            <>
+                                <Stack spacing={1.5}>
+                                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                        Event Type
+                                    </Typography>
+                                    <TextField
+                                        select
+                                        fullWidth
+                                        value={filters.event_type || 'all'}
+                                        onChange={(e) => onFilters({ event_type: e.target.value })}
+                                        SelectProps={{ native: true }}
+                                        size="small"
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                borderRadius: 1.5,
+                                                bgcolor: 'background.neutral',
+                                            },
+                                        }}
+                                    >
+                                        <option value="all">All Events</option>
+                                        <option value="Late Login">Late Login</option>
+                                        <option value="Early Exit">Early Exit</option>
+                                        <option value="Daily Log Submission">Daily Log Submission</option>
+                                        <option value="Specific Day Leave">Specific Day Leave</option>
+                                        <option value="Specific Date Leave">Specific Date Leave</option>
+                                        <option value="Continuous Presence">Continuous Presence</option>
+                                    </TextField>
+                                </Stack>
+
+                                <Stack spacing={1.5}>
+                                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                        Rule Status
+                                    </Typography>
+                                    <TextField
+                                        select
+                                        fullWidth
+                                        value={filters.rule_enabled || 'all'}
+                                        onChange={(e) => onFilters({ rule_enabled: e.target.value })}
+                                        SelectProps={{ native: true }}
+                                        size="small"
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                borderRadius: 1.5,
+                                                bgcolor: 'background.neutral',
+                                            },
+                                        }}
+                                    >
+                                        <option value="all">All Status</option>
+                                        <option value="1">Active</option>
+                                        <option value="0">Inactive</option>
+                                    </TextField>
+                                </Stack>
+                            </>
                         )}
                     </Stack>
                 </LocalizationProvider>

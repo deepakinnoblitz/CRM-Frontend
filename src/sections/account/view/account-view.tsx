@@ -1,4 +1,5 @@
 import { MuiTelInput } from 'mui-tel-input';
+import { IoMdCloudDownload } from "react-icons/io";
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -15,10 +16,12 @@ import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
@@ -281,7 +284,7 @@ export function AccountView() {
         if (!confirmDelete.id) return;
         try {
             await deleteAccount(confirmDelete.id);
-            setSnackbar({ open: true, message: 'Account deleted successfully', severity: 'success' });
+            setSnackbar({ open: true, message: 'Company deleted successfully', severity: 'success' });
             loadAccounts();
         } catch (error: any) {
             console.error(error);
@@ -295,7 +298,7 @@ export function AccountView() {
     const handleBulkDelete = async () => {
         try {
             await Promise.all(selected.map((id) => deleteAccount(id)));
-            setSnackbar({ open: true, message: `${selected.length} accounts deleted successfully`, severity: 'success' });
+            setSnackbar({ open: true, message: `${selected.length} Company deleted successfully`, severity: 'success' });
             setSelected([]);
             loadAccounts();
         } catch (e: any) {
@@ -340,7 +343,7 @@ export function AccountView() {
 
         if (!accountName) {
             newErrors.accountName = true;
-            missingFields.push('Account Name');
+            missingFields.push('Company Name');
         }
         if (!phoneNumber) {
             newErrors.phoneNumber = true;
@@ -381,10 +384,10 @@ export function AccountView() {
             setCreating(true);
             if (isEdit && currentAccount) {
                 await updateAccount(currentAccount.name, data);
-                setSnackbar({ open: true, message: 'Account updated successfully', severity: 'success' });
+                setSnackbar({ open: true, message: 'Company updated successfully', severity: 'success' });
             } else {
                 await createAccount(data);
-                setSnackbar({ open: true, message: 'Account created successfully', severity: 'success' });
+                setSnackbar({ open: true, message: 'Company created successfully', severity: 'success' });
             }
             handleCloseCreate();
             loadAccounts();
@@ -447,18 +450,18 @@ export function AccountView() {
     const empty = !loading && !accounts.length && !filterName && !canReset;
 
     return (
-        <DashboardContent maxWidth={false}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box display="flex" alignItems="center" mb={5}>
                 <Typography variant="h4" flexGrow={1}>
-                    Accounts
+                    Company
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                     {permissions.write && (
                         <Button
-                            variant="outlined"
-                            startIcon={<Iconify icon={"solar:import-bold-duotone" as any} />}
+                            variant="contained"
+                            startIcon={<IoMdCloudDownload size={20} />}
                             onClick={handleOpenImport}
-                            sx={{ color: '#08a3cd', borderColor: '#08a3cd', '&:hover': { borderColor: '#068fb3', bgcolor: 'rgba(8, 163, 205, 0.04)' } }}
+                            sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
                         >
                             Import
                         </Button>
@@ -470,7 +473,7 @@ export function AccountView() {
                             onClick={handleOpenCreate}
                             sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
                         >
-                            New Account
+                            New Company
                         </Button>
                     )}
                 </Box>
@@ -481,7 +484,7 @@ export function AccountView() {
                     numSelected={selected.length}
                     filterName={filterName}
                     onFilterName={handleFilterByName}
-                    searchPlaceholder="Search accounts..."
+                    searchPlaceholder="Search Company..."
                     onOpenFilter={() => setOpenFilters(true)}
                     canReset={canReset}
                     sortBy={sortBy}
@@ -490,8 +493,8 @@ export function AccountView() {
                     sortOptions={[
                         { value: 'modified_desc', label: 'Newest First' },
                         { value: 'modified_asc', label: 'Oldest First' },
-                        { value: 'account_name_asc', label: 'Account Name: A to Z' },
-                        { value: 'account_name_desc', label: 'Account Name: Z to A' },
+                        { value: 'account_name_asc', label: 'Company Name: A to Z' },
+                        { value: 'account_name_desc', label: 'Company Name: Z to A' },
                     ]}
                 />
 
@@ -510,65 +513,70 @@ export function AccountView() {
                                 hideCheckbox
                                 showIndex
                                 headLabel={[
-                                    { id: 'account_name', label: 'Account Name' },
+                                    { id: 'account_name', label: 'Company Name' },
                                     { id: 'phone_number', label: 'Phone Number' },
                                     { id: 'gstin', label: 'GSTIN' },
                                     { id: 'city', label: 'City' },
                                     { id: 'state', label: 'State' },
                                     { id: 'country', label: 'Country' },
-                                    { id: 'website', label: 'Website' },
-                                    { id: '', label: '' },
+                                    { id: 'actions', label: 'Actions', align: 'right' },
                                 ]}
                             />
-                            <TableBody>
-                                {loading && (
-                                    <TableEmptyRows height={68} emptyRows={5} />
-                                )}
-
-                                {!loading && accounts.map((row, index) => (
-                                    <AccountTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            account_name: row.account_name,
-                                            phone_number: row.phone_number,
-                                            website: row.website,
-                                            gstin: row.gstin,
-                                            city: row.city,
-                                            state: row.state,
-                                            country: row.country,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                             <TableBody>
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
-                                            <EmptyContent
-                                                title="No accounts found"
-                                                description="Create a new account to manage your business relationships."
-                                                icon="solar:buildings-bold-duotone"
-                                            />
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {accounts.map((row, index) => (
+                                            <AccountTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    account_name: row.account_name,
+                                                    phone_number: row.phone_number,
+                                                    website: row.website,
+                                                    gstin: row.gstin,
+                                                    city: row.city,
+                                                    state: row.state,
+                                                    country: row.country,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row)}
+                                                onEdit={() => handleEditRow(row.name)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
 
-                                {!empty && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={accounts.length < 5 ? 5 - accounts.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={8} sx={{py:10}}>
+                                                    <EmptyContent
+                                                        title="No Company found"
+                                                        description="Create a new account to manage your business relationships."
+                                                        icon="solar:buildings-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                    {!empty && !notFound && (
+                                        <TableEmptyRows
+                                            height={68}
+                                            emptyRows={accounts.length < 5 ? 5 - accounts.length : 0}
+                                        />
+                                    )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
@@ -601,9 +609,9 @@ export function AccountView() {
                 }}
             />
 
-            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="sm">
+            <Dialog open={openCreate} onClose={handleCloseCreate} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {viewMode ? 'Account Details' : isEdit ? 'Edit Account' : 'New Account'}
+                    {viewMode ? 'Company Details' : isEdit ? 'Edit Company' : 'New Company'}
                     <IconButton
                         aria-label="close"
                         onClick={handleCloseCreate}
@@ -627,7 +635,7 @@ export function AccountView() {
                     >
                         <TextField
                             fullWidth
-                            label="Account Name"
+                            label="Company Name"
                             name="account_name"
                             value={accountName}
                             onChange={(e) => {
@@ -636,6 +644,7 @@ export function AccountView() {
                             }}
                             required
                             error={!!validationErrors.accountName}
+                            helperText={validationErrors.accountName ? 'Company Name is required' : ''}
                             disabled={viewMode}
                             placeholder="e.g. Acme Corp"
                         />
@@ -653,6 +662,7 @@ export function AccountView() {
                             }}
                             required
                             error={!!validationErrors.phoneNumber}
+                            helperText={validationErrors.phoneNumber ? 'Phone Number is required' : ''}
                             sx={{
                                 '& .MuiInputBase-input.Mui-disabled': {
                                     WebkitTextFillColor: 'inherit',
@@ -671,74 +681,46 @@ export function AccountView() {
                             placeholder="e.g. 22AAAAA0000A1Z5"
                         />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="Country"
-                            name="country"
-                            value={country}
-                            onChange={(e) => setCountry(e.target.value)}
                             disabled={viewMode}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {countryOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
+                            options={countryOptions.filter(o => o !== '')}
+                            value={country}
+                            onChange={(e, newValue) => setCountry(newValue || '')}
+                            renderInput={(params) => <TextField {...params} label="Country" />}
+                        />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="State"
-                            name="state"
-                            value={state}
-                            onChange={(e) => setState(e.target.value)}
                             disabled={viewMode || !country}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {stateOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
+                            options={stateOptions.filter(o => o !== '')}
+                            value={state}
+                            onChange={(e, newValue) => setState(newValue || '')}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="State"
+                                    placeholder={!country ? "Select Country First" : ""}
+                                    InputLabelProps={{ shrink: true }}
+                                />
+                            )}
+                        />
 
-                        <TextField
-                            select
+                        <Autocomplete
                             fullWidth
-                            label="City"
-                            name="city"
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
                             disabled={viewMode || !state}
-                            SelectProps={{ native: true }}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{
-                                "& .MuiInputBase-input.Mui-disabled": {
-                                    WebkitTextFillColor: "inherit",
-                                    color: "inherit",
-                                },
-                            }}
-                        >
-                            <option value="" disabled>Select</option>
-                            {cityOptions.map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </TextField>
+                            options={cityOptions.filter(o => o !== '')}
+                            value={city}
+                            onChange={(e, newValue) => setCity(newValue || '')}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="City"
+                                    placeholder={!state ? "Select State First" : ""}
+                                    InputLabelProps={{ shrink: true }}
+                                />
+                            )}
+                        />
 
                         <TextField
                             fullWidth
@@ -753,7 +735,7 @@ export function AccountView() {
                     </Box>
                 </DialogContent>
 
-                <DialogActions>
+                <DialogActions sx={{ p: 2 }}>
 
                     {!viewMode && (
                         <Button variant="contained" onClick={handleCreate} disabled={creating}>

@@ -1,7 +1,12 @@
 import type { Invoice } from 'src/api/invoice';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { 
+    IoMdArrowBack, IoMdTrash, IoMdCreate, IoMdDocument, 
+    IoMdPerson, IoMdCalendar, IoMdCash, IoMdAlert, 
+    IoMdCheckmarkCircle, IoMdListBox, IoMdListBox as IoMdNotes
+} from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -23,7 +28,6 @@ import { getInvoice } from 'src/api/invoice';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getInvoiceCollection, deleteInvoiceCollection, fetchInvoiceCollections } from 'src/api/invoice-collection';
 
-import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 // ----------------------------------------------------------------------
@@ -31,6 +35,16 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 export function InvoiceCollectionDetailsView() {
     const { id } = useParams();
     const router = useRouter();
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    const handleGoBack = () => {
+        if (location.state?.from) {
+            navigate(location.state.from);
+        } else {
+            router.push('/deals?tab=invoices&subtab=collections');
+        }
+    };
 
     const [collection, setCollection] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
@@ -81,7 +95,7 @@ export function InvoiceCollectionDetailsView() {
         return (
             <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Invoice Collection not found</Typography>
-                <Button onClick={() => router.push('/deals?tab=invoices&subtab=collections')} sx={{ mt: 3 }}>
+                <Button onClick={handleGoBack} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
             </DashboardContent>
@@ -107,7 +121,7 @@ export function InvoiceCollectionDetailsView() {
             setDeleting(true);
             await deleteInvoiceCollection(id);
             setSnackbar({ open: true, message: 'Collection deleted successfully', severity: 'success' });
-            setTimeout(() => router.push('/deals?tab=invoices&subtab=collections'), 1500);
+            setTimeout(() => handleGoBack(), 1500);
         } catch (error) {
             console.error('Failed to delete collection:', error);
             setSnackbar({ open: true, message: 'Failed to delete collection', severity: 'error' });
@@ -119,23 +133,34 @@ export function InvoiceCollectionDetailsView() {
 
     return (
         <DashboardContent maxWidth={false}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3}>
                 <Typography variant="h4">Invoice Collection: {id}</Typography>
                 <Stack direction="row" spacing={2}>
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/deals?tab=invoices&subtab=collections')}
-                        startIcon={<Iconify icon={"solar:arrow-left-bold" as any} />}
+                        onClick={handleGoBack}
+                        startIcon={<IoMdArrowBack size={20} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 2.5,
+                            '&:hover': {
+                                bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
+                                borderColor: 'text.primary',
+                            }
+                        }}
                     >
-                        Back to List
+                        Go Back
                     </Button>
                     {isLatest && (
                         <Button
                             variant="contained"
                             color="error"
                             onClick={() => setConfirmDeleteOpen(true)}
-                            startIcon={<Iconify icon={"solar:trash-bin-trash-bold" as any} />}
+                            startIcon={<IoMdTrash size={20} />}
+                            sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none' }}
                         >
                             Delete
                         </Button>
@@ -145,7 +170,15 @@ export function InvoiceCollectionDetailsView() {
                             variant="contained"
                             color="primary"
                             onClick={() => router.push(`/invoice-collections/${encodeURIComponent(id || '')}/edit`)}
-                            startIcon={<Iconify icon={"solar:pen-bold" as any} />}
+                            startIcon={<IoMdCreate size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#068fb3' }
+                            }}
                         >
                             Edit Collection
                         </Button>
@@ -167,21 +200,30 @@ export function InvoiceCollectionDetailsView() {
                         {/* Invoice Section */}
                         <Stack spacing={1.5}>
                             <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                                <Iconify icon={"solar:document-text-bold-duotone" as any} width={20} />
+                                <IoMdListBox size={20} />
                                 <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Invoice Details</Typography>
                             </Stack>
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                                <Typography variant="caption" color="text.disabled">Invoice Number</Typography>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <IoMdListBox size={14} style={{ color: '#919EAB' }} />
+                                    <Typography variant="caption" color="text.disabled">Invoice Number</Typography>
+                                </Stack>
                                 <Typography variant="subtitle1" color="primary.main" sx={{ mt: 0.5 }}>{invoice}</Typography>
                                 {invoiceDetails && (
                                     <>
                                         <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
-                                        <Typography variant="caption" color="text.disabled">Grand Total</Typography>
+                                        <Stack direction="row" alignItems="center" spacing={1}>
+                                            <IoMdCash size={14} style={{ color: '#919EAB' }} />
+                                            <Typography variant="caption" color="text.disabled">Grand Total</Typography>
+                                        </Stack>
                                         <Typography variant="subtitle1" sx={{ mt: 0.5 }}>{fCurrency(invoiceDetails.grand_total || 0)}</Typography>
                                     </>
                                 )}
                                 <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
-                                <Typography variant="caption" color="text.disabled">Amount to Pay</Typography>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <IoMdCash size={14} style={{ color: '#919EAB' }} />
+                                    <Typography variant="caption" color="text.disabled">Amount to Pay</Typography>
+                                </Stack>
                                 <Typography variant="h6" sx={{ mt: 0.5 }}>{fCurrency(amount_to_pay)}</Typography>
                             </Box>
                         </Stack>
@@ -189,19 +231,28 @@ export function InvoiceCollectionDetailsView() {
                         {/* Customer Section */}
                         <Stack spacing={1.5}>
                             <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                                <Iconify icon={"solar:user-rounded-bold-duotone" as any} width={20} />
+                                <IoMdPerson size={20} />
                                 <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Customer Details</Typography>
                             </Stack>
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                                <Typography variant="caption" color="text.disabled">Customer ID</Typography>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <IoMdListBox size={14} style={{ color: '#919EAB' }} />
+                                    <Typography variant="caption" color="text.disabled">Customer ID</Typography>
+                                </Stack>
                                 <Typography variant="subtitle2" sx={{ mt: 0.5 }}>{customer}</Typography>
                                 <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
-                                <Typography variant="caption" color="text.disabled">Name</Typography>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <IoMdPerson size={14} style={{ color: '#919EAB' }} />
+                                    <Typography variant="caption" color="text.disabled">Name</Typography>
+                                </Stack>
                                 <Typography variant="body2" sx={{ mt: 0.5 }}>{customer_name || '-'}</Typography>
                                 {company_name && (
                                     <>
                                         <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
-                                        <Typography variant="caption" color="text.disabled">Company</Typography>
+                                        <Stack direction="row" alignItems="center" spacing={1}>
+                                            <IoMdDocument size={14} style={{ color: '#919EAB' }} />
+                                            <Typography variant="caption" color="text.disabled">Company</Typography>
+                                        </Stack>
                                         <Typography variant="body2" sx={{ mt: 0.5 }}>{company_name}</Typography>
                                     </>
                                 )}
@@ -211,16 +262,22 @@ export function InvoiceCollectionDetailsView() {
                         {/* Collection Details Section */}
                         <Stack spacing={1.5}>
                             <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                                <Iconify icon={"solar:calendar-bold-duotone" as any} width={20} />
+                                <IoMdCalendar size={20} />
                                 <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Collection Info</Typography>
                             </Stack>
                             <Stack spacing={2} sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Collection Date</Typography>
+                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                        <IoMdCalendar size={14} style={{ color: '#919EAB' }} />
+                                        <Typography variant="caption" color="text.disabled">Collection Date</Typography>
+                                    </Stack>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{collection_date}</Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Payment Mode</Typography>
+                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                        <IoMdListBox size={14} style={{ color: '#919EAB' }} />
+                                        <Typography variant="caption" color="text.disabled">Payment Mode</Typography>
+                                    </Stack>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{mode_of_payment}</Typography>
                                 </Stack>
                             </Stack>
@@ -230,25 +287,32 @@ export function InvoiceCollectionDetailsView() {
                     {/* Payment Summary */}
                     <Box>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2, color: 'text.secondary' }}>
-                            <Iconify icon={"solar:wad-of-money-bold-duotone" as any} width={20} />
+                            <IoMdCash size={20} />
                             <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Payment Summary</Typography>
                         </Stack>
                         <Stack spacing={2} sx={{ p: 3, borderRadius: 2, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography variant="body2" color="text.secondary">Amount to Pay</Typography>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
+                                    <Typography variant="body2" color="text.secondary">Amount to Pay</Typography>
+                                </Stack>
                                 <Typography variant="subtitle2">{fCurrency(amount_to_pay)}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                    <Iconify icon={"solar:hand-money-bold-duotone" as any} width={16} sx={{ color: 'success.main' }} />
+                                <Stack direction="row" spacing={1.5} alignItems="center">
+                                    <IoMdCash size={20} style={{ color: '#02c281' }} />
                                     <Typography variant="body2" color="text.secondary">Amount Collected</Typography>
                                 </Stack>
                                 <Typography variant="subtitle2" color="success.main">{fCurrency(amount_collected)}</Typography>
                             </Stack>
                             <Divider sx={{ borderStyle: 'dashed' }} />
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                    <Iconify icon={"solar:wallet-2-bold-duotone" as any} width={20} sx={{ color: (amount_pending || 0) > 0 ? 'error.main' : 'success.main' }} />
+                                <Stack direction="row" spacing={1.5} alignItems="center">
+                                    {(amount_pending || 0) > 0 ? (
+                                        <IoMdAlert size={24} style={{ color: '#FF5630' }} />
+                                    ) : (
+                                        <IoMdCheckmarkCircle size={24} style={{ color: '#02c281' }} />
+                                    )}
                                     <Typography variant="subtitle1" sx={{ color: (amount_pending || 0) > 0 ? 'error.main' : 'success.main' }}>Amount Pending</Typography>
                                 </Stack>
                                 <Typography variant="h5" color={(amount_pending || 0) > 0 ? "error.main" : "success.main"}>{fCurrency(amount_pending)}</Typography>
@@ -260,7 +324,7 @@ export function InvoiceCollectionDetailsView() {
                     {remarks && (
                         <Stack spacing={1}>
                             <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                                <Iconify icon={"solar:notes-bold-duotone" as any} width={20} />
+                                <IoMdNotes size={20} />
                                 <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Remarks</Typography>
                             </Stack>
                             <Typography variant="body2" sx={{
