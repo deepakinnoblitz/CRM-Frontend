@@ -20,6 +20,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useJobApplicants } from 'src/hooks/useJobApplicants';
 
@@ -63,7 +64,7 @@ export function JobApplicantsView() {
     endDate: null as string | null,
   });
 
-  const { data, total, refetch } = useJobApplicants(
+  const { data, total, loading, refetch } = useJobApplicants(
     page + 1,
     rowsPerPage,
     filterName,
@@ -322,8 +323,8 @@ export function JobApplicantsView() {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const notFound = !data.length && !!filterName;
-  const empty = !data.length && !filterName;
+  const notFound = !loading && !data.length && !!filterName;
+  const empty = !loading && !data.length && !filterName;
 
   return (
     <DashboardContent maxWidth={false}>
@@ -380,45 +381,55 @@ export function JobApplicantsView() {
                 ]}
               />
               <TableBody>
-                {data.map((row, index) => (
-                  <JobApplicantTableRow
-                    key={row.name}
-                    index={page * rowsPerPage + index}
-                    row={{
-                      id: row.name,
-                      applicant_name: row.applicant_name,
-                      email_id: row.email_id,
-                      phone_number: row.phone_number,
-                      job_title: row.job_title,
-                      status: row.status,
-                    }}
-                    selected={selected.includes(row.name)}
-                    onSelectRow={() => handleSelectRow(row.name)}
-                    hideCheckbox
-                    onView={() => handleViewRow(row)}
-                    onEdit={() => handleEditRow(row)}
-                    onDelete={() => handleDeleteRow(row.name)}
-                    canEdit={permissions.write}
-                    canDelete={permissions.delete}
-                  />
-                ))}
-
-                {notFound && <TableNoData searchQuery={filterName} />}
-
-                {empty && (
+                {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6}>
-                      <EmptyContent
-                        title="No applicants found"
-                        description="There are no candidates for your job openings yet."
-                        icon="solar:user-resume-bold-duotone"
-                      />
+                    <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                      <CircularProgress sx={{ color: '#08a3cd' }} />
                     </TableCell>
                   </TableRow>
-                )}
+                ) : (
+                  <>
+                    {data.map((row, index) => (
+                      <JobApplicantTableRow
+                        key={row.name}
+                        index={page * rowsPerPage + index}
+                        row={{
+                          id: row.name,
+                          applicant_name: row.applicant_name,
+                          email_id: row.email_id,
+                          phone_number: row.phone_number,
+                          job_title: row.job_title,
+                          status: row.status,
+                        }}
+                        selected={selected.includes(row.name)}
+                        onSelectRow={() => handleSelectRow(row.name)}
+                        hideCheckbox
+                        onView={() => handleViewRow(row)}
+                        onEdit={() => handleEditRow(row)}
+                        onDelete={() => handleDeleteRow(row.name)}
+                        canEdit={permissions.write}
+                        canDelete={permissions.delete}
+                      />
+                    ))}
 
-                {!empty && !notFound && (
-                  <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                    {notFound && <TableNoData searchQuery={filterName} />}
+
+                    {empty && (
+                      <TableRow>
+                        <TableCell colSpan={6}>
+                          <EmptyContent
+                            title="No applicants found"
+                            description="There are no candidates for your job openings yet."
+                            icon="solar:user-resume-bold-duotone"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )}
+
+                    {!empty && !notFound && (
+                      <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                    )}
+                  </>
                 )}
               </TableBody>
             </Table>

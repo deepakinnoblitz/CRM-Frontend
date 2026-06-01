@@ -1297,57 +1297,62 @@ export function LeadView() {
                 />
 
                 <TableBody>
-                  {loading && (
-                    <TableEmptyRows height={68} emptyRows={5} />
-                  )}
-
-                  {!loading &&
-                    data.map((row, index) => (
-                      <LeadTableRow
-                        key={row.name}
-                        index={table.page * table.rowsPerPage + index}
-                        hideCheckbox
-                        row={{
-                          id: row.name,
-                          name: getString(row.lead_name) ?? '-',
-                          phone: getString(row.phone_number) ?? '-',
-                          email: getString(row.email) ?? '-',
-                          company: getString(row.company_name) ?? '-',
-                          status: getString(row.status) ?? '-',
-                          workflow_state: getString(row.workflow_state) ?? '-',
-                          avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
-                          isVerified: true,
-                          country: getString(row.country) ?? '-',
-                        }}
-                        selected={table.selected.includes(row.name)}
-                        onSelectRow={() => table.onSelectRow(row.name)}
-                        onEdit={() => handleEditRow({ id: row.name })}
-                        onDelete={() => onDeleteRow(row.name)}
-                        onView={() => handleViewRow({ id: row.name })}
-                        canEdit={permissions.write}
-                        canDelete={permissions.delete}
-                      />
-                    ))}
-
-                  {notFound && <TableNoData searchQuery={filterName} />}
-
-                  {empty && (
+                  {loading ? (
                     <TableRow>
                       <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                        <EmptyContent
-                          title="No leads found"
-                          description="Start capturing leads to boost your sales."
-                          icon="solar:user-plus-bold-duotone"
-                        />
+                        <CircularProgress sx={{ color: '#08a3cd' }} />
                       </TableCell>
                     </TableRow>
-                  )}
+                  ) : (
+                    <>
+                      {data.map((row, index) => (
+                        <LeadTableRow
+                          key={row.name}
+                          index={table.page * table.rowsPerPage + index}
+                          hideCheckbox
+                          row={{
+                            id: row.name,
+                            name: getString(row.lead_name) ?? '-',
+                            phone: getString(row.phone_number) ?? '-',
+                            email: getString(row.email) ?? '-',
+                            company: getString(row.company_name) ?? '-',
+                            status: getString(row.status) ?? '-',
+                            workflow_state: getString(row.workflow_state) ?? '-',
+                            avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
+                            isVerified: true,
+                            country: getString(row.country) ?? '-',
+                          }}
+                          selected={table.selected.includes(row.name)}
+                          onSelectRow={() => table.onSelectRow(row.name)}
+                          onEdit={() => handleEditRow({ id: row.name })}
+                          onDelete={() => onDeleteRow(row.name)}
+                          onView={() => handleViewRow({ id: row.name })}
+                          canEdit={permissions.write}
+                          canDelete={permissions.delete}
+                        />
+                      ))}
 
-                  {!empty && !notFound && (
-                    <TableEmptyRows
-                      height={68}
-                      emptyRows={data.length < 5 ? 5 - data.length : 0}
-                    />
+                      {notFound && <TableNoData searchQuery={filterName} />}
+
+                      {empty && (
+                        <TableRow>
+                          <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                            <EmptyContent
+                              title="No leads found"
+                              description="Start capturing leads to boost your sales."
+                              icon="solar:user-plus-bold-duotone"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      )}
+
+                      {!empty && !notFound && (
+                        <TableEmptyRows
+                          height={68}
+                          emptyRows={data.length < 5 ? 5 - data.length : 0}
+                        />
+                      )}
+                    </>
                   )}
                 </TableBody>
               </Table>

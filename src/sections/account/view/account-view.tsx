@@ -21,6 +21,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
@@ -521,56 +522,62 @@ export function AccountView() {
                                     { id: 'actions', label: 'Actions', align: 'right' },
                                 ]}
                             />
-                            <TableBody>
-                                {loading && (
-                                    <TableEmptyRows height={68} emptyRows={5} />
-                                )}
-
-                                {!loading && accounts.map((row, index) => (
-                                    <AccountTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            account_name: row.account_name,
-                                            phone_number: row.phone_number,
-                                            website: row.website,
-                                            gstin: row.gstin,
-                                            city: row.city,
-                                            state: row.state,
-                                            country: row.country,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                             <TableBody>
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={8} sx={{py:10}}>
-                                            <EmptyContent
-                                                title="No Company found"
-                                                description="Create a new account to manage your business relationships."
-                                                icon="solar:buildings-bold-duotone"
-                                            />
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {accounts.map((row, index) => (
+                                            <AccountTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    account_name: row.account_name,
+                                                    phone_number: row.phone_number,
+                                                    website: row.website,
+                                                    gstin: row.gstin,
+                                                    city: row.city,
+                                                    state: row.state,
+                                                    country: row.country,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row)}
+                                                onEdit={() => handleEditRow(row.name)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
 
-                            {!empty && !notFound && (
-                                <TableEmptyRows
-                                    height={68}
-                                    emptyRows={accounts.length < 5 ? 5 - accounts.length : 0}
-                                />
-                            )}
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={8} sx={{py:10}}>
+                                                    <EmptyContent
+                                                        title="No Company found"
+                                                        description="Create a new account to manage your business relationships."
+                                                        icon="solar:buildings-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                    {!empty && !notFound && (
+                                        <TableEmptyRows
+                                            height={68}
+                                            emptyRows={accounts.length < 5 ? 5 - accounts.length : 0}
+                                        />
+                                    )}
+                                    </>
+                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>

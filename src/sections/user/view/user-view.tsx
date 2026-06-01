@@ -12,6 +12,7 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useUsers } from 'src/hooks/useUsers';
 
@@ -333,39 +334,49 @@ export const UserView = forwardRef(
                 />
 
                 <TableBody>
-                  {data.map((row, index) => (
-                    <UserTableRow
-                      key={row.name}
-                      row={row}
-                      selected={false}
-                      index={page * rowsPerPage + index}
-                      onSelectRow={() => { }}
-                      onEdit={() => handleEditRow(row)}
-                      onDelete={() => handleDeleteRow(row.name)}
-                      onView={() => handleOpenDetails(row.name)}
-                    />
-                  ))}
-
-                  {notFound && <TableNoData searchQuery={filterName} />}
-
-                  {empty && (
+                  {loading ? (
                     <TableRow>
-                      <TableCell colSpan={7}>
-                        <EmptyContent
-                          title="No users found"
-                          description="Start adding users to your organization."
-                          icon="solar:users-group-rounded-bold-duotone"
-                          sx={{ py: 5 }}
-                        />
+                      <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                        <CircularProgress sx={{ color: '#08a3cd' }} />
                       </TableCell>
                     </TableRow>
-                  )}
+                  ) : (
+                    <>
+                      {data.map((row, index) => (
+                        <UserTableRow
+                          key={row.name}
+                          row={row}
+                          selected={false}
+                          index={page * rowsPerPage + index}
+                          onSelectRow={() => { }}
+                          onEdit={() => handleEditRow(row)}
+                          onDelete={() => handleDeleteRow(row.name)}
+                          onView={() => handleOpenDetails(row.name)}
+                        />
+                      ))}
 
-                  {!empty && !notFound && (
-                    <TableEmptyRows
-                      height={68}
-                      emptyRows={data.length < 5 ? 5 - data.length : 0}
-                    />
+                      {notFound && <TableNoData searchQuery={filterName} />}
+
+                      {empty && (
+                        <TableRow>
+                          <TableCell colSpan={7}>
+                            <EmptyContent
+                              title="No users found"
+                              description="Start adding users to your organization."
+                              icon="solar:users-group-rounded-bold-duotone"
+                              sx={{ py: 5 }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      )}
+
+                      {!empty && !notFound && (
+                        <TableEmptyRows
+                          height={68}
+                          emptyRows={data.length < 5 ? 5 - data.length : 0}
+                        />
+                      )}
+                    </>
                   )}
                 </TableBody>
               </Table>

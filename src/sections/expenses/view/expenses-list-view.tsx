@@ -13,6 +13,7 @@ import AlertTitle from '@mui/material/AlertTitle';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -188,44 +189,54 @@ export function ExpenseListView() {
                                 headLabel={TABLE_HEAD}
                             />
                             <TableBody>
-                                {data.map((row) => (
-                                    <ExpenseTableRow
-                                        key={row.name}
-                                        row={{
-                                            id: row.name,
-                                            expense_no: row.expense_no || '',
-                                            expense_category: row.expense_category || '',
-                                            date: row.date,
-                                            payment_type: row.payment_type || '',
-                                            total: row.total || 0,
-                                        }}
-                                        selected={table.selected.includes(row.name)}
-                                        onSelectRow={() => table.onSelectRow(row.name)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onView={() => handleViewRow(row.name)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit
-                                        canDelete
-                                    />
-                                ))}
-
-                                    <TableEmptyRows
-                                        height={77}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
-                                            <EmptyContent
-                                                title="No expenses found"
-                                                description="Record and track your business expenses efficiently."
-                                                icon="solar:bill-list-bold-duotone"
-                                            />
+                                        <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
+                                ) : (
+                                    <>
+                                        {data.map((row) => (
+                                            <ExpenseTableRow
+                                                key={row.name}
+                                                row={{
+                                                    id: row.name,
+                                                    expense_no: row.expense_no || '',
+                                                    expense_category: row.expense_category || '',
+                                                    date: row.date,
+                                                    payment_type: row.payment_type || '',
+                                                    total: row.total || 0,
+                                                }}
+                                                selected={table.selected.includes(row.name)}
+                                                onSelectRow={() => table.onSelectRow(row.name)}
+                                                onEdit={() => handleEditRow(row.name)}
+                                                onView={() => handleViewRow(row.name)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                canEdit
+                                                canDelete
+                                            />
+                                        ))}
+
+                                        <TableEmptyRows
+                                            height={77}
+                                            emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                        />
+
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={6}>
+                                                    <EmptyContent
+                                                        title="No expenses found"
+                                                        description="Record and track your business expenses efficiently."
+                                                        icon="solar:bill-list-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

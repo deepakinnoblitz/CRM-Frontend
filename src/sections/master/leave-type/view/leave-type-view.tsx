@@ -13,6 +13,7 @@ import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useLeaveTypes } from 'src/hooks/use-masters';
 
@@ -181,32 +182,42 @@ export function LeaveTypeView() {
               />
 
               <TableBody>
-                {data.map((row, index) => (
-                  <LeaveTypeTableRow
-                    key={row.name}
-                    index={page * rowsPerPage + index}
-                    row={row}
-                    selected={false}
-                    onEditRow={() => handleEditRow(row.name)}
-                    onDeleteRow={() => handleDeleteRow(row.name)}
-                    onSelectRow={() => {}}
-                  />
-                ))}
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                      <CircularProgress sx={{ color: '#08a3cd' }} />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <>
+                    {data.map((row, index) => (
+                      <LeaveTypeTableRow
+                        key={row.name}
+                        index={page * rowsPerPage + index}
+                        row={row}
+                        selected={false}
+                        onEditRow={() => handleEditRow(row.name)}
+                        onDeleteRow={() => handleDeleteRow(row.name)}
+                        onSelectRow={() => {}}
+                      />
+                    ))}
 
-                {empty && (
-                  <MasterEmptyState
-                    masterName="Leave Type"
-                    colSpan={8}
-                  />
-                )}
+                    {empty && (
+                      <MasterEmptyState
+                        masterName="Leave Type"
+                        colSpan={8}
+                      />
+                    )}
 
-                {notFound && <TableNoData searchQuery={filterName} />}
+                    {notFound && <TableNoData searchQuery={filterName} />}
 
-                {!empty && !notFound && (
-                    <TableEmptyRows
-                        height={68}
-                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                    />
+                    {!empty && !notFound && (
+                        <TableEmptyRows
+                            height={68}
+                            emptyRows={data.length < 5 ? 5 - data.length : 0}
+                        />
+                    )}
+                  </>
                 )}
               </TableBody>
             </Table>

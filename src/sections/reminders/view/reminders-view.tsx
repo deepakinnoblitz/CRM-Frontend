@@ -18,6 +18,7 @@ import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useHRReminders } from 'src/hooks/useReminders';
 
@@ -188,47 +189,57 @@ export function RemindersView() {
                     ]}
                   />
                   <TableBody>
-                    {reminders.map((row, index) => (
-                      <RemindersTableRow
-                        key={row.name}
-                        row={row}
-                        index={page * rowsPerPage + index}
-                        onEdit={() => {
-                          setSelectedReminder(row);
-                          setOpenForm(true);
-                        }}
-                        onDelete={async () => {
-                          try {
-                            await deleteHRReminder(row.name);
-                            setSnackbar({ open: true, message: 'Reminder deleted successfully', severity: 'success' });
-                            refetch();
-                          } catch (error) {
-                            console.error(error);
-                            setSnackbar({ open: true, message: 'Failed to delete reminder', severity: 'error' });
-                          }
-                        }}
-                      />
-                    ))}
-
-                    {!loading && reminders.length > 0 && reminders.length < 5 && (
-                      <TableEmptyRows
-                        height={77}
-                        emptyRows={5 - reminders.length}
-                      />
-                    )}
-
-                    {notFound && <TableNoData searchQuery={filterName} colSpan={5} />}
-
-                    {!loading && !reminders.length && !filterName && (
+                    {loading ? (
                       <TableRow>
-                        <TableCell colSpan={5} sx={{ p: 0 }}>
-                          <EmptyContent
-                            title="No Reminders Found"
-                            description="Create organizational reminders for employees."
-                            sx={{ py: 10 }}
-                          />
+                        <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
+                          <CircularProgress sx={{ color: '#08a3cd' }} />
                         </TableCell>
                       </TableRow>
+                    ) : (
+                      <>
+                        {reminders.map((row, index) => (
+                          <RemindersTableRow
+                            key={row.name}
+                            row={row}
+                            index={page * rowsPerPage + index}
+                            onEdit={() => {
+                              setSelectedReminder(row);
+                              setOpenForm(true);
+                            }}
+                            onDelete={async () => {
+                              try {
+                                await deleteHRReminder(row.name);
+                                setSnackbar({ open: true, message: 'Reminder deleted successfully', severity: 'success' });
+                                refetch();
+                              } catch (error) {
+                                console.error(error);
+                                setSnackbar({ open: true, message: 'Failed to delete reminder', severity: 'error' });
+                              }
+                            }}
+                          />
+                        ))}
+
+                        {reminders.length > 0 && reminders.length < 5 && (
+                          <TableEmptyRows
+                            height={77}
+                            emptyRows={5 - reminders.length}
+                          />
+                        )}
+
+                        {notFound && <TableNoData searchQuery={filterName} colSpan={5} />}
+
+                        {!reminders.length && !filterName && (
+                          <TableRow>
+                            <TableCell colSpan={5} sx={{ p: 0 }}>
+                              <EmptyContent
+                                title="No Reminders Found"
+                                description="Create organizational reminders for employees."
+                                sx={{ py: 10 }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
                     )}
                   </TableBody>
                 </Table>

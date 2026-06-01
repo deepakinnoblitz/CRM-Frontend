@@ -78,7 +78,7 @@ export function AssetsView() {
     const [openFilters, setOpenFilters] = useState(false);
     const canReset = filters.status !== 'all' || filters.category !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
 
-    const { data, total, refetch } = useAssets(page + 1, rowsPerPage, filterName, orderBy, order, filters);
+    const { data, total, loading, refetch } = useAssets(page + 1, rowsPerPage, filterName, orderBy, order, filters);
 
     const [openCreate, setOpenCreate] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -391,8 +391,8 @@ export function AssetsView() {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const notFound = !data.length && !!filterName;
-    const empty = !data.length && !filterName;
+    const notFound = !loading && !data.length && !!filterName;
+    const empty = !loading && !data.length && !filterName;
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -465,46 +465,56 @@ export function AssetsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <AssetTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            asset_name: row.asset_name,
-                                            asset_tag: row.asset_tag,
-                                            category: row.category,
-                                            current_status: row.current_status,
-                                            purchase_cost: row.purchase_cost,
-                                            purchase_date: row.purchase_date,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {!empty && !notFound && (
-                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
-                                )}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={7}>
-                                            <EmptyContent
-                                                title="No assets found"
-                                                description="You haven't added any assets yet. Click 'New Asset' to get started."
-                                                icon="solar:laptop-bold-duotone"
-                                            />
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <AssetTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    asset_name: row.asset_name,
+                                                    asset_tag: row.asset_tag,
+                                                    category: row.category,
+                                                    current_status: row.current_status,
+                                                    purchase_cost: row.purchase_cost,
+                                                    purchase_date: row.purchase_date,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row)}
+                                                onEdit={() => handleEditRow(row)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        )}
+
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={8}>
+                                                    <EmptyContent
+                                                        title="No assets found"
+                                                        description="You haven't added any assets yet. Click 'New Asset' to get started."
+                                                        icon="solar:laptop-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

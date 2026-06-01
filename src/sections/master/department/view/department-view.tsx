@@ -13,6 +13,7 @@ import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useDepartments } from 'src/hooks/use-masters';
 
@@ -241,33 +242,43 @@ export function DepartmentView() {
               />
 
               <TableBody>
-                {data.map((row, index) => (
-                  <DepartmentTableRow
-                    key={row.name}
-                    index={page * rowsPerPage + index}
-                    row={row}
-                    selected={selected.includes(row.name)}
-                    onSelectRow={() => handleSelectRow(row.name)}
-                    onEditRow={() => handleEditRow(row.name)}
-                    onViewRow={() => handleViewRow(row.name)}
-                    onDeleteRow={() => handleDeleteRow(row.name)}
-                  />
-                ))}
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
+                      <CircularProgress sx={{ color: '#08a3cd' }} />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <>
+                    {data.map((row, index) => (
+                      <DepartmentTableRow
+                        key={row.name}
+                        index={page * rowsPerPage + index}
+                        row={row}
+                        selected={selected.includes(row.name)}
+                        onSelectRow={() => handleSelectRow(row.name)}
+                        onEditRow={() => handleEditRow(row.name)}
+                        onViewRow={() => handleViewRow(row.name)}
+                        onDeleteRow={() => handleDeleteRow(row.name)}
+                      />
+                    ))}
 
-                {empty && (
-                  <MasterEmptyState
-                    masterName="Department"
-                    colSpan={5}
-                  />
-                )}
+                    {empty && (
+                      <MasterEmptyState
+                        masterName="Department"
+                        colSpan={5}
+                      />
+                    )}
 
-                {notFound && <TableNoData searchQuery={filterName} />}
+                    {notFound && <TableNoData searchQuery={filterName} />}
 
-                {!empty && !notFound && (
-                    <TableEmptyRows
-                        height={68}
-                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                    />
+                    {!empty && !notFound && (
+                        <TableEmptyRows
+                            height={68}
+                            emptyRows={data.length < 5 ? 5 - data.length : 0}
+                        />
+                    )}
+                  </>
                 )}
               </TableBody>
             </Table>

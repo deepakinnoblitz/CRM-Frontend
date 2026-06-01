@@ -28,6 +28,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -1568,81 +1569,91 @@ export function EmployeeOverallReportView() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {data.map((row, index) => {
-                    const isSelected = selected.indexOf(row.name) !== -1;
-                    return (
-                      <TableRow
-                        key={row.name}
-                        hover
-                        selected={isSelected}
-                        aria-checked={isSelected}
-                        role="checkbox"
-                      >
-                        <TableCell padding="checkbox">
-                          <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
-                        </TableCell>
-                        <TableCell>
-                          <Stack direction="row" alignItems="center" spacing={2}>
-                            <Avatar
-                              src={row.profile_picture || ''}
-                              alt={row.employee_name}
-                              sx={{
-                                width: 36,
-                                height: 36,
-                                fontSize: 14,
-                                fontWeight: 'bold',
-                                bgcolor: stringToColor(row.employee_name),
-                                color: stringToDarkColor(row.employee_name),
-                              }}
-                            >
-                              {row.employee_name?.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Stack spacing={0.25}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                                {row.employee_name}
-                              </Typography>
-                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                ID: {row.name}
-                              </Typography>
-                            </Stack>
-                          </Stack>
-                        </TableCell>
-                        <TableCell>{row.department}</TableCell>
-                        <TableCell>{row.designation}</TableCell>
-                        <TableCell>{fDate(row.date_of_joining, 'DD-MM-YYYY')}</TableCell>
-                        <TableCell>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              px: 1,
-                              py: 0.5,
-                              borderRadius: 0.75,
-                              fontWeight: 'bold',
-                              bgcolor: row.status === 'Active' ? 'success.lighter' : 'error.lighter',
-                              color: row.status === 'Active' ? 'success.dark' : 'error.dark',
-                            }}
-                          >
-                            {row.status}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper' }}>
-                          <IconButton onClick={() => handleViewDetails(row.name)} sx={{ color: 'info.main' }}>
-                            <Iconify icon="solar:eye-bold" />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-
-                  {data.length === 0 && !loading && (
+                  {loading ? (
                     <TableRow>
-                      <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                        <Stack spacing={1} alignItems="center">
-                          <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                          <Typography variant="body2" sx={{ color: 'text.disabled' }}>No Employees found</Typography>
-                        </Stack>
+                      <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                        <CircularProgress sx={{ color: '#08a3cd' }} />
                       </TableCell>
                     </TableRow>
+                  ) : (
+                    <>
+                      {data.map((row, index) => {
+                        const isSelected = selected.indexOf(row.name) !== -1;
+                        return (
+                          <TableRow
+                            key={row.name}
+                            hover
+                            selected={isSelected}
+                            aria-checked={isSelected}
+                            role="checkbox"
+                          >
+                            <TableCell padding="checkbox">
+                              <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                            </TableCell>
+                            <TableCell>
+                              <Stack direction="row" alignItems="center" spacing={2}>
+                                <Avatar
+                                  src={row.profile_picture || ''}
+                                  alt={row.employee_name}
+                                  sx={{
+                                    width: 36,
+                                    height: 36,
+                                    fontSize: 14,
+                                    fontWeight: 'bold',
+                                    bgcolor: stringToColor(row.employee_name),
+                                    color: stringToDarkColor(row.employee_name),
+                                  }}
+                                >
+                                  {row.employee_name?.charAt(0).toUpperCase()}
+                                </Avatar>
+                                <Stack spacing={0.25}>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                    {row.employee_name}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    ID: {row.name}
+                                  </Typography>
+                                </Stack>
+                              </Stack>
+                            </TableCell>
+                            <TableCell>{row.department}</TableCell>
+                            <TableCell>{row.designation}</TableCell>
+                            <TableCell>{fDate(row.date_of_joining, 'DD-MM-YYYY')}</TableCell>
+                            <TableCell>
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  px: 1,
+                                  py: 0.5,
+                                  borderRadius: 0.75,
+                                  fontWeight: 'bold',
+                                  bgcolor: row.status === 'Active' ? 'success.lighter' : 'error.lighter',
+                                  color: row.status === 'Active' ? 'success.dark' : 'error.dark',
+                                }}
+                              >
+                                {row.status}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper' }}>
+                              <IconButton onClick={() => handleViewDetails(row.name)} sx={{ color: 'info.main' }}>
+                                <Iconify icon="solar:eye-bold" />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+
+                      {data.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                            <Stack spacing={1} alignItems="center">
+                              <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                              <Typography variant="body2" sx={{ color: 'text.disabled' }}>No Employees found</Typography>
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
                   )}
                 </TableBody>
               </Table>

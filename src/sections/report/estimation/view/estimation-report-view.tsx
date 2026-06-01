@@ -20,6 +20,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -368,56 +369,66 @@ export function EstimationReportView() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {reportData
-                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                        .map((row, index) => {
-                                            const isSelected = selected.indexOf(row.name) !== -1;
-                                            return (
-                                                <TableRow
-                                                 key={index}
-                                                 hover
-                                                 role="checkbox"
-                                                 aria-checked={isSelected}
-                                                 selected={isSelected}
-                                                 sx={{
-                                                     '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                     '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                 }}
-                                             >
-                                                    <TableCell padding="checkbox">
-                                                        <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
-                                                    </TableCell>
-                                                    <TableCell>{row.name}</TableCell>
-                                                    <TableCell>{row.customer_name}</TableCell>
-                                                    <TableCell>{row.estimate_date ? dayjs(row.estimate_date).format('DD MMM YYYY') : '-'}</TableCell>
-                                                    <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
-                                                    <TableCell align="center">{row.quantity}</TableCell>
-                                                    <TableCell align="right">₹{row.price?.toLocaleString() || 0}</TableCell>
-                                                    <TableCell align="right">₹{row.tax_amount?.toLocaleString() || 0}</TableCell>
-                                                    <TableCell align="right">₹{row.sub_total?.toLocaleString() || 0}</TableCell>
-                                                    <TableCell align="right" sx={{ fontWeight: 700 }}>₹{row.grand_total?.toLocaleString() || 0}</TableCell>
-                                                    <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
-                                                        <IconButton
-                                                            onClick={() => navigate(`/estimations/${encodeURIComponent(row.name)}/view`)}
-                                                            sx={{ color: 'info.main' }}
-                                                        >
-                                                            <Iconify icon="solar:eye-bold" />
-                                                        </IconButton>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    {reportData.length === 0 && !loading && (
+                                    {loading ? (
                                         <TableRow>
                                             <TableCell colSpan={11} align="center" sx={{ py: 10 }}>
-                                                <Stack spacing={1} alignItems="center">
-                                                    <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>
-                                                        No data found
-                                                    </Typography>
-                                                </Stack>
+                                                <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
+                                    ) : (
+                                        <>
+                                            {reportData
+                                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                                .map((row, index) => {
+                                                    const isSelected = selected.indexOf(row.name) !== -1;
+                                                    return (
+                                                        <TableRow
+                                                         key={index}
+                                                         hover
+                                                         role="checkbox"
+                                                         aria-checked={isSelected}
+                                                         selected={isSelected}
+                                                         sx={{
+                                                             '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                             '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                         }}
+                                                     >
+                                                            <TableCell padding="checkbox">
+                                                                <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                                                            </TableCell>
+                                                            <TableCell>{row.name}</TableCell>
+                                                            <TableCell>{row.customer_name}</TableCell>
+                                                            <TableCell>{row.estimate_date ? dayjs(row.estimate_date).format('DD MMM YYYY') : '-'}</TableCell>
+                                                            <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
+                                                            <TableCell align="center">{row.quantity}</TableCell>
+                                                            <TableCell align="right">₹{row.price?.toLocaleString() || 0}</TableCell>
+                                                            <TableCell align="right">₹{row.tax_amount?.toLocaleString() || 0}</TableCell>
+                                                            <TableCell align="right">₹{row.sub_total?.toLocaleString() || 0}</TableCell>
+                                                            <TableCell align="right" sx={{ fontWeight: 700 }}>₹{row.grand_total?.toLocaleString() || 0}</TableCell>
+                                                            <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
+                                                                <IconButton
+                                                                    onClick={() => navigate(`/estimations/${encodeURIComponent(row.name)}/view`)}
+                                                                    sx={{ color: 'info.main' }}
+                                                                >
+                                                                    <Iconify icon="solar:eye-bold" />
+                                                                </IconButton>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
+                                            {reportData.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={11} align="center" sx={{ py: 10 }}>
+                                                        <Stack spacing={1} alignItems="center">
+                                                            <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled' }}>
+                                                                No data found
+                                                            </Typography>
+                                                        </Stack>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </>
                                     )}
                                 </TableBody>
                             </Table>

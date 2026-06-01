@@ -24,8 +24,8 @@ import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { Checkbox, IconButton, FormControlLabel } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { Checkbox, IconButton, FormControlLabel, CircularProgress } from '@mui/material';
 
 import { useSocket } from 'src/hooks/use-socket';
 import { useLeaveApplications } from 'src/hooks/useLeaveApplications';
@@ -506,63 +506,73 @@ export function LeavesView() {
                             />
 
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <LeavesTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            employee: row.employee,
-                                            employeeName: row.employee_name,
-                                            leaveType: row.leave_type,
-                                            fromDate: row.from_date,
-                                            toDate: row.to_date,
-                                            totalDays: row.total_days,
-                                            reason: row.reson,
-                                            status: row.workflow_state || row.status || 'Pending',
-                                            halfDay: row.half_day,
-                                            permissionHours: row.permission_hours,
-                                            modified: row.modified,
-                                            hrQueryCount: [1, 2, 3, 4, 5].filter(i => {
-                                                const field = i === 1 ? 'hr_query' : `hr_query_${i}`;
-                                                return row[field] && String(row[field]).trim();
-                                            }).length,
-                                            empReplyCount: [1, 2, 3, 4, 5].filter(i => {
-                                                const field = i === 1 ? 'employee_reply' : `employee_reply_${i}`;
-                                                return row[field] && String(row[field]).trim();
-                                            }).length,
-                                        }}
-                                        selected={false}
-                                        onSelectRow={() => { }}
-                                        onView={() => handleOpenDetails(row.name)}
-                                        onDelete={() => handleDeleteClick(row.name)}
-                                        onApplyAction={(action) => handleApplyAction(row.name, action)}
-                                        onClarify={(action, message) => handleClarify(row.name, action, message)}
-                                        canDelete={permissions.delete}
-                                        isHR={isHR}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
-                                            <EmptyContent
-                                                title="No leave applications"
-                                                description="You haven't submitted any leave requests yet."
-                                                icon="solar:calendar-add-bold-duotone"
-                                            />
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <LeavesTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    employee: row.employee,
+                                                    employeeName: row.employee_name,
+                                                    leaveType: row.leave_type,
+                                                    fromDate: row.from_date,
+                                                    toDate: row.to_date,
+                                                    totalDays: row.total_days,
+                                                    reason: row.reson,
+                                                    status: row.workflow_state || row.status || 'Pending',
+                                                    halfDay: row.half_day,
+                                                    permissionHours: row.permission_hours,
+                                                    modified: row.modified,
+                                                    hrQueryCount: [1, 2, 3, 4, 5].filter(i => {
+                                                        const field = i === 1 ? 'hr_query' : `hr_query_${i}`;
+                                                        return row[field] && String(row[field]).trim();
+                                                    }).length,
+                                                    empReplyCount: [1, 2, 3, 4, 5].filter(i => {
+                                                        const field = i === 1 ? 'employee_reply' : `employee_reply_${i}`;
+                                                        return row[field] && String(row[field]).trim();
+                                                    }).length,
+                                                }}
+                                                selected={false}
+                                                onSelectRow={() => { }}
+                                                onView={() => handleOpenDetails(row.name)}
+                                                onDelete={() => handleDeleteClick(row.name)}
+                                                onApplyAction={(action) => handleApplyAction(row.name, action)}
+                                                onClarify={(action, message) => handleClarify(row.name, action, message)}
+                                                canDelete={permissions.delete}
+                                                isHR={isHR}
+                                            />
+                                        ))}
 
-                                {!empty && !notFound && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={8}>
+                                                    <EmptyContent
+                                                        title="No leave applications"
+                                                        description="You haven't submitted any leave requests yet."
+                                                        icon="solar:calendar-add-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

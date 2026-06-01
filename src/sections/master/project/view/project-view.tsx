@@ -13,6 +13,7 @@ import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useProjects } from 'src/hooks/use-masters';
 
@@ -171,33 +172,43 @@ export function ProjectView() {
               />
 
               <TableBody>
-                {data.map((row, index) => (
-                  <ProjectTableRow
-                    key={row.name}
-                    index={page * rowsPerPage + index}
-                    row={row}
-                    selected={selected.includes(row.name)}
-                    onEditRow={() => handleEditRow(row.name)}
-                    onViewRow={() => handleViewRow(row.name)}
-                    onDeleteRow={() => handleDeleteRow(row.name)}
-                    onSelectRow={() => {}}
-                  />
-                ))}
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
+                      <CircularProgress sx={{ color: '#08a3cd' }} />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <>
+                    {data.map((row, index) => (
+                      <ProjectTableRow
+                        key={row.name}
+                        index={page * rowsPerPage + index}
+                        row={row}
+                        selected={selected.includes(row.name)}
+                        onEditRow={() => handleEditRow(row.name)}
+                        onViewRow={() => handleViewRow(row.name)}
+                        onDeleteRow={() => handleDeleteRow(row.name)}
+                        onSelectRow={() => {}}
+                      />
+                    ))}
 
-                {!empty && !notFound && (
-                    <TableEmptyRows
-                        height={68}
-                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                    />
-                )}
+                    {!empty && !notFound && (
+                        <TableEmptyRows
+                            height={68}
+                            emptyRows={data.length < 5 ? 5 - data.length : 0}
+                        />
+                    )}
 
-                {notFound && <TableNoData searchQuery={filterName} />}
+                    {notFound && <TableNoData searchQuery={filterName} />}
 
-                {empty && (
-                  <MasterEmptyState
-                    masterName="Project"
-                    colSpan={4}
-                  />
+                    {empty && (
+                      <MasterEmptyState
+                        masterName="Project"
+                        colSpan={4}
+                      />
+                    )}
+                  </>
                 )}
               </TableBody>
             </Table>

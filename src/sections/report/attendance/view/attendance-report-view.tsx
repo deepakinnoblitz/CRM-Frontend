@@ -27,6 +27,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -717,67 +718,77 @@ export function AttendanceReportView() {
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {reportData
-                                            .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-                                            .map((row, index) => {
-                                                const isSelected = selected.indexOf(row.name) !== -1;
-                                                return (
-                                                    <TableRow
-                                                        key={`${row.employee}-${row.attendance_date}-${index}`}
-                                                        hover
-                                                        role="checkbox"
-                                                        aria-checked={isSelected}
-                                                        selected={isSelected}
-                                                        sx={{
-                                                            '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                            '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                        }}
-                                                    >
-                                                        <TableCell padding="checkbox">
-                                                            <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
-                                                        </TableCell>
-                                                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.attendance_date, 'DD-MM-YYYY')}</TableCell>
-                                                        <TableCell>
-                                                            <Typography variant="subtitle2">{row.employee_name}</Typography>
-                                                            <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Label color={getStatusColor(row.status)} variant="soft">
-                                                                {row.status}
-                                                            </Label>
-                                                        </TableCell>
-                                                        <TableCell>{row.in_time || '---'}</TableCell>
-                                                        <TableCell>{row.out_time || '---'}</TableCell>
-                                                        <TableCell sx={{ fontWeight: 'bold' }}>{row.working_hours_display || '---'}</TableCell>
-                                                        <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
-                                                            {row.status !== 'Holiday' && (
-                                                                <IconButton onClick={() => handleViewDetails(row.name)} sx={{ color: 'info.main' }}>
-                                                                    <Iconify icon={"solar:eye-bold" as any} />
-                                                                </IconButton>
+                                        {loading ? (
+                                            <TableRow>
+                                                <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                                    <CircularProgress sx={{ color: '#08a3cd' }} />
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            <>
+                                                {reportData
+                                                    .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+                                                    .map((row, index) => {
+                                                        const isSelected = selected.indexOf(row.name) !== -1;
+                                                        return (
+                                                            <TableRow
+                                                                key={`${row.employee}-${row.attendance_date}-${index}`}
+                                                                hover
+                                                                role="checkbox"
+                                                                aria-checked={isSelected}
+                                                                selected={isSelected}
+                                                                sx={{
+                                                                    '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                                    '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                                }}
+                                                            >
+                                                                <TableCell padding="checkbox">
+                                                                    <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                                                                </TableCell>
+                                                                <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.attendance_date, 'DD-MM-YYYY')}</TableCell>
+                                                                <TableCell>
+                                                                    <Typography variant="subtitle2">{row.employee_name}</Typography>
+                                                                    <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <Label color={getStatusColor(row.status)} variant="soft">
+                                                                        {row.status}
+                                                                    </Label>
+                                                                </TableCell>
+                                                                <TableCell>{row.in_time || '---'}</TableCell>
+                                                                <TableCell>{row.out_time || '---'}</TableCell>
+                                                                <TableCell sx={{ fontWeight: 'bold' }}>{row.working_hours_display || '---'}</TableCell>
+                                                                <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
+                                                                    {row.status !== 'Holiday' && (
+                                                                        <IconButton onClick={() => handleViewDetails(row.name)} sx={{ color: 'info.main' }}>
+                                                                            <Iconify icon={"solar:eye-bold" as any} />
+                                                                        </IconButton>
+                                                                    )}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        );
+                                                    })}
+
+                                                {reportData.length === 0 && (
+                                                    <TableRow>
+                                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                                            {!fromDate || !toDate ? (
+                                                                <Stack spacing={1} alignItems="center">
+                                                                    <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                        Please Select Filters
+                                                                    </Typography>
+                                                                </Stack>
+                                                            ) : (
+                                                                <Stack spacing={1} alignItems="center">
+                                                                    <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
+                                                                </Stack>
                                                             )}
                                                         </TableCell>
                                                     </TableRow>
-                                                );
-                                            })}
-
-                                        {reportData.length === 0 && !loading && (
-                                            <TableRow>
-                                                <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                                                    {!fromDate || !toDate ? (
-                                                        <Stack spacing={1} alignItems="center">
-                                                            <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                                Please Select Filters
-                                                            </Typography>
-                                                        </Stack>
-                                                    ) : (
-                                                        <Stack spacing={1} alignItems="center">
-                                                            <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                            <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
-                                                        </Stack>
-                                                    )}
-                                                </TableCell>
-                                            </TableRow>
+                                                )}
+                                            </>
                                         )}
                                     </TableBody>
                                 </Table>

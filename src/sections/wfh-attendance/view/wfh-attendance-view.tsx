@@ -8,7 +8,6 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import { IconButton } from '@mui/material';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
@@ -24,6 +23,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { IconButton, CircularProgress } from '@mui/material';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -495,7 +495,7 @@ export function WFHAttendanceView() {
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
-                    WFH Attendance List
+                    WFH Attendance
                 </Typography>
 
                 {permissions.write && (
@@ -559,51 +559,61 @@ export function WFHAttendanceView() {
                             />
 
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <WFHAttendanceTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            employee: row.employee,
-                                            employeeName: row.employee_name,
-                                            date: row.date,
-                                            workflowState: row.workflow_state || 'Draft',
-                                            fromTime: row.from_time,
-                                            toTime: row.to_time,
-                                            totalHours: row.total_hours,
-                                            modified: row.modified,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row.name)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onApplyAction={(action) => handleApplyAction(row.name, action)}
-                                        canEdit={permissions.write}
-                                        isHR={isHR}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
-                                            <EmptyContent
-                                                title="No WFH records"
-                                                description="You haven't added any WFH entries yet."
-                                                icon="solar:calendar-date-bold-duotone"
-                                            />
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <WFHAttendanceTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    employee: row.employee,
+                                                    employeeName: row.employee_name,
+                                                    date: row.date,
+                                                    workflowState: row.workflow_state || 'Draft',
+                                                    fromTime: row.from_time,
+                                                    toTime: row.to_time,
+                                                    totalHours: row.total_hours,
+                                                    modified: row.modified,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row.name)}
+                                                onEdit={() => handleEditRow(row.name)}
+                                                onApplyAction={(action) => handleApplyAction(row.name, action)}
+                                                canEdit={permissions.write}
+                                                isHR={isHR}
+                                            />
+                                        ))}
 
-                                {!empty && !notFound && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={8}>
+                                                    <EmptyContent
+                                                        title="No WFH records"
+                                                        description="You haven't added any WFH entries yet."
+                                                        icon="solar:calendar-date-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

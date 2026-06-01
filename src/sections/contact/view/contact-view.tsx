@@ -13,6 +13,7 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useContacts } from 'src/hooks/useContacts';
 
@@ -485,55 +486,61 @@ export function ContactView() {
                             />
 
                             <TableBody>
-                                {loading && (
-                                    <TableEmptyRows height={68} emptyRows={5} />
-                                )}
-
-                                {!loading && data.map((row, index) => (
-                                    <ContactTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            firstName: row.first_name,
-                                            companyName: getString(row.company_name) || '',
-                                            companyNames: row.company_names || [],
-                                            email: getString(row.email) || '',
-                                            phone: getString(row.phone) || '',
-                                            avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
-                                            sourceLeadId: row.source_lead ? getString(row.source_lead) : '',
-                                            sourceLeadName: row.source_lead ? (leadOptions.find(l => l.name === getString(row.source_lead))?.lead_name || '') : '',
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row.name)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onDelete={() => handleDeleteClick(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={10} sx={{py:10}}>
-                                            <EmptyContent
-                                                title="No contacts found"
-                                                description="Create a new Client to track your professional network."
-                                                icon="solar:users-group-rounded-bold-duotone"
-                                            />
+                                        <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <ContactTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    firstName: row.first_name,
+                                                    companyName: getString(row.company_name) || '',
+                                                    companyNames: row.company_names || [],
+                                                    email: getString(row.email) || '',
+                                                    phone: getString(row.phone) || '',
+                                                    avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
+                                                    sourceLeadId: row.source_lead ? getString(row.source_lead) : '',
+                                                    sourceLeadName: row.source_lead ? (leadOptions.find(l => l.name === getString(row.source_lead))?.lead_name || '') : '',
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row.name)}
+                                                onEdit={() => handleEditRow(row.name)}
+                                                onDelete={() => handleDeleteClick(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
 
-                                {!empty && !notFound && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={10} sx={{py:10}}>
+                                                    <EmptyContent
+                                                        title="No contacts found"
+                                                        description="Create a new Client to track your professional network."
+                                                        icon="solar:users-group-rounded-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

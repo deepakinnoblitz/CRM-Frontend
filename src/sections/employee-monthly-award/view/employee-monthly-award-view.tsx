@@ -16,6 +16,7 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useEmployeeMonthlyAwards } from 'src/hooks/useEmployeeMonthlyAward';
 
@@ -210,43 +211,53 @@ export function EmployeeMonthlyAwardView() {
                     ]}
                   />
                   <TableBody>
-                    {awards.map((row, index) => (
-                      <EmployeeMonthlyAwardTableRow
-                        key={row.name}
-                        row={row}
-                        index={page * rowsPerPage + index}
-                        onView={() => {
-                            setSelectedAward(row);
-                            setOpenDetails({ open: true, mode: 'view' });
-                        }}
-                        onEdit={() => {
-                            setSelectedAward(row);
-                            setOpenDetails({ open: true, mode: 'edit' });
-                        }}
-                        onDelete={() => {
-                            setSelectedAward(row);
-                            setOpenDeleteConfirm(true);
-                        }}
-                      />
-                    ))}
-
-                    {emptyAwards && (
+                    {loading ? (
                       <TableRow>
-                        <TableCell colSpan={8}>
-                          <EmptyContent
-                            title="No Awards Found"
-                            description="Click Generate to calculate awards for the previous month."
-                            icon="solar:cup-star-bold-duotone"
-                          />
+                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                          <CircularProgress sx={{ color: '#08a3cd' }} />
                         </TableCell>
                       </TableRow>
-                    )}
+                    ) : (
+                      <>
+                        {awards.map((row, index) => (
+                          <EmployeeMonthlyAwardTableRow
+                            key={row.name}
+                            row={row}
+                            index={page * rowsPerPage + index}
+                            onView={() => {
+                                setSelectedAward(row);
+                                setOpenDetails({ open: true, mode: 'view' });
+                            }}
+                            onEdit={() => {
+                                setSelectedAward(row);
+                                setOpenDetails({ open: true, mode: 'edit' });
+                            }}
+                            onDelete={() => {
+                                setSelectedAward(row);
+                                setOpenDeleteConfirm(true);
+                            }}
+                          />
+                        ))}
 
-                    {!emptyAwards && !notFound && (
-                      <TableEmptyRows height={77} emptyRows={emptyRows} />
-                    )}
+                        {emptyAwards && (
+                          <TableRow>
+                            <TableCell colSpan={8}>
+                              <EmptyContent
+                                title="No Awards Found"
+                                description="Click Generate to calculate awards for the previous month."
+                                icon="solar:cup-star-bold-duotone"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )}
 
-                    {notFound && <TableNoData searchQuery={filterName} colSpan={8} />}
+                        {!emptyAwards && !notFound && (
+                          <TableEmptyRows height={77} emptyRows={emptyRows} />
+                        )}
+
+                        {notFound && <TableNoData searchQuery={filterName} colSpan={8} />}
+                      </>
+                    )}
                   </TableBody>
                 </Table>
               </TableContainer>

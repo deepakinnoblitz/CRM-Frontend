@@ -550,8 +550,8 @@ export function AssetRequestsView() {
                                 <TableBody>
                                     {myLoading ? (
                                         <TableRow>
-                                            <TableCell colSpan={isHR ? 9 : 8} align="center" sx={{ py: 5 }}>
-                                                <CircularProgress size={32} />
+                                            <TableCell colSpan={isHR ? 9 : 8} align="center" sx={{ py: 10 }}>
+                                                <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
                                     ) : (
@@ -784,8 +784,8 @@ export function AssetRequestsView() {
                                 <TableBody>
                                     {hrLoading ? (
                                         <TableRow>
-                                            <TableCell colSpan={8} align="center" sx={{ py: 5 }}>
-                                                <CircularProgress size={32} />
+                                            <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                                <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
                                     ) : (

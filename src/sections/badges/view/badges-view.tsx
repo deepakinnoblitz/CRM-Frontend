@@ -16,6 +16,7 @@ import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { fetchEmployees } from 'src/api/employees';
 import { fetchFrappeList } from 'src/api/hr-management';
@@ -396,67 +397,96 @@ export function BadgesView() {
                 }
               />
               <TableBody>
-                {currentTab === 'badges'
-                  ? badges.map((row, index) => (
-                      <BadgeTableRow
-                        key={row.name}
-                        row={row}
-                        index={page * rowsPerPage + index}
-                        onView={() => {
-                          setSelectedBadgeDetail(row);
-                          setOpenBadgeDetail(true);
-                        }}
-                        onEdit={() => {
-                          setSelectedBadge(row);
-                          setOpenBadgeForm(true);
-                        }}
-                        onDelete={() => handleDeleteBadge(row.name)}
-                      />
-                    ))
-                  : assignments.map((row, index) => (
-                      <BadgeAssignmentTableRow
-                        key={row.name}
-                        row={row}
-                        index={page * rowsPerPage + index}
-                        onView={() => handleViewAssignment(row)}
-                        onDelete={() => handleDeleteAssignment(row.name)}
-                      />
-                    ))}
+                {currentTab === 'badges' ? (
+                  loadingBadges ? (
+                    <TableRow>
+                      <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
+                        <CircularProgress sx={{ color: '#08a3cd' }} />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <>
+                      {badges.map((row, index) => (
+                        <BadgeTableRow
+                          key={row.name}
+                          row={row}
+                          index={page * rowsPerPage + index}
+                          onView={() => {
+                            setSelectedBadgeDetail(row);
+                            setOpenBadgeDetail(true);
+                          }}
+                          onEdit={() => {
+                            setSelectedBadge(row);
+                            setOpenBadgeForm(true);
+                          }}
+                          onDelete={() => handleDeleteBadge(row.name)}
+                        />
+                      ))}
 
-                {isEmpty && (
-                  <TableRow>
-                    <TableCell colSpan={8}>
-                      <EmptyContent
-                        title={
-                          currentTab === 'badges' ? 'No Badges Found' : 'No Badge Assignments Found'
-                        }
-                        description={
-                          currentTab === 'badges'
-                            ? 'Add your first badge to get started.'
-                            : 'Assign badges to employees to see them here.'
-                        }
-                        icon={
-                          currentTab === 'badges'
-                            ? 'solar:medal-ribbon-bold-duotone'
-                            : 'solar:user-id-bold-duotone'
-                        }
-                      />
-                    </TableCell>
-                  </TableRow>
+                      {isEmpty && (
+                        <TableRow>
+                          <TableCell colSpan={5}>
+                            <EmptyContent
+                              title="No Badges Found"
+                              description="Add your first badge to get started."
+                              icon="solar:medal-ribbon-bold-duotone"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      )}
+
+                      {!isEmpty && !notFound && (
+                        <TableEmptyRows
+                          height={77}
+                          emptyRows={badges.length < 5 ? 5 - badges.length : 0}
+                        />
+                      )}
+
+                      {notFound && <TableNoData colSpan={5} searchQuery={filterName} />}
+                    </>
+                  )
+                ) : (
+                  loadingAssignments ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                        <CircularProgress sx={{ color: '#08a3cd' }} />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <>
+                      {assignments.map((row, index) => (
+                        <BadgeAssignmentTableRow
+                          key={row.name}
+                          row={row}
+                          index={page * rowsPerPage + index}
+                          onView={() => handleViewAssignment(row)}
+                          onDelete={() => handleDeleteAssignment(row.name)}
+                        />
+                      ))}
+
+                      {isEmpty && (
+                        <TableRow>
+                          <TableCell colSpan={6}>
+                            <EmptyContent
+                              title="No Badge Assignments Found"
+                              description="Assign badges to employees to see them here."
+                              icon="solar:user-id-bold-duotone"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      )}
+
+                      {!isEmpty && !notFound && (
+                        <TableEmptyRows
+                          height={77}
+                          emptyRows={assignments.length < 5 ? 5 - assignments.length : 0}
+                        />
+                      )}
+
+                      {notFound && <TableNoData colSpan={6} searchQuery={filterName} />}
+                    </>
+                  )
                 )}
-
-                {!isEmpty && !notFound && (
-                  <TableEmptyRows
-                    height={77}
-                    emptyRows={
-                      (currentTab === 'badges' ? badges.length : assignments.length) < 5
-                        ? 5 - (currentTab === 'badges' ? badges.length : assignments.length)
-                        : 0
-                    }
-                  />
-                )}
-
-                {notFound && <TableNoData colSpan={8} searchQuery={filterName} />}
               </TableBody>
             </Table>
           </TableContainer>

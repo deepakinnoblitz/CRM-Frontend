@@ -24,6 +24,7 @@ import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -320,45 +321,55 @@ export function LeaveAllocationView() {
                             />
 
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <LeaveAllocationTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            employee: row.employee,
-                                            employeeName: row.employee_name,
-                                            leaveType: row.leave_type,
-                                            fromDate: row.from_date,
-                                            toDate: row.to_date,
-                                            totalLeaves: row.total_leaves_allocated,
-                                            leavesTaken: row.total_leaves_taken,
-                                            status: row.workflow_state || row.status,
-                                        }}
-                                        selected={false}
-                                        onSelectRow={() => { }}
-                                        onView={() => {
-                                            setSelectedAllocationId(row.name);
-                                            setOpenDetails(true);
-                                        }}
-                                        onEdit={() => handleEdit(row)}
-                                        onDelete={() => setConfirmDelete({ open: true, id: row.name })}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {filterName && !data.length && !loading && (
-                                    <TableNoData searchQuery={filterName} />
-                                )}
-
-                                {!data.length && !loading && !filterName && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={12}>
-                                            <EmptyContent title="No Leave Allocation Found" sx={{ py: 16 }} />
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <LeaveAllocationTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    employee: row.employee,
+                                                    employeeName: row.employee_name,
+                                                    leaveType: row.leave_type,
+                                                    fromDate: row.from_date,
+                                                    toDate: row.to_date,
+                                                    totalLeaves: row.total_leaves_allocated,
+                                                    leavesTaken: row.total_leaves_taken,
+                                                    status: row.workflow_state || row.status,
+                                                }}
+                                                selected={false}
+                                                onSelectRow={() => { }}
+                                                onView={() => {
+                                                    setSelectedAllocationId(row.name);
+                                                    setOpenDetails(true);
+                                                }}
+                                                onEdit={() => handleEdit(row)}
+                                                onDelete={() => setConfirmDelete({ open: true, id: row.name })}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
+
+                                        {filterName && !data.length && (
+                                            <TableNoData searchQuery={filterName} />
+                                        )}
+
+                                        {!data.length && !filterName && (
+                                            <TableRow>
+                                                <TableCell colSpan={8}>
+                                                    <EmptyContent title="No Leave Allocation Found" sx={{ py: 16 }} />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

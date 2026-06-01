@@ -27,6 +27,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -970,106 +971,116 @@ export function TaskManagerReportView() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {reportData
-                                        .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-                                        .map((row) => {
-                                            const isSelected = selected.indexOf(row.name) !== -1;
-                                            const actual = getTimeLogged(row);
-                                            const estimated = row.estimated_time || 0;
-                                            const variance = actual - estimated;
-                                            const isOverdue = row.status !== 'Completed' && row.due_date && dayjs(row.due_date).isBefore(dayjs().startOf('day'));
-
-                                            return (
-                                                <TableRow
-                                                    key={row.name}
-                                                    hover
-                                                    selected={isSelected}
-                                                    sx={{
-                                                        '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                        '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                        ...(isOverdue && { bgcolor: alpha(theme.palette.error.main, 0.04) })
-                                                    }}
-                                                >
-                                                    <TableCell padding="checkbox">
-                                                        <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
-                                                    </TableCell>
-                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.creation, 'DD-MM-YYYY')}</TableCell>
-                                                    <TableCell sx={{ maxWidth: 250 }}>
-                                                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{row.title}</Typography>
-                                                        <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.name}</Typography>
-                                                    </TableCell>
-                                                    <TableCell sx={{ maxWidth: 200 }}>
-                                                        {row.assignees && row.assignees.length > 0 ? (
-                                                            <>
-                                                                {row.assignees.slice(0, 2).map((a, index) => (
-                                                                    <Typography key={a.employee} variant="body2" noWrap>
-                                                                        {a.employee_name}
-                                                                        {index === 0 && row.assignees!.length > 1 && ","}
-                                                                    </Typography>
-                                                                ))}
-                                                                {row.assignees.length > 2 && (
-                                                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                                        + {row.assignees.length - 2} more...
-                                                                    </Typography>
-                                                                )}
-                                                            </>
-                                                        ) : (
-                                                            <Typography variant="body2" sx={{ color: 'text.disabled' }}>---</Typography>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell>{row.project}</TableCell>
-                                                    <TableCell>
-                                                        <Label
-                                                            color={
-                                                                (row.status === 'Completed' && 'success') ||
-                                                                (row.status === 'In Progress' && 'info') ||
-                                                                (isOverdue && 'error') ||
-                                                                'default'
-                                                            }
-                                                            variant="soft"
-                                                        >
-                                                            {isOverdue && row.status !== 'Completed' ? 'Overdue' : row.status}
-                                                        </Label>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                            <Box sx={{
-                                                                width: 8,
-                                                                height: 8,
-                                                                borderRadius: '50%',
-                                                                bgcolor:
-                                                                    (row.priority === 'High' && 'error.main') ||
-                                                                    (row.priority === 'Medium' && 'warning.main') ||
-                                                                    'success.main'
-                                                            }} />
-                                                            <Typography variant="body2">{row.priority}</Typography>
-                                                        </Box>
-                                                    </TableCell>
-                                                    <TableCell sx={{ fontWeight: 'bold' }}>{formatDurationDescriptive(actual)}</TableCell>
-                                                    <TableCell>{formatDurationDescriptive(estimated)}</TableCell>
-                                                    <TableCell sx={{ color: variance > 0 ? 'error.main' : 'success.main' }}>
-                                                        {formatDurationDescriptive(Math.abs(variance))} {variance > 0 ? '↑' : '↓'}
-                                                    </TableCell>
-                                                    <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper' }}>
-                                                        <IconButton onClick={() => handleViewDetails(row)} sx={{ color: 'info.main' }}>
-                                                            <Iconify icon={"solar:eye-bold" as any} />
-                                                        </IconButton>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-
-                                    {reportData.length === 0 && !loading && (
+                                    {loading ? (
                                         <TableRow>
                                             <TableCell colSpan={11} align="center" sx={{ py: 10 }}>
-                                                <Stack spacing={1} alignItems="center">
-                                                    <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                        No tasks found
-                                                    </Typography>
-                                                </Stack>
+                                                <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
+                                    ) : (
+                                        <>
+                                            {reportData
+                                                .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+                                                .map((row) => {
+                                                    const isSelected = selected.indexOf(row.name) !== -1;
+                                                    const actual = getTimeLogged(row);
+                                                    const estimated = row.estimated_time || 0;
+                                                    const variance = actual - estimated;
+                                                    const isOverdue = row.status !== 'Completed' && row.due_date && dayjs(row.due_date).isBefore(dayjs().startOf('day'));
+
+                                                    return (
+                                                        <TableRow
+                                                            key={row.name}
+                                                            hover
+                                                            selected={isSelected}
+                                                            sx={{
+                                                                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                                '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                                ...(isOverdue && { bgcolor: alpha(theme.palette.error.main, 0.04) })
+                                                            }}
+                                                        >
+                                                            <TableCell padding="checkbox">
+                                                                <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                                                            </TableCell>
+                                                            <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.creation, 'DD-MM-YYYY')}</TableCell>
+                                                            <TableCell sx={{ maxWidth: 250 }}>
+                                                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{row.title}</Typography>
+                                                                <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.name}</Typography>
+                                                            </TableCell>
+                                                            <TableCell sx={{ maxWidth: 200 }}>
+                                                                {row.assignees && row.assignees.length > 0 ? (
+                                                                    <>
+                                                                        {row.assignees.slice(0, 2).map((a, index) => (
+                                                                            <Typography key={a.employee} variant="body2" noWrap>
+                                                                                {a.employee_name}
+                                                                                {index === 0 && row.assignees!.length > 1 && ","}
+                                                                            </Typography>
+                                                                        ))}
+                                                                        {row.assignees.length > 2 && (
+                                                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                                + {row.assignees.length - 2} more...
+                                                                            </Typography>
+                                                                        )}
+                                                                    </>
+                                                                ) : (
+                                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>---</Typography>
+                                                                )}
+                                                            </TableCell>
+                                                            <TableCell>{row.project}</TableCell>
+                                                            <TableCell>
+                                                                <Label
+                                                                    color={
+                                                                        (row.status === 'Completed' && 'success') ||
+                                                                        (row.status === 'In Progress' && 'info') ||
+                                                                        (isOverdue && 'error') ||
+                                                                        'default'
+                                                                    }
+                                                                    variant="soft"
+                                                                >
+                                                                    {isOverdue && row.status !== 'Completed' ? 'Overdue' : row.status}
+                                                                </Label>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                    <Box sx={{
+                                                                        width: 8,
+                                                                        height: 8,
+                                                                        borderRadius: '50%',
+                                                                        bgcolor:
+                                                                            (row.priority === 'High' && 'error.main') ||
+                                                                            (row.priority === 'Medium' && 'warning.main') ||
+                                                                            'success.main'
+                                                                    }} />
+                                                                    <Typography variant="body2">{row.priority}</Typography>
+                                                                </Box>
+                                                            </TableCell>
+                                                            <TableCell sx={{ fontWeight: 'bold' }}>{formatDurationDescriptive(actual)}</TableCell>
+                                                            <TableCell>{formatDurationDescriptive(estimated)}</TableCell>
+                                                            <TableCell sx={{ color: variance > 0 ? 'error.main' : 'success.main' }}>
+                                                                {formatDurationDescriptive(Math.abs(variance))} {variance > 0 ? '↑' : '↓'}
+                                                            </TableCell>
+                                                            <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper' }}>
+                                                                <IconButton onClick={() => handleViewDetails(row)} sx={{ color: 'info.main' }}>
+                                                                    <Iconify icon={"solar:eye-bold" as any} />
+                                                                </IconButton>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
+
+                                            {reportData.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={11} align="center" sx={{ py: 10 }}>
+                                                        <Stack spacing={1} alignItems="center">
+                                                            <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                No tasks found
+                                                            </Typography>
+                                                        </Stack>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </>
                                     )}
                                 </TableBody>
                             </Table>

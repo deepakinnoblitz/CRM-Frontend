@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import { SelectChangeEvent } from '@mui/material/Select';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useSocket } from 'src/hooks/use-socket';
 import { usePresenceLog } from 'src/hooks/use-presence-log';
@@ -249,7 +250,11 @@ export function EmployeeDailyLogView() {
 
                             <TableBody>
                                 {loading ? (
-                                    null
+                                    <TableRow>
+                                        <TableCell colSpan={12} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
+                                        </TableCell>
+                                    </TableRow>
                                 ) : (
                                     sessions.map((row, index) => (
                                         <EmployeeDailyLogTableRow

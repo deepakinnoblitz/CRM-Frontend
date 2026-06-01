@@ -404,7 +404,7 @@ export function AssetAssignmentsView() {
                                 {loading ? (
                                     <TableRow>
                                         <TableCell colSpan={isHR ? 6 : 5} align="center" sx={{ py: 10 }}>
-                                            <CircularProgress />
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
                                 ) : (

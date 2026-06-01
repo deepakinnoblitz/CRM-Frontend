@@ -24,6 +24,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -441,63 +442,73 @@ export function LeadReportView() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
-                                        const isSelected = selected.indexOf(row.name) !== -1;
-                                        return (
-                                            <TableRow
-                                                key={index}
-                                                hover
-                                                role="checkbox"
-                                                aria-checked={isSelected}
-                                                selected={isSelected}
-                                                sx={{
-                                                    '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                    '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                }}
-                                            >
-                                                <TableCell padding="checkbox">
-                                                    <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
-                                                </TableCell>
-                                                <TableCell sx={{ fontWeight: 600 }}>{row.lead_name}</TableCell>
-                                                <TableCell>{row.company_name}</TableCell>
-                                                <TableCell>{row.phone_number}</TableCell>
-                                                <TableCell>{row.email}</TableCell>
-                                                <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
-                                                <TableCell>
-                                                    <Box
-                                                        sx={{
-                                                            px: 1,
-                                                            py: 0.5,
-                                                            borderRadius: 1,
-                                                            display: 'inline-flex',
-                                                            typography: 'caption',
-                                                            fontWeight: 'bold',
-                                                            bgcolor: alpha(row.leads_type === 'Incoming' ? '#4CAF50' : '#FF9800', 0.1),
-                                                            color: row.leads_type === 'Incoming' ? '#4CAF50' : '#FF9800',
-                                                        }}
-                                                    >
-                                                        {row.leads_type}
-                                                    </Box>
-                                                </TableCell>
-                                                <TableCell>{row.leads_from}</TableCell>
-                                                <TableCell>{row.owner_name}</TableCell>
-                                                <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
-                                                    <IconButton onClick={() => handleViewLead(row.name)} sx={{ color: 'info.main' }}>
-                                                        <Iconify icon="solar:eye-bold" />
-                                                    </IconButton>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                    {reportData.length === 0 && !loading && (
+                                    {loading ? (
                                         <TableRow>
                                             <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
-                                                <Stack spacing={1} alignItems="center">
-                                                    <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
-                                                </Stack>
+                                                <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
+                                    ) : (
+                                        <>
+                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                                const isSelected = selected.indexOf(row.name) !== -1;
+                                                return (
+                                                    <TableRow
+                                                        key={index}
+                                                        hover
+                                                        role="checkbox"
+                                                        aria-checked={isSelected}
+                                                        selected={isSelected}
+                                                        sx={{
+                                                            '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                            '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                        }}
+                                                    >
+                                                        <TableCell padding="checkbox">
+                                                            <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                                                        </TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>{row.lead_name}</TableCell>
+                                                        <TableCell>{row.company_name}</TableCell>
+                                                        <TableCell>{row.phone_number}</TableCell>
+                                                        <TableCell>{row.email}</TableCell>
+                                                        <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
+                                                        <TableCell>
+                                                            <Box
+                                                                sx={{
+                                                                    px: 1,
+                                                                    py: 0.5,
+                                                                    borderRadius: 1,
+                                                                    display: 'inline-flex',
+                                                                    typography: 'caption',
+                                                                    fontWeight: 'bold',
+                                                                    bgcolor: alpha(row.leads_type === 'Incoming' ? '#4CAF50' : '#FF9800', 0.1),
+                                                                    color: row.leads_type === 'Incoming' ? '#4CAF50' : '#FF9800',
+                                                                }}
+                                                            >
+                                                                {row.leads_type}
+                                                            </Box>
+                                                        </TableCell>
+                                                        <TableCell>{row.leads_from}</TableCell>
+                                                        <TableCell>{row.owner_name}</TableCell>
+                                                        <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
+                                                            <IconButton onClick={() => handleViewLead(row.name)} sx={{ color: 'info.main' }}>
+                                                                <Iconify icon="solar:eye-bold" />
+                                                            </IconButton>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                            {reportData.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
+                                                        <Stack spacing={1} alignItems="center">
+                                                            <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
+                                                        </Stack>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </>
                                     )}
                                 </TableBody>
                             </Table>
