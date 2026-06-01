@@ -218,7 +218,7 @@ export function DealDetailsView() {
         <DashboardContent maxWidth={false}>
             {/* Top Header */}
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={2}>
-                <Typography variant="h4">Prospect: {deal.deal_title}</Typography>
+                <Typography variant="h4">Prospect Details: {deal.name}</Typography>
                 <Stack direction="row" spacing={2}>
                     <Button
                         variant="outlined"
