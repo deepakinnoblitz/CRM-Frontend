@@ -971,13 +971,13 @@ export function LeadView() {
                 <>
                   <TextField
                     fullWidth
-                    label="Converted Account"
+                    label="Converted Company"
                     value={convertedAccount}
                     InputProps={{ readOnly: true }}
                   />
                   <TextField
                     fullWidth
-                    label="Converted Contact"
+                    label="Converted Client"
                     value={convertedContact}
                     InputProps={{ readOnly: true }}
                   />
@@ -1051,7 +1051,7 @@ export function LeadView() {
           {currentTab === 'convert' && (
             <Box sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ mb: 3 }}>
-                Convert Lead to Account and Contact
+                Convert Lead to Client and Company
               </Typography>
 
               {/* Check if already converted */}
@@ -1064,13 +1064,13 @@ export function LeadView() {
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <TextField
                       fullWidth
-                      label="Converted Account"
+                      label="Converted Company"
                       value={convertedAccount}
                       InputProps={{ readOnly: true }}
                     />
                     <TextField
                       fullWidth
-                      label="Converted Contact"
+                      label="Converted Client"
                       value={convertedContact}
                       InputProps={{ readOnly: true }}
                     />
@@ -1093,7 +1093,7 @@ export function LeadView() {
                             display: 'block',
                           }}
                         >
-                          Converted Account
+                          Converted Company
                         </Typography>
                         <Typography
                           variant="subtitle1"
@@ -1126,7 +1126,7 @@ export function LeadView() {
                             display: 'block',
                           }}
                         >
-                          Converted Contact
+                          Converted Client
                         </Typography>
                         <Typography
                           variant="subtitle1"
@@ -1167,7 +1167,7 @@ export function LeadView() {
               ) : (
                 <Box>
                   <Alert severity="info" sx={{ mb: 3 }}>
-                    This will create an Account and Contact from this lead&apos;s information.
+                    This will create an Company and Client from this lead&apos;s information.
                   </Alert>
 
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
@@ -1199,7 +1199,7 @@ export function LeadView() {
                     />
                     {!email && !phoneNumber && (
                       <Alert severity="warning">
-                        Email or Phone Number is required to create a Contact
+                        Email or Phone Number is required to create a Client
                       </Alert>
                     )}
                   </Box>
@@ -1297,57 +1297,62 @@ export function LeadView() {
                 />
 
                 <TableBody>
-                  {loading && (
-                    <TableEmptyRows height={68} emptyRows={5} />
-                  )}
-
-                  {!loading &&
-                    data.map((row, index) => (
-                      <LeadTableRow
-                        key={row.name}
-                        index={table.page * table.rowsPerPage + index}
-                        hideCheckbox
-                        row={{
-                          id: row.name,
-                          name: getString(row.lead_name) ?? '-',
-                          phone: getString(row.phone_number) ?? '-',
-                          email: getString(row.email) ?? '-',
-                          company: getString(row.company_name) ?? '-',
-                          status: getString(row.status) ?? '-',
-                          workflow_state: getString(row.workflow_state) ?? '-',
-                          avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
-                          isVerified: true,
-                          country: getString(row.country) ?? '-',
-                        }}
-                        selected={table.selected.includes(row.name)}
-                        onSelectRow={() => table.onSelectRow(row.name)}
-                        onEdit={() => handleEditRow({ id: row.name })}
-                        onDelete={() => onDeleteRow(row.name)}
-                        onView={() => handleViewRow({ id: row.name })}
-                        canEdit={permissions.write}
-                        canDelete={permissions.delete}
-                      />
-                    ))}
-
-                  {notFound && <TableNoData searchQuery={filterName} />}
-
-                  {empty && (
+                  {loading ? (
                     <TableRow>
                       <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                        <EmptyContent
-                          title="No leads found"
-                          description="Start capturing leads to boost your sales."
-                          icon="solar:user-plus-bold-duotone"
-                        />
+                        <CircularProgress sx={{ color: '#08a3cd' }} />
                       </TableCell>
                     </TableRow>
-                  )}
+                  ) : (
+                    <>
+                      {data.map((row, index) => (
+                        <LeadTableRow
+                          key={row.name}
+                          index={table.page * table.rowsPerPage + index}
+                          hideCheckbox
+                          row={{
+                            id: row.name,
+                            name: getString(row.lead_name) ?? '-',
+                            phone: getString(row.phone_number) ?? '-',
+                            email: getString(row.email) ?? '-',
+                            company: getString(row.company_name) ?? '-',
+                            status: getString(row.status) ?? '-',
+                            workflow_state: getString(row.workflow_state) ?? '-',
+                            avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
+                            isVerified: true,
+                            country: getString(row.country) ?? '-',
+                          }}
+                          selected={table.selected.includes(row.name)}
+                          onSelectRow={() => table.onSelectRow(row.name)}
+                          onEdit={() => handleEditRow({ id: row.name })}
+                          onDelete={() => onDeleteRow(row.name)}
+                          onView={() => handleViewRow({ id: row.name })}
+                          canEdit={permissions.write}
+                          canDelete={permissions.delete}
+                        />
+                      ))}
 
-                  {!empty && !notFound && (
-                    <TableEmptyRows
-                      height={68}
-                      emptyRows={data.length < 5 ? 5 - data.length : 0}
-                    />
+                      {notFound && <TableNoData searchQuery={filterName} />}
+
+                      {empty && (
+                        <TableRow>
+                          <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                            <EmptyContent
+                              title="No leads found"
+                              description="Start capturing leads to boost your sales."
+                              icon="solar:user-plus-bold-duotone"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      )}
+
+                      {!empty && !notFound && (
+                        <TableEmptyRows
+                          height={68}
+                          emptyRows={data.length < 5 ? 5 - data.length : 0}
+                        />
+                      )}
+                    </>
                   )}
                 </TableBody>
               </Table>
@@ -1466,7 +1471,7 @@ export function LeadView() {
         open={openConvertConfirm}
         onClose={() => setOpenConvertConfirm(false)}
         title="Convert Lead"
-        content="Are you sure you want to convert this lead? This will create a permanent Account and Contact record."
+        content="Are you sure you want to convert this lead? This will create a permanent Company and Client record."
         action={
           <Button
             variant="contained"

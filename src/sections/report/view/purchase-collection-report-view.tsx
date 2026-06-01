@@ -20,6 +20,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -301,54 +302,64 @@ export function PurchaseCollectionReportView() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
-                                        const isSelected = selected.indexOf(row.id) !== -1;
-                                        return (
-                                            <TableRow
-                                                key={index}
-                                                hover
-                                                role="checkbox"
-                                                aria-checked={isSelected}
-                                                selected={isSelected}
-                                                sx={{
-                                                    '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                    '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                }}
-                                            >
-                                                <TableCell padding="checkbox">
-                                                    <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.id)} />
-                                                </TableCell>
-                                                <TableCell sx={{ fontWeight: 600 }}>{row.id}</TableCell>
-                                                <TableCell sx={{ fontWeight: 600 }}>{row.purchase}</TableCell>
-                                                <TableCell>{row.collection_date ? dayjs(row.collection_date).format('DD MMM YYYY') : '-'}</TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.vendor_name}</Typography>
-                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>{row.vendor}</Typography>
-                                                </TableCell>
-                                                <TableCell>{row.mode_of_payment || '-'}</TableCell>
-                                                <TableCell sx={{ fontWeight: 600 }}>{fCurrency(row.amount_to_pay)}</TableCell>
-                                                <TableCell sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.amount_collected)}</TableCell>
-                                                <TableCell sx={{ color: 'error.main', fontWeight: 600 }}>{fCurrency(row.amount_pending)}</TableCell>
-                                                <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
-                                                    <IconButton
-                                                        onClick={() => navigate(`/purchase-collections/${encodeURIComponent(row.id)}/view`, { state: { from: location.pathname } })}
-                                                        sx={{ color: 'info.main' }}
-                                                    >
-                                                        <Iconify icon="solar:eye-bold" />
-                                                    </IconButton>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                    {reportData.length === 0 && !loading && (
+                                    {loading ? (
                                         <TableRow>
                                             <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
-                                                <Stack spacing={1} alignItems="center">
-                                                    <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>No purchase settlements found</Typography>
-                                                </Stack>
+                                                <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
+                                    ) : (
+                                        <>
+                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                                const isSelected = selected.indexOf(row.id) !== -1;
+                                                return (
+                                                    <TableRow
+                                                        key={index}
+                                                        hover
+                                                        role="checkbox"
+                                                        aria-checked={isSelected}
+                                                        selected={isSelected}
+                                                        sx={{
+                                                            '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                            '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                        }}
+                                                    >
+                                                        <TableCell padding="checkbox">
+                                                            <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.id)} />
+                                                        </TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>{row.id}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>{row.purchase}</TableCell>
+                                                        <TableCell>{row.collection_date ? dayjs(row.collection_date).format('DD MMM YYYY') : '-'}</TableCell>
+                                                        <TableCell>
+                                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.vendor_name}</Typography>
+                                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>{row.vendor}</Typography>
+                                                        </TableCell>
+                                                        <TableCell>{row.mode_of_payment || '-'}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>{fCurrency(row.amount_to_pay)}</TableCell>
+                                                        <TableCell sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.amount_collected)}</TableCell>
+                                                        <TableCell sx={{ color: 'error.main', fontWeight: 600 }}>{fCurrency(row.amount_pending)}</TableCell>
+                                                        <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
+                                                            <IconButton
+                                                                onClick={() => navigate(`/purchase-collections/${encodeURIComponent(row.id)}/view`, { state: { from: location.pathname } })}
+                                                                sx={{ color: 'info.main' }}
+                                                            >
+                                                                <Iconify icon="solar:eye-bold" />
+                                                            </IconButton>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                            {reportData.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
+                                                        <Stack spacing={1} alignItems="center">
+                                                            <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled' }}>No purchase settlements found</Typography>
+                                                        </Stack>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </>
                                     )}
                                 </TableBody>
                             </Table>

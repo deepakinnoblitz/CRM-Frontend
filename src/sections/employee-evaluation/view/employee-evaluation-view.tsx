@@ -34,6 +34,7 @@ import DialogActions from '@mui/material/DialogActions';
 import InputAdornment from '@mui/material/InputAdornment';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
 
 import { useEmployeeEvaluationTraits, useEmployeeEvaluationEvents, useEmployeeEvaluationScoreLogs } from 'src/hooks/useEmployeeEvaluation';
@@ -362,76 +363,86 @@ export function EmployeeEvaluationView() {
                     ]}
                   />
                   <TableBody>
-                    {events.map((row, index) => (
-                      <EmployeeEvaluationEventTableRow
-                        key={row.name}
-                        row={row}
-                        index={page * rowsPerPage + index}
-                        selected={false}
-                        onSelectRow={() => { }}
-                        onView={() => {
-                          setSelectedEvent(row);
-                          setOpenDetails(true);
-                        }}
-                        onEdit={() => {
-                          setSelectedEvent(row);
-                          setOpenEventForm(true);
-                        }}
-                        onSubmit={async () => {
-                          try {
-                            await submitEmployeeEvaluationEvent({
-                              doctype: 'Employee Evaluation',
-                              name: row.name,
-                            } as any);
-                            setSnackbar({ open: true, message: 'Submitted successfully', severity: 'success' });
-                            refetchEvents();
-                            refetchLogs();
-                          } catch (error: any) {
-                            setSnackbar({ open: true, message: error.message || 'Submission failed', severity: 'error' });
-                          }
-                        }}
-                        onCancel={async () => {
-                          try {
-                            await cancelEmployeeEvaluationEvent(row.name);
-                            setSnackbar({ open: true, message: 'Cancelled successfully', severity: 'success' });
-                            refetchEvents();
-                            refetchLogs();
-                          } catch (error: any) {
-                            setSnackbar({ open: true, message: error.message || 'Cancellation failed', severity: 'error' });
-                          }
-                        }}
-                        onDelete={() => {
-                          setConfirmDelete({
-                            open: true,
-                            type: 'event',
-                            name: row.name,
-                            isSubmitted: row.docstatus === 1,
-                          });
-                        }}
-                        hideActions={hideTabs}
-                      />
-                    ))}
-
-                    {emptyEvents && (
+                    {loadingEvents ? (
                       <TableRow>
-                        <TableCell colSpan={8}>
-                          <EmptyContent
-                            title="No Employee Evaluation Assessment"
-                            description="Wait for HR to add employee evaluations for employees."
-                            icon="solar:clipboard-check-bold-duotone"
-                          />
+                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                          <CircularProgress sx={{ color: '#08a3cd' }} />
                         </TableCell>
                       </TableRow>
-                    )}
+                    ) : (
+                      <>
+                        {events.map((row, index) => (
+                          <EmployeeEvaluationEventTableRow
+                            key={row.name}
+                            row={row}
+                            index={page * rowsPerPage + index}
+                            selected={false}
+                            onSelectRow={() => { }}
+                            onView={() => {
+                              setSelectedEvent(row);
+                              setOpenDetails(true);
+                            }}
+                            onEdit={() => {
+                              setSelectedEvent(row);
+                              setOpenEventForm(true);
+                            }}
+                            onSubmit={async () => {
+                              try {
+                                await submitEmployeeEvaluationEvent({
+                                  doctype: 'Employee Evaluation',
+                                  name: row.name,
+                                } as any);
+                                setSnackbar({ open: true, message: 'Submitted successfully', severity: 'success' });
+                                refetchEvents();
+                                refetchLogs();
+                              } catch (error: any) {
+                                setSnackbar({ open: true, message: error.message || 'Submission failed', severity: 'error' });
+                              }
+                            }}
+                            onCancel={async () => {
+                              try {
+                                await cancelEmployeeEvaluationEvent(row.name);
+                                setSnackbar({ open: true, message: 'Cancelled successfully', severity: 'success' });
+                                refetchEvents();
+                                refetchLogs();
+                              } catch (error: any) {
+                                setSnackbar({ open: true, message: error.message || 'Cancellation failed', severity: 'error' });
+                              }
+                            }}
+                            onDelete={() => {
+                              setConfirmDelete({
+                                open: true,
+                                type: 'event',
+                                name: row.name,
+                                isSubmitted: row.docstatus === 1,
+                              });
+                            }}
+                            hideActions={hideTabs}
+                          />
+                        ))}
 
-                    {!emptyEvents && !notFoundEvents && (
-                      <TableEmptyRows
-                        height={77}
-                        emptyRows={events.length < 5 ? 5 - events.length : 0}
-                      />
-                    )}
+                        {emptyEvents && (
+                          <TableRow>
+                            <TableCell colSpan={8}>
+                              <EmptyContent
+                                title="No Employee Evaluation Assessment"
+                                description="Wait for HR to add employee evaluations for employees."
+                                icon="solar:clipboard-check-bold-duotone"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )}
 
-                    {notFoundEvents && <TableNoData searchQuery={filterName} colSpan={8} />}
+                        {!emptyEvents && !notFoundEvents && (
+                          <TableEmptyRows
+                            height={77}
+                            emptyRows={events.length < 5 ? 5 - events.length : 0}
+                          />
+                        )}
+
+                        {notFoundEvents && <TableNoData searchQuery={filterName} colSpan={8} />}
+                      </>
+                    )}
                   </TableBody>
                 </>
               )}
@@ -450,34 +461,44 @@ export function EmployeeEvaluationView() {
                     ]}
                   />
                   <TableBody>
-                    {logs.map((row, index) => (
-                      <EmployeeEvaluationScoreLogTableRow
-                        key={row.name}
-                        row={row}
-                        index={page * rowsPerPage + index}
-                      />
-                    ))}
-
-                    {emptyLogs && (
+                    {loadingLogs ? (
                       <TableRow>
-                        <TableCell colSpan={7}>
-                          <EmptyContent
-                            title="No Score Logs found"
-                            description="Personal score changes will be logged here."
-                            icon="solar:history-bold-duotone"
-                          />
+                        <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                          <CircularProgress sx={{ color: '#08a3cd' }} />
                         </TableCell>
                       </TableRow>
-                    )}
+                    ) : (
+                      <>
+                        {logs.map((row, index) => (
+                          <EmployeeEvaluationScoreLogTableRow
+                            key={row.name}
+                            row={row}
+                            index={page * rowsPerPage + index}
+                          />
+                        ))}
 
-                    {!emptyLogs && !notFoundLogs && (
-                      <TableEmptyRows
-                        height={77}
-                        emptyRows={logs.length < 5 ? 5 - logs.length : 0}
-                      />
-                    )}
+                        {emptyLogs && (
+                          <TableRow>
+                            <TableCell colSpan={7}>
+                              <EmptyContent
+                                title="No Score Logs found"
+                                description="Personal score changes will be logged here."
+                                icon="solar:history-bold-duotone"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )}
 
-                    {notFoundLogs && <TableNoData searchQuery={filterName} colSpan={7} />}
+                        {!emptyLogs && !notFoundLogs && (
+                          <TableEmptyRows
+                            height={77}
+                            emptyRows={logs.length < 5 ? 5 - logs.length : 0}
+                          />
+                        )}
+
+                        {notFoundLogs && <TableNoData searchQuery={filterName} colSpan={7} />}
+                      </>
+                    )}
                   </TableBody>
                 </>
               )}
@@ -494,53 +515,63 @@ export function EmployeeEvaluationView() {
                     ]}
                   />
                   <TableBody>
-                    {traits.map((row, index) => (
-                      <EmployeeEvaluationTraitTableRow
-                        key={row.name}
-                        row={row}
-                        index={page * rowsPerPage + index}
-                        onEdit={async () => {
-                          try {
-                            const fullTrait = await fetchEmployeeEvaluationTrait(row.name);
-                            setSelectedTrait(fullTrait);
-                            setOpenTraitForm(true);
-                          } catch (error) {
-                            console.error('Failed to fetch trait details:', error);
-                            // Fallback to row data if fetch fails
-                            setSelectedTrait(row);
-                            setOpenTraitForm(true);
-                          }
-                        }}
-                        onDelete={() => {
-                          setConfirmDelete({
-                            open: true,
-                            type: 'trait',
-                            name: row.name,
-                          });
-                        }}
-                      />
-                    ))}
-
-                    {emptyTraits && (
+                    {loadingTraits ? (
                       <TableRow>
-                        <TableCell colSpan={5}>
-                          <EmptyContent
-                            title="No Criteria found"
-                            description="Define performance criteria to start evaluations."
-                            icon="solar:user-speak-bold-duotone"
-                          />
+                        <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
+                          <CircularProgress sx={{ color: '#08a3cd' }} />
                         </TableCell>
                       </TableRow>
-                    )}
+                    ) : (
+                      <>
+                        {traits.map((row, index) => (
+                          <EmployeeEvaluationTraitTableRow
+                            key={row.name}
+                            row={row}
+                            index={page * rowsPerPage + index}
+                            onEdit={async () => {
+                              try {
+                                const fullTrait = await fetchEmployeeEvaluationTrait(row.name);
+                                setSelectedTrait(fullTrait);
+                                setOpenTraitForm(true);
+                              } catch (error) {
+                                console.error('Failed to fetch trait details:', error);
+                                // Fallback to row data if fetch fails
+                                setSelectedTrait(row);
+                                setOpenTraitForm(true);
+                              }
+                            }}
+                            onDelete={() => {
+                              setConfirmDelete({
+                                open: true,
+                                type: 'trait',
+                                name: row.name,
+                              });
+                            }}
+                          />
+                        ))}
 
-                    {!emptyTraits && !notFoundTraits && (
-                      <TableEmptyRows
-                        height={77}
-                        emptyRows={traits.length < 5 ? 5 - traits.length : 0}
-                      />
-                    )}
+                        {emptyTraits && (
+                          <TableRow>
+                            <TableCell colSpan={5}>
+                              <EmptyContent
+                                title="No Criteria found"
+                                description="Define performance criteria to start evaluations."
+                                icon="solar:user-speak-bold-duotone"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )}
 
-                    {notFoundTraits && <TableNoData searchQuery={filterName} colSpan={5} />}
+                        {!emptyTraits && !notFoundTraits && (
+                          <TableEmptyRows
+                            height={77}
+                            emptyRows={traits.length < 5 ? 5 - traits.length : 0}
+                          />
+                        )}
+
+                        {notFoundTraits && <TableNoData searchQuery={filterName} colSpan={5} />}
+                      </>
+                    )}
                   </TableBody>
                 </>
               )}
@@ -559,39 +590,49 @@ export function EmployeeEvaluationView() {
                     ]}
                   />
                   <TableBody>
-                    {automationRules.map((row, index) => (
-                      <EvaluationAutomationRuleTableRow
-                        key={row.name}
-                        row={row}
-                        index={page * rowsPerPage + index}
-                        onEdit={() => {
-                          setSelectedRule(row);
-                          setOpenAutomationForm(true);
-                        }}
-                        onDelete={() => setConfirmDelete({ open: true, type: 'automation', name: row.name })}
-                        onToggleEnabled={async (enabled) => {
-                          try {
-                            await updateEvaluationAutomationRule(row.name, { enabled: enabled ? 1 : 0 });
-                            refetchAutomation();
-                          } catch (err: any) {
-                            setSnackbar({ open: true, message: err.message || 'Update failed', severity: 'error' });
-                          }
-                        }}
-                      />
-                    ))}
-                    {!loadingAutomation && automationRules.length === 0 && (
+                    {loadingAutomation ? (
                       <TableRow>
-                        <TableCell colSpan={8}>
-                          <EmptyContent
-                            title="No Automation Rules"
-                            description="Create rules to auto-generate evaluations from system events."
-                            icon="solar:layers-minimalistic-bold-duotone"
-                          />
+                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                          <CircularProgress sx={{ color: '#08a3cd' }} />
                         </TableCell>
                       </TableRow>
-                    )}
-                    {!loadingAutomation && automationRules.length > 0 && automationRules.length < 5 && (
-                      <TableEmptyRows height={77} emptyRows={5 - automationRules.length} />
+                    ) : (
+                      <>
+                        {automationRules.map((row, index) => (
+                          <EvaluationAutomationRuleTableRow
+                            key={row.name}
+                            row={row}
+                            index={page * rowsPerPage + index}
+                            onEdit={() => {
+                              setSelectedRule(row);
+                              setOpenAutomationForm(true);
+                            }}
+                            onDelete={() => setConfirmDelete({ open: true, type: 'automation', name: row.name })}
+                            onToggleEnabled={async (enabled) => {
+                              try {
+                                await updateEvaluationAutomationRule(row.name, { enabled: enabled ? 1 : 0 });
+                                refetchAutomation();
+                              } catch (err: any) {
+                                    setSnackbar({ open: true, message: err.message || 'Update failed', severity: 'error' });
+                              }
+                            }}
+                          />
+                        ))}
+                        {!loadingAutomation && automationRules.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={8}>
+                              <EmptyContent
+                                title="No Automation Rules"
+                                description="Create rules to auto-generate evaluations from system events."
+                                icon="solar:layers-minimalistic-bold-duotone"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        {!loadingAutomation && automationRules.length > 0 && automationRules.length < 5 && (
+                          <TableEmptyRows height={77} emptyRows={5 - automationRules.length} />
+                        )}
+                      </>
                     )}
                   </TableBody>
                 </>

@@ -230,8 +230,8 @@ export function ProposalListView({ hideTitle, prospectId }: Props) {
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={10} align="center" sx={{ py: 6 }}>
-                                            <CircularProgress size={36} />
+                                        <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
                                 ) : (

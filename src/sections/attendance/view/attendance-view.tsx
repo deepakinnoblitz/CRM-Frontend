@@ -8,7 +8,6 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import { IconButton } from '@mui/material';
 import Popover from '@mui/material/Popover';
 import Snackbar from '@mui/material/Snackbar';
 import Checkbox from '@mui/material/Checkbox';
@@ -25,6 +24,7 @@ import TableContainer from '@mui/material/TableContainer';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import TablePagination from '@mui/material/TablePagination';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { IconButton, CircularProgress } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -596,51 +596,61 @@ export function AttendanceView() {
                             />
 
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <AttendanceTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            employee: row.employee,
-                                            employeeName: row.employee_name,
-                                            attendanceDate: row.attendance_date,
-                                            status: row.status,
-                                            inTime: row.in_time,
-                                            out_time: row.out_time,
-                                            working_hours_display: row.working_hours_display,
-                                            modified: row.modified,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleOpenDetails(row.name)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onDelete={() => handleDeleteClick(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
-                                            <EmptyContent
-                                                title="No attendance records"
-                                                description="You haven't marked any attendance yet."
-                                                icon="solar:calendar-date-bold-duotone"
-                                            />
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <AttendanceTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    employee: row.employee,
+                                                    employeeName: row.employee_name,
+                                                    attendanceDate: row.attendance_date,
+                                                    status: row.status,
+                                                    inTime: row.in_time,
+                                                    out_time: row.out_time,
+                                                    working_hours_display: row.working_hours_display,
+                                                    modified: row.modified,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleOpenDetails(row.name)}
+                                                onEdit={() => handleEditRow(row.name)}
+                                                onDelete={() => handleDeleteClick(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
 
-                                {!empty && !notFound && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={8}>
+                                                    <EmptyContent
+                                                        title="No attendance records"
+                                                        description="You haven't marked any attendance yet."
+                                                        icon="solar:calendar-date-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

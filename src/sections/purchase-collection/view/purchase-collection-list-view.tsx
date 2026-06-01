@@ -14,6 +14,7 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -336,42 +337,52 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
                             />
 
                             <TableBody>
-                                {tableData.map((row, index) => (
-                                    <PurchaseCollectionTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={row}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onEditRow={() => router.push(`/purchase-collections/${row.name}/edit`)}
-                                        onDeleteRow={() => handleDeleteRow(row.name)}
-                                        onViewRow={() => router.push(`/purchase-collections/${row.name}/view`)}
-                                        isLatest={(row as any).isLatest}
-                                    />
-                                ))}
-
-                                    {tableData.length > 0 && (
-                                        <TableEmptyRows
-                                            height={77}
-                                            emptyRows={tableData.length < 5 ? 5 - tableData.length : 0}
-                                        />
-                                    )}
-
-                                {notFound && (
-                                    <TableNoData searchQuery={filterName} />
-                                )}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={totalHeadCols}>
-                                            <EmptyContent
-                                                title="No purchase settlements found"
-                                                description="Track your purchase payments to vendors here."
-                                                icon="solar:bill-check-bold-duotone"
-                                            />
+                                        <TableCell colSpan={totalHeadCols} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
+                                ) : (
+                                    <>
+                                        {tableData.map((row, index) => (
+                                            <PurchaseCollectionTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={row}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onEditRow={() => router.push(`/purchase-collections/${row.name}/edit`)}
+                                                onDeleteRow={() => handleDeleteRow(row.name)}
+                                                onViewRow={() => router.push(`/purchase-collections/${row.name}/view`)}
+                                                isLatest={(row as any).isLatest}
+                                            />
+                                        ))}
+
+                                        {tableData.length > 0 && (
+                                            <TableEmptyRows
+                                                height={77}
+                                                emptyRows={tableData.length < 5 ? 5 - tableData.length : 0}
+                                            />
+                                        )}
+
+                                        {notFound && (
+                                            <TableNoData searchQuery={filterName} />
+                                        )}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={totalHeadCols}>
+                                                    <EmptyContent
+                                                        title="No purchase settlements found"
+                                                        description="Track your purchase payments to vendors here."
+                                                        icon="solar:bill-check-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

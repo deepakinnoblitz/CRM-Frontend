@@ -27,6 +27,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -738,63 +739,73 @@ export function SalarySlipReportView() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {reportData
-                                        .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-                                        .map((row) => {
-                                            const isSelected = selected.indexOf(row.name) !== -1;
-                                            return (
-                                                <TableRow
-                                                    key={row.name}
-                                                    hover
-                                                    selected={isSelected}
-                                                    sx={{
-                                                        '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                        '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                    }}
-                                                >
-                                                    <TableCell padding="checkbox">
-                                                        <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
-                                                    </TableCell>
-                                                    <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{row.name}</TableCell>
-                                                    <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        <Typography variant="subtitle2">{row.employee_name}</Typography>
-                                                        <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
-                                                    </TableCell>
-                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                                                        {fDate(row.pay_period_start, 'DD-MM-YYYY')} to {fDate(row.pay_period_end, 'DD-MM-YYYY')}
-                                                    </TableCell>
-                                                    <TableCell sx={{ fontWeight: 700 }}>
-                                                        <Box component="span" sx={{ fontFamily: 'Arial', mr: 0.2 }}>{hrSettings.currency_symbol}</Box>
-                                                        {fNumber(row.grand_gross_pay ?? row.gross_pay ?? 0, { locale: hrSettings.default_locale })}
-                                                    </TableCell>
-                                                    <TableCell sx={{ fontWeight: 700, color: 'error.main' }}>
-                                                        <Box component="span" sx={{ fontFamily: 'Arial', mr: 0.2 }}>{hrSettings.currency_symbol}</Box>
-                                                        {fNumber(row.total_deduction ?? 0, { locale: hrSettings.default_locale })}
-                                                    </TableCell>
-                                                    <TableCell sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                                                        <Box component="span" sx={{ fontFamily: 'Arial', mr: 0.2 }}>{hrSettings.currency_symbol}</Box>
-                                                        {fNumber(row.grand_net_pay ?? row.net_pay ?? 0, { locale: hrSettings.default_locale })}
-                                                    </TableCell>
-                                                    <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper' }}>
-                                                        <IconButton onClick={() => handleViewDetails(row.name)} sx={{ color: 'info.main' }}>
-                                                            <Iconify icon={"solar:eye-bold" as any} />
-                                                        </IconButton>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-
-                                    {reportData.length === 0 && !loading && (
+                                    {loading ? (
                                         <TableRow>
                                             <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                                                <Stack spacing={1} alignItems="center">
-                                                    <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                        No salary slips found
-                                                    </Typography>
-                                                </Stack>
+                                                <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
+                                    ) : (
+                                        <>
+                                            {reportData
+                                                .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+                                                .map((row) => {
+                                                    const isSelected = selected.indexOf(row.name) !== -1;
+                                                    return (
+                                                        <TableRow
+                                                            key={row.name}
+                                                            hover
+                                                            selected={isSelected}
+                                                            sx={{
+                                                                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                                '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                            }}
+                                                        >
+                                                            <TableCell padding="checkbox">
+                                                                <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                                                            </TableCell>
+                                                            <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{row.name}</TableCell>
+                                                            <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                <Typography variant="subtitle2">{row.employee_name}</Typography>
+                                                                <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
+                                                            </TableCell>
+                                                            <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                                                {fDate(row.pay_period_start, 'DD-MM-YYYY')} to {fDate(row.pay_period_end, 'DD-MM-YYYY')}
+                                                            </TableCell>
+                                                            <TableCell sx={{ fontWeight: 700 }}>
+                                                                <Box component="span" sx={{ fontFamily: 'Arial', mr: 0.2 }}>{hrSettings.currency_symbol}</Box>
+                                                                {fNumber(row.grand_gross_pay ?? row.gross_pay ?? 0, { locale: hrSettings.default_locale })}
+                                                            </TableCell>
+                                                            <TableCell sx={{ fontWeight: 700, color: 'error.main' }}>
+                                                                <Box component="span" sx={{ fontFamily: 'Arial', mr: 0.2 }}>{hrSettings.currency_symbol}</Box>
+                                                                {fNumber(row.total_deduction ?? 0, { locale: hrSettings.default_locale })}
+                                                            </TableCell>
+                                                            <TableCell sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                                                                <Box component="span" sx={{ fontFamily: 'Arial', mr: 0.2 }}>{hrSettings.currency_symbol}</Box>
+                                                                {fNumber(row.grand_net_pay ?? row.net_pay ?? 0, { locale: hrSettings.default_locale })}
+                                                            </TableCell>
+                                                            <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper' }}>
+                                                                <IconButton onClick={() => handleViewDetails(row.name)} sx={{ color: 'info.main' }}>
+                                                                    <Iconify icon={"solar:eye-bold" as any} />
+                                                                </IconButton>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
+
+                                            {reportData.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                                        <Stack spacing={1} alignItems="center">
+                                                            <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                No salary slips found
+                                                            </Typography>
+                                                        </Stack>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </>
                                     )}
                                 </TableBody>
                             </Table>

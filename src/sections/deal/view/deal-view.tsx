@@ -31,6 +31,7 @@ import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -727,57 +728,62 @@ export function DealView() {
                                             />
 
                                             <TableBody>
-                                                {loading && (
-                                                    <TableEmptyRows height={68} emptyRows={5} />
-                                                )}
-
-                                                {!loading &&
-                                                    data.map((row, index) => (
-                                                        <DealTableRow
-                                                            key={row.name}
-                                                            index={page * rowsPerPage + index}
-                                                            hideCheckbox
-                                                            row={{
-                                                                id: row.name,
-                                                                title: row.deal_title ?? '-',
-                                                                account: row.account ?? '-',
-                                                                accountName: row.account_name ?? '',
-                                                                contact: row.contact ?? '-',
-                                                                contactName: row.contact_name ?? '',
-                                                                value: row.value ?? 0,
-                                                                stage: row.stage ?? '-',
-                                                                expectedCloseDate: row.expected_close_date ?? '-',
-                                                                avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
-                                                            }}
-                                                            selected={selected.includes(row.name)}
-                                                            onSelectRow={() => handleSelectRow(row.name)}
-                                                            onEdit={() => handleEditRow(row.name)}
-                                                            onDelete={() => handleDeleteClick(row.name)}
-                                                            onView={() => handleViewRow(row.name)}
-                                                            canEdit={permissions.write}
-                                                            canDelete={permissions.delete}
-                                                        />
-                                                    ))}
-
-                                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                                {empty && (
+                                                {loading ? (
                                                     <TableRow>
-                                                        <TableCell colSpan={10} align="center" sx={{py:5}}>
-                                                            <EmptyContent
-                                                                title="No Prospects found"
-                                                                description="Create a new Prospect to track your sales pipeline."
-                                                                icon="solar:hand-stars-bold-duotone"
-                                                            />
+                                                        <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
+                                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                                         </TableCell>
                                                     </TableRow>
-                                                )}
+                                                ) : (
+                                                    <>
+                                                        {data.map((row, index) => (
+                                                            <DealTableRow
+                                                                key={row.name}
+                                                                index={page * rowsPerPage + index}
+                                                                hideCheckbox
+                                                                row={{
+                                                                    id: row.name,
+                                                                    title: row.deal_title ?? '-',
+                                                                    account: row.account ?? '-',
+                                                                    accountName: row.account_name ?? '',
+                                                                    contact: row.contact ?? '-',
+                                                                    contactName: row.contact_name ?? '',
+                                                                    value: row.value ?? 0,
+                                                                    stage: row.stage ?? '-',
+                                                                    expectedCloseDate: row.expected_close_date ?? '-',
+                                                                    avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
+                                                                }}
+                                                                selected={selected.includes(row.name)}
+                                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                                onEdit={() => handleEditRow(row.name)}
+                                                                onDelete={() => handleDeleteClick(row.name)}
+                                                                onView={() => handleViewRow(row.name)}
+                                                                canEdit={permissions.write}
+                                                                canDelete={permissions.delete}
+                                                            />
+                                                        ))}
 
-                                                {!empty && !notFound && (
-                                                    <TableEmptyRows
-                                                        height={68}
-                                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                                    />
+                                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                                        {empty && (
+                                                            <TableRow>
+                                                                <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
+                                                                    <EmptyContent
+                                                                        title="No Prospects found"
+                                                                        description="Create a new Prospect to track your sales pipeline."
+                                                                        icon="solar:hand-stars-bold-duotone"
+                                                                    />
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )}
+
+                                                        {!empty && !notFound && (
+                                                            <TableEmptyRows
+                                                                height={68}
+                                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                                            />
+                                                        )}
+                                                    </>
                                                 )}
                                             </TableBody>
                                         </Table>

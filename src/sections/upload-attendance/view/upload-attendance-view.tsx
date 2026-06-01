@@ -14,6 +14,7 @@ import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useUploadAttendance } from 'src/hooks/useUploadAttendance';
 
@@ -234,36 +235,46 @@ export function UploadAttendanceView() {
                             />
 
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <UploadAttendanceTableRow
-                                        key={row.name}
-                                        row={row}
-                                        index={page * rowsPerPage + index}
-                                        onEditRow={() => handleEditRow(row)}
-                                        onDeleteRow={() => handleDeleteRow(row.name)}
-                                        onImport={() => handleImport(row.name)}
-                                        importing={importing === row.name}
-                                    />
-                                ))}
-
-                                {!empty && !notFound && (
-                                    <TableEmptyRows
-                                        height={52}
-                                        emptyRows={emptyRows}
-                                    />
-                                )}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={12}>
-                                            <EmptyContent
-                                                title="No Attendance Uploaded"
-                                                description="You haven't uploaded any attendance records yet."
-                                            />
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <UploadAttendanceTableRow
+                                                key={row.name}
+                                                row={row}
+                                                index={page * rowsPerPage + index}
+                                                onEditRow={() => handleEditRow(row)}
+                                                onDeleteRow={() => handleDeleteRow(row.name)}
+                                                onImport={() => handleImport(row.name)}
+                                                importing={importing === row.name}
+                                            />
+                                        ))}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={52}
+                                                emptyRows={emptyRows}
+                                            />
+                                        )}
+
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={8}>
+                                                    <EmptyContent
+                                                        title="No Attendance Uploaded"
+                                                        description="You haven't uploaded any attendance records yet."
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

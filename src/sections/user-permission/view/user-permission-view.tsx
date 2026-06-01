@@ -13,6 +13,7 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchUserPermissions, createUserPermission, deleteUserPermission } from 'src/api/user-permissions';
@@ -262,38 +263,48 @@ export const UserPermissionView = forwardRef(({ hideHeader = false, hideActionBu
                             />
 
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <UserPermissionTableRow
-                                        key={row.name}
-                                        row={row}
-                                        selected={false}
-                                        index={page * rowsPerPage + index}
-                                        onSelectRow={() => { }}
-                                        onEditRow={() => handleEditRow(row)}
-                                        onDeleteRow={() => handleDeleteRow(row.name)}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={7}>
-                                            <EmptyContent
-                                                title="No user permissions found"
-                                                description="You haven't created any user permissions yet."
-                                                icon="solar:lock-password-bold-duotone"
-                                                sx={{ py: 5 }}
-                                            />
+                                        <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <UserPermissionTableRow
+                                                key={row.name}
+                                                row={row}
+                                                selected={false}
+                                                index={page * rowsPerPage + index}
+                                                onSelectRow={() => { }}
+                                                onEditRow={() => handleEditRow(row)}
+                                                onDeleteRow={() => handleDeleteRow(row.name)}
+                                            />
+                                        ))}
 
-                                {!empty && !notFound && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={5}>
+                                                    <EmptyContent
+                                                        title="No user permissions found"
+                                                        description="You haven't created any user permissions yet."
+                                                        icon="solar:lock-password-bold-duotone"
+                                                        sx={{ py: 5 }}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

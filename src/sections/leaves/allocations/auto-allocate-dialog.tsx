@@ -111,7 +111,7 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 3, mt: 2 }}>
+            <DialogContent sx={{ p: 3,}}>
                 {step === 'input' ? (
                     <Box sx={{ mt: 2 }}>
                         <Stack direction="row" spacing={2}>
@@ -159,7 +159,7 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                                         <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', mr: 1 }} />
                                     ),
                                 }}
-                                sx={{ mt: 5, mb: 2 }}
+                                sx={{ mt: 5, mb: 2, width: 380 }}
                             />
                         </Stack>
                         <TableContainer sx={{ border: 1, borderColor: 'divider', borderRadius: 2 }}>

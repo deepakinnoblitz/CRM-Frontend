@@ -24,6 +24,7 @@ import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -113,7 +114,7 @@ export function HolidaysView() {
     const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
 
-    const { data, total, refetch } = useHolidayLists(page + 1, rowsPerPage, filterName, orderBy, order);
+    const { data, total, loading, refetch } = useHolidayLists(page + 1, rowsPerPage, filterName, orderBy, order);
 
     const [openCreate, setOpenCreate] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -390,8 +391,8 @@ export function HolidaysView() {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const notFound = !data.length && !!filterName;
-    const empty = !data.length && !filterName;
+    const notFound = !loading && !data.length && !!filterName;
+    const empty = !loading && !data.length && !filterName;
 
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
@@ -445,49 +446,59 @@ export function HolidaysView() {
                                     { id: '', label: '' },
                                 ]}
                             />
-                            <TableBody>
-                                {filteredData.map((row, index) => (
-                                    <HolidayListTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            holiday_list_name: row.holiday_list_name,
-                                            year: row.year,
-                                            month: row.month_year,
-                                            working_days: row.working_days,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                             <TableBody>
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={5}>
-                                            <EmptyContent
-                                                title="No holiday lists found"
-                                                description="You haven't created any holiday lists yet."
-                                                icon="solar:calendar-mark-bold-duotone"
-                                                sx={{ py: 5 }}
-                                            />
+                                        <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {filteredData.map((row, index) => (
+                                            <HolidayListTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    holiday_list_name: row.holiday_list_name,
+                                                    year: row.year,
+                                                    month: row.month_year,
+                                                    working_days: row.working_days,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row)}
+                                                onEdit={() => handleEditRow(row)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
 
-                                {!empty && !notFound && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={filteredData.length < 5 ? 5 - filteredData.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={5}>
+                                                    <EmptyContent
+                                                        title="No holiday lists found"
+                                                        description="You haven't created any holiday lists yet."
+                                                        icon="solar:calendar-mark-bold-duotone"
+                                                        sx={{ py: 5 }}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={filteredData.length < 5 ? 5 - filteredData.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

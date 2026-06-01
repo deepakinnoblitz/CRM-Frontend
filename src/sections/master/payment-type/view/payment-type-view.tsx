@@ -6,10 +6,13 @@ import Alert from '@mui/material/Alert'
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
 import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { usePaymentTypes } from 'src/hooks/use-masters';
 
@@ -176,34 +179,40 @@ export function PaymentTypesView() {
               />
 
               <TableBody>
-                {loading && (
-                  <TableEmptyRows height={68} emptyRows={5} />
-                )}
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center" sx={{ py: 10 }}>
+                      <CircularProgress sx={{ color: '#08a3cd' }} />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <>
+                    {!loading && data.map((row, index) => (
+                      <PaymentTypeTableRow
+                        key={row.name}
+                        index={page * rowsPerPage + index}
+                        row={row}
+                        onEditRow={() => handleEditRow(row)}
+                        onDeleteRow={() => handleDeleteRow(row.name)}
+                      />
+                    ))}
 
-                {!loading && data.map((row, index) => (
-                  <PaymentTypeTableRow
-                    key={row.name}
-                    index={page * rowsPerPage + index}
-                    row={row}
-                    onEditRow={() => handleEditRow(row)}
-                    onDeleteRow={() => handleDeleteRow(row.name)}
-                  />
-                ))}
+                    {notFound && <TableNoData searchQuery={filterName} />}
 
-                {notFound && <TableNoData searchQuery={filterName} />}
+                    {empty && (
+                      <MasterEmptyState
+                        masterName="Payment Type"
+                        colSpan={3}
+                      />
+                    )}
 
-                {empty && (
-                  <MasterEmptyState
-                    masterName="Payment Type"
-                    colSpan={3}
-                  />
-                )}
-
-                {!empty && !notFound && (
-                  <TableEmptyRows
-                    height={68}
-                    emptyRows={data.length < 5 ? 5 - data.length : 0}
-                  />
+                    {!empty && !notFound && (
+                      <TableEmptyRows
+                        height={68}
+                        emptyRows={data.length < 5 ? 5 - data.length : 0}
+                      />
+                    )}
+                  </>
                 )}
               </TableBody>
             </Table>

@@ -12,6 +12,7 @@ import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useBankAccounts } from 'src/hooks/use-masters';
 
@@ -158,32 +159,42 @@ export function BankAccountView() {
               />
 
               <TableBody>
-                {data.map((row, index) => (
-                  <BankAccountTableRow
-                    key={row.name}
-                    index={page * rowsPerPage + index}
-                    row={row}
-                    selected={false}
-                    onEditRow={() => handleEditRow(row.name)}
-                    onDeleteRow={() => handleDeleteRow(row.name)}
-                    onSelectRow={() => {}}
-                  />
-                ))}
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                      <CircularProgress sx={{ color: '#08a3cd' }} />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <>
+                    {data.map((row, index) => (
+                      <BankAccountTableRow
+                        key={row.name}
+                        index={page * rowsPerPage + index}
+                        row={row}
+                        selected={false}
+                        onEditRow={() => handleEditRow(row.name)}
+                        onDeleteRow={() => handleDeleteRow(row.name)}
+                        onSelectRow={() => {}}
+                      />
+                    ))}
 
-                {!empty && !notFound && (
-                    <TableEmptyRows
-                        height={68}
-                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                    />
-                )}
+                    {!empty && !notFound && (
+                        <TableEmptyRows
+                            height={68}
+                            emptyRows={data.length < 5 ? 5 - data.length : 0}
+                        />
+                    )}
 
-                {notFound && <TableNoData searchQuery={filterName} />}
+                    {notFound && <TableNoData searchQuery={filterName} />}
 
-                {empty && (
-                  <MasterEmptyState
-                    masterName="Bank Account"
-                    colSpan={7}
-                  />
+                    {empty && (
+                      <MasterEmptyState
+                        masterName="Bank Account"
+                        colSpan={7}
+                      />
+                    )}
+                  </>
                 )}
               </TableBody>
             </Table>

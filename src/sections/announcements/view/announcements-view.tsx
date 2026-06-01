@@ -20,6 +20,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { useAnnouncements } from 'src/hooks/useAnnouncements';
@@ -107,7 +108,7 @@ export function AnnouncementsView() {
     });
     const [selected, setSelected] = useState<string[]>([]);
 
-    const { data, total, refetch } = useAnnouncements(page + 1, rowsPerPage, filterName, filters, orderBy, order);
+    const { data, total, loading, refetch } = useAnnouncements(page + 1, rowsPerPage, filterName, filters, orderBy, order);
 
     const [openCreate, setOpenCreate] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -297,8 +298,8 @@ export function AnnouncementsView() {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const notFound = !data.length && !!filterName;
-    const empty = !data.length && !filterName;
+    const notFound = !loading && !data.length && !!filterName;
+    const empty = !loading && !data.length && !filterName;
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -353,44 +354,54 @@ export function AnnouncementsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <AnnouncementTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            announcement_name: row.announcement_name,
-                                            announcement: row.announcement,
-                                            is_active: row.is_active,
-                                            creation: row.creation,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={4}>
-                                            <EmptyContent
-                                                title="No announcements"
-                                                description="There are no announcements to display at this time."
-                                                icon="solar:bell-bold-duotone"
-                                            />
+                                        <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <AnnouncementTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    announcement_name: row.announcement_name,
+                                                    announcement: row.announcement,
+                                                    is_active: row.is_active,
+                                                    creation: row.creation,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row)}
+                                                onEdit={() => handleEditRow(row)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
 
-                                {!empty && !notFound && (
-                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={6}>
+                                                    <EmptyContent
+                                                        title="No announcements"
+                                                        description="There are no announcements to display at this time."
+                                                        icon="solar:bell-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

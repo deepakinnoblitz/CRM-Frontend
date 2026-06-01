@@ -15,6 +15,7 @@ import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useSalarySlips } from 'src/hooks/useSalarySlips';
 
@@ -412,49 +413,58 @@ export function SalarySlipsView() {
                                 ]}
                             />
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <SalarySlipTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            employee_name: row.employee_name,
-                                            employee_id: row.employee,
-                                            pay_period_start: row.pay_period_start,
-                                            pay_period_end: row.pay_period_end,
-                                            gross_pay: row.gross_pay,
-                                            net_pay: row.net_pay,
-                                            status: row.status,
-                                            docstatus: row.docstatus,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleViewRow(row)}
-                                        onEdit={() => handleEditRow(row)}
-                                        onSubmit={() => handleSubmitRow(row.name)}
-                                        onDelete={() => handleDeleteRow(row.name)}
-                                        isHR={isHR}
-                                    />
-
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={8}>
-                                            <EmptyContent
-                                                title="No salary slips"
-                                                description="You haven't received any salary slips yet."
-                                                icon="solar:wallet-bold-duotone"
-                                            />
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <SalarySlipTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    employee_name: row.employee_name,
+                                                    employee_id: row.employee,
+                                                    pay_period_start: row.pay_period_start,
+                                                    pay_period_end: row.pay_period_end,
+                                                    gross_pay: row.gross_pay,
+                                                    net_pay: row.net_pay,
+                                                    status: row.status,
+                                                    docstatus: row.docstatus,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleViewRow(row)}
+                                                onEdit={() => handleEditRow(row)}
+                                                onSubmit={() => handleSubmitRow(row.name)}
+                                                onDelete={() => handleDeleteRow(row.name)}
+                                                isHR={isHR}
+                                            />
+                                        ))}
 
-                                {!empty && !notFound && (
-                                    <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={8}>
+                                                    <EmptyContent
+                                                        title="No salary slips"
+                                                        description="You haven't received any salary slips yet."
+                                                        icon="solar:wallet-bold-duotone"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>

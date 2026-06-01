@@ -28,6 +28,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -799,57 +800,67 @@ export function DailyLogReportView() {
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {reportData
-                                            .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-                                            .map((row, index) => {
-                                                const isSelected = selected.indexOf(row.name) !== -1;
-                                                return (
-                                                    <TableRow
-                                                        key={row.name}
-                                                        hover
-                                                        selected={isSelected}
-                                                        sx={{
-                                                            '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                            '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                        }}
-                                                    >
-                                                        <TableCell padding="checkbox">
-                                                            <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
-                                                        </TableCell>
-                                                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.login_date, 'DD-MM-YYYY')}</TableCell>
-                                                        <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                            <Typography variant="subtitle2">{row.employee_name}</Typography>
-                                                            <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
-                                                        </TableCell>
-                                                        <TableCell>{row.login_time ? dayjs(row.login_time).format('HH:mm:ss') : '---'}</TableCell>
-                                                        <TableCell>{row.logout_time ? dayjs(row.logout_time).format('HH:mm:ss') : '---'}</TableCell>
-                                                        <TableCell sx={{ fontWeight: 'bold' }}>{row.total_work_hours?.toFixed(2) || '0.00'} Hrs</TableCell>
-                                                        <TableCell>{row.total_break_hours?.toFixed(2) || '0.00'} Hrs</TableCell>
-                                                        <TableCell>
-                                                            <Label color={row.status === 'Active' ? 'success' : 'error'} variant="soft">
-                                                                {row.status}
-                                                            </Label>
-                                                        </TableCell>
-                                                        <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper' }}>
-                                                            <IconButton onClick={() => handleViewDetails(row)} sx={{ color: 'info.main' }}>
-                                                                <Iconify icon={"solar:eye-bold" as any} />
-                                                            </IconButton>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                );
-                                            })}
-
-                                        {reportData.length === 0 && !loading && (
+                                        {loading ? (
                                             <TableRow>
                                                 <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
-                                                    <Stack spacing={1} alignItems="center">
-                                                        <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                        <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                            No data found
-                                                        </Typography>
-                                                    </Stack>
+                                                    <CircularProgress sx={{ color: '#08a3cd' }} />
                                                 </TableCell>
                                             </TableRow>
+                                        ) : (
+                                            <>
+                                                {reportData
+                                                    .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+                                                    .map((row, index) => {
+                                                        const isSelected = selected.indexOf(row.name) !== -1;
+                                                        return (
+                                                            <TableRow
+                                                                key={row.name}
+                                                                hover
+                                                                selected={isSelected}
+                                                                sx={{
+                                                                    '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                                    '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                                }}
+                                                            >
+                                                                <TableCell padding="checkbox">
+                                                                    <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                                                                </TableCell>
+                                                                <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.login_date, 'DD-MM-YYYY')}</TableCell>
+                                                                <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                    <Typography variant="subtitle2">{row.employee_name}</Typography>
+                                                                    <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
+                                                                </TableCell>
+                                                                <TableCell>{row.login_time ? dayjs(row.login_time).format('HH:mm:ss') : '---'}</TableCell>
+                                                                <TableCell>{row.logout_time ? dayjs(row.logout_time).format('HH:mm:ss') : '---'}</TableCell>
+                                                                <TableCell sx={{ fontWeight: 'bold' }}>{row.total_work_hours?.toFixed(2) || '0.00'} Hrs</TableCell>
+                                                                <TableCell>{row.total_break_hours?.toFixed(2) || '0.00'} Hrs</TableCell>
+                                                                <TableCell>
+                                                                    <Label color={row.status === 'Active' ? 'success' : 'error'} variant="soft">
+                                                                        {row.status}
+                                                                    </Label>
+                                                                </TableCell>
+                                                                <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper' }}>
+                                                                    <IconButton onClick={() => handleViewDetails(row)} sx={{ color: 'info.main' }}>
+                                                                        <Iconify icon={"solar:eye-bold" as any} />
+                                                                    </IconButton>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        );
+                                                    })}
+
+                                                {reportData.length === 0 && (
+                                                    <TableRow>
+                                                        <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                                            <Stack spacing={1} alignItems="center">
+                                                                <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                                <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                    No data found
+                                                                </Typography>
+                                                            </Stack>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </>
                                         )}
                                     </TableBody>
                                 </Table>

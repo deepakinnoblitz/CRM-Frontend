@@ -27,6 +27,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -781,67 +782,77 @@ export function TimesheetsReportView() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {reportData
-                                        .filter(d => d.timesheet_date !== 'TOTAL')
-                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                        .map((row, index) => {
-                                            const absoluteIndex = page * rowsPerPage + index;
-                                            const rowId = `${row.employee}-${absoluteIndex}`;
-                                            const isSelected = selected.indexOf(rowId) !== -1;
-                                            return (
-                                                <TableRow
-                                                    key={index}
-                                                    hover
-                                                    role="checkbox"
-                                                    aria-checked={isSelected}
-                                                    selected={isSelected}
-                                                    sx={{
-                                                        '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                        '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                    }}
-                                                >
-                                                    <TableCell padding="checkbox">
-                                                        <Checkbox checked={isSelected} onClick={(event) => handleClick(event, rowId)} />
-                                                    </TableCell>
-                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.timesheet_date, 'DD-MM-YYYY')}</TableCell>
-                                                    <TableCell>
-                                                        <Typography variant="subtitle2">{row.employee_name}</Typography>
-                                                        <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
-                                                    </TableCell>
-                                                    <TableCell>{row.project}</TableCell>
-                                                    <TableCell sx={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.activity_type}</TableCell>
-                                                    <TableCell sx={{ fontWeight: 'bold' }}>{row.hours} hrs</TableCell>
-                                                    <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {row.description}
-                                                    </TableCell>
-                                                    <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
-                                                        <IconButton onClick={() => handleViewDetails(row.name)} sx={{ color: 'info.main' }}>
-                                                            <Iconify icon={"solar:eye-bold" as any} />
-                                                        </IconButton>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-
-                                    {/* Total Row */}
-                                    {reportData.length > 0 && (
-                                        <TableRow sx={{ bgcolor: alpha(theme.palette.success.main, 0.08) }}>
-                                            <TableCell padding="checkbox" />
-                                            <TableCell colSpan={4} sx={{ fontWeight: 'bold', color: 'success.main' }}>TOTAL</TableCell>
-                                            <TableCell sx={{ fontWeight: 'bold', color: 'success.main' }}>{totalHours.toFixed(2)} hrs</TableCell>
-                                            <TableCell colSpan={2} />
-                                        </TableRow>
-                                    )}
-
-                                    {reportData.length === 0 && !loading && (
+                                    {loading ? (
                                         <TableRow>
                                             <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                                                <Stack spacing={1} alignItems="center">
-                                                    <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
-                                                </Stack>
+                                                <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
+                                    ) : (
+                                        <>
+                                            {reportData
+                                                .filter(d => d.timesheet_date !== 'TOTAL')
+                                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                                .map((row, index) => {
+                                                    const absoluteIndex = page * rowsPerPage + index;
+                                                    const rowId = `${row.employee}-${absoluteIndex}`;
+                                                    const isSelected = selected.indexOf(rowId) !== -1;
+                                                    return (
+                                                        <TableRow
+                                                            key={index}
+                                                            hover
+                                                            role="checkbox"
+                                                            aria-checked={isSelected}
+                                                            selected={isSelected}
+                                                            sx={{
+                                                                '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
+                                                                '&:last-child td, &:last-child th': { borderBottom: 0 },
+                                                            }}
+                                                        >
+                                                            <TableCell padding="checkbox">
+                                                                <Checkbox checked={isSelected} onClick={(event) => handleClick(event, rowId)} />
+                                                            </TableCell>
+                                                            <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.timesheet_date, 'DD-MM-YYYY')}</TableCell>
+                                                            <TableCell>
+                                                                <Typography variant="subtitle2">{row.employee_name}</Typography>
+                                                                <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
+                                                            </TableCell>
+                                                            <TableCell>{row.project}</TableCell>
+                                                            <TableCell sx={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.activity_type}</TableCell>
+                                                            <TableCell sx={{ fontWeight: 'bold' }}>{row.hours} hrs</TableCell>
+                                                            <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                {row.description}
+                                                            </TableCell>
+                                                            <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
+                                                                <IconButton onClick={() => handleViewDetails(row.name)} sx={{ color: 'info.main' }}>
+                                                                    <Iconify icon={"solar:eye-bold" as any} />
+                                                                </IconButton>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
+
+                                            {/* Total Row */}
+                                            {reportData.length > 0 && (
+                                                <TableRow sx={{ bgcolor: alpha(theme.palette.success.main, 0.08) }}>
+                                                    <TableCell padding="checkbox" />
+                                                    <TableCell colSpan={4} sx={{ fontWeight: 'bold', color: 'success.main' }}>TOTAL</TableCell>
+                                                    <TableCell sx={{ fontWeight: 'bold', color: 'success.main' }}>{totalHours.toFixed(2)} hrs</TableCell>
+                                                    <TableCell colSpan={2} />
+                                                </TableRow>
+                                            )}
+
+                                            {reportData.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                                        <Stack spacing={1} alignItems="center">
+                                                            <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
+                                                        </Stack>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </>
                                     )}
                                 </TableBody>
                             </Table>

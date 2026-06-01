@@ -1541,49 +1541,59 @@ export function EmployeeView() {
                             />
 
                             <TableBody>
-                                {data.map((row, index) => (
-                                    <EmployeeTableRow
-                                        key={row.name}
-                                        index={page * rowsPerPage + index}
-                                        hideCheckbox
-                                        row={{
-                                            id: row.name,
-                                            employeeId: row.employee_id,
-                                            name: row.employee_name,
-                                            department: row.department,
-                                            designation: row.designation,
-                                            status: row.status,
-                                        }}
-                                        selected={selected.includes(row.name)}
-                                        onSelectRow={() => handleSelectRow(row.name)}
-                                        onView={() => handleOpenDetails(row.name)}
-                                        onEdit={() => handleEditRow(row.name)}
-                                        onDelete={() => handleDeleteClick(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
-                                    />
-                                ))}
-
-                                {notFound && <TableNoData searchQuery={filterName} />}
-
-                                {empty && (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6}>
-                                            <EmptyContent
-                                                title="No employees found"
-                                                description="Click 'New Employee' to add your first team member."
-                                                icon="solar:users-group-rounded-bold-duotone"
-                                                sx={{ py: 5 }}
-                                            />
+                                        <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
-                                )}
+                                ) : (
+                                    <>
+                                        {data.map((row, index) => (
+                                            <EmployeeTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    employeeId: row.employee_id,
+                                                    name: row.employee_name,
+                                                    department: row.department,
+                                                    designation: row.designation,
+                                                    status: row.status,
+                                                }}
+                                                selected={selected.includes(row.name)}
+                                                onSelectRow={() => handleSelectRow(row.name)}
+                                                onView={() => handleOpenDetails(row.name)}
+                                                onEdit={() => handleEditRow(row.name)}
+                                                onDelete={() => handleDeleteClick(row.name)}
+                                                canEdit={permissions.write}
+                                                canDelete={permissions.delete}
+                                            />
+                                        ))}
 
-                                {!empty && !notFound && (
-                                    <TableEmptyRows
-                                        height={68}
-                                        emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                    />
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                                        {empty && (
+                                            <TableRow>
+                                                <TableCell colSpan={6}>
+                                                    <EmptyContent
+                                                        title="No employees found"
+                                                        description="Click 'New Employee' to add your first team member."
+                                                        icon="solar:users-group-rounded-bold-duotone"
+                                                        sx={{ py: 5 }}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
