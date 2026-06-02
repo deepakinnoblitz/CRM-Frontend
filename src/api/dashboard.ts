@@ -590,51 +590,51 @@ export interface FinancialTotals {
     categories: string[];
 }
 
-export async function fetchFinancialTotals(start_date?: string, end_date?: string): Promise<FinancialTotals> {
-    try {
-        let url = '/api/method/company.company.frontend_api.get_financial_totals';
-        const params = new URLSearchParams();
-        if (start_date) params.append('start_date', start_date);
-        if (end_date) params.append('end_date', end_date);
-        if (params.toString()) url += `?${params.toString()}`;
+// export async function fetchFinancialTotals(start_date?: string, end_date?: string): Promise<FinancialTotals> {
+//     try {
+//         let url = '/api/method/company.company.frontend_api.get_financial_totals';
+//         const params = new URLSearchParams();
+//         if (start_date) params.append('start_date', start_date);
+//         if (end_date) params.append('end_date', end_date);
+//         if (params.toString()) url += `?${params.toString()}`;
 
-        const res = await frappeRequest(url);
+//         const res = await frappeRequest(url);
 
-        if (!res.ok) {
-            const error = await res.json();
-            throw new Error(handleFrappeError(error, 'Failed to fetch financial totals'));
-        }
+//         if (!res.ok) {
+//             const error = await res.json();
+//             throw new Error(handleFrappeError(error, 'Failed to fetch financial totals'));
+//         }
 
-        const data = await res.json();
-        return data.message;
-    } catch (error) {
-        console.error('Failed to fetch financial totals:', error);
-        // Return default zero values when API fails
-        return {
-            invoices: {
-                total: 0,
-                count: 0,
-                chart: [0, 0, 0, 0, 0, 0, 0],
-            },
-            estimations: {
-                total: 0,
-                count: 0,
-                chart: [0, 0, 0, 0, 0, 0, 0],
-            },
-            purchases: {
-                total: 0,
-                count: 0,
-                chart: [0, 0, 0, 0, 0, 0, 0],
-            },
-            expenses: {
-                total: 0,
-                count: 0,
-                chart: [0, 0, 0, 0, 0, 0, 0],
-            },
-            categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        };
-    }
-}
+//         const data = await res.json();
+//         return data.message;
+//     } catch (error) {
+//         console.error('Failed to fetch financial totals:', error);
+//         // Return default zero values when API fails
+//         return {
+//             invoices: {
+//                 total: 0,
+//                 count: 0,
+//                 chart: [0, 0, 0, 0, 0, 0, 0],
+//             },
+//             estimations: {
+//                 total: 0,
+//                 count: 0,
+//                 chart: [0, 0, 0, 0, 0, 0, 0],
+//             },
+//             purchases: {
+//                 total: 0,
+//                 count: 0,
+//                 chart: [0, 0, 0, 0, 0, 0, 0],
+//             },
+//             expenses: {
+//                 total: 0,
+//                 count: 0,
+//                 chart: [0, 0, 0, 0, 0, 0, 0],
+//             },
+//             categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+//         };
+//     }
+// }
 
 export async function fetchMonthlyEmployee(): Promise<any> {
     try {

@@ -33,8 +33,6 @@ import {
     type DashboardStats,
     fetchTodayActivities,
     type TodayActivities,
-    fetchFinancialTotals,
-    type FinancialTotals,
     fetchSalesDashboardData,
     type SalesDashboardData
 } from 'src/api/dashboard';
@@ -97,13 +95,6 @@ export function CombinedDashboardView() {
         calls: [],
         meetings: [],
     });
-    const [financialTotals, setFinancialTotals] = useState<FinancialTotals>({
-        invoices: { total: 0, count: 0, chart: [0, 0, 0, 0, 0, 0, 0] },
-        estimations: { total: 0, count: 0, chart: [0, 0, 0, 0, 0, 0, 0] },
-        purchases: { total: 0, count: 0, chart: [0, 0, 0, 0, 0, 0, 0] },
-        expenses: { total: 0, count: 0, chart: [0, 0, 0, 0, 0, 0, 0] },
-        categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    });
 
     const [dateFilter, setDateFilter] = useState<string>('Last 7 Days');
     const [customStartDate, setCustomStartDate] = useState<Dayjs | null>(dayjs().subtract(7, 'day'));
@@ -153,16 +144,14 @@ export function CombinedDashboardView() {
             }
             // If 'All Time', we leave start_date and end_date as undefined
 
-            const [sales, stats, acts, financial] = await Promise.all([
+            const [sales, stats, acts] = await Promise.all([
                 fetchSalesDashboardData(start_date, end_date),
                 fetchDashboardStats(start_date, end_date),
                 fetchTodayActivities(),
-                fetchFinancialTotals(start_date, end_date)
             ]);
             setSalesData(sales);
             setCrmStats(stats);
             setActivities(acts);
-            setFinancialTotals(financial);
         };
 
         loadData();
