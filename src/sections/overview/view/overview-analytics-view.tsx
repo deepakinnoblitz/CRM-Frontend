@@ -22,8 +22,9 @@ export function OverviewAnalyticsView() {
     contacts: 0,
     deals: 0,
     accounts: 0,
-    recent_leads: 0,
-    total_deal_value: 0,
+    proposals: 0,
+    estimations: 0,
+    invoices: 0,
     leads_by_status: [],
     deals_by_stage: [],
     charts: {
@@ -32,6 +33,9 @@ export function OverviewAnalyticsView() {
       contacts: [0, 0, 0, 0, 0, 0, 0],
       deals: [0, 0, 0, 0, 0, 0, 0],
       accounts: [0, 0, 0, 0, 0, 0, 0],
+      proposals: [0, 0, 0, 0, 0, 0, 0],
+      estimations: [0, 0, 0, 0, 0, 0, 0],
+      invoices: [0, 0, 0, 0, 0, 0, 0],
     },
   });
   const [activities, setActivities] = useState<TodayActivities>({

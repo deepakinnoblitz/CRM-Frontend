@@ -6,16 +6,20 @@ export interface DashboardStats {
     contacts: number;
     deals: number;
     accounts: number;
-    recent_leads: number;
-    total_deal_value: number;
+    proposals: number;
+    estimations :number;
+    invoices :number;
     leads_by_status: Array<{ status: string; count: number }>;
     deals_by_stage: Array<{ stage: string; count: number }>;
     charts: {
         categories: string[];
         leads: number[];
         contacts: number[];
-        deals: number[];
         accounts: number[];
+        deals: number[];
+        proposals: number[];
+        estimations: number[];
+        invoices: number[];
     };
 }
 
@@ -72,25 +76,55 @@ export async function fetchDashboardStats(start_date?: string, end_date?: string
         }
 
         const data = await res.json();
-        return data.message;
+
+        // Normalize backend keys (some endpoints return singular keys: proposal, estimation, invoice)
+        const m = data.message || {};
+
+        const charts = m.charts || {};
+
+        return {
+            leads: m.leads || 0,
+            contacts: m.contacts || 0,
+            deals: m.deals || 0,
+            accounts: m.accounts || 0,
+            proposals: m.proposals ?? m.proposal ?? 0,
+            estimations: m.proposals ?? m.proposal ?? 0,
+            invoices: m.proposals ?? m.proposal ?? 0,
+            leads_by_status: m.leads_by_status || [],
+            deals_by_stage: m.deals_by_stage || [],
+            charts: {
+                categories: charts.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                leads: charts.leads || charts.lead || [0, 0, 0, 0, 0, 0, 0],
+                contacts: charts.contacts || [0, 0, 0, 0, 0, 0, 0],
+                accounts: charts.accounts || [0, 0, 0, 0, 0, 0, 0],
+                deals: charts.deals || [0, 0, 0, 0, 0, 0, 0],
+                proposals: charts.proposals ?? charts.proposal ?? [0, 0, 0, 0, 0, 0, 0],
+                estimations: charts.estimations ?? charts.estimation ?? [0, 0, 0, 0, 0, 0, 0],
+                invoices: charts.invoices ?? charts.invoice ?? [0, 0, 0, 0, 0, 0, 0],
+            },
+        };
     } catch (error) {
         console.error('Failed to fetch dashboard stats:', error);
         // Return default zero values when API fails
         return {
             leads: 0,
             contacts: 0,
-            deals: 0,
             accounts: 0,
-            recent_leads: 0,
-            total_deal_value: 0,
+            deals: 0,
+            proposals: 0,
+            estimations: 0,
+            invoices: 0,
             leads_by_status: [],
             deals_by_stage: [],
             charts: {
                 categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                 leads: [0, 0, 0, 0, 0, 0, 0],
                 contacts: [0, 0, 0, 0, 0, 0, 0],
-                deals: [0, 0, 0, 0, 0, 0, 0],
                 accounts: [0, 0, 0, 0, 0, 0, 0],
+                deals: [0, 0, 0, 0, 0, 0, 0],
+                proposals: [0, 0, 0, 0, 0, 0, 0],
+                estimations: [0, 0, 0, 0, 0, 0, 0],
+                invoices: [0, 0, 0, 0, 0, 0, 0]
             },
         };
     }
@@ -451,18 +485,23 @@ export interface SalesDashboardData {
     top_customers_by_revenue: Array<{
         client_name: string;
         billing_name: string;
+        contact_name?: string;
+        account_name?: string;
         revenue: number;
         order_count: number;
     }>;
     most_repeated_customers: Array<{
         client_name: string;
         billing_name: string;
+        contact_name?: string;
+        account_name?: string;
         order_count: number;
         total_spent: number;
     }>;
     overdue_orders: Array<{
         name: string;
         billing_name: string;
+        account_name?: string;
         due_date: string;
         balance_amount: number;
         grand_total: number;

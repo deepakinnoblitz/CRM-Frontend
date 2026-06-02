@@ -5,7 +5,6 @@ import type {
 import dayjs from 'dayjs';
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 
-// 2️⃣ MUI Components (sorted alphabetically)
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';

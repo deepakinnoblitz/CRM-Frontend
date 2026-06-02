@@ -28,6 +28,7 @@ import { useRouter } from 'src/routes/hooks';
 import { fCurrency } from 'src/utils/format-number';
 import { handleDirectPrint } from 'src/utils/print';
 
+import { getDoctypeList } from 'src/api/purchase';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getEstimation, deleteEstimation, getEstimationPrintUrl, convertEstimationToInvoice } from 'src/api/estimation';
 
@@ -48,6 +49,8 @@ export function EstimationDetailsView() {
     const [printing, setPrinting] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [itemNames, setItemNames] = useState<Record<string, string>>({});
+    const [accountName, setAccountName] = useState<string>('');
 
     const { enqueueSnackbar } = useSnackbar();
 
@@ -58,6 +61,47 @@ export function EstimationDetailsView() {
                 .finally(() => setFetching(false));
         }
     }, [id]);
+
+    useEffect(() => {
+        if (estimation?.billing_name) {
+            getDoctypeList('Accounts', ['name', 'account_name'])
+                .then((accounts: any[]) => {
+                    const account = accounts.find((acc: any) => acc.name === estimation.billing_name);
+                    if (account?.account_name) {
+                        setAccountName(account.account_name);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch Account details:', err);
+                    setAccountName('');
+                });
+        }
+    }, [estimation?.billing_name]);
+
+    useEffect(() => {
+        const services = Array.from(new Set((estimation?.table_qecz || [])
+            .map((item: any) => item?.service)
+            .filter(Boolean)));
+
+        if (!services.length) {
+            setItemNames({});
+            return;
+        }
+
+        getDoctypeList('Item', ['name', 'item_name'], { name: ['in', services] })
+            .then((items: any[]) => {
+                const mapped = items.reduce((acc: Record<string, string>, item: any) => {
+                    if (item?.name) {
+                        acc[item.name] = item.item_name || item.name;
+                    }
+                    return acc;
+                }, {});
+                setItemNames(mapped);
+            })
+            .catch((err) => {
+                console.error('Failed to fetch Item names:', err);
+            });
+    }, [estimation?.table_qecz]);
 
     if (fetching) {
         return (
@@ -130,7 +174,7 @@ export function EstimationDetailsView() {
             setConverting(true);
             const result = await convertEstimationToInvoice(id);
             if (result.alreadyCreated) {
-                enqueueSnackbar(result.message || `Invoice ${result.invoiceName} already created for this estimation.`, { variant: 'info' });
+                enqueueSnackbar(result.message || `Invoice ${result.invoiceName} already created for this estimation.`, { variant: 'warning' });
                 router.push(`/invoices/${encodeURIComponent(result.invoiceName)}/view`);
             } else {
                 router.push(`/invoices/${encodeURIComponent(result.invoiceName)}/view`, { converted: true });
@@ -258,9 +302,12 @@ export function EstimationDetailsView() {
                             </Stack>
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                                 <Typography variant="subtitle1" color="text.primary" sx={{ fontWeight: 700, fontSize: '16px' }}>
-                                    {billing_name || 'No Company Name'}
+                                    {accountName || billing_name || 'No Company Name'}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+                                <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
+                                    ID: {billing_name}
+                                </Typography>
+                                <Typography variant="body2" color="text.primary" sx={{ mt: 0.5, fontWeight: 600, fontSize: '15px' }}>
                                     {customer_name || 'No Contact Name'}
                                 </Typography>
                                 <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
@@ -348,7 +395,7 @@ export function EstimationDetailsView() {
                                     {table_qecz.map((row: any, index: number) => (
                                         <TableRow key={index} sx={{ '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) } }}>
                                             <TableCell sx={{ py: 2 }}>
-                                                <Typography variant="subtitle2">{row.service}</Typography>
+                                                <Typography variant="subtitle2">{itemNames[row.service] || row.service || '-'}</Typography>
                                             </TableCell>
                                             <TableCell sx={{ py: 2 }}>
                                                 <Typography variant="body2">{row.hsn_code || '-'}</Typography>

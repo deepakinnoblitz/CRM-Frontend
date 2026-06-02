@@ -42,6 +42,7 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { getProposal, createProposal } from 'src/api/proposal';
 
 import { Iconify } from 'src/components/iconify';
+import { RichTextEditor } from 'src/components/rich-text-editor/rich-text-editor';
 
 // ----------------------------------------------------------------------
 
@@ -427,15 +428,32 @@ export function ProposalEditView() {
                             onChange={(val) => setValidUntil(val?.format('YYYY-MM-DD') || '')}
                             slotProps={{ textField: { fullWidth: true, InputLabelProps: { shrink: true } }, field: { clearable: true, onClear: () => setValidUntil('') } }} />
 
-                        <TextField fullWidth label="Status" select value={status} onChange={(e) => setStatus(e.target.value)}>
+                        {/* <TextField fullWidth label="Status" select value={status} onChange={(e) => setStatus(e.target.value)}>
                             {STATUS_OPTIONS.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
-                        </TextField>
+                        </TextField> */}
 
-                        <TextField fullWidth label="Description" multiline rows={3} value={description}
-                            onChange={(e) => setDescription(e.target.value)} sx={{ gridColumn: { sm: 'span 2' } }} />
+                        {/* Description */}
+                        <Box sx={{ gridColumn: { sm: 'span 2' } }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>
+                                Description
+                            </Typography>
+                            <RichTextEditor
+                                value={description}
+                                onChange={(val: string) => setDescription(val)}
+                                placeholder="Enter proposal description..."
+                            />
+                        </Box>
                         
-                        <TextField fullWidth multiline rows={5} label="Terms and Conditions"
-                            value={termsAndConditions} onChange={(e) => setTermsAndConditions(e.target.value)} sx={{ gridColumn: { sm: 'span 2' } }}/>
+                        <Box sx={{ gridColumn: { sm: 'span 2' } }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>
+                                Terms and Conditions
+                            </Typography>
+                            <RichTextEditor
+                                value={termsAndConditions}
+                                onChange={(val: string) => setTermsAndConditions(val)}
+                                placeholder="Enter terms and conditions for this proposal..."
+                            />
+                        </Box>
                     </Box>
                 </Card>
 

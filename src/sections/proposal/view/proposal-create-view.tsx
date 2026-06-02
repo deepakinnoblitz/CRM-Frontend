@@ -43,6 +43,7 @@ import { createProposal } from 'src/api/proposal';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
+import { RichTextEditor } from 'src/components/rich-text-editor/rich-text-editor';
 
 // ----------------------------------------------------------------------
 
@@ -270,7 +271,7 @@ export function ProposalCreateView() {
             setClientError(true);
             hasError = true;
         }
-        if (!billingName){
+        if (!billingName) {
             setBillingError(true);
             hasError = true;
         }
@@ -453,7 +454,7 @@ export function ProposalCreateView() {
                             }
                             onChange={(_e, val) => { setBillingName(val?.name || ''); if (val?.name) setBillingError(false); }}
                             renderInput={(params) => (
-                                <TextField {...params} label="Billing Name" required error={BillingError} helperText={BillingError ? 'Billing Name is required' : ''}/>
+                                <TextField {...params} label="Billing Name" required error={BillingError} helperText={BillingError ? 'Billing Name is required' : ''} />
                             )}
                             renderOption={(props, option) => (
                                 <li {...props} key={option.name}>
@@ -522,7 +523,7 @@ export function ProposalCreateView() {
                         />
 
                         {/* Status */}
-                        <TextField
+                        {/* <TextField
                             fullWidth
                             label="Status"
                             select
@@ -534,29 +535,30 @@ export function ProposalCreateView() {
                                     {s}
                                 </MenuItem>
                             ))}
-                        </TextField>
+                        </TextField> */}
 
                         {/* Description */}
-                        <TextField
-                            fullWidth
-                            label="Description"
-                            multiline
-                            rows={3}
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            sx={{ gridColumn: { sm: 'span 2' } }}
-                        />
-                        
-                        <TextField
-                        fullWidth
-                        multiline
-                        rows={6}
-                        label="Terms and Conditions"
-                        value={termsAndConditions}
-                        onChange={(e) => setTermsAndConditions(e.target.value)}
-                        placeholder="Enter terms and conditions for this proposal..."
-                        sx={{ gridColumn: { sm: 'span 2' } }}
-                    />
+                        <Box sx={{ gridColumn: { sm: 'span 2' } }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>
+                                Description
+                            </Typography>
+                            <RichTextEditor
+                                value={description}
+                                onChange={(val: string) => setDescription(val)}
+                                placeholder="Enter proposal description..."
+                            />
+                        </Box>
+
+                        <Box sx={{ gridColumn: { sm: 'span 2' } }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>
+                                Terms and Conditions
+                            </Typography>
+                            <RichTextEditor
+                                value={termsAndConditions}
+                                onChange={(val: string) => setTermsAndConditions(val)}
+                                placeholder="Enter terms and conditions for this proposal..."
+                            />
+                        </Box>
                     </Box>
                 </Card>
 

@@ -42,6 +42,7 @@ export function PurchaseDetailsView() {
 
     const [purchase, setPurchase] = useState<any>(null);
     const [contactDetails, setContactDetails] = useState<any>(null);
+    const [itemNames, setItemNames] = useState<Record<string, string>>({});
     const [fetching, setFetching] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [printing, setPrinting] = useState(false);
@@ -67,6 +68,31 @@ export function PurchaseDetailsView() {
                 .catch(err => console.error('Failed to fetch contact details', err));
         }
     }, [purchase]);
+
+    useEffect(() => {
+        const services = Array.from(new Set((purchase?.table_qecz || [])
+            .map((item: any) => item?.service)
+            .filter(Boolean)));
+
+        if (!services.length) {
+            setItemNames({});
+            return;
+        }
+
+        getDoctypeList('Item', ['name', 'item_name'], { name: ['in', services] })
+            .then((items: any[]) => {
+                const mapped = items.reduce((acc: Record<string, string>, item: any) => {
+                    if (item?.name) {
+                        acc[item.name] = item.item_name || item.name;
+                    }
+                    return acc;
+                }, {});
+                setItemNames(mapped);
+            })
+            .catch((err) => {
+                console.error('Failed to fetch Item names:', err);
+            });
+    }, [purchase?.table_qecz]);
 
     if (fetching) {
         return (
@@ -200,6 +226,23 @@ export function PurchaseDetailsView() {
                             Edit Purchase
                         </Button>
                     )}
+                    {(balance_amount || 0) >= 0 && (
+                        <Button
+                            variant="contained"
+                            onClick={() => router.push(`/purchase-collections/new?purchase=${encodeURIComponent(id || '')}`)}
+                            startIcon={<IoMdCash size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                bgcolor: '#36b37e',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#2b9065' }
+                            }}
+                        >
+                            Create Settlement
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 
@@ -325,7 +368,7 @@ export function PurchaseDetailsView() {
                                     {table_qecz.map((row: any, index: number) => (
                                         <TableRow key={index} sx={{ '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) } }}>
                                             <TableCell sx={{ py: 2 }}>
-                                                <Typography variant="subtitle2">{row.service}</Typography>
+                                                <Typography variant="subtitle2">{itemNames[row.service] || row.service || '-'}</Typography>
                                             </TableCell>
                                             <TableCell sx={{ py: 2 }}>
                                                 <Typography variant="body2">{row.hsn_code || '-'}</Typography>

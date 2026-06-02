@@ -107,8 +107,8 @@ export function LeadView() {
   const [leadName, setLeadName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [gstin, setGstin] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [email, setEmail] = useState('');
+  const [phoneNumbers, setPhoneNumbers] = useState<{ phone: string }[]>([{ phone: '' }]);
+  const [emails, setEmails] = useState<{ email: string }[]>([{ email: '' }]);
   const [leadsType, setLeadsType] = useState('Incoming');
   const [leadsFrom, setLeadsFrom] = useState('');
   const [service, setService] = useState('');
@@ -335,8 +335,8 @@ export function LeadView() {
     setLeadName('');
     setCompanyName('');
     setGstin('');
-    setPhoneNumber('');
-    setEmail('');
+    setPhoneNumbers([{ phone: '' }]);
+    setEmails([{ email: '' }]);
     setLeadsType('Incoming');
     setLeadsFrom('');
     setService('');
@@ -451,7 +451,8 @@ export function LeadView() {
       newErrors.leadsFrom = true;
       missingFields.push('Leads From');
     }
-    if (!phoneNumber) {
+    const primaryPhone = phoneNumbers[0]?.phone;
+    if (!primaryPhone || !primaryPhone.trim()) {
       newErrors.phoneNumber = true;
       missingFields.push('Phone Number');
     }
@@ -472,19 +473,31 @@ export function LeadView() {
     try {
       setCreating(true);
 
-      // Format phone number: remove spaces and add hyphen after dial code (e.g., +91-9876543210)
-      let formattedPhone = phoneNumber.replace(/\s/g, '');
-      const parts = phoneNumber.trim().split(/\s+/);
-      if (parts.length > 1 && parts[0].startsWith('+')) {
-        formattedPhone = `${parts[0]}-${parts.slice(1).join('')}`;
-      }
+      // Format phone numbers
+      const formattedPhoneNumbers = phoneNumbers
+        .filter((item) => item.phone.trim() !== '')
+        .map((item) => {
+          let phone = item.phone.replace(/\s/g, '');
+          const parts = item.phone.trim().split(/\s+/);
+          if (parts.length > 1 && parts[0].startsWith('+')) {
+            phone = `${parts[0]}-${parts.slice(1).join('')}`;
+          }
+          return { phone };
+        });
+
+      // Format emails
+      const formattedEmails = emails
+        .filter((item) => item.email.trim() !== '')
+        .map((item) => ({ email: item.email.trim() }));
 
       const leadData = {
         lead_name: leadName,
         company_name: companyName,
         gstin,
-        phone_number: formattedPhone,
-        email,
+        phone_number: formattedPhoneNumbers.length > 0 ? formattedPhoneNumbers[0].phone : '',
+        phone_numbers: formattedPhoneNumbers,
+        email: formattedEmails.length > 0 ? formattedEmails[0].email : '',
+        emails: formattedEmails,
         leads_type: leadsType as any,
         leads_from: leadsFrom,
         service,
@@ -538,8 +551,17 @@ export function LeadView() {
       setLeadName(getString(fullLead.lead_name) || '');
       setCompanyName(getString(fullLead.company_name) || '');
       setGstin(getString(fullLead.gstin) || '');
-      setPhoneNumber(cleanPhoneNumber(getString(fullLead.phone_number) || ''));
-      setEmail(getString(fullLead.email) || '');
+      if (fullLead.phone_numbers && fullLead.phone_numbers.length > 0) {
+        setPhoneNumbers(fullLead.phone_numbers.map((p: any) => ({ phone: cleanPhoneNumber(p.phone || '') })));
+      } else {
+        setPhoneNumbers([{ phone: cleanPhoneNumber(getString(fullLead.phone_number) || '') }]);
+      }
+
+      if (fullLead.emails && fullLead.emails.length > 0) {
+        setEmails(fullLead.emails.map((e: any) => ({ email: e.email || '' })));
+      } else {
+        setEmails([{ email: getString(fullLead.email) || '' }]);
+      }
       setLeadsType(getString(fullLead.leads_type) || 'Incoming');
       setLeadsFrom(getString(fullLead.leads_from) || '');
       setService(getString(fullLead.service) || '');
@@ -569,8 +591,17 @@ export function LeadView() {
         setLeadName(getString(fallbackRow.lead_name) || '');
         setCompanyName(getString(fallbackRow.company_name) || '');
         setGstin(getString(fallbackRow.gstin) || '');
-        setPhoneNumber(cleanPhoneNumber(getString(fallbackRow.phone_number) || ''));
-        setEmail(getString(fallbackRow.email) || '');
+        if (fallbackRow.phone_numbers && fallbackRow.phone_numbers.length > 0) {
+          setPhoneNumbers(fallbackRow.phone_numbers.map((p: any) => ({ phone: cleanPhoneNumber(p.phone || '') })));
+        } else {
+          setPhoneNumbers([{ phone: cleanPhoneNumber(getString(fallbackRow.phone_number) || '') }]);
+        }
+
+        if (fallbackRow.emails && fallbackRow.emails.length > 0) {
+          setEmails(fallbackRow.emails.map((e: any) => ({ email: e.email || '' })));
+        } else {
+          setEmails([{ email: getString(fallbackRow.email) || '' }]);
+        }
         setLeadsType(getString(fallbackRow.leads_type) || 'Incoming');
         setLeadsFrom(getString(fallbackRow.leads_from) || '');
         setService(getString(fallbackRow.service) || '');
@@ -686,38 +717,137 @@ export function LeadView() {
                 slotProps={{ input: { readOnly: viewOnly } }}
               />
 
-              <MuiTelInput
+              <TextField
+                select
                 fullWidth
-                defaultCountry="IN"
-                label="Phone Number"
-                name="phone_number"
-                value={phoneNumber}
-                onChange={(newValue: string) => {
-                  setPhoneNumber(newValue);
-                  if (newValue) setValidationErrors(prev => ({ ...prev, phoneNumber: false }));
+                label="Leads Type"
+                value={leadsType}
+                onChange={(e) => {
+                  setLeadsType(e.target.value as any);
+                  if (e.target.value) setValidationErrors(prev => ({ ...prev, leadsType: false }));
                 }}
                 required
                 disabled={viewOnly}
-                error={!!validationErrors.phoneNumber}
-                helperText={validationErrors.phoneNumber ? 'Phone Number is required' : ''}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
-                  "& .MuiInputLabel-root.Mui-disabled": {
-                    color: "rgba(0, 0, 0, 0.6)",
-                  },
+                error={!!validationErrors.leadsType}
+                helperText={validationErrors.leadsType ? 'Leads Type is required' : ''}
+                SelectProps={{
+                  MenuProps: {
+                    PaperProps: {
+                      sx: {
+                        marginTop: 0.5,
+                        boxShadow: (theme) => theme.customShadows.z20,
+                        borderRadius: 1.5,
+                      }
+                    }
+                  }
                 }}
-              />
+              >
+                <MenuItem value="Incoming">Incoming</MenuItem>
+                <MenuItem value="Outgoing">Outgoing</MenuItem>
+              </TextField>
 
-              <TextField
-                fullWidth
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                slotProps={{ input: { readOnly: viewOnly } }}
-              />
+              <Stack spacing={3} sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+                {phoneNumbers.map((item, index) => (
+                  <Stack key={index} direction="row" alignItems="center" spacing={1}>
+                    <MuiTelInput
+                      fullWidth
+                      defaultCountry="IN"
+                      label={index === 0 ? "Phone Number" : `Phone Number ${index + 1}`}
+                      name={`phone_number_${index}`}
+                      value={item.phone}
+                      onChange={(newValue: string) => {
+                        const newPhones = [...phoneNumbers];
+                        newPhones[index] = { ...newPhones[index], phone: newValue };
+                        setPhoneNumbers(newPhones);
+                        if (index === 0 && newValue) {
+                          setValidationErrors(prev => ({ ...prev, phoneNumber: false }));
+                        }
+                      }}
+                      required={index === 0}
+                      disabled={viewOnly}
+                      error={index === 0 && !!validationErrors.phoneNumber}
+                      helperText={index === 0 && validationErrors.phoneNumber ? 'Phone Number is required' : ''}
+                      sx={{
+                        "& .MuiInputBase-input.Mui-disabled": {
+                          WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
+                        },
+                        "& .MuiInputLabel-root.Mui-disabled": {
+                          color: "rgba(0, 0, 0, 0.6)",
+                        },
+                      }}
+                    />
+                    {!viewOnly && (
+                      index === 0 ? (
+                        <IconButton
+                          color="primary"
+                          onClick={() => setPhoneNumbers([...phoneNumbers, { phone: '' }])}
+                          sx={{
+                            transition: 'transform 0.2s',
+                            '&:hover': { transform: 'scale(1.1)' }
+                          }}
+                        >
+                          <Iconify icon="solar:add-circle-bold" width={24} />
+                        </IconButton>
+                      ) : (
+                        <IconButton
+                          color="error"
+                          onClick={() => setPhoneNumbers(phoneNumbers.filter((_, i) => i !== index))}
+                          sx={{
+                            transition: 'transform 0.2s',
+                            '&:hover': { transform: 'scale(1.1)' }
+                          }}
+                        >
+                          <Iconify icon="solar:trash-bin-trash-bold" width={24} />
+                        </IconButton>
+                      )
+                    )}
+                  </Stack>
+                ))}
+              </Stack>
+
+              <Stack spacing={3} sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+                {emails.map((item, index) => (
+                  <Stack key={index} direction="row" alignItems="center" spacing={1}>
+                    <TextField
+                      fullWidth
+                      label={index === 0 ? "Email" : `Email ${index + 1}`}
+                      type="email"
+                      value={item.email}
+                      onChange={(e) => {
+                        const newEmails = [...emails];
+                        newEmails[index] = { ...newEmails[index], email: e.target.value };
+                        setEmails(newEmails);
+                      }}
+                      slotProps={{ input: { readOnly: viewOnly } }}
+                    />
+                    {!viewOnly && (
+                      index === 0 ? (
+                        <IconButton
+                          color="primary"
+                          onClick={() => setEmails([...emails, { email: '' }])}
+                          sx={{
+                            transition: 'transform 0.2s',
+                            '&:hover': { transform: 'scale(1.1)' }
+                          }}
+                        >
+                          <Iconify icon="solar:add-circle-bold" width={24} />
+                        </IconButton>
+                      ) : (
+                        <IconButton
+                          color="error"
+                          onClick={() => setEmails(emails.filter((_, i) => i !== index))}
+                          sx={{
+                            transition: 'transform 0.2s',
+                            '&:hover': { transform: 'scale(1.1)' }
+                          }}
+                        >
+                          <Iconify icon="solar:trash-bin-trash-bold" width={24} />
+                        </IconButton>
+                      )
+                    )}
+                  </Stack>
+                ))}
+              </Stack>
 
 
               <TextField
@@ -1188,16 +1318,16 @@ export function LeadView() {
                     <TextField
                       fullWidth
                       label="Email"
-                      value={email}
+                      value={emails[0]?.email || ''}
                       InputProps={{ readOnly: true }}
                     />
                     <TextField
                       fullWidth
                       label="Phone Number"
-                      value={phoneNumber}
+                      value={phoneNumbers[0]?.phone || ''}
                       InputProps={{ readOnly: true }}
                     />
-                    {!email && !phoneNumber && (
+                    {!(emails[0]?.email || '').trim() && !(phoneNumbers[0]?.phone || '').trim() && (
                       <Alert severity="warning">
                         Email or Phone Number is required to create a Client
                       </Alert>
@@ -1207,7 +1337,7 @@ export function LeadView() {
                   <Button
                     variant="contained"
                     onClick={() => setOpenConvertConfirm(true)}
-                    disabled={converting || !companyName || (!email && !phoneNumber)}
+                    disabled={converting || !companyName || (!(emails[0]?.email || '').trim() && !(phoneNumbers[0]?.phone || '').trim())}
                     fullWidth
                   >
                     {converting ? 'Converting...' : 'Convert Lead'}
@@ -1472,10 +1602,12 @@ export function LeadView() {
         onClose={() => setOpenConvertConfirm(false)}
         title="Convert Lead"
         content="Are you sure you want to convert this lead? This will create a permanent Company and Client record."
+        icon="solar:round-transfer-horizontal-bold"
+        iconColor="success.main"
         action={
           <Button
             variant="contained"
-            color="primary"
+            color="success"
             onClick={async () => {
               setOpenConvertConfirm(false);
               if (!companyName) {
@@ -1487,7 +1619,9 @@ export function LeadView() {
                 return;
               }
 
-              if (!email && !phoneNumber) {
+              const primaryEmail = emails[0]?.email || '';
+              const primaryPhone = phoneNumbers[0]?.phone || '';
+              if (!primaryEmail.trim() && !primaryPhone.trim()) {
                 setSnackbar({
                   open: true,
                   message: 'Email or Phone Number is required to convert lead',
