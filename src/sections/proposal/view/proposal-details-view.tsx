@@ -138,6 +138,7 @@ export function ProposalDetailsView() {
             });
         } catch (err: any) {
             setSnackbar({ open: true, message: err.message || 'Failed to update status', severity: 'error' });
+            setSelectedStatus(proposal.status || 'Draft');
         } finally {
             setUpdatingStatus(false);
         }

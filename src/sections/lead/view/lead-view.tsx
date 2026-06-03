@@ -116,7 +116,7 @@ export function LeadView() {
   const [state, setState] = useState('');
   const [city, setCity] = useState('');
   const [workflowState, setWorkflowState] = useState('');
-  const [status, setStatus] = useState('New Lead');
+  const [status, setStatus] = useState('Not Converted');
   const [billingAddress, setBillingAddress] = useState('');
   const [remarks, setRemarks] = useState('');
   const [convertedAccount, setConvertedAccount] = useState('');
@@ -344,7 +344,7 @@ export function LeadView() {
     setState('');
     setCity('');
     setWorkflowState('');
-    setStatus('New Lead');
+    setStatus('Not Converted');
     setBillingAddress('');
     setRemarks('');
     setConvertedAccount('');
@@ -569,7 +569,7 @@ export function LeadView() {
       setState(getString(fullLead.state) || '');
       setCity(getString(fullLead.city) || '');
       setWorkflowState(getString(fullLead.workflow_state) || '');
-      setStatus(getString(fullLead.status) || 'New Lead');
+      setStatus(getString(fullLead.status) || 'Not Converted');
       setBillingAddress(getString(fullLead.billing_address) || '');
       setRemarks(getString(fullLead.remarks) || '');
       setConvertedAccount(getString(fullLead.converted_account) || '');
@@ -609,7 +609,7 @@ export function LeadView() {
         setState(getString(fallbackRow.state) || '');
         setCity(getString(fallbackRow.city) || '');
         setWorkflowState(getString(fallbackRow.workflow_state) || '');
-        setStatus(getString(fallbackRow.status) || 'New Lead');
+        setStatus(getString(fallbackRow.status) || 'Not Converted');
         setBillingAddress(getString(fallbackRow.billing_address) || '');
         setRemarks(getString(fallbackRow.remarks) || '');
       }
