@@ -74,7 +74,7 @@ function StatusSwitcher({ value, onChange }: { value: 'Scheduled' | 'Completed';
                     color: isActive ? 'common.white' : 'text.disabled',
                     '&:hover': !isActive
                         ? {
-                            color: 'primary.main',
+                            color: 'text.main',
                             transform: 'translateY(-1px)',
                         }
                         : {},

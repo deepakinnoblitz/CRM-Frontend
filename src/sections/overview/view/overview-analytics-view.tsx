@@ -143,6 +143,9 @@ export function OverviewAnalyticsView() {
         <Grid size={{ xs: 12, md: 6 }}>
           <AnalyticsCurrentVisits
             title="Leads by Status"
+            emptyTitle="No leads found"
+            emptyDescription="Get started by creating a new lead or importing contacts."
+            emptyIcon="solar:users-group-rounded-bold-duotone"
             chart={{
               series: (stats?.leads_by_status || []).map((item) => ({
                 label: item.status,
@@ -156,6 +159,9 @@ export function OverviewAnalyticsView() {
         <Grid size={{ xs: 12, md: 6 }}>
           <AnalyticsCurrentVisits
             title="Deals by Stage"
+            emptyTitle="No deals found"
+            emptyDescription="Track your sales pipeline by adding your first deal."
+            emptyIcon="solar:case-bold-duotone"
             chart={{
               series: (stats?.deals_by_stage || []).map((item) => ({
                 label: item.stage,

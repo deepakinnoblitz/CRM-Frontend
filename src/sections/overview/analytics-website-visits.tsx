@@ -14,6 +14,9 @@ import { EmptyContent } from 'src/components/empty-content';
 type Props = CardProps & {
   title?: string;
   subheader?: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  emptyIcon?: string;
   chart: {
     colors?: string[];
     categories?: string[];
@@ -26,7 +29,7 @@ type Props = CardProps & {
   chartType?: 'bar' | 'line' | 'area';
 };
 
-export function AnalyticsWebsiteVisits({ title, subheader, chart, chartType = 'bar', sx, ...other }: Props) {
+export function AnalyticsWebsiteVisits({ title, subheader, emptyTitle, emptyDescription, emptyIcon, chart, chartType = 'bar', sx, ...other }: Props) {
   const theme = useTheme();
 
   const chartColors = chart.colors ?? [
@@ -66,7 +69,9 @@ export function AnalyticsWebsiteVisits({ title, subheader, chart, chartType = 'b
       ) : (
         <Box sx={{ height: 364, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <EmptyContent
-            title="No data"
+            title={emptyTitle || "No data"}
+            description={emptyDescription}
+            icon={emptyIcon}
             sx={{ py: 5 }}
           />
         </Box>

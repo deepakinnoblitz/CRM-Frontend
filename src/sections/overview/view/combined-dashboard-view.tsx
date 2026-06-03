@@ -1,5 +1,5 @@
 import dayjs, { Dayjs } from 'dayjs';
-import { ImFilter } from "react-icons/im";
+import { IoFilter } from "react-icons/io5";
 import React, { useState, useEffect } from 'react';
 import { IoMdArrowDropdown } from "react-icons/io";
 
@@ -96,7 +96,7 @@ export function CombinedDashboardView() {
         meetings: [],
     });
 
-    const [dateFilter, setDateFilter] = useState<string>('Last 7 Days');
+    const [dateFilter, setDateFilter] = useState<string>('Filter');
     const [customStartDate, setCustomStartDate] = useState<Dayjs | null>(dayjs().subtract(7, 'day'));
     const [customEndDate, setCustomEndDate] = useState<Dayjs | null>(dayjs());
 
@@ -204,49 +204,62 @@ export function CombinedDashboardView() {
                         <Select
                             value={dateFilter}
                             onChange={(e) => setDateFilter(e.target.value)}
-                            IconComponent={IoMdArrowDropdown}
+                            IconComponent={() => null} // Hide default dropdown arrow to match the mockup
                             renderValue={(selected) => (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 0.5 }}>
-                                    <ImFilter size={14} style={{ color: theme.palette.mode === 'dark' ? '#111111' : '#111111' }} />
-                                    <Typography variant="subtitle2" sx={{ color: theme.palette.mode === 'dark' ? 'common.white' : 'grey.900', fontWeight: 600, mt: 0.2, ml: 0.5 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', gap: 1 }}>
+                                    <Box sx={{ position: 'relative', display: 'flex' }}>
+                                        <IoFilter size={20} color="#7C4DFF" />
+                                        {selected !== 'Filter' && (
+                                            <Box sx={{
+                                                position: 'absolute',
+                                                top: -2,
+                                                right: -2,
+                                                width: 8,
+                                                height: 8,
+                                                borderRadius: '50%',
+                                                bgcolor: 'error.main',
+                                                border: '1.5px solid white'
+                                            }} />
+                                        )}
+                                    </Box>
+                                    <Typography sx={{ color: '#2A2A35', fontWeight: 600, fontSize: 15, letterSpacing: '-0.2px', ml: 0.5 }}>
                                         {selected}
                                     </Typography>
                                 </Box>
                             )}
                             sx={{
-                                minWidth: 160,
+                                minWidth: 110,
                                 height: 40,
                                 borderRadius: '20px',
-                                bgcolor: (themeVar) => themeVar.palette.mode === 'dark' ? alpha(themeVar.palette.grey[800], 0.8) : alpha(themeVar.palette.grey[500], 0.08),
-                                boxShadow: (themeVar) => themeVar.palette.mode === 'dark' ? '0 4px 12px rgba(0,0,0,0.2)' : '0 4px 12px rgba(145, 158, 171, 0.12)',
+                                bgcolor: 'common.white',
+                                boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.04), inset 0px 2px 4px rgba(255, 255, 255, 0.8)',
                                 transition: 'all 0.2s ease-in-out',
                                 '& .MuiSelect-select': {
                                     display: 'flex',
                                     alignItems: 'center',
+                                    justifyContent: 'center',
                                     py: 1,
-                                },
-                                '& .MuiSelect-icon': {
-                                    color: (themeVar) => themeVar.palette.mode === 'dark' ? 'grey.400' : 'grey.700',
-                                    right: 15,
+                                    px: 2, // override default select right padding since we removed the arrow
                                 },
                                 '& .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: (themeVar) => themeVar.palette.mode === 'dark' ? alpha(themeVar.palette.primary.light, 0.35) : alpha(themeVar.palette.primary.main, 0.35),
-                                    borderWidth: '0.5px',
+                                    borderColor: '#F1F3F5',
+                                    borderWidth: '2px',
                                 },
                                 '&:hover .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: (themeVar) => themeVar.palette.mode === 'dark' ? themeVar.palette.primary.light : themeVar.palette.primary.main,
+                                    borderColor: '#E9ECEF',
                                     borderWidth: '2px',
                                 },
                                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: (themeVar) => themeVar.palette.mode === 'dark' ? themeVar.palette.primary.light : themeVar.palette.primary.main,
+                                    borderColor: '#E9ECEF',
                                     borderWidth: '2px',
                                 },
                                 '&:hover': {
                                     transform: 'translateY(-1px)',
-                                    boxShadow: (themeVar) => themeVar.palette.mode === 'dark' ? '0 6px 16px rgba(0,0,0,0.4)' : '0 6px 16px rgba(145, 158, 171, 0.2)',
+                                    boxShadow: '0px 10px 28px rgba(0, 0, 0, 0.06), inset 0px 2px 4px rgba(255, 255, 255, 0.9)',
                                 }
                             }}
                         >
+                            <MenuItem value="Filter">Filter</MenuItem>
                             <MenuItem value="All Time">All Time</MenuItem>
                             <MenuItem value="Last 7 Days">Last 7 Days</MenuItem>
                             <MenuItem value="Last Month">Last Month</MenuItem>
@@ -263,7 +276,7 @@ export function CombinedDashboardView() {
                         title="Total Leads"
                         percent={getPercentChange(crmStats.charts?.leads)}
                         total={crmStats.leads || 0}
-                        icon={<img alt="Leads" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-users.svg`} />}
+                        icon={<img alt="Leads" src={`${import.meta.env.BASE_URL}assets/icons/glass/leads.png`} height={45} width={50} />}
                         chart={{
                             categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                             series: crmStats.charts?.leads || [0, 0, 0, 0, 0, 0, 0],
@@ -277,7 +290,7 @@ export function CombinedDashboardView() {
                         percent={getPercentChange(crmStats.charts?.contacts)}
                         total={crmStats.contacts || 0}
                         color="secondary"
-                        icon={<img alt="Contacts" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-message.svg`} />}
+                        icon={<img alt="Contacts" src={`${import.meta.env.BASE_URL}assets/icons/glass/clients.png`} height={45} width={70} />}
                         chart={{
                             categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                             series: crmStats.charts?.contacts || [0, 0, 0, 0, 0, 0, 0],
@@ -291,7 +304,7 @@ export function CombinedDashboardView() {
                         percent={getPercentChange(crmStats.charts?.accounts)}
                         total={crmStats.accounts || 0}
                         color="info"
-                        icon={<img alt="Accounts" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-users.svg`} />}
+                        icon={<img alt="Accounts" src={`${import.meta.env.BASE_URL}assets/icons/glass/company.png`} height={45} width={50} />}
                         chart={{
                             categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                             series: crmStats.charts?.accounts || [0, 0, 0, 0, 0, 0, 0],
@@ -306,7 +319,7 @@ export function CombinedDashboardView() {
                         percent={getPercentChange(crmStats.charts?.deals)}
                         total={crmStats.deals || 0}
                         color="warning"
-                        icon={<img alt="Deals" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-buy.svg`} />}
+                        icon={<img alt="Deals" src={`${import.meta.env.BASE_URL}assets/icons/glass/deals.png`} height={45} width={70} />}
                         chart={{
                             categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                             series: crmStats.charts?.deals || [0, 0, 0, 0, 0, 0, 0],
@@ -320,7 +333,7 @@ export function CombinedDashboardView() {
                         percent={getPercentChange(crmStats.charts?.proposals)}
                         total={crmStats.proposals || 0}
                         color="warning"
-                        icon={<img alt="Proposals" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-buy.svg`} />}
+                        icon={<img alt="Proposals" src={`${import.meta.env.BASE_URL}assets/icons/glass/proposals.png`} height={45} width={70} />}
                         chart={{
                             categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                             series: crmStats.charts?.proposals || [0, 0, 0, 0, 0, 0, 0],
@@ -335,7 +348,7 @@ export function CombinedDashboardView() {
                         percent={getPercentChange(crmStats.charts?.estimations)}
                         total={crmStats.estimations || 0}
                         color="secondary"
-                        icon={<img alt="Estimations" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-bag.svg`} />}
+                        icon={<img alt="Estimations" src={`${import.meta.env.BASE_URL}assets/icons/glass/estimations.png`} height={45} width={70}/>}
                         chart={{
                             categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                             series: crmStats.charts?.estimations || [0, 0, 0, 0, 0, 0, 0],
@@ -348,7 +361,7 @@ export function CombinedDashboardView() {
                         title="Total Invoices"
                         percent={getPercentChange(crmStats.charts?.invoices)}
                         total={crmStats.invoices || 0}
-                        icon={<img alt="Invoices" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-buy.svg`} />}
+                        icon={<img alt="Invoices" src={`${import.meta.env.BASE_URL}assets/icons/glass/invoices.png`} height={45} width={70}/>}
                         chart={{
                             categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                             series: crmStats.charts?.invoices || [0, 0, 0, 0, 0, 0, 0],
@@ -384,6 +397,9 @@ export function CombinedDashboardView() {
                         title="Total Revenue"
                         subheader="Revenue over last 12 months"
                         chartType="line"
+                        emptyTitle="No revenue recorded"
+                        emptyDescription="There are no invoices or billing records for this period."
+                        emptyIcon="solar:bill-list-bold-duotone"
                         chart={{
                             colors: [theme.palette.warning.main],
                             categories: salesData.sales_trend.categories,
@@ -409,6 +425,9 @@ export function CombinedDashboardView() {
                 <Grid size={{ xs: 12, md: 6 }}>
                     <AnalyticsCurrentVisits
                         title="Leads by Status"
+                        emptyTitle="No leads found"
+                        emptyDescription="Get started by creating a new lead or importing contacts."
+                        emptyIcon="solar:users-group-rounded-bold-duotone"
                         chart={{
                             series: (crmStats.leads_by_status || []).map((item) => ({
                                 label: item.status,
@@ -423,6 +442,9 @@ export function CombinedDashboardView() {
                 <Grid size={{ xs: 12, md: 6 }}>
                     <AnalyticsCurrentVisits
                         title="Deals by Status"
+                        emptyTitle="No deals found"
+                        emptyDescription="Track your sales pipeline by adding your first deal."
+                        emptyIcon="solar:case-bold-duotone"
                         chart={{
                             series: (crmStats.deals_by_stage || []).map((item) => ({
                                 label: item.stage,
