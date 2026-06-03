@@ -53,6 +53,7 @@ export default function LeadKanbanBoard({ leads, workflowStates, onOpenLead }: P
         width: '100%',
         overflowX: 'auto',
         pb: 2,
+        mb: -10,
         '&::-webkit-scrollbar': { height: 8 },
         '&::-webkit-scrollbar-thumb': {
           bgcolor: 'rgba(145, 158, 171, 0.3)',

@@ -33,7 +33,7 @@ export default function LeadKanbanColumn({ column, leads, onOpenLead }: Props) {
         p: 1.5,
         display: 'flex',
         flexDirection: 'column',
-        height: 'calc(108vh - 300px)',
+        maxHeight: 'calc(108vh - 300px)',
         boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.08)',
         border: '1px solid',
         borderColor: 'rgba(145, 158, 171, 0.12)',
