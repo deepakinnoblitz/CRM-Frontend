@@ -54,6 +54,7 @@ import { LeadTableHead } from '../lead-table-head';
 import { TableEmptyRows } from '../table-empty-rows';
 import { LeadTableToolbar } from '../lead-table-toolbar';
 import { LeadImportDialog } from '../lead-import-dialog';
+import LeadKanbanBoard from '../kanban/lead-kanban-board';
 import { LeadFollowupDetails } from '../lead-followup-details';
 import { LeadPipelineTimeline } from '../lead-pipeline-timeline';
 import { LeadDetailsDialog } from '../../report/lead-details-dialog';
@@ -126,6 +127,7 @@ export function LeadView() {
 
   // Tab State
   const [currentTab, setCurrentTab] = useState('general');
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
 
   // Dropdown Options
   const [leadsFromOptions, setLeadsFromOptions] = useState<string[]>([]);
@@ -1364,42 +1366,96 @@ export function LeadView() {
             Leads
           </Typography>
 
-          {permissions.write && (
-            <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* View Switcher */}
+            <Box sx={{
+              display: 'flex',
+              p: 0.5,
+              bgcolor: 'common.white',
+              borderRadius: 24,
+              border: (theme) => `1px solid ${theme.palette.divider}`,
+              boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.02)'
+            }}>
               <Button
-                variant="contained"
-                startIcon={<IoMdCloudDownload size={20} />}
-                onClick={() => setOpenImport(true)}
-                sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
+                disableRipple
+                onClick={() => setViewMode('list')}
+                sx={{
+                  borderRadius: 20,
+                  px: 2.5,
+                  py: 0.5,
+                  minWidth: 100,
+                  typography: 'subtitle2',
+                  color: viewMode === 'list' ? 'common.white' : 'text.disabled',
+                  bgcolor: viewMode === 'list' ? '#3B82F6' : 'transparent',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: viewMode === 'list' ? '#2563EB' : 'transparent',
+                    color: viewMode === 'list' ? 'common.white' : 'text.secondary',
+                  }
+                }}
               >
-                Import
+                List View
               </Button>
               <Button
-                variant="contained"
-                startIcon={<Iconify icon="mingcute:add-line" />}
-                onClick={handleOpenCreate}
-                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                disableRipple
+                onClick={() => setViewMode('kanban')}
+                sx={{
+                  borderRadius: 20,
+                  px: 2.5,
+                  py: 0.5,
+                  minWidth: 100,
+                  typography: 'subtitle2',
+                  color: viewMode === 'kanban' ? 'common.white' : 'text.disabled',
+                  bgcolor: viewMode === 'kanban' ? '#3B82F6' : 'transparent',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: viewMode === 'kanban' ? '#2563EB' : 'transparent',
+                    color: viewMode === 'kanban' ? 'common.white' : 'text.secondary',
+                  }
+                }}
               >
-                New Lead
+                Kanban View
               </Button>
             </Box>
-          )}
+
+            {permissions.write && (
+              <>
+                <Button
+                  variant="contained"
+                  startIcon={<IoMdCloudDownload size={20} />}
+                  onClick={() => setOpenImport(true)}
+                  sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
+                >
+                  Import
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<Iconify icon="mingcute:add-line" />}
+                  onClick={handleOpenCreate}
+                  sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                >
+                  New Lead
+                </Button>
+              </>
+            )}
+          </Box>
         </Box>
 
-        <Card>
-          <LeadTableToolbar
-            numSelected={table.selected.length}
-            filterName={filterName}
-            onFilterName={(e) => {
-              setFilterName(e.target.value);
-              table.onResetPage();
-            }}
-            onOpenFilter={() => setOpenFilters(true)}
-            canReset={canReset}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            onDelete={handleBulkDelete}
-          />
+        {viewMode === 'list' ? (
+          <Card>
+            <LeadTableToolbar
+              numSelected={table.selected.length}
+              filterName={filterName}
+              onFilterName={(e) => {
+                setFilterName(e.target.value);
+                table.onResetPage();
+              }}
+              onOpenFilter={() => setOpenFilters(true)}
+              canReset={canReset}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              onDelete={handleBulkDelete}
+            />
 
           <Scrollbar>
             <TableContainer sx={{ overflow: 'unset' }}>
@@ -1499,6 +1555,16 @@ export function LeadView() {
             onRowsPerPageChange={table.onChangeRowsPerPage}
           />
         </Card>
+        ) : (
+          <LeadKanbanBoard
+            leads={data}
+            workflowStates={allWorkflowStates}
+            onOpenLead={(id) => {
+              const row = data.find((l) => l.name === id);
+              if (row) handleEditRow(row);
+            }}
+          />
+        )}
       </DashboardContent>
 
       <LeadTableFiltersDrawer
