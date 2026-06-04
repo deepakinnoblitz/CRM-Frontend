@@ -780,6 +780,134 @@ export function EventsView() {
                   text-overflow: ellipsis;
                   white-space: nowrap;
                 }
+
+                /* Layout overrides for full-width toolbar */
+                .b-top-toolbar,
+                .b-toolbar,
+                .b-calendar-tbar {
+                    height: 64px !important;
+                    padding-left: 16px !important;
+                    border-bottom: 1px solid ${theme.palette.divider} !important;
+                    box-sizing: border-box !important;
+                }
+                .b-calendar-panel-body {
+                    position: relative !important;
+                    margin-left: 260px !important;
+                    width: calc(100% - 260px) !important;
+                    border-top: none !important;
+                    box-sizing: border-box !important;
+                    background-color: var(--b-calendar-background, #fff) !important;
+                }
+
+                /* Inset the view container to create proper visual breathing space on all sides of the grid */
+                .b-calendar-view-container {
+                    position: absolute !important;
+                    top: 0px !important;
+                    left: 250px !important;
+                    right: 0px !important;
+                    bottom: 0px !important;
+                    width: auto !important;
+                    height: auto !important;
+                    padding: 0 !important;
+                    box-sizing: border-box !important;
+                }
+
+                /* Styling view grids as premium floating cards with soft shadows and borders */
+                .b-month-view,
+                .b-day-view,
+                .b-week-view,
+                .b-year-view,
+                .b-agenda-view {
+                    border: 0px solid ${theme.palette.divider} !important;
+                    border-radius: 0px !important;
+                    overflow: hidden !important;
+                    background-color: var(--b-calendar-background, #fff) !important;
+                    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+                }
+
+                /* Center column headers for balanced, modern, and aligned alignment */
+                .b-month-view .b-calendar-day-header {
+                    justify-content: center !important;
+                    padding-bottom: 8px !important;
+                    font-weight: 600 !important;
+                    font-size: 0.85rem !important;
+                    text-transform: uppercase !important;
+                    letter-spacing: 0.05em !important;
+                }
+                .b-day-column-header-cell {
+                    justify-content: center !important;
+                    align-items: center !important;
+                    padding: 8px 0 !important;
+                    font-weight: 600 !important;
+                    font-size: 0.85rem !important;
+                }
+
+                /* Overall calendar event padding, gap, and text presentation */
+                .crm-event-content {
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 8px !important; /* Visual separation between icon and text */
+                  width: 100%;
+                  overflow: hidden;
+                }
+                .b-cal-event {
+                    padding: 0px 05px !important; /* Balanced internal padding for text breathing room */
+                }
+
+                /* Overall calendar event border radius for premium modern feel */
+                .b-cal-event-wrap,
+                .b-cal-event {
+                    border-radius: 6px !important;
+                }
+
+                /* Month View Spacing & Positioning Overrides */
+                .b-month-view {
+                    --b-month-view-event-padding: 12px !important; /* Spacing from cell borders */
+                    --bi-event-spacing: 8px !important; /* Space between stacked events */
+                    --b-month-view-cell-header-padding: 12px 12px 0 0 !important; /* Spacing for day numbers */
+                    --b-month-view-padding: 2.6em 0 0 0 !important; /* Breathing space below day numbers */
+                }
+
+                /* Day/Week View spacing */
+                .b-day-view {
+                    --b-day-view-event-body-padding: 2px 10px !important; /* Spacing inside event cards */
+                    --b-day-view-event-border-radius: 6px !important;
+                }
+                .b-day-view-day-detail .b-cal-event-wrap {
+                    padding: 5px 6px !important; /* Margin around event cards from grid borders */
+                }
+
+                /* Year View spacing & typography hierarchy */
+                .b-year-view {
+                    --b-year-view-row-gap: 2.0em !important; /* Open layout spacing */
+                    --b-year-view-column-gap: 2.em !important;
+                    --b-year-view-content-padding: 24px !important;
+                }
+                .b-year-view .b-week-number-cell {
+                    display: none !important;
+                    width: 0px !important;
+                    flex: 0 0 0px !important;
+                }
+                .b-year-view-month-name {
+                    font-weight: 700 !important;
+                    font-size: 1.15rem !important;
+                    color: var(--b-neutral-10, #212B36) !important;
+                    text-transform: uppercase !important;
+                    letter-spacing: 0.05em !important;
+                    padding-bottom: 8px !important;
+                }
+
+                /* Agenda View spacing and alignment */
+                .b-agenda-view {
+                    --b-agenda-view-cell-padding-block: 16px !important; /* Comfortable vertical cell spacing */
+                    --b-agenda-view-cell-padding-inline: 20px !important;
+                }
+                .b-cal-agenda-event-row {
+                    padding: 2px 1 !important; /* Balanced internal event line height/spacing */
+                }
+                .b-agenda-view .b-cal-event-wrap {
+                    margin-block: 2px !important;
+                }
             `}</style>
             <DashboardContent maxWidth="xl">
                 <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3} mt={2}>
@@ -799,29 +927,50 @@ export function EventsView() {
                     </Button>
                 </Stack>
 
+                {/* 1. Full width Event Types Legend */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3, mb: 1.5, px: 1 }}>
+                    <Typography variant="subtitle2" color="text.secondary">Event Types:</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
+                        <FiPhoneCall size={16} />
+                        <Typography variant="body2">Calls</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
+                        <FiCalendar size={16} />
+                        <Typography variant="body2">Meetings</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
+                        <FiCheckSquare size={16} />
+                        <Typography variant="body2">To-Do</Typography>
+                    </Box>
+                </Box>
+
                 {/* Calendar Layout: custom sidebar + Bryntum calendar */}
-                <Card sx={{ mb: 3, overflow: 'hidden', display: 'flex', flexDirection: 'row', height: 720 }}>
+                <Card sx={{ mb: 3, overflow: 'hidden', position: 'relative', height: 720 }}>
 
                     {/* ---- Custom Left Sidebar ---- */}
                     <Box
                         sx={{
+                            position: 'absolute',
+                            top: 64, // starts immediately below toolbar
+                            left: 0,
+                            bottom: 0,
                             width: 260,
-                            flexShrink: 0,
                             display: 'flex',
                             flexDirection: 'column',
                             borderRight: `1px solid ${theme.palette.divider}`,
                             bgcolor: 'background.paper',
                             overflowY: 'auto',
+                            zIndex: 20
                         }}
                     >
                         {/* Mini month calendar */}
                         <Box
                             sx={{
                                 '& .MuiDateCalendar-root': {
-                                    width: '90%',
-                                    maxHeight: 230,
+                                    width: '90%', // full width
+                                    maxHeight: 240,
                                     minHeight: 'unset',
-                                    mt: 5
+                                    mt: 3 // removed extra empty gap
                                 },
                                 '& .MuiPickersCalendarHeader-root': {
                                     pl: 1, pr: 0.5, mt: 0.5, mb: 0,
@@ -863,8 +1012,8 @@ export function EventsView() {
                                         day: (props) => {
                                             const { day, outsideCurrentMonth, ...other } = props;
                                             
-                                            // Check if this date has events
-                                            const hasEvent = !outsideCurrentMonth && events.some((event) => {
+                                            // Find all events for this date
+                                            const dayEvents = outsideCurrentMonth ? [] : events.filter((event) => {
                                                 if (!event.starts_on) return false;
                                                 const start = dayjs(event.starts_on).startOf('day');
                                                 const end = dayjs(event.ends_on || event.starts_on).startOf('day');
@@ -872,27 +1021,42 @@ export function EventsView() {
                                                 return (target.isAfter(start) || target.isSame(start)) && (target.isBefore(end) || target.isSame(end));
                                             });
 
+                                            // Determine dots (max 3)
+                                            const dots = dayEvents.slice(0, 3).map((event, index) => {
+                                                const type = event.reference_doctype;
+                                                const evCat = event.event_category || (event as any).eventOriginalData?.event_category;
+                                                const subjectLower = (event.subject || '').toLowerCase();
+                                                
+                                                let bgColor = '#08a3cd'; // default
+                                                if (type === 'Call' || type === 'Calls' || evCat === 'Call' || evCat === 'Calls' || subjectLower.includes('call')) {
+                                                    bgColor = '#ff9800'; // orange
+                                                } else if (type === 'Meeting') {
+                                                    bgColor = '#4caf50'; // green
+                                                } else if (type === 'ToDo' || type === 'Todo' || type === 'To-do') {
+                                                    bgColor = '#f44336'; // red
+                                                }
+                                                return <Box key={`${event.name || index}-${index}`} sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: bgColor }} />;
+                                            });
+
                                             return (
-                                                <Badge
-                                                    key={day.toString()}
-                                                    overlap="circular"
-                                                    variant="dot"
-                                                    invisible={!hasEvent}
-                                                    sx={{
-                                                        '& .MuiBadge-badge': {
-                                                            bottom: 4,
-                                                            right: '50%',
-                                                            transform: 'translate(50%, 0)',
-                                                            backgroundColor: '#08a3cd',
-                                                            width: 4,
-                                                            height: 4,
-                                                            minWidth: 'unset',
-                                                            borderRadius: '50%',
-                                                        }
-                                                    }}
-                                                >
+                                                <Box sx={{ position: 'relative', display: 'inline-block' }}>
                                                     <PickersDay {...other} outsideCurrentMonth={outsideCurrentMonth} day={day} />
-                                                </Badge>
+                                                    {dots.length > 0 && (
+                                                        <Box
+                                                            sx={{
+                                                                position: 'absolute',
+                                                                bottom: 2,
+                                                                left: '50%',
+                                                                transform: 'translateX(-50%)',
+                                                                display: 'flex',
+                                                                gap: '2px',
+                                                                pointerEvents: 'none'
+                                                            }}
+                                                        >
+                                                            {dots}
+                                                        </Box>
+                                                    )}
+                                                </Box>
                                             );
                                         }
                                     }}
@@ -1041,24 +1205,7 @@ export function EventsView() {
                     </Box>
 
                     {/* ---- Bryntum Calendar grid ---- */}
-                    <Box sx={{ flex: 1, minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column' }}>
-                        {/* Event Type Legend */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3, px: 2, pt: 1, pb: 1, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', zIndex: 11 }}>
-                            <Typography variant="subtitle2" color="text.secondary">Event Types:</Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
-                                <FiPhoneCall size={16} />
-                                <Typography variant="body2">Calls</Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
-                                <FiCalendar size={16} />
-                                <Typography variant="body2">Meetings</Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
-                                <FiCheckSquare size={16} />
-                                <Typography variant="body2">To-Do</Typography>
-                            </Box>
-                        </Box>
-                        
+                    <Box sx={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
                         <Box sx={{ flex: 1, position: 'relative' }}>
                             {loadingEvents && (
                                 <Box sx={{
