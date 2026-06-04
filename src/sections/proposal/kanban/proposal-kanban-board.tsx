@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useRef, useState, useMemo } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -11,7 +11,6 @@ type Props = {
   onOpenProposal: (proposalId: string) => void;
   onEditProposal: (proposalId: string) => void;
   onDeleteProposal: (proposalId: string) => void;
-  onAddProposal: (stage: string) => void;
   permissions?: {
     write: boolean;
     delete: boolean;
@@ -35,7 +34,6 @@ export default function ProposalKanbanBoard({
   onOpenProposal,
   onEditProposal,
   onDeleteProposal,
-  onAddProposal,
   permissions,
 }: Props) {
   const columns = useMemo(
@@ -61,6 +59,39 @@ export default function ProposalKanbanBoard({
     [proposals, status]
   );
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const [isDown, setIsDown] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+
+    setIsDown(true);
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDown(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsDown(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDown || !scrollRef.current) return;
+
+    e.preventDefault();
+
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX) * 2;
+
+    scrollRef.current.scrollLeft = scrollLeft - walk;
+  };
+
   return (
     <Box
       sx={{
@@ -72,10 +103,17 @@ export default function ProposalKanbanBoard({
       }}
     >
       <Box
+        ref={scrollRef}
+        onMouseDown={handleMouseDown}
+        onMouseLeave={handleMouseLeave}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handleMouseMove}
         sx={{
           flex: 1,
           overflowX: 'auto',
           overflowY: 'hidden',
+          cursor: isDown ? 'grabbing' : 'grab',
+          userSelect: 'none',
 
           '&::-webkit-scrollbar': {
             height: 8,
@@ -110,7 +148,6 @@ export default function ProposalKanbanBoard({
               onOpenProposal={onOpenProposal}
               onEditProposal={onEditProposal}
               onDeleteProposal={onDeleteProposal}
-              onAddProposal={onAddProposal}
               permissions={permissions}
             />
           ))}

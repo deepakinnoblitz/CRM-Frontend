@@ -18,7 +18,6 @@ type Props = {
   onOpenProposal: (proposalId: string) => void;
   onEditProposal: (proposalId: string) => void;
   onDeleteProposal: (proposalId: string) => void;
-  onAddProposal: (status: string) => void;
   permissions?: {
     write: boolean;
     delete: boolean;
@@ -31,7 +30,6 @@ export default function ProposalKanbanColumn({
   onOpenProposal,
   onEditProposal,
   onDeleteProposal,
-  onAddProposal,
   permissions,
 }: Props) {
   const columnProposals = column.proposalIds
@@ -61,7 +59,7 @@ export default function ProposalKanbanColumn({
         sx={{
           bgcolor: column.color,
           px: 2,
-          py: 0.5,
+          py: 1,
           borderRadius: 999,
           display: 'flex',
           alignItems: 'center',
@@ -98,18 +96,6 @@ export default function ProposalKanbanColumn({
             {column.name}
           </Typography>
         </Box>
-
-        {permissions?.write && (
-          <IconButton
-            size="small"
-            onClick={() => onAddProposal(column.id)}
-            sx={{
-              color: '#fff',
-            }}
-          >
-            <Iconify icon="mingcute:add-line" width={20} />
-          </IconButton>
-        )}
       </Box>
 
       {/* Scroll Area */}

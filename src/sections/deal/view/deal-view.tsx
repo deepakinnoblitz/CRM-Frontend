@@ -119,6 +119,7 @@ export function DealView() {
     const [openCreate, setOpenCreate] = useState(false);
     const [creating, setCreating] = useState(false);
     const [currentDealId, setCurrentDealId] = useState<string | null>(null);
+    const [currentProposalId, setCurrentProposalId] = useState<string | null>(null);
     const [viewOnly, setViewOnly] = useState(false);
     const [DealviewMode, setDealViewMode] = useState<'deallist' | 'dealkanban'>('deallist');
     const [ProposalviewMode, setProposalViewMode] = useState<'proposallist' | 'proposalkanban'>('proposallist');
@@ -964,9 +965,8 @@ export function DealView() {
                                     proposals={proposalData}
                                     status={STATUS_OPTIONS}
                                     onOpenProposal={(id) => handleProposalViewRow(id)}
-                                    onEditProposal={(id) => handleEditRow(id)}
-                                    onDeleteProposal={(id) => handleDeleteClick(id)}
-                                    onAddProposal={(selectedStage) => handleOpenCreate(selectedStage)}
+                                    onEditProposal={(id) => handleProposalEditRow(id)}
+                                    onDeleteProposal={(id) => handleProposalDeleteClick(id)}
                                     permissions={permissions}
                                 />
                             )}
