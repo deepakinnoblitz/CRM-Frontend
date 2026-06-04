@@ -5,37 +5,37 @@ import IconButton from '@mui/material/IconButton';
 
 import { Iconify } from 'src/components/iconify';
 
-import LeadKanbanCard from './lead-kanban-card';
+import DealKanbanCard from './deal-kanban-card';
 
 type Props = {
   column: {
     id: string;
     name: string;
     color: string;
-    leadIds: string[];
+    dealIds: string[];
   };
-  leads: any[];
-  onOpenLead: (leadId: string) => void;
-  onEditLead: (leadId: string) => void;
-  onDeleteLead: (leadId: string) => void;
-  onAddLead: (workflowState: string) => void;
+  deals: any[];
+  onOpenDeal: (dealId: string) => void;
+  onEditDeal: (dealId: string) => void;
+  onDeleteDeal: (dealId: string) => void;
+  onAddDeal: (stage: string) => void;
   permissions?: {
     write: boolean;
     delete: boolean;
   };
 };
 
-export default function LeadKanbanColumn({
+export default function DealKanbanColumn({
   column,
-  leads,
-  onOpenLead,
-  onEditLead,
-  onDeleteLead,
-  onAddLead,
+  deals,
+  onOpenDeal,
+  onEditDeal,
+  onDeleteDeal,
+  onAddDeal,
   permissions,
 }: Props) {
-  const columnLeads = column.leadIds
-    .map((id) => leads.find((l) => l.name === id))
+  const columnDeals = column.dealIds
+    .map((id) => deals.find((d) => d.name === id))
     .filter(Boolean);
 
   return (
@@ -43,7 +43,7 @@ export default function LeadKanbanColumn({
       sx={{
         width: 300,
         minWidth: 300,
-        height: 'calc(120vh - 240px)',
+        height: 'calc(125vh - 270px)',
         flexShrink: 0,
         bgcolor: '#F8FAFC',
         borderRadius: 3,
@@ -85,7 +85,7 @@ export default function LeadKanbanColumn({
               fontSize: 13,
             }}
           >
-            {columnLeads.length}
+            {columnDeals.length}
           </Box>
 
           <Typography
@@ -102,7 +102,7 @@ export default function LeadKanbanColumn({
         {permissions?.write && (
           <IconButton
             size="small"
-            onClick={() => onAddLead(column.id)}
+            onClick={() => onAddDeal(column.id)}
             sx={{
               color: '#fff',
             }}
@@ -135,13 +135,13 @@ export default function LeadKanbanColumn({
           },
         }}
       >
-        {columnLeads.map((lead) => (
-          <LeadKanbanCard
-            key={lead.name}
-            lead={lead}
-            onClick={() => onOpenLead(lead.name)}
-            onEdit={() => onEditLead(lead.name)}
-            onDelete={() => onDeleteLead(lead.name)}
+        {columnDeals.map((deal) => (
+          <DealKanbanCard
+            key={deal.name}
+            deal={deal}
+            onClick={() => onOpenDeal(deal.name)}
+            onEdit={() => onEditDeal(deal.name)}
+            onDelete={() => onDeleteDeal(deal.name)}
             permissions={permissions}
           />
         ))}

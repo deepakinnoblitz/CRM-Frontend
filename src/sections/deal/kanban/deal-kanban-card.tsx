@@ -14,9 +14,8 @@ import { stringToColor, stringToDarkColor } from 'src/utils/color-utils';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
-
 type Props = {
-  lead: any;
+  deal: any;
   onClick?: VoidFunction;
   onEdit?: VoidFunction;
   onDelete?: VoidFunction;
@@ -26,8 +25,8 @@ type Props = {
   };
 };
 
-export default function LeadKanbanCard({
-  lead,
+export default function DealKanbanCard({
+  deal,
   onClick,
   onEdit,
   onDelete,
@@ -55,6 +54,8 @@ export default function LeadKanbanCard({
     handleCloseMenu();
   };
 
+  const contactText = deal.contact_name || deal.contact || '';
+
   return (
     <Card
       onClick={onClick}
@@ -65,17 +66,12 @@ export default function LeadKanbanCard({
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-
         borderRadius: 1.5,
-
         border: '1px solid',
         borderColor: 'divider',
-
         boxShadow: (theme) =>
           `0px 4px 12px ${alpha(theme.palette.grey[500], 0.12)}`,
-
         transition: 'all .25s ease',
-
         '&:hover': {
           transform: 'translateY(-3px)',
           boxShadow: (theme) => theme.customShadows.z20,
@@ -84,17 +80,26 @@ export default function LeadKanbanCard({
     >
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-          <Label
+          {/* <Label
             variant="soft"
-            color={lead.leads_type === 'Incoming' ? 'info' : 'warning'}
+            color="info"
             sx={{
               fontSize: 10,
               fontWeight: 700,
-              py: -5
             }}
           >
-            {lead.leads_type || 'Incoming'}
-          </Label>
+            {deal.type || 'New Business'}
+          </Label> */}
+
+        <Typography
+          variant="subtitle2"
+          sx={{
+            fontWeight: 700,
+            mb: 0.5,
+          }}
+        >
+          {deal.deal_title}
+        </Typography>
 
           <IconButton
             size="small"
@@ -109,43 +114,30 @@ export default function LeadKanbanCard({
         </Box>
 
         <Typography
-          variant="subtitle2"
-          sx={{
-            fontWeight: 700,
-            mb: 1,
-          }}
-        >
-          {lead.lead_name}
-        </Typography>
-
-        <Typography
           variant="body2"
           sx={{
             color: 'text.secondary',
-            display: '-webkit-box',
-            overflow: 'hidden',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
+            fontWeight: 600,
+            mb: 0.5,
           }}
         >
-          {lead.company_name || 'No Company'}
+          {deal.account_name || deal.account || 'No Company'}
         </Typography>
 
-        <Typography
-          variant="body2"
-          sx={{
-            color: 'text.primary',
-            fontWeight: 600,
-            fontSize: 13,
-            mt: 0.5,
-            display: '-webkit-box',
-            overflow: 'hidden',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-          }}
-        >
-          Service : {lead.service || 'No Service'}
-        </Typography>
+        {contactText && (
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'text.secondary',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+            }}
+          >
+            <Iconify icon="solar:user-bold" width={12} />
+            {contactText}
+          </Typography>
+        )}
       </Box>
 
       <Box
@@ -162,11 +154,11 @@ export default function LeadKanbanCard({
             height: 25,
             fontSize: 10,
             fontWeight: 700,
-            bgcolor: stringToColor(lead.owner || 'Unassigned'),
-            color: stringToDarkColor(lead.owner || 'Unassigned'),
+            bgcolor: stringToColor(deal.owner || 'Unassigned'),
+            color: stringToDarkColor(deal.owner || 'Unassigned'),
           }}
         >
-          {lead.owner?.charAt(0)?.toUpperCase() || 'U'}
+          {deal.owner?.charAt(0)?.toUpperCase() || 'U'}
         </Avatar>
 
         <Typography
@@ -175,7 +167,7 @@ export default function LeadKanbanCard({
             fontWeight: 600,
           }}
         >
-          {lead.owner || 'Unassigned'}
+          {deal.owner || 'Unassigned'}
         </Typography>
       </Box>
 

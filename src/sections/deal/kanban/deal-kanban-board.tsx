@@ -3,15 +3,15 @@ import { useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 
-import LeadKanbanColumn from './lead-kanban-column';
+import DealKanbanColumn from './deal-kanban-column';
 
 type Props = {
-  leads: any[];
-  workflowStates: string[];
-  onOpenLead: (leadId: string) => void;
-  onEditLead: (leadId: string) => void;
-  onDeleteLead: (leadId: string) => void;
-  onAddLead: (workflowState: string) => void;
+  deals: any[];
+  stages: { value: string; label: string }[];
+  onOpenDeal: (dealId: string) => void;
+  onEditDeal: (dealId: string) => void;
+  onDeleteDeal: (dealId: string) => void;
+  onAddDeal: (stage: string) => void;
   permissions?: {
     write: boolean;
     delete: boolean;
@@ -29,45 +29,43 @@ const COLUMN_COLORS = [
   '#3B82F6', // Blue
 ];
 
-export default function LeadKanbanBoard({
-  leads,
-  workflowStates,
-  onOpenLead,
-  onEditLead,
-  onDeleteLead,
-  onAddLead,
+export default function DealKanbanBoard({
+  deals,
+  stages,
+  onOpenDeal,
+  onEditDeal,
+  onDeleteDeal,
+  onAddDeal,
   permissions,
 }: Props) {
-  const columns = useMemo(() => {
-    const states =
-      workflowStates?.length > 0
-        ? workflowStates
-        : ['New Lead', 'Contacted', 'Qualified'];
+  const columns = useMemo(
+    () =>
+      stages.map((stageObj, index) => {
+        const stageName = stageObj.value;
 
-    return states.map((state, index) => {
-      const stateLeads = leads.filter((lead) => {
-        if (state === states[0] && !lead.workflow_state) {
-          return true;
-        }
+        const stageDeals = deals.filter((deal) => {
+          if (stageName === stages[0].value && !deal.stage) {
+            return true;
+          }
 
-        return lead.workflow_state === state;
-      });
+          return deal.stage === stageName;
+        });
 
-      return {
-        id: state,
-        name: state,
-        color: COLUMN_COLORS[index % COLUMN_COLORS.length],
-        leadIds: stateLeads.map((lead) => lead.name),
-      };
-    });
-  }, [leads, workflowStates]);
+        return {
+          id: stageName,
+          name: stageObj.label,
+          color: COLUMN_COLORS[index % COLUMN_COLORS.length],
+          dealIds: stageDeals.map((deal) => deal.name),
+        };
+      }),
+    [deals, stages]
+  );
 
   return (
     <Box
       sx={{
         width: '100%',
-        height: 'calc(118vh - 170px)', // Adjust based on your page header
-        mb: -5,
+        height: 'calc(120vh - 200px)',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
@@ -105,14 +103,14 @@ export default function LeadKanbanBoard({
           }}
         >
           {columns.map((column) => (
-            <LeadKanbanColumn
+            <DealKanbanColumn
               key={column.id}
               column={column}
-              leads={leads}
-              onOpenLead={onOpenLead}
-              onEditLead={onEditLead}
-              onDeleteLead={onDeleteLead}
-              onAddLead={onAddLead}
+              deals={deals}
+              onOpenDeal={onOpenDeal}
+              onEditDeal={onEditDeal}
+              onDeleteDeal={onDeleteDeal}
+              onAddDeal={onAddDeal}
               permissions={permissions}
             />
           ))}
