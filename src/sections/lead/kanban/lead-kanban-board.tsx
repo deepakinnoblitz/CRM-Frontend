@@ -9,6 +9,13 @@ type Props = {
   leads: any[];
   workflowStates: string[];
   onOpenLead: (leadId: string) => void;
+  onEditLead: (leadId: string) => void;
+  onDeleteLead: (leadId: string) => void;
+  onAddLead: (workflowState: string) => void;
+  permissions?: {
+    write: boolean;
+    delete: boolean;
+  };
 };
 
 const COLUMN_COLORS = [
@@ -26,6 +33,10 @@ export default function LeadKanbanBoard({
   leads,
   workflowStates,
   onOpenLead,
+  onEditLead,
+  onDeleteLead,
+  onAddLead,
+  permissions,
 }: Props) {
   const columns = useMemo(() => {
     const states =
@@ -99,6 +110,10 @@ export default function LeadKanbanBoard({
               column={column}
               leads={leads}
               onOpenLead={onOpenLead}
+              onEditLead={onEditLead}
+              onDeleteLead={onDeleteLead}
+              onAddLead={onAddLead}
+              permissions={permissions}
             />
           ))}
         </Stack>

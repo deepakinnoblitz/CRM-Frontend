@@ -1,6 +1,8 @@
+import { IoList } from "react-icons/io5";
 import { MuiTelInput } from 'mui-tel-input';
 import { useSearchParams } from 'react-router-dom';
 import { IoMdCloudDownload } from "react-icons/io";
+import { TbLayoutKanbanFilled } from "react-icons/tb";
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -323,9 +325,12 @@ export function LeadView() {
 
   // Form state
 
-  const handleOpenCreate = () => {
+  const handleOpenCreate = (initialWorkflowState?: any) => {
     setViewOnly(false);
     setOpenCreate(true);
+    if (initialWorkflowState && typeof initialWorkflowState === 'string') {
+      setWorkflowState(initialWorkflowState);
+    }
   };
 
   const handleCloseCreate = () => {
@@ -1371,26 +1376,27 @@ export function LeadView() {
             <Box sx={{
               display: 'flex',
               p: 0.5,
-              bgcolor: 'common.white',
-              borderRadius: 24,
+              bgcolor: '#F4F6F8',
+              borderRadius: '999px',
               border: (theme) => `1px solid ${theme.palette.divider}`,
-              boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.02)'
             }}>
               <Button
                 disableRipple
                 onClick={() => setViewMode('list')}
+                startIcon={<IoList size={18} />}
                 sx={{
-                  borderRadius: 20,
+                  borderRadius: '999px',
                   px: 2.5,
-                  py: 0.5,
-                  minWidth: 100,
+                  py: 0.6,
                   typography: 'subtitle2',
-                  color: viewMode === 'list' ? 'common.white' : 'text.disabled',
-                  bgcolor: viewMode === 'list' ? '#0ac3f5' : 'transparent',
+                  fontWeight: 700,
+                  color: viewMode === 'list' ? 'common.white' : 'text.secondary',
+                  bgcolor: viewMode === 'list' ? '#08a3cd' : 'transparent',
+                  boxShadow: viewMode === 'list' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
                   transition: 'all 0.2s',
                   '&:hover': {
-                    bgcolor: viewMode === 'list' ? '#0ab1dfff' : 'transparent',
-                    color: viewMode === 'list' ? 'common.white' : 'text.secondary',
+                    bgcolor: viewMode === 'list' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
+                    color: viewMode === 'list' ? 'common.white' : 'text.primary',
                   }
                 }}
               >
@@ -1399,18 +1405,20 @@ export function LeadView() {
               <Button
                 disableRipple
                 onClick={() => setViewMode('kanban')}
+                startIcon={<TbLayoutKanbanFilled size={18} />}
                 sx={{
-                  borderRadius: 20,
+                  borderRadius: '999px',
                   px: 2.5,
-                  py: 0.5,
-                  minWidth: 100,
+                  py: 0.6,
                   typography: 'subtitle2',
-                  color: viewMode === 'kanban' ? 'common.white' : 'text.disabled',
-                  bgcolor: viewMode === 'kanban' ? '#0ac3f5' : 'transparent',
+                  fontWeight: 700,
+                  color: viewMode === 'kanban' ? 'common.white' : 'text.secondary',
+                  bgcolor: viewMode === 'kanban' ? '#08a3cd' : 'transparent',
+                  boxShadow: viewMode === 'kanban' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
                   transition: 'all 0.2s',
                   '&:hover': {
-                    bgcolor: viewMode === 'kanban' ? '#0ab1dfff' : 'transparent',
-                    color: viewMode === 'kanban' ? 'common.white' : 'text.secondary',
+                    bgcolor: viewMode === 'kanban' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
+                    color: viewMode === 'kanban' ? 'common.white' : 'text.primary',
                   }
                 }}
               >
@@ -1559,10 +1567,11 @@ export function LeadView() {
           <LeadKanbanBoard
             leads={data}
             workflowStates={allWorkflowStates}
-            onOpenLead={(id) => {
-              const row = data.find((l) => l.name === id);
-              if (row) handleEditRow(row);
-            }}
+            onOpenLead={(id) => handleViewRow({ id })}
+            onEditLead={(id) => handleEditRow({ id })}
+            onDeleteLead={(id) => handleDeleteClick(id)}
+            onAddLead={(selectedState) => handleOpenCreate(selectedState)}
+            permissions={permissions}
           />
         )}
       </DashboardContent>

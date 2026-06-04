@@ -16,12 +16,23 @@ type Props = {
   };
   leads: any[];
   onOpenLead: (leadId: string) => void;
+  onEditLead: (leadId: string) => void;
+  onDeleteLead: (leadId: string) => void;
+  onAddLead: (workflowState: string) => void;
+  permissions?: {
+    write: boolean;
+    delete: boolean;
+  };
 };
 
 export default function LeadKanbanColumn({
   column,
   leads,
   onOpenLead,
+  onEditLead,
+  onDeleteLead,
+  onAddLead,
+  permissions,
 }: Props) {
   const columnLeads = column.leadIds
     .map((id) => leads.find((l) => l.name === id))
@@ -88,14 +99,17 @@ export default function LeadKanbanColumn({
           </Typography>
         </Box>
 
-        <IconButton
-          size="small"
-          sx={{
-            color: '#fff',
-          }}
-        >
-          <Iconify icon="mingcute:add-line" width={20} />
-        </IconButton>
+        {permissions?.write && (
+          <IconButton
+            size="small"
+            onClick={() => onAddLead(column.id)}
+            sx={{
+              color: '#fff',
+            }}
+          >
+            <Iconify icon="mingcute:add-line" width={20} />
+          </IconButton>
+        )}
       </Box>
 
       {/* Scroll Area */}
@@ -126,6 +140,9 @@ export default function LeadKanbanColumn({
             key={lead.name}
             lead={lead}
             onClick={() => onOpenLead(lead.name)}
+            onEdit={() => onEditLead(lead.name)}
+            onDelete={() => onDeleteLead(lead.name)}
+            permissions={permissions}
           />
         ))}
       </Stack>
