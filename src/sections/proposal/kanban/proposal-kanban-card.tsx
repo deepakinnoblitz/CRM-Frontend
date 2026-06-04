@@ -58,7 +58,7 @@ export default function ProposalKanbanCard({
     <Card
       onClick={onClick}
       sx={{
-        minHeight: 200,
+        minHeight: 190,
         p: 2,
         cursor: 'pointer',
         display: 'flex',

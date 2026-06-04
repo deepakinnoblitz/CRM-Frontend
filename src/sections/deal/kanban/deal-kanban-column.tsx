@@ -135,16 +135,67 @@ export default function DealKanbanColumn({
           },
         }}
       >
-        {columnDeals.map((deal) => (
-          <DealKanbanCard
-            key={deal.name}
-            deal={deal}
-            onClick={() => onOpenDeal(deal.name)}
-            onEdit={() => onEditDeal(deal.name)}
-            onDelete={() => onDeleteDeal(deal.name)}
-            permissions={permissions}
-          />
-        ))}
+        {columnDeals.length ===0 ? (
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 180,
+              borderRadius: 2,
+              border: '1.5px dashed',
+              borderColor: 'rgba(145, 158, 171, 0.18)',
+              bgcolor: 'rgba(145, 158, 171, 0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              px: 2,
+            }}
+          >
+            <Iconify
+              icon="solar:document-text-bold-duotone"
+              width={40}
+              sx={{
+                color: 'text.disabled',
+                opacity: 0.4,
+                mb: 1,
+              }}
+            />
+
+            <Typography
+              variant="subtitle2"
+              sx={{
+                color: 'text.secondary',
+                fontWeight: 600,
+                opacity: 0.7,
+              }}
+            >
+              No Prospects
+            </Typography>
+
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.disabled',
+                opacity: 0.6,
+                mt: 0.5,
+              }}
+            >
+              No Prospects in this stage
+            </Typography>
+          </Box>
+        ) : (
+          columnDeals.map((deal) => (
+            <DealKanbanCard
+              key={deal.name}
+              deal={deal}
+              onClick={() => onOpenDeal(deal.name)}
+              onEdit={() => onEditDeal(deal.name)}
+              onDelete={() => onDeleteDeal(deal.name)}
+              permissions={permissions}
+            />
+          )))
+        }
       </Stack>
     </Box>
   );

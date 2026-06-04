@@ -135,16 +135,67 @@ export default function ProposalKanbanColumn({
           },
         }}
       >
-        {columnProposals.map((p) => (
-          <ProposalKanbanCard
-            key={p.name}
-            proposal={p}
-            onClick={() => onOpenProposal(p.name)}
-            onEdit={() => onEditProposal(p.name)}
-            onDelete={() => onDeleteProposal(p.name)}
-            permissions={permissions}
-          />
-        ))}
+        {columnProposals.length === 0 ? (
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 180,
+              borderRadius: 2,
+              border: '1.5px dashed',
+              borderColor: 'rgba(145, 158, 171, 0.18)',
+              bgcolor: 'rgba(145, 158, 171, 0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              px: 2,
+            }}
+          >
+            <Iconify
+              icon="solar:document-text-bold-duotone"
+              width={40}
+              sx={{
+                color: 'text.disabled',
+                opacity: 0.4,
+                mb: 1,
+              }}
+            />
+
+            <Typography
+              variant="subtitle2"
+              sx={{
+                color: 'text.secondary',
+                fontWeight: 600,
+                opacity: 0.7,
+              }}
+            >
+              No Proposals
+            </Typography>
+
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.disabled',
+                opacity: 0.6,
+                mt: 0.5,
+              }}
+            >
+              No proposals in this stage
+            </Typography>
+          </Box>
+        ) : (
+          columnProposals.map((p) => (
+            <ProposalKanbanCard
+              key={p.name}
+              proposal={p}
+              onClick={() => onOpenProposal(p.name)}
+              onEdit={() => onEditProposal(p.name)}
+              onDelete={() => onDeleteProposal(p.name)}
+              permissions={permissions}
+            />
+          ))
+        )}
       </Stack>
     </Box>
   );
