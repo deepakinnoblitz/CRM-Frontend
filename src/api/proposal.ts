@@ -32,6 +32,7 @@ export interface Proposal {
     total_attachments?: number;
     attachments_table?: ProposalAttachmentItem[];
     created_by?: string;
+    owner_name: string;
     prospect?: string;
     creation?: string;
     modified?: string;
@@ -118,6 +119,7 @@ export async function fetchProposals(params: FetchProposalsParams) {
             'status',
             'total_attachments',
             'prospect',
+            'owner_name',
             'created_by',
             'creation',
             'modified',

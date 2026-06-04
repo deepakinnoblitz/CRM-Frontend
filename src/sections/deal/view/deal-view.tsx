@@ -40,6 +40,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { useRouter } from 'src/routes/hooks';
 
 import { useDeals } from 'src/hooks/useDeals';
+import { useProposals } from 'src/hooks/useProposals';
 
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
@@ -60,6 +61,7 @@ import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { DealTableFiltersDrawer } from '../deal-table-filters-drawer';
 import { ProposalListView } from '../../proposal/view/proposal-list-view';
 import { LeadTableHead as DealTableHead } from '../../lead/lead-table-head';
+import ProposalKanbanBoard from '../../proposal/kanban/proposal-kanban-board';
 import { EstimationListView } from '../../estimation/view/estimation-list-view';
 import { InvoiceManagementView } from '../../invoice/view/invoice-management-view';
 import { LeadTableToolbar as DealTableToolbar } from '../../lead/lead-table-toolbar';
@@ -106,11 +108,20 @@ export function DealView() {
         { value: 'Closed', label: 'Closed' },
     ];
 
+    const STATUS_OPTIONS = [
+        { value: 'Draft', label: 'Draft' },
+        { value: 'Sent', label: 'Sent' },
+        { value: 'Approved', label: 'Approved' },
+        { value: 'Rejected', label: 'Rejected' },
+        { value: 'Expired', label: 'Expired' },
+    ];
+
     const [openCreate, setOpenCreate] = useState(false);
     const [creating, setCreating] = useState(false);
     const [currentDealId, setCurrentDealId] = useState<string | null>(null);
     const [viewOnly, setViewOnly] = useState(false);
-    const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+    const [DealviewMode, setDealViewMode] = useState<'deallist' | 'dealkanban'>('deallist');
+    const [ProposalviewMode, setProposalViewMode] = useState<'proposallist' | 'proposalkanban'>('proposallist');
 
 
     // Form state
@@ -158,6 +169,13 @@ export function DealView() {
         filterStage,
         sortBy,
         filters
+    );
+
+    const { data: proposalData, total: proposalTotal, loading: proposalLoading, refetch: proposalRefetch, } = useProposals(
+        page,
+        rowsPerPage,
+        filterName,
+        sortBy
     );
 
     const handleFilters = (update: any) => {
@@ -446,6 +464,10 @@ export function DealView() {
         router.push(`/deals/${encodeURIComponent(id)}/view`);
     };
 
+    const handleProposalViewRow = (id: string) => {
+        router.push(`/proposals/${encodeURIComponent(id)}/view`);
+    };
+
     const onChangePage = (_: unknown, newPage: number) => setPage(newPage);
 
     const onChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -677,7 +699,7 @@ export function DealView() {
                                 }}>
                                     <Button
                                         disableRipple
-                                        onClick={() => setViewMode('list')}
+                                        onClick={() => setDealViewMode('deallist')}
                                         startIcon={<IoList size={18} />}
                                         sx={{
                                             borderRadius: '999px',
@@ -685,13 +707,13 @@ export function DealView() {
                                             py: 0.6,
                                             typography: 'subtitle2',
                                             fontWeight: 700,
-                                            color: viewMode === 'list' ? 'common.white' : 'text.secondary',
-                                            bgcolor: viewMode === 'list' ? '#08a3cd' : 'transparent',
-                                            boxShadow: viewMode === 'list' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
+                                            color: DealviewMode === 'deallist' ? 'common.white' : 'text.secondary',
+                                            bgcolor: DealviewMode === 'deallist' ? '#08a3cd' : 'transparent',
+                                            boxShadow: DealviewMode === 'deallist' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
                                             transition: 'all 0.2s',
                                             '&:hover': {
-                                                bgcolor: viewMode === 'list' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
-                                                color: viewMode === 'list' ? 'common.white' : 'text.primary',
+                                                bgcolor: DealviewMode === 'deallist' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
+                                                color: DealviewMode === 'deallist' ? 'common.white' : 'text.primary',
                                             }
                                         }}
                                     >
@@ -699,7 +721,7 @@ export function DealView() {
                                     </Button>
                                     <Button
                                         disableRipple
-                                        onClick={() => setViewMode('kanban')}
+                                        onClick={() => setDealViewMode('dealkanban')}
                                         startIcon={<TbLayoutKanbanFilled size={18} />}
                                         sx={{
                                             borderRadius: '999px',
@@ -707,13 +729,13 @@ export function DealView() {
                                             py: 0.6,
                                             typography: 'subtitle2',
                                             fontWeight: 700,
-                                            color: viewMode === 'kanban' ? 'common.white' : 'text.secondary',
-                                            bgcolor: viewMode === 'kanban' ? '#08a3cd' : 'transparent',
-                                            boxShadow: viewMode === 'kanban' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
+                                            color: DealviewMode === 'dealkanban' ? 'common.white' : 'text.secondary',
+                                            bgcolor: DealviewMode === 'dealkanban' ? '#08a3cd' : 'transparent',
+                                            boxShadow: DealviewMode === 'dealkanban' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
                                             transition: 'all 0.2s',
                                             '&:hover': {
-                                                bgcolor: viewMode === 'kanban' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
-                                                color: viewMode === 'kanban' ? 'common.white' : 'text.primary',
+                                                bgcolor: DealviewMode === 'dealkanban' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
+                                                color: DealviewMode === 'dealkanban' ? 'common.white' : 'text.primary',
                                             }
                                         }}
                                     >
@@ -733,11 +755,68 @@ export function DealView() {
                                 )}
                             </Box>
                         )}
+
+                        {currentTab === 'proposals' && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Box sx={{
+                                    display: 'flex',
+                                    p: 0.5,
+                                    bgcolor: '#F4F6F8',
+                                    borderRadius: '999px',
+                                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                                }}>
+                                    <Button
+                                        disableRipple
+                                        onClick={() => setProposalViewMode('proposallist')}
+                                        startIcon={<IoList size={18} />}
+                                        sx={{
+                                            borderRadius: '999px',
+                                            px: 2.5,
+                                            py: 0.6,
+                                            typography: 'subtitle2',
+                                            fontWeight: 700,
+                                            color: ProposalviewMode === 'proposallist' ? 'common.white' : 'text.secondary',
+                                            bgcolor: ProposalviewMode === 'proposallist' ? '#08a3cd' : 'transparent',
+                                            boxShadow: ProposalviewMode === 'proposallist' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
+                                            transition: 'all 0.2s',
+                                            '&:hover': {
+                                                bgcolor: ProposalviewMode === 'proposallist' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
+                                                color: ProposalviewMode === 'proposallist' ? 'common.white' : 'text.primary',
+                                            }
+                                        }}
+                                    >
+                                        List View
+                                    </Button>
+                                    <Button
+                                        disableRipple
+                                        onClick={() => setProposalViewMode('proposalkanban')}
+                                        startIcon={<TbLayoutKanbanFilled size={18} />}
+                                        sx={{
+                                            borderRadius: '999px',
+                                            px: 2.5,
+                                            py: 0.6,
+                                            typography: 'subtitle2',
+                                            fontWeight: 700,
+                                            color: ProposalviewMode === 'proposalkanban' ? 'common.white' : 'text.secondary',
+                                            bgcolor: ProposalviewMode === 'proposalkanban' ? '#08a3cd' : 'transparent',
+                                            boxShadow: ProposalviewMode === 'proposalkanban' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
+                                            transition: 'all 0.2s',
+                                            '&:hover': {
+                                                bgcolor: ProposalviewMode === 'proposalkanban' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
+                                                color: ProposalviewMode === 'proposalkanban' ? 'common.white' : 'text.primary',
+                                            }
+                                        }}
+                                    >
+                                        Kanban View
+                                    </Button>
+                                </Box>
+                            </Box>
+                        )}
                     </Stack>
 
                     {currentTab === 'deals' && (
                         <>
-                            {viewMode === 'list' ? (
+                            {DealviewMode === 'deallist' ? (
                                 <Card>
                                     <DealTableToolbar
                                         numSelected={selected.length}
@@ -877,7 +956,21 @@ export function DealView() {
                     )}
                     
                     {currentTab === 'proposals' && (
-                        <ProposalListView hideTitle />
+                        <>
+                            {ProposalviewMode === 'proposallist' ? (
+                                <ProposalListView hideTitle />
+                            ) : (
+                                <ProposalKanbanBoard
+                                    proposals={proposalData}
+                                    status={STATUS_OPTIONS}
+                                    onOpenProposal={(id) => handleProposalViewRow(id)}
+                                    onEditProposal={(id) => handleEditRow(id)}
+                                    onDeleteProposal={(id) => handleDeleteClick(id)}
+                                    onAddProposal={(selectedStage) => handleOpenCreate(selectedStage)}
+                                    permissions={permissions}
+                                />
+                            )}
+                        </>    
                     )}
 
                     {currentTab === 'estimations' && (
