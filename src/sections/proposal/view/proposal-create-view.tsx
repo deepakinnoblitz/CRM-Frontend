@@ -328,7 +328,7 @@ export function ProposalCreateView() {
 
             const result = await createProposal(payload);
             enqueueSnackbar('Proposal created successfully', { variant: 'success' });
-            setTimeout(() => router.push(`/proposals/${encodeURIComponent(result.name)}/view`), 1200);
+            setTimeout(() => router.push(`/deals?tab=proposals`), 600);
         } catch (err: any) {
             enqueueSnackbar(err.message || 'Failed to create proposal', { variant: 'error' });
         } finally {

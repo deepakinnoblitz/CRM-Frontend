@@ -46,6 +46,7 @@ import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
 import { CONFIG } from 'src/config-global';
 import { uploadFile } from 'src/api/data-import';
+import { deleteProposal } from 'src/api/proposal';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { createDeal, updateDeal, deleteDeal, getDealPermissions } from 'src/api/deals';
 
@@ -147,6 +148,7 @@ export function DealView() {
 
     // Alert & Dialog State
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
+    const [confirmProposalDelete, setConfirmProposalDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
         open: false,
         message: '',
@@ -331,6 +333,24 @@ export function DealView() {
             setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
         }
     };
+    const handleProposalDeleteClick = (id: string) => {
+        setConfirmProposalDelete({ open: true, id });
+    };
+
+    const handleProposalConfirmDelete = async () => {
+        if (!confirmProposalDelete.id) return;
+        try {
+            await deleteProposal(confirmProposalDelete.id);
+            setSnackbar({ open: true, message: 'Proposal deleted successfully', severity: 'success' });
+            await proposalRefetch();
+        } catch (e: any) {
+            console.error(e);
+            const friendlyMsg = getFriendlyErrorMessage(e);
+            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
+        } finally {
+            setConfirmProposalDelete({ open: false, id: null });
+        }
+    };
 
     const handleSelectAllRows = (checked: boolean, ids: string[]) => {
         if (checked) {
@@ -459,6 +479,10 @@ export function DealView() {
             setAttachments(fullRow.attachments ? [fullRow.attachments] : []);
         }
         setOpenCreate(true);
+    };
+
+    const handleProposalEditRow = (id: string) => {
+        router.push(`/proposals/${encodeURIComponent(id)}/edit`);
     };
 
     const handleViewRow = (id: string) => {
@@ -955,7 +979,7 @@ export function DealView() {
                             )}
                         </>
                     )}
-                    
+
                     {currentTab === 'proposals' && (
                         <>
                             {ProposalviewMode === 'proposallist' ? (
@@ -970,7 +994,7 @@ export function DealView() {
                                     permissions={permissions}
                                 />
                             )}
-                        </>    
+                        </>
                     )}
 
                     {currentTab === 'estimations' && (
@@ -1004,6 +1028,18 @@ export function DealView() {
                     content="Are you sure you want to delete this Prospect?"
                     action={
                         <Button onClick={handleConfirmDelete} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
+                            Delete
+                        </Button>
+                    }
+                />
+
+                <ConfirmDialog
+                    open={confirmProposalDelete.open}
+                    onClose={() => setConfirmProposalDelete({ open: false, id: null })}
+                    title="Confirm Delete"
+                    content="Are you sure you want to delete this Proposal?"
+                    action={
+                        <Button onClick={handleProposalConfirmDelete} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
                             Delete
                         </Button>
                     }
