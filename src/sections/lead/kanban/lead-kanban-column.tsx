@@ -50,7 +50,7 @@ export default function LeadKanbanColumn({
         sx={{
           bgcolor: column.color,
           px: 2,
-          py: 0.8,
+          py: 0.5,
           borderRadius: 999,
           display: 'flex',
           alignItems: 'center',
@@ -62,8 +62,8 @@ export default function LeadKanbanColumn({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box
             sx={{
-              width: 30,
-              height: 30,
+              width: 25,
+              height: 25,
               borderRadius: '50%',
               bgcolor: '#fff',
               display: 'flex',
@@ -81,7 +81,7 @@ export default function LeadKanbanColumn({
             sx={{
               color: '#fff',
               fontWeight: 700,
-              fontSize: 16,
+              fontSize: 14,
             }}
           >
             {column.name}

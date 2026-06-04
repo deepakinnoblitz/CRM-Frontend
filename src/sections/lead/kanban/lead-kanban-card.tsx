@@ -90,9 +90,9 @@ export default function LeadKanbanCard({
       >
         <Avatar
           sx={{
-            width: 30,
-            height: 30,
-            fontSize: 12,
+            width: 25,
+            height: 25,
+            fontSize: 10,
             fontWeight: 700,
             bgcolor: (theme) =>
               alpha(theme.palette.success.main, 0.15),

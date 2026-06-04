@@ -1386,10 +1386,10 @@ export function LeadView() {
                   minWidth: 100,
                   typography: 'subtitle2',
                   color: viewMode === 'list' ? 'common.white' : 'text.disabled',
-                  bgcolor: viewMode === 'list' ? '#3B82F6' : 'transparent',
+                  bgcolor: viewMode === 'list' ? '#0ac3f5' : 'transparent',
                   transition: 'all 0.2s',
                   '&:hover': {
-                    bgcolor: viewMode === 'list' ? '#2563EB' : 'transparent',
+                    bgcolor: viewMode === 'list' ? '#0ab1dfff' : 'transparent',
                     color: viewMode === 'list' ? 'common.white' : 'text.secondary',
                   }
                 }}
@@ -1406,10 +1406,10 @@ export function LeadView() {
                   minWidth: 100,
                   typography: 'subtitle2',
                   color: viewMode === 'kanban' ? 'common.white' : 'text.disabled',
-                  bgcolor: viewMode === 'kanban' ? '#3B82F6' : 'transparent',
+                  bgcolor: viewMode === 'kanban' ? '#0ac3f5' : 'transparent',
                   transition: 'all 0.2s',
                   '&:hover': {
-                    bgcolor: viewMode === 'kanban' ? '#2563EB' : 'transparent',
+                    bgcolor: viewMode === 'kanban' ? '#0ab1dfff' : 'transparent',
                     color: viewMode === 'kanban' ? 'common.white' : 'text.secondary',
                   }
                 }}
