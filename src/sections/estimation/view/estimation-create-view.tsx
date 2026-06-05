@@ -445,7 +445,7 @@ export function EstimationCreateView() {
 
             await createEstimation(estimationData);
             enqueueSnackbar('Estimation created successfully', { variant: 'success' });
-            setTimeout(() => router.push('/estimations'), 1500);
+            setTimeout(() => router.push('/estimations'), 600);
         } catch (err: any) {
             console.error(err);
             enqueueSnackbar(err.message || 'Failed to create estimation', { variant: 'error' });

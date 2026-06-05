@@ -462,7 +462,7 @@ export function InvoiceCreateView() {
 
             await createInvoice(invoiceData);
             enqueueSnackbar('Invoice created successfully', { variant: 'success' });
-            setTimeout(() => router.push('/deals?tab=invoices'), 1500);
+            setTimeout(() => router.push('/deals?tab=invoices'), 600);
         } catch (err: any) {
             console.error(err);
             enqueueSnackbar(err.message || 'Failed to create invoice', { variant: 'error' });
@@ -765,7 +765,7 @@ export function InvoiceCreateView() {
                         boxShadow: (theme) => theme.customShadows.z8,
                     }}>
                         <Table sx={{ minWidth: 960 }}>
-                            <TableHead sx={{ 
+                            <TableHead sx={{
                                 bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
                                 '& th:first-of-type': { borderTopLeftRadius: 11 },
                                 '& th:last-of-type': { borderTopRightRadius: 11 }

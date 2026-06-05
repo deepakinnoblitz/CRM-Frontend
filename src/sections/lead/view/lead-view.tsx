@@ -1125,7 +1125,23 @@ export function LeadView() {
 
           {currentTab === 'pipeline' && (
             <>
-              {workflowState !== 'Closed' && (
+              <Alert
+                severity="info"
+                icon={<Iconify icon="solar:info-circle-bold" />}
+                sx={{
+                  mb: 2,
+                  borderRadius: 2,
+                  bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
+                  color: 'info.dark',
+                  border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.16)}`,
+                  '& .MuiAlert-icon': {
+                    color: 'info.main',
+                  },
+                }}
+              >
+                Click on a stage card to update the current stage.
+              </Alert>
+              {/* {workflowState !== 'Closed' && (
                 <Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mb: 2 }}>
                   <Typography variant="subtitle2" sx={{ color: 'text.primary' }}>
                     Change Workflow
@@ -1160,7 +1176,7 @@ export function LeadView() {
                     </Select>
                   </FormControl>
                 </Stack>
-              )}
+              )} */}
               <SalesPipeline
                 currentStage={workflowState || status}
                 stages={allWorkflowStates}
@@ -1465,104 +1481,104 @@ export function LeadView() {
               onDelete={handleBulkDelete}
             />
 
-          <Scrollbar>
-            <TableContainer sx={{ overflow: 'unset' }}>
-              <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
-                <LeadTableHead
-                  rowCount={total}
-                  numSelected={table.selected.length}
-                  onSelectAllRows={(checked) =>
-                    table.onSelectAllRows(
-                      checked,
-                      data.map((row) => row.name)
-                    )
-                  }
-                  hideCheckbox
-                  showIndex
-                  headLabel={[
-                    { id: 'lead_name', label: 'Name' },
-                    { id: 'company_name', label: 'Company' },
-                    { id: 'phone_number', label: 'Phone' },
-                    { id: 'email', label: 'Email' },
-                    { id: 'country', label: 'Country' },
-                    { id: 'workflow_state', label: 'Status' },
-                    { id: 'actions', label: 'Actions', align: 'right' },
-                  ]}
-                />
+            <Scrollbar>
+              <TableContainer sx={{ overflow: 'unset' }}>
+                <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
+                  <LeadTableHead
+                    rowCount={total}
+                    numSelected={table.selected.length}
+                    onSelectAllRows={(checked) =>
+                      table.onSelectAllRows(
+                        checked,
+                        data.map((row) => row.name)
+                      )
+                    }
+                    hideCheckbox
+                    showIndex
+                    headLabel={[
+                      { id: 'lead_name', label: 'Name' },
+                      { id: 'company_name', label: 'Company' },
+                      { id: 'phone_number', label: 'Phone' },
+                      { id: 'email', label: 'Email' },
+                      { id: 'country', label: 'Country' },
+                      { id: 'workflow_state', label: 'Status' },
+                      { id: 'actions', label: 'Actions', align: 'right' },
+                    ]}
+                  />
 
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                        <CircularProgress sx={{ color: '#08a3cd' }} />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    <>
-                      {data.map((row, index) => (
-                        <LeadTableRow
-                          key={row.name}
-                          index={table.page * table.rowsPerPage + index}
-                          hideCheckbox
-                          row={{
-                            id: row.name,
-                            name: getString(row.lead_name) ?? '-',
-                            phone: getString(row.phone_number) ?? '-',
-                            email: getString(row.email) ?? '-',
-                            company: getString(row.company_name) ?? '-',
-                            status: getString(row.status) ?? '-',
-                            workflow_state: getString(row.workflow_state) ?? '-',
-                            avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
-                            isVerified: true,
-                            country: getString(row.country) ?? '-',
-                          }}
-                          selected={table.selected.includes(row.name)}
-                          onSelectRow={() => table.onSelectRow(row.name)}
-                          onEdit={() => handleEditRow({ id: row.name })}
-                          onDelete={() => onDeleteRow(row.name)}
-                          onView={() => handleViewRow({ id: row.name })}
-                          canEdit={permissions.write}
-                          canDelete={permissions.delete}
-                        />
-                      ))}
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                          <CircularProgress sx={{ color: '#08a3cd' }} />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      <>
+                        {data.map((row, index) => (
+                          <LeadTableRow
+                            key={row.name}
+                            index={table.page * table.rowsPerPage + index}
+                            hideCheckbox
+                            row={{
+                              id: row.name,
+                              name: getString(row.lead_name) ?? '-',
+                              phone: getString(row.phone_number) ?? '-',
+                              email: getString(row.email) ?? '-',
+                              company: getString(row.company_name) ?? '-',
+                              status: getString(row.status) ?? '-',
+                              workflow_state: getString(row.workflow_state) ?? '-',
+                              avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
+                              isVerified: true,
+                              country: getString(row.country) ?? '-',
+                            }}
+                            selected={table.selected.includes(row.name)}
+                            onSelectRow={() => table.onSelectRow(row.name)}
+                            onEdit={() => handleEditRow({ id: row.name })}
+                            onDelete={() => onDeleteRow(row.name)}
+                            onView={() => handleViewRow({ id: row.name })}
+                            canEdit={permissions.write}
+                            canDelete={permissions.delete}
+                          />
+                        ))}
 
-                      {notFound && <TableNoData searchQuery={filterName} />}
+                        {notFound && <TableNoData searchQuery={filterName} />}
 
-                      {empty && (
-                        <TableRow>
-                          <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                            <EmptyContent
-                              title="No leads found"
-                              description="Start capturing leads to boost your sales."
-                              icon="solar:user-plus-bold-duotone"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      )}
+                        {empty && (
+                          <TableRow>
+                            <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                              <EmptyContent
+                                title="No leads found"
+                                description="Start capturing leads to boost your sales."
+                                icon="solar:user-plus-bold-duotone"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )}
 
-                      {!empty && !notFound && (
-                        <TableEmptyRows
-                          height={68}
-                          emptyRows={data.length < 5 ? 5 - data.length : 0}
-                        />
-                      )}
-                    </>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Scrollbar>
+                        {!empty && !notFound && (
+                          <TableEmptyRows
+                            height={68}
+                            emptyRows={data.length < 5 ? 5 - data.length : 0}
+                          />
+                        )}
+                      </>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Scrollbar>
 
-          <TablePagination
-            component="div"
-            page={table.page}
-            count={total}
-            rowsPerPage={table.rowsPerPage}
-            onPageChange={table.onChangePage}
-            rowsPerPageOptions={[10, 25, 50]}
-            onRowsPerPageChange={table.onChangeRowsPerPage}
-          />
-        </Card>
+            <TablePagination
+              component="div"
+              page={table.page}
+              count={total}
+              rowsPerPage={table.rowsPerPage}
+              onPageChange={table.onChangePage}
+              rowsPerPageOptions={[10, 25, 50]}
+              onRowsPerPageChange={table.onChangeRowsPerPage}
+            />
+          </Card>
         ) : (
           <LeadKanbanBoard
             leads={data}

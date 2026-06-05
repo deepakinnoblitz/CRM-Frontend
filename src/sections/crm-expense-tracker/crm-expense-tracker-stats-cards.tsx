@@ -84,10 +84,10 @@ export default function CRMExpenseTrackerStatsCards({ stats }: Props) {
                     </Box>
 
                     <Box>
-                        <Typography variant="subtitle2" sx={{ opacity: 0.72, fontWeight: 'bold', textTransform: 'uppercase', fontSize: 11, letterSpacing: 0.5 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: 12 }}>
                             {item.label}
                         </Typography>
-                        <Typography variant="h3">
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: 24}}>
                             {fCurrency(item.value)}
                         </Typography>
                     </Box>
