@@ -4,16 +4,6 @@ import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
 
-import listPlugin from '@fullcalendar/list';
-import { useNavigate } from 'react-router-dom';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import interactionPlugin from '@fullcalendar/interaction';
-import { createRoot } from 'react-dom/client';
-import { FiPhoneCall, FiCalendar, FiCheckSquare } from 'react-icons/fi';
-
 import '@bryntum/core-thin/fontawesome/css/fontawesome.css';
 import '@bryntum/core-thin/fontawesome/css/solid.css';
 import '@bryntum/core-thin/core.css';
@@ -22,7 +12,16 @@ import '@bryntum/scheduler-thin/scheduler.css';
 import '@bryntum/calendar-thin/calendar.css';
 import '@bryntum/core-thin/svalbard-light.css';
 
+import listPlugin from '@fullcalendar/list';
+import { createRoot } from 'react-dom/client';
+import { useNavigate } from 'react-router-dom';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
 import { BryntumCalendar } from '@bryntum/calendar-react-thin';
+import { FiPhoneCall, FiCalendar, FiCheckSquare } from 'react-icons/fi';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
@@ -34,19 +33,19 @@ import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
+import { PickersDay } from '@mui/x-date-pickers/PickersDay';
+import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
-import { PickersDay } from '@mui/x-date-pickers/PickersDay';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { Box, Card, Grid, Stack, Alert, Button, Snackbar, IconButton, Typography, CircularProgress, Popover, Divider, InputAdornment, Badge } from '@mui/material';
 
 import { stripHtml } from 'src/utils/string';
 
 import { CONFIG } from 'src/config-global';
+import { DashboardContent } from 'src/layouts/dashboard';
 import { getToDo, deleteToDo, type ToDo } from 'src/api/todo';
 import { getCall, deleteCall, type Call } from 'src/api/calls';
-import { DashboardContent } from 'src/layouts/dashboard';
 import { getMeeting, deleteMeeting, type Meeting } from 'src/api/meetings';
 import { fetchEvents, updateEvent, createEvent, deleteEvent, type CalendarEvent } from 'src/api/events';
 
@@ -403,8 +402,8 @@ export function EventsView() {
         eventClick: async ({ eventRecord, eventElement, domEvent }: any) => {
             const {
                 events: latestEvents,
-                setClickedEvent,
-                setPopoverAnchorEl
+                setClickedEvent: stateSetClickedEvent,
+                setPopoverAnchorEl: stateSetPopoverAnchorEl
             } = stateRef.current;
 
             const eventId = eventRecord.id;
@@ -415,13 +414,13 @@ export function EventsView() {
             }
         },
         beforeEventCreate: ({ date }: any) => {
-            const { handleOpenTypeDialog } = stateRef.current;
+            const { handleOpenTypeDialog: stateHandleOpenTypeDialog } = stateRef.current;
             const dateStr = dayjs(date).format('YYYY-MM-DDTHH:mm:ss');
-            handleOpenTypeDialog(dateStr);
+            stateHandleOpenTypeDialog(dateStr);
             return false;
         },
         beforeDragMoveEnd: async ({ eventRecord, newStartDate, newEndDate }: any): Promise<boolean> => {
-            const { loadEvents, setSnackbar } = stateRef.current;
+            const { loadEvents: stateLoadEvents, setSnackbar: stateSetSnackbar } = stateRef.current;
             try {
                 console.log('eventDrop fired');
                 console.log('Dropped locked check', eventRecord.data);
@@ -431,12 +430,12 @@ export function EventsView() {
                     eventRecord.data?.isCompletedLocked === true;
 
                 if (isLocked) {
-                    setSnackbar({
+                    stateSetSnackbar({
                         open: true,
                         message: 'Completed events cannot be rescheduled.',
                         severity: 'error',
                     });
-                    loadEvents();
+                    stateLoadEvents();
                     return false;
                 }
 
@@ -445,17 +444,17 @@ export function EventsView() {
                     starts_on: dayjs(newStartDate).format('YYYY-MM-DD HH:mm:ss'),
                     ends_on: newEndDate ? dayjs(newEndDate).format('YYYY-MM-DD HH:mm:ss') : undefined
                 });
-                loadEvents();
+                stateLoadEvents();
                 return true;
             } catch (error: any) {
                 console.error('Failed to update event position:', error);
-                setSnackbar({ open: true, message: error.message || 'Failed to update event position', severity: 'error' });
-                loadEvents();
+                stateSetSnackbar({ open: true, message: error.message || 'Failed to update event position', severity: 'error' });
+                stateLoadEvents();
                 return false;
             }
         },
         eventResizeEnd: async ({ eventRecord, startDate, endDate }: any) => {
-            const { loadEvents: reload, setSnackbar } = stateRef.current;
+            const { loadEvents: reload, setSnackbar: stateSetSnackbar } = stateRef.current;
             try {
                 await updateEvent(eventRecord.id, {
                     starts_on: dayjs(startDate).format('YYYY-MM-DD HH:mm:ss'),
@@ -464,7 +463,7 @@ export function EventsView() {
                 reload();
             } catch (error: any) {
                 console.error('Failed to update event duration:', error);
-                setSnackbar({ open: true, message: error.message || 'Failed to update event duration', severity: 'error' });
+                stateSetSnackbar({ open: true, message: error.message || 'Failed to update event duration', severity: 'error' });
                 reload();
             }
         }
@@ -1233,211 +1232,6 @@ export function EventsView() {
                 </Card>
 
                 {/* Old Events Calendar Component (Hidden / Commented out safely) */}
-                {false && (
-                    <Card
-                        sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            pt: 3,
-                        }}
-                    >
-
-                        <Box
-                            sx={{
-                                p: 3,
-                                pt: 0,
-                                '& .fc': {
-                                    '--fc-border-color': theme.palette.divider,
-                                    '--fc-daygrid-event-dot-width': '8px',
-                                    '--fc-list-event-dot-width': '10px',
-                                    '--fc-today-bg-color': theme.palette.primary.lighter,
-                                },
-                                // ToolBar
-                                '& .fc .fc-toolbar': {
-                                    mb: 3,
-                                    gap: 1.5,
-                                    flexDirection: { xs: 'column', md: 'row' },
-                                    '& .fc-toolbar-title': {
-                                        fontSize: '1.25rem',
-                                        fontWeight: 700,
-                                    },
-                                },
-                                // Buttons
-                                '& .fc .fc-button': {
-                                    border: 'none',
-                                    py: '8px',
-                                    px: '12px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.875rem',
-                                    fontWeight: 600,
-                                    textTransform: 'capitalize',
-                                    backgroundColor: theme.palette.background.neutral,
-                                    color: theme.palette.text.primary,
-                                    transition: theme.transitions.create(['background-color', 'color', 'box-shadow']),
-                                    '&:hover': {
-                                        backgroundColor: theme.palette.action.hover,
-                                    },
-                                    '&:focus': {
-                                        boxShadow: 'none',
-                                    },
-                                    '&.fc-button-active': {
-                                        backgroundColor: '#08a3cd',
-                                        color: theme.palette.common.white,
-                                        '&:hover': {
-                                            backgroundColor: '#068eb1', // Slightly darker for hover
-                                        },
-                                    },
-                                    '&.fc-today-button': {
-                                        border: `1px solid #08a3cd`,
-                                        '&:disabled': {
-                                            opacity: 0.48,
-                                        },
-                                    },
-                                },
-                                // Table Head
-                                '& .fc .fc-col-header-cell': {
-                                    py: 1.5,
-                                    backgroundColor: '#08a3cd', // Custom theme color
-                                    color: theme.palette.common.white,
-                                    '&:first-of-type': {
-                                        borderTopLeftRadius: '12px',
-                                    },
-                                    '&:last-of-type': {
-                                        borderTopRightRadius: '12px',
-                                    },
-                                    '& .fc-col-header-cell-cushion': {
-                                        textDecoration: 'none',
-                                        fontSize: '0.875rem',
-                                        fontWeight: 700,
-                                    },
-                                },
-                                // Calendar Border Radius
-                                '& .fc-view-harness': {
-                                    borderRadius: '12px',
-                                    overflow: 'hidden',
-                                    border: `1px solid ${theme.palette.divider}`,
-                                },
-                                '& .fc-scrollgrid': {
-                                    border: 'none',
-                                },
-                                // Day Cells
-                                '& .fc .fc-daygrid-day': {
-                                    '&:hover': {
-                                        backgroundColor: theme.palette.action.hover,
-                                    },
-                                },
-                                '& .fc .fc-daygrid-day-number': {
-                                    p: 1.5,
-                                    fontSize: '0.875rem',
-                                    fontWeight: 600,
-                                    color: theme.palette.text.primary,
-                                },
-                                // Events
-                                '& .fc .fc-event': {
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    fontWeight: 600,
-                                    fontSize: '0.75rem',
-                                    mx: '4px',
-                                    my: '1px',
-                                    p: '2px 4px',
-                                    cursor: 'pointer',
-                                },
-                                '& .fc .fc-daygrid-event': {
-                                    boxShadow: 'none',
-                                },
-                                // List View
-                                '& .fc .fc-list': {
-                                    border: 'none',
-                                    '& .fc-list-day-cushion': {
-                                        backgroundColor: theme.palette.background.neutral,
-                                    },
-                                },
-                            }}
-                        >
-                            <FullCalendar
-                                plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
-                                headerToolbar={{
-                                    left: 'prev,next today',
-                                    center: 'title',
-                                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
-                                }}
-                                initialView="dayGridMonth"
-                                editable
-                                selectable
-                                selectMirror
-                                dayMaxEvents={3}
-                                weekends
-                                events={calendarEvents}
-                                datesSet={handleDatesSet}
-                                eventClick={handleEventClick}
-                                eventDrop={handleEventDrop}
-                                eventResize={handleEventResize}
-                                select={(info) => {
-                                    handleOpenTypeDialog();
-                                }}
-                                eventContent={(eventInfo) => {
-                                    const { category } = eventInfo.event.extendedProps;
-                                    let icon = "solar:notes-bold";
-
-                                    if (category === 'Call') icon = "solar:phone-bold";
-                                    else if (category === 'Meeting') icon = "solar:calendar-add-bold";
-
-                                    return (
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 0.5,
-                                                width: 1,
-                                                px: 0.5,
-                                                overflow: 'hidden',
-                                            }}
-                                        >
-                                            <Iconify icon={icon as any} width={14} sx={{ flexShrink: 0 }} />
-                                            <Box
-                                                component="span"
-                                                sx={{
-                                                    flexGrow: 1,
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap',
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 600,
-                                                }}
-                                            >
-                                                {eventInfo.timeText && (
-                                                    <Box component="span" sx={{ mr: 0.5, fontWeight: 600 }}>
-                                                        {eventInfo.timeText}
-                                                    </Box>
-                                                )}
-                                                {eventInfo.event.title}
-                                            </Box>
-                                        </Box>
-                                    );
-                                }}
-                                aspectRatio={1.5}
-                                eventDisplay="block"
-                                eventTimeFormat={{
-                                    hour: 'numeric',
-                                    minute: '2-digit',
-                                    meridiem: 'short',
-                                }}
-                                views={{
-                                    dayGridMonth: {
-                                        titleFormat: { year: 'numeric', month: 'long' },
-                                    },
-                                    timeGridWeek: {
-                                        titleFormat: { year: 'numeric', month: 'short', day: 'numeric' },
-                                    },
-                                    timeGridDay: {
-                                        titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
-                                    },
-                                }}
-                            />
-                        </Box>
-                    </Card>
-                )}
 
                 <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 2, boxShadow: (t) => t.customShadows.z24, } }}>
                     <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1724,7 +1518,7 @@ export function EventsView() {
                             p: 2.5,
                             width: 380,
                             borderRadius: 3,
-                            boxShadow: (theme) => theme.customShadows?.z24 || '0 12px 24px -4px rgba(0,0,0,0.12)',
+                            boxShadow: (t) => t.customShadows?.z24 || '0 12px 24px -4px rgba(0,0,0,0.12)',
                             border: '1px solid',
                             borderColor: 'divider',
                             backdropFilter: 'blur(8px)',
