@@ -53,7 +53,7 @@ export async function fetchEvents(start?: string, end?: string): Promise<Calenda
     return data.message;
 }
 
-export async function createEvent(data: Partial<CalendarEvent>): Promise<void> {
+export async function createEvent(data: Partial<CalendarEvent>): Promise<any> {
     const headers = await getAuthHeaders();
 
     const res = await frappeRequest(`/api/method/frappe.client.insert`, {
@@ -67,13 +67,11 @@ export async function createEvent(data: Partial<CalendarEvent>): Promise<void> {
         })
     });
 
-    if (!res.ok) {
-        const json = await res.json();
-        throw new Error(handleFrappeError(json, "Failed to create event"));
-    }
+    const parsed = await handleResponse(res);
+    return parsed.message;
 }
 
-export async function updateEvent(name: string, data: Partial<CalendarEvent>): Promise<void> {
+export async function updateEvent(name: string, data: Partial<CalendarEvent>): Promise<any> {
     const headers = await getAuthHeaders();
 
     const res = await frappeRequest(`/api/method/frappe.client.set_value`, {
@@ -86,13 +84,11 @@ export async function updateEvent(name: string, data: Partial<CalendarEvent>): P
         })
     });
 
-    if (!res.ok) {
-        const json = await res.json();
-        throw new Error(handleFrappeError(json, "Failed to update event"));
-    }
+    const parsed = await handleResponse(res);
+    return parsed.message;
 }
 
-export async function deleteEvent(name: string): Promise<void> {
+export async function deleteEvent(name: string): Promise<any> {
     const headers = await getAuthHeaders();
 
     const res = await frappeRequest(`/api/method/frappe.client.delete`, {
@@ -104,10 +100,8 @@ export async function deleteEvent(name: string): Promise<void> {
         })
     });
 
-    if (!res.ok) {
-        const json = await res.json();
-        throw new Error(handleFrappeError(json, "Failed to delete event"));
-    }
+    const parsed = await handleResponse(res);
+    return parsed.message;
 }
 
 export async function getEventPermissions() {
