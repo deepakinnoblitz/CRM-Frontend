@@ -103,7 +103,7 @@ export function DealTableRow({
             case 'Closed Won':
             case 'Project Started':
                 return 'success';
-            case 'Ready for Delivery':
+            case 'Proposal Sent':
                 return 'primary';
             default:
                 return 'default';
