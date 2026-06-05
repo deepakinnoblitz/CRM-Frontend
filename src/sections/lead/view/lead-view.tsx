@@ -1,6 +1,8 @@
+import { IoList } from "react-icons/io5";
 import { MuiTelInput } from 'mui-tel-input';
 import { useSearchParams } from 'react-router-dom';
 import { IoMdCloudDownload } from "react-icons/io";
+import { TbLayoutKanbanFilled } from "react-icons/tb";
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -54,6 +56,7 @@ import { LeadTableHead } from '../lead-table-head';
 import { TableEmptyRows } from '../table-empty-rows';
 import { LeadTableToolbar } from '../lead-table-toolbar';
 import { LeadImportDialog } from '../lead-import-dialog';
+import LeadKanbanBoard from '../kanban/lead-kanban-board';
 import { LeadFollowupDetails } from '../lead-followup-details';
 import { LeadPipelineTimeline } from '../lead-pipeline-timeline';
 import { LeadDetailsDialog } from '../../report/lead-details-dialog';
@@ -107,8 +110,8 @@ export function LeadView() {
   const [leadName, setLeadName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [gstin, setGstin] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [email, setEmail] = useState('');
+  const [phoneNumbers, setPhoneNumbers] = useState<{ phone: string }[]>([{ phone: '' }]);
+  const [emails, setEmails] = useState<{ email: string }[]>([{ email: '' }]);
   const [leadsType, setLeadsType] = useState('Incoming');
   const [leadsFrom, setLeadsFrom] = useState('');
   const [service, setService] = useState('');
@@ -116,7 +119,7 @@ export function LeadView() {
   const [state, setState] = useState('');
   const [city, setCity] = useState('');
   const [workflowState, setWorkflowState] = useState('');
-  const [status, setStatus] = useState('New Lead');
+  const [status, setStatus] = useState('Not Converted');
   const [billingAddress, setBillingAddress] = useState('');
   const [remarks, setRemarks] = useState('');
   const [convertedAccount, setConvertedAccount] = useState('');
@@ -126,6 +129,7 @@ export function LeadView() {
 
   // Tab State
   const [currentTab, setCurrentTab] = useState('general');
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
 
   // Dropdown Options
   const [leadsFromOptions, setLeadsFromOptions] = useState<string[]>([]);
@@ -321,9 +325,12 @@ export function LeadView() {
 
   // Form state
 
-  const handleOpenCreate = () => {
+  const handleOpenCreate = (initialWorkflowState?: any) => {
     setViewOnly(false);
     setOpenCreate(true);
+    if (initialWorkflowState && typeof initialWorkflowState === 'string') {
+      setWorkflowState(initialWorkflowState);
+    }
   };
 
   const handleCloseCreate = () => {
@@ -335,8 +342,8 @@ export function LeadView() {
     setLeadName('');
     setCompanyName('');
     setGstin('');
-    setPhoneNumber('');
-    setEmail('');
+    setPhoneNumbers([{ phone: '' }]);
+    setEmails([{ email: '' }]);
     setLeadsType('Incoming');
     setLeadsFrom('');
     setService('');
@@ -344,7 +351,7 @@ export function LeadView() {
     setState('');
     setCity('');
     setWorkflowState('');
-    setStatus('New Lead');
+    setStatus('Not Converted');
     setBillingAddress('');
     setRemarks('');
     setConvertedAccount('');
@@ -451,7 +458,8 @@ export function LeadView() {
       newErrors.leadsFrom = true;
       missingFields.push('Leads From');
     }
-    if (!phoneNumber) {
+    const primaryPhone = phoneNumbers[0]?.phone;
+    if (!primaryPhone || !primaryPhone.trim()) {
       newErrors.phoneNumber = true;
       missingFields.push('Phone Number');
     }
@@ -472,19 +480,31 @@ export function LeadView() {
     try {
       setCreating(true);
 
-      // Format phone number: remove spaces and add hyphen after dial code (e.g., +91-9876543210)
-      let formattedPhone = phoneNumber.replace(/\s/g, '');
-      const parts = phoneNumber.trim().split(/\s+/);
-      if (parts.length > 1 && parts[0].startsWith('+')) {
-        formattedPhone = `${parts[0]}-${parts.slice(1).join('')}`;
-      }
+      // Format phone numbers
+      const formattedPhoneNumbers = phoneNumbers
+        .filter((item) => item.phone.trim() !== '')
+        .map((item) => {
+          let phone = item.phone.replace(/\s/g, '');
+          const parts = item.phone.trim().split(/\s+/);
+          if (parts.length > 1 && parts[0].startsWith('+')) {
+            phone = `${parts[0]}-${parts.slice(1).join('')}`;
+          }
+          return { phone };
+        });
+
+      // Format emails
+      const formattedEmails = emails
+        .filter((item) => item.email.trim() !== '')
+        .map((item) => ({ email: item.email.trim() }));
 
       const leadData = {
         lead_name: leadName,
         company_name: companyName,
         gstin,
-        phone_number: formattedPhone,
-        email,
+        phone_number: formattedPhoneNumbers.length > 0 ? formattedPhoneNumbers[0].phone : '',
+        phone_numbers: formattedPhoneNumbers,
+        email: formattedEmails.length > 0 ? formattedEmails[0].email : '',
+        emails: formattedEmails,
         leads_type: leadsType as any,
         leads_from: leadsFrom,
         service,
@@ -538,8 +558,17 @@ export function LeadView() {
       setLeadName(getString(fullLead.lead_name) || '');
       setCompanyName(getString(fullLead.company_name) || '');
       setGstin(getString(fullLead.gstin) || '');
-      setPhoneNumber(cleanPhoneNumber(getString(fullLead.phone_number) || ''));
-      setEmail(getString(fullLead.email) || '');
+      if (fullLead.phone_numbers && fullLead.phone_numbers.length > 0) {
+        setPhoneNumbers(fullLead.phone_numbers.map((p: any) => ({ phone: cleanPhoneNumber(p.phone || '') })));
+      } else {
+        setPhoneNumbers([{ phone: cleanPhoneNumber(getString(fullLead.phone_number) || '') }]);
+      }
+
+      if (fullLead.emails && fullLead.emails.length > 0) {
+        setEmails(fullLead.emails.map((e: any) => ({ email: e.email || '' })));
+      } else {
+        setEmails([{ email: getString(fullLead.email) || '' }]);
+      }
       setLeadsType(getString(fullLead.leads_type) || 'Incoming');
       setLeadsFrom(getString(fullLead.leads_from) || '');
       setService(getString(fullLead.service) || '');
@@ -547,7 +576,7 @@ export function LeadView() {
       setState(getString(fullLead.state) || '');
       setCity(getString(fullLead.city) || '');
       setWorkflowState(getString(fullLead.workflow_state) || '');
-      setStatus(getString(fullLead.status) || 'New Lead');
+      setStatus(getString(fullLead.status) || 'Not Converted');
       setBillingAddress(getString(fullLead.billing_address) || '');
       setRemarks(getString(fullLead.remarks) || '');
       setConvertedAccount(getString(fullLead.converted_account) || '');
@@ -569,8 +598,17 @@ export function LeadView() {
         setLeadName(getString(fallbackRow.lead_name) || '');
         setCompanyName(getString(fallbackRow.company_name) || '');
         setGstin(getString(fallbackRow.gstin) || '');
-        setPhoneNumber(cleanPhoneNumber(getString(fallbackRow.phone_number) || ''));
-        setEmail(getString(fallbackRow.email) || '');
+        if (fallbackRow.phone_numbers && fallbackRow.phone_numbers.length > 0) {
+          setPhoneNumbers(fallbackRow.phone_numbers.map((p: any) => ({ phone: cleanPhoneNumber(p.phone || '') })));
+        } else {
+          setPhoneNumbers([{ phone: cleanPhoneNumber(getString(fallbackRow.phone_number) || '') }]);
+        }
+
+        if (fallbackRow.emails && fallbackRow.emails.length > 0) {
+          setEmails(fallbackRow.emails.map((e: any) => ({ email: e.email || '' })));
+        } else {
+          setEmails([{ email: getString(fallbackRow.email) || '' }]);
+        }
         setLeadsType(getString(fallbackRow.leads_type) || 'Incoming');
         setLeadsFrom(getString(fallbackRow.leads_from) || '');
         setService(getString(fallbackRow.service) || '');
@@ -578,7 +616,7 @@ export function LeadView() {
         setState(getString(fallbackRow.state) || '');
         setCity(getString(fallbackRow.city) || '');
         setWorkflowState(getString(fallbackRow.workflow_state) || '');
-        setStatus(getString(fallbackRow.status) || 'New Lead');
+        setStatus(getString(fallbackRow.status) || 'Not Converted');
         setBillingAddress(getString(fallbackRow.billing_address) || '');
         setRemarks(getString(fallbackRow.remarks) || '');
       }
@@ -686,38 +724,137 @@ export function LeadView() {
                 slotProps={{ input: { readOnly: viewOnly } }}
               />
 
-              <MuiTelInput
+              <TextField
+                select
                 fullWidth
-                defaultCountry="IN"
-                label="Phone Number"
-                name="phone_number"
-                value={phoneNumber}
-                onChange={(newValue: string) => {
-                  setPhoneNumber(newValue);
-                  if (newValue) setValidationErrors(prev => ({ ...prev, phoneNumber: false }));
+                label="Leads Type"
+                value={leadsType}
+                onChange={(e) => {
+                  setLeadsType(e.target.value as any);
+                  if (e.target.value) setValidationErrors(prev => ({ ...prev, leadsType: false }));
                 }}
                 required
                 disabled={viewOnly}
-                error={!!validationErrors.phoneNumber}
-                helperText={validationErrors.phoneNumber ? 'Phone Number is required' : ''}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
-                  "& .MuiInputLabel-root.Mui-disabled": {
-                    color: "rgba(0, 0, 0, 0.6)",
-                  },
+                error={!!validationErrors.leadsType}
+                helperText={validationErrors.leadsType ? 'Leads Type is required' : ''}
+                SelectProps={{
+                  MenuProps: {
+                    PaperProps: {
+                      sx: {
+                        marginTop: 0.5,
+                        boxShadow: (theme) => theme.customShadows.z20,
+                        borderRadius: 1.5,
+                      }
+                    }
+                  }
                 }}
-              />
+              >
+                <MenuItem value="Incoming">Incoming</MenuItem>
+                <MenuItem value="Outgoing">Outgoing</MenuItem>
+              </TextField>
 
-              <TextField
-                fullWidth
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                slotProps={{ input: { readOnly: viewOnly } }}
-              />
+              <Stack spacing={3} sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+                {phoneNumbers.map((item, index) => (
+                  <Stack key={index} direction="row" alignItems="center" spacing={1}>
+                    <MuiTelInput
+                      fullWidth
+                      defaultCountry="IN"
+                      label={index === 0 ? "Phone Number" : `Phone Number ${index + 1}`}
+                      name={`phone_number_${index}`}
+                      value={item.phone}
+                      onChange={(newValue: string) => {
+                        const newPhones = [...phoneNumbers];
+                        newPhones[index] = { ...newPhones[index], phone: newValue };
+                        setPhoneNumbers(newPhones);
+                        if (index === 0 && newValue) {
+                          setValidationErrors(prev => ({ ...prev, phoneNumber: false }));
+                        }
+                      }}
+                      required={index === 0}
+                      disabled={viewOnly}
+                      error={index === 0 && !!validationErrors.phoneNumber}
+                      helperText={index === 0 && validationErrors.phoneNumber ? 'Phone Number is required' : ''}
+                      sx={{
+                        "& .MuiInputBase-input.Mui-disabled": {
+                          WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
+                        },
+                        "& .MuiInputLabel-root.Mui-disabled": {
+                          color: "rgba(0, 0, 0, 0.6)",
+                        },
+                      }}
+                    />
+                    {!viewOnly && (
+                      index === 0 ? (
+                        <IconButton
+                          color="primary"
+                          onClick={() => setPhoneNumbers([...phoneNumbers, { phone: '' }])}
+                          sx={{
+                            transition: 'transform 0.2s',
+                            '&:hover': { transform: 'scale(1.1)' }
+                          }}
+                        >
+                          <Iconify icon="solar:add-circle-bold" width={24} />
+                        </IconButton>
+                      ) : (
+                        <IconButton
+                          color="error"
+                          onClick={() => setPhoneNumbers(phoneNumbers.filter((_, i) => i !== index))}
+                          sx={{
+                            transition: 'transform 0.2s',
+                            '&:hover': { transform: 'scale(1.1)' }
+                          }}
+                        >
+                          <Iconify icon="solar:trash-bin-trash-bold" width={24} />
+                        </IconButton>
+                      )
+                    )}
+                  </Stack>
+                ))}
+              </Stack>
+
+              <Stack spacing={3} sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+                {emails.map((item, index) => (
+                  <Stack key={index} direction="row" alignItems="center" spacing={1}>
+                    <TextField
+                      fullWidth
+                      label={index === 0 ? "Email" : `Email ${index + 1}`}
+                      type="email"
+                      value={item.email}
+                      onChange={(e) => {
+                        const newEmails = [...emails];
+                        newEmails[index] = { ...newEmails[index], email: e.target.value };
+                        setEmails(newEmails);
+                      }}
+                      slotProps={{ input: { readOnly: viewOnly } }}
+                    />
+                    {!viewOnly && (
+                      index === 0 ? (
+                        <IconButton
+                          color="primary"
+                          onClick={() => setEmails([...emails, { email: '' }])}
+                          sx={{
+                            transition: 'transform 0.2s',
+                            '&:hover': { transform: 'scale(1.1)' }
+                          }}
+                        >
+                          <Iconify icon="solar:add-circle-bold" width={24} />
+                        </IconButton>
+                      ) : (
+                        <IconButton
+                          color="error"
+                          onClick={() => setEmails(emails.filter((_, i) => i !== index))}
+                          sx={{
+                            transition: 'transform 0.2s',
+                            '&:hover': { transform: 'scale(1.1)' }
+                          }}
+                        >
+                          <Iconify icon="solar:trash-bin-trash-bold" width={24} />
+                        </IconButton>
+                      )
+                    )}
+                  </Stack>
+                ))}
+              </Stack>
 
 
               <TextField
@@ -988,7 +1125,23 @@ export function LeadView() {
 
           {currentTab === 'pipeline' && (
             <>
-              {workflowState !== 'Closed' && (
+              <Alert
+                severity="info"
+                icon={<Iconify icon="solar:info-circle-bold" />}
+                sx={{
+                  mb: 2,
+                  borderRadius: 2,
+                  bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
+                  color: 'info.dark',
+                  border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.16)}`,
+                  '& .MuiAlert-icon': {
+                    color: 'info.main',
+                  },
+                }}
+              >
+                Click on a stage card to update the current stage.
+              </Alert>
+              {/* {workflowState !== 'Closed' && (
                 <Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mb: 2 }}>
                   <Typography variant="subtitle2" sx={{ color: 'text.primary' }}>
                     Change Workflow
@@ -1023,7 +1176,7 @@ export function LeadView() {
                     </Select>
                   </FormControl>
                 </Stack>
-              )}
+              )} */}
               <SalesPipeline
                 currentStage={workflowState || status}
                 stages={allWorkflowStates}
@@ -1188,16 +1341,16 @@ export function LeadView() {
                     <TextField
                       fullWidth
                       label="Email"
-                      value={email}
+                      value={emails[0]?.email || ''}
                       InputProps={{ readOnly: true }}
                     />
                     <TextField
                       fullWidth
                       label="Phone Number"
-                      value={phoneNumber}
+                      value={phoneNumbers[0]?.phone || ''}
                       InputProps={{ readOnly: true }}
                     />
-                    {!email && !phoneNumber && (
+                    {!(emails[0]?.email || '').trim() && !(phoneNumbers[0]?.phone || '').trim() && (
                       <Alert severity="warning">
                         Email or Phone Number is required to create a Client
                       </Alert>
@@ -1207,7 +1360,7 @@ export function LeadView() {
                   <Button
                     variant="contained"
                     onClick={() => setOpenConvertConfirm(true)}
-                    disabled={converting || !companyName || (!email && !phoneNumber)}
+                    disabled={converting || !companyName || (!(emails[0]?.email || '').trim() && !(phoneNumbers[0]?.phone || '').trim())}
                     fullWidth
                   >
                     {converting ? 'Converting...' : 'Convert Lead'}
@@ -1234,141 +1387,209 @@ export function LeadView() {
             Leads
           </Typography>
 
-          {permissions.write && (
-            <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* View Switcher */}
+            <Box sx={{
+              display: 'flex',
+              p: 0.5,
+              bgcolor: '#F4F6F8',
+              borderRadius: '999px',
+              border: (theme) => `1px solid ${theme.palette.divider}`,
+            }}>
               <Button
-                variant="contained"
-                startIcon={<IoMdCloudDownload size={20} />}
-                onClick={() => setOpenImport(true)}
-                sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
+                disableRipple
+                onClick={() => setViewMode('list')}
+                startIcon={<IoList size={18} />}
+                sx={{
+                  borderRadius: '999px',
+                  px: 2.5,
+                  py: 0.6,
+                  typography: 'subtitle2',
+                  fontWeight: 700,
+                  color: viewMode === 'list' ? 'common.white' : 'text.secondary',
+                  bgcolor: viewMode === 'list' ? '#08a3cd' : 'transparent',
+                  boxShadow: viewMode === 'list' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: viewMode === 'list' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
+                    color: viewMode === 'list' ? 'common.white' : 'text.primary',
+                  }
+                }}
               >
-                Import
+                List View
               </Button>
               <Button
-                variant="contained"
-                startIcon={<Iconify icon="mingcute:add-line" />}
-                onClick={handleOpenCreate}
-                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                disableRipple
+                onClick={() => setViewMode('kanban')}
+                startIcon={<TbLayoutKanbanFilled size={18} />}
+                sx={{
+                  borderRadius: '999px',
+                  px: 2.5,
+                  py: 0.6,
+                  typography: 'subtitle2',
+                  fontWeight: 700,
+                  color: viewMode === 'kanban' ? 'common.white' : 'text.secondary',
+                  bgcolor: viewMode === 'kanban' ? '#08a3cd' : 'transparent',
+                  boxShadow: viewMode === 'kanban' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: viewMode === 'kanban' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
+                    color: viewMode === 'kanban' ? 'common.white' : 'text.primary',
+                  }
+                }}
               >
-                New Lead
+                Kanban View
               </Button>
             </Box>
-          )}
+
+            {permissions.write && (
+              <>
+                <Button
+                  variant="contained"
+                  startIcon={<IoMdCloudDownload size={20} />}
+                  onClick={() => setOpenImport(true)}
+                  sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
+                >
+                  Import
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<Iconify icon="mingcute:add-line" />}
+                  onClick={handleOpenCreate}
+                  sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                >
+                  New Lead
+                </Button>
+              </>
+            )}
+          </Box>
         </Box>
 
-        <Card>
-          <LeadTableToolbar
-            numSelected={table.selected.length}
-            filterName={filterName}
-            onFilterName={(e) => {
-              setFilterName(e.target.value);
-              table.onResetPage();
-            }}
-            onOpenFilter={() => setOpenFilters(true)}
-            canReset={canReset}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            onDelete={handleBulkDelete}
+        {viewMode === 'list' ? (
+          <Card>
+            <LeadTableToolbar
+              numSelected={table.selected.length}
+              filterName={filterName}
+              onFilterName={(e) => {
+                setFilterName(e.target.value);
+                table.onResetPage();
+              }}
+              onOpenFilter={() => setOpenFilters(true)}
+              canReset={canReset}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              onDelete={handleBulkDelete}
+            />
+
+            <Scrollbar>
+              <TableContainer sx={{ overflow: 'unset' }}>
+                <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
+                  <LeadTableHead
+                    rowCount={total}
+                    numSelected={table.selected.length}
+                    onSelectAllRows={(checked) =>
+                      table.onSelectAllRows(
+                        checked,
+                        data.map((row) => row.name)
+                      )
+                    }
+                    hideCheckbox
+                    showIndex
+                    headLabel={[
+                      { id: 'lead_name', label: 'Name' },
+                      { id: 'company_name', label: 'Company' },
+                      { id: 'phone_number', label: 'Phone' },
+                      { id: 'email', label: 'Email' },
+                      { id: 'country', label: 'Country' },
+                      { id: 'workflow_state', label: 'Status' },
+                      { id: 'actions', label: 'Actions', align: 'right' },
+                    ]}
+                  />
+
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                          <CircularProgress sx={{ color: '#08a3cd' }} />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      <>
+                        {data.map((row, index) => (
+                          <LeadTableRow
+                            key={row.name}
+                            index={table.page * table.rowsPerPage + index}
+                            hideCheckbox
+                            row={{
+                              id: row.name,
+                              name: getString(row.lead_name) ?? '-',
+                              phone: getString(row.phone_number) ?? '-',
+                              email: getString(row.email) ?? '-',
+                              company: getString(row.company_name) ?? '-',
+                              status: getString(row.status) ?? '-',
+                              workflow_state: getString(row.workflow_state) ?? '-',
+                              avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
+                              isVerified: true,
+                              country: getString(row.country) ?? '-',
+                            }}
+                            selected={table.selected.includes(row.name)}
+                            onSelectRow={() => table.onSelectRow(row.name)}
+                            onEdit={() => handleEditRow({ id: row.name })}
+                            onDelete={() => onDeleteRow(row.name)}
+                            onView={() => handleViewRow({ id: row.name })}
+                            canEdit={permissions.write}
+                            canDelete={permissions.delete}
+                          />
+                        ))}
+
+                        {notFound && <TableNoData searchQuery={filterName} />}
+
+                        {empty && (
+                          <TableRow>
+                            <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                              <EmptyContent
+                                title="No leads found"
+                                description="Start capturing leads to boost your sales."
+                                icon="solar:user-plus-bold-duotone"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )}
+
+                        {!empty && !notFound && (
+                          <TableEmptyRows
+                            height={68}
+                            emptyRows={data.length < 5 ? 5 - data.length : 0}
+                          />
+                        )}
+                      </>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Scrollbar>
+
+            <TablePagination
+              component="div"
+              page={table.page}
+              count={total}
+              rowsPerPage={table.rowsPerPage}
+              onPageChange={table.onChangePage}
+              rowsPerPageOptions={[10, 25, 50]}
+              onRowsPerPageChange={table.onChangeRowsPerPage}
+            />
+          </Card>
+        ) : (
+          <LeadKanbanBoard
+            leads={data}
+            workflowStates={allWorkflowStates}
+            onOpenLead={(id) => handleViewRow({ id })}
+            onEditLead={(id) => handleEditRow({ id })}
+            onDeleteLead={(id) => handleDeleteClick(id)}
+            onAddLead={(selectedState) => handleOpenCreate(selectedState)}
+            permissions={permissions}
           />
-
-          <Scrollbar>
-            <TableContainer sx={{ overflow: 'unset' }}>
-              <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
-                <LeadTableHead
-                  rowCount={total}
-                  numSelected={table.selected.length}
-                  onSelectAllRows={(checked) =>
-                    table.onSelectAllRows(
-                      checked,
-                      data.map((row) => row.name)
-                    )
-                  }
-                  hideCheckbox
-                  showIndex
-                  headLabel={[
-                    { id: 'lead_name', label: 'Name' },
-                    { id: 'company_name', label: 'Company' },
-                    { id: 'phone_number', label: 'Phone' },
-                    { id: 'email', label: 'Email' },
-                    { id: 'country', label: 'Country' },
-                    { id: 'workflow_state', label: 'Status' },
-                    { id: 'actions', label: 'Actions', align: 'right' },
-                  ]}
-                />
-
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                        <CircularProgress sx={{ color: '#08a3cd' }} />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    <>
-                      {data.map((row, index) => (
-                        <LeadTableRow
-                          key={row.name}
-                          index={table.page * table.rowsPerPage + index}
-                          hideCheckbox
-                          row={{
-                            id: row.name,
-                            name: getString(row.lead_name) ?? '-',
-                            phone: getString(row.phone_number) ?? '-',
-                            email: getString(row.email) ?? '-',
-                            company: getString(row.company_name) ?? '-',
-                            status: getString(row.status) ?? '-',
-                            workflow_state: getString(row.workflow_state) ?? '-',
-                            avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
-                            isVerified: true,
-                            country: getString(row.country) ?? '-',
-                          }}
-                          selected={table.selected.includes(row.name)}
-                          onSelectRow={() => table.onSelectRow(row.name)}
-                          onEdit={() => handleEditRow({ id: row.name })}
-                          onDelete={() => onDeleteRow(row.name)}
-                          onView={() => handleViewRow({ id: row.name })}
-                          canEdit={permissions.write}
-                          canDelete={permissions.delete}
-                        />
-                      ))}
-
-                      {notFound && <TableNoData searchQuery={filterName} />}
-
-                      {empty && (
-                        <TableRow>
-                          <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                            <EmptyContent
-                              title="No leads found"
-                              description="Start capturing leads to boost your sales."
-                              icon="solar:user-plus-bold-duotone"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      )}
-
-                      {!empty && !notFound && (
-                        <TableEmptyRows
-                          height={68}
-                          emptyRows={data.length < 5 ? 5 - data.length : 0}
-                        />
-                      )}
-                    </>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Scrollbar>
-
-          <TablePagination
-            component="div"
-            page={table.page}
-            count={total}
-            rowsPerPage={table.rowsPerPage}
-            onPageChange={table.onChangePage}
-            rowsPerPageOptions={[10, 25, 50]}
-            onRowsPerPageChange={table.onChangeRowsPerPage}
-          />
-        </Card>
+        )}
       </DashboardContent>
 
       <LeadTableFiltersDrawer
@@ -1472,10 +1693,12 @@ export function LeadView() {
         onClose={() => setOpenConvertConfirm(false)}
         title="Convert Lead"
         content="Are you sure you want to convert this lead? This will create a permanent Company and Client record."
+        icon="solar:round-transfer-horizontal-bold"
+        iconColor="success.main"
         action={
           <Button
             variant="contained"
-            color="primary"
+            color="success"
             onClick={async () => {
               setOpenConvertConfirm(false);
               if (!companyName) {
@@ -1487,7 +1710,9 @@ export function LeadView() {
                 return;
               }
 
-              if (!email && !phoneNumber) {
+              const primaryEmail = emails[0]?.email || '';
+              const primaryPhone = phoneNumbers[0]?.phone || '';
+              if (!primaryEmail.trim() && !primaryPhone.trim()) {
                 setSnackbar({
                   open: true,
                   message: 'Email or Phone Number is required to convert lead',

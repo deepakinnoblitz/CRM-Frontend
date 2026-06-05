@@ -173,7 +173,7 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
         if (type === 'estimations') {
             router.push(`/estimations/new?deal_id=${dealId}`);
         } else if (type === 'proposals') {
-            router.push(`/proposals/new?prospect_id=${dealId}`);
+            router.push(`/proposals/new?deal_id=${dealId}`);
         } else {
             router.push(`/invoices/new?deal_id=${dealId}`);
         }

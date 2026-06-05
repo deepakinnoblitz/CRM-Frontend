@@ -1,6 +1,16 @@
 import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
+export interface LeadPhoneRow {
+    name?: string;
+    phone: string;
+}
+
+export interface LeadEmailRow {
+    name?: string;
+    email: string;
+}
+
 export interface Lead {
     name: string;
     lead_name: string;
@@ -19,6 +29,8 @@ export interface Lead {
     workflow_state?: string;
     billing_address?: string;
     interest_level?: 'High' | 'Medium' | 'Low';
+    phone_numbers?: LeadPhoneRow[];
+    emails?: LeadEmailRow[];
 }
 
 export async function fetchLeads(params: {

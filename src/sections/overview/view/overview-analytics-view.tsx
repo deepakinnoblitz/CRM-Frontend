@@ -22,8 +22,9 @@ export function OverviewAnalyticsView() {
     contacts: 0,
     deals: 0,
     accounts: 0,
-    recent_leads: 0,
-    total_deal_value: 0,
+    proposals: 0,
+    estimations: 0,
+    invoices: 0,
     leads_by_status: [],
     deals_by_stage: [],
     charts: {
@@ -32,6 +33,9 @@ export function OverviewAnalyticsView() {
       contacts: [0, 0, 0, 0, 0, 0, 0],
       deals: [0, 0, 0, 0, 0, 0, 0],
       accounts: [0, 0, 0, 0, 0, 0, 0],
+      proposals: [0, 0, 0, 0, 0, 0, 0],
+      estimations: [0, 0, 0, 0, 0, 0, 0],
+      invoices: [0, 0, 0, 0, 0, 0, 0],
     },
   });
   const [activities, setActivities] = useState<TodayActivities>({
@@ -139,6 +143,9 @@ export function OverviewAnalyticsView() {
         <Grid size={{ xs: 12, md: 6 }}>
           <AnalyticsCurrentVisits
             title="Leads by Status"
+            emptyTitle="No leads found"
+            emptyDescription="Get started by creating a new lead or importing contacts."
+            emptyIcon="solar:users-group-rounded-bold-duotone"
             chart={{
               series: (stats?.leads_by_status || []).map((item) => ({
                 label: item.status,
@@ -152,6 +159,9 @@ export function OverviewAnalyticsView() {
         <Grid size={{ xs: 12, md: 6 }}>
           <AnalyticsCurrentVisits
             title="Deals by Stage"
+            emptyTitle="No deals found"
+            emptyDescription="Track your sales pipeline by adding your first deal."
+            emptyIcon="solar:case-bold-duotone"
             chart={{
               series: (stats?.deals_by_stage || []).map((item) => ({
                 label: item.stage,

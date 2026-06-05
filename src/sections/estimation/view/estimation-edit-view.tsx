@@ -461,7 +461,7 @@ export function EstimationEditView() {
 
             await updateEstimation(id, estimationData);
             enqueueSnackbar('Estimation updated successfully', { variant: 'success' });
-            setTimeout(() => router.push('/estimations'), 1500);
+            setTimeout(() => router.push('/estimations'), 600);
         } catch (err: any) {
             console.error(err);
             enqueueSnackbar(err.message || 'Failed to update estimation', { variant: 'error' });

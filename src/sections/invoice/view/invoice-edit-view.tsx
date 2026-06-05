@@ -485,7 +485,7 @@ export function InvoiceEditView() {
 
             await updateInvoice(id, invoiceData);
             enqueueSnackbar('Invoice updated successfully', { variant: 'success' });
-            setTimeout(() => router.push('/deals?tab=invoices'), 1500);
+            setTimeout(() => router.push('/deals?tab=invoices'), 600);
         } catch (err: any) {
             console.error(err);
             enqueueSnackbar(err.message || 'Failed to update invoice', { variant: 'error' });

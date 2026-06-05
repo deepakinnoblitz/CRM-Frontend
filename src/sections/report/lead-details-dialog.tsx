@@ -494,7 +494,7 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
                                         <DetailItem label="State" value={lead.state} icon={<FaLocationDot size={13} />} />
                                         <DetailItem label="City" value={lead.city} icon={<FaCity size={13} />} />
                                         <DetailItem label="Owner" value={lead.owner_name || lead.owner} icon={<FaUser size={13} />} color="secondary.main" />
-                                        <DetailItem label="Creation" value={new Date(lead.creation).toLocaleString()} icon={<FaCalendarDays size={13} />} />
+                                        <DetailItem label="Creation" value={`${new Date(lead.creation) .toLocaleDateString('en-GB') .replace(/\//g, '-')} ${new Date(lead.creation).toLocaleTimeString('en-GB')}`} icon={<FaCalendarDays size={13} />} />
                                     </Box>
                                 </Box>
 

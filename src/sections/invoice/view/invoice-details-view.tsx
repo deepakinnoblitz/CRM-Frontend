@@ -1,5 +1,5 @@
 import { useSnackbar } from 'notistack';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { 
     IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags, 
@@ -32,6 +32,7 @@ import { useRouter } from 'src/routes/hooks';
 import { fCurrency } from 'src/utils/format-number';
 import { handleDirectPrint } from 'src/utils/print';
 
+import { getDoctypeList } from 'src/api/purchase';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getInvoice, deleteInvoice, getInvoicePrintUrl } from 'src/api/invoice';
 
@@ -46,6 +47,8 @@ export function InvoiceDetailsView() {
     const navigate = useNavigate();
 
     const [invoice, setInvoice] = useState<any>(null);
+    const [itemNames, setItemNames] = useState<Record<string, string>>({});
+    const [accountName, setAccountName] = useState<string>('');
     const [fetching, setFetching] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [printing, setPrinting] = useState(false);
@@ -62,7 +65,51 @@ export function InvoiceDetailsView() {
     }, [id]);
 
     useEffect(() => {
-        if (location.state?.converted) {
+        if (invoice?.billing_name) {
+            getDoctypeList('Accounts', ['name', 'account_name'])
+                .then((accounts: any[]) => {
+                    const account = accounts.find((acc: any) => acc.name === invoice.billing_name);
+                    if (account?.account_name) {
+                        setAccountName(account.account_name);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch Account details:', err);
+                    setAccountName('');
+                });
+        }
+    }, [invoice?.billing_name]);
+
+    useEffect(() => {
+        const services = Array.from(new Set((invoice?.table_qecz || [])
+            .map((item: any) => item?.service)
+            .filter(Boolean)));
+
+        if (!services.length) {
+            setItemNames({});
+            return;
+        }
+
+        getDoctypeList('Item', ['name', 'item_name'], { name: ['in', services] })
+            .then((items: any[]) => {
+                const mapped = items.reduce((acc: Record<string, string>, item: any) => {
+                    if (item?.name) {
+                        acc[item.name] = item.item_name || item.name;
+                    }
+                    return acc;
+                }, {});
+                setItemNames(mapped);
+            })
+            .catch((err) => {
+                console.error('Failed to fetch Item names:', err);
+            });
+    }, [invoice?.table_qecz]);
+
+    const convertedShown = useRef(false);
+
+    useEffect(() => {
+        if (location.state?.converted && !convertedShown.current) {
+            convertedShown.current = true;
             enqueueSnackbar('Converted from estimation successfully!', { variant: 'success' });
             // Clear navigation state to prevent re-showing on refresh
             navigate(location.pathname, { replace: true, state: {} });
@@ -253,9 +300,12 @@ export function InvoiceDetailsView() {
                             </Stack>
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                                 <Typography variant="subtitle1" color="text.primary" sx={{ fontWeight: 700 }}>
-                                    {billing_name || 'No Company Name'}
+                                    {accountName || billing_name || 'No Company Name'}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+                                <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
+                                    ID: {billing_name}
+                                </Typography>
+                                <Typography variant="body2" color="text.primary" sx={{ mt: 1, fontWeight: 600, fontSize: '15px' }}>
                                     {customer_name || 'No Contact Name'}
                                 </Typography>
                                 <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
@@ -273,11 +323,11 @@ export function InvoiceDetailsView() {
                             </Stack>
                             <Stack spacing={2} sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Invoice Date</Typography>
+                                    <Typography variant="caption" color="text.secondary">Invoice Date</Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{invoice_date}</Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Reference</Typography>
+                                    <Typography variant="caption" color="text.secondary">Reference</Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>#{id}</Typography>
                                 </Stack>
                             </Stack>
@@ -337,7 +387,7 @@ export function InvoiceDetailsView() {
                                     {table_qecz.map((row: any, index: number) => (
                                         <TableRow key={index} sx={{ '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) } }}>
                                             <TableCell sx={{ py: 2 }}>
-                                                <Typography variant="subtitle2">{row.service}</Typography>
+                                                <Typography variant="subtitle2">{itemNames[row.service] || row.service || '-'}</Typography>
                                             </TableCell>
                                             <TableCell sx={{ py: 2 }}>
                                                 <Typography variant="body2">{row.hsn_code || '-'}</Typography>

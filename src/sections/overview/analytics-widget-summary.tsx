@@ -116,7 +116,7 @@ export function AnalyticsWidgetSummary({
       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
         <Box
           sx={{
-            width: 44,
+            width: 47,
             height: 44,
             display: 'flex',
             alignItems: 'center',

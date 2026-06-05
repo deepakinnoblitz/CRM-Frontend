@@ -78,6 +78,14 @@ const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, o
         });
     }, []);
 
+    useEffect(() => {
+        const searchParams = new URLSearchParams(window.location.search);
+        const purchaseParam = searchParams.get('purchase');
+        if (purchaseParam && !currentPurchaseCollection) {
+            handlePurchaseChange(purchaseParam);
+        }
+    }, [currentPurchaseCollection]);
+
     const handleChange = (field: string, value: any) => {
         setFormData(prev => {
             const updated = { ...prev, [field]: value };

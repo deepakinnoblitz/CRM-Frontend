@@ -84,15 +84,29 @@ export function DealTableRow({
 
     const getStageColor = (stage: string) => {
         switch (stage) {
-            case 'Closed Won':
-                return 'success';
-            case 'Closed Lost':
-                return 'error';
+            case 'Just In':
+                return 'info';
+            case 'Working':
+                return 'primary';
+            case 'Estimation Created':
+            case 'Invoice Created':
+                return 'secondary';
+            case 'Estimation Sent':
+            case 'Invoice Sent':
             case 'Proposal Sent':
             case 'Negotiation':
                 return 'warning';
+            case 'Special Approval':
+            case 'Closed Lost':
+                return 'error';
+            case 'Closed':
+            case 'Closed Won':
+            case 'Project Started':
+                return 'success';
+            case 'Ready for Delivery':
+                return 'primary';
             default:
-                return 'info';
+                return 'default';
         }
     };
 
@@ -177,7 +191,11 @@ export function DealTableRow({
                 </Typography>
             </TableCell>
 
-            <TableCell>{row.expectedCloseDate || '-'}</TableCell>
+            <TableCell>
+                <Label variant="soft" color={getStageColor(row.stage)}>
+                    {row.stage}
+                </Label>
+            </TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
