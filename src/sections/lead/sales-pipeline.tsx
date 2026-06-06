@@ -20,9 +20,10 @@ const STAGES = [
     'In Negotiation',
     'Follow-up Scheduled',
     'On Hold',
+    'Proposal Approved',
+    'Proposal Rejected',
     'In Active',
     'Not Interested',
-    'Closed',
 ];
 
 const NEXT_STEPS: Record<string, string[]> = {
@@ -33,6 +34,8 @@ const NEXT_STEPS: Record<string, string[]> = {
     'In Negotiation': ['Contract draft', 'Final discount approval', 'Legal review'],
     'Follow-up Scheduled': ['Prepare for follow-up', 'Address pending questions'],
     'On Hold': ['Check back in 2 weeks', 'Send monthly newsletter'],
+    'Proposal Approved': ['Ready to Convert Lead', 'Ready to make Prospects'],
+    'Proposal Rejected': ['Check back in 2 weeks', 'Send monthly newsletter'],
     'In Active': ['Archive lead', 'Move to cold storage'],
     'Not Interested': ['Ask for feedback', 'Update CRM notes'],
     'Closed': ['Onboarding', 'Introduction to CSM', 'Handover to delivery'],
@@ -147,7 +150,7 @@ export function SalesPipeline({ currentStage, stages = STAGES, leadName, service
                         </Label>
                     </Stack>
 
-                    <Box>
+                    {/* <Box>
                         <Typography variant="subtitle2" sx={{ color: '#1877F2', mb: 2, fontWeight: 'bold' }}>
                             Need to do Next
                         </Typography>
@@ -174,7 +177,7 @@ export function SalesPipeline({ currentStage, stages = STAGES, leadName, service
                                 </Box>
                             ))}
                         </Stack>
-                    </Box>
+                    </Box> */}
 
                     <Stack
                         direction="row"
@@ -182,7 +185,7 @@ export function SalesPipeline({ currentStage, stages = STAGES, leadName, service
                         divider={<Box sx={{ width: '1px', height: 16, bgcolor: alpha(theme.palette.grey[500], 0.2), mx: 2 }} />}
                         sx={{
                             pt: 2.5,
-                            borderTop: `2px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
+                            borderTop: `2px dashed ${alpha(theme.palette.grey[500], 0.4)}`,
                         }}
                     >
                         <Typography variant="subtitle2" sx={{ display: 'flex', gap: 1 }}>
