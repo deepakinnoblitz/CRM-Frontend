@@ -19,6 +19,7 @@ import {
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
+import Card from '@mui/material/Card';
 import Tabs from '@mui/material/Tabs';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
@@ -34,7 +35,7 @@ import { useRouter } from 'src/routes/hooks';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getLead, convertLead, getWorkflowStates } from 'src/api/leads';
+import { getLead, convertLead, getWorkflowStates, getWorkflowActions, applyWorkflowAction } from 'src/api/leads';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -48,6 +49,27 @@ import { ContactDetailsDialog } from '../../report/contact/contact-details-dialo
 
 // ----------------------------------------------------------------------
 
+const STAGE_OPTIONS = [
+    { value: 'New Lead', label: 'New Lead' },
+    { value: 'Contacted', label: 'Contacted' },
+    { value: 'Qualified', label: 'Qualified' },
+    { value: 'Proposal Sent', label: 'Proposal\nSent' },
+    { value: 'In Negotiation', label: 'In\nNegotiation' },
+    { value: 'Closed', label: 'Closed' },
+    { value: 'Not Interested', label: 'Not\nInterested' },
+    { value: 'In Active', label: 'In\nActive' },
+];
+
+const getClipPath = (index: number, total: number) => {
+    if (index === 0) {
+        return 'polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 6px calc(100% - 1px), 3px calc(100% - 3px), 1px calc(100% - 6px), 0 calc(100% - 12px), 0 12px, 1px 6px, 3px 3px, 6px 1px)';
+    }
+    if (index === total - 1) {
+        return 'polygon(0 0, calc(100% - 12px) 0, calc(100% - 6px) 1px, calc(100% - 3px) 3px, calc(100% - 1px) 6px, 100% 12px, 100% calc(100% - 12px), calc(100% - 1px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 1px), calc(100% - 12px) 100%, 0 100%, 12px 50%)';
+    }
+    return 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)';
+};
+
 export function LeadDetailsView() {
     const { id } = useParams();
     const router = useRouter();
@@ -56,7 +78,7 @@ export function LeadDetailsView() {
     const [lead, setLead] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [currentTab, setCurrentTab] = useState('general');
-    const [allWorkflowStates, setAllWorkflowStates] = useState<string[]>([]);
+    const [allWorkflowData, setAllWorkflowData] = useState<{ states: string[]; actions: { action: string; next_state: string }[] }>({ states: [], actions: [] });
 
     // Convert Lead State
     const [converting, setConverting] = useState(false);
@@ -66,6 +88,9 @@ export function LeadDetailsView() {
     const [openContact, setOpenContact] = useState(false);
     const [selectedContact, setSelectedContact] = useState<string | null>(null);
 
+    const [convertedAccountName, setConvertedAccountName] = useState<string | null>(null);
+    const [convertedContactName, setConvertedContactName] = useState<string | null>(null);
+
     const [openConfirm, setOpenConfirm] = useState(false);
 
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' | 'info' }>({
@@ -73,6 +98,33 @@ export function LeadDetailsView() {
         message: '',
         severity: 'success',
     });
+
+    const [selectedStage, setSelectedStage] = useState<string | null>(null);
+    const [updatingStage, setUpdatingStage] = useState(false);
+    const [confirmUpdate, setConfirmUpdate] = useState(false);
+
+    useEffect(() => {
+        if (lead) {
+            setSelectedStage(lead.workflow_state);
+        }
+    }, [lead]);
+
+    useEffect(() => {
+        const fetchWorkflowData = async () => {
+            if (!lead) return;
+            const currentState = lead.workflow_state || lead.status || 'New Lead';
+
+            try {
+                const wf = await getWorkflowStates('Lead');
+                const actions = await getWorkflowActions('Lead', currentState);
+                setAllWorkflowData({ states: wf.states, actions });
+            } catch (error) {
+                console.error('Failed to fetch workflow data:', error);
+            }
+        };
+
+        fetchWorkflowData();
+    }, [lead]);
 
     const handleCloseSnackbar = useCallback(() => {
         setSnackbar((prev) => ({ ...prev, open: false }));
@@ -85,9 +137,6 @@ export function LeadDetailsView() {
                 .then(setLead)
                 .catch((err) => console.error('Failed to fetch lead details:', err))
                 .finally(() => setLoading(false));
-
-            // Fetch workflow states for pipeline visualization
-            getWorkflowStates('Lead').then(wf => setAllWorkflowStates(wf.states));
         }
     }, [id]);
 
@@ -97,7 +146,6 @@ export function LeadDetailsView() {
         try {
             const result = await convertLead(id);
 
-            // Show messages in snackbar if available
             if (result.messages && result.messages.length > 0) {
                 const firstMsg = result.messages[0];
                 setSnackbar({
@@ -109,7 +157,6 @@ export function LeadDetailsView() {
                 setSnackbar({ open: true, message: 'Lead converted successfully', severity: 'success' });
             }
 
-            // Refresh lead data to show conversion results
             const updatedLead = await getLead(id);
             setLead(updatedLead);
         } catch (err: any) {
@@ -120,6 +167,53 @@ export function LeadDetailsView() {
             setConverting(false);
         }
     };
+
+    const handleUpdateStage = useCallback(async () => {
+        if (!lead || !selectedStage || selectedStage === lead.workflow_state) return;
+
+        const action = allWorkflowData.actions.find(a => a.next_state === selectedStage)?.action;
+
+        if (!action) {
+            setSnackbar({
+                open: true,
+                message: `Invalid state transition to "${selectedStage}" from current state.`,
+                severity: 'error'
+            });
+            setSelectedStage(lead.workflow_state);
+            return;
+        }
+
+        const previousStage = lead.workflow_state;
+        setConfirmUpdate(false);
+        setUpdatingStage(true);
+        try {
+            await applyWorkflowAction('Lead', lead.name, action);
+            const updated = await getLead(lead.name);
+            setLead(updated);
+            setSnackbar({
+                open: true,
+                message: `Lead status updated from "${previousStage}" to "${selectedStage}" successfully`,
+                severity: 'success'
+            });
+        } catch (err: any) {
+            console.error('Failed to update stage:', err);
+            setSnackbar({
+                open: true,
+                message: err.message || 'Failed to update status',
+                severity: 'error'
+            });
+            setSelectedStage(lead.workflow_state || previousStage);
+        } finally {
+            setUpdatingStage(false);
+        }
+    }, [lead, selectedStage, allWorkflowData]);
+
+    const handleStageUpdateClick = useCallback(() => {
+        if (!lead || !selectedStage || selectedStage === (lead.workflow_state || 'New Lead')) {
+            return;
+        }
+        setConfirmUpdate(true);
+    }, [lead, selectedStage]);
 
     const renderPremiumStatus = (status: string) => {
         let bgColor = '#1B53F4';
@@ -244,6 +338,90 @@ export function LeadDetailsView() {
                     Go Back
                 </Button>
             </Stack>
+
+            {/* Stage Tracker Bar */}
+            <Card sx={{ mb: 3, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: { xs: 'wrap', md: 'nowrap' }, gap: 2, borderRadius: 2 }}>
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    overflowX: 'auto',
+                    flexGrow: 1,
+                    py: 0.5,
+                    px: 0.5,
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                    '&::-webkit-scrollbar': {
+                        display: 'none',
+                    },
+                }}>
+                    {(() => {
+                        const stages = allWorkflowData.states.length > 0 ? allWorkflowData.states : ['New Lead'];
+                        const effectiveLeadStage = lead.workflow_state || lead.status || 'New Lead';
+                        const currentActiveStage = selectedStage || effectiveLeadStage;
+                        const activeIndex = stages.findIndex(s => s === currentActiveStage);
+
+                        return stages.map((stage: string, index: number) => {
+                            const isCompletedOrActive = index <= activeIndex;
+                            const isActive = stage === currentActiveStage;
+
+                            return (
+                                <Box
+                                    key={stage}
+                                    onClick={() => setSelectedStage(stage)}
+                                    sx={{
+                                        height: 46,
+                                        display: 'flex',
+                                        flex: '1 1 0',
+                                        minWidth: { xs: 100, md: 92 },
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        px: 1,
+                                        ml: index === 0 ? 0 : '-10px',
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                        clipPath: getClipPath(index, stages.length),
+                                        bgcolor: isCompletedOrActive ? '#2081C3' : '#e0e0e0b5',
+                                        color: isCompletedOrActive ? 'common.white' : '#4c545a',
+                                        fontWeight: isActive ? 800 : 600,
+                                        fontSize: { xs: 11, md: 11.5 },
+                                        lineHeight: 1.15,
+                                        textAlign: 'center',
+                                        transition: 'all 0.2s',
+                                        whiteSpace: 'pre-line',
+                                        position: 'relative',
+                                        zIndex: stages.length - index,
+                                        '&:hover': {
+                                            opacity: 0.88,
+                                        }
+                                    }}
+                                >
+                                    <Typography variant="body2" sx={{ fontWeight: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', textAlign: 'inherit', zIndex: 1, pl: index === 0 ? 0 : 1, pr: index === stages.length - 1 ? 0 : 1 }}>
+                                        {stage}
+                                    </Typography>
+                                </Box>
+                            );
+                        });
+                    })()}
+                </Box>
+                <Button
+                    variant="contained"
+                    disabled={!selectedStage || selectedStage === (lead.workflow_state || lead.status || 'New Lead') || updatingStage}
+                    onClick={handleStageUpdateClick}
+                    sx={{
+                        height: 36,
+                        borderRadius: 1.5,
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        bgcolor: '#2081C3',
+                        color: 'common.white',
+                        minWidth: 130,
+                        '&:hover': { bgcolor: '#1a699f' },
+                        '&:disabled': { bgcolor: 'action.disabledBackground', color: 'text.disabled' }
+                    }}
+                >
+                    {updatingStage ? <CircularProgress size={20} color="inherit" /> : 'Edit Status'}
+                </Button>
+            </Card>
 
             {/* Premium Header Banner */}
             <Box
@@ -448,7 +626,7 @@ export function LeadDetailsView() {
                         <>
                             {/* General Information */}
                             <Box sx={{ margin: 2 }}>
-                                <SectionHeader title="Contact & Service" icon={<FaPhone size={16} />} />
+                                <SectionHeader title="Contact & Service" icon={<FaPhone size={15} />} />
                                 <Box
                                     sx={{
                                         display: 'grid',
@@ -467,7 +645,7 @@ export function LeadDetailsView() {
 
                             {/* Location & Status */}
                             <Box sx={{ margin: 2 }}>
-                                <SectionHeader title="Location & Preferences" icon={<FaLocationDot size={16} />} />
+                                <SectionHeader title="Location & Preferences" icon={<FaLocationDot size={15} />} />
                                 <Box
                                     sx={{
                                         display: 'grid',
@@ -496,7 +674,7 @@ export function LeadDetailsView() {
                                 <SectionHeader title="Additional Information" icon={<FaFileLines size={18} />} noMargin />
                                 <Box sx={{ mt: 3.5, display: 'flex', flexDirection: 'column', gap: 3 }}>
                                     <Box>
-                                        <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', mb: 1, display: 'block', letterSpacing: 0.8 }}>
+                                        <Typography variant="caption" sx={{ color: '#68707bff', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block', letterSpacing: 0.2 }}>
                                             Billing Address
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: '#1E293B', fontWeight: 600, lineHeight: 1.6 }}>
@@ -505,7 +683,7 @@ export function LeadDetailsView() {
                                     </Box>
                                     <Divider sx={{ borderStyle: 'solid', borderColor: (theme) => theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.divider, 0.5) }} />
                                     <Box>
-                                        <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', mb: 1, display: 'block', letterSpacing: 0.8 }}>
+                                        <Typography variant="caption" sx={{ color: '#68707bff', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block', letterSpacing: 0.8 }}>
                                             Remarks / Notes
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: lead.remarks ? '#1E293B' : '#64748B', fontWeight: lead.remarks ? 600 : 500, fontStyle: lead.remarks ? 'normal' : 'italic', lineHeight: 1.6 }}>
@@ -521,7 +699,7 @@ export function LeadDetailsView() {
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                             <SalesPipeline
                                 currentStage={lead.workflow_state || lead.status}
-                                stages={allWorkflowStates}
+                                stages={allWorkflowData.states}
                                 leadName={lead.lead_name}
                                 service={lead.service}
                                 disabled
@@ -544,50 +722,102 @@ export function LeadDetailsView() {
                         <Box sx={{ py: 3 }}>
                             {lead.converted_account || lead.converted_contact ? (
                                 <Box>
-                                    <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                                    <Box sx={{ padding: 5, bgcolor: (theme) => theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04), borderRadius: 2.5, border: (theme) => `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`,}}>
                                         <Stack spacing={2.5}>
                                             <Box>
-                                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                                                    Converted Company
-                                                </Typography>
-                                                <Typography
-                                                    variant="subtitle1"
-                                                    sx={{
-                                                        fontWeight: 800,
-                                                        color: 'primary.main',
-                                                        cursor: lead.converted_account ? 'pointer' : 'default'
-                                                    }}
-                                                    onClick={() => {
-                                                        if (lead.converted_account) {
-                                                            setSelectedAccount(lead.converted_account);
-                                                            setOpenAccount(true);
-                                                        }
-                                                    }}
-                                                >
-                                                    {lead.converted_account || 'N/A'}
-                                                </Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                                        Converted Company
+                                                    </Typography>
+                                                    {lead.converted_account && (
+                                                        <Box
+                                                            onClick={() => {
+                                                                setSelectedAccount(lead.converted_account);
+                                                                setOpenAccount(true);
+                                                            }}
+                                                            sx={{ cursor: 'pointer', '&:hover': { opacity: 0.7 } }}
+                                                        >
+                                                            <Iconify icon={"solar:square-arrow-right-up-bold" as any} width={18} sx={{ color: 'primary.main' }} />
+                                                        </Box>
+                                                    )}
+                                                </Box>
+                                                {lead.converted_account_name ? (
+                                                    <Typography
+                                                        variant="body1"
+                                                        sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1.4 }}
+                                                    >
+                                                        {lead.converted_account_name}
+                                                    </Typography>
+                                                ) : (
+                                                    <Typography
+                                                        variant="body1"
+                                                        sx={{ fontWeight: 800, color: 'primary.main', cursor: lead.converted_account ? 'pointer' : 'default' }}
+                                                        onClick={() => {
+                                                            if (lead.converted_account) {
+                                                                setSelectedAccount(lead.converted_account);
+                                                                setOpenAccount(true);
+                                                            }
+                                                        }}
+                                                    >
+                                                        {lead.converted_account || 'N/A'}
+                                                    </Typography>
+                                                )}
+                                                {lead.converted_account_name && lead.converted_account && (
+                                                    <Typography
+                                                        variant="caption"
+                                                        sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mt: 0.5 }}
+                                                    >
+                                                        ID: {lead.converted_account}
+                                                    </Typography>
+                                                )}
                                             </Box>
                                             <Divider sx={{ borderStyle: 'dashed' }} />
                                             <Box>
-                                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                                                    Converted Client
-                                                </Typography>
-                                                <Typography
-                                                    variant="subtitle1"
-                                                    sx={{
-                                                        fontWeight: 800,
-                                                        color: 'primary.main',
-                                                        cursor: lead.converted_contact ? 'pointer' : 'default'
-                                                    }}
-                                                    onClick={() => {
-                                                        if (lead.converted_contact) {
-                                                            setSelectedContact(lead.converted_contact);
-                                                            setOpenContact(true);
-                                                        }
-                                                    }}
-                                                >
-                                                    {lead.converted_contact || 'N/A'}
-                                                </Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                                        Converted Client
+                                                    </Typography>
+                                                    {lead.converted_contact && (
+                                                        <Box
+                                                            onClick={() => {
+                                                                setSelectedContact(lead.converted_contact);
+                                                                setOpenContact(true);
+                                                            }}
+                                                            sx={{ cursor: 'pointer', '&:hover': { opacity: 0.7 } }}
+                                                        >
+                                                            <Iconify icon={"solar:square-arrow-right-up-bold" as any} width={18} sx={{ color: 'primary.main' }} />
+                                                        </Box>
+                                                    )}
+                                                </Box>
+                                                {lead.converted_contact_name ? (
+                                                    <Typography
+                                                        variant="body1"
+                                                        sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1.4 }}
+                                                    >
+                                                        {lead.converted_contact_name}
+                                                    </Typography>
+                                                ) : (
+                                                    <Typography
+                                                        variant="body1"
+                                                        sx={{ fontWeight: 800, color: 'primary.main', cursor: lead.converted_contact ? 'pointer' : 'default' }}
+                                                        onClick={() => {
+                                                            if (lead.converted_contact) {
+                                                                setSelectedContact(lead.converted_contact);
+                                                                setOpenContact(true);
+                                                            }
+                                                        }}
+                                                    >
+                                                        {lead.converted_contact || 'N/A'}
+                                                    </Typography>
+                                                )}
+                                                {lead.converted_contact_name && lead.converted_contact && (
+                                                    <Typography
+                                                        variant="caption"
+                                                        sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mt: 0.5 }}
+                                                    >
+                                                        ID: {lead.converted_contact}
+                                                    </Typography>
+                                                )}
                                             </Box>
                                         </Stack>
                                     </Box>
@@ -661,6 +891,20 @@ export function LeadDetailsView() {
                         sx={{ borderRadius: 1.5 }}
                     >
                         Convert
+                    </Button>
+                }
+            />
+
+            <ConfirmDialog
+                open={confirmUpdate}
+                onClose={() => setConfirmUpdate(false)}
+                title="Confirm Status Update"
+                content={selectedStage ? `Are you sure you want to update the lead status to "${selectedStage}"?` : 'Are you sure you want to update the lead status?'}
+                icon="solar:info-circle-bold"
+                iconColor="#2081C3"
+                action={
+                    <Button onClick={handleUpdateStage} color="primary" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
+                        {updatingStage ? <CircularProgress size={20} color="inherit" /> : 'Update'}
                     </Button>
                 }
             />
