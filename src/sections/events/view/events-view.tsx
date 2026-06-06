@@ -193,6 +193,24 @@ export function EventsView() {
         loadEvents();
     }, [loadEvents]);
 
+    useEffect(() => {
+        if (!miniCalDate) return;
+        const dateStr = miniCalDate.format('YYYY-MM-DD');
+
+        const applyHighlight = () => {
+            document.querySelectorAll('.crm-main-selected-date').forEach(el => {
+                el.classList.remove('crm-main-selected-date');
+            });
+            const cell = document.querySelector(`[data-date="${dateStr}"]`);
+            if (cell) {
+                cell.classList.add('crm-main-selected-date');
+            }
+        };
+
+        const timer = setTimeout(applyHighlight, 50);
+        return () => clearTimeout(timer);
+    }, [miniCalDate, events]);
+
     const handleDatesSet = (arg: any) => {
         loadEvents(arg.start, arg.end);
     };
@@ -955,6 +973,13 @@ export function EventsView() {
                 }
                 .b-agenda-view .b-cal-event-wrap {
                     margin-block: 2px !important;
+                }
+
+                /* Selected Date Highlight */
+                .crm-main-selected-date {
+                  background: rgba(0, 145, 255, 0.08) !important;
+                  outline: 1px solid #c3dcfaff !important;
+                  outline-offset: -2px;
                 }
             `}</style>
             <DashboardContent maxWidth="xl">
