@@ -81,6 +81,7 @@ export function InvoiceCreateView() {
     const [itemOptions, setItemOptions] = useState<any[]>([]);
     const [taxOptions, setTaxOptions] = useState<any[]>([]);
     const [paymentTermsOptions, setPaymentTermsOptions] = useState<any[]>([]);
+    const [bankAccountOptions, setBankAccountOptions] = useState<any[]>([]);
 
     const [searchParams] = useSearchParams();
     const queryDealId = searchParams.get('deal_id');
@@ -98,6 +99,7 @@ export function InvoiceCreateView() {
     const [billingAddress, setBillingAddress] = useState(estimationData?.billing_address || '');
     const [description, setDescription] = useState(estimationData?.description || '');
     const [remarks, setRemarks] = useState(estimationData?.terms_and_conditions || '');
+    const [bankAccount, setBankAccount] = useState(estimationData?.bank_account || '');
     const [attachments, setAttachments] = useState<any[]>(() => {
         try {
             return estimationData?.attachments ? (typeof estimationData.attachments === 'string' ? JSON.parse(estimationData.attachments) : estimationData.attachments) : [];
@@ -163,6 +165,7 @@ export function InvoiceCreateView() {
         getDoctypeList('Item', ['name', 'item_name', 'rate', 'item_code']).then(setItemOptions);
         getDoctypeList('Tax Types', ['name', 'tax_name', 'tax_percentage', 'tax_type']).then(setTaxOptions);
         getDoctypeList('Deal', ['name']).then(setDealOptions);
+        getDoctypeList('Bank Account', ['name', 'account_name', 'bank']).then(setBankAccountOptions);
         fetchPaymentTermsOptions();
     }, []);
 
@@ -437,6 +440,7 @@ export function InvoiceCreateView() {
                 billing_address: billingAddress,
                 description,
                 terms_and_conditions: remarks,
+                bank_account: bankAccount,
                 attachments: attachmentUrl,
                 overall_discount_type: discountType,
                 overall_discount: discountValue,
@@ -1250,6 +1254,32 @@ export function InvoiceCreateView() {
                         }}
                     >
                         <Stack spacing={3}>
+                            <Autocomplete
+                                fullWidth
+                                options={bankAccountOptions}
+                                getOptionLabel={(option) => (option.bank ? `${option.account_name} / ${option.bank}` : option.account_name || option.name || '')}
+                                value={bankAccountOptions.find((opt) => opt.name === bankAccount) || null}
+                                onChange={(_e, newValue) => setBankAccount(newValue?.name || '')}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Bank Account"
+                                    />
+                                )}
+                                renderOption={(props, option) => (
+                                    <li {...props} key={option.name}>
+                                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                {option.bank ? `${option.account_name} / ${option.bank}` : option.account_name || option.name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                ID: {option.name}
+                                            </Typography>
+                                        </Stack>
+                                    </li>
+                                )}
+                            />
+
                             <TextField
                                 fullWidth
                                 label="Description"

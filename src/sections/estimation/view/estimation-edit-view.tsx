@@ -79,6 +79,7 @@ export function EstimationEditView() {
     const [itemOptions, setItemOptions] = useState<any[]>([]);
     const [taxOptions, setTaxOptions] = useState<any[]>([]);
     const [dealOptions, setDealOptions] = useState<any[]>([]);
+    const [bankAccountOptions, setBankAccountOptions] = useState<any[]>([]);
 
     const [deal, setDeal] = useState('');
     const [clientName, setClientName] = useState('');
@@ -89,6 +90,7 @@ export function EstimationEditView() {
     const [billingAddress, setBillingAddress] = useState('');
     const [description, setDescription] = useState('');
     const [remarks, setRemarks] = useState('');
+    const [bankAccount, setBankAccount] = useState('');
     const [attachments, setAttachments] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
 
@@ -126,6 +128,10 @@ export function EstimationEditView() {
         getDoctypeList('Deal', ['name', 'deal_title'])
             .then(setDealOptions)
             .catch((error) => console.error('Failed to load Deal data:', error));
+
+        getDoctypeList('Bank Account', ['name', 'account_name', 'bank'])
+            .then(setBankAccountOptions)
+            .catch((error) => console.error('Failed to load Bank Account data:', error));
     }, []);
 
     useEffect(() => {
@@ -153,6 +159,7 @@ export function EstimationEditView() {
                     }
                     setDescription(data.description || '');
                     setRemarks(data.terms_and_conditions || '');
+                    setBankAccount(data.bank_account || '');
                     if (data.attachments) {
                         try {
                             const parsed = JSON.parse(data.attachments);
@@ -435,6 +442,7 @@ export function EstimationEditView() {
                 billing_address: billingAddress,
                 description,
                 terms_and_conditions: remarks,
+                bank_account: bankAccount,
                 attachments: attachmentUrl,
                 overall_discount_type: discountType,
                 overall_discount: discountValue,
@@ -1183,6 +1191,32 @@ export function EstimationEditView() {
                         }}
                     >
                         <Stack spacing={3}>
+                            <Autocomplete
+                                fullWidth
+                                options={bankAccountOptions}
+                                getOptionLabel={(option) => (option.bank ? `${option.account_name} / ${option.bank}` : option.account_name || option.name || '')}
+                                value={bankAccountOptions.find((opt) => opt.name === bankAccount) || null}
+                                onChange={(_e, newValue) => setBankAccount(newValue?.name || '')}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Bank Account"
+                                    />
+                                )}
+                                renderOption={(props, option) => (
+                                    <li {...props} key={option.name}>
+                                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                {option.bank ? `${option.account_name} / ${option.bank}` : option.account_name || option.name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                ID: {option.name}
+                                            </Typography>
+                                        </Stack>
+                                    </li>
+                                )}
+                            />
+
                             <TextField
                                 fullWidth
                                 label="Description"
