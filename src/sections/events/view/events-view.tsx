@@ -770,11 +770,39 @@ export function EventsView() {
                 .b-cal-event-bar-container .b-cal-event-wrap:not(.b-solid-bar) .b-cal-event .b-cal-event-body {
                     color: var(--b-calendar-event-reveal-color) !important;
                 }
+                .b-cal-event-bar-container .b-cal-event-wrap .b-cal-event {
+                    background: var(--b-calendar-event-color) !important;
+                }
                 /* Prevent intraday events from dimming when another event is selected */
                 .b-calendar .b-cal-event-wrap.b-colorize.b-intraday {
                     opacity: 1 !important;
                 }
 
+                /* Fix multi-day Bryntum solid-bar text visibility */
+                .b-cal-event-wrap.b-solid-bar .b-cal-event-desc {
+                    color: #ffffff !important;
+                    opacity: 1 !important;
+                    filter: none !important;
+                    white-space: nowrap !important;
+                    overflow: hidden !important;
+                    text-overflow: ellipsis !important;
+                }
+
+                .b-cal-event-wrap.b-solid-bar .b-cal-event-desc *,
+                .b-cal-event-wrap.b-solid-bar .crm-inline-event-icon,
+                .b-cal-event-wrap.b-solid-bar svg {
+                    color: #ffffff !important;
+                    stroke: #ffffff !important;
+                    opacity: 1 !important;
+                    filter: none !important;
+                }
+
+                .b-has-selection .b-cal-event-wrap.b-solid-bar .b-cal-event-desc,
+                .b-has-selection .b-cal-event-wrap.b-solid-bar .b-cal-event-desc * {
+                   color: #ffffff !important;
+                   opacity: 1 !important;
+                   filter: none !important;
+                }
                 .crm-event-content {
                   display: inline-flex;
                   align-items: center;
