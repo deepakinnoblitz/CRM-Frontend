@@ -194,7 +194,8 @@ export function EventsView() {
     }, [loadEvents]);
 
     useEffect(() => {
-        if (!miniCalDate) return;
+        if (!miniCalDate) return () => {};
+        
         const dateStr = miniCalDate.format('YYYY-MM-DD');
 
         const applyHighlight = () => {
