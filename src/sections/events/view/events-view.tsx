@@ -474,7 +474,7 @@ export function EventsView() {
         mode: 'month',
         eventRenderer: ({ eventRecord, renderData, element }: any) => {
             const color = eventRecord.data?.eventColor || eventRecord.eventColor || '#08a3cd';
-            
+
             if (renderData) {
                 renderData.eventColor = color;
                 renderData.style = `background-color: ${color}; color: white;`;
@@ -513,7 +513,7 @@ export function EventsView() {
             const start = dayjs(event.starts_on);
             const end = dayjs(event.ends_on || event.starts_on);
             return (start.isBefore(todayEnd) || start.isSame(todayEnd)) &&
-                   (end.isAfter(todayStart) || end.isSame(todayStart));
+                (end.isAfter(todayStart) || end.isSame(todayStart));
         });
     }, [events]);
 
@@ -570,9 +570,9 @@ export function EventsView() {
                     span.style.marginRight = '4px';
                     span.style.verticalAlign = 'middle';
                     span.style.flexShrink = '0';
-                    
+
                     descNode.insertBefore(span, descNode.firstChild);
-                    
+
                     const root = createRoot(span);
                     root.render(IconComponent);
                 }
@@ -671,8 +671,8 @@ export function EventsView() {
                     allDay: finalBryntumEvent.allDay,
                     durationMS:
                         (finalBryntumEvent.startDate as any) instanceof Date && (finalBryntumEvent.endDate as any) instanceof Date
-                        ? (finalBryntumEvent.endDate as any).getTime() - (finalBryntumEvent.startDate as any).getTime()
-                        : 'invalid date',
+                            ? (finalBryntumEvent.endDate as any).getTime() - (finalBryntumEvent.startDate as any).getTime()
+                            : 'invalid date',
                     durationUnit: (finalBryntumEvent as any).durationUnit,
                     milestone: (finalBryntumEvent as any).milestone,
                     isMilestone: (finalBryntumEvent as any).isMilestone,
@@ -1010,7 +1010,7 @@ export function EventsView() {
                                     slots={{
                                         day: (props) => {
                                             const { day, outsideCurrentMonth, ...other } = props;
-                                            
+
                                             // Find all events for this date
                                             const dayEvents = outsideCurrentMonth ? [] : events.filter((event) => {
                                                 if (!event.starts_on) return false;
@@ -1025,7 +1025,7 @@ export function EventsView() {
                                                 const type = event.reference_doctype;
                                                 const evCat = event.event_category || (event as any).eventOriginalData?.event_category;
                                                 const subjectLower = (event.subject || '').toLowerCase();
-                                                
+
                                                 let bgColor = '#08a3cd'; // default
                                                 if (type === 'Call' || type === 'Calls' || evCat === 'Call' || evCat === 'Calls' || subjectLower.includes('call')) {
                                                     bgColor = '#ff9800'; // orange
