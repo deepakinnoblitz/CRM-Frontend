@@ -895,6 +895,80 @@ export async function deleteLeadFrom(name: string) {
     return true;
 }
 
+export interface CompanyBankAccount {
+    name: string;
+    bank_name: string;
+    account_holder_name?: string;
+    account_no?: string;
+    ifsc_code?: string;
+    upi_id?: string;
+    status?: 'Active' | 'Inactive';
+    creation?: string;
+    modified?: string;
+}
+
+// Company Bank Account APIs
+export const fetchCompanyBankAccounts = (params: any) => {
+    const { search, ...restParams } = params;
+
+    const or_filters = search ? [
+        ["Company Bank Account", "bank_name", "like", `%${search}%`],
+        ["Company Bank Account", "account_no", "like", `%${search}%`],
+        ["Company Bank Account", "ifsc_code", "like", `%${search}%`],
+        ["Company Bank Account", "account_holder_name", "like", `%${search}%`],
+        ["Company Bank Account", "name", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("Company Bank Account", {
+        ...restParams,
+        search: undefined,
+        or_filters,
+        fields: ["name", "bank_name", "account_holder_name", "account_no", "ifsc_code", "upi_id", "status", "modified", "creation"]
+    });
+};
+
+export async function createCompanyBankAccount(data: Partial<CompanyBankAccount>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "Company Bank Account", status: "Active", ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create company bank account"));
+    return json.message;
+}
+
+export async function updateCompanyBankAccount(name: string, data: Partial<CompanyBankAccount>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Company Bank Account", name, fieldname: data })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update company bank account"));
+    return json.message;
+}
+
+export async function deleteCompanyBankAccount(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Company Bank Account", name })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete company bank account"));
+    return true;
+}
+
+export async function getCompanyBankAccount(name: string) {
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Company Bank Account&name=${encodeURIComponent(name)}`);
+    if (!res.ok) throw new Error("Failed to fetch company bank account details");
+    return (await res.json()).message;
+}
+
 export interface Service {
     name: string;
     service_id: string;

@@ -147,6 +147,7 @@ export const ServicePage = lazy(() => import('src/pages/service'));
 export const ItemPage = lazy(() => import('src/pages/item'));
 export const PaymentTermsPage = lazy(() => import('../pages/payment-terms'));
 export const PaymentTypePage = lazy(() => import('../pages/payment-type'));
+export const CompanyBankAccountPage = lazy(() => import('src/pages/company-bank-account'));
 export const EmployeeOverallReportPage = lazy(() => import('src/pages/employee-overall-report'));
 
 
@@ -266,6 +267,7 @@ export const routesSection: RouteObject[] = [
       { path: 'master/item', element: <ItemPage /> },
       { path: 'master/payment-terms', element: <PaymentTermsPage /> },
       { path: 'master/payment-type', element: <PaymentTypePage /> },
+      { path: 'master/company-bank-account', element: <CompanyBankAccountPage /> },
       { path: 'employee-overall-report', element: <EmployeeOverallReportPage /> },
       { path: 'timesheet-reports', element: <TimesheetReportPage /> },
       {
