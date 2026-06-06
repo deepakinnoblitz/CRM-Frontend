@@ -12,6 +12,7 @@ import '@bryntum/scheduler-thin/scheduler.css';
 import '@bryntum/calendar-thin/calendar.css';
 import '@bryntum/core-thin/svalbard-light.css';
 
+import { LuFilter } from "react-icons/lu";
 import listPlugin from '@fullcalendar/list';
 import { createRoot } from 'react-dom/client';
 import { useNavigate } from 'react-router-dom';
@@ -106,6 +107,7 @@ export function EventsView() {
     const [popoverAnchorEl, setPopoverAnchorEl] = useState<HTMLElement | null>(null);
     const [clickedEvent, setClickedEvent] = useState<CalendarEvent | null>(null);
     const [miniCalDate, setMiniCalDate] = useState<any>(dayjs());
+    const [eventTypeFilter, setEventTypeFilter] = useState<string>('All');
 
     const handleClosePopover = () => {
         setPopoverAnchorEl(null);
@@ -586,7 +588,26 @@ export function EventsView() {
     const bryntumEvents = useMemo(() => {
         console.log('BRYNTUM EVENTS USEMEMO RUNNING', events?.length);
         if (!events) return [];
-        return events.map((event) => {
+
+        let filtered = events;
+        if (eventTypeFilter && eventTypeFilter !== 'All') {
+            filtered = events.filter((event) => {
+                const type = event.reference_doctype;
+                const evCat = event.event_category || (event as any).eventOriginalData?.event_category;
+                const subjectLower = (event.subject || '').toLowerCase();
+                
+                if (eventTypeFilter === 'Calls') {
+                    return type === 'Call' || type === 'Calls' || evCat === 'Call' || evCat === 'Calls' || subjectLower.includes('call');
+                } else if (eventTypeFilter === 'Meetings') {
+                    return type === 'Meeting';
+                } else if (eventTypeFilter === 'To-Do') {
+                    return type === 'ToDo' || type === 'Todo' || type === 'To-do';
+                }
+                return true;
+            });
+        }
+
+        return filtered.map((event) => {
             let eventColor = event.color || '#08a3cd';
 
             if (!event.color) {
@@ -684,7 +705,7 @@ export function EventsView() {
 
             return finalBryntumEvent;
         });
-    }, [events, theme]);
+    }, [events, theme, eventTypeFilter]);
 
     return (
         <>
@@ -929,17 +950,65 @@ export function EventsView() {
                 {/* 1. Full width Event Types Legend */}
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3, mb: 1.5, px: 1 }}>
                     <Typography variant="subtitle2" color="text.secondary">Event Types:</Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
+                    <Box 
+                        onClick={() => setEventTypeFilter('All')}
+                        sx={{ 
+                            display: 'flex', alignItems: 'center', gap: 0.5, 
+                            color: eventTypeFilter === 'All' ? 'primary.main' : 'text.secondary',
+                            cursor: 'pointer',
+                            fontWeight: eventTypeFilter === 'All' ? 700 : 400,
+                            bgcolor: eventTypeFilter === 'All' ? (t) => alpha(t.palette.primary.main, 0.08) : 'transparent',
+                            px: 1, py: 0.5, borderRadius: 1,
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        <LuFilter size={16} />
+                        <Typography variant="body2" sx={{ fontWeight: 'inherit' }}>All</Typography>
+                    </Box>
+                    <Box 
+                        onClick={() => setEventTypeFilter('Calls')}
+                        sx={{ 
+                            display: 'flex', alignItems: 'center', gap: 0.5, 
+                            color: eventTypeFilter === 'Calls' ? 'primary.main' : 'text.secondary',
+                            cursor: 'pointer',
+                            fontWeight: eventTypeFilter === 'Calls' ? 700 : 400,
+                            bgcolor: eventTypeFilter === 'Calls' ? (t) => alpha(t.palette.primary.main, 0.08) : 'transparent',
+                            px: 1, py: 0.5, borderRadius: 1,
+                            transition: 'all 0.2s'
+                        }}
+                    >
                         <FiPhoneCall size={16} />
-                        <Typography variant="body2">Calls</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 'inherit' }}>Calls</Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
+                    <Box 
+                        onClick={() => setEventTypeFilter('Meetings')}
+                        sx={{ 
+                            display: 'flex', alignItems: 'center', gap: 0.5, 
+                            color: eventTypeFilter === 'Meetings' ? 'primary.main' : 'text.secondary',
+                            cursor: 'pointer',
+                            fontWeight: eventTypeFilter === 'Meetings' ? 700 : 400,
+                            bgcolor: eventTypeFilter === 'Meetings' ? (t) => alpha(t.palette.primary.main, 0.08) : 'transparent',
+                            px: 1, py: 0.5, borderRadius: 1,
+                            transition: 'all 0.2s'
+                        }}
+                    >
                         <FiCalendar size={16} />
-                        <Typography variant="body2">Meetings</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 'inherit' }}>Meetings</Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
+                    <Box 
+                        onClick={() => setEventTypeFilter('To-Do')}
+                        sx={{ 
+                            display: 'flex', alignItems: 'center', gap: 0.5, 
+                            color: eventTypeFilter === 'To-Do' ? 'primary.main' : 'text.secondary',
+                            cursor: 'pointer',
+                            fontWeight: eventTypeFilter === 'To-Do' ? 700 : 400,
+                            bgcolor: eventTypeFilter === 'To-Do' ? (t) => alpha(t.palette.primary.main, 0.08) : 'transparent',
+                            px: 1, py: 0.5, borderRadius: 1,
+                            transition: 'all 0.2s'
+                        }}
+                    >
                         <FiCheckSquare size={16} />
-                        <Typography variant="body2">To-Do</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 'inherit' }}>To-Do</Typography>
                     </Box>
                 </Box>
 
@@ -1525,80 +1594,91 @@ export function EventsView() {
                         },
                     }}
                 >
-                    {clickedEvent && (
-                        <Stack spacing={2}>
-                            {/* Header */}
-                            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexGrow: 1 }}>
-                                    {clickedEvent.subject}
-                                </Typography>
-                                <Stack direction="row" alignItems="center" spacing={0.5}>
-                                    <IconButton size="small" onClick={() => handleOpenEditDialog(clickedEvent)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
-                                        <Iconify icon="solar:pen-bold" width={20} />
-                                    </IconButton>
-                                    <IconButton size="small" onClick={handleDeleteClick} sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}>
-                                        <Iconify icon="solar:trash-bin-trash-bold" width={20} />
-                                    </IconButton>
-                                    <IconButton size="small" onClick={handleClosePopover} sx={{ color: 'text.secondary', '&:hover': { bgcolor: 'action.hover' } }}>
-                                        <Iconify icon="mingcute:close-line" width={20} />
-                                    </IconButton>
+                    {clickedEvent && (() => {
+                        const isCompleted = (clickedEvent.status || '').toLowerCase() === 'completed' || (clickedEvent.status || '').toLowerCase() === 'closed';
+                        const showDuration = isCompleted;
+
+                        return (
+                            <Stack spacing={2}>
+                                {/* Header */}
+                                <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
+                                    <Typography variant="subtitle1" sx={{ 
+                                        fontWeight: 700, 
+                                        flexGrow: 1,
+                                        wordBreak: 'break-word'
+                                    }}>
+                                        {clickedEvent.subject}
+                                    </Typography>
+                                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pt: 0.25 }}>
+                                        <IconButton size="small" onClick={() => handleOpenEditDialog(clickedEvent)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
+                                            <Iconify icon="solar:pen-bold" width={20} />
+                                        </IconButton>
+                                        <IconButton size="small" onClick={handleDeleteClick} sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}>
+                                            <Iconify icon="solar:trash-bin-trash-bold" width={20} />
+                                        </IconButton>
+                                        <IconButton size="small" onClick={handleClosePopover} sx={{ color: 'text.secondary', '&:hover': { bgcolor: 'action.hover' } }}>
+                                            <Iconify icon="mingcute:close-line" width={20} />
+                                        </IconButton>
+                                    </Stack>
                                 </Stack>
-                            </Stack>
 
-                            {/* Start Date */}
-                            <Stack direction="row" alignItems="center" spacing={2}>
-                                <Box sx={{ width: 44, borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider', textAlign: 'center', flexShrink: 0 }}>
-                                    <Box sx={{ bgcolor: 'info.main', color: 'common.white', fontSize: '0.688rem', fontWeight: 700, py: 0.25, textTransform: 'uppercase' }}>
-                                        {dayjs(clickedEvent.starts_on).format('MMM')}
+                                {/* Start Date */}
+                                <Stack direction="row" alignItems="center" spacing={2}>
+                                    <Box sx={{ width: 44, borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider', textAlign: 'center', flexShrink: 0 }}>
+                                        <Box sx={{ bgcolor: 'info.main', color: 'common.white', fontSize: '0.688rem', fontWeight: 700, py: 0.25, textTransform: 'uppercase' }}>
+                                            {dayjs(clickedEvent.starts_on).format('MMM')}
+                                        </Box>
+                                        <Box sx={{ bgcolor: 'background.neutral', color: 'text.primary', fontSize: '0.938rem', fontWeight: 700, py: 0.5 }}>
+                                            {dayjs(clickedEvent.starts_on).format('D')}
+                                        </Box>
                                     </Box>
-                                    <Box sx={{ bgcolor: 'background.neutral', color: 'text.primary', fontSize: '0.938rem', fontWeight: 700, py: 0.5 }}>
-                                        {dayjs(clickedEvent.starts_on).format('D')}
-                                    </Box>
-                                </Box>
-                                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                    {dayjs(clickedEvent.starts_on).format('MMM D, YYYY h:mm A')}
-                                </Typography>
-                            </Stack>
+                                    <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                        {dayjs(clickedEvent.starts_on).format('MMM D, YYYY h:mm A')}
+                                    </Typography>
+                                </Stack>
 
-                            {/* End Date */}
-                            <Stack direction="row" alignItems="center" spacing={2}>
-                                <Box sx={{ width: 44, borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider', textAlign: 'center', flexShrink: 0 }}>
-                                    <Box sx={{ bgcolor: 'info.main', color: 'common.white', fontSize: '0.688rem', fontWeight: 700, py: 0.25, textTransform: 'uppercase' }}>
-                                        {dayjs(clickedEvent.ends_on || clickedEvent.starts_on).format('MMM')}
+                                {/* End Date */}
+                                <Stack direction="row" alignItems="center" spacing={2}>
+                                    <Box sx={{ width: 44, borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider', textAlign: 'center', flexShrink: 0 }}>
+                                        <Box sx={{ bgcolor: 'info.main', color: 'common.white', fontSize: '0.688rem', fontWeight: 700, py: 0.25, textTransform: 'uppercase' }}>
+                                            {dayjs(clickedEvent.ends_on || clickedEvent.starts_on).format('MMM')}
+                                        </Box>
+                                        <Box sx={{ bgcolor: 'background.neutral', color: 'text.primary', fontSize: '0.938rem', fontWeight: 700, py: 0.5 }}>
+                                            {dayjs(clickedEvent.ends_on || clickedEvent.starts_on).format('D')}
+                                        </Box>
                                     </Box>
-                                    <Box sx={{ bgcolor: 'background.neutral', color: 'text.primary', fontSize: '0.938rem', fontWeight: 700, py: 0.5 }}>
-                                        {dayjs(clickedEvent.ends_on || clickedEvent.starts_on).format('D')}
-                                    </Box>
-                                </Box>
-                                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                    {dayjs(clickedEvent.ends_on || clickedEvent.starts_on).format('MMM D, YYYY h:mm A')}
-                                </Typography>
-                            </Stack>
+                                    <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                        {dayjs(clickedEvent.ends_on || clickedEvent.starts_on).format('MMM D, YYYY h:mm A')}
+                                    </Typography>
+                                </Stack>
 
-                            {/* Duration */}
-                            <Stack direction="row" alignItems="center" spacing={2} sx={{ pl: 0.5 }}>
-                                <Iconify icon="solar:clock-circle-bold" sx={{ color: 'text.secondary', width: 24, height: 24, flexShrink: 0 }} />
-                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                                    {(() => {
-                                        const start = dayjs(clickedEvent.starts_on);
-                                        const end = dayjs(clickedEvent.ends_on || clickedEvent.starts_on);
-                                        const diffMinutes = end.diff(start, 'minute');
-                                        const hours = Math.floor(diffMinutes / 60);
-                                        const minutes = diffMinutes % 60;
-                                        let durationStr = '';
-                                        if (hours > 0) {
-                                            durationStr += `${hours} hour${hours > 1 ? 's' : ''}`;
-                                        }
-                                        if (minutes > 0) {
-                                            if (durationStr) durationStr += ', ';
-                                            durationStr += `${minutes} minute${minutes > 1 ? 's' : ''}`;
-                                        }
-                                        return durationStr || '0 minutes';
-                                    })()}
-                                </Typography>
+                                {/* Duration */}
+                                {showDuration && (
+                                    <Stack direction="row" alignItems="center" spacing={2} sx={{ pl: 0.5 }}>
+                                        <Iconify icon="solar:clock-circle-bold" sx={{ color: 'text.secondary', width: 24, height: 24, flexShrink: 0 }} />
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                                            {(() => {
+                                                const start = dayjs(clickedEvent.starts_on);
+                                                const end = dayjs(clickedEvent.ends_on || clickedEvent.starts_on);
+                                                const diffMinutes = end.diff(start, 'minute');
+                                                const hours = Math.floor(diffMinutes / 60);
+                                                const minutes = diffMinutes % 60;
+                                                let durationStr = '';
+                                                if (hours > 0) {
+                                                    durationStr += `${hours} hour${hours > 1 ? 's' : ''}`;
+                                                }
+                                                if (minutes > 0) {
+                                                    if (durationStr) durationStr += ', ';
+                                                    durationStr += `${minutes} minute${minutes > 1 ? 's' : ''}`;
+                                                }
+                                                return durationStr || '0 minutes';
+                                            })()}
+                                        </Typography>
+                                    </Stack>
+                                )}
                             </Stack>
-                        </Stack>
-                    )}
+                        );
+                    })()}
                 </Popover>
             </DashboardContent>
         </>
