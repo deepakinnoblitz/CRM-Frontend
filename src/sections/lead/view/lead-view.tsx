@@ -649,7 +649,7 @@ export function LeadView() {
           </IconButton>
         </DialogTitle>
 
-        {currentLeadId && (
+        {/* {currentLeadId && (
           <Box sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
               value={currentTab}
@@ -661,7 +661,7 @@ export function LeadView() {
               {currentLeadId && <Tab label="Convert Lead" value="convert" disabled={viewOnly} />}
             </Tabs>
           </Box>
-        )}
+        )} */}
 
         <DialogContent dividers>
           {currentTab === 'general' && (
@@ -1174,7 +1174,7 @@ export function LeadView() {
                 }}
               />
               <LeadPipelineTimeline
-                title="State History"
+                title="Stage History"
                 list={pipelineTimeline}
               />
             </>

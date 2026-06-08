@@ -224,11 +224,11 @@ export function LeadDetailsView() {
             bgColor = '#1B53F4';
             icon = <FaStar />;
             iconColor = '#FFFFFF';
-        } else if (status === 'Qualified' || status === 'Closed') {
+        } else if (status === 'Qualified' || status === 'Proposal Approved') {
             bgColor = '#0E9F6E';
             icon = 'solar:check-circle-bold';
             iconColor = '#6EE7B7';
-        } else if (status === 'Not Interested' || status === 'In Active') {
+        } else if (status === 'Not Interested' || status === 'In Active' || status === 'Proposal Rejected') {
             bgColor = '#E02424';
             icon = 'solar:close-circle-bold';
             iconColor = '#FCA5A5';
@@ -287,7 +287,7 @@ export function LeadDetailsView() {
 
     const TABS = [
         { value: 'general', label: 'General' },
-        { value: 'pipeline', label: 'Pipeline' },
+        { value: 'pipeline', label: 'Stage History' },
         { value: 'followups', label: 'Followups' },
         { value: 'convert', label: 'Convert Lead' },
     ];
@@ -705,7 +705,7 @@ export function LeadDetailsView() {
                                 disabled
                             />
                             <LeadPipelineTimeline
-                                title="State History"
+                                title="Stage History"
                                 list={lead.converted_pipeline_timeline || []}
                             />
                         </Box>
@@ -729,6 +729,7 @@ export function LeadDetailsView() {
                                                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
                                                         Converted Company
                                                     </Typography>
+                                                    
                                                     {lead.converted_account && (
                                                         <Box
                                                             onClick={() => {
@@ -741,33 +742,27 @@ export function LeadDetailsView() {
                                                         </Box>
                                                     )}
                                                 </Box>
-                                                {lead.converted_account_name ? (
+                                                <Typography
+                                                    variant="h6"
+                                                    sx={{
+                                                        fontWeight: 800,
+                                                        color: 'text.primary',
+                                                        lineHeight: 1.3,
+                                                    }}
+                                                >
+                                                    {lead.converted_account_name || 'N/A'}
+                                                </Typography>
+
+                                                {lead.converted_contact && (
                                                     <Typography
-                                                        variant="body1"
-                                                        sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1.4 }}
-                                                    >
-                                                        {lead.converted_account_name}
-                                                    </Typography>
-                                                ) : (
-                                                    <Typography
-                                                        variant="body1"
-                                                        sx={{ fontWeight: 800, color: 'primary.main', cursor: lead.converted_account ? 'pointer' : 'default' }}
-                                                        onClick={() => {
-                                                            if (lead.converted_account) {
-                                                                setSelectedAccount(lead.converted_account);
-                                                                setOpenAccount(true);
-                                                            }
+                                                        variant="body2"
+                                                        sx={{
+                                                            color: 'primary.main',
+                                                            fontWeight: 700,
+                                                            mt: 0.5,
                                                         }}
                                                     >
-                                                        {lead.converted_account || 'N/A'}
-                                                    </Typography>
-                                                )}
-                                                {lead.converted_account_name && lead.converted_account && (
-                                                    <Typography
-                                                        variant="caption"
-                                                        sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mt: 0.5 }}
-                                                    >
-                                                        ID: {lead.converted_account}
+                                                        {lead.converted_account}
                                                     </Typography>
                                                 )}
                                             </Box>
@@ -789,35 +784,30 @@ export function LeadDetailsView() {
                                                         </Box>
                                                     )}
                                                 </Box>
-                                                {lead.converted_contact_name ? (
+                                                <Typography
+                                                    variant="h6"
+                                                    sx={{
+                                                        fontWeight: 800,
+                                                        color: 'text.primary',
+                                                        lineHeight: 1.3,
+                                                    }}
+                                                >
+                                                    {lead.converted_contact_name || 'N/A'}
+                                                </Typography>
+
+                                                {lead.converted_contact && (
                                                     <Typography
-                                                        variant="body1"
-                                                        sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1.4 }}
-                                                    >
-                                                        {lead.converted_contact_name}
-                                                    </Typography>
-                                                ) : (
-                                                    <Typography
-                                                        variant="body1"
-                                                        sx={{ fontWeight: 800, color: 'primary.main', cursor: lead.converted_contact ? 'pointer' : 'default' }}
-                                                        onClick={() => {
-                                                            if (lead.converted_contact) {
-                                                                setSelectedContact(lead.converted_contact);
-                                                                setOpenContact(true);
-                                                            }
+                                                        variant="body2"
+                                                        sx={{
+                                                            color: 'primary.main',
+                                                            fontWeight: 700,
+                                                            mt: 0.5,
                                                         }}
                                                     >
-                                                        {lead.converted_contact || 'N/A'}
+                                                        {lead.converted_contact}
                                                     </Typography>
                                                 )}
-                                                {lead.converted_contact_name && lead.converted_contact && (
-                                                    <Typography
-                                                        variant="caption"
-                                                        sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mt: 0.5 }}
-                                                    >
-                                                        ID: {lead.converted_contact}
-                                                    </Typography>
-                                                )}
+                                                
                                             </Box>
                                         </Stack>
                                     </Box>

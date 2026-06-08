@@ -542,7 +542,7 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
                                     disabled
                                 />
                                 <LeadPipelineTimeline
-                                    title="State History"
+                                    title="Stage History"
                                     list={lead.converted_pipeline_timeline || []}
                                 />
                             </Box>
