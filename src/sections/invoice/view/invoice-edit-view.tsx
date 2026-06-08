@@ -79,6 +79,7 @@ export function InvoiceEditView() {
     const [itemOptions, setItemOptions] = useState<any[]>([]);
     const [taxOptions, setTaxOptions] = useState<any[]>([]);
     const [paymentTermsOptions, setPaymentTermsOptions] = useState<any[]>([]);
+    const [bankAccountOptions, setBankAccountOptions] = useState<any[]>([]);
 
     const [customerId, setCustomerId] = useState('');
     const [customerName, setCustomerName] = useState('');
@@ -92,6 +93,7 @@ export function InvoiceEditView() {
     const [billingAddress, setBillingAddress] = useState('');
     const [description, setDescription] = useState('');
     const [remarks, setRemarks] = useState('');
+    const [bankAccount, setBankAccount] = useState('');
     const [attachments, setAttachments] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
 
@@ -134,6 +136,7 @@ export function InvoiceEditView() {
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'address']).then(setCustomerOptions);
         getDoctypeList('Item', ['name', 'item_name', 'rate', 'item_code']).then(setItemOptions);
         getDoctypeList('Tax Types', ['name', 'tax_name', 'tax_percentage', 'tax_type']).then(setTaxOptions);
+        getDoctypeList('Bank Account', ['name', 'account_name', 'bank']).then(setBankAccountOptions);
         fetchPaymentTermsOptions();
 
         if (id) {
@@ -164,6 +167,7 @@ export function InvoiceEditView() {
                     }
                     setDescription(data.description || '');
                     setRemarks(data.terms_and_conditions || '');
+                    setBankAccount(data.bank_account || '');
                     if (data.attachments) {
                         try {
                             const parsed = JSON.parse(data.attachments);
@@ -459,6 +463,7 @@ export function InvoiceEditView() {
                 billing_address: billingAddress,
                 description,
                 terms_and_conditions: remarks,
+                bank_account: bankAccount,
                 attachments: attachmentUrl,
                 overall_discount_type: discountType,
                 overall_discount: discountValue,
@@ -1229,6 +1234,32 @@ export function InvoiceEditView() {
                         }}
                     >
                         <Stack spacing={3}>
+                            <Autocomplete
+                                fullWidth
+                                options={bankAccountOptions}
+                                getOptionLabel={(option) => (option.bank ? `${option.account_name} / ${option.bank}` : option.account_name || option.name || '')}
+                                value={bankAccountOptions.find((opt) => opt.name === bankAccount) || null}
+                                onChange={(_e, newValue) => setBankAccount(newValue?.name || '')}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Bank Account"
+                                    />
+                                )}
+                                renderOption={(props, option) => (
+                                    <li {...props} key={option.name}>
+                                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                {option.bank ? `${option.account_name} / ${option.bank}` : option.account_name || option.name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                ID: {option.name}
+                                            </Typography>
+                                        </Stack>
+                                    </li>
+                                )}
+                            />
+
                             <TextField
                                 fullWidth
                                 label="Description"
