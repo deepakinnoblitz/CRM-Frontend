@@ -86,25 +86,31 @@ export function DealTableRow({
         switch (stage) {
             case 'Just In':
                 return 'info';
+
             case 'Working':
                 return 'primary';
+
             case 'Estimation Created':
             case 'Invoice Created':
                 return 'secondary';
+
             case 'Estimation Sent':
             case 'Invoice Sent':
             case 'Proposal Sent':
             case 'Negotiation':
                 return 'warning';
+
             case 'Special Approval':
+                return 'info';
+
             case 'Closed Lost':
                 return 'error';
+
             case 'Closed':
             case 'Closed Won':
             case 'Project Started':
                 return 'success';
-            case 'Ready for Delivery':
-                return 'primary';
+
             default:
                 return 'default';
         }
@@ -217,7 +223,7 @@ export function DealTableRow({
                                 '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#8B5CF6', 0.08) }
                             }}
                         >
-                            <BsFillSendPlusFill size={20}/>
+                            <BsFillSendPlusFill size={20} />
                         </IconButton>
                     </StyledTooltip>
 
@@ -230,7 +236,7 @@ export function DealTableRow({
                                 '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#10B981', 0.08) }
                             }}
                         >
-                            <GrDocumentTime size={20}/>
+                            <GrDocumentTime size={20} />
                         </IconButton>
                     </StyledTooltip>
 
@@ -243,7 +249,7 @@ export function DealTableRow({
                                 '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#D97706', 0.08) }
                             }}
                         >
-                            <GrDocumentVerified size={20}/>
+                            <GrDocumentVerified size={20} />
                         </IconButton>
                     </StyledTooltip>
 

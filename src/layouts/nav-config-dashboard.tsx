@@ -441,6 +441,7 @@ export const crmAndSalesNavData = [
       { title: 'Item', path: '/master/item' },
       { title: 'Payment Terms', path: '/master/payment-terms' },
       { title: 'Payment Type', path: '/master/payment-type' },
+      { title: 'Company Bank Account', path: '/master/company-bank-account' },
     ],
   },
   {

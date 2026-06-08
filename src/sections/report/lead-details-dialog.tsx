@@ -542,7 +542,7 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
                                     disabled
                                 />
                                 <LeadPipelineTimeline
-                                    title="State History"
+                                    title="Stage History"
                                     list={lead.converted_pipeline_timeline || []}
                                 />
                             </Box>
@@ -706,7 +706,7 @@ function SectionHeader({ title, icon, noMargin = false }: { title: string; icon:
             <Box sx={{ color: 'primary.main', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                 {icon}
             </Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: 15 }}>
                 {title}
             </Typography>
         </Box>
@@ -723,7 +723,7 @@ function DetailItem({ label, value, icon, color = 'text.primary' }: { label: str
                 <Box sx={{ color: 'text.disabled', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                     {icon}
                 </Box>
-                <Typography variant="body2" sx={{ fontWeight: 700, color }}>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
                     {value || '-'}
                 </Typography>
             </Box>

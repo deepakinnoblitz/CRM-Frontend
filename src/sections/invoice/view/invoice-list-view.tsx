@@ -251,6 +251,7 @@ export function InvoiceListView({ hideHeader = false }: { hideHeader?: boolean }
                                                     client_name: row.client_name || '',
                                                     customer_name: row.customer_name || '',
                                                     billing_name: row.billing_name || '',
+                                                    billing_account_name: row.billing_account_name || '',
                                                     invoice_date: row.invoice_date,
                                                     grand_total: row.grand_total || 0,
                                                     received_amount: row.received_amount || 0,

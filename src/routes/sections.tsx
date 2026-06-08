@@ -38,6 +38,7 @@ export const DashboardPage = lazy(() => import('src/pages/dashboard'));
 
 export const BlogPage = lazy(() => import('src/pages/blog'));
 export const LeadsPage = lazy(() => import('src/pages/leads'));
+export const LeadDetailsPage = lazy(() => import('src/pages/leads/details'));
 export const UsersPage = lazy(() => import('src/pages/users'));
 export const ContactPage = lazy(() => import('src/pages/contact'));
 export const AccountsPage = lazy(() => import('src/pages/accounts'));
@@ -147,6 +148,7 @@ export const ServicePage = lazy(() => import('src/pages/service'));
 export const ItemPage = lazy(() => import('src/pages/item'));
 export const PaymentTermsPage = lazy(() => import('../pages/payment-terms'));
 export const PaymentTypePage = lazy(() => import('../pages/payment-type'));
+export const CompanyBankAccountPage = lazy(() => import('src/pages/company-bank-account'));
 export const EmployeeOverallReportPage = lazy(() => import('src/pages/employee-overall-report'));
 
 
@@ -174,7 +176,13 @@ export const routesSection: RouteObject[] = [
     ),
     children: [
       { index: true, element: <DashboardPage /> },
-      { path: 'leads', element: <LeadsPage /> },
+      {
+        path: 'leads',
+        children: [
+          { index: true, element: <LeadsPage /> },
+          { path: ':id/view', element: <LeadDetailsPage /> },
+        ],
+      },
       { path: 'users', element: <UsersPage /> },
       { path: 'user-permissions', element: <UserPermissionsPage /> },
       { path: 'user-profile', element: <ProfilePage /> },
@@ -266,6 +274,7 @@ export const routesSection: RouteObject[] = [
       { path: 'master/item', element: <ItemPage /> },
       { path: 'master/payment-terms', element: <PaymentTermsPage /> },
       { path: 'master/payment-type', element: <PaymentTypePage /> },
+      { path: 'master/company-bank-account', element: <CompanyBankAccountPage /> },
       { path: 'employee-overall-report', element: <EmployeeOverallReportPage /> },
       { path: 'timesheet-reports', element: <TimesheetReportPage /> },
       {

@@ -1,9 +1,9 @@
 import { IoList } from "react-icons/io5";
 import { MuiTelInput } from 'mui-tel-input';
-import { useSearchParams } from 'react-router-dom';
 import { IoMdCloudDownload } from "react-icons/io";
 import { TbLayoutKanbanFilled } from "react-icons/tb";
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -69,9 +69,8 @@ import { ContactDetailsDialog } from '../../report/contact/contact-details-dialo
 const filter = createFilterOptions<any>();
 
 export function LeadView() {
+  const navigate = useNavigate();
   const table = useTable();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const viewLeadId = searchParams.get('view');
   const [filterName, setFilterName] = useState('');
   const [filters, setFilters] = useState({
     status: 'all',
@@ -188,17 +187,6 @@ export function LeadView() {
     filters,
     sortBy
   );
-
-  useEffect(() => {
-    if (viewLeadId && !openView) {
-      setCurrentLeadId(viewLeadId);
-      setOpenView(true);
-      // Remove 'view' from search params to avoid re-opening on refresh
-      const params = new URLSearchParams(searchParams);
-      params.delete('view');
-      setSearchParams(params, { replace: true });
-    }
-  }, [viewLeadId, openView, setSearchParams, searchParams]);
 
   const handleFilters = (update: any) => {
     setFilters((prev) => ({ ...prev, ...update }));
@@ -624,10 +612,8 @@ export function LeadView() {
     setOpenCreate(true);
   };
 
-  const handleViewRow = async (row: any) => {
-    const leadId = row.id;
-    setCurrentLeadId(leadId);
-    setOpenView(true);
+  const handleViewRow = (row: any) => {
+    navigate(`/leads/${row.id}/view`);
   };
 
   const onDeleteRow = (id: string) => {
@@ -663,7 +649,7 @@ export function LeadView() {
           </IconButton>
         </DialogTitle>
 
-        {currentLeadId && (
+        {/* {currentLeadId && (
           <Box sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
               value={currentTab}
@@ -675,7 +661,7 @@ export function LeadView() {
               {currentLeadId && <Tab label="Convert Lead" value="convert" disabled={viewOnly} />}
             </Tabs>
           </Box>
-        )}
+        )} */}
 
         <DialogContent dividers>
           {currentTab === 'general' && (
@@ -1188,7 +1174,7 @@ export function LeadView() {
                 }}
               />
               <LeadPipelineTimeline
-                title="State History"
+                title="Stage History"
                 list={pipelineTimeline}
               />
             </>

@@ -99,12 +99,12 @@ export function DealView() {
     const STAGE_OPTIONS = [
         { value: 'Just In', label: 'Just In' },
         { value: 'Working', label: 'Working' },
+        { value: 'Proposal Sent', label: 'Proposal Sent' },
         { value: 'Estimation Created', label: 'Estimation Created' },
         { value: 'Estimation Sent', label: 'Estimation Sent' },
         { value: 'Invoice Created', label: 'Invoice Created' },
         { value: 'Invoice Sent', label: 'Invoice Sent' },
         { value: 'Special Approval', label: 'Special Approval' },
-        { value: 'Ready for Delivery', label: 'Ready for Delivery' },
         { value: 'Project Started', label: 'Project Started' },
         { value: 'Closed', label: 'Closed' },
     ];
