@@ -51,7 +51,6 @@ type Props = {
 };
 
 export function SalesPipeline({ currentStage, stages = STAGES, leadName, service, onStageChange, disabled = false }: Props) {
-    console.log('SalesPipeline rendering:', { currentStage, leadName });
     const theme = useTheme();
 
     const safeCurrentStage = getString(currentStage);
