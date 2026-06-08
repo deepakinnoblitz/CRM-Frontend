@@ -129,7 +129,7 @@ export function EstimationEditView() {
             .then(setDealOptions)
             .catch((error) => console.error('Failed to load Deal data:', error));
 
-        getDoctypeList('Bank Account', ['name', 'account_name', 'bank'])
+        getDoctypeList('Company Bank Account', ['name', 'account_holder_name', 'account_no'])
             .then(setBankAccountOptions)
             .catch((error) => console.error('Failed to load Bank Account data:', error));
     }, []);
@@ -469,7 +469,7 @@ export function EstimationEditView() {
 
             await updateEstimation(id, estimationData);
             enqueueSnackbar('Estimation updated successfully', { variant: 'success' });
-            setTimeout(() => router.push('/estimations'), 600);
+            setTimeout(() => router.push('/deals?tab=estimations'), 600);
         } catch (err: any) {
             console.error(err);
             enqueueSnackbar(err.message || 'Failed to update estimation', { variant: 'error' });
@@ -517,7 +517,7 @@ export function EstimationEditView() {
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3} className="no-print">
                 <Typography variant="h4">Edit Estimation</Typography>
                 <Stack direction="row" spacing={2}>
-                    <Button variant="outlined" color="inherit" startIcon={<IoMdArrowBack size={20} />} onClick={() => router.push('/estimations')}
+                    <Button variant="outlined" color="inherit" startIcon={<IoMdArrowBack size={20} />} onClick={() => router.push('/deals?tab=estimations')}
                         sx={{
                             borderRadius: 1.5,
                             fontWeight: 600,
@@ -1194,7 +1194,7 @@ export function EstimationEditView() {
                             <Autocomplete
                                 fullWidth
                                 options={bankAccountOptions}
-                                getOptionLabel={(option) => (option.bank ? `${option.account_name} / ${option.bank}` : option.account_name || option.name || '')}
+                                getOptionLabel={(option) => (option.account_no ? `${option.account_holder_name} - ${option.account_no}` : option.account_holder_name || option.name || '')}
                                 value={bankAccountOptions.find((opt) => opt.name === bankAccount) || null}
                                 onChange={(_e, newValue) => setBankAccount(newValue?.name || '')}
                                 renderInput={(params) => (
@@ -1207,7 +1207,7 @@ export function EstimationEditView() {
                                     <li {...props} key={option.name}>
                                         <Stack spacing={0.5} sx={{ py: 0.5 }}>
                                             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                                {option.bank ? `${option.account_name} / ${option.bank}` : option.account_name || option.name}
+                                                {option.account_no ? `${option.account_holder_name} - ${option.account_no}` : option.account_holder_name || option.name}
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                                 ID: {option.name}

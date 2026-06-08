@@ -136,7 +136,7 @@ export function InvoiceEditView() {
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name', 'address']).then(setCustomerOptions);
         getDoctypeList('Item', ['name', 'item_name', 'rate', 'item_code']).then(setItemOptions);
         getDoctypeList('Tax Types', ['name', 'tax_name', 'tax_percentage', 'tax_type']).then(setTaxOptions);
-        getDoctypeList('Bank Account', ['name', 'account_name', 'bank']).then(setBankAccountOptions);
+        getDoctypeList('Company Bank Account', ['name', 'account_holder_name', 'account_no']).then(setBankAccountOptions);
         fetchPaymentTermsOptions();
 
         if (id) {
@@ -1237,7 +1237,7 @@ export function InvoiceEditView() {
                             <Autocomplete
                                 fullWidth
                                 options={bankAccountOptions}
-                                getOptionLabel={(option) => (option.bank ? `${option.account_name} / ${option.bank}` : option.account_name || option.name || '')}
+                                getOptionLabel={(option) => (option.account_no ? `${option.account_holder_name} - ${option.account_no}` : option.account_holder_name || option.name || '')}
                                 value={bankAccountOptions.find((opt) => opt.name === bankAccount) || null}
                                 onChange={(_e, newValue) => setBankAccount(newValue?.name || '')}
                                 renderInput={(params) => (
@@ -1250,7 +1250,7 @@ export function InvoiceEditView() {
                                     <li {...props} key={option.name}>
                                         <Stack spacing={0.5} sx={{ py: 0.5 }}>
                                             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                                {option.bank ? `${option.account_name} / ${option.bank}` : option.account_name || option.name}
+                                                {option.account_no ? `${option.account_holder_name} - ${option.account_no}` : option.account_holder_name || option.name}
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                                 ID: {option.name}
