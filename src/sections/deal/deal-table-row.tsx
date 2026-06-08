@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { BsFillSendPlusFill } from "react-icons/bs";
 import { GrDocumentTime, GrDocumentVerified } from "react-icons/gr";
 
 import Box from '@mui/material/Box';
@@ -213,19 +212,6 @@ export function DealTableRow({
                     >
                         <Iconify icon="solar:eye-bold" />
                     </IconButton>
-
-                    <StyledTooltip title="Create Proposal" placement="top" arrow>
-                        <IconButton
-                            onClick={() => navigate(`/proposals/new?deal_id=${encodeURIComponent(row.id)}`)}
-                            sx={{
-                                color: '#8B5CF6',
-                                transition: (theme) => theme.transitions.create(['transform'], { duration: theme.transitions.duration.shorter }),
-                                '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#8B5CF6', 0.08) }
-                            }}
-                        >
-                            <BsFillSendPlusFill size={20} />
-                        </IconButton>
-                    </StyledTooltip>
 
                     <StyledTooltip title="Create Estimation" placement="top" arrow>
                         <IconButton

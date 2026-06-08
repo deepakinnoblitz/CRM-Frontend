@@ -309,7 +309,6 @@ export function ProposalEditView() {
             }
 
             const payload: any = {
-                name: decodeURIComponent(id || ''),
                 proposal_title: proposalTitle,
                 client_name: clientName,
                 customer_name: customerName,
@@ -324,16 +323,28 @@ export function ProposalEditView() {
                 attachments_table: uploadedAttachments,
             };
 
-            // Use full doc save via insert with name override (update approach)
+            const decodedId = decodeURIComponent(id || '');
+            let mergedDoc: any = {};
+            try {
+                const latestDoc = await getProposal(decodedId);
+                mergedDoc = { ...latestDoc, ...payload, doctype: 'Proposal' };
+            } catch (err) {
+                throw new Error('Failed to fetch latest proposal data before updating.');
+            }
+
             const { frappeRequest, getAuthHeaders } = await import('src/utils/csrf');
             const headers = await getAuthHeaders();
             const res = await frappeRequest('/api/method/frappe.client.save', {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ doc: { doctype: 'Proposal', ...payload } }),
+                body: JSON.stringify({ doc: mergedDoc }),
             });
+            
             if (!res.ok) {
                 const j = await res.json();
+                if (j.exc_type === 'TimestampMismatchError' || j.exc?.includes('TimestampMismatchError')) {
+                    throw new Error('This proposal was updated recently. Please refresh and try again.');
+                }
                 throw new Error(j.exc_type || 'Failed to update proposal');
             }
 
@@ -373,7 +384,7 @@ export function ProposalEditView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/deals?tab=proposals')}
+                        onClick={() => router.push('/proposals')}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', px: 2.5 }}
                     >

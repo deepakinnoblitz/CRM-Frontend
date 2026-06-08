@@ -40,13 +40,11 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { useRouter } from 'src/routes/hooks';
 
 import { useDeals } from 'src/hooks/useDeals';
-import { useProposals } from 'src/hooks/useProposals';
 
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
 import { CONFIG } from 'src/config-global';
 import { uploadFile } from 'src/api/data-import';
-import { deleteProposal } from 'src/api/proposal';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { createDeal, updateDeal, deleteDeal, getDealPermissions } from 'src/api/deals';
 
@@ -60,9 +58,7 @@ import { TableNoData } from '../../lead/table-no-data';
 import DealKanbanBoard from '../kanban/deal-kanban-board';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { DealTableFiltersDrawer } from '../deal-table-filters-drawer';
-import { ProposalListView } from '../../proposal/view/proposal-list-view';
 import { LeadTableHead as DealTableHead } from '../../lead/lead-table-head';
-import ProposalKanbanBoard from '../../proposal/kanban/proposal-kanban-board';
 import { EstimationListView } from '../../estimation/view/estimation-list-view';
 import { InvoiceManagementView } from '../../invoice/view/invoice-management-view';
 import { LeadTableToolbar as DealTableToolbar } from '../../lead/lead-table-toolbar';
@@ -123,7 +119,7 @@ export function DealView() {
     const [currentProposalId, setCurrentProposalId] = useState<string | null>(null);
     const [viewOnly, setViewOnly] = useState(false);
     const [DealviewMode, setDealViewMode] = useState<'deallist' | 'dealkanban'>('deallist');
-    const [ProposalviewMode, setProposalViewMode] = useState<'proposallist' | 'proposalkanban'>('proposallist');
+
 
 
     // Form state
@@ -148,7 +144,7 @@ export function DealView() {
 
     // Alert & Dialog State
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
-    const [confirmProposalDelete, setConfirmProposalDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
+
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
         open: false,
         message: '',
@@ -172,13 +168,6 @@ export function DealView() {
         filterStage,
         sortBy,
         filters
-    );
-
-    const { data: proposalData, total: proposalTotal, loading: proposalLoading, refetch: proposalRefetch, } = useProposals(
-        page,
-        rowsPerPage,
-        filterName,
-        sortBy
     );
 
     const handleFilters = (update: any) => {
@@ -333,24 +322,6 @@ export function DealView() {
             setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
         }
     };
-    const handleProposalDeleteClick = (id: string) => {
-        setConfirmProposalDelete({ open: true, id });
-    };
-
-    const handleProposalConfirmDelete = async () => {
-        if (!confirmProposalDelete.id) return;
-        try {
-            await deleteProposal(confirmProposalDelete.id);
-            setSnackbar({ open: true, message: 'Proposal deleted successfully', severity: 'success' });
-            await proposalRefetch();
-        } catch (e: any) {
-            console.error(e);
-            const friendlyMsg = getFriendlyErrorMessage(e);
-            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
-        } finally {
-            setConfirmProposalDelete({ open: false, id: null });
-        }
-    };
 
     const handleSelectAllRows = (checked: boolean, ids: string[]) => {
         if (checked) {
@@ -481,16 +452,10 @@ export function DealView() {
         setOpenCreate(true);
     };
 
-    const handleProposalEditRow = (id: string) => {
-        router.push(`/proposals/${encodeURIComponent(id)}/edit`);
-    };
+
 
     const handleViewRow = (id: string) => {
         router.push(`/deals/${encodeURIComponent(id)}/view`);
-    };
-
-    const handleProposalViewRow = (id: string) => {
-        router.push(`/proposals/${encodeURIComponent(id)}/view`);
     };
 
     const onChangePage = (_: unknown, newPage: number) => setPage(newPage);
@@ -690,13 +655,7 @@ export function DealView() {
                                 icon={<HiOutlineBriefcase size={22} />}
                                 iconPosition="start"
                             />
-                            <Tab
-                                key="proposals"
-                                value="proposals"
-                                label="Proposal"
-                                icon={<RiMailSendLine size={22} />}
-                                iconPosition="start"
-                            />
+
                             <Tab
                                 key="estimations"
                                 value="estimations"
@@ -781,62 +740,7 @@ export function DealView() {
                             </Box>
                         )}
 
-                        {currentTab === 'proposals' && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Box sx={{
-                                    display: 'flex',
-                                    p: 0.5,
-                                    bgcolor: '#F4F6F8',
-                                    borderRadius: '999px',
-                                    border: (theme) => `1px solid ${theme.palette.divider}`,
-                                }}>
-                                    <Button
-                                        disableRipple
-                                        onClick={() => setProposalViewMode('proposallist')}
-                                        startIcon={<IoList size={18} />}
-                                        sx={{
-                                            borderRadius: '999px',
-                                            px: 2.5,
-                                            py: 0.6,
-                                            typography: 'subtitle2',
-                                            fontWeight: 700,
-                                            color: ProposalviewMode === 'proposallist' ? 'common.white' : 'text.secondary',
-                                            bgcolor: ProposalviewMode === 'proposallist' ? '#08a3cd' : 'transparent',
-                                            boxShadow: ProposalviewMode === 'proposallist' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
-                                            transition: 'all 0.2s',
-                                            '&:hover': {
-                                                bgcolor: ProposalviewMode === 'proposallist' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
-                                                color: ProposalviewMode === 'proposallist' ? 'common.white' : 'text.primary',
-                                            }
-                                        }}
-                                    >
-                                        List View
-                                    </Button>
-                                    <Button
-                                        disableRipple
-                                        onClick={() => setProposalViewMode('proposalkanban')}
-                                        startIcon={<TbLayoutKanbanFilled size={18} />}
-                                        sx={{
-                                            borderRadius: '999px',
-                                            px: 2.5,
-                                            py: 0.6,
-                                            typography: 'subtitle2',
-                                            fontWeight: 700,
-                                            color: ProposalviewMode === 'proposalkanban' ? 'common.white' : 'text.secondary',
-                                            bgcolor: ProposalviewMode === 'proposalkanban' ? '#08a3cd' : 'transparent',
-                                            boxShadow: ProposalviewMode === 'proposalkanban' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
-                                            transition: 'all 0.2s',
-                                            '&:hover': {
-                                                bgcolor: ProposalviewMode === 'proposalkanban' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
-                                                color: ProposalviewMode === 'proposalkanban' ? 'common.white' : 'text.primary',
-                                            }
-                                        }}
-                                    >
-                                        Kanban View
-                                    </Button>
-                                </Box>
-                            </Box>
-                        )}
+
                     </Stack>
 
                     {currentTab === 'deals' && (
@@ -980,22 +884,7 @@ export function DealView() {
                         </>
                     )}
 
-                    {currentTab === 'proposals' && (
-                        <>
-                            {ProposalviewMode === 'proposallist' ? (
-                                <ProposalListView hideTitle />
-                            ) : (
-                                <ProposalKanbanBoard
-                                    proposals={proposalData}
-                                    status={STATUS_OPTIONS}
-                                    onOpenProposal={(id) => handleProposalViewRow(id)}
-                                    onEditProposal={(id) => handleProposalEditRow(id)}
-                                    onDeleteProposal={(id) => handleProposalDeleteClick(id)}
-                                    permissions={permissions}
-                                />
-                            )}
-                        </>
-                    )}
+
 
                     {currentTab === 'estimations' && (
                         <EstimationListView hideTitle />
@@ -1033,17 +922,7 @@ export function DealView() {
                     }
                 />
 
-                <ConfirmDialog
-                    open={confirmProposalDelete.open}
-                    onClose={() => setConfirmProposalDelete({ open: false, id: null })}
-                    title="Confirm Delete"
-                    content="Are you sure you want to delete this Proposal?"
-                    action={
-                        <Button onClick={handleProposalConfirmDelete} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
-                            Delete
-                        </Button>
-                    }
-                />
+
 
                 <Snackbar
                     open={snackbar.open}

@@ -171,8 +171,19 @@ export function ProposalTableRow({
             </TableCell>
 
             {/* Billing Name */}
-            <TableCell sx={{ fontWeight: 600, maxWidth: 180 }}>
-                {row.billing_account_name || row.billing_name || '—'}
+            <TableCell sx={{ maxWidth: 180 }}>
+                {row.billing_name ? (
+                    <Stack spacing={0.5}>
+                        <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                            {row.billing_account_name || row.billing_name}
+                        </Typography>
+                        <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                            {row.billing_name}
+                        </Typography>
+                    </Stack>
+                ) : (
+                    '—'
+                )}
             </TableCell>
 
             {/* Proposal Date */}

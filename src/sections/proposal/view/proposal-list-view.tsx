@@ -26,6 +26,7 @@ import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { deleteProposal, getProposalPrintUrl } from 'src/api/proposal';
 
+import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -48,7 +49,7 @@ const TABLE_HEAD = [
     { id: 'proposal_date', label: 'Proposal Date' },
     { id: 'status', label: 'Status' },
     { id: 'total_attachments', label: 'Attachments', align: 'center' },
-    { id: '' },
+    { id: 'action', label: 'Actions', align: 'center' },
 ];
 
 // ----------------------------------------------------------------------
@@ -198,6 +199,19 @@ export function ProposalListView({ hideTitle, prospectId }: Props) {
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                 {!hideTitle && <Typography variant="h4">Proposals</Typography>}
                 {hideTitle && <Box sx={{ flexGrow: 1 }} />}
+
+                {!hideTitle && (
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon="mingcute:add-line" />}
+                            onClick={handleCreateNew}
+                            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                        >
+                            New Proposal
+                        </Button>
+                    </Box>
+                )}
             </Stack>
 
             <Card>
@@ -248,8 +262,7 @@ export function ProposalListView({ hideTitle, prospectId }: Props) {
                                                     client_name: row.client_name || '',
                                                     customer_name: row.customer_name || '',
                                                     billing_name: row.billing_name || '',
-                                                    billing_account_name:
-                                                        (row as any).billing_account_name || '',
+                                                    billing_account_name: row.billing_account_name || '',
                                                     proposal_date: row.proposal_date,
                                                     status: row.status,
                                                     total_attachments: row.total_attachments,

@@ -328,7 +328,7 @@ export function ProposalCreateView() {
 
             const result = await createProposal(payload);
             enqueueSnackbar('Proposal created successfully', { variant: 'success' });
-            setTimeout(() => router.push(`/deals?tab=proposals`), 600);
+            setTimeout(() => router.push(`/proposals`), 600);
         } catch (err: any) {
             enqueueSnackbar(err.message || 'Failed to create proposal', { variant: 'error' });
         } finally {
@@ -349,7 +349,7 @@ export function ProposalCreateView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/deals?tab=proposals')}
+                        onClick={() => router.push('/proposals')}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,
