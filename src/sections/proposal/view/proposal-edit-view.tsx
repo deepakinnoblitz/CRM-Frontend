@@ -129,7 +129,7 @@ export function ProposalEditView() {
         const loadAll = async () => {
             try {
                 const [contacts, prospects] = await Promise.all([
-                    getDoctypeList('Contacts', ['name', 'first_name', 'company_name']),
+                    getDoctypeList('Lead', ['name', 'lead_name', 'company_name']),
                     getDoctypeList('Deal', ['name', 'deal_title']),
                 ]);
                 setCustomerOptions(contacts);
@@ -139,9 +139,9 @@ export function ProposalEditView() {
                     const proposal = await getProposal(decodeURIComponent(id));
                     setProposalTitle(proposal.proposal_title || '');
                     setReferenceNo(proposal.reference_no || '');
-                    setClientName(proposal.client_name || '');
-                    setCustomerName(proposal.customer_name || '');
-                    setBillingName(proposal.billing_name || '');
+                    setClientName(proposal.lead || '');
+                    setCustomerName(proposal.lead_name || '');
+                    setBillingName(proposal.company_name || '');
                     setProspect(proposal.prospect || '');
                     setProposalDate(proposal.proposal_date || '');
                     setValidUntil(proposal.valid_until || '');
@@ -154,9 +154,9 @@ export function ProposalEditView() {
                     );
 
                     // Load billing options for the existing client
-                    if (proposal.client_name) {
+                    if (proposal.lead) {
                         try {
-                            const contact = await getContact(proposal.client_name);
+                            const contact = await getContact(proposal.lead);
                             const opts =
                                 contact.company_names?.map((cid: string, idx: number) => ({
                                     name: cid,
@@ -184,7 +184,7 @@ export function ProposalEditView() {
         if (name) {
             try {
                 const contact = await getContact(name);
-                setCustomerName(contact.first_name || '');
+                setCustomerName(contact.lead_name || '');
                 const opts =
                     contact.company_names?.map((cid: string, idx: number) => ({
                         name: cid,
@@ -310,9 +310,9 @@ export function ProposalEditView() {
 
             const payload: any = {
                 proposal_title: proposalTitle,
-                client_name: clientName,
-                customer_name: customerName,
-                billing_name: billingName || undefined,
+                lead: clientName,
+                lead_name: customerName,
+                company_name: billingName || undefined,
                 prospect: prospect || undefined,
                 proposal_date: proposalDate,
                 valid_until: validUntil || undefined,
@@ -411,15 +411,15 @@ export function ProposalEditView() {
                             sx={{ gridColumn: { sm: 'span 2' } }} />
 
                         <Autocomplete fullWidth options={customerOptions}
-                            getOptionLabel={(opt) => opt.first_name ? `${opt.first_name} (${opt.name})` : opt.name || ''}
+                            getOptionLabel={(opt) => opt.lead_name ? `${opt.lead_name} (${opt.name})` : opt.name || ''}
                             value={customerOptions.find((o) => o.name === clientName) || null}
                             onChange={(_e, val) => handleCustomerChange(val?.name || '')}
                             renderInput={(params) => (
-                                <TextField {...params} label="Client" required error={clientError}
-                                    helperText={clientError ? 'Please select a client' : ''} />
+                                <TextField {...params} label="Lead" required error={clientError}
+                                    helperText={clientError ? 'Please select a lead' : ''} />
                             )} />
 
-                        <TextField fullWidth label="Client Name" value={customerName}
+                        <TextField fullWidth label="Lead Name" value={customerName}
                             slotProps={{ input: { readOnly: true } }}
                             sx={{ bgcolor: (t) => alpha(t.palette.grey[500], 0.05) }} />
 
@@ -427,7 +427,7 @@ export function ProposalEditView() {
                             getOptionLabel={(opt) => opt.account_name || opt.name || ''}
                             value={billingNameOptions.find((o) => o.name === billingName) || null}
                             onChange={(_e, val) => setBillingName(val?.name || '')}
-                            renderInput={(params) => <TextField {...params} label="Billing Name" />} />
+                            renderInput={(params) => <TextField {...params} label="Company Name" />} />
 
                         <DatePicker label="Proposal Date *"
                             value={proposalDate ? dayjs(proposalDate) : null}

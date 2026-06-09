@@ -108,10 +108,10 @@ export default function ProposalKanbanCard({
             mb: 0.5,
           }}
         >
-          {proposal.billing_account_name || proposal.billing_name}
+          {proposal.billing_account_name || proposal.company_name}
         </Typography>
 
-        {proposal.billing_name && (
+        {proposal.company_name && (
           <Typography
             variant="caption"
             sx={{
@@ -122,7 +122,7 @@ export default function ProposalKanbanCard({
             }}
           >
             <Iconify icon={"solar:user-bold" as any} width={12} />
-            {proposal.customer_name || proposal.client_name || 'No Client'}
+            {proposal.lead_name || proposal.lead || 'No Lead'}
           </Typography>
         )}
       </Box>

@@ -13,7 +13,7 @@ export function useProposals(
     search: string,
     sortBy?: string,
     filters?: {
-        client_name?: string;
+        lead?: string;
         status?: string;
         proposal_date?: string;
     }
@@ -37,7 +37,7 @@ export function useProposals(
         })
             .then(async (res) => {
                 const fetchedData = res.data;
-                const billingIds = Array.from(new Set(fetchedData.map((d: any) => d.billing_name).filter(Boolean)));
+                const billingIds = Array.from(new Set(fetchedData.map((d: any) => d.company_name).filter(Boolean)));
                 if (billingIds.length > 0) {
                     try {
                         const accountPromises = billingIds.map((id: any) => getAccount(id).catch(() => null));
@@ -50,8 +50,8 @@ export function useProposals(
                         }, {} as Record<string, string>);
                         
                         fetchedData.forEach((d: any) => {
-                            if (d.billing_name && accountMap[d.billing_name]) {
-                                d.billing_account_name = accountMap[d.billing_name];
+                            if (d.company_name && accountMap[d.company_name]) {
+                                d.billing_account_name = accountMap[d.company_name];
                             }
                         });
                     } catch (e) {

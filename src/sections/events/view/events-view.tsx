@@ -1213,116 +1213,123 @@ export function EventsView() {
 
                         <Divider />
 
-                        {/* Today Events heading */}
-                        <Box sx={{ px: 2, pt: 2, pb: 1 }}>
-                            <Typography
-                                variant="overline"
-                                sx={{
-                                    fontWeight: 700,
-                                    fontSize: '0.7rem',
-                                    letterSpacing: '0.08em',
-                                    color: 'text.secondary',
-                                }}
-                            >
-                                Today Events
-                            </Typography>
-                        </Box>
-
-                        {/* Event cards list */}
+                        {/* Today Events categorised list */}
                         <Box sx={{ flex: 1, overflowY: 'auto', px: 1.5, pb: 2 }}>
-                            {filteredTodayEvents.length === 0 ? (
-                                <Box
-                                    sx={{
-                                        textAlign: 'center',
-                                        py: 4,
-                                        color: 'text.disabled',
-                                        fontSize: '0.8125rem',
-                                        fontWeight: 500,
-                                    }}
-                                >
-                                    No Today Events Found
-                                </Box>
-                            ) : (
-                                <Stack spacing={0.75}>
-                                    {filteredTodayEvents.map((evt) => {
-                                        let dotColor = evt.color || '#08a3cd';
-                                        if (!evt.color) {
-                                            switch (evt.status) {
-                                                case 'Completed':
-                                                case 'Closed': dotColor = theme.palette.success.main; break;
-                                                case 'Cancelled': dotColor = theme.palette.error.main; break;
-                                                case 'Scheduled': dotColor = '#08a3cd'; break;
-                                                case 'Open': dotColor = theme.palette.warning.main; break;
-                                                default: dotColor = '#08a3cd';
-                                            }
-                                        }
-                                        return (
-                                            <Box
-                                                key={evt.name}
-                                                sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'flex-start',
-                                                    gap: 1,
-                                                    px: 1.25,
-                                                    py: 1,
-                                                    borderRadius: 1.5,
-                                                    bgcolor: 'background.neutral',
-                                                    cursor: 'pointer',
-                                                    transition: 'background-color 0.2s',
-                                                    '&:hover': { bgcolor: 'action.hover' },
-                                                }}
-                                                onClick={() => handleOpenEditDialog(evt)}
-                                            >
-                                                {/* Color dot */}
-                                                <Box
-                                                    sx={{
-                                                        mt: 0.5,
-                                                        width: 9,
-                                                        height: 9,
-                                                        borderRadius: '50%',
-                                                        bgcolor: dotColor,
-                                                        flexShrink: 0,
-                                                    }}
-                                                />
-                                                <Box sx={{ minWidth: 0 }}>
-                                                    <Typography
-                                                        variant="body2"
-                                                        sx={{
-                                                            fontWeight: 600,
-                                                            fontSize: '0.8125rem',
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            whiteSpace: 'nowrap',
-                                                            lineHeight: 1.4,
-                                                        }}
-                                                    >
-                                                        {evt.subject.replace(/\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\s*$/i, '')}
-                                                    </Typography>
-                                                    <Typography
-                                                        variant="caption"
-                                                        sx={{ color: 'text.secondary', fontSize: '0.75rem' }}
-                                                    >
-                                                        {(() => {
-                                                            if (!evt.starts_on) return '';
-                                                            const start = dayjs(evt.starts_on);
-                                                            const end = dayjs(evt.ends_on || evt.starts_on);
-                                                            const isMultiDay = !start.isSame(end, 'day');
+                            {(() => {
+                                const calls = filteredTodayEvents.filter(evt => {
+                                    const t = evt.reference_doctype;
+                                    const ec = evt.event_category;
+                                    const sl = (evt.subject || '').toLowerCase();
+                                    return t === 'Call' || t === 'Calls' || ec === 'Call' || ec === 'Calls' || sl.includes('call');
+                                });
+                                const meetings = filteredTodayEvents.filter(evt => {
+                                    const t = evt.reference_doctype;
+                                    const ec = evt.event_category;
+                                    const sl = (evt.subject || '').toLowerCase();
+                                    const isCall = t === 'Call' || t === 'Calls' || ec === 'Call' || ec === 'Calls' || sl.includes('call');
+                                    return !isCall && (t === 'Meeting' || ec === 'Meeting');
+                                });
+                                const todos = filteredTodayEvents.filter(evt => {
+                                    const t = evt.reference_doctype;
+                                    const ec = evt.event_category;
+                                    const sl = (evt.subject || '').toLowerCase();
+                                    const isCall = t === 'Call' || t === 'Calls' || ec === 'Call' || ec === 'Calls' || sl.includes('call');
+                                    const isMeeting = !isCall && (t === 'Meeting' || ec === 'Meeting');
+                                    return !isCall && !isMeeting && (t === 'ToDo' || t === 'Todo' || t === 'To-do' || ec === 'ToDo' || ec === 'Todo');
+                                });
 
-                                                            if (isMultiDay) {
-                                                                return `${start.format('MMM D, hh:mm A')} - ${end.format('MMM D, hh:mm A')}`;
-                                                            }
-                                                            if (!evt.ends_on || start.isSame(end, 'minute')) {
-                                                                return start.format('hh:mm A');
-                                                            }
-                                                            return `${start.format('hh:mm A')} - ${end.format('hh:mm A')}`;
-                                                        })()}
-                                                    </Typography>
-                                                </Box>
+                                const renderCard = (evt: any) => (
+                                        <Box
+                                            key={evt.name}
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'flex-start',
+                                                gap: 1,
+                                                px: 1.25,
+                                                py: 1,
+                                                borderRadius: 1.5,
+                                                bgcolor: 'background.neutral',
+                                                cursor: 'pointer',
+                                                transition: 'background-color 0.2s',
+                                                '&:hover': { bgcolor: 'action.hover' },
+                                            }}
+                                            onClick={() => handleOpenEditDialog(evt)}
+                                        >
+                                            <Box sx={{ minWidth: 0, width: '100%' }}>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        fontWeight: 600,
+                                                        fontSize: '0.8125rem',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                        lineHeight: 1.4,
+                                                    }}
+                                                >
+                                                    {evt.subject.replace(/\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\s*$/i, '')}
+                                                </Typography>
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{ color: 'text.secondary', fontSize: '0.75rem' }}
+                                                >
+                                                    {(() => {
+                                                        if (!evt.starts_on) return '';
+                                                        const start = dayjs(evt.starts_on);
+                                                        const end = dayjs(evt.ends_on || evt.starts_on);
+                                                        const isMultiDay = !start.isSame(end, 'day');
+
+                                                        if (isMultiDay) {
+                                                            return `${start.format('MMM D, hh:mm A')} - ${end.format('MMM D, hh:mm A')}`;
+                                                        }
+                                                        if (!evt.ends_on || start.isSame(end, 'minute')) {
+                                                            return start.format('hh:mm A');
+                                                        }
+                                                        return `${start.format('hh:mm A')} - ${end.format('hh:mm A')}`;
+                                                    })()}
+                                                </Typography>
                                             </Box>
-                                        );
-                                    })}
-                                </Stack>
-                            )}
+                                        </Box>
+                                    );
+
+                                const renderSection = (title: string, icon: any, color: string, items: any[], emptyMsg: string) => (
+                                    <Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, px: 0.5 }}>
+                                            <Box sx={{ color, display: 'flex' }}>{icon}</Box>
+                                            <Typography
+                                                variant="overline"
+                                                sx={{
+                                                    fontWeight: 700,
+                                                    fontSize: '0.7rem',
+                                                    letterSpacing: '0.08em',
+                                                    color: 'text.secondary',
+                                                }}
+                                            >
+                                                {title}
+                                            </Typography>
+                                        </Box>
+                                        {items.length === 0 ? (
+                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontSize: '0.8125rem', px: 1, fontStyle: 'italic' }}>
+                                                {emptyMsg}
+                                            </Typography>
+                                        ) : (
+                                            <Stack spacing={0.75}>
+                                                {items.map(renderCard)}
+                                            </Stack>
+                                        )}
+                                    </Box>
+                                );
+
+                                return (
+                                    <Box sx={{ mt: 2 }}>
+                                        {renderSection('TODAY CALLS', <Iconify icon={"solar:phone-calling-bold" as any} width={16} />, '#ff9800', calls, 'No Calls Today')}
+                                        <Box sx={{ height: 16 }} />
+                                        {renderSection('TODAY MEETINGS', <Iconify icon={"solar:calendar-bold" as any} width={16} />, '#4caf50', meetings, 'No Meetings Today')}
+                                        <Box sx={{ height: 16 }} />
+                                        {renderSection('TODAY TO-DOS', <Iconify icon={"solar:check-square-bold" as any} width={16} />, '#f44336', todos, 'No To-Dos Today')}
+                                    </Box>
+                                );
+                            })()}
                         </Box>
                     </Box>
 
