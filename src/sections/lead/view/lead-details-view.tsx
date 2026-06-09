@@ -35,7 +35,7 @@ import { useRouter } from 'src/routes/hooks';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getDoc, getLead, convertLead, getWorkflowStates, getWorkflowActions, applyWorkflowAction, getFollowupHistory } from 'src/api/leads';
+import { getDoc, getLead, convertLead, getWorkflowStates, getWorkflowActions, applyWorkflowAction, getFollowupHistory, getProposalByLeadId } from 'src/api/leads';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -44,6 +44,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { SalesPipeline } from '../sales-pipeline';
 import { WhatsappChatDialog } from './whatsapp_chat_dialog';
 import { LeadFollowupDetails } from '../lead-followup-details';
+import { LeadProposalDetails } from '../lead-proposal-details';
 import { LeadPipelineTimeline } from '../lead-pipeline-timeline';
 import { AccountDetailsDialog } from '../../report/account/account-details-dialog';
 import { ContactDetailsDialog } from '../../report/contact/contact-details-dialog';
@@ -109,6 +110,8 @@ export function LeadDetailsView() {
     const [followupHistory, setFollowupHistory] = useState<any[]>([]);
     const [followupLoading, setFollowupLoading] = useState(false);
 
+    const [proposalHistory, setProposalHistory] = useState([]);
+
     useEffect(() => {
         const loadFollowups = async () => {
             if (!lead?.name) return;
@@ -130,6 +133,14 @@ export function LeadDetailsView() {
         };
 
         loadFollowups();
+    }, [lead?.name]);
+
+    useEffect(() => {
+        if (!lead?.name) return;
+
+        getProposalByLeadId(lead.name)
+            .then(setProposalHistory)
+            .catch(console.error);
     }, [lead?.name]);
 
     useEffect(() => {
@@ -348,6 +359,7 @@ export function LeadDetailsView() {
         { value: 'convert', label: 'Convert Lead' },
         { value: 'followups', label: 'Followups' },
         { value: 'pipeline', label: 'Stage History' },
+        { value: 'proposal', label: 'Proposals' },
     ];
 
     if (loading) {
@@ -805,6 +817,13 @@ export function LeadDetailsView() {
                         <LeadFollowupDetails
                             title="Followup History"
                             list={followupHistory}
+                        />
+                    )}
+
+                    {currentTab === 'proposal' && (
+                        <LeadProposalDetails
+                            title="Proposal List"
+                            list={proposalHistory}
                         />
                     )}
 
