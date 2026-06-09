@@ -106,9 +106,9 @@ export function ProposalDetailsView() {
                     setProposal(data);
                     setSelectedStatus(data.status || 'Draft');
 
-                    if (data.billing_name) {
+                    if (data.company_name) {
                         try {
-                            const accountData = await getAccount(data.billing_name);
+                            const accountData = await getAccount(data.company_name);
                             if (accountData && accountData.account_name) {
                                 setBillingAccountName(accountData.account_name);
                             }
@@ -198,7 +198,7 @@ export function ProposalDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/deals?tab=proposals')}
+                        onClick={() => router.push('/proposals')}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', px: 2.5 }}
                     >
@@ -352,8 +352,8 @@ export function ProposalDetailsView() {
                                 <Box>
                                     <SectionHeader title="Proposal Information" />
                                     <Stack spacing={2.5} sx={{ mt: 2.5 }}>
-                                        <DetailItem label="Client" value={proposal.customer_name || proposal.client_name} subValue={proposal.client_name} icon={<HiOutlineUser size={20} />} />
-                                        <DetailItem label="Billing Name" value={billingAccountName || proposal.billing_name || '—'} subValue={billingAccountName ? proposal.billing_name : undefined} icon={<HiOutlineBuildingOffice size={20} />} />
+                                        <DetailItem label="Lead" value={proposal.lead_name || proposal.lead} subValue={proposal.lead} icon={<HiOutlineUser size={20} />} />
+                                        <DetailItem label="Company Name" value={billingAccountName || proposal.company_name || '—'} subValue={billingAccountName ? proposal.company_name : undefined} icon={<HiOutlineBuildingOffice size={20} />} />
                                         <DetailItem label="Proposal Date" value={fDate(proposal.proposal_date)} icon={<HiOutlineCalendar size={20} />} />
                                         {proposal.valid_until && (
                                             <DetailItem label="Valid Until" value={fDate(proposal.valid_until)} icon={<HiOutlineClock size={20} />} />

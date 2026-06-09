@@ -11,7 +11,6 @@ import { MdContacts } from "react-icons/md";
 import { PiMoneyWavy } from "react-icons/pi";
 import { FaHandshake } from "react-icons/fa";
 import { LuUsersRound } from "react-icons/lu";
-import { RiUserAddLine } from "react-icons/ri";
 import { BiPurchaseTag } from "react-icons/bi";
 import { BsFillBellFill } from "react-icons/bs";
 import { IoHomeOutline } from "react-icons/io5";
@@ -29,6 +28,7 @@ import { HiOutlineCreditCard } from "react-icons/hi2";
 import { HiOutlineSpeakerphone } from "react-icons/hi";
 import { RiCalendarScheduleLine } from "react-icons/ri";
 import { MdOutlineLaptopWindows } from "react-icons/md";
+import { RiUserAddLine, RiMailSendLine } from "react-icons/ri";
 
 import { Iconify } from 'src/components/iconify';
 
@@ -345,6 +345,11 @@ export const crmNavData = [
     icon: <Iconify icon={"solar:buildings-2-bold-duotone" as any} />,
   },
   {
+    title: 'Proposal',
+    path: '/proposals',
+    icon: <RiMailSendLine size={22} />,
+  },
+  {
     title: 'Deals',
     path: '/deals',
     icon: <Iconify icon={"solar:hand-money-bold-duotone" as any} />,
@@ -409,6 +414,11 @@ export const crmAndSalesNavData = [
     title: 'Company',
     path: '/accounts',
     icon: <FaBuildingUser size={20}/>,
+  },
+  {
+    title: 'Proposal',
+    path: '/proposals',
+    icon: <RiMailSendLine size={22} />,
   },
   {
     title: 'Prospects',

@@ -50,6 +50,8 @@ export interface Invoice {
     terms_and_conditions?: string;
     description?: string;
     attachments?: string;
+    converted_from_estimation?: number;
+    converted_estimation_id?: string;
     table_qecz?: InvoiceItem[]; // Invoice Items
 }
 

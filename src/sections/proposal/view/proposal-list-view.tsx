@@ -1,3 +1,5 @@
+import { IoList } from "react-icons/io5";
+import { TbLayoutKanbanFilled } from "react-icons/tb";
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -26,6 +28,7 @@ import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { deleteProposal, getProposalPrintUrl } from 'src/api/proposal';
 
+import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -36,6 +39,7 @@ import { TableEmptyRows } from '../table-empty-rows';
 import { ProposalTableRow } from '../proposal-table-row';
 import { ProposalTableHead } from '../proposal-table-head';
 import { ProposalTableToolbar } from '../proposal-table-toolbar';
+import ProposalKanbanBoard from '../kanban/proposal-kanban-board';
 import { ProposalTableFiltersDrawer } from '../proposal-table-filters-drawer';
 
 // ----------------------------------------------------------------------
@@ -43,12 +47,20 @@ import { ProposalTableFiltersDrawer } from '../proposal-table-filters-drawer';
 const TABLE_HEAD = [
     { id: 'reference_no', label: 'Proposal No' },
     { id: 'proposal_title', label: 'Proposal Title' },
-    { id: 'client_name', label: 'Client' },
-    { id: 'billing_name', label: 'Billing Name' },
+    { id: 'lead', label: 'Lead' },
+    { id: 'company_name', label: 'Company Name' },
     { id: 'proposal_date', label: 'Proposal Date' },
     { id: 'status', label: 'Status' },
     { id: 'total_attachments', label: 'Attachments', align: 'center' },
-    { id: '' },
+    { id: 'action', label: 'Actions', align: 'center' },
+];
+
+const STATUS_OPTIONS = [
+    { value: 'Draft', label: 'Draft' },
+    { value: 'Sent', label: 'Sent' },
+    { value: 'Approved', label: 'Approved' },
+    { value: 'Rejected', label: 'Rejected' },
+    { value: 'Expired', label: 'Expired' },
 ];
 
 // ----------------------------------------------------------------------
@@ -77,18 +89,19 @@ export function ProposalListView({ hideTitle, prospectId }: Props) {
 
     const [openFilters, setOpenFilters] = useState(false);
     const [filters, setFilters] = useState({
-        client_name: 'all',
+        lead: 'all',
         status: 'all',
         proposal_date: '',
         ...(prospectId ? { prospect: prospectId } : {}),
     });
-    const [customerOptions, setCustomerOptions] = useState<any[]>([]);
+    const [ProposalviewMode, setProposalViewMode] = useState<'proposallist' | 'proposalkanban'>('proposallist');
+    const [leadOptions, setLeadOptions] = useState<any[]>([]);
 
     useEffect(() => {
-        getDoctypeList('Contacts', ['name', 'first_name', 'company_name'])
+        getDoctypeList('Lead', ['name', 'lead_name', 'company_name'])
             .then((data) =>
-                setCustomerOptions(
-                    data.map((c: any) => ({ name: c.name, customer_name: c.first_name || c.name }))
+                setLeadOptions(
+                    data.map((c: any) => ({ name: c.name, lead_name: c.lead_name || c.name }))
                 )
             )
             .catch((err) => console.error('Failed to fetch filter options', err));
@@ -109,7 +122,7 @@ export function ProposalListView({ hideTitle, prospectId }: Props) {
 
     const handleResetFilters = () => {
         setFilters({
-            client_name: 'all',
+            lead: 'all',
             status: 'all',
             proposal_date: '',
             ...(prospectId ? { prospect: prospectId } : {}),
@@ -118,7 +131,7 @@ export function ProposalListView({ hideTitle, prospectId }: Props) {
     };
 
     const canReset =
-        filters.client_name !== 'all' ||
+        filters.lead !== 'all' ||
         (filters.status !== 'all' && !!filters.status) ||
         !!filters.proposal_date ||
         !!filterName;
@@ -198,8 +211,74 @@ export function ProposalListView({ hideTitle, prospectId }: Props) {
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                 {!hideTitle && <Typography variant="h4">Proposals</Typography>}
                 {hideTitle && <Box sx={{ flexGrow: 1 }} />}
+
+                {!hideTitle && (
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        <Box sx={{
+                            display: 'flex',
+                            p: 0.5,
+                            bgcolor: '#F4F6F8',
+                            borderRadius: '999px',
+                            border: (theme) => `1px solid ${theme.palette.divider}`,
+                        }}>
+                            <Button
+                                disableRipple
+                                onClick={() => setProposalViewMode('proposallist')}
+                                startIcon={<IoList size={18} />}
+                                sx={{
+                                    borderRadius: '999px',
+                                    px: 2.5,
+                                    py: 0.6,
+                                    typography: 'subtitle2',
+                                    fontWeight: 700,
+                                    color: ProposalviewMode === 'proposallist' ? 'common.white' : 'text.secondary',
+                                    bgcolor: ProposalviewMode === 'proposallist' ? '#08a3cd' : 'transparent',
+                                    boxShadow: ProposalviewMode === 'proposallist' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
+                                    transition: 'all 0.2s',
+                                    '&:hover': {
+                                        bgcolor: ProposalviewMode === 'proposallist' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
+                                        color: ProposalviewMode === 'proposallist' ? 'common.white' : 'text.primary',
+                                    }
+                                }}
+                            >
+                                List View
+                            </Button>
+                            <Button
+                                disableRipple
+                                onClick={() => setProposalViewMode('proposalkanban')}
+                                startIcon={<TbLayoutKanbanFilled size={18} />}
+                                sx={{
+                                    borderRadius: '999px',
+                                    px: 2.5,
+                                    py: 0.6,
+                                    typography: 'subtitle2',
+                                    fontWeight: 700,
+                                    color: ProposalviewMode === 'proposalkanban' ? 'common.white' : 'text.secondary',
+                                    bgcolor: ProposalviewMode === 'proposalkanban' ? '#08a3cd' : 'transparent',
+                                    boxShadow: ProposalviewMode === 'proposalkanban' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
+                                    transition: 'all 0.2s',
+                                    '&:hover': {
+                                        bgcolor: ProposalviewMode === 'proposalkanban' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
+                                        color: ProposalviewMode === 'proposalkanban' ? 'common.white' : 'text.primary',
+                                    }
+                                }}
+                            >
+                                Kanban View
+                            </Button>
+                        </Box>
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon="mingcute:add-line" />}
+                            onClick={handleCreateNew}
+                            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                        >
+                            New Proposal
+                        </Button>
+                    </Box>
+                )}
             </Stack>
 
+            {ProposalviewMode === 'proposallist' ? (
             <Card>
                 <ProposalTableToolbar
                     numSelected={table.selected.length}
@@ -245,11 +324,10 @@ export function ProposalListView({ hideTitle, prospectId }: Props) {
                                                     id: row.name,
                                                     reference_no: row.reference_no,
                                                     proposal_title: row.proposal_title,
-                                                    client_name: row.client_name || '',
-                                                    customer_name: row.customer_name || '',
-                                                    billing_name: row.billing_name || '',
-                                                    billing_account_name:
-                                                        (row as any).billing_account_name || '',
+                                                    lead: row.lead || '',
+                                                    lead_name: row.lead_name || '',
+                                                    company_name: row.company_name || '',
+                                                    billing_account_name: row.billing_account_name || '',
                                                     proposal_date: row.proposal_date,
                                                     status: row.status,
                                                     total_attachments: row.total_attachments,
@@ -305,6 +383,16 @@ export function ProposalListView({ hideTitle, prospectId }: Props) {
                     onRowsPerPageChange={table.onChangeRowsPerPage}
                 />
             </Card>
+            ) : (
+                <ProposalKanbanBoard
+                    proposals={data}
+                    status={STATUS_OPTIONS}
+                    onOpenProposal={handleViewRow}
+                    onEditProposal={handleEditRow}
+                    onDeleteProposal={handleDeleteRow}
+                    permissions={{ write: true, delete: true }}
+                />
+            )}
 
             <ProposalTableFiltersDrawer
                 open={openFilters}
@@ -314,7 +402,7 @@ export function ProposalListView({ hideTitle, prospectId }: Props) {
                 onFilters={handleFilters}
                 canReset={canReset}
                 onResetFilters={handleResetFilters}
-                options={{ customers: customerOptions }}
+                options={{ leads: leadOptions }}
             />
 
             <Snackbar

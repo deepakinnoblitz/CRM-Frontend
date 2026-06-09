@@ -51,6 +51,7 @@ export function EstimationDetailsView() {
     const [deleting, setDeleting] = useState(false);
     const [itemNames, setItemNames] = useState<Record<string, string>>({});
     const [accountName, setAccountName] = useState<string>('');
+    const [bankAccountDetails, setBankAccountDetails] = useState<any>(null);
 
     const { enqueueSnackbar } = useSnackbar();
 
@@ -61,6 +62,21 @@ export function EstimationDetailsView() {
                 .finally(() => setFetching(false));
         }
     }, [id]);
+
+    useEffect(() => {
+        if (estimation?.bank_account) {
+            getDoctypeList('Company Bank Account', ['name', 'bank_name', 'account_holder_name', 'account_no', 'ifsc_code'], { name: estimation.bank_account })
+                .then((accounts: any[]) => {
+                    if (accounts && accounts.length > 0) {
+                        setBankAccountDetails(accounts[0]);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch Bank Account details:', err);
+                    setBankAccountDetails(null);
+                });
+        }
+    }, [estimation?.bank_account]);
 
     useEffect(() => {
         if (estimation?.billing_name) {
@@ -115,7 +131,7 @@ export function EstimationDetailsView() {
         return (
             <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Estimation not found</Typography>
-                <Button onClick={() => navigate(-1)} sx={{ mt: 3 }}>
+                <Button onClick={() => navigate('/deals?tab=estimations')} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
             </DashboardContent>
@@ -138,6 +154,7 @@ export function EstimationDetailsView() {
         total_amount,
         grand_total,
         table_qecz = [],
+        bank_account,
     } = estimation;
 
     let parsedAttachments: { name: string; url: string }[] = [];
@@ -193,7 +210,7 @@ export function EstimationDetailsView() {
         try {
             setDeleting(true);
             await deleteEstimation(id);
-            router.push('/estimations');
+            router.push('/deals?tab=estimations');
         } catch (error) {
             console.error('Failed to delete estimation:', error);
         } finally {
@@ -210,7 +227,7 @@ export function EstimationDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => navigate(-1)}
+                        onClick={() => navigate('/deals?tab=estimations')}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,
@@ -467,6 +484,46 @@ export function EstimationDetailsView() {
                                 }}>
                                     {terms_and_conditions || 'No specific terms provided.'}
                                 </Typography>
+                            </Stack>
+
+                            <Stack spacing={1}>
+                                <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Company Bank Account</Typography>
+                                {bank_account ? (
+                                    <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                                        <Typography variant="subtitle1" color="text.primary" sx={{ fontWeight: 700, fontSize: '16px' }}>
+                                            {bankAccountDetails?.bank_name || 'Loading...'}
+                                        </Typography>
+                                        <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 700 }}>
+                                            ID: {bank_account}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, whiteSpace: 'pre-wrap' }}>
+                                            Account Holder:{' '}
+                                            <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                                {bankAccountDetails?.account_holder_name || '-'}
+                                            </Box>
+                                             <Box sx={{ mb: 0.5 }} />
+                                            Account No:{' '}
+                                            <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                                {bankAccountDetails?.account_no || '-'}
+                                            </Box>
+                                              <Box sx={{ mb: 0.5 }} />
+                                            IFSC:{' '}
+                                            <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                                {bankAccountDetails?.ifsc_code || '-'}
+                                            </Box>
+                                        </Typography>
+                                    </Box>
+                                ) : (
+                                    <Typography variant="body2" sx={{
+                                        p: 2,
+                                        borderRadius: 1.5,
+                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                                        border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                                        color: 'text.secondary'
+                                    }}>
+                                        No bank account selected.
+                                    </Typography>
+                                )}
                             </Stack>
 
                             {parsedAttachments.length > 0 && (

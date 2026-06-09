@@ -55,9 +55,9 @@ export type ProposalRowProps = {
     id: string;
     reference_no?: string;
     proposal_title: string;
-    client_name: string;
-    customer_name?: string;
-    billing_name?: string;
+    lead: string;
+    lead_name?: string;
+    company_name?: string;
     billing_account_name?: string;
     proposal_date: string;
     status?: string;
@@ -158,21 +158,27 @@ export function ProposalTableRow({
                 </Typography>
             </TableCell>
 
-            {/* Client */}
+            {/* Lead */}
             <TableCell sx={{ maxWidth: 180 }}>
                 <Stack spacing={0.5}>
                     <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
-                        {row.customer_name || row.client_name}
+                        {row.lead_name || row.lead}
                     </Typography>
                     <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
-                        {row.client_name}
+                        {row.lead}
                     </Typography>
                 </Stack>
             </TableCell>
 
-            {/* Billing Name */}
-            <TableCell sx={{ fontWeight: 600, maxWidth: 180 }}>
-                {row.billing_account_name || row.billing_name || '—'}
+            {/* Company Name */}
+            <TableCell sx={{ maxWidth: 180 }}>
+                {row.company_name ? (
+                    <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                        {row.company_name}
+                    </Typography>
+                ) : (
+                    '—'
+                )}
             </TableCell>
 
             {/* Proposal Date */}
