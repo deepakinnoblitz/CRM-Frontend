@@ -24,10 +24,7 @@ export const fetchEmployees = (params: any) => {
     // If there's a search query, create or_filters to search across multiple fields
     const or_filters = search ? [
         ["Employee", "employee_name", "like", `%${search}%`],
-        ["Employee", "employee_id", "like", `%${search}%`],
-        ["Employee", "department", "like", `%${search}%`],
-        ["Employee", "designation", "like", `%${search}%`],
-        ["Employee", "status", "like", `%${search}%`],
+        ["Employee", "name", "like", `%${search}%`],
     ] : undefined;
 
     // Merge search-based or_filters with any existing or_filters from params
