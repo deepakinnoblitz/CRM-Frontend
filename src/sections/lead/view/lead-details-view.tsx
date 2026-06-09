@@ -35,14 +35,16 @@ import { useRouter } from 'src/routes/hooks';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getLead, convertLead, getWorkflowStates, getWorkflowActions, applyWorkflowAction } from 'src/api/leads';
+import { getDoc, getLead, convertLead, getWorkflowStates, getWorkflowActions, applyWorkflowAction, getFollowupHistory, getProposalByLeadId } from 'src/api/leads';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { SalesPipeline } from '../sales-pipeline';
+import { WhatsappChatDialog } from './whatsapp_chat_dialog';
 import { LeadFollowupDetails } from '../lead-followup-details';
+import { LeadProposalDetails } from '../lead-proposal-details';
 import { LeadPipelineTimeline } from '../lead-pipeline-timeline';
 import { AccountDetailsDialog } from '../../report/account/account-details-dialog';
 import { ContactDetailsDialog } from '../../report/contact/contact-details-dialog';
@@ -75,6 +77,8 @@ export function LeadDetailsView() {
     const router = useRouter();
     const navigate = useNavigate();
 
+    const [openWhatsapp, setOpenWhatsapp] = useState(false);
+
     const [lead, setLead] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [currentTab, setCurrentTab] = useState('general');
@@ -103,10 +107,75 @@ export function LeadDetailsView() {
     const [updatingStage, setUpdatingStage] = useState(false);
     const [confirmUpdate, setConfirmUpdate] = useState(false);
 
+    const [followupHistory, setFollowupHistory] = useState<any[]>([]);
+    const [followupLoading, setFollowupLoading] = useState(false);
+
+    const [proposalHistory, setProposalHistory] = useState([]);
+
+    useEffect(() => {
+        const loadFollowups = async () => {
+            if (!lead?.name) return;
+
+            try {
+                setFollowupLoading(true);
+
+                const history = await getFollowupHistory(
+                    "Lead",
+                    lead.name
+                );
+
+                setFollowupHistory(history || []);
+            } catch (error) {
+                console.error("Failed to load followup history", error);
+            } finally {
+                setFollowupLoading(false);
+            }
+        };
+
+        loadFollowups();
+    }, [lead?.name]);
+
+    useEffect(() => {
+        if (!lead?.name) return;
+
+        getProposalByLeadId(lead.name)
+            .then(setProposalHistory)
+            .catch(console.error);
+    }, [lead?.name]);
+
     useEffect(() => {
         if (lead) {
             setSelectedStage(lead.workflow_state);
         }
+    }, [lead]);
+
+    useEffect(() => {
+        const loadNames = async () => {
+
+            if (lead?.converted_account) {
+                const company = await getDoc(
+                    "Accounts",
+                    lead.converted_account
+                );
+
+                setConvertedAccountName(
+                    company.account_name
+                );
+            }
+
+            if (lead?.converted_contact) {
+                const client = await getDoc(
+                    "Contacts",
+                    lead.converted_contact
+                );
+
+                setConvertedContactName(
+                    client.first_name
+                );
+            }
+        };
+
+        loadNames();
     }, [lead]);
 
     useEffect(() => {
@@ -287,9 +356,10 @@ export function LeadDetailsView() {
 
     const TABS = [
         { value: 'general', label: 'General' },
-        { value: 'pipeline', label: 'Stage History' },
-        { value: 'followups', label: 'Followups' },
         { value: 'convert', label: 'Convert Lead' },
+        { value: 'followups', label: 'Followups' },
+        { value: 'pipeline', label: 'Stage History' },
+        { value: 'proposal', label: 'Proposals' },
     ];
 
     if (loading) {
@@ -317,26 +387,65 @@ export function LeadDetailsView() {
     return (
         <DashboardContent maxWidth={false}>
             {/* Top Header */}
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={4} mt={2}>
-                <Typography variant="h4" sx={{ fontWeight: 800 }}>Lead Profile</Typography>
-                <Button
-                    variant="outlined"
-                    color="inherit"
-                    onClick={() => navigate(-1)}
-                    startIcon={<IoMdArrowBack size={20} />}
-                    sx={{
-                        borderRadius: 1.5,
-                        fontWeight: 600,
-                        textTransform: 'none',
-                        px: 2.5,
-                        '&:hover': {
-                            bgcolor: (themeVar) => alpha(themeVar.palette.text.primary, 0.04),
-                            borderColor: 'text.primary',
+            <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                mb={4}
+                mt={2}
+            >
+                <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                    Lead Profile
+                </Typography>
+
+                <Stack direction="row" spacing={2}>
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={() => navigate(-1)}
+                        startIcon={<IoMdArrowBack size={20} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 2.5,
+                            '&:hover': {
+                                bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
+                                borderColor: 'text.primary',
+                            },
+                        }}
+                    >
+                        Go Back
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        color="success"
+                        onClick={() => setOpenWhatsapp(true)}
+                        startIcon={
+                            <Iconify
+                                icon={"ic:baseline-whatsapp" as any}
+                            />
                         }
-                    }}
-                >
-                    Go Back
-                </Button>
+                        sx={{
+                            bgcolor: '#25D366',
+                            color: '#fff',
+                            border: '1px solid #12a750ff',
+                            borderRadius: 2.5,
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            px: 2.5,
+                            boxShadow: '0 4px 12px rgba(37,211,102,0.25)',
+
+                            '&:hover': {
+                                bgcolor: '#22c55e',
+                                borderColor: '#128C7E',
+                            },
+                        }}
+                    >
+                        WhatsApp
+                    </Button>
+                </Stack>
             </Stack>
 
             {/* Stage Tracker Bar */}
@@ -697,13 +806,6 @@ export function LeadDetailsView() {
 
                     {currentTab === 'pipeline' && (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            <SalesPipeline
-                                currentStage={lead.workflow_state || lead.status}
-                                stages={allWorkflowData.states}
-                                leadName={lead.lead_name}
-                                service={lead.service}
-                                disabled
-                            />
                             <LeadPipelineTimeline
                                 title="Stage History"
                                 list={lead.converted_pipeline_timeline || []}
@@ -714,7 +816,14 @@ export function LeadDetailsView() {
                     {currentTab === 'followups' && (
                         <LeadFollowupDetails
                             title="Followup History"
-                            list={lead.followup_details || []}
+                            list={followupHistory}
+                        />
+                    )}
+
+                    {currentTab === 'proposal' && (
+                        <LeadProposalDetails
+                            title="Proposal List"
+                            list={proposalHistory}
                         />
                     )}
 
@@ -722,25 +831,13 @@ export function LeadDetailsView() {
                         <Box sx={{ py: 3 }}>
                             {lead.converted_account || lead.converted_contact ? (
                                 <Box>
-                                    <Box sx={{ padding: 5, bgcolor: (theme) => theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04), borderRadius: 2.5, border: (theme) => `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`,}}>
+                                    <Box sx={{ padding: 5, bgcolor: (theme) => theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04), borderRadius: 2.5, border: (theme) => `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`, }}>
                                         <Stack spacing={2.5}>
                                             <Box>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
                                                         Converted Company
                                                     </Typography>
-                                                    
-                                                    {lead.converted_account && (
-                                                        <Box
-                                                            onClick={() => {
-                                                                setSelectedAccount(lead.converted_account);
-                                                                setOpenAccount(true);
-                                                            }}
-                                                            sx={{ cursor: 'pointer', '&:hover': { opacity: 0.7 } }}
-                                                        >
-                                                            <Iconify icon={"solar:square-arrow-right-up-bold" as any} width={18} sx={{ color: 'primary.main' }} />
-                                                        </Box>
-                                                    )}
                                                 </Box>
                                                 <Typography
                                                     variant="h6"
@@ -750,7 +847,7 @@ export function LeadDetailsView() {
                                                         lineHeight: 1.3,
                                                     }}
                                                 >
-                                                    {lead.converted_account_name || 'N/A'}
+                                                    {convertedAccountName || 'NA'}
                                                 </Typography>
 
                                                 {lead.converted_contact && (
@@ -772,17 +869,6 @@ export function LeadDetailsView() {
                                                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
                                                         Converted Client
                                                     </Typography>
-                                                    {lead.converted_contact && (
-                                                        <Box
-                                                            onClick={() => {
-                                                                setSelectedContact(lead.converted_contact);
-                                                                setOpenContact(true);
-                                                            }}
-                                                            sx={{ cursor: 'pointer', '&:hover': { opacity: 0.7 } }}
-                                                        >
-                                                            <Iconify icon={"solar:square-arrow-right-up-bold" as any} width={18} sx={{ color: 'primary.main' }} />
-                                                        </Box>
-                                                    )}
                                                 </Box>
                                                 <Typography
                                                     variant="h6"
@@ -792,7 +878,7 @@ export function LeadDetailsView() {
                                                         lineHeight: 1.3,
                                                     }}
                                                 >
-                                                    {lead.converted_contact_name || 'N/A'}
+                                                    {convertedContactName || 'NA'}
                                                 </Typography>
 
                                                 {lead.converted_contact && (
@@ -807,7 +893,7 @@ export function LeadDetailsView() {
                                                         {lead.converted_contact}
                                                     </Typography>
                                                 )}
-                                                
+
                                             </Box>
                                         </Stack>
                                     </Box>
@@ -861,6 +947,12 @@ export function LeadDetailsView() {
                 open={openContact}
                 onClose={() => setOpenContact(false)}
                 contactId={selectedContact}
+            />
+
+            <WhatsappChatDialog
+                open={openWhatsapp}
+                onClose={() => setOpenWhatsapp(false)}
+                lead={lead}
             />
 
             <ConfirmDialog

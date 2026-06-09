@@ -1002,67 +1002,82 @@ export function EventsView() {
                 </Stack>
 
                 {/* 1. Full width Event Types Legend */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3, mb: 1.5, px: 1 }}>
-                    <Typography variant="subtitle2" color="text.secondary">Event Types:</Typography>
-                    <Box 
-                        onClick={() => setEventTypeFilter('All')}
-                        sx={{ 
-                            display: 'flex', alignItems: 'center', gap: 0.5, 
-                            color: eventTypeFilter === 'All' ? 'primary.main' : 'text.secondary',
-                            cursor: 'pointer',
-                            fontWeight: eventTypeFilter === 'All' ? 700 : 400,
-                            bgcolor: eventTypeFilter === 'All' ? (t) => alpha(t.palette.primary.main, 0.08) : 'transparent',
-                            px: 1, py: 0.5, borderRadius: 1,
-                            transition: 'all 0.2s'
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'end',
+                        justifyContent: 'flex-end',
+                        mb: 2,
+                    }}
+                >
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            p: 0.5,
+                            bgcolor: '#F4F6F8',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '999px',
+                            gap: 0.5,
                         }}
                     >
-                        <LuFilter size={16} />
-                        <Typography variant="body2" sx={{ fontWeight: 'inherit' }}>All</Typography>
-                    </Box>
-                    <Box 
-                        onClick={() => setEventTypeFilter('Calls')}
-                        sx={{ 
-                            display: 'flex', alignItems: 'center', gap: 0.5, 
-                            color: eventTypeFilter === 'Calls' ? 'primary.main' : 'text.secondary',
-                            cursor: 'pointer',
-                            fontWeight: eventTypeFilter === 'Calls' ? 700 : 400,
-                            bgcolor: eventTypeFilter === 'Calls' ? (t) => alpha(t.palette.primary.main, 0.08) : 'transparent',
-                            px: 1, py: 0.5, borderRadius: 1,
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        <FiPhoneCall size={16} />
-                        <Typography variant="body2" sx={{ fontWeight: 'inherit' }}>Calls</Typography>
-                    </Box>
-                    <Box 
-                        onClick={() => setEventTypeFilter('Meetings')}
-                        sx={{ 
-                            display: 'flex', alignItems: 'center', gap: 0.5, 
-                            color: eventTypeFilter === 'Meetings' ? 'primary.main' : 'text.secondary',
-                            cursor: 'pointer',
-                            fontWeight: eventTypeFilter === 'Meetings' ? 700 : 400,
-                            bgcolor: eventTypeFilter === 'Meetings' ? (t) => alpha(t.palette.primary.main, 0.08) : 'transparent',
-                            px: 1, py: 0.5, borderRadius: 1,
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        <FiCalendar size={16} />
-                        <Typography variant="body2" sx={{ fontWeight: 'inherit' }}>Meetings</Typography>
-                    </Box>
-                    <Box 
-                        onClick={() => setEventTypeFilter('To-Do')}
-                        sx={{ 
-                            display: 'flex', alignItems: 'center', gap: 0.5, 
-                            color: eventTypeFilter === 'To-Do' ? 'primary.main' : 'text.secondary',
-                            cursor: 'pointer',
-                            fontWeight: eventTypeFilter === 'To-Do' ? 700 : 400,
-                            bgcolor: eventTypeFilter === 'To-Do' ? (t) => alpha(t.palette.primary.main, 0.08) : 'transparent',
-                            px: 1, py: 0.5, borderRadius: 1,
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        <FiCheckSquare size={16} />
-                        <Typography variant="body2" sx={{ fontWeight: 'inherit' }}>To-Do</Typography>
+                        {[
+                            { label: 'All', icon: <LuFilter size={16} /> },
+                            { label: 'Calls', icon: <FiPhoneCall size={16} /> },
+                            { label: 'Meetings', icon: <FiCalendar size={16} /> },
+                            { label: 'To-Do', icon: <FiCheckSquare size={16} /> },
+                        ].map((item) => (
+                            <Box
+                                key={item.label}
+                                onClick={() => setEventTypeFilter(item.label)}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    px: 2.5,
+                                    py: 0.5,
+                                    borderRadius: '999px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.25s ease',
+
+                                    bgcolor:
+                                        eventTypeFilter === item.label
+                                            ? '#12A8D6'
+                                            : 'transparent',
+
+                                    color:
+                                        eventTypeFilter === item.label
+                                            ? '#fff'
+                                            : '#637381',
+
+                                    boxShadow:
+                                        eventTypeFilter === item.label
+                                            ? '0 4px 12px rgba(18,168,214,0.25)'
+                                            : 'none',
+
+                                    '&:hover': {
+                                        bgcolor:
+                                            eventTypeFilter === item.label
+                                                ? '#12A8D6'
+                                                : 'rgba(18,168,214,0.08)',
+                                    },
+                                }}
+                            >
+                                {item.icon}
+
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        fontWeight:
+                                            eventTypeFilter === item.label
+                                                ? 700
+                                                : 600,
+                                    }}
+                                >
+                                    {item.label}
+                                </Typography>
+                            </Box>
+                        ))}
                     </Box>
                 </Box>
 

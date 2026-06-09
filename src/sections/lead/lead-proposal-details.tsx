@@ -25,18 +25,17 @@ type Props = {
   subheader?: string;
   list: {
     name: string;
-    type: string;
-    title?: string;
-    status?: string;
-    result?: string;
-    notes?: string;
-    owner?: string;
-    start_time?: string;
-    end_time?: string;
+    proposal_title: string;
+    reference_no: string;
+    proposal_date: string;
+    valid_until?: string;
+    status: string;
+    lead_name?: string;
+    company_name?: string;
   }[];
 };
 
-export function LeadFollowupDetails({ title, subheader, list }: Props) {
+export function LeadProposalDetails({ title, subheader, list }: Props) {
   const [page, setPage] = useState(0);
 
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -76,19 +75,18 @@ export function LeadFollowupDetails({ title, subheader, list }: Props) {
           >
             <TableHead>
               <TableRow>
-                <TableCell>Date & Time</TableCell>
+                <TableCell>Reference No</TableCell>
 
-                <TableCell>Type</TableCell>
+                <TableCell>Proposal Title</TableCell>
 
-                <TableCell>Title</TableCell>
+                <TableCell>Proposal Date</TableCell>
+
+                <TableCell>Valid Until</TableCell>
+                
+                <TableCell>Company</TableCell>
 
                 <TableCell>Status</TableCell>
-                
-                <TableCell>Completed Status</TableCell>
 
-                <TableCell>Owner</TableCell>
-
-                <TableCell>Notes</TableCell>
               </TableRow>
             </TableHead>
 
@@ -102,7 +100,7 @@ export function LeadFollowupDetails({ title, subheader, list }: Props) {
                       }}
                     >
                       <Iconify
-                        icon={"solar:calendar-mark-bold-duotone" as any}
+                        icon={"solar:document-add-bold" as any}
                         width={56}
                         sx={{
                           color: "text.disabled",
@@ -117,7 +115,7 @@ export function LeadFollowupDetails({ title, subheader, list }: Props) {
                           color: "text.secondary",
                         }}
                       >
-                        No follow-up history available
+                        No Proposal available for this Lead
                       </Typography>
                     </Box>
                   </TableCell>
@@ -126,52 +124,56 @@ export function LeadFollowupDetails({ title, subheader, list }: Props) {
                 paginatedList.map((row) => (
                   <TableRow hover key={row.name}>
                     <TableCell>
-                      {row.start_time ? fDateTime(row.start_time) : "-"}
+                      {row.reference_no}
                     </TableCell>
 
-                    <TableCell>
-                      <Label color={row.type === "Call" ? "primary" : "info"}>
-                        {row.type}
-                      </Label>
+                    <TableCell
+                        sx={{
+                            maxWidth: 250,
+                            fontWeight: 600,
+                        }}
+                    >
+                        {row.proposal_title}
                     </TableCell>
 
                     <TableCell
                       sx={{
-                        maxWidth: 250,
                         fontWeight: 600,
                       }}
                     >
-                      {row.title || "-"}
+                       {row.proposal_date ? fDateTime(row.proposal_date) : "-"}
+                    </TableCell>
+
+                    <TableCell
+                        sx={{
+                            fontWeight: 600,
+                        }}
+                    >
+                       {row.valid_until ? fDateTime(row.valid_until) : "-"}
+                    </TableCell>
+
+                    <TableCell
+                      sx={{
+                        maxWidth: 200,
+                      }}
+                    >
+                        {row.company_name || "-"}
                     </TableCell>
 
                     <TableCell>
-                      <Label
+                        <Label
                         color={
-                          row.status === "Completed" ? "success" : "warning"
+                            row.status === "Approved"
+                            ? "success"
+                            : row.status === "Rejected"
+                            ? "error"
+                            : row.status === "Sent"
+                            ? "info"
+                            : "warning"
                         }
-                      >
-                        {row.status || "-"}
-                      </Label>
-                    </TableCell>
-
-                    <TableCell
-                      sx={{
-                        maxWidth: 150,
-                      }}
                     >
-                      {row.result || "-"}
-                    </TableCell>
-
-                    <TableCell>{row.owner || "-"}</TableCell>
-
-                    <TableCell
-                      sx={{
-                        maxWidth: 300,
-                        whiteSpace: "normal",
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      {row.notes || "-"}
+                        {row.status}
+                        </Label>
                     </TableCell>
                   </TableRow>
                 ))

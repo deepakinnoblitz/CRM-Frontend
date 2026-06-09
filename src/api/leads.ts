@@ -293,6 +293,34 @@ export async function getLeadPermissions() {
     return (await res.json()).message || { read: false, write: false, delete: false };
 }
 
+export async function getFollowupHistory(
+    reference_type: string,
+    reference_name: string
+) {
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_followup_history?reference_type=${encodeURIComponent(reference_type)}&reference_name=${encodeURIComponent(reference_name)}`
+    );
+
+    if (!res.ok) {
+        throw new Error(
+            `Failed to fetch follow-up history`
+        );
+    }
+
+    return (await res.json()).message || [];
+}
+
+export async function getProposalByLeadId(leadId: string) {
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_proposal_by_lead_id?lead_id=${encodeURIComponent(leadId)}`
+    );
+
+    if (!res.ok) {
+        throw new Error('Failed to fetch proposals');
+    }
+
+    return (await res.json()).message;
+}
 
 export interface WorkflowTransition {
     state: string;
