@@ -374,7 +374,7 @@ export function SalarySlipsView() {
                     numSelected={selected.length}
                     filterName={filterName}
                     onFilterName={handleFilterByName}
-                    searchPlaceholder="Search employee name..."
+                    searchPlaceholder="Search employee name or ID..."
                     sortBy={`${orderBy}_${order}`}
                     onSortChange={(val) => {
                         const index = val.lastIndexOf('_');

@@ -183,14 +183,14 @@ export function EmployeeDetailsView() {
                             </Box>
 
                             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                                <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>{employee.employee_name}</Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                                    <Typography variant="h5" sx={{ fontWeight: 800 }}>{employee.employee_name}</Typography>
+                                    {renderStatus(employee.status)}
+                                </Box>
                                 <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{employee.designation} at {employee.department}</Typography>
                                 <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'text.disabled', fontWeight: 700 }}>
                                     ID: {employee.name}
                                 </Typography>
-                            </Box>
-                            <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
-                                {renderStatus(employee.status)}
                             </Box>
                         </Box>
 

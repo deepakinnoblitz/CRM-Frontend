@@ -35,6 +35,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import MenuItem from '@mui/material/MenuItem';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -1114,10 +1115,10 @@ export function EmployeeView() {
 
         if (type === 'select' || type === 'link') {
             return (
-                <TextField {...commonProps} select SelectProps={{ native: true }}>
-                    <option value="">Select {label}</option>
+                <TextField {...commonProps} select>
+                    <MenuItem value="" disabled>Select {label}</MenuItem>
                     {options.map((opt: any) => (
-                        <option key={opt.name || opt} value={opt.name || opt}>{opt.name || opt}</option>
+                        <MenuItem key={opt.name || opt} value={opt.name || opt}>{opt.name || opt}</MenuItem>
                     ))}
                 </TextField>
             );

@@ -24,6 +24,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import ChatInfo from './chat-info';
 import ChatAudioPlayer from './chat-audio-player';
+import DocumentMessageCard from './document-message-card';
 
 // ----------------------------------------------------------------------
 
@@ -532,6 +533,7 @@ type ChatMessageItemProps = {
 const ChatMessageItem = memo(({ msg, isMe, isSameDate, onDelete, showSender, onJoinCall, isConcluded }: ChatMessageItemProps) => {
     const isDeleted = msg.content?.includes('deleted-message-text');
     const isVoiceClip = !isDeleted && (msg.is_voice_clip === 1 || msg.content?.includes('<audio'));
+    const isDocument = !isDeleted && (msg.is_document === 1 || (!isVoiceClip && !msg.is_media && msg.attachment && !msg.content?.includes('<img') && !msg.content?.includes('<audio')));
     // Purely content-based detection — strip HTML and check for the tag
     const plainText = String(msg.content || '').replace(/<[^>]*>/g, '');
     const isCallInvite = !isDeleted && plainText.includes('[GROUP_CALL]');
@@ -655,6 +657,7 @@ const ChatMessageItem = memo(({ msg, isMe, isSameDate, onDelete, showSender, onJ
                                 typography: 'body2',
                                 bgcolor: (theme) => {
                                     if (isCallInvite && isConcluded) return alpha(theme.palette.info.main, 0.08);
+                                    if (isDocument) return 'transparent';
                                     return isMe
                                         ? theme.palette.primary.main
                                         : alpha(theme.palette.primary.main, 0.1);
@@ -667,11 +670,12 @@ const ChatMessageItem = memo(({ msg, isMe, isSameDate, onDelete, showSender, onJ
                                 width: isCallInvite ? 300 : 'auto',
                                 border: (theme) => (isCallInvite && isConcluded) ? `1px solid ${alpha(theme.palette.info.main, 0.15)}` : 'none',
                                 boxShadow: (theme) => {
+                                    if (isDocument) return 'none';
                                     if (isCallInvite && !isConcluded) return `0 12px 24px ${alpha(theme.palette.primary.main, 0.2)}`;
                                     if (isCallInvite && isConcluded) return `0 4px 12px ${alpha(theme.palette.info.main, 0.1)}`;
                                     return 'none';
                                 },
-                                p: isCallInvite ? 3 : (isVoiceClip ? 0.5 : 1.5),
+                                p: isCallInvite ? 3 : (isVoiceClip ? 0.5 : (isDocument ? 0 : 1.5)),
                                 ...(isMe && {
                                     borderTopRightRadius: 0,
                                 }),
@@ -793,6 +797,8 @@ const ChatMessageItem = memo(({ msg, isMe, isSameDate, onDelete, showSender, onJ
                                 </Stack>
                             ) : isVoiceClip ? (
                                 <ChatAudioPlayer src={getAudioSrc()} isMe={isMe} />
+                            ) : isDocument ? (
+                                <DocumentMessageCard msg={msg} isMe={isMe} />
                             ) : (
                                 <Box
                                     component="div"

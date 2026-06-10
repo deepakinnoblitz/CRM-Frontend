@@ -37,9 +37,12 @@ export interface WorkflowAction {
 
 // Leave Application APIs
 export const fetchLeaveApplications = (params: any) => {
+    const { search, ...restParams } = params;
+    const cleanSearch = search?.trim();
+
     const filters: any[] = [];
-    if (params.filters) {
-        Object.entries(params.filters).forEach(([key, value]) => {
+    if (restParams.filters) {
+        Object.entries(restParams.filters).forEach(([key, value]) => {
             if (value && value !== 'all') {
                 if (key === 'start_date' || key === 'end_date') {
                     // Handled below for range
@@ -49,13 +52,23 @@ export const fetchLeaveApplications = (params: any) => {
             }
         });
 
-        if (params.filters.start_date || params.filters.end_date) {
-            const start = params.filters.start_date || '1970-01-01';
-            const end = params.filters.end_date || '2099-12-31';
+        if (restParams.filters.start_date || restParams.filters.end_date) {
+            const start = restParams.filters.start_date || '1970-01-01';
+            const end = restParams.filters.end_date || '2099-12-31';
             filters.push(["Leave Application", "from_date", "between", [start, end]]);
         }
     }
-    return fetchFrappeList("Leave Application", { ...params, filters, searchField: "employee_name" });
+
+    const or_filters = restParams.or_filters || [];
+    
+    if (cleanSearch) {
+        or_filters.push(
+            ["Leave Application", "employee_name", "like", `%${cleanSearch}%`],
+            ["Leave Application", "employee", "like", `%${cleanSearch}%`]
+        );
+    }
+
+    return fetchFrappeList("Leave Application", { ...restParams, filters, or_filters });
 };
 
 export async function createLeaveApplication(data: Partial<LeaveApplication>) {

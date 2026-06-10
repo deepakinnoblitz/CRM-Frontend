@@ -320,7 +320,7 @@ export function LeaveStatusCards({ data, inProbation, sx, ...other }: Props) {
                             icon="solar:calendar-mark-bold-duotone"
                             hoverIcon="solar:check-circle-bold-duotone"
                             badgeIcon="solar:check-circle-bold"
-                            bgColor={paidOverused ? alpha('#ef4444', 0.1) : alpha('#2563eb', 0.1)}
+                            bgColor={paidOverused ? alpha('#ee3333ff', 0.1) : alpha('#2563eb', 0.1)}
                         />
                     </Stack>
 
@@ -331,18 +331,19 @@ export function LeaveStatusCards({ data, inProbation, sx, ...other }: Props) {
                                 display: 'flex',
                                 flexDirection: 'column',
                                 justifyContent: 'center',
-                                p: 2,
-                                borderRadius: 1.5,
-                                backgroundColor: alpha('#ef4444', 0.08),
-                                border: `1px solid ${alpha('#ef4444', 0.14)}`,
+                                alignItems: 'center',
+                                textAlign: 'center',
+                                mt: -6.5, // offset header margin to perfectly center in card
                             }}
                         >
                             <Typography
                                 sx={{
-                                    color: '#b91c1c',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 800,
-                                    lineHeight: 1.55,
+                                    color: '#dc2626',
+                                    fontSize: '1.1rem',
+                                    fontWeight: 600,
+                                    lineHeight: 1.4,
+                                    m: 0,
+                                    p: 0,
                                 }}
                             >
                                 Paid Leave will be available once your probation ends.

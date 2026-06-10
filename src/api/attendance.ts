@@ -15,7 +15,21 @@ export interface Attendance {
 }
 
 // Attendance APIs
-export const fetchAttendance = (params: any) => fetchFrappeList("Attendance", { ...params, searchField: "employee_name" });
+export const fetchAttendance = (params: any) => {
+    const { search, ...rest } = params;
+    const cleanSearch = search?.trim();
+    
+    const or_filters = rest.or_filters || [];
+    
+    if (cleanSearch) {
+        or_filters.push(
+            ["Attendance", "employee_name", "like", `%${cleanSearch}%`],
+            ["Attendance", "employee", "like", `%${cleanSearch}%`]
+        );
+    }
+    
+    return fetchFrappeList("Attendance", { ...rest, or_filters });
+};
 
 export async function createAttendance(data: Partial<Attendance>) {
     const headers = await getAuthHeaders();
