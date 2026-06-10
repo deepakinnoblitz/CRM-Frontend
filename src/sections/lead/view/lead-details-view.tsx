@@ -1,4 +1,5 @@
 import { IoMdArrowBack } from "react-icons/io";
+import { RiMailSendLine } from "react-icons/ri";
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HiOutlineBuildingOffice2, HiOutlineMapPin, HiOutlineTag, HiOutlineCalendarDays } from "react-icons/hi2";
@@ -421,6 +422,30 @@ export function LeadDetailsView() {
                     <Button
                         variant="contained"
                         color="success"
+                        onClick={() => {
+                            router.push(`/proposals/new?lead=${lead.name}`);
+                        }}
+                        startIcon={
+                            <RiMailSendLine />
+                        }
+                        sx={{
+                            bgcolor: '#9625d3ff',
+                            color: '#fff',
+                            borderRadius: 1.5,
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            px: 2.5,
+                            '&:hover': {
+                                bgcolor: '#9625d3ff',
+                            },
+                        }}
+                    >
+                        Create Proposal
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        color="success"
                         onClick={() => setOpenWhatsapp(true)}
                         startIcon={
                             <Iconify
@@ -430,7 +455,6 @@ export function LeadDetailsView() {
                         sx={{
                             bgcolor: '#25D366',
                             color: '#fff',
-                            border: '1px solid #12a750ff',
                             borderRadius: 2.5,
                             fontWeight: 700,
                             textTransform: 'none',
@@ -439,7 +463,6 @@ export function LeadDetailsView() {
 
                             '&:hover': {
                                 bgcolor: '#22c55e',
-                                borderColor: '#128C7E',
                             },
                         }}
                     >

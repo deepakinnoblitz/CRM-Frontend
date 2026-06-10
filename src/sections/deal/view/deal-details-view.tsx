@@ -28,7 +28,6 @@ import { fetchRelatedEstimations } from 'src/api/estimation';
 const STAGE_OPTIONS = [
     { value: 'Just In', label: 'Just In' },
     { value: 'Working', label: 'Working' },
-    { value: 'Proposal Sent', label: 'Proposal\nSend' },
     { value: 'Estimation Created', label: 'Estimation\nCreated' },
     { value: 'Estimation Sent', label: 'Estimation\nSent' },
     { value: 'Invoice Created', label: 'Invoice\nCreated' },

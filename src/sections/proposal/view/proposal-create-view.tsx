@@ -77,13 +77,14 @@ export function ProposalCreateView() {
     const router = useRouter();
     const { enqueueSnackbar } = useSnackbar();
     const [searchParams] = useSearchParams();
+    const leadParam = searchParams.get('lead');
     const prospectIdParam = searchParams.get('prospect_id');
     const clientIdParam = searchParams.get('client_id');
     const dealIdParam = searchParams.get('deal_id');
 
     // Form state
     const [proposalTitle, setProposalTitle] = useState('');
-    const [clientName, setClientName] = useState('');
+    const [clientName, setClientName] = useState(leadParam || '');
     const [customerName, setCustomerName] = useState('');
     const [billingName, setBillingName] = useState('');
     const [billingNameOptions, setBillingNameOptions] = useState<
@@ -116,6 +117,12 @@ export function ProposalCreateView() {
 
     // File input ref per row
     const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+    useEffect(() => {
+        if (leadParam && customerOptions.length > 0) {
+            handleCustomerChange(leadParam);
+        }
+    }, [leadParam, customerOptions]);
 
     useEffect(() => {
         getDoctypeList('Lead', ['name', 'lead_name', 'company_name'])
