@@ -1,20 +1,20 @@
 import { IoMdArrowBack } from "react-icons/io";
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { HiOutlineBuildingOffice2, HiOutlineMapPin, HiOutlineTag, HiOutlineCalendarDays } from "react-icons/hi2";
+import { HiOutlineTag, HiOutlineMapPin, HiOutlineCalendarDays, HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import {
-    FaStar,
-    FaPhone,
-    FaEnvelope,
     FaTag,
-    FaGlobe,
+    FaStar,
     FaUser,
-    FaCalendarDays,
+    FaCity,
+    FaPhone,
+    FaGlobe,
+    FaEnvelope,
     FaLightbulb,
     FaListCheck,
+    FaFileLines,
     FaLocationDot,
-    FaCity,
-    FaFileLines
+    FaCalendarDays
 } from "react-icons/fa6";
 
 import Box from '@mui/material/Box';
@@ -35,13 +35,12 @@ import { useRouter } from 'src/routes/hooks';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getDoc, getLead, convertLead, getWorkflowStates, getWorkflowActions, applyWorkflowAction, getFollowupHistory, getProposalByLeadId } from 'src/api/leads';
+import { getDoc, getLead, convertLead, getWorkflowStates, getWorkflowActions, getFollowupHistory, applyWorkflowAction, getProposalByLeadId } from 'src/api/leads';
 
-import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { SalesPipeline } from '../sales-pipeline';
+import { LeadConvertDialog } from '../lead-convert-dialog';
 import { WhatsappChatDialog } from './whatsapp_chat_dialog';
 import { LeadFollowupDetails } from '../lead-followup-details';
 import { LeadProposalDetails } from '../lead-proposal-details';
@@ -96,6 +95,7 @@ export function LeadDetailsView() {
     const [convertedContactName, setConvertedContactName] = useState<string | null>(null);
 
     const [openConfirm, setOpenConfirm] = useState(false);
+    const [openConvertDialog, setOpenConvertDialog] = useState(false);
 
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' | 'info' }>({
         open: false,
@@ -924,7 +924,7 @@ export function LeadDetailsView() {
                                         size="large"
                                         color="primary"
                                         startIcon={converting ? <Iconify icon={"svg-spinners:18-dots-indicator" as any} /> : <Iconify icon={"solar:refresh-bold" as any} />}
-                                        onClick={() => setOpenConfirm(true)}
+                                        onClick={() => setOpenConvertDialog(true)}
                                         disabled={converting}
                                         sx={{ px: 4, height: 48, fontWeight: 800 }}
                                     >
@@ -953,6 +953,14 @@ export function LeadDetailsView() {
                 open={openWhatsapp}
                 onClose={() => setOpenWhatsapp(false)}
                 lead={lead}
+            />
+
+            <LeadConvertDialog
+                open={openConvertDialog}
+                onClose={() => setOpenConvertDialog(false)}
+                lead={lead}
+                onReadyToConvert={() => setOpenConfirm(true)}
+                onError={(msg) => setSnackbar({ open: true, message: msg, severity: 'error' })}
             />
 
             <ConfirmDialog
