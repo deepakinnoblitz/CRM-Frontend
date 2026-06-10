@@ -1,8 +1,9 @@
 import React from 'react';
+
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import { alpha } from '@mui/material/styles';
+import Typography from '@mui/material/Typography';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -27,7 +28,7 @@ export default function DocumentMessageCard({ msg, isMe }: Props) {
         filename = msg.content?.replace(/<[^>]*>?/gm, '').trim() || 'Document';
     }
 
-    const extensionMatch = filename.match(/\.([0-9a-z]+)(?:[\?#]|$)/i);
+    const extensionMatch = filename.match(/\.([0-9a-z]+)(?:[?#]|$)/i);
     const extension = extensionMatch ? extensionMatch[1].toLowerCase() : '';
 
     let icon = "solar:document-bold";
