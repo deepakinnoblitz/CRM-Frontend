@@ -17,6 +17,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import { ClickAwayListener, Tooltip as MuiTooltip, keyframes } from '@mui/material';
 
+import { fDate } from 'src/utils/format-time';
 import { fNumber } from 'src/utils/format-number';
 
 import { getHRDoc, getHRSettings } from 'src/api/hr-management';
@@ -185,7 +186,17 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
                                     <Typography variant="h5" sx={{ fontWeight: 800 }}>{employee.employee_name}</Typography>
                                     {renderStatus(employee.status)}
                                 </Box>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{employee.designation} at {employee.department}</Typography>
+                                {(() => {
+                                    const des = (employee.designation || '').trim();
+                                    const dep = (employee.department || '').trim();
+                                    const validDes = des && des !== '-';
+                                    const validDep = dep && dep !== '-';
+                                    
+                                    if (!validDes && !validDep) return null;
+                                    
+                                    const text = validDes && validDep ? `${des} at ${dep}` : (validDes ? des : dep);
+                                    return <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{text}</Typography>;
+                                })()}
                                 <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'text.disabled', fontWeight: 700 }}>
                                     ID: {employee.name}
                                 </Typography>
@@ -239,8 +250,8 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
                                         <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' } }}>
                                             <DetailItem label="Department" value={employee.department} icon="solar:buildings-bold" />
                                             <DetailItem label="Designation" value={employee.designation} icon="solar:medal-star-bold" />
-                                            <DetailItem label="Joining Date" value={employee.date_of_joining} icon="solar:calendar-bold" />
-                                            <DetailItem label="Date of Birth" value={employee.dob} icon="solar:calendar-bold" />
+                                            <DetailItem label="Joining Date" value={fDate(employee.date_of_joining, 'DD-MM-YYYY')} icon="solar:calendar-bold" />
+                                            <DetailItem label="Date of Birth" value={fDate(employee.dob, 'DD-MM-YYYY')} icon="solar:calendar-bold" />
                                         </Box>
                                     </Box>
 
@@ -491,8 +502,9 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
                                                     Cost to Company (Monthly)
                                                 </Typography>
                                             </Box>
-                                            <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                                                {employee.ctc ? `₹${parseFloat(employee.ctc).toLocaleString()}` : '-'}
+                                            <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main', display: 'flex', alignItems: 'center' }}>
+                                                <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mr: 1, fontSize: '0.8em', color: 'primary.main' }}>{hrSettings.currency_symbol}</Box>
+                                                {employee.ctc ? fNumber(parseFloat(employee.ctc), { locale: hrSettings.default_locale }) : '-'}
                                             </Typography>
                                         </Box>
 
@@ -502,14 +514,28 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
                                                 bgcolor: (theme) => theme.palette.mode === 'light' ? 'success.lighter' : 'grey.900',
                                                 border: (theme) => `1px solid ${theme.palette.success.light}`,
                                             }}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                                    <Iconify icon="solar:chart-2-bold" width={18} sx={{ color: 'success.main' }} />
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
+                                                    <Box sx={{
+                                                        width: 32,
+                                                        height: 32,
+                                                        borderRadius: 1.5,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        bgcolor: 'success.main',
+                                                        color: 'white'
+                                                    }}>
+                                                        <Iconify icon="solar:chart-2-bold" width={18} />
+                                                    </Box>
                                                     <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'success.darker' }}>Earnings</Typography>
                                                 </Box>
                                                 <Box display="flex" flexDirection="column" gap={1.5}>
                                                     {(employee.earnings || []).map((item: any, idx: number) => (
                                                         <SalaryItem key={idx} label={item.component_name} value={item.amount} hrSettings={hrSettings} />
                                                     ))}
+                                                    {(!employee.earnings || employee.earnings.length === 0) && (
+                                                        <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>No earnings defined</Typography>
+                                                    )}
                                                 </Box>
                                             </Box>
 
@@ -518,14 +544,28 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
                                                 bgcolor: (theme) => theme.palette.mode === 'light' ? 'warning.lighter' : 'grey.900',
                                                 border: (theme) => `1px solid ${theme.palette.warning.light}`,
                                             }}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                                    <Iconify icon="solar:chart-square-bold" width={18} sx={{ color: 'warning.main' }} />
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
+                                                    <Box sx={{
+                                                        width: 32,
+                                                        height: 32,
+                                                        borderRadius: 1.5,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        bgcolor: 'warning.main',
+                                                        color: 'white'
+                                                    }}>
+                                                        <Iconify icon="solar:chart-square-bold" width={18} />
+                                                    </Box>
                                                     <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'warning.darker' }}>Deductions</Typography>
                                                 </Box>
                                                 <Box display="flex" flexDirection="column" gap={1.5}>
                                                     {(employee.deductions || []).map((item: any, idx: number) => (
                                                         <SalaryItem key={idx} label={item.component_name} value={item.amount} hrSettings={hrSettings} />
                                                     ))}
+                                                    {(!employee.deductions || employee.deductions.length === 0) && (
+                                                        <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>No deductions defined</Typography>
+                                                    )}
                                                 </Box>
                                             </Box>
                                         </Box>
@@ -539,10 +579,26 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
                                                 <Box>
                                                     <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>Net Salary (Monthly)</Typography>
                                                     <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 800, display: 'flex', alignItems: 'center' }}>
-                                                        <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mr: 1, fontSize: '0.8em' }}>{hrSettings.currency_symbol}</Box>
+                                                        <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mr: 1, fontSize: '0.8em', color: 'primary.main' }}>{hrSettings.currency_symbol}</Box>
                                                         {fNumber(employee.net_salary || 0, { locale: hrSettings.default_locale })}
                                                     </Typography>
                                                 </Box>
+                                                <Stack direction="row" spacing={4}>
+                                                    <Box sx={{ textAlign: 'right' }}>
+                                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Earnings</Typography>
+                                                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'success.main', display: 'flex', alignItems: 'center' }}>
+                                                            + <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mx: 0.5, color: 'success.main' }}>{hrSettings.currency_symbol}</Box>
+                                                            {fNumber(employee.total_earnings || 0, { locale: hrSettings.default_locale })}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ textAlign: 'right' }}>
+                                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Deductions</Typography>
+                                                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'error.main', display: 'flex', alignItems: 'center' }}>
+                                                            - <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mx: 0.5, color: 'error.main' }}>{hrSettings.currency_symbol}</Box>
+                                                            {fNumber(employee.total_deductions || 0, { locale: hrSettings.default_locale })}
+                                                        </Typography>
+                                                    </Box>
+                                                </Stack>
                                             </Stack>
                                         </Box>
                                     </Box>
