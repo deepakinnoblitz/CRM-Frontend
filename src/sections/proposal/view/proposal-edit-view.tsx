@@ -35,9 +35,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useRouter } from 'src/routes/hooks';
 
-import { getContact } from 'src/api/contacts';
-import { getDoctypeList } from 'src/api/leads';
 import { uploadFile } from 'src/api/data-import';
+import { getDoctypeList, getLead } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getProposal, createProposal } from 'src/api/proposal';
 
@@ -156,13 +155,11 @@ export function ProposalEditView() {
                     // Load billing options for the existing client
                     if (proposal.lead) {
                         try {
-                            const contact = await getContact(proposal.lead);
-                            const opts =
-                                contact.company_names?.map((cid: string, idx: number) => ({
-                                    name: cid,
-                                    account_name: contact.company_name_list?.[idx] || cid,
-                                })) || [];
-                            setBillingNameOptions(opts);
+                            const leadData = await getLead(proposal.lead);
+                            const compName = leadData?.company_name || leadData?.company || '';
+                            if (compName) {
+                                setBillingNameOptions([{ name: compName, account_name: compName }]);
+                            }
                         } catch (err) {
                             console.error('Failed to load billing options:', err);
                         }
@@ -178,21 +175,28 @@ export function ProposalEditView() {
         loadAll();
     }, [id]);
 
-    const handleCustomerChange = async (name: string) => {
+    const handleCustomerChange = async (name: string, opt?: any) => {
         setClientName(name);
         setClientError(false);
         if (name) {
             try {
-                const contact = await getContact(name);
-                setCustomerName(contact.lead_name || '');
-                const opts =
-                    contact.company_names?.map((cid: string, idx: number) => ({
-                        name: cid,
-                        account_name: contact.company_name_list?.[idx] || cid,
-                    })) || [];
-                setBillingNameOptions(opts);
-                if (opts.length === 1) setBillingName(opts[0].name);
-                else setBillingName('');
+                let leadDetails = opt;
+                if (!leadDetails || (!leadDetails.lead_name && !leadDetails.company_name)) {
+                    leadDetails = await getLead(name);
+                }
+                
+                const autoCustomerName = leadDetails?.lead_name || leadDetails?.customer_name || leadDetails?.title || '';
+                setCustomerName(autoCustomerName);
+                
+                const compName = leadDetails?.company_name || leadDetails?.company || '';
+                
+                if (compName) {
+                    setBillingNameOptions([{ name: compName, account_name: compName }]);
+                    setBillingName(compName);
+                } else {
+                    setBillingNameOptions([]);
+                    setBillingName('');
+                }
             } catch (err) {
                 console.error('Failed to fetch contact:', err);
             }
@@ -413,21 +417,32 @@ export function ProposalEditView() {
                         <Autocomplete fullWidth options={customerOptions}
                             getOptionLabel={(opt) => opt.lead_name ? `${opt.lead_name} (${opt.name})` : opt.name || ''}
                             value={customerOptions.find((o) => o.name === clientName) || null}
-                            onChange={(_e, val) => handleCustomerChange(val?.name || '')}
+                            onChange={(_e, val) => handleCustomerChange(val?.name || '', val)}
                             renderInput={(params) => (
                                 <TextField {...params} label="Lead" required error={clientError}
                                     helperText={clientError ? 'Please select a lead' : ''} />
-                            )} />
+                            )}
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.name}>
+                                    <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                            {option.lead_name || option.name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                </li>
+                            )}
+                        />
 
                         <TextField fullWidth label="Lead Name" value={customerName}
                             slotProps={{ input: { readOnly: true } }}
                             sx={{ bgcolor: (t) => alpha(t.palette.grey[500], 0.05) }} />
 
-                        <Autocomplete fullWidth options={billingNameOptions}
-                            getOptionLabel={(opt) => opt.account_name || opt.name || ''}
-                            value={billingNameOptions.find((o) => o.name === billingName) || null}
-                            onChange={(_e, val) => setBillingName(val?.name || '')}
-                            renderInput={(params) => <TextField {...params} label="Company Name" />} />
+                        <TextField fullWidth label="Company Name" value={billingName}
+                            slotProps={{ input: { readOnly: true } }}
+                            sx={{ bgcolor: (t) => alpha(t.palette.grey[500], 0.05) }} />
 
                         <DatePicker label="Proposal Date *"
                             value={proposalDate ? dayjs(proposalDate) : null}

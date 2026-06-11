@@ -721,7 +721,7 @@ export function ReimbursementClaimsView() {
                     numSelected={selected.length}
                     filterName={filterName}
                     onFilterName={handleFilterByName}
-                    searchPlaceholder="Search claims..."
+                    searchPlaceholder="Search employee name or ID..."
                     onDelete={selected.length > 0 ? handleBulkDelete : undefined}
                     onOpenFilter={() => setOpenFilters(true)}
                     canReset={canReset}
@@ -877,7 +877,7 @@ export function ReimbursementClaimsView() {
                         <Autocomplete
                             fullWidth
                             options={employees}
-                            getOptionLabel={(option) => `${option.employee_name} (${option.name})`}
+                            getOptionLabel={(option) => option.employee_name || option.name || option.employee_id || ''}
                             value={employees.find((emp) => emp.name === employee) || null}
                             disabled={isEdit || !isHR}
                             onChange={(event, newValue) => {
@@ -885,6 +885,21 @@ export function ReimbursementClaimsView() {
                                 if (formErrors.employee) {
                                     setFormErrors((prev) => ({ ...prev, employee: '' }));
                                 }
+                            }}
+                            renderOption={(props, option) => {
+                                const { key, ...optionProps } = props as any;
+                                return (
+                                    <li key={key} {...optionProps}>
+                                        <Stack spacing={0.5}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                {option.employee_name || option.name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                ID: {option.name || option.employee_id}
+                                            </Typography>
+                                        </Stack>
+                                    </li>
+                                );
                             }}
                             renderInput={(params) => (
                                 <TextField

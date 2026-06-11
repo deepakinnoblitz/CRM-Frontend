@@ -24,9 +24,9 @@ import TableContainer from '@mui/material/TableContainer';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import TablePagination from '@mui/material/TablePagination';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-import { IconButton, CircularProgress } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { IconButton, CircularProgress, MenuItem } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useAttendance } from 'src/hooks/useAttendance';
@@ -405,12 +405,12 @@ export function AttendanceView() {
 
         if (type === 'select' || type === 'link') {
             return (
-                <TextField {...commonProps} select SelectProps={{ native: true }}>
-                    <option value="">Select {label}</option>
+                <TextField {...commonProps} select>
+                    <MenuItem value="" disabled>Select {label}</MenuItem>
                     {options.map((opt: any) => (
-                        <option key={opt.name || opt} value={opt.name || opt}>
+                        <MenuItem key={opt.name || opt} value={opt.name || opt}>
                             {opt.employee_name ? `${opt.employee_name} (${opt.name})` : (opt.name || opt)}
-                        </option>
+                        </MenuItem>
                     ))}
                 </TextField>
             );
@@ -688,7 +688,7 @@ export function AttendanceView() {
                             <Autocomplete
                                 fullWidth
                                 options={employeeOptions}
-                                getOptionLabel={(option) => option.employee_name ? `${option.employee_name} (${option.name})` : (option.name || '')}
+                                getOptionLabel={(option) => option.employee_name || option.name || ''}
                                 value={employeeOptions.find((opt) => opt.name === formData.employee) || null}
                                 onChange={(event, newValue) => {
                                     handleInputChange('employee', newValue?.name || '');
@@ -705,6 +705,20 @@ export function AttendanceView() {
                                             },
                                         }}
                                     />
+                                )}
+                                renderOption={(props, option) => (
+                                    <li {...props}>
+                                        <Box>
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                {option.employee_name || option.name}
+                                            </Typography>
+                                            {option.employee_name && (
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                    ID: {option.name}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    </li>
                                 )}
                             />
                             {renderField('attendance_date', 'Attendance Date', 'date', [], {}, true)}

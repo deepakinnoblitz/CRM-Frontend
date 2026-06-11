@@ -39,12 +39,14 @@ import { generateCallsPdf } from 'src/components/export/pdf/calls-pdf-generator'
 
 import { useAuth } from 'src/auth/auth-context';
 
+import { CallsCalendar } from './calls-calendar';
 import { CallDetailsDialog } from '../call-details-dialog';
 import { ExportFieldsDialog } from '../../export-fields-dialog';
 
 // ----------------------------------------------------------------------
 
 export function CallsReportView() {
+    const theme = useTheme();
     const [reportData, setReportData] = useState<any[]>([]);
     const [summaryData, setSummaryData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -57,12 +59,20 @@ export function CallsReportView() {
     const [callFor, setCallFor] = useState('all');
     const [status, setStatus] = useState('all');
     const [owner, setOwner] = useState('all');
+    const [currentView, setCurrentView] = useState<'list' | 'calendar'>('list');
 
     useEffect(() => {
         if (user?.name) {
             setOwner(user.has_crm_permission ? user.name : 'all');
         }
     }, [user]);
+
+    useEffect(() => {
+        if (owner === 'all') {
+            setCurrentView('list');
+        }
+    }, [owner]);
+
     const [reminder, setReminder] = useState('all');
 
     // Options
@@ -411,8 +421,54 @@ export function CallsReportView() {
                     )}
                 </Box>
 
-                <Card>
-                    <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                {owner !== 'all' && (
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                        <Box
+                            sx={{
+                                display: 'inline-flex',
+                                bgcolor: alpha(theme.palette.grey[500], 0.06),
+                                p: 0.5,
+                                borderRadius: '24px',
+                                border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                            }}
+                        >
+                            {[
+                                { value: 'list', label: 'List View', icon: 'solar:list-bold' },
+                                { value: 'calendar', label: 'Calendar View', icon: 'solar:calendar-bold' }
+                            ].map((tab) => {
+                                const isActive = currentView === tab.value;
+                                return (
+                                    <Button
+                                        key={tab.value}
+                                        onClick={() => setCurrentView(tab.value as any)}
+                                        startIcon={<Iconify icon={tab.icon as any} width={16} />}
+                                        sx={{
+                                            borderRadius: '20px',
+                                            px: 3,
+                                            py: 0.75,
+                                            fontSize: '0.825rem',
+                                            fontWeight: isActive ? 700 : 600,
+                                            color: isActive ? '#fff' : theme.palette.text.secondary,
+                                            bgcolor: isActive ? '#08a3cd' : 'transparent',
+                                            boxShadow: isActive ? `0 2px 8px ${alpha('#08a3cd', 0.3)}` : 'none',
+                                            textTransform: 'capitalize',
+                                            transition: 'all 0.2s ease-in-out',
+                                            '&:hover': {
+                                                bgcolor: isActive ? '#08a3cd' : alpha(theme.palette.grey[500], 0.08),
+                                            }
+                                        }}
+                                    >
+                                        {tab.label}
+                                    </Button>
+                                );
+                            })}
+                        </Box>
+                    </Box>
+                )}
+
+                {currentView === 'list' ? (
+                    <Card>
+                        <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
                         <Scrollbar>
                             <Table size="medium" stickyHeader sx={{ borderCollapse: 'collapse' }}>
                                 <TableHead>
@@ -503,6 +559,15 @@ export function CallsReportView() {
                         rowsPerPageOptions={[10, 25, 50]}
                     />
                 </Card>
+                ) : (
+                    <CallsCalendar
+                        reportData={reportData}
+                        owner={owner}
+                        fromDate={fromDate}
+                        toDate={toDate}
+                        onEventClick={handleViewCall}
+                    />
+                )}
             </Stack>
 
             <CallDetailsDialog

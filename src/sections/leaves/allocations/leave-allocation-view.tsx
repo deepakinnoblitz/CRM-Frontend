@@ -11,6 +11,7 @@ import Dialog from '@mui/material/Dialog';
 import { alpha } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
+import MenuItem from '@mui/material/MenuItem';
 import TableBody from '@mui/material/TableBody';
 import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
@@ -531,14 +532,13 @@ export function LeaveAllocationView() {
                             label="Status"
                             value={status}
                             onChange={(e) => setStatus(e.target.value)}
-                            SelectProps={{ native: true }}
                             InputLabelProps={{ shrink: true }}
                             required
                             sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
                         >
-                            <option value="Approved">Approved</option>
-                            <option value="Draft">Draft</option>
-                            <option value="Cancelled">Cancelled</option>
+                            <MenuItem value="Approved">Approved</MenuItem>
+                            <MenuItem value="Draft">Draft</MenuItem>
+                            <MenuItem value="Cancelled">Cancelled</MenuItem>
                         </TextField>
                     </Box>
                 </DialogContent>

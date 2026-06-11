@@ -535,13 +535,34 @@ export function UserStatusBar() {
                             sx={{
                                 width: 48,
                                 height: 48,
-                                bgcolor: userAvatar ? 'common.white' : avatarColor,
-                                color: avatarTextColor,
+                                bgcolor: (t) => {
+                                    if (userAvatar) return 'common.white';
+                                    const name = userName || '';
+                                    let hash = 0;
+                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                    const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                    return colors[Math.abs(hash) % colors.length];
+                                },
+                                color: (t) => {
+                                    if (userAvatar) return 'inherit';
+                                    const name = userName || '';
+                                    let hash = 0;
+                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
+                                    return textColors[Math.abs(hash) % textColors.length];
+                                },
                                 fontWeight: 'bold',
-                                border: `2px solid ${userAvatar ? theme.palette.divider : 'transparent'}`,
+                                border: (t) => {
+                                    if (userAvatar) return `2px solid ${t.palette.divider}`;
+                                    const name = userName || '';
+                                    let hash = 0;
+                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
+                                    return `2px solid ${alpha(textColors[Math.abs(hash) % textColors.length], 0.5)}`;
+                                },
                             }}
                         >
-                            {initials}
+                            {userName.charAt(0).toUpperCase()}
                         </Avatar>
 
                         <Stack spacing={0.5} flex={1}>
@@ -732,11 +753,34 @@ export function UserStatusBar() {
                             sx={{
                                 width: 100,
                                 height: 100,
-                                border: `4px solid ${theme.palette.background.paper}`,
+                                bgcolor: (t) => {
+                                    if (userAvatar) return 'transparent';
+                                    const name = userName || '';
+                                    let hash = 0;
+                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                    const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                    return colors[Math.abs(hash) % colors.length];
+                                },
+                                color: (t) => {
+                                    if (userAvatar) return 'inherit';
+                                    const name = userName || '';
+                                    let hash = 0;
+                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
+                                    return textColors[Math.abs(hash) % textColors.length];
+                                },
+                                border: (t) => {
+                                    if (userAvatar) return `4px solid ${t.palette.background.paper}`;
+                                    const name = userName || '';
+                                    let hash = 0;
+                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
+                                    return `4px solid ${alpha(textColors[Math.abs(hash) % textColors.length], 0.5)}`;
+                                },
                                 boxShadow: `0 0 0 2px ${alpha(theme.palette.success.main, 0.4)}, 0 12px 24px -4px ${alpha(theme.palette.common.black, 0.16)}`,
                             }}
                         >
-                            {initials}
+                            {userName.charAt(0).toUpperCase()}
                         </Avatar>
                     </Box>
 

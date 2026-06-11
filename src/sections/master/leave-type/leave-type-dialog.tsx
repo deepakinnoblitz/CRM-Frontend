@@ -6,10 +6,14 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Switch from '@mui/material/Switch';
+import Select from '@mui/material/Select';
 import Snackbar from '@mui/material/Snackbar';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import InputLabel from '@mui/material/InputLabel';
 import DialogTitle from '@mui/material/DialogTitle';
+import FormControl from '@mui/material/FormControl';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -35,7 +39,7 @@ type Props = {
 };
 
 const STATUS_OPTIONS = ['Active', 'Inactive'];
-const RESET_FREQUENCY_OPTIONS = ['', 'Monthly', 'Quarterly', 'Half-Yearly', 'Yearly'];
+const RESET_FREQUENCY_OPTIONS = ['', 'Every 3 months', 'Every 4 months', 'Every 6 months', 'Whole year'];
 
 export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
     const [leaveTypeName, setLeaveTypeName] = useState('');
@@ -165,34 +169,33 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
                             disabled={loading}
                             InputLabelProps={{ shrink: true }}
                         />
-                        <TextField
-                            select
-                            fullWidth
-                            label="Reset Frequency"
-                            value={resetFrequency}
-                            onChange={(e) => setResetFrequency(e.target.value)}
-                            SelectProps={{ native: true }}
-                            disabled={loading}
-                            InputLabelProps={{ shrink: true }}
-                        >
-                            {RESET_FREQUENCY_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>{opt || 'None'}</option>
-                            ))}
-                        </TextField>
-                        <TextField
-                            select
-                            fullWidth
-                            label="Status"
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value as any)}
-                            SelectProps={{ native: true }}
-                            disabled={loading}
-                            InputLabelProps={{ shrink: true }}
-                        >
-                            {STATUS_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                        </TextField>
+                        <FormControl fullWidth disabled={loading}>
+                            <InputLabel id="reset-frequency-label" shrink>Reset Frequency</InputLabel>
+                            <Select
+                                labelId="reset-frequency-label"
+                                value={resetFrequency}
+                                onChange={(e) => setResetFrequency(e.target.value as string)}
+                                label="Reset Frequency"
+                                displayEmpty
+                            >
+                                {RESET_FREQUENCY_OPTIONS.map((opt) => (
+                                    <MenuItem key={opt} value={opt}>{opt || 'None'}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <FormControl fullWidth disabled={loading}>
+                            <InputLabel id="status-label" shrink>Status</InputLabel>
+                            <Select
+                                labelId="status-label"
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value as any)}
+                                label="Status"
+                            >
+                                {STATUS_OPTIONS.map((opt) => (
+                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                     </Box>
 
                     <Stack direction="row" spacing={3}>

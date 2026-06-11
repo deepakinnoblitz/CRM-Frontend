@@ -263,7 +263,17 @@ export function MyProfileView() {
                                 </Box>
                                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                                     <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>{employee.employee_name}</Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{employee.designation} at {employee.department}</Typography>
+                                    {(() => {
+                                        const des = (employee.designation || '').trim();
+                                        const dep = (employee.department || '').trim();
+                                        const validDes = des && des !== '-';
+                                        const validDep = dep && dep !== '-';
+                                        
+                                        if (!validDes && !validDep) return null;
+                                        
+                                        const text = validDes && validDep ? `${des} at ${dep}` : (validDes ? des : dep);
+                                        return <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{text}</Typography>;
+                                    })()}
                                 </Box>
                                 <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
                                     {renderStatus(employee.status)}

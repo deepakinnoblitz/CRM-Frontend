@@ -11,6 +11,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 
 import { getUser } from 'src/api/users';
+import { fetchUserPermissions } from 'src/api/user-permissions';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -27,12 +28,27 @@ type Props = {
 export function UserDetailsDialog({ open, onClose, userId, onEdit }: Props) {
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [userPermissions, setUserPermissions] = useState<any[]>([]);
+    const [loadingPermissions, setLoadingPermissions] = useState(false);
 
     useEffect(() => {
         if (open && userId) {
             setLoading(true);
             getUser(userId)
-                .then(setUser)
+                .then((userData) => {
+                    setUser(userData);
+                    if (userData?.email) {
+                        setLoadingPermissions(true);
+                        fetchUserPermissions({
+                            page: 1,
+                            page_size: 100,
+                            filters: { user: userData.email }
+                        })
+                        .then((res) => setUserPermissions(res.data || []))
+                        .catch((err) => console.error('Failed to fetch user permissions', err))
+                        .finally(() => setLoadingPermissions(false));
+                    }
+                })
                 .catch((err) => console.error('Failed to fetch user details:', err))
                 .finally(() => setLoading(false));
         }
@@ -229,6 +245,28 @@ export function UserDetailsDialog({ open, onClose, userId, onEdit }: Props) {
                                                 </Label>
                                             );
                                         })}
+                                    </Box>
+
+                                    {/* Permissions subsection */}
+                                    <Box sx={{ mt: 3 }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.secondary', mb: 1.5, fontSize: '13px', textTransform: 'uppercase' }}>
+                                            ASSIGNED PERMISSIONS:
+                                        </Typography>
+                                        {loadingPermissions ? (
+                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>Loading permissions...</Typography>
+                                        ) : userPermissions.length > 0 ? (
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                                {userPermissions.map((perm: any) => (
+                                                    <Label key={perm.name} variant="soft" color="info" sx={{ fontWeight: 600, fontSize: '13px', py: 2 }}>
+                                                        {perm.allow}: {perm.for_value}
+                                                    </Label>
+                                                ))}
+                                            </Box>
+                                        ) : (
+                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+                                                No permissions assigned
+                                            </Typography>
+                                        )}
                                     </Box>
                                 </Box>
                             </>

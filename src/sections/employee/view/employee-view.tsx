@@ -20,6 +20,7 @@ import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
+import MenuItem from '@mui/material/MenuItem';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -1114,10 +1115,10 @@ export function EmployeeView() {
 
         if (type === 'select' || type === 'link') {
             return (
-                <TextField {...commonProps} select SelectProps={{ native: true }}>
-                    <option value="">Select {label}</option>
+                <TextField {...commonProps} select>
+                    <MenuItem value="" disabled>Select {label}</MenuItem>
                     {options.map((opt: any) => (
-                        <option key={opt.name || opt} value={opt.name || opt}>{opt.name || opt}</option>
+                        <MenuItem key={opt.name || opt} value={opt.name || opt}>{opt.name || opt}</MenuItem>
                     ))}
                 </TextField>
             );

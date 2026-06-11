@@ -36,10 +36,9 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { useRouter } from 'src/routes/hooks';
 
 import { getDeal } from 'src/api/deals';
-import { getContact } from 'src/api/contacts';
-import { getDoctypeList } from 'src/api/leads';
 import { uploadFile } from 'src/api/data-import';
 import { createProposal } from 'src/api/proposal';
+import { getLead, getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -158,26 +157,30 @@ export function ProposalCreateView() {
         }
     }, [dealIdParam]);
 
-    const handleCustomerChange = async (name: string) => {
+    const handleCustomerChange = async (name: string, opt?: any) => {
         setClientName(name);
         setClientError(false);
         if (name) {
             try {
-                const contact = await getContact(name);
-                setCustomerName(contact.lead_name || '');
-                const mappedOptions =
-                    contact.company_names?.map((id: string, idx: number) => ({
-                        name: id,
-                        account_name: contact.company_name_list?.[idx] || id,
-                    })) || [];
-                setBillingNameOptions(mappedOptions);
-                if (mappedOptions.length === 1) {
-                    setBillingName(mappedOptions[0].name);
+                let leadDetails = opt;
+                if (!leadDetails || (!leadDetails.lead_name && !leadDetails.company_name)) {
+                    leadDetails = await getLead(name);
+                }
+                
+                const autoCustomerName = leadDetails?.lead_name || leadDetails?.customer_name || leadDetails?.title || '';
+                setCustomerName(autoCustomerName);
+                
+                const compName = leadDetails?.company_name || leadDetails?.company || '';
+                
+                if (compName) {
+                    setBillingNameOptions([{ name: compName, account_name: compName }]);
+                    setBillingName(compName);
                 } else {
+                    setBillingNameOptions([]);
                     setBillingName('');
                 }
             } catch (err) {
-                console.error('Failed to fetch contact details:', err);
+                console.error('Failed to fetch lead details:', err);
             }
         } else {
             setCustomerName('');
@@ -418,7 +421,7 @@ export function ProposalCreateView() {
                                 opt.lead_name ? `${opt.lead_name} (${opt.name})` : opt.name || ''
                             }
                             value={customerOptions.find((o) => o.name === clientName) || null}
-                            onChange={(_e, val) => handleCustomerChange(val?.name || '')}
+                            onChange={(_e, val) => handleCustomerChange(val?.name || '', val)}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
@@ -451,30 +454,16 @@ export function ProposalCreateView() {
                             sx={{ bgcolor: (t) => alpha(t.palette.grey[500], 0.05) }}
                         />
 
-                        {/* Billing Name */}
-                        <Autocomplete
+                        {/* Company Name */}
+                        <TextField
                             fullWidth
-                            options={billingNameOptions}
-                            getOptionLabel={(opt) => opt.account_name || opt.name || ''}
-                            value={
-                                billingNameOptions.find((o) => o.name === billingName) || null
-                            }
-                            onChange={(_e, val) => { setBillingName(val?.name || ''); if (val?.name) setBillingError(false); }}
-                            renderInput={(params) => (
-                                <TextField {...params} label="Company Name" required error={BillingError} helperText={BillingError ? 'Company Name is required' : ''} />
-                            )}
-                            renderOption={(props, option) => (
-                                <li {...props} key={option.name}>
-                                    <Stack spacing={0.5} sx={{ py: 0.5 }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                            {option.account_name}
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                            ID: {option.name}
-                                        </Typography>
-                                    </Stack>
-                                </li>
-                            )}
+                            label="Company Name"
+                            value={billingName}
+                            slotProps={{ input: { readOnly: true } }}
+                            sx={{ bgcolor: (t) => alpha(t.palette.grey[500], 0.05) }}
+                            required
+                            error={BillingError}
+                            helperText={BillingError ? 'Company Name is required' : ''}
                         />
 
                         {/* Prospect / Deal */}
