@@ -442,7 +442,7 @@ export function LeadDetailsView() {
                     >
                         Create Proposal
                     </Button>
-
+State
                     <Button
                         variant="contained"
                         color="success"
