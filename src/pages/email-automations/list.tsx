@@ -1,15 +1,15 @@
 import { CONFIG } from 'src/config-global';
 
-import { EmailAutomationListView } from 'src/sections/email-automations/view';
+import { EmailAutomationsListView } from 'src/sections/email-automations/view';
 
 // ----------------------------------------------------------------------
 
-export default function EmailAutomationListPage() {
+export default function EmailAutomationsListPage() {
     return (
         <>
             <title>{`Email Automation - ${CONFIG.appName}`}</title>
 
-            <EmailAutomationListView />
+            <EmailAutomationsListView />
         </>
     );
 }

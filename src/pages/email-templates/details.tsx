@@ -2,18 +2,18 @@ import { useParams } from 'react-router-dom';
 
 import { CONFIG } from 'src/config-global';
 
-import { EmailTempleteDetailsView } from 'src/sections/email-templete/view';
+import { EmailTemplateDetailsView } from 'src/sections/email-templates/view';
 
 // ----------------------------------------------------------------------
 
-export default function EmailTempleteDetailsPage() {
+export default function EmailTemplateDetailsPage() {
     const { id } = useParams();
 
     return (
         <>
             <title>{`Email Templete: ${id} - ${CONFIG.appName}`}</title>
 
-            <EmailTempleteDetailsView />
+            <EmailTemplateDetailsView />
         </>
     );
 }
