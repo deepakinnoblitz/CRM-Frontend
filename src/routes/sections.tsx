@@ -62,6 +62,23 @@ export const ProposalListPage = lazy(() => import('src/pages/proposals/list'));
 export const ProposalCreatePage = lazy(() => import('src/pages/proposals/new'));
 export const ProposalEditPage = lazy(() => import('src/pages/proposals/edit'));
 export const ProposalDetailsPage = lazy(() => import('src/pages/proposals/details'));
+
+export const EmailTemplateListPage = lazy(() => import('src/pages/email-templates/list'));
+export const EmailTemplateCreatePage = lazy(() => import('src/pages/email-templates/new'));
+export const EmailTemplateEditPage = lazy(() => import('src/pages/email-templates/edit'));
+export const EmailTemplateDetailsPage = lazy(() => import('src/pages/email-templates/details'));
+
+export const EmailCampaignListPage = lazy(() => import('src/pages/email-campaigns/list'));
+export const EmailCampaignCreatePage = lazy(() => import('src/pages/email-campaigns/new'));
+export const EmailCampaignEditPage = lazy(() => import('src/pages/email-campaigns/edit'));
+export const EmailCampaignDetailsPage = lazy(() => import('src/pages/email-campaigns/details'));
+
+export const EmailAutomationListPage = lazy(() => import('src/pages/email-automations/list'));
+export const EmailAutomationCreatePage = lazy(() => import('src/pages/email-automations/new'));
+export const EmailAutomationEditPage = lazy(() => import('src/pages/email-automations/edit'));
+export const EmailAutomationDetailsPage = lazy(() => import('src/pages/email-automations/details'));
+
+export const EmailSettingsPage = lazy(() => import('src/pages/email-settings'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 
 export const LeadReportPage = lazy(() => import('src/pages/reports/lead'));
@@ -231,6 +248,34 @@ export const routesSection: RouteObject[] = [
           { path: ':id/view', element: <ProposalDetailsPage /> },
         ],
       },
+      {
+        path: 'email-templates',
+        children: [
+          { index: true, element: <EmailTemplateListPage /> },
+          { path: 'new', element: <EmailTemplateCreatePage /> },
+          { path: ':id/edit', element: <EmailTemplateEditPage /> },
+          { path: ':id/view', element: <EmailTemplateDetailsPage /> },
+        ],
+      },
+      {
+        path: 'email-campaigns',
+        children: [
+          { index: true, element: <EmailCampaignListPage /> },
+          { path: 'new', element: <EmailCampaignCreatePage /> },
+          { path: ':id/edit', element: <EmailCampaignEditPage /> },
+          { path: ':id/view', element: <EmailCampaignDetailsPage /> },
+        ],
+      },
+      {
+        path: 'email-automations',
+        children: [
+          { index: true, element: <EmailAutomationListPage /> },
+          { path: 'new', element: <EmailAutomationCreatePage /> },
+          { path: ':id/edit', element: <EmailAutomationEditPage /> },
+          { path: ':id/view', element: <EmailAutomationDetailsPage /> },
+        ],
+      },
+      { path: 'email-settings', element: <EmailSettingsPage /> },
       { path: 'blog', element: <BlogPage /> },
 
       {
