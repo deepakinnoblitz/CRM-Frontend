@@ -13,7 +13,7 @@ import MenuList from '@mui/material/MenuList';
 import Backdrop from '@mui/material/Backdrop';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import { useColorScheme, alpha } from '@mui/material/styles';
+import { useColorScheme } from '@mui/material/styles';
 import CircularProgress from '@mui/material/CircularProgress';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
@@ -89,7 +89,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
       }
 
       const fcmResponse = await logout();
-            
+
       // Wait 3 seconds so the user can read the debug message before the page reloads
       await new Promise(resolve => setTimeout(resolve, 3000));
     } catch (error) {
@@ -133,33 +133,11 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
           sx={{
             width: 1,
             height: 1,
-            bgcolor: (theme) => {
-              if (photoURL && !isPng) return 'transparent';
-              if (photoURL && isPng) return '#FFFFFF';
-              const name = displayName || '';
-              let hash = 0;
-              for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-              const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
-              return colors[Math.abs(hash) % colors.length];
-            },
-            color: (theme) => {
-              if (photoURL) return 'inherit';
-              const name = displayName || '';
-              let hash = 0;
-              for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-              const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
-              return textColors[Math.abs(hash) % textColors.length];
-            },
-            fontWeight: 800,
-            fontSize: '20px',
-            border: (theme) => {
-              if (photoURL) return `2px solid ${theme.palette.background.paper}`;
-              const name = displayName || '';
-              let hash = 0;
-              for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-              const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
-              return `2px solid ${alpha(textColors[Math.abs(hash) % textColors.length], 0.5)}`;
-            },
+            bgcolor: !photoURL ? stringToColor(displayName) : (isPng ? '#FFFFFF' : 'transparent'),
+            color: stringToDarkColor(displayName),
+            fontWeight: 700,
+            fontSize: '16px',
+            border: (theme) => `2px solid ${theme.palette.background.paper}`,
           }}
         >
           {displayName.charAt(0).toUpperCase()}
