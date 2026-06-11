@@ -60,6 +60,7 @@ export function UserStatusBar() {
         remainingSeconds,
     } = usePresence();
     const router = useRouter();
+    const displayName = user?.full_name || 'User';
 
     const isHR = user?.roles.some((role: string) =>
         ['HR', 'System Manager', 'Administrator'].includes(role)
@@ -336,6 +337,8 @@ export function UserStatusBar() {
     if (isHR) {
         return null;
     }
+
+    const isPng = userAvatar?.toLowerCase().endsWith('.png') ?? false;
 
     return (
         <>
@@ -747,41 +750,42 @@ export function UserStatusBar() {
                 <DialogContent sx={{ px: 4, pt: 6, pb: 4, textAlign: 'center', position: 'relative', zIndex: 1 }}>
                     {/* Centered Avatar with Ring */}
                     <Box sx={{ position: 'relative', display: 'inline-flex', mb: 3 }}>
-                        <Avatar
-                            src={userAvatar}
-                            alt={userName}
-                            sx={{
-                                width: 100,
-                                height: 100,
-                                bgcolor: (t) => {
-                                    if (userAvatar) return 'transparent';
-                                    const name = userName || '';
-                                    let hash = 0;
-                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                    const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
-                                    return colors[Math.abs(hash) % colors.length];
+                              <IconButton
+                                sx={{
+                                p: '2px',
+                                width: 90,
+                                height: 90,
+                                background: `linear-gradient(135deg, ${theme.palette.primary.darker} 0%, #00f2ff 50%, ${theme.palette.primary.darker} 100%)`,
+                                backgroundSize: '200% 200%',
+                                animation: 'shimmer 2.5s ease infinite',
+                                '@keyframes shimmer': {
+                                    '0%': { backgroundPosition: '0% 50%' },
+                                    '50%': { backgroundPosition: '100% 50%' },
+                                    '100%': { backgroundPosition: '0% 50%' },
                                 },
-                                color: (t) => {
-                                    if (userAvatar) return 'inherit';
-                                    const name = userName || '';
-                                    let hash = 0;
-                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
-                                    return textColors[Math.abs(hash) % textColors.length];
-                                },
-                                border: (t) => {
-                                    if (userAvatar) return `4px solid ${t.palette.background.paper}`;
-                                    const name = userName || '';
-                                    let hash = 0;
-                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
-                                    return `4px solid ${alpha(textColors[Math.abs(hash) % textColors.length], 0.5)}`;
-                                },
-                                boxShadow: `0 0 0 2px ${alpha(theme.palette.success.main, 0.4)}, 0 12px 24px -4px ${alpha(theme.palette.common.black, 0.16)}`,
-                            }}
-                        >
-                            {userName.charAt(0).toUpperCase()}
-                        </Avatar>
+                                transition: theme.transitions.create('all'),
+                                '&:hover': {
+                                    transform: 'scale(1.05)',
+                                    boxShadow: `0 0 15px ${theme.palette.primary.main}40`,
+                                }
+                                }}
+                            >
+                                <Avatar
+                                src={userAvatar}
+                                alt={displayName}
+                                sx={{
+                                    width: 1,
+                                    height: 1,
+                                    bgcolor: !userAvatar ? stringToColor(displayName) : (isPng ? '#FFFFFF' : 'transparent'),
+                                    color: stringToDarkColor(displayName),
+                                    fontWeight: 600,
+                                    fontSize: '28px',
+                                    border: `2px solid ${theme.palette.background.paper}`,
+                                }}
+                                >
+                                {displayName.charAt(0).toUpperCase()}
+                                </Avatar>
+                            </IconButton>
                     </Box>
 
                     <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', mb: 1, letterSpacing: -0.5 }}>
