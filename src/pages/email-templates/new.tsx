@@ -1,15 +1,15 @@
 import { CONFIG } from 'src/config-global';
 
-import { EmailTempleteCreateView } from 'src/sections/email-templete/view';
+import { EmailTemplateCreateView } from 'src/sections/email-templates/view/email-templates-create-view';
 
 // ----------------------------------------------------------------------
 
-export default function EmailTempleteNewPage() {
+export default function EmailTemplateNewPage() {
     return (
         <>
             <title>{`New Email Templete - ${CONFIG.appName}`}</title>
 
-            <EmailTempleteCreateView />
+            <EmailTemplateCreateView />
         </>
     );
 }

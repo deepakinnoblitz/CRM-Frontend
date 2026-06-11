@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 
 import { CONFIG } from 'src/config-global';
 
-import { EmailSettings } from 'src/sections/email-settings/view';
+import { EmailSettingsView } from 'src/sections/email-settings/view';
 
 // ----------------------------------------------------------------------
 
@@ -13,7 +13,7 @@ export default function EmailSettingsPage() {
         <>
             <title>{`Email Settings: ${id} - ${CONFIG.appName}`}</title>
 
-            <EmailSettings />
+            <EmailSettingsView />
         </>
     );
 }
