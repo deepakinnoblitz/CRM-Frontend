@@ -19,6 +19,7 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { TableEmptyRows } from 'src/sections/proposal/table-empty-rows';
@@ -27,7 +28,6 @@ import { ProposalTableToolbar } from 'src/sections/proposal/proposal-table-toolb
 
 
 const TABLE_HEAD = [
-    { id: 'index', label: 'S.No' },
     { id: 'campaign_name', label: 'Campaign Name' },
     { id: 'email_template', label: 'Email Template' },
     { id: 'target_type', label: 'Target Type' },
@@ -97,17 +97,27 @@ export function EmailCampaignsListView() {
                                     </TableRow>
                                 ) : (
                                     <>
-                                        {notFound && <TableNoData colSpan={9} searchQuery={filterName} />}
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+                                        
                                         {empty && (
                                             <TableRow>
-                                                <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
-                                                    <Typography variant="subtitle1" color="text.secondary">
-                                                        No email campaigns found
-                                                    </Typography>
+                                                <TableCell colSpan={9}>
+                                                    <EmptyContent
+                                                        title="No Email Campaigns lists found"
+                                                        description="You haven't created any Email Campaigns lists yet."
+                                                        icon="solar:calendar-mark-bold-duotone"
+                                                        sx={{ py: 12 }}
+                                                    />
                                                 </TableCell>
                                             </TableRow>
                                         )}
-                                        {!empty && !notFound && <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />}
+
+                                        {/* {!empty && !notFound && (
+                                            <TableEmptyRows
+                                                height={68}
+                                                emptyRows={filteredData.length < 5 ? 5 - filteredData.length : 0}
+                                            />
+                                        )} */}
                                     </>
                                 )}
                             </TableBody>
