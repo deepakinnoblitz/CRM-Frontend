@@ -163,7 +163,10 @@ export function EmailCampaignsCreateView() {
             await createEmailCampaign(campaignData);
             setSnackbar({ open: true, message: 'Email Campaign created successfully', severity: 'success' });
             
-            router.push('/email-campaigns');
+            setTimeout(() => {
+                router.push('/email-campaigns');
+            }, 100);
+            
         } catch (err: any) {
             console.error(err);
             const friendlyMsg = getFriendlyErrorMessage(err);

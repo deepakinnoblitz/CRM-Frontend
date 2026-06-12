@@ -66,7 +66,11 @@ export async function fetchEmailCampaigns(params: FetchEmailCampaignsParams) {
 
     let orderBy = 'creation desc';
     if (params.sort_by) {
-        const parts = params.sort_by.split('_');
+        let sortBy = params.sort_by;
+        if (sortBy.startsWith('created_')) {
+            sortBy = sortBy.replace('created_', 'creation_');
+        }
+        const parts = sortBy.split('_');
         const dir = parts.pop() || 'desc';
         const field = parts.join('_');
         orderBy = `${field} ${dir}`;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -15,6 +15,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { useEmailCampaigns } from 'src/hooks/useEmailCampaigns';
+
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -26,6 +28,7 @@ import { TableEmptyRows } from 'src/sections/proposal/table-empty-rows';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 import { ProposalTableToolbar } from 'src/sections/proposal/proposal-table-toolbar';
 
+import { EmailCampaignTableRow } from '../email-campaign-table-row';
 
 const TABLE_HEAD = [
     { id: 'campaign_name', label: 'Campaign Name' },
@@ -43,11 +46,24 @@ export function EmailCampaignsListView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
-    const [sortBy, setSortBy] = useState('created_desc');
-    
-    const data: any[] = []; 
-    const total = 0;
-    const loading = false;
+    const [sortBy, setSortBy] = useState('creation_desc');
+    const [filters, setFilters] = useState({ status: 'all', target_type: 'all' });
+
+    const { data, total, loading, refetch } = useEmailCampaigns(
+        page,
+        rowsPerPage,
+        filterName,
+        sortBy,
+        filters
+    );
+
+    const handleViewRow = (id: string) => {
+        router.push(`/email-campaigns/${encodeURIComponent(id)}/view`);
+    };
+
+    const handleEditRow = (id: string) => {
+        router.push(`/email-campaigns/${encodeURIComponent(id)}/edit`);
+    };
 
     const notFound = !loading && data.length === 0 && !!filterName;
     const empty = !loading && data.length === 0 && !filterName;
@@ -91,14 +107,38 @@ export function EmailCampaignsListView() {
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
                                             <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     <>
+                                        {data.map((row, index) => (
+                                            <EmailCampaignTableRow
+                                                key={row.name}
+                                                index={page * rowsPerPage + index}
+                                                hideCheckbox
+                                                row={{
+                                                    id: row.name,
+                                                    campaign_name: row.campaign_name,
+                                                    email_template: row.email_template,
+                                                    target_type: row.target_type,
+                                                    total_recipients: row.total_recipients,
+                                                    sent_count: row.sent_count,
+                                                    status: row.status,
+                                                    created_on: row.creation,
+                                                    template_name: row.email_template,
+                                                }}
+                                                onView={() => handleViewRow(row.name)}
+                                                onEdit={() => handleEditRow(row.name)}
+                                                onDelete={() => {}}
+                                                canEdit
+                                                canDelete
+                                            />
+                                        ))}
+
                                         {notFound && <TableNoData searchQuery={filterName} />}
-                                        
+
                                         {empty && (
                                             <TableRow>
                                                 <TableCell colSpan={9}>
@@ -111,13 +151,6 @@ export function EmailCampaignsListView() {
                                                 </TableCell>
                                             </TableRow>
                                         )}
-
-                                        {/* {!empty && !notFound && (
-                                            <TableEmptyRows
-                                                height={68}
-                                                emptyRows={filteredData.length < 5 ? 5 - filteredData.length : 0}
-                                            />
-                                        )} */}
                                     </>
                                 )}
                             </TableBody>
