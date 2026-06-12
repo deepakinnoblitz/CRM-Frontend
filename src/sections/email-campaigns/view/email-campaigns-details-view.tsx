@@ -194,9 +194,6 @@ export function EmailCampaignsDetailsView() {
                                 <Typography variant="subtitle1" color="text.primary" sx={{ fontWeight: 700 }}>
                                     {campaign_name}
                                 </Typography>
-                                <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
-                                    ID: {id}
-                                </Typography>
                                 {subject && (
                                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
                                         Subject: {subject}
@@ -213,9 +210,6 @@ export function EmailCampaignsDetailsView() {
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                                 <Typography variant="subtitle1" color="text.primary" sx={{ fontWeight: 700 }}>
                                     {target_type}
-                                </Typography>
-                                <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
-                                    Email Template: {email_template}
                                 </Typography>
                                 {schedule_date && (
                                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>

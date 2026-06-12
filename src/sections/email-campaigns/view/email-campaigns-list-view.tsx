@@ -29,7 +29,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
-import { ProposalTableToolbar } from 'src/sections/proposal/proposal-table-toolbar';
+import { EmailCampaignTableToolbar } from 'src/sections/email-campaigns/email-campaign-table-toolbar';
 
 import { EmailCampaignTableRow } from '../email-campaign-table-row';
 import { EmailCampaignTableFiltersDrawer } from '../email-campaign-table-filters-drawer';
@@ -49,7 +49,7 @@ export function EmailCampaignsListView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
-    const [sortBy, setSortBy] = useState('creation_desc');
+    const [sortBy, setSortBy] = useState('modified_desc');
     const [filters, setFilters] = useState({ status: 'all', target_type: 'all' });
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [deleting, setDeleting] = useState(false);
@@ -169,7 +169,7 @@ export function EmailCampaignsListView() {
             </Stack>
 
             <Card>
-                <ProposalTableToolbar
+                <EmailCampaignTableToolbar
                     numSelected={0}
                     filterName={filterName}
                     onFilterName={(e) => setFilterName(e.target.value)}

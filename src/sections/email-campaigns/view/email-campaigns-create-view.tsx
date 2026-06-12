@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { enqueueSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IoMdArrowBack } from "react-icons/io";
@@ -6,10 +7,12 @@ import { CiCalculator2 } from "react-icons/ci";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
 import Alert from '@mui/material/Alert';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
 import Switch from '@mui/material/Switch';
 import { alpha } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
@@ -21,7 +24,10 @@ import TextField from '@mui/material/TextField';
 import TableHead from '@mui/material/TableHead';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import DialogTitle from '@mui/material/DialogTitle';
 import Autocomplete from '@mui/material/Autocomplete';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -35,7 +41,7 @@ import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchEmailTemplates } from 'src/api/email-template';
-import { createEmailCampaign, EmailCampaign } from 'src/api/email-campaign';
+import { createEmailCampaign, EmailCampaign, previewRecipients } from 'src/api/email-campaign';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -197,6 +203,56 @@ export function EmailCampaignsCreateView() {
         setFilters(newFilters);
     };
 
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [recipientPreview, setRecipientPreview] = useState<any[]>([]);
+    const [totalRecipients, setTotalRecipients] = useState(0);
+
+    const handlePreviewRecipients = async () => {
+        if (!targetType) {
+            enqueueSnackbar(
+                'Please select Target Type',
+                { variant: 'warning' }
+            );
+            return;
+        }
+
+        const hasValidFilter = filters.some(
+            (filter) =>
+                filter.field_name?.trim() &&
+                filter.operator?.trim() &&
+                filter.value?.trim()
+        );
+
+        if (!hasValidFilter) {
+            enqueueSnackbar(
+                'Please add at least one filter before previewing recipients',
+                { variant: 'warning' }
+            );
+            return;
+        }
+
+        try {
+            const result = await previewRecipients(
+                targetType,
+                filters
+            );
+
+            setTotalRecipients(result.count);
+            setRecipientPreview(result.recipients);
+            setPreviewOpen(true);
+
+            enqueueSnackbar(
+                `Found ${result.count} recipients`,
+                { variant: 'success' }
+            );
+        } catch (error: any) {
+            enqueueSnackbar(
+                error?.message || 'Failed to preview recipients',
+                { variant: 'error' }
+            );
+        }
+    };
+
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack
@@ -253,7 +309,7 @@ export function EmailCampaignsCreateView() {
             </Stack>
 
             <Card sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 3 }}>Campaign Information</Typography>
+                <Typography sx={{ mb: 3, ml: 1, mt: 1, fontWeight: 700, fontSize: 16 }}>Campaign Information</Typography>
                 <Box
                     sx={{
                         display: 'grid',
@@ -325,26 +381,24 @@ export function EmailCampaignsCreateView() {
                         disabled
                     />
                 </Box>
-            </Card>
-
-            <Card sx={{ p: 3, mb: 3 }} >
-                <Box
+                 <Box
                     sx={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    mb: 4,
+                    mb: 2,
                     flexWrap: 'wrap',
                     gap: 2,
                     }}
                 >
-                    <Typography variant="h6" fontWeight={700}>
+                    <Typography sx={{ mb: 3, ml: 1, mt: 2, fontWeight: 700, fontSize: 16 }}>
                     Audience
                     </Typography>
 
                     <Button
                     variant="contained"
                     startIcon={<CiCalculator2 size={24} />}
+                    onClick={handlePreviewRecipients}
                     sx={{
                         background: 'linear-gradient(135deg,#A855F7,#7C3AED)',
                         borderRadius: 3,
@@ -358,7 +412,7 @@ export function EmailCampaignsCreateView() {
                         },
                     }}
                     >
-                     Calculate Recipients
+                        Preview Recipients
                     </Button>
                 </Box>
 
@@ -408,7 +462,7 @@ export function EmailCampaignsCreateView() {
 
                     <TextField
                         label="Total Recipients"
-                        value="0"
+                        value={totalRecipients}
                         disabled
                         fullWidth
                     />
@@ -560,12 +614,9 @@ export function EmailCampaignsCreateView() {
                 </Box>
             </Card>
 
-
             <Card sx={{ p: 3, mb: 3 }}>
             <Typography
-                variant="h6"
-                fontWeight={700}
-                sx={{ mb: 2 }}
+                sx={{ mb: 3, ml: 1, fontWeight: 700, fontSize: 16 }}
             >
                 Scheduling
             </Typography>
@@ -620,6 +671,167 @@ export function EmailCampaignsCreateView() {
             )}
             </Box>
             </Card>
+
+            <Dialog
+                open={previewOpen}
+                onClose={() => setPreviewOpen(false)}
+                fullWidth
+                maxWidth="lg"
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: (theme) => theme.customShadows.z24,
+                    },
+                }}
+            >
+                <DialogTitle
+                    sx={{
+                        p: 2.5,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        borderBottom: (theme) =>
+                            `1px solid ${theme.palette.divider}`,
+                    }}
+                >
+                    <Box>
+                        <Typography
+                            variant="h6"
+                            sx={{ fontWeight: 800 }}
+                        >
+                            Recipients Preview
+                        </Typography>
+
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                        >
+                            Preview matching recipients before creating the campaign
+                        </Typography>
+                    </Box>
+
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5,
+                        }}
+                    >
+                        <Chip
+                            label={`${totalRecipients} Recipients`}
+                            color="primary"
+                            variant="filled"
+                        />
+
+                        <IconButton
+                            onClick={() => setPreviewOpen(false)}
+                            sx={{
+                                color: (theme) => theme.palette.grey[500],
+                                bgcolor: 'background.paper',
+                                boxShadow: (theme) =>
+                                    theme.customShadows?.z1,
+                            }}
+                        >
+                            <Iconify icon="mingcute:close-line" />
+                        </IconButton>
+                    </Box>
+                </DialogTitle>
+
+                <DialogContent sx={{ p: 0 }}>
+                    <TableContainer>
+                        <Table>
+                            <TableHead>
+                                <TableRow
+                                    sx={{
+                                        bgcolor: (theme) =>
+                                            alpha(
+                                                theme.palette.primary.main,
+                                                0.04
+                                            ),
+                                    }}
+                                >
+                                    <TableCell
+                                        sx={{
+                                            fontWeight: 700,
+                                            py: 2,
+                                        }}
+                                    >
+                                        S.No
+                                    </TableCell>
+
+                                    <TableCell
+                                        sx={{
+                                            fontWeight: 700,
+                                        }}
+                                    >
+                                        Recipient Name
+                                    </TableCell>
+
+                                    <TableCell
+                                        sx={{
+                                            fontWeight: 700,
+                                        }}
+                                    >
+                                        Email Address
+                                    </TableCell>
+                                </TableRow>
+                            </TableHead>
+
+                            <TableBody>
+                                {recipientPreview.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={3}
+                                            align="center"
+                                            sx={{ py: 8 }}
+                                        >
+                                            <Typography
+                                                variant="subtitle1"
+                                                color="text.secondary"
+                                            >
+                                                No recipients found
+                                            </Typography>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    recipientPreview.map(
+                                        (row, index) => (
+                                            <TableRow
+                                                key={index}
+                                                hover
+                                            >
+                                                <TableCell>
+                                                    <Typography
+                                                        fontWeight={600}
+                                                    >
+                                                        {index + 1}
+                                                    </Typography>
+                                                </TableCell>
+
+                                                <TableCell>
+                                                    <Typography
+                                                        fontWeight={600}
+                                                    >
+                                                        {row.name}
+                                                    </Typography>
+                                                </TableCell>
+
+                                                <TableCell>
+                                                    <Typography
+                                                        color="text.secondary"
+                                                    >
+                                                        {row.email}
+                                                    </Typography>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    )
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </DialogContent>
+            </Dialog>
 
             <Snackbar
                 open={snackbar.open}

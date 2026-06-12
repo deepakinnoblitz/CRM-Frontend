@@ -274,6 +274,31 @@ export async function calculateRecipients(campaignName: string) {
     return json.message;
 }
 
+export async function previewRecipients(
+    targetType: string,
+    filters: any[]
+) {
+    const res = await frappeRequest(
+        '/api/method/company.company.doctype.crm_email_campaign.crm_email_campaign.preview_recipients',
+        {
+            method: 'POST',
+            headers: await getAuthHeaders(),
+            body: JSON.stringify({
+                target_type: targetType,
+                filters: JSON.stringify(filters),
+            }),
+        }
+    );
+
+    const json = await res.json();
+
+    if (!res.ok) {
+        throw new Error('Failed to preview recipients');
+    }
+
+    return json.message;
+}
+
 export async function getFilterValueOptions(targetType: string, fieldName: string) {
     const res = await frappeRequest(
         `/api/method/company.company.doctype.crm_email_campaign.crm_email_campaign.get_filter_value_options?target_type=${encodeURIComponent(targetType)}&field_name=${encodeURIComponent(fieldName)}`
