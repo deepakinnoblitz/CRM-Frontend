@@ -5,17 +5,17 @@ import { IoMdArrowBack } from 'react-icons/io';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import MenuItem from '@mui/material/MenuItem';
-import IconButton from '@mui/material/IconButton';
 import Table from '@mui/material/Table';
+import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
+import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
+import TextField from '@mui/material/TextField';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import TableContainer from '@mui/material/TableContainer';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -189,7 +189,7 @@ export function EmailAutomationsEditView() {
                                             <TableCell>Field</TableCell>
                                             <TableCell>Operator</TableCell>
                                             <TableCell>Value</TableCell>
-                                            <TableCell width={60}></TableCell>
+                                            <TableCell width={60} />
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
