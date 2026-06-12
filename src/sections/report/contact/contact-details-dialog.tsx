@@ -24,6 +24,7 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
 import { ContactRelatedList } from './contact-related-list';
+import { WhatsappChatDialog } from '../../lead/view/whatsapp_chat_dialog';
 
 // ----------------------------------------------------------------------
 
@@ -40,6 +41,7 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
     const [contact, setContact] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [currentTab, setCurrentTab] = useState('deals');
+    const [openWhatsapp, setOpenWhatsapp] = useState(false);
 
     useEffect(() => {
         if (open && contactId) {
@@ -254,7 +256,7 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
 
                         {/* Main Content: Tabs & Related Data */}
                         <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                            <Box sx={{ borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 3 }}>
                                 <Tabs
                                     value={currentTab}
                                     onChange={(e, newValue) => setCurrentTab(newValue)}
@@ -282,6 +284,29 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                                         />
                                     ))}
                                 </Tabs>
+
+                                {contact?.phone && (
+                                    <Button
+                                        variant="contained"
+                                        color="success"
+                                        onClick={() => setOpenWhatsapp(true)}
+                                        startIcon={<Iconify icon={"ic:baseline-whatsapp" as any} />}
+                                        sx={{
+                                            bgcolor: '#25D366',
+                                            color: '#fff',
+                                            borderRadius: 2.5,
+                                            fontWeight: 700,
+                                            textTransform: 'none',
+                                            px: 2.5,
+                                            height: 36,
+                                            '&:hover': {
+                                                bgcolor: '#22c55e',
+                                            },
+                                        }}
+                                    >
+                                        WhatsApp
+                                    </Button>
+                                )}
                             </Box>
 
                             <Box sx={{ flexGrow: 1, p: 4, bgcolor: 'background.paper', overflow: 'auto' }}>
@@ -296,6 +321,16 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                     </Box>
                 )}
             </DialogContent>
+            {contact?.phone && (
+                <WhatsappChatDialog
+                    open={openWhatsapp}
+                    onClose={() => setOpenWhatsapp(false)}
+                    lead={{
+                        lead_name: `${contact.first_name} ${contact.last_name || ''}`,
+                        phone_number: contact.phone
+                    }}
+                />
+            )}
         </Dialog>
     );
 }

@@ -15,6 +15,7 @@ export interface EmailCampaign {
     name: string;
     campaign_name: string;
     email_template: string;
+    template_name?: string;
     subject?: string;
     status: string;
     target_type: string;
@@ -66,7 +67,11 @@ export async function fetchEmailCampaigns(params: FetchEmailCampaignsParams) {
 
     let orderBy = 'creation desc';
     if (params.sort_by) {
-        const parts = params.sort_by.split('_');
+        let sortBy = params.sort_by;
+        if (sortBy.startsWith('created_')) {
+            sortBy = sortBy.replace('created_', 'creation_');
+        }
+        const parts = sortBy.split('_');
         const dir = parts.pop() || 'desc';
         const field = parts.join('_');
         orderBy = `${field} ${dir}`;
@@ -98,9 +103,58 @@ export async function fetchEmailCampaigns(params: FetchEmailCampaignsParams) {
 
     const data = await res.json();
     const countData = await countRes.json();
+    const campaigns = data.message || [];
+
+    const templateIds = [
+        ...new Set(
+            campaigns
+                .map((c: any) => c.email_template)
+                .filter(Boolean)
+        ),
+    ];
+
+    let templateMap: Record<string, string> = {};
+
+    if (templateIds.length) {
+        const templateQuery = new URLSearchParams({
+            doctype: 'CRM Email Template',
+            fields: JSON.stringify([
+                'name',
+                'template_name',
+            ]),
+            filters: JSON.stringify([
+                ['CRM Email Template', 'name', 'in', templateIds],
+            ]),
+            limit_page_length: '500',
+        });
+
+        const templateRes = await frappeRequest(
+            `/api/method/frappe.client.get_list?${templateQuery}`
+        );
+
+        const templateJson = await templateRes.json();
+
+        templateMap = Object.fromEntries(
+            (templateJson.message || []).map(
+                (t: any) => [
+                    t.name,
+                    t.template_name,
+                ]
+            )
+        );
+    }
+
+    const enrichedCampaigns = campaigns.map(
+        (campaign: any) => ({
+            ...campaign,
+            template_name:
+                templateMap[campaign.email_template] ||
+                campaign.email_template,
+        })
+    );
 
     return {
-        data: data.message || [],
+        data: enrichedCampaigns,
         total: countData.message || 0,
     };
 }
@@ -220,6 +274,31 @@ export async function calculateRecipients(campaignName: string) {
     return json.message;
 }
 
+export async function previewRecipients(
+    targetType: string,
+    filters: any[]
+) {
+    const res = await frappeRequest(
+        '/api/method/company.company.doctype.crm_email_campaign.crm_email_campaign.preview_recipients',
+        {
+            method: 'POST',
+            headers: await getAuthHeaders(),
+            body: JSON.stringify({
+                target_type: targetType,
+                filters: JSON.stringify(filters),
+            }),
+        }
+    );
+
+    const json = await res.json();
+
+    if (!res.ok) {
+        throw new Error('Failed to preview recipients');
+    }
+
+    return json.message;
+}
+
 export async function getFilterValueOptions(targetType: string, fieldName: string) {
     const res = await frappeRequest(
         `/api/method/company.company.doctype.crm_email_campaign.crm_email_campaign.get_filter_value_options?target_type=${encodeURIComponent(targetType)}&field_name=${encodeURIComponent(fieldName)}`
@@ -227,4 +306,27 @@ export async function getFilterValueOptions(targetType: string, fieldName: strin
     const json = await res.json();
     if (!res.ok) throw new Error('Failed to fetch filter options');
     return json.message;
+}
+
+// ----------------------------------------------------------------------
+// Fetch Email Queue for a Campaign
+// ----------------------------------------------------------------------
+
+export interface EmailQueueItem {
+    name: string;
+    recipient_name: string;
+    recipient_email: string;
+    status: string;
+    queued_on: string;
+    sent_on: string;
+    error_message: string;
+}
+
+export async function fetchEmailQueue(campaignName: string): Promise<EmailQueueItem[]> {
+    const res = await frappeRequest(
+        `/api/method/frappe.client.get_list?doctype=CRM%20Email%20Queue&filters=${encodeURIComponent(JSON.stringify([['CRM Email Queue', 'campaign', '=', campaignName]]))}&fields=${encodeURIComponent(JSON.stringify(['name', 'recipient_name', 'recipient_email', 'status', 'queued_on', 'sent_on', 'error_message']))}`
+    );
+    if (!res.ok) throw new Error('Failed to fetch email queue');
+    const json = await res.json();
+    return json.message || [];
 }
