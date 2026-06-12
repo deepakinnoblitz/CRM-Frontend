@@ -16,7 +16,7 @@ import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-type EmailTemplateTableToolbarProps = {
+type EmailAutomationsTableToolbarProps = {
     numSelected: number;
     filterName: string;
     onFilterName: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -30,13 +30,13 @@ type EmailTemplateTableToolbarProps = {
 const SORT_OPTIONS = [
     { value: 'modified_desc', label: 'Newest First' },
     { value: 'modified_asc', label: 'Oldest First' },
-    { value: 'template_name_asc', label: 'Name: A to Z' },
-    { value: 'template_name_desc', label: 'Name: Z to A' },
-    { value: 'creation_desc', label: 'Date (Newest)' },
-    { value: 'creation_asc', label: 'Date (Oldest)' },
+    { value: 'automation_name_asc', label: 'Name: A to Z' },
+    { value: 'automation_name_desc', label: 'Name: Z to A' },
+    { value: 'start_date_desc', label: 'Date (Newest)' },
+    { value: 'start_date_asc', label: 'Date (Oldest)' },
 ];
 
-export function EmailTemplateTableToolbar({
+export function EmailAutomationsTableToolbar({
     numSelected,
     filterName,
     onFilterName,
@@ -45,7 +45,7 @@ export function EmailTemplateTableToolbar({
     onOpenFilter,
     canReset,
     onCreateNew,
-}: EmailTemplateTableToolbarProps) {
+}: EmailAutomationsTableToolbarProps) {
     const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
 
     const handleSortClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -86,7 +86,7 @@ export function EmailTemplateTableToolbar({
                 <OutlinedInput
                     value={filterName}
                     onChange={onFilterName}
-                    placeholder="Search templates..."
+                    placeholder="Search automations..."
                     startAdornment={
                         <InputAdornment position="start">
                             <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
@@ -202,7 +202,7 @@ export function EmailTemplateTableToolbar({
                                 }}
                                 startIcon={<Iconify icon="mingcute:add-line" />}
                             >
-                                New Template
+                                New Automation
                             </Button>
                         )}
                     </>

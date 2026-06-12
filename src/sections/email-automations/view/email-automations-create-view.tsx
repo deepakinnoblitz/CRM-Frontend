@@ -1,28 +1,102 @@
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import FormControlLabel from '@mui/material/FormControlLabel';
+
+import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 
 import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 
+import dayjs from 'dayjs';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+
 import { Iconify } from 'src/components/iconify';
+import { IoMdArrowBack } from 'react-icons/io';
 
 export function EmailAutomationsCreateView() {
     const router = useRouter();
 
+    const [automationName, setAutomationName] = useState('');
+    const [emailTemplate, setEmailTemplate] = useState('');
+    const [targetType, setTargetType] = useState('');
+    const [frequency, setFrequency] = useState('');
+    const [runTime, setRunTime] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+
+    const [errors, setErrors] = useState<{
+        automationName?: boolean;
+        emailTemplate?: boolean;
+        targetType?: boolean;
+        frequency?: boolean;
+        runTime?: boolean;
+        startDate?: boolean;
+    }>({});
+
+    const handleSave = () => {
+        const newErrors: typeof errors = {};
+        if (!automationName) newErrors.automationName = true;
+        if (!emailTemplate) newErrors.emailTemplate = true;
+        if (!targetType) newErrors.targetType = true;
+        if (!frequency) newErrors.frequency = true;
+        if (!runTime) newErrors.runTime = true;
+        if (!startDate) newErrors.startDate = true;
+
+        setErrors(newErrors);
+
+        if (Object.keys(newErrors).length > 0) {
+            return;
+        }
+
+        // Add save logic here
+    };
+
     return (
-        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
-            <Stack direction="row" alignItems="center" mb={3}>
-                <Button onClick={() => router.back()} startIcon={<Iconify icon={"eva:arrow-ios-back-fill" as any} />} sx={{ mr: 2 }}>
-                    Back
-                </Button>
-                <Typography variant="h4">Create New Automation</Typography>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3}>
+                <Stack spacing={0.5}>
+                    <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                        Create New Automation
+                    </Typography>
+                </Stack>
+                <Stack direction="row" spacing={2}>
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={() => router.back()}
+                        startIcon={<IoMdArrowBack size={20} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 2.5,
+                        }}
+                    >
+                        Go Back
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleSave}
+                        sx={{
+                            borderRadius: 1.5,
+                            bgcolor: '#08a3cd',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#068fb3' },
+                        }}
+                    >
+                        Save Automation
+                    </Button>
+                </Stack>
             </Stack>
 
             <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(3, 1fr)' }} gap={3}>
@@ -30,18 +104,51 @@ export function EmailAutomationsCreateView() {
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Basic Information</Typography>
                         <Stack spacing={3}>
-                            <TextField fullWidth label="Automation Name" />
+                            <TextField 
+                                fullWidth 
+                                label="Automation Name" 
+                                required
+                                value={automationName}
+                                onChange={(e) => {
+                                    setAutomationName(e.target.value);
+                                    if (e.target.value) setErrors((prev) => ({ ...prev, automationName: false }));
+                                }}
+                                error={errors.automationName}
+                                helperText={errors.automationName ? 'This field is required' : ''}
+                            />
                             <TextField fullWidth multiline rows={3} label="Description" />
-                            <FormControlLabel control={<Switch defaultChecked />} label="Is Active" />
+                            <FormControlLabel control={<CustomSwitch defaultChecked />} label="Is Active" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
                         </Stack>
                     </Card>
 
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Email Configuration</Typography>
                         <Stack spacing={3}>
-                            <TextField fullWidth label="Email Template" />
+                            <TextField 
+                                fullWidth 
+                                label="Email Template" 
+                                required
+                                value={emailTemplate}
+                                onChange={(e) => {
+                                    setEmailTemplate(e.target.value);
+                                    if (e.target.value) setErrors((prev) => ({ ...prev, emailTemplate: false }));
+                                }}
+                                error={errors.emailTemplate}
+                                helperText={errors.emailTemplate ? 'This field is required' : ''}
+                            />
                             <TextField fullWidth label="Subject Override" />
-                            <TextField fullWidth label="Target Type" />
+                            <TextField 
+                                fullWidth 
+                                label="Target Type" 
+                                required
+                                value={targetType}
+                                onChange={(e) => {
+                                    setTargetType(e.target.value);
+                                    if (e.target.value) setErrors((prev) => ({ ...prev, targetType: false }));
+                                }}
+                                error={errors.targetType}
+                                helperText={errors.targetType ? 'This field is required' : ''}
+                            />
                         </Stack>
                     </Card>
 
@@ -55,12 +162,60 @@ export function EmailAutomationsCreateView() {
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Schedule</Typography>
                         <Stack spacing={3}>
-                            <TextField fullWidth label="Frequency" />
+                            <TextField 
+                                fullWidth 
+                                label="Frequency" 
+                                required
+                                value={frequency}
+                                onChange={(e) => {
+                                    setFrequency(e.target.value);
+                                    if (e.target.value) setErrors((prev) => ({ ...prev, frequency: false }));
+                                }}
+                                error={errors.frequency}
+                                helperText={errors.frequency ? 'This field is required' : ''}
+                            />
                             <Stack direction="row" spacing={2}>
-                                <TextField fullWidth type="date" label="Start Date" InputLabelProps={{ shrink: true }} />
-                                <TextField fullWidth type="date" label="End Date" InputLabelProps={{ shrink: true }} />
+                                <DatePicker
+                                    label="Start Date *"
+                                    format="DD-MM-YYYY"
+                                    value={startDate ? dayjs(startDate) : null}
+                                    onChange={(newValue) => {
+                                        const formatted = newValue ? newValue.format('YYYY-MM-DD') : '';
+                                        setStartDate(formatted);
+                                        if (formatted) setErrors((prev) => ({ ...prev, startDate: false }));
+                                    }}
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            error: errors.startDate,
+                                            helperText: errors.startDate ? 'This field is required' : ''
+                                        }
+                                    }}
+                                />
+                                <DatePicker
+                                    label="End Date"
+                                    format="DD-MM-YYYY"
+                                    value={endDate ? dayjs(endDate) : null}
+                                    onChange={(newValue) => setEndDate(newValue ? newValue.format('YYYY-MM-DD') : '')}
+                                    slotProps={{ textField: { fullWidth: true } }}
+                                />
                             </Stack>
-                            <TextField fullWidth type="time" label="Run Time" InputLabelProps={{ shrink: true }} />
+                            <TimePicker
+                                label="Run Time *"
+                                value={runTime ? dayjs(`2000-01-01T${runTime}`) : null}
+                                onChange={(newValue) => {
+                                    const formatted = newValue ? newValue.format('HH:mm:ss') : '';
+                                    setRunTime(formatted);
+                                    if (formatted) setErrors((prev) => ({ ...prev, runTime: false }));
+                                }}
+                                slotProps={{
+                                    textField: {
+                                        fullWidth: true,
+                                        error: errors.runTime,
+                                        helperText: errors.runTime ? 'This field is required' : ''
+                                    }
+                                }}
+                            />
                             <TextField fullWidth label="Week Day" />
                             <TextField fullWidth label="Day Of Month" />
                         </Stack>
@@ -69,40 +224,15 @@ export function EmailAutomationsCreateView() {
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Execution Settings</Typography>
                         <Stack spacing={3}>
-                            <FormControlLabel control={<Switch defaultChecked />} label="Create Campaign History" />
-                            <FormControlLabel control={<Switch defaultChecked />} label="Auto Pause On Error" />
+                            <FormControlLabel control={<CustomSwitch defaultChecked />} label="Create Campaign History" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
+                            <FormControlLabel control={<CustomSwitch defaultChecked />} label="Auto Pause On Error" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
                             <TextField fullWidth type="number" label="Maximum Retry Count" />
                         </Stack>
                     </Card>
                 </Box>
 
-                <Box gridColumn={{ xs: 'span 1', md: 'span 1' }}>
-                    <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>Statistics</Typography>
-                        <Stack spacing={2}>
-                            <Typography variant="body2">Last Run: -</Typography>
-                            <Typography variant="body2">Next Run: -</Typography>
-                            <Typography variant="body2">Total Runs: 0</Typography>
-                            <Typography variant="body2">Total Emails Sent: 0</Typography>
-                        </Stack>
-                    </Card>
-
-                    <Stack spacing={2}>
-                        <Button fullWidth variant="contained" size="large" sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}>
-                            Save
-                        </Button>
-                        <Button fullWidth variant="contained" color="success" size="large">
-                            Activate
-                        </Button>
-                        <Button fullWidth variant="outlined" color="warning" size="large">
-                            Pause
-                        </Button>
-                        <Button fullWidth variant="text" size="large" color="inherit" onClick={() => router.back()}>
-                            Cancel
-                        </Button>
-                    </Stack>
-                </Box>
             </Box>
-        </DashboardContent>
+            </DashboardContent>
+        </LocalizationProvider>
     );
 }

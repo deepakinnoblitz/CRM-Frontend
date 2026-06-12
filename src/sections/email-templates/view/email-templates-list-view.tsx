@@ -233,6 +233,9 @@ export function EmailTemplateListView() {
                                                 </TableCell>
                                                 <TableCell align="center">
                                                     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                                        <IconButton onClick={() => router.push(`/email-templates/${row.name}/view`)} sx={{ color: 'info.main' }} title="View">
+                                                            <Iconify icon="solar:eye-bold" />
+                                                        </IconButton>
                                                         <IconButton onClick={() => router.push(`/email-templates/${row.name}/edit`)} sx={{ color: 'primary.main' }} title="Edit">
                                                             <Iconify icon="solar:pen-bold" />
                                                         </IconButton>
