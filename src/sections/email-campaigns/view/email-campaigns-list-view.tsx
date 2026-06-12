@@ -44,8 +44,8 @@ export function EmailCampaignsListView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
     const [sortBy, setSortBy] = useState('created_desc');
-    
-    const data: any[] = []; 
+
+    const data: any[] = [];
     const total = 0;
     const loading = false;
 
@@ -73,7 +73,7 @@ export function EmailCampaignsListView() {
                     onFilterName={(e) => setFilterName(e.target.value)}
                     sortBy={sortBy}
                     onSortChange={setSortBy}
-                    onOpenFilter={() => {}}
+                    onOpenFilter={() => { }}
                     canReset={!!filterName}
                 />
 
@@ -83,7 +83,7 @@ export function EmailCampaignsListView() {
                             <ProposalTableHead
                                 rowCount={total}
                                 numSelected={0}
-                                onSelectAllRows={() => {}}
+                                onSelectAllRows={() => { }}
                                 hideCheckbox
                                 showIndex
                                 headLabel={TABLE_HEAD}
