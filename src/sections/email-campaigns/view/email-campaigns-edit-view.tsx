@@ -182,9 +182,12 @@ export function EmailCampaignsEditView() {
             await updateEmailCampaign(id, campaignData);
             setSnackbar({ open: true, message: 'Email Campaign updated successfully', severity: 'success' });
             
-            setTimeout(() => {
-                router.push('/email-campaigns');
-            }, 100);
+            sessionStorage.setItem(
+            'email_campaign_edit_success',
+            'Email Campaign Edited successfully'
+            );
+
+            router.push('/email-campaigns');
             
         } catch (err: any) {
             console.error(err);

@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 
 import Card from '@mui/material/Card';
-import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
@@ -28,7 +28,6 @@ import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from 'src/sections/proposal/table-no-data';
-import { TableEmptyRows } from 'src/sections/proposal/table-empty-rows';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 import { ProposalTableToolbar } from 'src/sections/proposal/proposal-table-toolbar';
 
@@ -37,7 +36,7 @@ import { EmailCampaignTableFiltersDrawer } from '../email-campaign-table-filters
 
 const TABLE_HEAD = [
     { id: 'campaign_name', label: 'Campaign Name' },
-    { id: 'email_template', label: 'Email Template' },
+    { id: 'email_template', label: 'Email Template Name' },
     { id: 'target_type', label: 'Target Type' },
     { id: 'total_recipients', label: 'Total Recipients' },
     { id: 'sent_count', label: 'Sent Count' },
@@ -50,7 +49,7 @@ export function EmailCampaignsListView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
-    const [sortBy, setSortBy] = useState('modified_desc');
+    const [sortBy, setSortBy] = useState('creation_desc');
     const [filters, setFilters] = useState({ status: 'all', target_type: 'all' });
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [deleting, setDeleting] = useState(false);
@@ -61,7 +60,6 @@ export function EmailCampaignsListView() {
         severity: 'success',
     });
 
-    const [templateOptions, setTemplateOptions] = useState<any[]>([]);
     const [openFilters, setOpenFilters] = useState(false);
 
     const { data, total, loading, refetch } = useEmailCampaigns(
@@ -120,6 +118,42 @@ export function EmailCampaignsListView() {
     const notFound = !loading && data.length === 0 && !!filterName;
     const empty = !loading && data.length === 0 && !filterName;
 
+    useEffect(() => {
+        const msg = sessionStorage.getItem(
+            'email_campaign_success'
+        );
+
+        if (msg) {
+            setSnackbar({
+            open: true,
+            message: msg,
+            severity: 'success',
+            });
+
+            sessionStorage.removeItem(
+            'email_campaign_success'
+            );
+        }
+    }, []);
+
+    useEffect(() => {
+        const msg = sessionStorage.getItem(
+            'email_campaign_edit_success'
+        );
+
+        if (msg) {
+            setSnackbar({
+            open: true,
+            message: msg,
+            severity: 'success',
+            });
+
+            sessionStorage.removeItem(
+            'email_campaign_edit_success'
+            );
+        }
+    }, []);
+
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
@@ -159,7 +193,7 @@ export function EmailCampaignsListView() {
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                        <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
                                             <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
@@ -178,8 +212,7 @@ export function EmailCampaignsListView() {
                                                     total_recipients: row.total_recipients,
                                                     sent_count: row.sent_count,
                                                     status: row.status,
-                                                    created_on: row.creation,
-                                                    template_name: row.email_template,
+                                                    template_name: row.template_name,
                                                 }}
                                                 onView={() => handleViewRow(row.name)}
                                                 onEdit={() => handleEditRow(row.name)}
@@ -189,11 +222,11 @@ export function EmailCampaignsListView() {
                                             />
                                         ))}
 
-                                        {notFound && <TableNoData searchQuery={filterName} colSpan={8} />}
+                                        {notFound && <TableNoData searchQuery={filterName} colSpan={7} />}
 
                                         {empty && (
                                             <TableRow>
-                                                <TableCell colSpan={9}>
+                                                <TableCell colSpan={7}>
                                                     <EmptyContent
                                                         title="No Email Campaigns lists found"
                                                         description="You haven't created any Email Campaigns lists yet."

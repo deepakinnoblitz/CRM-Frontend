@@ -163,10 +163,13 @@ export function EmailCampaignsCreateView() {
             await createEmailCampaign(campaignData);
             setSnackbar({ open: true, message: 'Email Campaign created successfully', severity: 'success' });
             
-            setTimeout(() => {
-                router.push('/email-campaigns');
-            }, 100);
-            
+            sessionStorage.setItem(
+            'email_campaign_success',
+            'Email Campaign created successfully'
+            );
+
+            router.push('/email-campaigns');
+
         } catch (err: any) {
             console.error(err);
             const friendlyMsg = getFriendlyErrorMessage(err);
@@ -385,6 +388,7 @@ export function EmailCampaignsCreateView() {
                             }));
                         }
                         }}
+                        required
                         error={!!validationErrors.targetType}
                         helperText={
                         validationErrors.targetType

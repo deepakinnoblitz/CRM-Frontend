@@ -1,4 +1,6 @@
+import { enqueueSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
+import { VscDebugStart } from "react-icons/vsc";
 import { useParams, useNavigate } from 'react-router-dom';
 import { IoMdArrowBack, IoMdMail, IoMdCalendar, IoMdPerson, IoMdStats, IoMdCreate, IoMdTrash, IoMdList } from "react-icons/io";
 
@@ -13,7 +15,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getEmailCampaign, deleteEmailCampaign } from 'src/api/email-campaign';
+import { getEmailCampaign, deleteEmailCampaign, startCampaign as startEmailCampaign } from 'src/api/email-campaign';
 
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
@@ -76,6 +78,29 @@ export function EmailCampaignsDetailsView() {
         router.push(`/email-campaigns/${encodeURIComponent(id || '')}/edit`);
     };
 
+    const handleStartCampaign = async () => {
+        try {
+            await startEmailCampaign(campaign.name);
+
+            const updated = await getEmailCampaign(campaign.name);
+            setCampaign(updated);
+
+            enqueueSnackbar('Campaign started successfully', {
+                variant: 'success',
+            });
+
+        } catch (err: any) {
+            console.error(err);
+
+            enqueueSnackbar(
+                err?.message || 'Failed to start campaign',
+                {
+                    variant: 'error',
+                }
+            );
+        }
+    };
+
     const handleDelete = async () => {
         if (!id) return;
         setDeleting(true);
@@ -113,6 +138,25 @@ export function EmailCampaignsDetailsView() {
                     >
                         Go Back
                     </Button>
+                    {!['Running', 'Completed', 'Cancelled'].includes(campaign.status) && (
+                        <Button
+                            variant="contained"
+                            startIcon={<VscDebugStart />}
+                            onClick={handleStartCampaign}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 700,
+                                textTransform: 'none',
+                                bgcolor: '#36b37e',
+                                color: 'common.white',
+                                '&:hover': {
+                                    bgcolor: '#2f9d6c',
+                                },
+                            }}
+                        >
+                            Start Campaign
+                        </Button>
+                    )}
                     <Button
                         variant="contained"
                         onClick={handleEdit}
@@ -127,15 +171,6 @@ export function EmailCampaignsDetailsView() {
                         }}
                     >
                         Edit
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="error"
-                        onClick={() => setConfirmDeleteOpen(true)}
-                        startIcon={<IoMdTrash size={20} />}
-                        sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none' }}
-                    >
-                        Delete
                     </Button>
                 </Stack>
             </Stack>

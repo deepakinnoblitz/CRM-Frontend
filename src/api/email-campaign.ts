@@ -15,6 +15,7 @@ export interface EmailCampaign {
     name: string;
     campaign_name: string;
     email_template: string;
+    template_name?: string;
     subject?: string;
     status: string;
     target_type: string;
@@ -102,9 +103,58 @@ export async function fetchEmailCampaigns(params: FetchEmailCampaignsParams) {
 
     const data = await res.json();
     const countData = await countRes.json();
+    const campaigns = data.message || [];
+
+    const templateIds = [
+    ...new Set(
+        campaigns
+        .map((c: any) => c.email_template)
+        .filter(Boolean)
+    ),
+    ];
+
+    let templateMap: Record<string, string> = {};
+
+    if (templateIds.length) {
+    const templateQuery = new URLSearchParams({
+        doctype: 'CRM Email Template',
+        fields: JSON.stringify([
+        'name',
+        'template_name',
+        ]),
+        filters: JSON.stringify([
+        ['CRM Email Template', 'name', 'in', templateIds],
+        ]),
+        limit_page_length: '500',
+    });
+
+    const templateRes = await frappeRequest(
+        `/api/method/frappe.client.get_list?${templateQuery}`
+    );
+
+    const templateJson = await templateRes.json();
+
+    templateMap = Object.fromEntries(
+        (templateJson.message || []).map(
+        (t: any) => [
+            t.name,
+            t.template_name,
+        ]
+        )
+    );
+    }
+
+    const enrichedCampaigns = campaigns.map(
+    (campaign: any) => ({
+        ...campaign,
+        template_name:
+        templateMap[campaign.email_template] ||
+        campaign.email_template,
+    })
+    );
 
     return {
-        data: data.message || [],
+        data: enrichedCampaigns,
         total: countData.message || 0,
     };
 }
