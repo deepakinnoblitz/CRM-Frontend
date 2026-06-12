@@ -6,17 +6,25 @@ import { IoMdArrowBack, IoMdMail, IoMdCalendar, IoMdPerson, IoMdStats, IoMdCreat
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import { alpha } from '@mui/material/styles';
+import TableRow from '@mui/material/TableRow';
+import TableBody from '@mui/material/TableBody';
+import TableHead from '@mui/material/TableHead';
+import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
+import TableContainer from '@mui/material/TableContainer';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getEmailCampaign, deleteEmailCampaign, startCampaign as startEmailCampaign } from 'src/api/email-campaign';
+import { getEmailCampaign, deleteEmailCampaign, startCampaign as startEmailCampaign, fetchEmailQueue, EmailQueueItem } from 'src/api/email-campaign';
 
+import { Label } from 'src/components/label';
+import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 // ----------------------------------------------------------------------
@@ -27,6 +35,7 @@ export function EmailCampaignsDetailsView() {
     const navigate = useNavigate();
 
     const [campaign, setCampaign] = useState<any>(null);
+    const [emailQueue, setEmailQueue] = useState<EmailQueueItem[]>([]);
     const [fetching, setFetching] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -38,6 +47,14 @@ export function EmailCampaignsDetailsView() {
                 .finally(() => setFetching(false));
         }
     }, [id]);
+
+    useEffect(() => {
+        if (campaign?.name) {
+            fetchEmailQueue(campaign.name)
+                .then(setEmailQueue)
+                .catch((err) => console.error('Failed to fetch email queue:', err));
+        }
+    }, [campaign?.name]);
 
     if (fetching) {
         return (
@@ -60,7 +77,7 @@ export function EmailCampaignsDetailsView() {
 
     const {
         campaign_name,
-        email_template,
+        template_name,
         subject,
         status,
         target_type,
@@ -194,11 +211,20 @@ export function EmailCampaignsDetailsView() {
                                 <Typography variant="subtitle1" color="text.primary" sx={{ fontWeight: 700 }}>
                                     {campaign_name}
                                 </Typography>
-                                {subject && (
-                                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-                                        Subject: {subject}
-                                    </Typography>
-                                )}
+                                <Stack spacing={1} sx={{ mt: 1 }}>
+                                    <Stack direction="row" spacing={1}>
+                                        <Typography variant="caption" color="text.secondary">Subject:</Typography>
+                                        <Typography variant="body2">{subject || '-'}</Typography>
+                                    </Stack>
+                                    <Stack direction="row" spacing={1}>
+                                        <Typography variant="caption" color="text.secondary">Email Template:</Typography>
+                                        <Typography variant="body2">{template_name || '-'}</Typography>
+                                    </Stack>
+                                    <Stack direction="row" spacing={1}>
+                                        <Typography variant="caption" color="text.secondary">Status:</Typography>
+                                        <Typography variant="body2">{status || '-'}</Typography>
+                                    </Stack>
+                                </Stack>
                             </Box>
                         </Stack>
 
@@ -215,6 +241,16 @@ export function EmailCampaignsDetailsView() {
                                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
                                         Schedule: {schedule_date}
                                     </Typography>
+                                )}
+                                {filters && filters.length > 0 && (
+                                    <Stack spacing={1} sx={{ mt: 1.5 }}>
+                                        {filters.map((filter: any, index: number) => (
+                                            <Stack key={index} direction="row" spacing={1.5}>
+                                                <Typography variant="body2" color="primary.main" sx={{ fontWeight: 500 }}>{filter.field_name}</Typography>
+                                                <Typography variant="body2" color="primary.main" sx={{ fontWeight: 500 }}>{filter.operator}  {filter.value}</Typography>
+                                            </Stack>
+                                        ))}
+                                    </Stack>
                                 )}
                             </Box>
                         </Stack>
@@ -251,25 +287,59 @@ export function EmailCampaignsDetailsView() {
                         </Stack>
                     </Box>
 
-                    {filters && filters.length > 0 && (
-                        <Stack spacing={1.5}>
-                            <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#08a3cd' }}>
-                                <IoMdList size={20} />
-                                <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>Target Filters</Typography>
-                            </Stack>
-                            <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                                <Stack spacing={1}>
-                                    {filters.map((filter: any, index: number) => (
-                                        <Stack key={index} direction="row" spacing={2}>
-                                            <Typography variant="body2" sx={{ fontWeight: 600, minWidth: 120 }}>{filter.field_name}</Typography>
-                                            <Typography variant="caption" color="text.secondary">{filter.operator}</Typography>
-                                            <Typography variant="body2">{filter.value}</Typography>
-                                        </Stack>
-                                    ))}
-                                </Stack>
-                            </Box>
+                    <Stack spacing={1.5}>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#08a3cd' }}>
+                            <IoMdList size={20} />
+                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase',  color: 'text.secondary' }}>List of Mail Sends</Typography>
                         </Stack>
-                    )}
+                        <Card sx={{ p: 0, mt: 2, borderRadius: 1.5, border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                            <Scrollbar>
+                                <TableContainer sx={{ maxHeight: 300 }}>
+                                    <Table size="medium">
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>Recipient Name</TableCell>
+                                                <TableCell>Recipient Email</TableCell>
+                                                <TableCell>Status</TableCell>
+                                                <TableCell>Sent On</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {emailQueue.length > 0 ? (
+                                                emailQueue.map((item) => (
+                                                    <TableRow key={item.name} hover>
+                                                        <TableCell>{item.recipient_name}</TableCell>
+                                                        <TableCell>{item.recipient_email}</TableCell>
+                                                        <TableCell>
+                                                            <Label
+                                                                sx={{
+                                                                    textTransform: 'uppercase',
+                                                                    fontWeight: 600,
+                                                                    fontSize: 10,
+                                                                    ...(item.status === 'Sent' && { color: 'success.main', bgcolor: 'success.lighter' }),
+                                                                    ...(item.status === 'Failed' && { color: 'error.main', bgcolor: 'error.lighter' }),
+                                                                    ...(item.status === 'Pending' && { color: 'warning.main', bgcolor: 'warning.lighter' }),
+                                                                }}
+                                                            >
+                                                                {item.status}
+                                                            </Label>
+                                                        </TableCell>
+                                                        <TableCell>{item.sent_on || '-'}</TableCell>
+                                                    </TableRow>
+                                                ))
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={4} align="center">
+                                                        <Typography variant="body2" color="text.secondary">No mail sends found</Typography>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </Scrollbar>
+                        </Card>
+                    </Stack>
                 </Stack>
             </Card>
 
