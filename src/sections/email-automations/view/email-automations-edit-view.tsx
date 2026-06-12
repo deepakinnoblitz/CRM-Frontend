@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { IoMdArrowBack } from 'react-icons/io';
 
 import Box from '@mui/material/Box';
@@ -22,13 +23,12 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
-import { useParams } from 'react-router-dom';
 import { useRouter } from 'src/routes/hooks';
 
-import { getEmailAutomation } from 'src/api/email-automation';
 import { frappeRequest } from 'src/utils/csrf';
 
 import { DashboardContent } from 'src/layouts/dashboard';
+import { getEmailAutomation } from 'src/api/email-automation';
 
 import { Iconify } from 'src/components/iconify';
 

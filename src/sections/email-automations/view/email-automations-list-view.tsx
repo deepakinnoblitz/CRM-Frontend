@@ -24,8 +24,8 @@ import { fetchEmailAutomations, deleteEmailAutomation } from 'src/api/email-auto
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
-import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { EmptyContent } from 'src/components/empty-content';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { TableEmptyRows } from 'src/sections/proposal/table-empty-rows';
