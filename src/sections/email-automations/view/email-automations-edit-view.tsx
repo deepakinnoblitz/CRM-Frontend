@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { IoMdArrowBack } from 'react-icons/io';
 
 import Box from '@mui/material/Box';
@@ -22,7 +22,11 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useParams } from 'react-router-dom';
 import { useRouter } from 'src/routes/hooks';
+
+import { getEmailAutomation } from 'src/api/email-automation';
+import { frappeRequest } from 'src/utils/csrf';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -32,6 +36,7 @@ import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 
 
 export function EmailAutomationsEditView() {
+    const { id } = useParams<{ id: string }>();
     const router = useRouter();
 
     const [automationName, setAutomationName] = useState('');
@@ -43,6 +48,34 @@ export function EmailAutomationsEditView() {
     const [endDate, setEndDate] = useState('');
     const [runTime, setRunTime] = useState('');
     const [filters, setFilters] = useState<{ field_name: string; operator: string; value: string; }[]>([]);
+
+    useEffect(() => {
+        if (id) {
+            getEmailAutomation(id).then((data) => {
+                setAutomationName(data.automation_name || '');
+                setStatus(data.status || 'Draft');
+                setEmailTemplate(data.email_template || '');
+                setTargetType(data.target_type || 'Lead');
+                setFrequency(data.frequency || '');
+                setStartDate(data.start_date || '');
+                setEndDate(data.end_date || '');
+                setRunTime(data.run_time || '');
+                if (data.filters && Array.isArray(data.filters) && data.filters.length > 0) {
+                    setFilters(data.filters);
+                } else {
+                    // Fallback to explicitly fetch child table if data.filters is missing
+                    frappeRequest(`/api/method/frappe.client.get_list?doctype=CRM Email Automation Filter&filters=${encodeURIComponent(JSON.stringify({ parent: id }))}&fields=${encodeURIComponent(JSON.stringify(['name', 'field_name', 'operator', 'value']))}`)
+                        .then(res => res.json())
+                        .then(resData => {
+                            if (resData.message && Array.isArray(resData.message)) {
+                                setFilters(resData.message);
+                            }
+                        })
+                        .catch(err => console.error('Failed to fetch filters:', err));
+                }
+            }).catch(console.error);
+        }
+    }, [id]);
 
     const [errors, setErrors] = useState<{
         automationName?: boolean;
@@ -262,11 +295,11 @@ export function EmailAutomationsEditView() {
                                     </TableBody>
                                 </Table>
                             </TableContainer>
-                            <Box>
+                            <Box display="flex" justifyContent="flex-end">
                                 <Button 
                                     size="small" 
-                                    variant="outlined" 
-                                    color="primary"
+                                    variant="contained" 
+                                    color="inherit"
                                     startIcon={<Iconify icon={"mingcute:add-line" as any} />}
                                     onClick={() => setFilters([...filters, { field_name: '', operator: '=', value: '' }])}
                                 >

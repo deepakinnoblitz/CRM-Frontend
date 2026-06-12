@@ -12,8 +12,14 @@ import Button from '@mui/material/Button';
 import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
 
 import { DashboardContent } from 'src/layouts/dashboard';
+import { Iconify } from 'src/components/iconify';
 import { getEmailTemplate } from 'src/api/email-template';
 import { getEmailAutomation } from 'src/api/email-automation';
 
@@ -193,6 +199,42 @@ export function EmailAutomationsDetailsView() {
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{target_type || '-'}</Typography>
                                 </Stack>
                             </Stack>
+                        </Box>
+                    </Stack>
+
+                    {/* Audience Filters */}
+                    <Stack spacing={1.5} sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
+                            <Iconify icon="solar:users-group-rounded-bold" width={20} />
+                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Audience Filters</Typography>
+                        </Stack>
+                        <Box sx={{ borderRadius: 1.5, border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}`, overflow: 'hidden' }}>
+                            {automation.filters && automation.filters.length > 0 ? (
+                                <Table size="small">
+                                    <TableHead sx={{ bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04) }}>
+                                        <TableRow>
+                                            <TableCell width={60}>No.</TableCell>
+                                            <TableCell>Field</TableCell>
+                                            <TableCell>Operator</TableCell>
+                                            <TableCell>Value</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {automation.filters.map((filter: any, index: number) => (
+                                            <TableRow key={index} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                                                <TableCell>{index + 1}</TableCell>
+                                                <TableCell sx={{ fontWeight: 'fontWeightSemiBold' }}>{filter.field_name}</TableCell>
+                                                <TableCell><Chip size="small" label={filter.operator} sx={{ borderRadius: 1 }} /></TableCell>
+                                                <TableCell>{filter.value}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <Box sx={{ p: 3, textAlign: 'center' }}>
+                                    <Typography variant="body2" color="text.secondary">No filters added</Typography>
+                                </Box>
+                            )}
                         </Box>
                     </Stack>
 

@@ -261,11 +261,11 @@ export function EmailAutomationsCreateView() {
                                     </TableBody>
                                 </Table>
                             </TableContainer>
-                            <Box>
+                            <Box display="flex" justifyContent="flex-end">
                                 <Button 
                                     size="small" 
-                                    variant="outlined" 
-                                    color="primary"
+                                    variant="contained" 
+                                    color="inherit"
                                     startIcon={<Iconify icon={"mingcute:add-line" as any} />}
                                     onClick={() => setFilters([...filters, { field_name: '', operator: '=', value: '' }])}
                                 >
