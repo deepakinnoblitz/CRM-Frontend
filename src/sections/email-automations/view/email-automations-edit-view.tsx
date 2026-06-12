@@ -1,26 +1,27 @@
+import dayjs from 'dayjs';
 import { useState } from 'react';
+import { IoMdArrowBack } from 'react-icons/io';
+
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import FormControlLabel from '@mui/material/FormControlLabel';
-
-import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 
-import dayjs from 'dayjs';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-
 import { Iconify } from 'src/components/iconify';
-import { IoMdArrowBack } from 'react-icons/io';
+
+import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';  
+
 
 export function EmailAutomationsEditView() {
     const router = useRouter();

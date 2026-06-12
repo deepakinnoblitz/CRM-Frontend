@@ -5,17 +5,17 @@ import {
 } from "react-icons/io";
 
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
-import Chip from '@mui/material/Chip';
 
-import { getEmailAutomation } from 'src/api/email-automation';
-import { getEmailTemplate } from 'src/api/email-template';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { getEmailTemplate } from 'src/api/email-template';
+import { getEmailAutomation } from 'src/api/email-automation';
 
 export function EmailAutomationsDetailsView() {
     const { id } = useParams();

@@ -52,6 +52,7 @@ export interface FetchEmailAutomationsParams {
     email_template?: string;
     status?: string;
     start_date?: string;
+    filters?: { status?: string; target_type?: string; is_active?: string };
 }
 
 // ----------------------------------------------------------------------
@@ -74,6 +75,17 @@ export async function fetchEmailAutomations(params: FetchEmailAutomationsParams)
     }
     if (params.start_date) {
         filters.push(['CRM Email Automation', 'start_date', '=', params.start_date]);
+    }
+    if (params.filters) {
+        if (params.filters.status && params.filters.status !== 'all') {
+            filters.push(['CRM Email Automation', 'status', '=', params.filters.status]);
+        }
+        if (params.filters.target_type && params.filters.target_type !== 'all') {
+            filters.push(['CRM Email Automation', 'target_type', '=', params.filters.target_type]);
+        }
+        if (params.filters.is_active && params.filters.is_active !== 'all') {
+            filters.push(['CRM Email Automation', 'is_active', '=', params.filters.is_active === '1' ? 1 : 0]);
+        }
     }
 
     let orderBy = 'creation desc';

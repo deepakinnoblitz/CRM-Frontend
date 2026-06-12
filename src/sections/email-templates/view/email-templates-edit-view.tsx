@@ -1,14 +1,14 @@
 import { useState } from 'react';
+import { IoMdArrowBack } from 'react-icons/io';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import { alpha } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import { alpha } from '@mui/material/styles';
-import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -17,7 +17,8 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { Iconify } from 'src/components/iconify';
 import { RichTextEditor } from 'src/components/rich-text-editor/rich-text-editor';
 
-import { IoMdArrowBack } from 'react-icons/io';
+import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
+
 
 export function EmailTemplateEditView() {
     const router = useRouter();

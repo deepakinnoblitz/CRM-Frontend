@@ -1,3 +1,4 @@
+import { useSnackbar } from 'notistack';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -6,6 +7,7 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Popover from '@mui/material/Popover';
+import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
@@ -18,22 +20,20 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { fDateTime } from 'src/utils/format-time';  
+
 import { DashboardContent } from 'src/layouts/dashboard';
+import { fetchEmailTemplates, deleteEmailTemplate } from 'src/api/email-template';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
-import { useSnackbar } from 'notistack';
 
-import { alpha } from '@mui/material/styles';
-
-import { fDateTime } from 'src/utils/format-time';
-
-import { fetchEmailTemplates, deleteEmailTemplate } from 'src/api/email-template';
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { TableEmptyRows } from 'src/sections/proposal/table-empty-rows';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
+
 import { EmailTemplateTableToolbar } from '../email-templates-table-toolbar';
 import { EmailTemplateFiltersDrawer } from '../email-templates-filters-drawer';
 
