@@ -53,6 +53,7 @@ export function EmailCampaignsListView() {
     const [sortBy, setSortBy] = useState('modified_desc');
     const [filters, setFilters] = useState({ status: 'all', target_type: 'all' });
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
+    const [deleting, setDeleting] = useState(false);
 
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
         open: false,
@@ -82,6 +83,7 @@ export function EmailCampaignsListView() {
 
     const handleConfirmDelete = async () => {
         if (!confirmDelete.id) return;
+        setDeleting(true);
         try {
             await deleteEmailCampaign(confirmDelete.id);
             setSnackbar({ open: true, message: 'Email Campaign deleted successfully', severity: 'success' });
@@ -90,6 +92,7 @@ export function EmailCampaignsListView() {
             console.error(e);
             setSnackbar({ open: true, message: 'Failed to delete Email Campaign', severity: 'error' });
         } finally {
+            setDeleting(false);
             setConfirmDelete({ open: false, id: null });
         }
     };
@@ -215,11 +218,11 @@ export function EmailCampaignsListView() {
 
             <ConfirmDialog
                 open={confirmDelete.open}
-                onClose={() => setConfirmDelete({ open: false, id: null })}
+                onClose={() => !deleting && setConfirmDelete({ open: false, id: null })}
                 title="Confirm Delete"
                 content="Are you sure you want to delete this Email Campaign?"
                 action={
-                    <LoadingButton onClick={handleConfirmDelete} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
+                    <LoadingButton onClick={handleConfirmDelete} loading={deleting} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
                         Delete
                     </LoadingButton>
                 }
