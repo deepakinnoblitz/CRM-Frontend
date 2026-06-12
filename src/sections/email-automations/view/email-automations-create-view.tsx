@@ -1,5 +1,5 @@
-import dayjs from 'dayjs';
 import { useState } from 'react';
+import dayjs from 'dayjs';
 import { IoMdArrowBack } from 'react-icons/io';
 
 import Box from '@mui/material/Box';
@@ -8,6 +8,14 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import MenuItem from '@mui/material/MenuItem';
+import IconButton from '@mui/material/IconButton';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -26,12 +34,14 @@ export function EmailAutomationsCreateView() {
     const router = useRouter();
 
     const [automationName, setAutomationName] = useState('');
+    const [status, setStatus] = useState('Draft');
     const [emailTemplate, setEmailTemplate] = useState('');
-    const [targetType, setTargetType] = useState('');
+    const [targetType, setTargetType] = useState('Lead');
     const [frequency, setFrequency] = useState('');
-    const [runTime, setRunTime] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [runTime, setRunTime] = useState('');
+    const [filters, setFilters] = useState<{ field_name: string; operator: string; value: string; }[]>([]);
 
     const [errors, setErrors] = useState<{
         automationName?: boolean;
@@ -99,8 +109,7 @@ export function EmailAutomationsCreateView() {
                 </Stack>
             </Stack>
 
-            <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(3, 1fr)' }} gap={3}>
-                <Box gridColumn={{ xs: 'span 1', md: 'span 2' }}>
+            <Box>
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Basic Information</Typography>
                         <Stack spacing={3}>
@@ -116,6 +125,17 @@ export function EmailAutomationsCreateView() {
                                 error={errors.automationName}
                                 helperText={errors.automationName ? 'This field is required' : ''}
                             />
+                            <TextField
+                                select
+                                fullWidth
+                                label="Status"
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value)}
+                            >
+                                {['Draft', 'Active', 'Paused', 'Completed', 'Cancelled', 'Failed'].map(opt => (
+                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                ))}
+                            </TextField>
                             <TextField fullWidth multiline rows={3} label="Description" />
                             <FormControlLabel control={<CustomSwitch defaultChecked />} label="Is Active" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
                         </Stack>
@@ -138,6 +158,7 @@ export function EmailAutomationsCreateView() {
                             />
                             <TextField fullWidth label="Subject Override" />
                             <TextField 
+                                select
                                 fullWidth 
                                 label="Target Type" 
                                 required
@@ -148,14 +169,109 @@ export function EmailAutomationsCreateView() {
                                 }}
                                 error={errors.targetType}
                                 helperText={errors.targetType ? 'This field is required' : ''}
-                            />
+                            >
+                                {['Lead', 'Contact', 'Account'].map(opt => (
+                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                ))}
+                            </TextField>
                         </Stack>
                     </Card>
 
                     <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>Audience</Typography>
+                        <Typography variant="h6" sx={{ mb: 3 }}>Audience Filters</Typography>
                         <Stack spacing={3}>
-                            <TextField fullWidth multiline rows={3} label="Filters" />
+                            <TableContainer sx={{ border: (theme) => `solid 1px ${theme.palette.divider}`, borderRadius: 1 }}>
+                                <Table size="small">
+                                    <TableHead sx={{ bgcolor: 'background.neutral' }}>
+                                        <TableRow>
+                                            <TableCell width={60}>No.</TableCell>
+                                            <TableCell>Field</TableCell>
+                                            <TableCell>Operator</TableCell>
+                                            <TableCell>Value</TableCell>
+                                            <TableCell width={60}></TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {filters.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
+                                                    <Stack alignItems="center" spacing={1}>
+                                                        <Iconify icon={"solar:folder-with-files-outline" as any} width={32} sx={{ color: 'text.secondary' }} />
+                                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>No Data</Typography>
+                                                    </Stack>
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            filters.map((filter, index) => (
+                                                <TableRow key={index}>
+                                                    <TableCell>{index + 1}</TableCell>
+                                                    <TableCell>
+                                                        <TextField 
+                                                            size="small"
+                                                            fullWidth
+                                                            value={filter.field_name}
+                                                            onChange={(e) => {
+                                                                const newFilters = [...filters];
+                                                                newFilters[index].field_name = e.target.value;
+                                                                setFilters(newFilters);
+                                                            }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <TextField 
+                                                            size="small"
+                                                            select
+                                                            fullWidth
+                                                            value={filter.operator}
+                                                            onChange={(e) => {
+                                                                const newFilters = [...filters];
+                                                                newFilters[index].operator = e.target.value;
+                                                                setFilters(newFilters);
+                                                            }}
+                                                        >
+                                                            {['=', '!=', '<', '>', '<=', '>=', 'in', 'not in', 'like', 'not like'].map(opt => (
+                                                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                                            ))}
+                                                        </TextField>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <TextField 
+                                                            size="small"
+                                                            fullWidth
+                                                            value={filter.value}
+                                                            onChange={(e) => {
+                                                                const newFilters = [...filters];
+                                                                newFilters[index].value = e.target.value;
+                                                                setFilters(newFilters);
+                                                            }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <IconButton color="error" onClick={() => {
+                                                            const newFilters = [...filters];
+                                                            newFilters.splice(index, 1);
+                                                            setFilters(newFilters);
+                                                        }}>
+                                                            <Iconify icon="solar:trash-bin-trash-bold" />
+                                                        </IconButton>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                            <Box>
+                                <Button 
+                                    size="small" 
+                                    variant="outlined" 
+                                    color="primary"
+                                    startIcon={<Iconify icon={"mingcute:add-line" as any} />}
+                                    onClick={() => setFilters([...filters, { field_name: '', operator: '=', value: '' }])}
+                                >
+                                    Add Row
+                                </Button>
+                            </Box>
                         </Stack>
                     </Card>
 
@@ -229,8 +345,6 @@ export function EmailAutomationsCreateView() {
                             <TextField fullWidth type="number" label="Maximum Retry Count" />
                         </Stack>
                     </Card>
-                </Box>
-
             </Box>
             </DashboardContent>
         </LocalizationProvider>
