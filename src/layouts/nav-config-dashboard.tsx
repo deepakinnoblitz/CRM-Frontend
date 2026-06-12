@@ -446,10 +446,10 @@ export const crmAndSalesNavData = [
     path: '/email-templates',
     icon: <RiMailSendLine size={22} />,
     children: [
-      { title: 'CRM Email Templates', path: '/email-templates' },
-      { title: 'CRM Email Campaigns', path: '/email-campaigns' },
-      { title: 'CRM Email Automations', path: '/email-automations' },
-      { title: 'CRM Email Settings', path: '/email-settings' },
+      { title: 'Email Templates', path: '/email-templates' },
+      { title: 'Email Campaigns', path: '/email-campaigns' },
+      { title: 'Email Automations', path: '/email-automations' },
+      { title: 'Email Settings', path: '/email-settings' },
     ],
   },
   {
