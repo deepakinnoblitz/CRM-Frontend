@@ -19,7 +19,7 @@ import {
 import { Iconify } from 'src/components/iconify';
 
 // Custom Switch Style matching the photo
-const CustomSwitch = styled((props: SwitchProps) => (
+export const CustomSwitch = styled((props: SwitchProps) => (
   <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
 ))(({ theme }) => ({
   width: 42,

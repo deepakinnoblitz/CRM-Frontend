@@ -21,6 +21,7 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
 import { AccountRelatedList } from './account-related-list';
+import { WhatsappChatDialog } from '../../lead/view/whatsapp_chat_dialog';
 
 // ----------------------------------------------------------------------
 
@@ -38,6 +39,7 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
 
     const [account, setAccount] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [openWhatsapp, setOpenWhatsapp] = useState(false);
 
     useEffect(() => {
         if (open && accountId) {
@@ -168,7 +170,7 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
 
                         {/* Main Content: Tabs & Related Data */}
                         <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                            <Box sx={{ borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 3 }}>
                                 <Tabs
                                     value={currentTab}
                                     onChange={(e: any, newValue: any) => setCurrentTab(newValue)}
@@ -196,6 +198,29 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
                                         />
                                     ))}
                                 </Tabs>
+
+                                {account?.phone_number && (
+                                    <Button
+                                        variant="contained"
+                                        color="success"
+                                        onClick={() => setOpenWhatsapp(true)}
+                                        startIcon={<Iconify icon={"ic:baseline-whatsapp" as any} />}
+                                        sx={{
+                                            bgcolor: '#25D366',
+                                            color: '#fff',
+                                            borderRadius: 2.5,
+                                            fontWeight: 700,
+                                            textTransform: 'none',
+                                            px: 2.5,
+                                            height: 36,
+                                            '&:hover': {
+                                                bgcolor: '#22c55e',
+                                            },
+                                        }}
+                                    >
+                                        WhatsApp
+                                    </Button>
+                                )}
                             </Box>
 
                             <Box sx={{ flexGrow: 1, p: 4, bgcolor: 'background.paper', overflow: 'auto' }}>
@@ -210,6 +235,16 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
                     </Box>
                 )}
             </DialogContent>
+            {account?.phone_number && (
+                <WhatsappChatDialog
+                    open={openWhatsapp}
+                    onClose={() => setOpenWhatsapp(false)}
+                    lead={{
+                        lead_name: account.account_name,
+                        phone_number: account.phone_number
+                    }}
+                />
+            )}
         </Dialog>
     );
 }

@@ -19,6 +19,7 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { TableEmptyRows } from 'src/sections/proposal/table-empty-rows';
@@ -95,17 +96,20 @@ export function EmailAutomationsListView() {
                                     </TableRow>
                                 ) : (
                                     <>
-                                        {notFound && <TableNoData colSpan={8} searchQuery={filterName} />}
+                                        {notFound && <TableNoData searchQuery={filterName} />}
+                                                                                
                                         {empty && (
                                             <TableRow>
-                                                <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                                                    <Typography variant="subtitle1" color="text.secondary">
-                                                        No email automations found
-                                                    </Typography>
+                                                <TableCell colSpan={9}>
+                                                    <EmptyContent
+                                                        title="No Email Automation lists found"
+                                                        description="You haven't created any Email Automation lists yet."
+                                                        icon="solar:calendar-mark-bold-duotone"
+                                                        sx={{ py: 12 }}
+                                                    />
                                                 </TableCell>
                                             </TableRow>
                                         )}
-                                        {!empty && !notFound && <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />}
                                     </>
                                 )}
                             </TableBody>
