@@ -159,12 +159,6 @@ export function EmailCampaignTableRow({
                 </Label>
             </TableCell>
 
-            <TableCell>
-                <Typography variant="body2">
-                    {row.created_on || '-'}
-                </Typography>
-            </TableCell>
-
             <TableCell align="center">
                 <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                     <IconButton onClick={onView} sx={{ color: 'info.main' }} title="View">

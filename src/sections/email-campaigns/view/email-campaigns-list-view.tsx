@@ -33,6 +33,7 @@ import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 import { ProposalTableToolbar } from 'src/sections/proposal/proposal-table-toolbar';
 
 import { EmailCampaignTableRow } from '../email-campaign-table-row';
+import { EmailCampaignTableFiltersDrawer } from '../email-campaign-table-filters-drawer';
 
 const TABLE_HEAD = [
     { id: 'campaign_name', label: 'Campaign Name' },
@@ -41,7 +42,6 @@ const TABLE_HEAD = [
     { id: 'total_recipients', label: 'Total Recipients' },
     { id: 'sent_count', label: 'Sent Count' },
     { id: 'status', label: 'Status' },
-    { id: 'created_on', label: 'Created On' },
     { id: 'action', label: 'Actions', align: 'center' },
 ];
 
@@ -61,6 +61,9 @@ export function EmailCampaignsListView() {
         severity: 'success',
     });
 
+    const [templateOptions, setTemplateOptions] = useState<any[]>([]);
+    const [openFilters, setOpenFilters] = useState(false);
+
     const { data, total, loading, refetch } = useEmailCampaigns(
         page,
         rowsPerPage,
@@ -68,6 +71,19 @@ export function EmailCampaignsListView() {
         sortBy,
         filters
     );
+
+    const handleFilters = (newFilters: any) => {
+        setFilters((prev) => ({ ...prev, ...newFilters }));
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilters({ status: 'all', target_type: 'all' });
+        setFilterName('');
+        setPage(0);
+    };
+
+    const canReset = filters.status !== 'all' || filters.target_type !== 'all' || !!filterName;
 
     const handleViewRow = (id: string) => {
         router.push(`/email-campaigns/${encodeURIComponent(id)}/view`);
@@ -125,8 +141,8 @@ export function EmailCampaignsListView() {
                     onFilterName={(e) => setFilterName(e.target.value)}
                     sortBy={sortBy}
                     onSortChange={setSortBy}
-                    onOpenFilter={() => { }}
-                    canReset={!!filterName}
+                    onOpenFilter={() => setOpenFilters(true)}
+                    canReset={canReset}
                 />
 
                 <Scrollbar>
@@ -215,6 +231,16 @@ export function EmailCampaignsListView() {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            <EmailCampaignTableFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+            />
 
             <ConfirmDialog
                 open={confirmDelete.open}
