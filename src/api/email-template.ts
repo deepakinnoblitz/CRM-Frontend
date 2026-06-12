@@ -75,7 +75,7 @@ export async function fetchEmailTemplates(params: FetchEmailTemplatesParams) {
             'name', 'template_name', 'category', 'is_active', 'is_default',
             'subject', 'sender_name', 'description',
             'enable_open_tracking', 'enable_click_tracking', 'enable_unsubscribe',
-            'creation', 'modified',
+            'creation', 'modified', 'owner',
         ]),
         filters: JSON.stringify(filters),
         or_filters: JSON.stringify(or_filters),

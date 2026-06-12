@@ -49,11 +49,10 @@ export interface FetchEmailAutomationsParams {
     page_size: number;
     search?: string;
     sort_by?: string;
-    filters?: {
-        status?: string;
-        target_type?: string;
-        is_active?: string;
-    };
+    email_template?: string;
+    status?: string;
+    start_date?: string;
+    filters?: { status?: string; target_type?: string; is_active?: string };
 }
 
 // ----------------------------------------------------------------------
@@ -68,6 +67,15 @@ export async function fetchEmailAutomations(params: FetchEmailAutomationsParams)
         or_filters.push(['CRM Email Automation', 'automation_name', 'like', `%${params.search}%`]);
     }
 
+    if (params.status && params.status !== 'all') {
+        filters.push(['CRM Email Automation', 'status', '=', params.status]);
+    }
+    if (params.email_template && params.email_template !== 'all') {
+        filters.push(['CRM Email Automation', 'email_template', '=', params.email_template]);
+    }
+    if (params.start_date) {
+        filters.push(['CRM Email Automation', 'start_date', '=', params.start_date]);
+    }
     if (params.filters) {
         if (params.filters.status && params.filters.status !== 'all') {
             filters.push(['CRM Email Automation', 'status', '=', params.filters.status]);
@@ -76,7 +84,7 @@ export async function fetchEmailAutomations(params: FetchEmailAutomationsParams)
             filters.push(['CRM Email Automation', 'target_type', '=', params.filters.target_type]);
         }
         if (params.filters.is_active && params.filters.is_active !== 'all') {
-            filters.push(['CRM Email Automation', 'is_active', '=', params.filters.is_active === 'yes' ? 1 : 0]);
+            filters.push(['CRM Email Automation', 'is_active', '=', params.filters.is_active === '1' ? 1 : 0]);
         }
     }
 
