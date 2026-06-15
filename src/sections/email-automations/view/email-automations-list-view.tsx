@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { useSnackbar } from 'notistack';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -243,7 +244,7 @@ export function EmailAutomationsListView() {
                                                 </TableCell>
                                                 <TableCell sx={{ maxWidth: 150 }}>
                                                     <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
-                                                        {row.start_date || '—'}
+                                                        {row.start_date ? dayjs(row.start_date).format('DD-MM-YYYY') : '—'}
                                                     </Typography>
                                                 </TableCell>
                                                 <TableCell align="center">
@@ -299,6 +300,21 @@ export function EmailAutomationsListView() {
                                                     />
                                                 </TableCell>
                                             </TableRow>
+                                        )}
+                                        {!empty && !notFound && data.length < 5 && (
+                                            <>
+                                                {Array.from({ length: 5 - data.length }).map((_, i) => (
+                                                    <TableRow
+                                                        key={`empty-${i}`}
+                                                        sx={{
+                                                            height: 68,
+                                                            '& td': { borderBottom: 'none' },
+                                                        }}
+                                                    >
+                                                        <TableCell colSpan={9} />
+                                                    </TableRow>
+                                                ))}
+                                            </>
                                         )}
                                     </>
                                 )}

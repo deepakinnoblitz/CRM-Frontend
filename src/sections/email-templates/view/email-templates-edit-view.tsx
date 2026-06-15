@@ -4,8 +4,11 @@ import { IoMdArrowBack } from 'react-icons/io';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import { alpha } from '@mui/material/styles';
+import MenuItem from '@mui/material/MenuItem';
+import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -32,16 +35,45 @@ export function EmailTemplateEditView() {
     const [subject, setSubject] = useState('');
     const [errors, setErrors] = useState<{ templateName?: boolean; category?: boolean; subject?: boolean; emailContent?: boolean }>({});
 
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
+
+    const handleCloseSnackbar = () => {
+        setSnackbar((prev) => ({ ...prev, open: false }));
+    };
+
     const handleSave = () => {
         const newErrors: typeof errors = {};
-        if (!templateName) newErrors.templateName = true;
-        if (!category) newErrors.category = true;
-        if (!subject) newErrors.subject = true;
-        if (!emailContent || emailContent === '<p><br></p>') newErrors.emailContent = true;
+        const missingFields: string[] = [];
+
+        if (!templateName) {
+            newErrors.templateName = true;
+            missingFields.push('Template Name');
+        }
+        if (!category) {
+            newErrors.category = true;
+            missingFields.push('Category');
+        }
+        if (!subject) {
+            newErrors.subject = true;
+            missingFields.push('Subject');
+        }
+        if (!emailContent || emailContent === '<p><br></p>') {
+            newErrors.emailContent = true;
+            missingFields.push('Email Content');
+        }
 
         setErrors(newErrors);
 
-        if (Object.keys(newErrors).length > 0) {
+        if (missingFields.length > 0) {
+            setSnackbar({
+                open: true,
+                message: `Please fill in mandatory fields: ${missingFields.join(', ')}`,
+                severity: 'error',
+            });
             return;
         }
 
@@ -115,6 +147,7 @@ export function EmailTemplateEditView() {
                                 helperText={errors.templateName ? 'This field is required' : ''}
                             />
                             <TextField
+                                select
                                 fullWidth
                                 label="Category"
                                 required
@@ -125,7 +158,13 @@ export function EmailTemplateEditView() {
                                 }}
                                 error={errors.category}
                                 helperText={errors.category ? 'This field is required' : ''}
-                            />
+                            >
+                                {['Marketing', 'Newsletter', 'Promotion', 'Welcome', 'Follow Up', 'Proposal', 'Invoice', 'Reminder', 'Custom'].map((option) => (
+                                    <MenuItem key={option} value={option}>
+                                        {option}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
                             <TextField fullWidth multiline rows={3} label="Description" />
                             <Stack direction="row" spacing={2}>
                                 <FormControlLabel control={<CustomSwitch defaultChecked />} label="Is Active" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
@@ -277,6 +316,17 @@ export function EmailTemplateEditView() {
                     </Card>
                 </Box>
             </Box>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </DashboardContent>
     );
 }

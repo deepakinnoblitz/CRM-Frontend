@@ -258,7 +258,21 @@ export function EmailTemplateListView() {
                                                 </TableCell>
                                             </TableRow>
                                         )}
-                                        {!empty && !notFound && <TableEmptyRows height={68} emptyRows={data.length < 5 ? 5 - data.length : 0} />}
+                                        {!empty && !notFound && data.length < 5 && (
+                                            <>
+                                                {Array.from({ length: 5 - data.length }).map((_, i) => (
+                                                    <TableRow
+                                                        key={`empty-${i}`}
+                                                        sx={{
+                                                            height: 68,
+                                                            '& td': { borderBottom: 'none' },
+                                                        }}
+                                                    >
+                                                        <TableCell colSpan={6} />
+                                                    </TableRow>
+                                                ))}
+                                            </>
+                                        )}
                                     </>
                                 )}
                             </TableBody>

@@ -7,15 +7,19 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import Snackbar from '@mui/material/Snackbar';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
+import Checkbox from '@mui/material/Checkbox';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
-import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import Autocomplete from '@mui/material/Autocomplete';
 import TableContainer from '@mui/material/TableContainer';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
@@ -28,6 +32,7 @@ import { useRouter } from 'src/routes/hooks';
 import { frappeRequest } from 'src/utils/csrf';
 
 import { DashboardContent } from 'src/layouts/dashboard';
+import { fetchEmailTemplates } from 'src/api/email-template';
 import { getEmailAutomation } from 'src/api/email-automation';
 
 import { Iconify } from 'src/components/iconify';
@@ -38,6 +43,16 @@ import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 export function EmailAutomationsEditView() {
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
+
+    const [templateOptions, setTemplateOptions] = useState<any[]>([]);
+
+    useEffect(() => {
+        fetchEmailTemplates({ page: 1, page_size: 1000 }).then((res) => {
+            setTemplateOptions(res.data);
+        }).catch((err) => {
+            console.error('Failed to fetch email templates:', err);
+        });
+    }, []);
 
     const [automationName, setAutomationName] = useState('');
     const [status, setStatus] = useState('Draft');
@@ -86,18 +101,53 @@ export function EmailAutomationsEditView() {
         startDate?: boolean;
     }>({});
 
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
+
+    const handleCloseSnackbar = () => {
+        setSnackbar((prev) => ({ ...prev, open: false }));
+    };
+
     const handleSave = () => {
         const newErrors: typeof errors = {};
-        if (!automationName) newErrors.automationName = true;
-        if (!emailTemplate) newErrors.emailTemplate = true;
-        if (!targetType) newErrors.targetType = true;
-        if (!frequency) newErrors.frequency = true;
-        if (!runTime) newErrors.runTime = true;
-        if (!startDate) newErrors.startDate = true;
+        const missingFields: string[] = [];
+
+        if (!automationName) {
+            newErrors.automationName = true;
+            missingFields.push('Automation Name');
+        }
+        if (!emailTemplate) {
+            newErrors.emailTemplate = true;
+            missingFields.push('Email Template');
+        }
+        if (!targetType) {
+            newErrors.targetType = true;
+            missingFields.push('Target Type');
+        }
+        if (!frequency) {
+            newErrors.frequency = true;
+            missingFields.push('Frequency');
+        }
+        if (!startDate) {
+            newErrors.startDate = true;
+            missingFields.push('Start Date');
+        }
+        if (!runTime) {
+            newErrors.runTime = true;
+            missingFields.push('Run Time');
+        }
 
         setErrors(newErrors);
 
-        if (Object.keys(newErrors).length > 0) {
+        if (missingFields.length > 0) {
+            setSnackbar({
+                open: true,
+                message: `Please fill in mandatory fields: ${missingFields.join(', ')}`,
+                severity: 'error',
+            });
             return;
         }
 
@@ -178,17 +228,39 @@ export function EmailAutomationsEditView() {
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Email Configuration</Typography>
                         <Stack spacing={3}>
-                            <TextField 
-                                fullWidth 
-                                label="Email Template" 
-                                required
-                                value={emailTemplate}
-                                onChange={(e) => {
-                                    setEmailTemplate(e.target.value);
-                                    if (e.target.value) setErrors((prev) => ({ ...prev, emailTemplate: false }));
+                            <Autocomplete
+                                fullWidth
+                                options={templateOptions}
+                                getOptionLabel={(option) => option.template_name || option.name || ''}
+                                value={templateOptions.find((opt) => opt.name === emailTemplate) || null}
+                                onChange={(_e, newValue) => {
+                                    setEmailTemplate(newValue?.name || '');
+                                    if (newValue?.name) setErrors(prev => ({ ...prev, emailTemplate: false }));
                                 }}
-                                error={errors.emailTemplate}
-                                helperText={errors.emailTemplate ? 'This field is required' : ''}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Email Template"
+                                        required
+                                        error={errors.emailTemplate}
+                                        helperText={errors.emailTemplate ? 'This field is required' : ''}
+                                    />
+                                )}
+                                renderOption={(props, option) => {
+                                    const { key, ...optionProps } = props as any;
+                                    return (
+                                        <li key={key || option.name} {...optionProps}>
+                                            <Box>
+                                                <Typography variant="subtitle2" sx={{ fontSize: '14px' }}>
+                                                    {option.template_name || option.name}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
+                                                    {option.category || 'No Category'}
+                                                </Typography>
+                                            </Box>
+                                        </li>
+                                    );
+                                }}
                             />
                             <TextField fullWidth label="Subject Override" />
                             <TextField 
@@ -313,6 +385,7 @@ export function EmailAutomationsEditView() {
                         <Typography variant="h6" sx={{ mb: 3 }}>Schedule</Typography>
                         <Stack spacing={3}>
                             <TextField 
+                                select
                                 fullWidth 
                                 label="Frequency" 
                                 required
@@ -323,63 +396,89 @@ export function EmailAutomationsEditView() {
                                 }}
                                 error={errors.frequency}
                                 helperText={errors.frequency ? 'This field is required' : ''}
-                            />
-                            <Stack direction="row" spacing={2}>
-                                <DatePicker
-                                    label="Start Date *"
-                                    format="DD-MM-YYYY"
-                                    value={startDate ? dayjs(startDate) : null}
-                                    onChange={(newValue) => {
-                                        const formatted = newValue ? newValue.format('YYYY-MM-DD') : '';
-                                        setStartDate(formatted);
-                                        if (formatted) setErrors((prev) => ({ ...prev, startDate: false }));
-                                    }}
-                                    slotProps={{
-                                        textField: {
-                                            fullWidth: true,
-                                            error: errors.startDate,
-                                            helperText: errors.startDate ? 'This field is required' : ''
-                                        }
-                                    }}
-                                />
-                                <DatePicker
-                                    label="End Date"
-                                    format="DD-MM-YYYY"
-                                    value={endDate ? dayjs(endDate) : null}
-                                    onChange={(newValue) => setEndDate(newValue ? newValue.format('YYYY-MM-DD') : '')}
-                                    slotProps={{ textField: { fullWidth: true } }}
-                                />
-                            </Stack>
-                            <TimePicker
-                                label="Run Time *"
-                                value={runTime ? dayjs(`2000-01-01T${runTime}`) : null}
-                                onChange={(newValue) => {
-                                    const formatted = newValue ? newValue.format('HH:mm:ss') : '';
-                                    setRunTime(formatted);
-                                    if (formatted) setErrors((prev) => ({ ...prev, runTime: false }));
-                                }}
-                                slotProps={{
-                                    textField: {
-                                        fullWidth: true,
-                                        error: errors.runTime,
-                                        helperText: errors.runTime ? 'This field is required' : ''
-                                    }
-                                }}
-                            />
-                            <TextField fullWidth label="Week Day" />
-                            <TextField fullWidth label="Day Of Month" />
+                            >
+                                {['Once', 'Daily', 'Weekly', 'Monthly', 'Yearly'].map(opt => (
+                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                ))}
+                            </TextField>
+                            {frequency && (
+                                <>
+                                    <Stack direction="row" spacing={2}>
+                                        <DatePicker
+                                            label="Start Date *"
+                                            format="DD-MM-YYYY"
+                                            value={startDate ? dayjs(startDate) : null}
+                                            onChange={(newValue) => {
+                                                const formatted = newValue ? newValue.format('DD-MM-YYYY') : '';
+                                                setStartDate(formatted);
+                                                if (formatted) setErrors((prev) => ({ ...prev, startDate: false }));
+                                            }}
+                                            slotProps={{
+                                                textField: {
+                                                    fullWidth: true,
+                                                    error: errors.startDate,
+                                                    helperText: errors.startDate ? 'This field is required' : ''
+                                                }
+                                            }}
+                                        />
+                                        {['Daily', 'Weekly', 'Monthly', 'Yearly'].includes(frequency) && (
+                                            <DatePicker
+                                                label="End Date"
+                                                format="DD-MM-YYYY"
+                                                value={endDate ? dayjs(endDate) : null}
+                                                onChange={(newValue) => setEndDate(newValue ? newValue.format('DD-MM-YYYY') : '')}
+                                                slotProps={{ textField: { fullWidth: true } }}
+                                            />
+                                        )}
+                                    </Stack>
+                                    <TimePicker
+                                        label="Run Time *"
+                                        value={runTime ? dayjs(`2000-01-01T${runTime}`) : null}
+                                        onChange={(newValue) => {
+                                            const formatted = newValue ? newValue.format('HH:mm:ss') : '';
+                                            setRunTime(formatted);
+                                            if (formatted) setErrors((prev) => ({ ...prev, runTime: false }));
+                                        }}
+                                        slotProps={{
+                                            textField: {
+                                                fullWidth: true,
+                                                error: errors.runTime,
+                                                helperText: errors.runTime ? 'This field is required' : ''
+                                            }
+                                        }}
+                                    />
+                                    {frequency === 'Weekly' && <TextField fullWidth label="Week Day" />}
+                                    {frequency === 'Monthly' && <TextField fullWidth label="Day Of Month" />}
+                                </>
+                            )}
                         </Stack>
                     </Card>
 
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Execution Settings</Typography>
-                        <Stack spacing={3}>
-                            <FormControlLabel control={<CustomSwitch defaultChecked />} label="Create Campaign History" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
-                            <FormControlLabel control={<CustomSwitch defaultChecked />} label="Auto Pause On Error" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
-                            <TextField fullWidth type="number" label="Maximum Retry Count" />
-                        </Stack>
+                        <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }} gap={3}>
+                            <Stack spacing={2}>
+                                <FormControlLabel control={<Checkbox defaultChecked />} label="Create Separate Campaign" />
+                                <FormControlLabel control={<Checkbox />} label="Send Immediately" />
+                            </Stack>
+                            <Stack spacing={2}>
+                                <FormControlLabel control={<Checkbox defaultChecked />} label="Auto Pause On Error" />
+                                <TextField fullWidth type="number" label="Max Retry Count" />
+                            </Stack>
+                        </Box>
                     </Card>
             </Box>
+            
+                <Snackbar
+                    open={snackbar.open}
+                    autoHideDuration={6000}
+                    onClose={handleCloseSnackbar}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                >
+                    <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+                        {snackbar.message}
+                    </Alert>
+                </Snackbar>
             </DashboardContent>
         </LocalizationProvider>
     );
