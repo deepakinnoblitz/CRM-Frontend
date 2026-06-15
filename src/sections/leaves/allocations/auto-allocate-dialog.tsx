@@ -264,7 +264,7 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                             <Table stickyHeader size="small">
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell sx={{ bgcolor: 'background.neutral', fontWeight: 700, width: 50 }}>#</TableCell>
+                                        <TableCell sx={{ bgcolor: 'background.neutral', fontWeight: 700, width: 50 }}>S.no</TableCell>
                                         <TableCell sx={{ bgcolor: 'background.neutral', fontWeight: 700, minWidth: 180 }}>Employee</TableCell>
                                         <TableCell sx={{ bgcolor: 'background.neutral', fontWeight: 700, textAlign: 'center', width: 110 }}>Joined</TableCell>
                                         <TableCell sx={{ bgcolor: 'background.neutral', fontWeight: 700, textAlign: 'center', width: 100 }}>Status</TableCell>
