@@ -124,6 +124,7 @@ export async function getLeaveAllocationWorkflowActions(currentState: string): P
 
 export interface AllocationPreviewItem {
     leave_type: string;
+    leave_type_name: string;
     count: number;
     exists: boolean;
 }
@@ -137,30 +138,65 @@ export interface EmployeeAllocationPreview {
     allocations: AllocationPreviewItem[];
 }
 
-export async function getLeaveAllocationPreview(year: number, month: number): Promise<EmployeeAllocationPreview[]> {
-    const headers = await getAuthHeaders();
+// ─── New Richer interfaces for frontend_api ────────────────────────────────
 
-    const res = await frappeRequest("/api/method/company.company.api.get_leave_allocation_preview", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ year, month })
-    });
+export interface MonthlyAllocationItem {
+    leave_type: string;
+    leave_type_name: string;
+    base_leaves: number;
+    carry_forward_balance: number;
+    total_leaves: number;
+    exists: boolean;
+    is_paid: number;
+    carry_forward: number;
+    reset_frequency: string;
+}
 
+export interface MonthlyEmployeeAllocationPreview {
+    employee: string;
+    employee_id: string;
+    employee_name: string;
+    date_of_joining: string;
+    in_probation: boolean;
+    allocations: MonthlyAllocationItem[];
+}
+
+export interface MonthlyAutoAllocateResult {
+    created_count: number;
+    skipped_count: number;
+    created_details: {
+        employee_name: string;
+        employee_id: string;
+        leave_type: string;
+        total_leaves: number;
+    }[];
+    errors: string[];
+}
+
+/** GET /api/method/company.company.frontend_api.get_leave_allocation_preview */
+export async function getMonthlyLeaveAllocationPreview(
+    year: number,
+    month: number
+): Promise<MonthlyEmployeeAllocationPreview[]> {
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_leave_allocation_preview?year=${year}&month=${month}`
+    );
     const json = await res.json();
-    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to get allocation preview"));
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to get allocation preview'));
     return json.message || [];
 }
 
-export async function autoAllocateMonthlyLeaves(year: number, month: number): Promise<string> {
+/** GET /api/method/company.company.frontend_api.auto_allocate_monthly_leaves */
+export async function autoAllocateMonthlyLeavesNew(
+    year: number,
+    month: number
+): Promise<MonthlyAutoAllocateResult> {
     const headers = await getAuthHeaders();
-
-    const res = await frappeRequest("/api/method/company.company.api.auto_allocate_monthly_leaves", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ year, month })
-    });
-
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.auto_allocate_monthly_leaves?year=${year}&month=${month}`,
+        { method: 'GET', headers }
+    );
     const json = await res.json();
-    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to auto-allocate leaves"));
-    return json.message || "Allocation completed";
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to auto-allocate monthly leaves'));
+    return json.message;
 }

@@ -35,7 +35,8 @@ interface AllocationResult {
         employee_name: string;
         employee_id: string;
         leave_type: string;
-        total_leaves: number;
+        allocated: number;
+        carry_forward: number;
     }[];
     errors: string[];
 }
@@ -57,6 +58,18 @@ export default function AutoAllocateResultDialog({ open, onClose, data }: Props)
         detail.leave_type.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const getLeaveTypeColor = (leaveType: string): any => {
+        const map: Record<string, any> = {
+            "Paid Leave": "primary",
+            "Unpaid Leave": "warning",
+            "Permission": "info",
+            "Sick Leave": "error",
+            "Casual Leave": "success",
+        };
+
+        return map[leaveType] || "default";
+    };
+
     return (
         <Dialog
             open={open}
@@ -72,11 +85,10 @@ export default function AutoAllocateResultDialog({ open, onClose, data }: Props)
         >
             <DialogTitle sx={{
                 m: 0,
-                p: 2.5,
+                p: 2,
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                bgcolor: 'background.neutral',
                 borderBottom: '1px solid',
                 borderColor: 'divider'
             }}>
@@ -181,49 +193,155 @@ export default function AutoAllocateResultDialog({ open, onClose, data }: Props)
                         maxHeight: 300,
                         bgcolor: 'background.neutral'
                     }}>
-                        <Table stickyHeader size="small">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell sx={{ bgcolor: 'background.neutral', fontWeight: 700, color: 'text.secondary', py: 1.5 }}>Employee</TableCell>
-                                    <TableCell sx={{ bgcolor: 'background.neutral', fontWeight: 700, color: 'text.secondary', py: 1.5 }}>Type</TableCell>
-                                    <TableCell sx={{ bgcolor: 'background.neutral', fontWeight: 700, color: 'text.secondary', textAlign: 'center', py: 1.5 }}>Allocated</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {filteredDetails.map((detail, idx) => (
-                                    <TableRow key={`${detail.employee_id}-${detail.leave_type}`} hover>
-                                        <TableCell>
-                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{detail.employee_name}</Typography>
-                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>{detail.employee_id}</Typography>
-                                        </TableCell>
-                                        <TableCell>
+                    <Table stickyHeader size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ fontWeight: 700 }}>
+                                    Employee
+                                </TableCell>
+
+                                <TableCell sx={{ fontWeight: 700 }}>
+                                    Leave Type
+                                </TableCell>
+
+                                <TableCell align="center" sx={{ fontWeight: 700 }}>
+                                    Carry Forward
+                                </TableCell>
+
+                                <TableCell align="center" sx={{ fontWeight: 700 }}>
+                                    Total Allocated
+                                </TableCell>
+
+                                <TableCell align="center" sx={{ fontWeight: 700 }}>
+                                    Status
+                                </TableCell>
+                            </TableRow>
+                        </TableHead>
+
+                        <TableBody>
+                            {filteredDetails.map((detail) => (
+                                <TableRow
+                                    hover
+                                    key={`${detail.employee_id}-${detail.leave_type}`}
+                                >
+                                    {/* Employee */}
+                                    <TableCell>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{ fontWeight: 700 }}
+                                        >
+                                            {detail.employee_name}
+                                        </Typography>
+
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                        >
+                                            {detail.employee_id}
+                                        </Typography>
+                                    </TableCell>
+
+                                    {/* Leave Type */}
+                                    <TableCell>
+                                        <Chip
+                                            label={detail.leave_type}
+                                            size="small"
+                                            color={getLeaveTypeColor(detail.leave_type)}
+                                            variant="filled"
+                                            sx={{
+                                                fontWeight: 700,
+                                                minWidth: 110,
+                                            }}
+                                        />
+                                    </TableCell>
+
+                                    {/* Carry Forward */}
+                                    <TableCell align="center">
+                                        {detail.carry_forward > 0 ? (
                                             <Chip
-                                                label={detail.leave_type}
                                                 size="small"
+                                                color="success"
                                                 variant="outlined"
-                                                color={detail.leave_type === 'Paid Leave' ? 'primary' : 'default'}
-                                                sx={{ borderRadius: 0.5, height: 20, fontSize: 10, fontWeight: 700 }}
+                                                icon={
+                                                    <Iconify
+                                                        icon={"solar:arrow-up-bold" as any}
+                                                        width={14}
+                                                    />
+                                                }
+                                                label={`+${detail.carry_forward}`}
                                             />
-                                        </TableCell>
-                                        <TableCell sx={{ textAlign: 'center' }}>
-                                            <Typography variant="subtitle2" sx={{ color: 'success.main', fontWeight: 800 }}>+{detail.total_leaves}</Typography>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                {data.created_details.length === 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={3} sx={{ py: 6, textAlign: 'center' }}>
-                                            <Stack spacing={1} alignItems="center">
-                                                <Iconify icon="solar:folder-bold-duotone" width={48} sx={{ color: 'text.disabled' }} />
-                                                <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
-                                                    No new allocations were created this time.
-                                                </Typography>
-                                            </Stack>
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                        ) : (
+                                            <Typography
+                                                variant="body2"
+                                                color="text.secondary"
+                                            >
+                                                —
+                                            </Typography>
+                                        )}
+                                    </TableCell>
+
+                                    {/* Allocated */}
+                                    <TableCell align="center">
+                                        <Typography
+                                            variant="subtitle2"
+                                            sx={{
+                                                fontWeight: 800,
+                                                color: 'success.main',
+                                            }}
+                                        >
+                                            {detail.allocated}
+                                        </Typography>
+                                    </TableCell>
+
+                                    {/* Status */}
+                                    <TableCell align="center">
+                                        <Chip
+                                            icon={
+                                                <Iconify
+                                                    icon={"eva:checkmark-circle-2-fill" as any}
+                                                    width={16}
+                                                />
+                                            }
+                                            label="Created"
+                                            color="success"
+                                            size="small"
+                                            variant="filled"
+                                        />
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+
+                            {filteredDetails.length === 0 && (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={5}
+                                        sx={{
+                                            py: 6,
+                                            textAlign: 'center',
+                                        }}
+                                    >
+                                        <Stack
+                                            spacing={1}
+                                            alignItems="center"
+                                        >
+                                            <Iconify
+                                                icon="solar:folder-bold-duotone"
+                                                width={48}
+                                                sx={{ color: 'text.disabled' }}
+                                            />
+
+                                            <Typography
+                                                variant="body2"
+                                                color="text.secondary"
+                                            >
+                                                No new allocations were created.
+                                            </Typography>
+                                        </Stack>
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
                     </TableContainer>
 
                     {data.errors.length > 0 && (
