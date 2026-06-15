@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-    IoMdArrowBack, IoMdSettings, IoMdMail, IoMdCalendar, IoMdStats
+    IoMdArrowBack, IoMdSettings, IoMdMail, IoMdCalendar, IoMdStats, IoMdCreate
 } from "react-icons/io";
 
 import Box from '@mui/material/Box';
@@ -114,6 +114,21 @@ export function EmailAutomationsDetailsView() {
                         }}
                     >
                         Go Back
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => navigate(`/email-automations/${encodeURIComponent(id || '')}/edit`)}
+                        startIcon={<IoMdCreate size={20} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            bgcolor: '#08a3cd',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#068fb3' }
+                        }}
+                    >
+                        Edit
                     </Button>
                 </Stack>
             </Stack>
