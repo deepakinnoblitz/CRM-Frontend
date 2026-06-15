@@ -222,11 +222,27 @@ export function EmailCampaignsListView() {
                                             />
                                         ))}
 
-                                        {notFound && <TableNoData searchQuery={filterName} colSpan={7} />}
+                                        {!empty && !notFound && data.length < 5 && (
+                                            <>
+                                                {Array.from({ length: 5 - data.length }).map((_, i) => (
+                                                    <TableRow
+                                                        key={`empty-${i}`}
+                                                        sx={{
+                                                            height: 68,
+                                                            '& td': { borderBottom: 'none' },
+                                                        }}
+                                                    >
+                                                        <TableCell colSpan={8} />
+                                                    </TableRow>
+                                                ))}
+                                            </>
+                                        )}
+
+                                        {notFound && <TableNoData searchQuery={filterName} colSpan={8} />}
 
                                         {empty && (
                                             <TableRow>
-                                                <TableCell colSpan={7}>
+                                                <TableCell colSpan={8}>
                                                     <EmptyContent
                                                         title="No Email Campaigns lists found"
                                                         description="You haven't created any Email Campaigns lists yet."

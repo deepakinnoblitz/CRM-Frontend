@@ -308,8 +308,7 @@ export function EmailAutomationsListView() {
                                                         key={`empty-${i}`}
                                                         sx={{
                                                             height: 68,
-                                                            '& td': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                            '&:last-child td': { borderBottom: 0 },
+                                                            '& td': { borderBottom: 'none' },
                                                         }}
                                                     >
                                                         <TableCell colSpan={9} />
