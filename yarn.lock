@@ -82,6 +82,53 @@
     "@babel/helper-string-parser" "^7.25.9"
     "@babel/helper-validator-identifier" "^7.25.9"
 
+"@bryntum/calendar-react-thin@7.3.0":
+  version "7.3.0"
+  resolved "https://registry.npmjs.org/@bryntum/calendar-react-thin/-/calendar-react-thin-7.3.0.tgz"
+  integrity sha512-lUZwzCbdShRCCCfO7agVYDvGG5WEbDuFHefWVALYQ8oC56hBXBeEx300tYAJfT4hgw3+1l4C3ZHZ3oWSMTGL7g==
+
+"@bryntum/calendar-thin@npm:@bryntum/calendar-thin-trial@7.3.0":
+  version "7.3.0"
+  resolved "https://registry.npmjs.org/@bryntum/calendar-thin-trial/-/calendar-thin-trial-7.3.0.tgz"
+  integrity sha512-3ZNokZ2bl8TC+eOOCwnHGQoW/xFdrFYiZTa4wMiKNQD0UZow9X2g3jrleC6W6MLnQ1Mi+i0P0+n2NSSqXziUBw==
+
+"@bryntum/core-react-thin@7.3.0":
+  version "7.3.0"
+  resolved "https://registry.npmjs.org/@bryntum/core-react-thin/-/core-react-thin-7.3.0.tgz"
+  integrity sha512-BwIjoiEdZtSEWHjnl1ZMqkK/fQSAlMTUB4ulsJJ8DY0kQlAJ90dtvc/nFE5TjQJOtAvm9SlVN11PYM/gmtN1SQ==
+
+"@bryntum/core-thin@npm:@bryntum/core-thin-trial@7.3.0":
+  version "7.3.0"
+  resolved "https://registry.npmjs.org/@bryntum/core-thin-trial/-/core-thin-trial-7.3.0.tgz"
+  integrity sha512-V9L7Ro/eSFhaz/cTM2YRizuD48rrWSBqP4u1wLzD+tcJ8DffMqGbJ6RjN4L2YFTEeUhTpK3lvr5HH7jKUSAoUw==
+  dependencies:
+    "@bryntum/core-trial-lib" "1.0.1"
+
+"@bryntum/core-trial-lib@1.0.1":
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/@bryntum/core-trial-lib/-/core-trial-lib-1.0.1.tgz"
+  integrity sha512-l0xH8WITqgxLwTk5ezZExF5Vx+hZgrVeEgfjOieEMDq9X/f+/nG6R2/hm5rNfL4NqdeHwN9D2B0zOlJvQJJeKA==
+
+"@bryntum/demo-resources@7.3.0":
+  version "7.3.0"
+  resolved "https://registry.npmjs.org/@bryntum/demo-resources/-/demo-resources-7.3.0.tgz"
+  integrity sha512-D+sjm1kDs4wGA4DqZwIj6wX2J+DBXjQ+Ld/66BVXYCaxosJZ2vc5ZR/uy4Bsqk6sCVTdqzRFjIi8jLJc0XB3aQ==
+
+"@bryntum/engine-thin@npm:@bryntum/engine-thin-trial@7.3.0":
+  version "7.3.0"
+  resolved "https://registry.npmjs.org/@bryntum/engine-thin-trial/-/engine-thin-trial-7.3.0.tgz"
+  integrity sha512-+an53WHikTS1xmhZa1fqcrMSHSASACcd2V9MyYFtI+HNke2bzR7+rjNrNWpzCUHJyx1e5rxVm/cazI//FNh0DA==
+
+"@bryntum/grid-thin@npm:@bryntum/grid-thin-trial@7.3.0":
+  version "7.3.0"
+  resolved "https://registry.npmjs.org/@bryntum/grid-thin-trial/-/grid-thin-trial-7.3.0.tgz"
+  integrity sha512-V2hvty7T479U1gPNSsvXUycJDiRd5RE0mytwmxqah83OpLf5NRtS9JNvxMkrnTNpbkTSAPjboQinrimvoOz47Q==
+
+"@bryntum/scheduler-thin@npm:@bryntum/scheduler-thin-trial@7.3.0":
+  version "7.3.0"
+  resolved "https://registry.npmjs.org/@bryntum/scheduler-thin-trial/-/scheduler-thin-trial-7.3.0.tgz"
+  integrity sha512-9zA6K6XyQdHXYwOq7ABgsISRQCSo3X2+0kQBTIZ5qpGmQIdI0ll2Wku9Y5FpDuFJXzjC0EcNbIILNpIuKyZDjw==
+
 "@bufbuild/protobuf@^1.10.0":
   version "1.10.1"
   resolved "https://registry.npmjs.org/@bufbuild/protobuf/-/protobuf-1.10.1.tgz"
