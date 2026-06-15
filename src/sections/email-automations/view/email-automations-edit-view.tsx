@@ -12,14 +12,14 @@ import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
+import Checkbox from '@mui/material/Checkbox';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
-import Autocomplete from '@mui/material/Autocomplete';
-import IconButton from '@mui/material/IconButton';
-import Checkbox from '@mui/material/Checkbox';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import Autocomplete from '@mui/material/Autocomplete';
 import TableContainer from '@mui/material/TableContainer';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
@@ -32,8 +32,8 @@ import { useRouter } from 'src/routes/hooks';
 import { frappeRequest } from 'src/utils/csrf';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getEmailAutomation } from 'src/api/email-automation';
 import { fetchEmailTemplates } from 'src/api/email-template';
+import { getEmailAutomation } from 'src/api/email-automation';
 
 import { Iconify } from 'src/components/iconify';
 
