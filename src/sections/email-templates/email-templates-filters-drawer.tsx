@@ -14,7 +14,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 // ----------------------------------------------------------------------
 
 const STATUS_OPTIONS = ['all', 'Active', 'Inactive'];
-const CATEGORY_OPTIONS = ['all', 'Marketing', 'Sales', 'Support', 'Transactional', 'Other'];
+const CATEGORY_OPTIONS = ['all', 'Marketing', 'Newsletter', 'Promotion', 'Welcome', 'Follow Up', 'Proposal', 'Invoice', 'Reminder', 'Custom'];
 
 type FiltersProps = {
     category: string;
@@ -157,32 +157,6 @@ export function EmailTemplateFiltersDrawer({
         </Stack>
     );
 
-    const renderCreatedBy = (
-        <Stack spacing={1.5}>
-            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Created By
-            </Typography>
-            <TextField
-                fullWidth
-                size="small"
-                value={filters.created_by || ''}
-                onChange={(event) => {
-                    handleFilterChange('created_by', event.target.value);
-                }}
-                placeholder="Search by creator name..."
-                sx={{
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                        bgcolor: 'background.neutral',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                        },
-                    },
-                }}
-            />
-        </Stack>
-    );
-
     return (
         <Drawer
             anchor="right"
@@ -206,7 +180,6 @@ export function EmailTemplateFiltersDrawer({
                 <Stack spacing={3} sx={{ p: 3 }}>
                     {renderCategory}
                     {renderStatus}
-                    {renderCreatedBy}
                 </Stack>
             </Scrollbar>
 

@@ -118,7 +118,7 @@ export function EmailAutomationsFiltersDrawer({
                     handleFilterChange('email_template', newValue ? newValue.name : 'all');
                 }}
                 options={options.templates}
-                getOptionLabel={(option) => `${option.template_name} (${option.name})`}
+                getOptionLabel={(option) => option.template_name || option.name || ''}
                 renderInput={(params) => (
                     <TextField
                         {...params}
@@ -134,18 +134,16 @@ export function EmailAutomationsFiltersDrawer({
                         }}
                     />
                 )}
-                renderOption={(props, option) => (
-                    <li {...props} key={option.name}>
-                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
-                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                {option.template_name}
+                renderOption={(props, option) => {
+                    const { key, ...optionProps } = props as any;
+                    return (
+                        <li key={key || option.name} {...optionProps}>
+                            <Typography variant="body2">
+                                {option.template_name || option.name}
                             </Typography>
-                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                ID: {option.name}
-                            </Typography>
-                        </Stack>
-                    </li>
-                )}
+                        </li>
+                    );
+                }}
             />
         </Stack>
     );
