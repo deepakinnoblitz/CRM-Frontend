@@ -755,7 +755,9 @@ export interface LeaveType {
     max_leaves?: number;
     status?: 'Active' | 'Inactive';
     carry_forward?: number;
-    reset_frequency?: 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly';
+    reset_frequency?: 'Every 3 months' | 'Every 4 months' | 'Every 6 months' | 'Whole year';
+    restrict_during_probation?: number;
+    probation_period_months?: number;
     creation?: string;
     modified?: string;
 }
