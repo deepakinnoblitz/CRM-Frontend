@@ -194,6 +194,7 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                                 <DatePicker
                                     views={['year']}
                                     label="Year"
+                                    format="YYYY"
                                     value={dayjs().year(year)}
                                     onChange={(newValue) => setYear(newValue ? newValue.year() : new Date().getFullYear())}
                                     slotProps={{ textField: { fullWidth: true } }}

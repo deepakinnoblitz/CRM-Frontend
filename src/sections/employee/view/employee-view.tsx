@@ -797,6 +797,7 @@ export function EmployeeView() {
             dataToSave.documents = documents;
 
             if (currentEmployeeId) {
+                console.log("Saving Employee", dataToSave);
                 await updateEmployee(currentEmployeeId, dataToSave as any);
                 handleCloseCreate();
                 setSnackbar({ open: true, message: 'Employee updated successfully', severity: 'success' });
