@@ -111,7 +111,7 @@ export function LeavesView() {
     const [uploading, setUploading] = useState(false);
     const [totalDays, setTotalDays] = useState(0);
     const [balanceInfo, setBalanceInfo] = useState<{ remaining: number, unit: string } | null>(null);
-    const [probationInfo, setProbationInfo] = useState<{ is_probation: boolean, restricted_types: string[] } | null>(null);
+    const [probationInfo, setProbationInfo] = useState<{ is_probation: boolean; restricted_types: string[]; probation_end_date: string | null; } | null>(null);
 
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
     const [leaveTypeOptions, setLeaveTypeOptions] = useState<any[]>([]);
@@ -171,13 +171,13 @@ export function LeavesView() {
     // Fetch probation info when employee changes
     useEffect(() => {
         if (employee) {
-            getEmployeeProbationInfo(employee)
+            getEmployeeProbationInfo(employee, fromDate || undefined)
                 .then(setProbationInfo)
                 .catch(console.error);
         } else {
             setProbationInfo(null);
         }
-    }, [employee]);
+    }, [employee, fromDate]);
 
     // Calculate total days and check balance
     useEffect(() => {
