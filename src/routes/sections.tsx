@@ -292,7 +292,7 @@ export const routesSection: RouteObject[] = [
       { path: 'requests', element: <RequestsPage /> },
       { path: 'announcements', element: <AnnouncementsPage /> },
       {
-        path: 'assets',
+        path: 'asset',
         children: [
           { index: true, element: <AssetsPage /> },
           { path: 'list', element: <AssetsPage /> },
