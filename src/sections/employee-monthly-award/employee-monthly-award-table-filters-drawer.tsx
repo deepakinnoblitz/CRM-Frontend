@@ -10,6 +10,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Autocomplete from '@mui/material/Autocomplete';
+import MenuItem from '@mui/material/MenuItem';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -232,7 +233,6 @@ export function EmployeeMonthlyAwardTableFiltersDrawer({
                                 fullWidth
                                 value={filters.type || 'all'}
                                 onChange={handleFilterType}
-                                SelectProps={{ native: true }}
                                 size="small"
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
@@ -241,9 +241,9 @@ export function EmployeeMonthlyAwardTableFiltersDrawer({
                                     },
                                 }}
                             >
-                                <option value="all">All Types</option>
-                                <option value="Auto">Auto</option>
-                                <option value="Manual">Manual</option>
+                                <MenuItem value="all">All Types</MenuItem>
+                                <MenuItem value="Auto">Auto</MenuItem>
+                                <MenuItem value="Manual">Manual</MenuItem>
                             </TextField>
                         </Stack>
 
@@ -256,7 +256,6 @@ export function EmployeeMonthlyAwardTableFiltersDrawer({
                                 fullWidth
                                 value={filters.status || 'all'}
                                 onChange={handleFilterStatus}
-                                SelectProps={{ native: true }}
                                 size="small"
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
@@ -265,9 +264,9 @@ export function EmployeeMonthlyAwardTableFiltersDrawer({
                                     },
                                 }}
                             >
-                                <option value="all">All Status</option>
-                                <option value="Published">Published</option>
-                                <option value="Draft">Draft</option>
+                                <MenuItem value="all">All Status</MenuItem>
+                                <MenuItem value="Published">Published</MenuItem>
+                                <MenuItem value="Draft">Draft</MenuItem>
                             </TextField>
                         </Stack>
                     </Stack>

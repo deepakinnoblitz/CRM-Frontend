@@ -8,6 +8,7 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import MenuItem from '@mui/material/MenuItem';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -149,7 +150,6 @@ export function HolidayTableFiltersDrawer({
                 fullWidth
                 value={filters.month_year || 'all'}
                 onChange={(e) => handleFilterChange('month_year', e.target.value === 'all' ? null : e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
                 sx={{
                     '& .MuiOutlinedInput-root': {
@@ -161,11 +161,11 @@ export function HolidayTableFiltersDrawer({
                     },
                 }}
             >
-                <option value="all">All Months</option>
+                <MenuItem value="all">All Months</MenuItem>
                 {MONTH_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
+                    <MenuItem key={option.value} value={option.value}>
                         {option.label}
-                    </option>
+                    </MenuItem>
                 ))}
             </TextField>
         </Stack>

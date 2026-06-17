@@ -10,6 +10,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Autocomplete from '@mui/material/Autocomplete';
+import MenuItem from '@mui/material/MenuItem';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -285,7 +286,6 @@ export function EmployeeEvaluationTableFiltersDrawer({
                                         fullWidth
                                         value={filters.evaluation_type || 'all'}
                                         onChange={handleFilterType}
-                                        SelectProps={{ native: true }}
                                         size="small"
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
@@ -294,11 +294,11 @@ export function EmployeeEvaluationTableFiltersDrawer({
                                             },
                                         }}
                                     >
-                                        <option value="all">All Types</option>
+                                        <MenuItem value="all">All Types</MenuItem>
                                         {evaluationPoints.map((point) => (
-                                            <option key={point.name} value={point.name}>
+                                            <MenuItem key={point.name} value={point.name}>
                                                 {point.point_name}
-                                            </option>
+                                            </MenuItem>
                                         ))}
                                     </TextField>
                                 </Stack>
@@ -312,7 +312,6 @@ export function EmployeeEvaluationTableFiltersDrawer({
                                         fullWidth
                                         value={filters.docstatus ?? 'all'}
                                         onChange={handleFilterStatus}
-                                        SelectProps={{ native: true }}
                                         size="small"
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
@@ -321,10 +320,10 @@ export function EmployeeEvaluationTableFiltersDrawer({
                                             },
                                         }}
                                     >
-                                        <option value="all">All Status</option>
-                                        <option value="0">Draft</option>
-                                        <option value="1">Submitted</option>
-                                        <option value="2">Cancelled</option>
+                                        <MenuItem value="all">All Status</MenuItem>
+                                        <MenuItem value="0">Draft</MenuItem>
+                                        <MenuItem value="1">Submitted</MenuItem>
+                                        <MenuItem value="2">Cancelled</MenuItem>
                                     </TextField>
                                 </Stack>
                             </>
@@ -362,7 +361,6 @@ export function EmployeeEvaluationTableFiltersDrawer({
                                         fullWidth
                                         value={filters.event_type || 'all'}
                                         onChange={(e) => onFilters({ event_type: e.target.value })}
-                                        SelectProps={{ native: true }}
                                         size="small"
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
@@ -371,13 +369,13 @@ export function EmployeeEvaluationTableFiltersDrawer({
                                             },
                                         }}
                                     >
-                                        <option value="all">All Events</option>
-                                        <option value="Late Login">Late Login</option>
-                                        <option value="Early Exit">Early Exit</option>
-                                        <option value="Daily Log Submission">Daily Log Submission</option>
-                                        <option value="Specific Day Leave">Specific Day Leave</option>
-                                        <option value="Specific Date Leave">Specific Date Leave</option>
-                                        <option value="Continuous Presence">Continuous Presence</option>
+                                        <MenuItem value="all">All Events</MenuItem>
+                                        <MenuItem value="Late Login">Late Login</MenuItem>
+                                        <MenuItem value="Early Exit">Early Exit</MenuItem>
+                                        <MenuItem value="Daily Log Submission">Daily Log Submission</MenuItem>
+                                        <MenuItem value="Specific Day Leave">Specific Day Leave</MenuItem>
+                                        <MenuItem value="Specific Date Leave">Specific Date Leave</MenuItem>
+                                        <MenuItem value="Continuous Presence">Continuous Presence</MenuItem>
                                     </TextField>
                                 </Stack>
 
@@ -390,7 +388,6 @@ export function EmployeeEvaluationTableFiltersDrawer({
                                         fullWidth
                                         value={filters.rule_enabled || 'all'}
                                         onChange={(e) => onFilters({ rule_enabled: e.target.value })}
-                                        SelectProps={{ native: true }}
                                         size="small"
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
@@ -399,9 +396,9 @@ export function EmployeeEvaluationTableFiltersDrawer({
                                             },
                                         }}
                                     >
-                                        <option value="all">All Status</option>
-                                        <option value="1">Active</option>
-                                        <option value="0">Inactive</option>
+                                        <MenuItem value="all">All Status</MenuItem>
+                                        <MenuItem value="1">Active</MenuItem>
+                                        <MenuItem value="0">Inactive</MenuItem>
                                     </TextField>
                                 </Stack>
                             </>
