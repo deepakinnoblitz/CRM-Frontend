@@ -52,6 +52,13 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
     click: true,
     touchstart: true,
   });
+  // Location states
+  const [enableLocationTracking, setEnableLocationTracking] = useState(false);
+  const [trackOnLogin, setTrackOnLogin] = useState(false);
+  const [trackOnLogout, setTrackOnLogout] = useState(false);
+  const [trackOnStatusChange, setTrackOnStatusChange] = useState(false);
+  const [trackingIntervalMinutes, setTrackingIntervalMinutes] = useState(15);
+  const [minimumGpsAccuracy, setMinimumGpsAccuracy] = useState(100);
   // Threshold unit ('sec' | 'min')
   const [unit, setUnit] = useState<'sec' | 'min'>('sec');
 
@@ -93,6 +100,12 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
         click: !!settings.event_click,
         touchstart: !!settings.event_touchstart,
       });
+      setEnableLocationTracking(!!settings.enable_location_tracking);
+      setTrackOnLogin(!!settings.track_on_login);
+      setTrackOnLogout(!!settings.track_on_logout);
+      setTrackOnStatusChange(!!settings.track_on_status_change);
+      setTrackingIntervalMinutes(settings.tracking_interval_minutes || 15);
+      setMinimumGpsAccuracy(settings.minimum_gps_accuracy || 100);
     } catch (error) {
       console.error('Error fetching presence settings:', error);
     } finally {
@@ -115,6 +128,12 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
         event_scroll: events.scroll,
         event_click: events.click,
         event_touchstart: events.touchstart,
+        enable_location_tracking: enableLocationTracking,
+        track_on_login: trackOnLogin,
+        track_on_logout: trackOnLogout,
+        track_on_status_change: trackOnStatusChange,
+        tracking_interval_minutes: trackingIntervalMinutes,
+        minimum_gps_accuracy: minimumGpsAccuracy,
       });
       setSnackbar({ open: true, message: 'Settings saved successfully!', severity: 'success' });
       // Close after a short delay so user sees the success message
@@ -326,6 +345,109 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                   onChange={(e) => setEnableAutoResumeBreak(e.target.checked)}
                   disabled={!enableAutoStatus || loading}
                 />
+              </Box>
+
+              {/* Location Tracking Section */}
+              <Box
+                sx={{
+                  p: 2.5,
+                  borderRadius: 2,
+                  bgcolor: 'background.neutral',
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                }}
+              >
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                  <Stack spacing={0.5}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                      Enable Location Tracking
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      Track geographical locations of employee activity triggers.
+                    </Typography>
+                  </Stack>
+                  <Switch
+                    checked={enableLocationTracking}
+                    onChange={(e) => setEnableLocationTracking(e.target.checked)}
+                    disabled={loading}
+                  />
+                </Stack>
+
+                {enableLocationTracking && (
+                  <Stack spacing={2.5} sx={{ mt: 3, pt: 2.5, borderTop: `1px dashed ${theme.palette.divider}` }}>
+                    <Typography variant="subtitle2" sx={{ color: 'text.primary', mb: 0.5 }}>
+                      Tracking Triggers & Constraints
+                    </Typography>
+                    
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>On Login</Typography>
+                        <Switch
+                          checked={trackOnLogin}
+                          onChange={(e) => setTrackOnLogin(e.target.checked)}
+                          disabled={loading}
+                          size="small"
+                        />
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>On Logout</Typography>
+                        <Switch
+                          checked={trackOnLogout}
+                          onChange={(e) => setTrackOnLogout(e.target.checked)}
+                          disabled={loading}
+                          size="small"
+                        />
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>Status Change</Typography>
+                        <Switch
+                          checked={trackOnStatusChange}
+                          onChange={(e) => setTrackOnStatusChange(e.target.checked)}
+                          disabled={loading}
+                          size="small"
+                        />
+                      </Box>
+                    </Stack>
+
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                      <TextField
+                        fullWidth
+                        label="Auto-Tracking Interval"
+                        type="number"
+                        value={trackingIntervalMinutes === 0 ? '' : trackingIntervalMinutes}
+                        onChange={(e) => setTrackingIntervalMinutes(e.target.value === '' ? 0 : Number(e.target.value))}
+                        helperText="Minutes between updates"
+                        disabled={loading}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                                mins
+                              </Typography>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                      <TextField
+                        fullWidth
+                        label="Min GPS Accuracy"
+                        type="number"
+                        value={minimumGpsAccuracy === 0 ? '' : minimumGpsAccuracy}
+                        onChange={(e) => setMinimumGpsAccuracy(e.target.value === '' ? 0 : Number(e.target.value))}
+                        helperText="Filter out poor GPS signals"
+                        disabled={loading}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                                meters
+                              </Typography>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Stack>
+                  </Stack>
+                )}
               </Box>
 
               {/* System Monitoring Action */}

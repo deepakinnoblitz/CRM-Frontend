@@ -1,11 +1,24 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-import { getPresence, pingPresence, updatePresence as apiUpdatePresence, checkTodayTimesheet, getPresenceSettings } from 'src/api/presence';
+import { getPresence, pingPresence, updatePresence as apiUpdatePresence, checkTodayTimesheet, getPresenceSettings, logLocation } from 'src/api/presence';
 
 import { useAuth } from 'src/auth/auth-context';
 
 import { useSocket } from './use-socket';
 import { useIdleDetection } from './use-idle-detection';
+
+const requestCurrentLocation = (): Promise<GeolocationPosition> =>
+  new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation is not supported by your browser'));
+    } else {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      });
+    }
+  });
 
 export function usePresence() {
   const { user } = useAuth();
@@ -22,9 +35,55 @@ export function usePresence() {
   const [enableAutoResumeBreak, setEnableAutoResumeBreak] = useState(true);
   const [activityEvents, setActivityEvents] = useState(['mousemove', 'keydown', 'scroll', 'click', 'touchstart']);
 
+  // Geo Location tracking settings
+  const [enableLocationTracking, setEnableLocationTracking] = useState(false);
+  const [trackOnLogin, setTrackOnLogin] = useState(false);
+  const [trackOnLogout, setTrackOnLogout] = useState(false);
+  const [trackOnStatusChange, setTrackOnStatusChange] = useState(false);
+  const [trackingIntervalMinutes, setTrackingIntervalMinutes] = useState(10);
+  const [minimumGpsAccuracy, setMinimumGpsAccuracy] = useState(100);
+
   const prevStatusBeforeIdle = useRef<string | null>(null);
+  const idleAtRef = useRef<Date | null>(null);
+
+  // Refs for tracking properties to prevent stale closures
+  const enableLocationTrackingRef = useRef(enableLocationTracking);
+  const trackOnLoginRef = useRef(trackOnLogin);
+  const trackOnLogoutRef = useRef(trackOnLogout);
+  const trackOnStatusChangeRef = useRef(trackOnStatusChange);
+  const trackingIntervalMinutesRef = useRef(trackingIntervalMinutes);
+  const minimumGpsAccuracyRef = useRef(minimumGpsAccuracy);
+
+  useEffect(() => {
+    enableLocationTrackingRef.current = enableLocationTracking;
+    trackOnLoginRef.current = trackOnLogin;
+    trackOnLogoutRef.current = trackOnLogout;
+    trackOnStatusChangeRef.current = trackOnStatusChange;
+    trackingIntervalMinutesRef.current = trackingIntervalMinutes;
+    minimumGpsAccuracyRef.current = minimumGpsAccuracy;
+  }, [enableLocationTracking, trackOnLogin, trackOnLogout, trackOnStatusChange, trackingIntervalMinutes, minimumGpsAccuracy]);
 
   const employeeId = (user as any)?.employee;
+
+  const logLocationIfAllowed = useCallback(async (source: 'Login' | 'Logout' | 'Status Change' | 'Auto Tracking', currentStatus: string) => {
+    if (!enableLocationTrackingRef.current) return;
+    
+    // Check specific conditions
+    if (source === 'Login' && !trackOnLoginRef.current) return;
+    if (source === 'Logout' && !trackOnLogoutRef.current) return;
+    if (source === 'Status Change' && !trackOnStatusChangeRef.current) return;
+    
+    try {
+      const position = await requestCurrentLocation();
+      const { latitude, longitude, accuracy } = position.coords;
+      
+      // Call api
+      await logLocation(latitude, longitude, accuracy, currentStatus, source);
+      console.log(`[Location Tracking] Location logged successfully for source: ${source}`);
+    } catch (err) {
+      console.error('[Location Tracking] Failed to log location:', err);
+    }
+  }, []);
 
   const fetchStatus = useCallback(async () => {
     if (!employeeId) return;
@@ -53,6 +112,13 @@ export function usePresence() {
       setAwayThreshold(settings.away_threshold || 300);
       setBreakThreshold(settings.break_threshold || 900);
       setEnableAutoResumeBreak(!!settings.enable_auto_resume_break);
+
+      setEnableLocationTracking(!!settings.enable_location_tracking);
+      setTrackOnLogin(!!settings.track_on_login);
+      setTrackOnLogout(!!settings.track_on_logout);
+      setTrackOnStatusChange(!!settings.track_on_status_change);
+      setTrackingIntervalMinutes(settings.tracking_interval_minutes || 10);
+      setMinimumGpsAccuracy(settings.minimum_gps_accuracy || 100);
 
       const events = [];
       if (settings.event_mousemove) events.push('mousemove');
@@ -85,6 +151,24 @@ export function usePresence() {
         if (data && data.enable_auto_resume_break !== undefined) {
           setEnableAutoResumeBreak(!!data.enable_auto_resume_break);
         }
+        if (data && data.enable_location_tracking !== undefined) {
+          setEnableLocationTracking(!!data.enable_location_tracking);
+        }
+        if (data && data.track_on_login !== undefined) {
+          setTrackOnLogin(!!data.track_on_login);
+        }
+        if (data && data.track_on_logout !== undefined) {
+          setTrackOnLogout(!!data.track_on_logout);
+        }
+        if (data && data.track_on_status_change !== undefined) {
+          setTrackOnStatusChange(!!data.track_on_status_change);
+        }
+        if (data && data.tracking_interval_minutes !== undefined) {
+          setTrackingIntervalMinutes(data.tracking_interval_minutes);
+        }
+        if (data && data.minimum_gps_accuracy !== undefined) {
+          setMinimumGpsAccuracy(data.minimum_gps_accuracy);
+        }
 
         const events = [];
         if (data.event_mousemove !== undefined) {
@@ -106,13 +190,12 @@ export function usePresence() {
     return undefined;
   }, [socket]);
 
-  const idleAtRef = useRef<Date | null>(null);
-
   const changeStatus = async (newStatus: string, message?: string, source: string = 'Manual', startTime?: string) => {
     if (!employeeId) return;
     try {
       const res = await apiUpdatePresence(newStatus, employeeId, message, source, startTime);
       if (res.status === 'success') {
+        const oldStatus = status;
         setStatus(newStatus);
         setStatusMessage(res.status_message || message || '');
         fetchStatus();
@@ -121,6 +204,16 @@ export function usePresence() {
         if (newStatus === 'Available') {
           window.dispatchEvent(new Event('REFRESH_CHAT_UNREAD_COUNT'));
         }
+
+        // Trigger Geo Location Tracking
+        let trackingSource: 'Login' | 'Logout' | 'Status Change' = 'Status Change';
+        if (newStatus === 'Offline') {
+          trackingSource = 'Logout';
+        } else if (oldStatus === 'Offline' && newStatus !== 'Offline') {
+          trackingSource = 'Login';
+        }
+        
+        logLocationIfAllowed(trackingSource, newStatus);
       }
       localStorage.setItem('user_presence_status', newStatus);
     } catch (error) {
@@ -235,7 +328,6 @@ export function usePresence() {
     activityEvents: activityEvents,
   });
 
-
   // Secondary Resume Trigger: When user returns to the tab
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -278,6 +370,20 @@ export function usePresence() {
     };
   }, [status, loading, employeeId]);
 
+  // Periodic Auto Location Tracking
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | undefined;
+
+    if (status !== 'Offline' && !loading && employeeId && enableLocationTracking) {
+      interval = setInterval(async () => {
+        logLocationIfAllowed('Auto Tracking', statusRef.current);
+      }, trackingIntervalMinutes * 60 * 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [status, loading, employeeId, enableLocationTracking, trackingIntervalMinutes, logLocationIfAllowed]);
 
   return {
     status,
