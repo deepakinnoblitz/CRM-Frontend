@@ -29,6 +29,8 @@ import {
 
 import { Iconify } from 'src/components/iconify';
 
+import { CustomSwitch } from 'src/sections/email-settings/view/email-settings-view';
+
 // ----------------------------------------------------------------------
 
 type Props = {
@@ -48,6 +50,9 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
     const [status, setStatus] = useState<'Active' | 'Inactive'>('Active');
     const [carryForward, setCarryForward] = useState(false);
     const [resetFrequency, setResetFrequency] = useState('');
+    const [restrictDuringProbation, setRestrictDuringProbation] = useState(false);
+    const [probationPeriodMonths, setProbationPeriodMonths] = useState<number | ''>(3);
+    const [probationError, setProbationError] = useState(false);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -70,6 +75,9 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
                         setStatus(data.status || 'Active');
                         setCarryForward(!!data.carry_forward);
                         setResetFrequency(data.reset_frequency || '');
+                        setRestrictDuringProbation(!!data.restrict_during_probation);
+                        setProbationPeriodMonths(data.probation_period_months || 3);
+                        setProbationError(false);
                     } catch (err) {
                         console.error('Failed to fetch leave type:', err);
                         setSnackbar({ open: true, message: 'Failed to fetch details', severity: 'error' });
@@ -83,6 +91,9 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
                     setStatus('Active');
                     setCarryForward(false);
                     setResetFrequency('');
+                    setRestrictDuringProbation(false);
+                    setProbationPeriodMonths(3);
+                    setProbationError(false);
                 }
                 setError('');
             }
@@ -98,6 +109,23 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
             return;
         }
 
+        if (
+            restrictDuringProbation &&
+            (!probationPeriodMonths || Number(probationPeriodMonths) <= 0)
+        ) {
+            setProbationError(true);
+
+            setSnackbar({
+                open: true,
+                message: "Probation Period cannot be 0.",
+                severity: "error",
+            });
+
+            return;
+        }
+
+        setProbationError(false);
+
         try {
             setLoading(true);
             setError('');
@@ -105,10 +133,18 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
             const data: Partial<LeaveType> = {
                 leave_type_name: leaveTypeName,
                 is_paid: isPaid ? 1 : 0,
-                max_leaves: typeof maxLeaves === 'number' ? maxLeaves : (maxLeaves ? Number(maxLeaves) : 0),
+                max_leaves:
+                    typeof maxLeaves === "number"
+                        ? maxLeaves
+                        : (maxLeaves ? Number(maxLeaves) : 0),
                 status,
                 carry_forward: carryForward ? 1 : 0,
                 reset_frequency: resetFrequency as any,
+
+                restrict_during_probation: restrictDuringProbation ? 1 : 0,
+                probation_period_months: restrictDuringProbation
+                    ? Number(probationPeriodMonths)
+                    : 0,
             };
 
             if (id) {
@@ -201,25 +237,81 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
                     <Stack direction="row" spacing={3}>
                         <FormControlLabel
                             control={
-                                <Switch
+                                <CustomSwitch
                                     checked={isPaid}
                                     onChange={(e) => setIsPaid(e.target.checked)}
                                     disabled={loading}
                                 />
                             }
                             label="Is Paid"
+                            sx={{
+                            m: 0,
+                            '& .MuiFormControlLabel-label': {
+                                ml: 1,
+                            },
+                        }}
                         />
+
                         <FormControlLabel
                             control={
-                                <Switch
+                                <CustomSwitch
                                     checked={carryForward}
                                     onChange={(e) => setCarryForward(e.target.checked)}
                                     disabled={loading}
                                 />
                             }
                             label="Carry Forward"
+                            sx={{
+                            m: 0,
+                            '& .MuiFormControlLabel-label': {
+                                ml: 1,
+                            },
+                        }}
                         />
                     </Stack>
+                    
+                    <FormControlLabel
+                        control={
+                            <CustomSwitch
+                                checked={restrictDuringProbation}
+                                onChange={(e) =>
+                                    setRestrictDuringProbation(e.target.checked)
+                                }
+                            />
+                        }
+                        label="Restrict During Probation"
+                        sx={{
+                            m: 0,
+                            '& .MuiFormControlLabel-label': {
+                                ml: 1,
+                            },
+                        }}
+                    />
+
+                    {restrictDuringProbation && (
+                    <TextField
+                        fullWidth
+                        type="number"
+                        label="Probation Period (Months)"
+                        value={probationPeriodMonths}
+                        onChange={(e) => {
+                            const value = e.target.value;
+
+                            setProbationPeriodMonths(value === "" ? "" : Number(value));
+
+                            if (value === "" || Number(value) > 0) {
+                                setProbationError(false);
+                            }
+                        }}
+                        error={probationError}
+                        helperText={
+                            probationError
+                                ? "Probation Period cannot be 0."
+                                : ""
+                        }
+                        inputProps={{ min: 1 }}
+                    />
+                    )}
                 </Box>
             </DialogContent>
 

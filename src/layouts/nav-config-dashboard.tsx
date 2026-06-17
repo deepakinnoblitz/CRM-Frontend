@@ -76,8 +76,7 @@ export const hrNavData = [
     children: [
       { title: 'Attendance List', path: '/attendance' },
       { title: 'Daily Log', path: '/daily-log' },
-      { title: 'WFH Attendance', path: '/wfh-attendance' },
-      { title: 'Import Attendance', path: '/import-attendance' },
+      { title: 'WFH Attendance', path: '/wfh-attendance' }
     ],
   },
   {
@@ -121,12 +120,12 @@ export const hrNavData = [
   },
   {
     title: 'Asset Records',
-    path: '/assets',
+    path: '/asset',
     icon: <MdOutlineLaptopWindows size={18} />,
     children: [
-      { title: 'Asset List', path: '/assets/list' },
-      { title: 'Asset Assignments', path: '/assets/assignments' },
-      { title: 'Asset Requests', path: '/assets/requests' },
+      { title: 'Asset List', path: '/asset/list' },
+      { title: 'Asset Assignments', path: '/asset/assignments' },
+      { title: 'Asset Requests', path: '/asset/requests' },
     ],
   },
   {
@@ -256,11 +255,11 @@ export const employeeNavData = [
   },
   {
     title: 'My Assets',
-    path: '/assets',
+    path: '/asset',
     icon: <MdOutlineLaptopWindows size={18} />,
     children: [
-      { title: 'My Asset List', path: '/assets/assignments' },
-      { title: 'My Asset Requests', path: '/assets/requests' },
+      { title: 'My Asset List', path: '/asset/assignments' },
+      { title: 'My Asset Requests', path: '/asset/requests' },
     ],
   },
   {

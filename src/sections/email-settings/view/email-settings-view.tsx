@@ -16,11 +16,11 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getEmailSettings, saveEmailSettings, getEmailAccountOptions, EmailSettings } from 'src/api/email-settings';
 
-const CustomSwitch = styled((props: SwitchProps) => (
+export const CustomSwitch = styled((props: SwitchProps) => (
     <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
 ))(({ theme }) => ({
-    width: 42,
-    height: 26,
+    width: 38,
+    height: 22,
     padding: 0,
     '& .MuiSwitch-switchBase': {
         padding: 0,
@@ -51,8 +51,8 @@ const CustomSwitch = styled((props: SwitchProps) => (
     },
     '& .MuiSwitch-thumb': {
         boxSizing: 'border-box',
-        width: 22,
-        height: 22,
+        width: 18,
+        height: 18,
     },
     '& .MuiSwitch-track': {
         borderRadius: 26 / 2,

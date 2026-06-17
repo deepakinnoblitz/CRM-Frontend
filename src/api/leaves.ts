@@ -136,16 +136,35 @@ export async function checkLeaveBalance(params: {
     return (await res.json()).message;
 }
 
-export async function getEmployeeProbationInfo(employee: string, date?: string) {
-    const query = new URLSearchParams({ employee });
-    if (date) query.append("date", date);
+export interface EmployeeProbationInfo {
+    is_probation: boolean;
+    restricted_types: string[];
+    probation_end_date: string | null;
+}
 
-    const res = await frappeRequest(`/api/method/company.company.api.get_employee_probation_info?${query.toString()}`);
+export async function getEmployeeProbationInfo(
+    employee: string,
+    date?: string
+): Promise<EmployeeProbationInfo> {
+    const query = new URLSearchParams({ employee });
+
+    if (date) {
+        query.append("date", date);
+    }
+
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_employee_probation_info?${query.toString()}`
+    );
+
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to probation info"));
+        throw new Error(
+            handleFrappeError(error, "Failed to fetch probation info")
+        );
     }
-    return (await res.json()).message;
+
+    const data = await res.json();
+    return data.message;
 }
 
 export async function getLeaveWorkflowActions(currentState: string): Promise<WorkflowAction[]> {

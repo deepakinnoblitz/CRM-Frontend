@@ -98,10 +98,16 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
         'July', 'August', 'September', 'October', 'November', 'December',
     ];
 
-    const filteredData = previewData.filter(row =>
-        row.employee_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        row.employee_id.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredData = previewData.filter((row) => {
+        const search = searchQuery.trim().toLowerCase();
+
+        if (!search) return true;
+
+        return (
+            String(row.employee_name || "").toLowerCase().includes(search) ||
+            String(row.employee_id || "").toLowerCase().includes(search)
+        );
+    });
 
     // Summary counts
     const newCount = previewData.reduce(
@@ -115,52 +121,52 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
         value,
         label,
         color,
-        }: {
+    }: {
         icon: React.ReactNode;
         value: number;
         label: string;
         color: string;
-        }) => (
+    }) => (
         <Paper
             elevation={0}
             sx={{
-            flex: 1,
-            p: 2,
-            borderRadius: 2,
-            border: `1px solid ${alpha(color, 0.18)}`,
-            bgcolor: alpha(color, 0.06),
-            transition: 'all .2s',
-            '&:hover': {
-                bgcolor: alpha(color, 0.1),
-                transform: 'translateY(-2px)',
-            },
+                flex: 1,
+                p: 2,
+                borderRadius: 2,
+                border: `1px solid ${alpha(color, 0.18)}`,
+                bgcolor: alpha(color, 0.06),
+                transition: 'all .2s',
+                '&:hover': {
+                    bgcolor: alpha(color, 0.1),
+                    transform: 'translateY(-2px)',
+                },
             }}
         >
             <Stack direction="row" spacing={2} alignItems="center">
-            <Box
-                sx={{
-                width: 46,
-                height: 46,
-                borderRadius: '50%',
-                bgcolor: alpha(color, 0.15),
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color,
-                }}
-            >
-                {icon}
-            </Box>
+                <Box
+                    sx={{
+                        width: 46,
+                        height: 46,
+                        borderRadius: '50%',
+                        bgcolor: alpha(color, 0.15),
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color,
+                    }}
+                >
+                    {icon}
+                </Box>
 
-            <Box>
-                <Typography variant="h5" fontWeight={700}>
-                {value}
-                </Typography>
+                <Box>
+                    <Typography variant="h5" fontWeight={700}>
+                        {value}
+                    </Typography>
 
-                <Typography variant="body2" color="text.secondary">
-                {label}
-                </Typography>
-            </Box>
+                    <Typography variant="body2" color="text.secondary">
+                        {label}
+                    </Typography>
+                </Box>
             </Stack>
         </Paper>
     );
@@ -188,6 +194,7 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                                 <DatePicker
                                     views={['year']}
                                     label="Year"
+                                    format="YYYY"
                                     value={dayjs().year(year)}
                                     onChange={(newValue) => setYear(newValue ? newValue.year() : new Date().getFullYear())}
                                     slotProps={{ textField: { fullWidth: true } }}
@@ -216,30 +223,30 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                     <Box>
                         {/* Summary Chips */}
                         <Stack
-                        direction={{ xs: 'column', md: 'row' }}
-                        spacing={2}
-                        sx={{ mb: 3, mt: 2 }}
+                            direction={{ xs: 'column', md: 'row' }}
+                            spacing={2}
+                            sx={{ mb: 3, mt: 2 }}
                         >
-                        <SummaryCard
-                            value={filteredData.length}
-                            label="Employees"
-                            color="#086ad8"
-                            icon={<Iconify icon={"eva:people-fill" as any} width={24} />}
-                        />
+                            <SummaryCard
+                                value={filteredData.length}
+                                label="Employees"
+                                color="#086ad8"
+                                icon={<Iconify icon={"eva:people-fill" as any} width={24} />}
+                            />
 
-                        <SummaryCard
-                            value={newCount}
-                            label="New Allocations"
-                            color="#22c55e"
-                            icon={<Iconify icon={"eva:checkmark-circle-2-fill" as any} width={24} />}
-                        />
+                            <SummaryCard
+                                value={newCount}
+                                label="New Allocations"
+                                color="#22c55e"
+                                icon={<Iconify icon={"eva:checkmark-circle-2-fill" as any} width={24} />}
+                            />
 
-                        <SummaryCard
-                            value={existingCount}
-                            label="Already Exists"
-                            color="#ff9800"
-                            icon={<Iconify icon="solar:double-alt-arrow-right-bold" width={24} />}
-                        />
+                            <SummaryCard
+                                value={existingCount}
+                                label="Already Exists"
+                                color="#ff9800"
+                                icon={<Iconify icon="solar:double-alt-arrow-right-bold" width={24} />}
+                            />
                         </Stack>
 
                         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
@@ -272,7 +279,8 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {filteredData.map((row, idx) => (
+                                    {filteredData.length > 0 ? (
+                                        filteredData.map((row, idx) => (
                                         <TableRow key={row.employee} hover>
                                             <TableCell sx={{ color: 'text.secondary', fontSize: 12 }}>{idx + 1}</TableCell>
                                             <TableCell>
@@ -281,7 +289,7 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                                             </TableCell>
                                             <TableCell sx={{ textAlign: 'center' }}>
                                                 <Typography variant="caption">
-                                                    {new Date(row.date_of_joining).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    {row.date_of_joining ? new Date(row.date_of_joining).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "-"}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell sx={{ textAlign: 'center' }}>
@@ -369,7 +377,40 @@ export default function AutoAllocateDialog({ open, onClose, onSuccess, onError }
                                                 </Stack>
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                                                <Stack
+                                                    spacing={1.5}
+                                                    alignItems="center"
+                                                    justifyContent="center"
+                                                >
+                                                    <Iconify
+                                                        icon="solar:users-group-rounded-bold-duotone"
+                                                        width={48}
+                                                        sx={{ color: 'text.disabled' }}
+                                                    />
+
+                                                    <Typography
+                                                        variant="subtitle2"
+                                                        color="text.secondary"
+                                                    >
+                                                        No employees found
+                                                    </Typography>
+
+                                                    {searchQuery && (
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="text.disabled"
+                                                        >
+                                                            No employee matches &quot;<strong>{searchQuery}</strong>&quot;
+                                                        </Typography>
+                                                    )}
+                                                </Stack>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
                                 </TableBody>
                             </Table>
                         </TableContainer>
