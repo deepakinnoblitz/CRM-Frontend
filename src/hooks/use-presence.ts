@@ -209,11 +209,16 @@ export function usePresence() {
         let trackingSource: 'Login' | 'Logout' | 'Status Change' = 'Status Change';
         if (newStatus === 'Offline') {
           trackingSource = 'Logout';
+          // For logout we await so the GPS log completes before the caller
+          // navigates away. This is safe because logout is already awaited.
+          await logLocationIfAllowed(trackingSource, newStatus);
         } else if (oldStatus === 'Offline' && newStatus !== 'Offline') {
           trackingSource = 'Login';
+          logLocationIfAllowed(trackingSource, newStatus);
+        } else {
+          // Status change – fire and forget (non-blocking)
+          logLocationIfAllowed(trackingSource, newStatus);
         }
-        
-        logLocationIfAllowed(trackingSource, newStatus);
       }
       localStorage.setItem('user_presence_status', newStatus);
     } catch (error) {
@@ -399,5 +404,6 @@ export function usePresence() {
     checkTimesheet,
     requestSystemPermission,
     refresh: fetchStatus,
+    logLocationIfAllowed,
   };
 }

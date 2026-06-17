@@ -376,7 +376,7 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
     <Box sx={{ mt: 1 }}>
       {/* Top Filter Bar */}
       <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mb: 2.5 }}>
-        <FormControl size="small" sx={{ minWidth: 180 }}>
+        <FormControl size="medium" sx={{ minWidth: 200 }}>
           <InputLabel>Status</InputLabel>
           <Select
             value={statusFilter}
@@ -392,7 +392,7 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
           </Select>
         </FormControl>
 
-        <FormControl size="small" sx={{ minWidth: 180 }}>
+        <FormControl size="medium" sx={{ minWidth: 200 }}>
           <InputLabel>Source</InputLabel>
           <Select
             value={sourceFilter}

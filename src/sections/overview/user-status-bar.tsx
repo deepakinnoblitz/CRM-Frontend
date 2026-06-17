@@ -69,6 +69,7 @@ export function UserStatusBar() {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [infoDialogOpen, setInfoDialogOpen] = useState(false);
     const [isLogoutDialog, setIsLogoutDialog] = useState(false);
+    const [isLoggingLocation, setIsLoggingLocation] = useState(false);
     const [statusMsgDialogOpen, setStatusMsgDialogOpen] = useState(false);
     const [customMessage, setCustomMessageInput] = useState('');
     const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
@@ -181,12 +182,14 @@ export function UserStatusBar() {
     const performLogout = async () => {
         setInfoDialogOpen(false);
         setIsLogoutDialog(false);
+        setIsLoggingLocation(true);
         try {
             await changeStatus('Offline');
             await logout();
             window.location.href = '/login';
         } catch (error) {
             console.error(error);
+            setIsLoggingLocation(false);
         }
     };
 
@@ -233,11 +236,22 @@ export function UserStatusBar() {
                 setIsCheckingTimesheet(false);
             }
         }
-        await changeStatus(newStatus);
+        if (newStatus === 'Offline' || newStatus === 'Available') {
+            setIsLoggingLocation(true);
+        }
+        handleClose();
+        try {
+            await changeStatus(newStatus);
+        } finally {
+            if (newStatus !== 'Offline') {
+                // For logout the page navigates away, so no need to reset.
+                // For all other statuses (including Available/Login), reset the loader.
+                setIsLoggingLocation(false);
+            }
+        }
         if (newStatus === 'Available') {
             triggerGreetingDialog();
         }
-        handleClose();
     };
 
     const handleStayOfflineAnyway = async () => {
@@ -245,7 +259,12 @@ export function UserStatusBar() {
         if (isLogoutDialog) {
             await performLogout();
         } else {
-            await changeStatus('Offline');
+            setIsLoggingLocation(true);
+            try {
+                await changeStatus('Offline');
+            } finally {
+                setIsLoggingLocation(false);
+            }
             handleClose();
         }
     };
@@ -1027,6 +1046,202 @@ export function UserStatusBar() {
                         </Button>
                     )}
                 </DialogActions>
+            </Dialog>
+
+            {/* GPS Location Logging Overlay */}
+            <Dialog
+                open={isLoggingLocation}
+                disableEscapeKeyDown
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        width: '100%',
+                        maxWidth: 420,
+                        overflow: 'hidden',
+                        bgcolor: 'background.paper',
+                        boxShadow: theme.customShadows.z24,
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                    },
+                }}
+            >
+                <DialogContent
+                    sx={{
+                        py: 5,
+                        px: 4,
+                        textAlign: 'center',
+                    }}
+                >
+                    {/* Animated GPS Icon */}
+                    <Box
+                        sx={{
+                            position: 'relative',
+                            display: 'inline-flex',
+                            mb: 3,
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                width: 92,
+                                height: 92,
+                                borderRadius: '50%',
+                                bgcolor: alpha('#08A3CD', 0.08),
+                                border: `2px solid ${alpha('#08A3CD', 0.15)}`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                animation: 'gpsPulse 2s infinite',
+
+                                '@keyframes gpsPulse': {
+                                    '0%': {
+                                        boxShadow: `0 0 0 0 ${alpha('#08A3CD', 0.35)}`,
+                                    },
+                                    '70%': {
+                                        boxShadow: `0 0 0 22px ${alpha('#08A3CD', 0)}`,
+                                    },
+                                    '100%': {
+                                        boxShadow: `0 0 0 0 ${alpha('#08A3CD', 0)}`,
+                                    },
+                                },
+                            }}
+                        >
+                            <Iconify
+                                icon={"solar:gps-bold-duotone" as any}
+                                width={46}
+                                sx={{
+                                    color: '#08A3CD',
+                                }}
+                            />
+                        </Box>
+
+                        {/* Rotating Ring */}
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                width: 118,
+                                height: 118,
+                                borderRadius: '50%',
+                                border: `2px dashed ${alpha('#08A3CD', 0.18)}`,
+                                transform: 'translate(-50%, -50%)',
+                                animation: 'rotateRing 6s linear infinite',
+
+                                '@keyframes rotateRing': {
+                                    from: {
+                                        transform: 'translate(-50%, -50%) rotate(0deg)',
+                                    },
+                                    to: {
+                                        transform: 'translate(-50%, -50%) rotate(360deg)',
+                                    },
+                                },
+                            }}
+                        />
+                    </Box>
+
+                    <Typography
+                        variant="h5"
+                        sx={{
+                            fontWeight: 700,
+                            color: 'text.primary',
+                            mb: 1,
+                        }}
+                    >
+                        Logging Your Location
+                    </Typography>
+
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: 'text.secondary',
+                            mb: 4,
+                            lineHeight: 1.7,
+                        }}
+                    >
+                        Please wait while we securely capture your GPS location before
+                        completing the logout process.
+                    </Typography>
+
+                    {/* Steps */}
+                    <Stack
+                        spacing={2}
+                        sx={{
+                            mb: 4,
+                            textAlign: 'left',
+                        }}
+                    >
+                        {[
+                            {
+                                icon: 'solar:gps-bold',
+                                title: 'Getting Current Location',
+                            },
+                            {
+                                icon: 'solar:map-point-bold',
+                                title: 'Saving Location Log',
+                            },
+                            {
+                                icon: 'solar:logout-bold',
+                                title: 'Completing Logout',
+                            },
+                        ].map((item) => (
+                            <Stack
+                                key={item.title}
+                                direction="row"
+                                spacing={2}
+                                alignItems="center"
+                            >
+                                <Box
+                                    sx={{
+                                        width: 42,
+                                        height: 42,
+                                        borderRadius: 2,
+                                        bgcolor: alpha('#08A3CD', 0.08),
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <Iconify
+                                        icon={item.icon as any}
+                                        width={20}
+                                        sx={{
+                                            color: '#08A3CD',
+                                        }}
+                                    />
+                                </Box>
+
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        color: 'text.primary',
+                                        fontWeight: 500,
+                                    }}
+                                >
+                                    {item.title}
+                                </Typography>
+                            </Stack>
+                        ))}
+                    </Stack>
+
+                    <CircularProgress
+                        size={32}
+                        thickness={4}
+                        sx={{
+                            color: '#08A3CD',
+                        }}
+                    />
+
+                    <Typography
+                        variant="caption"
+                        display="block"
+                        sx={{
+                            mt: 2,
+                            color: 'text.secondary',
+                        }}
+                    >
+                        This usually takes only a few seconds...
+                    </Typography>
+                </DialogContent>
             </Dialog>
 
             {/* Idle Detector Permission Dialog */}
