@@ -929,7 +929,61 @@ export function ReimbursementClaimsView() {
                                 />
                             )}
                         />
-                        {renderField('claim_type', 'Claim Type', 'select', claimTypes.map(type => ({ value: type.name, label: type.name })), { disabled: isApprovedOrPaid }, true)}
+                        <Autocomplete
+                            fullWidth
+                            options={claimTypes}
+                            getOptionLabel={(option) => option.name || ''}
+                            value={claimTypes.find((item) => item.name === claimType) || null}
+                            disabled={isApprovedOrPaid}
+                            onChange={(event, newValue) => {
+                                setClaimType(newValue?.name || '');
+
+                                if (formErrors.claim_type) {
+                                    setFormErrors((prev) => ({
+                                        ...prev,
+                                        claim_type: '',
+                                    }));
+                                }
+                            }}
+                            renderOption={(props, option) => {
+                                const { key, ...optionProps } = props as any;
+
+                                return (
+                                    <li key={key} {...optionProps}>
+                                        <Typography variant="body2">
+                                            {option.name}
+                                        </Typography>
+                                    </li>
+                                );
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Claim Type"
+                                    required
+                                    error={!!formErrors.claim_type}
+                                    helperText={formErrors.claim_type}
+                                    InputLabelProps={{ shrink: true }}
+                                    sx={{
+                                        '& .MuiFormLabel-asterisk': {
+                                            color: 'red',
+                                        },
+                                        '& .MuiInputBase-input.Mui-disabled': {
+                                            WebkitTextFillColor: 'unset',
+                                            color: 'text.primary',
+                                            opacity: 1,
+                                            pointerEvents: 'none',
+                                        },
+                                        '& .MuiInputLabel-root.Mui-disabled': {
+                                            color: 'text.secondary',
+                                        },
+                                        '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: 'rgba(0,0,0,0.23)',
+                                        },
+                                    }}
+                                />
+                            )}
+                        />
                         {renderField('date_of_expense', 'Date of Expense', 'date', [], { inputProps: { readOnly: isApprovedOrPaid }, disabled: isApprovedOrPaid }, true)}
                         {renderField('amount', 'Amount', 'number', [], { placeholder: 'Enter amount', inputProps: { step: '0.01', min: '0' }, disabled: isApprovedOrPaid }, true)}
                         {renderField('claim_details', 'Claim Details', 'textarea', [], { placeholder: 'Enter claim details', disabled: isApprovedOrPaid })}
