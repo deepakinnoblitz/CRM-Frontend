@@ -8,10 +8,10 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import { alpha } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
-import Checkbox from '@mui/material/Checkbox';
 import TableBody from '@mui/material/TableBody';
 import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
@@ -26,7 +26,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
-import { useRouter } from 'src/routes/hooks'
+import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchEmailTemplates } from 'src/api/email-template';
@@ -34,6 +34,7 @@ import { fetchEmailTemplates } from 'src/api/email-template';
 import { Iconify } from 'src/components/iconify';
 
 import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
+
 
 export function EmailAutomationsCreateView() {
     const router = useRouter();
@@ -252,14 +253,24 @@ export function EmailAutomationsCreateView() {
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Audience Filters</Typography>
                         <Stack spacing={3}>
-                            <TableContainer sx={{ border: (theme) => `solid 1px ${theme.palette.divider}`, borderRadius: 1 }}>
-                                <Table size="small">
-                                    <TableHead sx={{ bgcolor: 'background.neutral' }}>
+                            <TableContainer sx={{
+                                overflow: 'unset',
+                                border: (theme) => `1px solid ${theme.palette.divider}`,
+                                borderRadius: 1.5,
+                                bgcolor: 'background.paper',
+                                boxShadow: (theme) => theme.customShadows.z8,
+                            }}>
+                                <Table sx={{ minWidth: 960 }}>
+                                    <TableHead sx={{
+                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                        '& th:first-of-type': { borderTopLeftRadius: 11 },
+                                        '& th:last-of-type': { borderTopRightRadius: 11 }
+                                    }}>
                                         <TableRow>
-                                            <TableCell width={60}>No.</TableCell>
-                                            <TableCell>Field</TableCell>
-                                            <TableCell>Operator</TableCell>
-                                            <TableCell>Value</TableCell>
+                                            <TableCell width={60} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>No.</TableCell>
+                                            <TableCell sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Field</TableCell>
+                                            <TableCell sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Operator</TableCell>
+                                            <TableCell sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Value</TableCell>
                                             <TableCell width={60} />
                                         </TableRow>
                                     </TableHead>
@@ -275,11 +286,18 @@ export function EmailAutomationsCreateView() {
                                             </TableRow>
                                         ) : (
                                             filters.map((filter, index) => (
-                                                <TableRow key={index}>
-                                                    <TableCell>{index + 1}</TableCell>
-                                                    <TableCell>
+                                                <TableRow key={index} sx={{
+                                                    verticalAlign: 'top',
+                                                    transition: (theme) => theme.transitions.create('background-color'),
+                                                    '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) },
+                                                    '&:nth-of-type(even)': { bgcolor: (theme) => alpha(theme.palette.grey[500], 0.02) },
+                                                }}>
+                                                    <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
+                                                        <Box sx={{ py: 1, px: 1 }}>{index + 1}</Box>
+                                                    </TableCell>
+                                                    <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}`, transition: (theme) => theme.transitions.create(['background-color', 'box-shadow']), '&:focus-within': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05) } }}>
                                                         <TextField 
-                                                            size="small"
+                                                            variant="standard"
                                                             fullWidth
                                                             value={filter.field_name}
                                                             onChange={(e) => {
@@ -287,11 +305,12 @@ export function EmailAutomationsCreateView() {
                                                                 newFilters[index].field_name = e.target.value;
                                                                 setFilters(newFilters);
                                                             }}
+                                                            InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
                                                         />
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}`, transition: (theme) => theme.transitions.create(['background-color', 'box-shadow']), '&:focus-within': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05) } }}>
                                                         <TextField 
-                                                            size="small"
+                                                            variant="standard"
                                                             select
                                                             fullWidth
                                                             value={filter.operator}
@@ -300,15 +319,16 @@ export function EmailAutomationsCreateView() {
                                                                 newFilters[index].operator = e.target.value;
                                                                 setFilters(newFilters);
                                                             }}
+                                                            InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
                                                         >
                                                             {['=', '!=', '<', '>', '<=', '>=', 'in', 'not in', 'like', 'not like'].map(opt => (
                                                                 <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                                                             ))}
                                                         </TextField>
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}`, transition: (theme) => theme.transitions.create(['background-color', 'box-shadow']), '&:focus-within': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05) } }}>
                                                         <TextField 
-                                                            size="small"
+                                                            variant="standard"
                                                             fullWidth
                                                             value={filter.value}
                                                             onChange={(e) => {
@@ -316,14 +336,15 @@ export function EmailAutomationsCreateView() {
                                                                 newFilters[index].value = e.target.value;
                                                                 setFilters(newFilters);
                                                             }}
+                                                            InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
                                                         />
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell sx={{ px: 1, py: 1 }}>
                                                         <IconButton color="error" onClick={() => {
                                                             const newFilters = [...filters];
                                                             newFilters.splice(index, 1);
                                                             setFilters(newFilters);
-                                                        }}>
+                                                        }} size="small" sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}>
                                                             <Iconify icon="solar:trash-bin-trash-bold" />
                                                         </IconButton>
                                                     </TableCell>
@@ -333,17 +354,13 @@ export function EmailAutomationsCreateView() {
                                     </TableBody>
                                 </Table>
                             </TableContainer>
-                            <Box display="flex" justifyContent="flex-end">
-                                <Button 
-                                    size="small" 
-                                    variant="contained" 
-                                    color="inherit"
-                                    startIcon={<Iconify icon={"mingcute:add-line" as any} />}
-                                    onClick={() => setFilters([...filters, { field_name: '', operator: '=', value: '' }])}
-                                >
-                                    Add Row
-                                </Button>
-                            </Box>
+                            <Button 
+                                startIcon={<Iconify icon={"mingcute:add-line" as any} />}
+                                onClick={() => setFilters([...filters, { field_name: '', operator: '=', value: '' }])}
+                                sx={{ alignSelf: 'flex-start' }}
+                            >
+                                Add Row
+                            </Button>
                         </Stack>
                     </Card>
 
@@ -424,11 +441,11 @@ export function EmailAutomationsCreateView() {
                         <Typography variant="h6" sx={{ mb: 3 }}>Execution Settings</Typography>
                         <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }} gap={3}>
                             <Stack spacing={2}>
-                                <FormControlLabel control={<Checkbox defaultChecked />} label="Create Separate Campaign" />
-                                <FormControlLabel control={<Checkbox />} label="Send Immediately" />
+                                <FormControlLabel control={<CustomSwitch defaultChecked />} label="Create Separate Campaign" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
+                                <FormControlLabel control={<CustomSwitch />} label="Send Immediately" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
                             </Stack>
                             <Stack spacing={2}>
-                                <FormControlLabel control={<Checkbox defaultChecked />} label="Auto Pause On Error" />
+                                <FormControlLabel control={<CustomSwitch defaultChecked />} label="Auto Pause On Error" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
                                 <TextField fullWidth type="number" label="Max Retry Count" />
                             </Stack>
                         </Box>

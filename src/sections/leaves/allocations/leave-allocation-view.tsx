@@ -359,6 +359,22 @@ export function LeaveAllocationView() {
                                             />
                                         ))}
 
+                                        {data.length > 0 && data.length < 5 && (
+                                            <>
+                                                {Array.from({ length: 5 - data.length }).map((_, i) => (
+                                                    <TableRow
+                                                        key={`empty-${i}`}
+                                                        sx={{
+                                                            height: 68,
+                                                            '& td': { borderBottom: 'none' },
+                                                        }}
+                                                    >
+                                                        <TableCell colSpan={8} />
+                                                    </TableRow>
+                                                ))}
+                                            </>
+                                        )}
+
                                         {filterName && !data.length && (
                                             <TableNoData searchQuery={filterName} />
                                         )}
