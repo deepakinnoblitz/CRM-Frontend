@@ -1316,7 +1316,6 @@ export function EventsView() {
                                                 sx={{
                                                     fontWeight: 700,
                                                     fontSize: '0.7rem',
-                                                    letterSpacing: '0.08em',
                                                     color: 'text.secondary',
                                                 }}
                                             >
@@ -1324,9 +1323,28 @@ export function EventsView() {
                                             </Typography>
                                         </Box>
                                         {items.length === 0 ? (
-                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontSize: '0.8125rem', px: 1, fontStyle: 'italic' }}>
+                                        <Box
+                                            sx={{
+                                                px: 3,
+                                                py: 2,
+                                                textAlign: 'center',
+                                                borderRadius: 2,
+                                                bgcolor:  theme.palette.grey[100],
+                                                border: `1px dashed ${theme.palette.divider}`,
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    color: 'text.secondary',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: 500,
+                                                    lineHeight: 1.6,
+                                                }}
+                                            >
                                                 {emptyMsg}
                                             </Typography>
+                                        </Box>
                                         ) : (
                                             <Stack spacing={0.75}>
                                                 {items.map(renderCard)}
