@@ -1,3 +1,5 @@
+import dayjs, { Dayjs } from 'dayjs';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -6,12 +8,14 @@ import Grid from '@mui/material/Grid';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Timeline from '@mui/lab/Timeline';
+import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import TimelineDot from '@mui/lab/TimelineDot';
+import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
@@ -20,6 +24,7 @@ import CardContent from '@mui/material/CardContent';
 import TimelineContent from '@mui/lab/TimelineContent';
 import TimelineSeparator from '@mui/lab/TimelineSeparator';
 import TimelineConnector from '@mui/lab/TimelineConnector';
+import { MobileTimePicker } from '@mui/x-date-pickers/MobileTimePicker';
 import TimelineItem, { timelineItemClasses } from '@mui/lab/TimelineItem';
 
 import { fDateTime } from 'src/utils/format-time';
@@ -148,6 +153,7 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
   const [logs, setLogs] = useState<LocationLog[]>([]);
   const [filteredLogs, setFilteredLogs] = useState<LocationLog[]>([]);
   const [selectedLog, setSelectedLog] = useState<LocationLog | null>(null);
+  const { enqueueSnackbar } = useSnackbar();
 
   const renderDetailItem = (label: string, value: string | React.ReactNode, icon: string, color: string = 'primary.main') => (
     <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 2, borderRadius: 1.5, border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.5)}` }}>
@@ -176,9 +182,34 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
     </Stack>
   );
 
-  // Filters
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [startTimeFilter, setStartTimeFilter] = useState<Dayjs | null>(null);
+  const [endTimeFilter, setEndTimeFilter] = useState<Dayjs | null>(null);
+
+  const handleClearAllFilters = () => {
+    setStatusFilter('all');
+    setSourceFilter('all');
+    setStartTimeFilter(null);
+    setEndTimeFilter(null);
+  };
+
+  const handleStartTimeChange = (newValue: Dayjs | null) => {
+    setStartTimeFilter(newValue);
+    if (newValue && endTimeFilter && newValue.isAfter(endTimeFilter)) {
+      setEndTimeFilter(null);
+      enqueueSnackbar('Start time cannot be after end time. End time has been cleared.', { variant: 'warning' });
+    }
+  };
+
+  const handleEndTimeChange = (newValue: Dayjs | null) => {
+    setEndTimeFilter(newValue);
+    if (newValue && startTimeFilter && newValue.isBefore(startTimeFilter)) {
+      enqueueSnackbar('End time must be after start time. Start time has been cleared.', { variant: 'warning' });
+    }
+  };
+
+  const hasAnyFilter = statusFilter !== 'all' || sourceFilter !== 'all' || startTimeFilter !== null || endTimeFilter !== null;
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -239,8 +270,24 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
     if (sourceFilter !== 'all') {
       filtered = filtered.filter((log) => log.source === sourceFilter);
     }
+    if (startTimeFilter) {
+      const startStr = startTimeFilter.format('HH:mm');
+      filtered = filtered.filter((log) => {
+        const logDate = dayjs(log.logged_at);
+        const logTimeStr = logDate.format('HH:mm');
+        return logTimeStr >= startStr;
+      });
+    }
+    if (endTimeFilter) {
+      const endStr = endTimeFilter.format('HH:mm');
+      filtered = filtered.filter((log) => {
+        const logDate = dayjs(log.logged_at);
+        const logTimeStr = logDate.format('HH:mm');
+        return logTimeStr <= endStr;
+      });
+    }
     setFilteredLogs(filtered);
-  }, [logs, statusFilter, sourceFilter]);
+  }, [logs, statusFilter, sourceFilter, startTimeFilter, endTimeFilter]);
 
   // Initialize Map
   useEffect(() => {
@@ -375,8 +422,8 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
   return (
     <Box sx={{ mt: 1 }}>
       {/* Top Filter Bar */}
-      <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mb: 2.5 }}>
-        <FormControl size="medium" sx={{ minWidth: 200 }}>
+      <Stack direction="row" spacing={2} justifyContent="flex-start" sx={{ mb: 2.5 }}>
+        <FormControl size="medium" sx={{ minWidth: 220 }}>
           <InputLabel>Status</InputLabel>
           <Select
             value={statusFilter}
@@ -384,11 +431,12 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <MenuItem value="all">All Statuses</MenuItem>
-            <MenuItem value="Available">Available</MenuItem>
-            <MenuItem value="Busy">Busy</MenuItem>
-            <MenuItem value="Away">Away</MenuItem>
-            <MenuItem value="Break">Break</MenuItem>
-            <MenuItem value="Offline">Offline</MenuItem>
+            <MenuItem value="Available">Available - Logged In</MenuItem>
+            <MenuItem value="Busy">In Client Meeting</MenuItem>
+            <MenuItem value="Do Not Disturb">Team Discussion</MenuItem>
+            <MenuItem value="Break">Lunch Break</MenuItem>
+            <MenuItem value="Away">Break</MenuItem>
+            <MenuItem value="Offline">Offline - Logout</MenuItem>
           </Select>
         </FormControl>
 
@@ -406,6 +454,56 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
             <MenuItem value="Auto Tracking">Auto Tracking</MenuItem>
           </Select>
         </FormControl>
+
+        <MobileTimePicker
+          label="Start Time"
+          value={startTimeFilter}
+          onChange={handleStartTimeChange}
+          maxTime={endTimeFilter || undefined}
+          slotProps={{ 
+            textField: { 
+              size: 'medium',
+              sx: { minWidth: 200 }
+            } 
+          }}
+        />
+
+        <MobileTimePicker
+          label="End Time"
+          value={endTimeFilter}
+          onChange={handleEndTimeChange}
+          minTime={startTimeFilter || undefined}
+          slotProps={{ 
+            textField: { 
+              size: 'medium',
+              sx: { minWidth: 200 }
+            } 
+          }}
+        />
+
+        {hasAnyFilter && (
+          <Button
+            color="error"
+            variant="outlined"
+            onClick={handleClearAllFilters}
+            startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+            sx={{
+              alignSelf: 'center',
+              fontWeight: 700,
+              px: 2.5,
+              borderRadius: 1.5,
+              height: 40, // Matches the height of outline select and time picker components
+              textTransform: 'none',
+              borderColor: (theme) => alpha(theme.palette.error.main, 0.48),
+              '&:hover': {
+                borderColor: 'error.main',
+                bgcolor: (theme) => alpha(theme.palette.error.main, 0.08),
+              }
+            }}
+          >
+            Clear Filters
+          </Button>
+        )}
       </Stack>
 
       <Grid container spacing={3}>

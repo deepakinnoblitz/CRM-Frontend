@@ -10,14 +10,58 @@ import { useIdleDetection } from './use-idle-detection';
 const requestCurrentLocation = (): Promise<GeolocationPosition> =>
   new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error('Geolocation is not supported by your browser'));
-    } else {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
+      reject(
+        new Error(
+          'Geolocation is not supported by your browser.'
+        )
+      );
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve(position);
+      },
+      (error) => {
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            reject(
+              new Error(
+                'Location permission is denied. Please enable location access to continue.'
+              )
+            );
+            break;
+
+          case error.POSITION_UNAVAILABLE:
+            reject(
+              new Error(
+                'Unable to determine your current location. Please make sure Location Services are enabled.'
+              )
+            );
+            break;
+
+          case error.TIMEOUT:
+            reject(
+              new Error(
+                'Location request timed out. Please try again.'
+              )
+            );
+            break;
+
+          default:
+            reject(
+              new Error(
+                'Unable to access your location. Please try again.'
+              )
+            );
+        }
+      },
+      {
         enableHighAccuracy: true,
         timeout: 10000,
         maximumAge: 0,
-      });
-    }
+      }
+    );
   });
 
 export function usePresence() {
@@ -42,6 +86,7 @@ export function usePresence() {
   const [trackOnStatusChange, setTrackOnStatusChange] = useState(false);
   const [trackingIntervalMinutes, setTrackingIntervalMinutes] = useState(10);
   const [minimumGpsAccuracy, setMinimumGpsAccuracy] = useState(100);
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
 
   const prevStatusBeforeIdle = useRef<string | null>(null);
   const idleAtRef = useRef<Date | null>(null);
@@ -67,16 +112,16 @@ export function usePresence() {
 
   const logLocationIfAllowed = useCallback(async (source: 'Login' | 'Logout' | 'Status Change' | 'Auto Tracking', currentStatus: string) => {
     if (!enableLocationTrackingRef.current) return;
-    
+
     // Check specific conditions
     if (source === 'Login' && !trackOnLoginRef.current) return;
     if (source === 'Logout' && !trackOnLogoutRef.current) return;
     if (source === 'Status Change' && !trackOnStatusChangeRef.current) return;
-    
+
     try {
       const position = await requestCurrentLocation();
       const { latitude, longitude, accuracy } = position.coords;
-      
+
       // Call api
       await logLocation(latitude, longitude, accuracy, currentStatus, source);
       console.log(`[Location Tracking] Location logged successfully for source: ${source}`);
@@ -190,16 +235,52 @@ export function usePresence() {
     return undefined;
   }, [socket]);
 
-  const changeStatus = async (newStatus: string, message?: string, source: string = 'Manual', startTime?: string) => {
-    if (!employeeId) return;
+  const validateLocationForStatusChange = useCallback(async () => {
+    if (!enableLocationTrackingRef.current) {
+      return true;
+    }
+
+    if (!trackOnStatusChangeRef.current) {
+      return true;
+    }
+
     try {
+      const position = await requestCurrentLocation();
+
+      if (!position?.coords) {
+        throw new Error("Unable to get location");
+      }
+
+      return true;
+    } catch (err: any) {
+      console.error(err);
+
+      setLocationDialogOpen(true);
+      return false;
+    }
+  }, []);
+
+  const changeStatus = async (newStatus: string, message?: string, source: string = 'Manual', startTime?: string): Promise<boolean> => {
+    if (!employeeId) return false;
+    try {
+      // Validate GPS before status change
+      if (newStatus !== 'Offline') {
+          const canProceed = await validateLocationForStatusChange();
+
+          if (!canProceed) {
+              // GPS unavailable or permission denied
+              // Dialog is already opened inside validateLocationForStatusChange()
+              return false;
+          }
+      }
+
       const res = await apiUpdatePresence(newStatus, employeeId, message, source, startTime);
       if (res.status === 'success') {
         const oldStatus = status;
         setStatus(newStatus);
         setStatusMessage(res.status_message || message || '');
         fetchStatus();
-        
+
         // Trigger chat unread count refresh if status changed to Available
         if (newStatus === 'Available') {
           window.dispatchEvent(new Event('REFRESH_CHAT_UNREAD_COUNT'));
@@ -208,21 +289,21 @@ export function usePresence() {
         // Trigger Geo Location Tracking
         let trackingSource: 'Login' | 'Logout' | 'Status Change' = 'Status Change';
         if (newStatus === 'Offline') {
-          trackingSource = 'Logout';
-          // For logout we await so the GPS log completes before the caller
-          // navigates away. This is safe because logout is already awaited.
-          await logLocationIfAllowed(trackingSource, newStatus);
-        } else if (oldStatus === 'Offline' && newStatus !== 'Offline') {
-          trackingSource = 'Login';
-          logLocationIfAllowed(trackingSource, newStatus);
+            trackingSource = 'Logout';
+            await logLocationIfAllowed(trackingSource, newStatus);
+        } else if (oldStatus === 'Offline') {
+            trackingSource = 'Login';
+            await logLocationIfAllowed(trackingSource, newStatus);
         } else {
-          // Status change – fire and forget (non-blocking)
-          logLocationIfAllowed(trackingSource, newStatus);
+            trackingSource = 'Status Change';
+            await logLocationIfAllowed(trackingSource, newStatus);
         }
       }
       localStorage.setItem('user_presence_status', newStatus);
+      return true;
     } catch (error) {
       console.error('Error updating presence:', error);
+      return false;
     }
   };
 
@@ -340,11 +421,11 @@ export function usePresence() {
         fetchStatus();
         if (isAutoStatusEnabled) {
           if (statusRef.current === 'Away') {
-              console.log('[Presence] Tab became visible: Resuming from Away');
-              changeStatus('Available', 'Auto-resumed upon returning to tab', 'Idle');
+            console.log('[Presence] Tab became visible: Resuming from Away');
+            changeStatus('Available', 'Auto-resumed upon returning to tab', 'Idle');
           } else if (statusRef.current === 'Break' && enableAutoResumeBreak) {
-              console.log('[Presence] Tab became visible: Resuming from Break');
-              changeStatus('Available', 'Auto-resumed upon returning to tab', 'Idle');
+            console.log('[Presence] Tab became visible: Resuming from Break');
+            changeStatus('Available', 'Auto-resumed upon returning to tab', 'Idle');
           }
         }
       }
@@ -405,5 +486,11 @@ export function usePresence() {
     requestSystemPermission,
     refresh: fetchStatus,
     logLocationIfAllowed,
+    locationDialogOpen,
+    setLocationDialogOpen,
+    enableLocationTracking,
+    trackOnLogin,
+    trackOnLogout,
+    trackOnStatusChange,
   };
 }

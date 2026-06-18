@@ -58,6 +58,12 @@ export function UserStatusBar() {
         isAutoStatusEnabled,
         isSystemMonitoring,
         remainingSeconds,
+        locationDialogOpen,
+        setLocationDialogOpen,
+        enableLocationTracking,
+        trackOnLogin,
+        trackOnLogout,
+        trackOnStatusChange,
     } = usePresence();
     const router = useRouter();
     const displayName = user?.full_name || 'User';
@@ -70,6 +76,8 @@ export function UserStatusBar() {
     const [infoDialogOpen, setInfoDialogOpen] = useState(false);
     const [isLogoutDialog, setIsLogoutDialog] = useState(false);
     const [isLoggingLocation, setIsLoggingLocation] = useState(false);
+    const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+    const [loadingMessage, setLoadingMessage] = useState('Logging Your Location');
     const [statusMsgDialogOpen, setStatusMsgDialogOpen] = useState(false);
     const [customMessage, setCustomMessageInput] = useState('');
     const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
@@ -102,6 +110,36 @@ export function UserStatusBar() {
         }
         return undefined;
     }, [loading, statusName]);
+
+    // Dynamic message rotator for the location logging overlay
+    useEffect(() => {
+        let interval: any;
+
+        if (isLoggingLocation) {
+            const messages = [
+                'Getting GPS Signal...',
+                'Fetching Location Data...',
+                'Saving Location Log...',
+                'Finalizing Status Change...'
+            ];
+
+            let index = 0;
+            setLoadingMessage(messages[0]);
+
+            interval = setInterval(() => {
+                index = (index + 1) % messages.length;
+                setLoadingMessage(messages[index]);
+            }, 1200);
+        } else {
+            setLoadingMessage('Logging Your Location');
+        }
+
+        return () => {
+            if (interval) {
+                clearInterval(interval);
+            }
+        };
+    }, [isLoggingLocation]);
 
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
@@ -182,6 +220,7 @@ export function UserStatusBar() {
     const performLogout = async () => {
         setInfoDialogOpen(false);
         setIsLogoutDialog(false);
+        setPendingStatus('Offline');
         setIsLoggingLocation(true);
         try {
             await changeStatus('Offline');
@@ -190,6 +229,7 @@ export function UserStatusBar() {
         } catch (error) {
             console.error(error);
             setIsLoggingLocation(false);
+            setPendingStatus(null);
         }
     };
 
@@ -236,18 +276,34 @@ export function UserStatusBar() {
                 setIsCheckingTimesheet(false);
             }
         }
-        if (newStatus === 'Offline' || newStatus === 'Available') {
+        const willTrackLocation = 
+            enableLocationTracking && (
+                (newStatus === 'Offline' && trackOnLogout) ||
+                (statusName === 'Offline' && newStatus !== 'Offline' && (trackOnLogin || trackOnStatusChange)) ||
+                (statusName !== 'Offline' && newStatus !== 'Offline' && trackOnStatusChange)
+            );
+
+        if (willTrackLocation) {
+            setPendingStatus(newStatus);
             setIsLoggingLocation(true);
         }
         handleClose();
+
+        let success: boolean;
         try {
-            await changeStatus(newStatus);
+            success = await changeStatus(newStatus);
         } finally {
             if (newStatus !== 'Offline') {
                 // For logout the page navigates away, so no need to reset.
                 // For all other statuses (including Available/Login), reset the loader.
                 setIsLoggingLocation(false);
+                setPendingStatus(null);
             }
+        }
+        if (!success) {
+            setIsLoggingLocation(false);
+            setPendingStatus(null);
+            return;
         }
         if (newStatus === 'Available') {
             triggerGreetingDialog();
@@ -259,11 +315,16 @@ export function UserStatusBar() {
         if (isLogoutDialog) {
             await performLogout();
         } else {
-            setIsLoggingLocation(true);
+            const willTrack = enableLocationTracking && trackOnLogout;
+            if (willTrack) {
+                setPendingStatus('Offline');
+                setIsLoggingLocation(true);
+            }
             try {
                 await changeStatus('Offline');
             } finally {
                 setIsLoggingLocation(false);
+                setPendingStatus(null);
             }
             handleClose();
         }
@@ -835,8 +896,22 @@ export function UserStatusBar() {
                                     return;
                                 }
                             }
-                            await changeStatus('Available');
+                            const willTrack = enableLocationTracking && (trackOnLogin || trackOnStatusChange);
+                            if (willTrack) {
+                                setPendingStatus('Available');
+                                setIsLoggingLocation(true);
+                            }
                             setCheckInDialogOpen(false);
+                            let success = false;
+                            try {
+                                success = await changeStatus('Available');
+                            } finally {
+                                setIsLoggingLocation(false);
+                                setPendingStatus(null);
+                            }
+                            if (!success) {
+                                return;
+                            }
                             triggerGreetingDialog();
                         }}
                         sx={{
@@ -1143,10 +1218,10 @@ export function UserStatusBar() {
                         sx={{
                             fontWeight: 700,
                             color: 'text.primary',
-                            mb: 1,
+                            my: 2,
                         }}
                     >
-                        Logging Your Location
+                        {loadingMessage}
                     </Typography>
 
                     <Typography
@@ -1157,8 +1232,9 @@ export function UserStatusBar() {
                             lineHeight: 1.7,
                         }}
                     >
-                        Please wait while we securely capture your GPS location before
-                        completing the logout process.
+                        {pendingStatus === 'Offline'
+                            ? 'Please wait while we securely capture your GPS location before completing the logout process.'
+                            : 'Please wait while we securely capture your GPS location before updating your status.'}
                     </Typography>
 
                     {/* Steps */}
@@ -1166,6 +1242,8 @@ export function UserStatusBar() {
                         spacing={2}
                         sx={{
                             mb: 4,
+                            mx: 'auto',
+                            width: 'fit-content',
                             textAlign: 'left',
                         }}
                     >
@@ -1179,8 +1257,10 @@ export function UserStatusBar() {
                                 title: 'Saving Location Log',
                             },
                             {
-                                icon: 'solar:logout-bold',
-                                title: 'Completing Logout',
+                                icon: pendingStatus === 'Offline' ? 'solar:logout-bold' : 'solar:login-bold',
+                                title: pendingStatus === 'Offline' 
+                                    ? 'Completing Logout' 
+                                    : (pendingStatus === 'Available' ? 'Completing Check-In' : 'Updating Status'),
                             },
                         ].map((item) => (
                             <Stack
@@ -1222,26 +1302,105 @@ export function UserStatusBar() {
                             </Stack>
                         ))}
                     </Stack>
+                </DialogContent>
+            </Dialog>
 
-                    <CircularProgress
-                        size={32}
-                        thickness={4}
+            {/* GPS Location Turn On Warning */}
+            <Dialog
+                open={locationDialogOpen}
+                onClose={() => setLocationDialogOpen(false)}
+                maxWidth="xs"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        p: 1,
+                    },
+                }}
+            >
+                <DialogContent
+                    sx={{
+                        textAlign: 'center',
+                        py: 4,
+                    }}
+                >
+                    <Box
                         sx={{
-                            color: '#08A3CD',
-                        }}
-                    />
-
-                    <Typography
-                        variant="caption"
-                        display="block"
-                        sx={{
-                            mt: 2,
-                            color: 'text.secondary',
+                            width: 90,
+                            height: 90,
+                            borderRadius: '50%',
+                            bgcolor: alpha(theme.palette.warning.main, 0.12),
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            mx: 'auto',
+                            mb: 3,
                         }}
                     >
-                        This usually takes only a few seconds...
+                        <Iconify
+                            icon={"solar:gps-bold-duotone" as any}
+                            width={48}
+                            sx={{
+                                color: 'warning.main',
+                            }}
+                        />
+                    </Box>
+
+                    <Typography
+                        variant="h5"
+                        sx={{
+                            fontWeight: 700,
+                            mb: 1,
+                        }}
+                    >
+                        Location Required
+                    </Typography>
+
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                            lineHeight: 1.8,
+                        }}
+                    >
+                        Please turn on your device location services and allow GPS
+                        permission to change your work status.
                     </Typography>
                 </DialogContent>
+
+                <DialogActions
+                    sx={{
+                        px: 3,
+                        pb: 3,
+                        justifyContent: 'center',
+                    }}
+                >
+                    <Button
+                        variant="outlined"
+                        onClick={() => setLocationDialogOpen(false)}
+                    >
+                        Cancel
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                            setLocationDialogOpen(false);
+
+                            navigator.geolocation.getCurrentPosition(
+                                () => {
+                                    // Permission granted
+                                },
+                                () => {
+                                    // Still denied
+                                }
+                            );
+                        }}
+                    >
+                        Try Again
+                    </Button>
+                </DialogActions>
             </Dialog>
 
             {/* Idle Detector Permission Dialog */}
