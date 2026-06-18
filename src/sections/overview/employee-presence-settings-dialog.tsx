@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
@@ -23,6 +22,8 @@ import { usePresence } from 'src/hooks/use-presence';
 import { getPresenceSettings, updatePresenceSettings } from 'src/api/presence';
 
 import { Iconify } from 'src/components/iconify';
+
+import { CustomSwitch } from 'src/sections/email-settings/view/email-settings-view';
 
 // ----------------------------------------------------------------------
 
@@ -52,6 +53,13 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
     click: true,
     touchstart: true,
   });
+  // Location states
+  const [enableLocationTracking, setEnableLocationTracking] = useState(false);
+  const [trackOnLogin, setTrackOnLogin] = useState(false);
+  const [trackOnLogout, setTrackOnLogout] = useState(false);
+  const [trackOnStatusChange, setTrackOnStatusChange] = useState(false);
+  const [trackingIntervalMinutes, setTrackingIntervalMinutes] = useState(15);
+  const [minimumGpsAccuracy, setMinimumGpsAccuracy] = useState(100);
   // Threshold unit ('sec' | 'min')
   const [unit, setUnit] = useState<'sec' | 'min'>('sec');
 
@@ -93,6 +101,12 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
         click: !!settings.event_click,
         touchstart: !!settings.event_touchstart,
       });
+      setEnableLocationTracking(!!settings.enable_location_tracking);
+      setTrackOnLogin(!!settings.track_on_login);
+      setTrackOnLogout(!!settings.track_on_logout);
+      setTrackOnStatusChange(!!settings.track_on_status_change);
+      setTrackingIntervalMinutes(settings.tracking_interval_minutes || 15);
+      setMinimumGpsAccuracy(settings.minimum_gps_accuracy || 100);
     } catch (error) {
       console.error('Error fetching presence settings:', error);
     } finally {
@@ -115,6 +129,12 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
         event_scroll: events.scroll,
         event_click: events.click,
         event_touchstart: events.touchstart,
+        enable_location_tracking: enableLocationTracking,
+        track_on_login: trackOnLogin,
+        track_on_logout: trackOnLogout,
+        track_on_status_change: trackOnStatusChange,
+        tracking_interval_minutes: trackingIntervalMinutes,
+        minimum_gps_accuracy: minimumGpsAccuracy,
       });
       setSnackbar({ open: true, message: 'Settings saved successfully!', severity: 'success' });
       // Close after a short delay so user sees the success message
@@ -183,7 +203,7 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                     Automatically switch users to &apos;Break&apos; or &apos;Lunch Break&apos; after inactivity.
                   </Typography>
                 </Stack>
-                <Switch
+                <CustomSwitch
                   checked={enableAutoStatus}
                   onChange={(e) => setEnableAutoStatus(e.target.checked)}
                   disabled={loading}
@@ -321,11 +341,147 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                     If off, users must click &apos;Return&apos; manually after a Lunch Break.
                   </Typography>
                 </Stack>
-                <Switch
+                <CustomSwitch
                   checked={enableAutoResumeBreak}
                   onChange={(e) => setEnableAutoResumeBreak(e.target.checked)}
                   disabled={!enableAutoStatus || loading}
                 />
+              </Box>
+
+              {/* Location Tracking Section */}
+              <Box
+                sx={{
+                  p: 2.5,
+                  borderRadius: 2,
+                  bgcolor: 'background.neutral',
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                }}
+              >
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                  <Stack spacing={0.5}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                      Enable Location Tracking
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      Track geographical locations of employee activity triggers.
+                    </Typography>
+                  </Stack>
+                  <CustomSwitch
+                    checked={enableLocationTracking}
+                    onChange={(e) => setEnableLocationTracking(e.target.checked)}
+                    disabled={loading}
+                  />
+                </Stack>
+
+                {enableLocationTracking && (
+                  <Stack spacing={2.5} sx={{ mt: 3, pt: 2.5, borderTop: `1px dashed ${theme.palette.divider}` }}>
+                    <Box sx={{ mt: 2 }}>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ color: 'text.primary', mb: 2, fontWeight: 600 }}
+                      >
+                        Tracking Triggers & Constraints
+                      </Typography>
+
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: {
+                            xs: '1fr',
+                            sm: 'repeat(3, 1fr)',
+                          },
+                          gap: 2,
+                        }}
+                      >
+                        {[
+                          {
+                            label: 'On Login',
+                            checked: trackOnLogin,
+                            onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                              setTrackOnLogin(e.target.checked),
+                          },
+                          {
+                            label: 'On Logout',
+                            checked: trackOnLogout,
+                            onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                              setTrackOnLogout(e.target.checked),
+                          },
+                          {
+                            label: 'Status Change',
+                            checked: trackOnStatusChange,
+                            onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                              setTrackOnStatusChange(e.target.checked),
+                          },
+                        ].map((item) => (
+                        <Box
+                            key={item.label}
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 3,
+                                px: 1.5,
+                                py: 2,
+                            }}
+                        >
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    fontWeight: 600,
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                {item.label}
+                            </Typography>
+
+                            <CustomSwitch
+                                checked={item.checked}
+                                onChange={item.onChange}
+                                disabled={loading}
+                            />
+                        </Box>
+                        ))}
+                      </Box>
+                    </Box>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                      <TextField
+                        fullWidth
+                        label="Auto-Tracking Interval"
+                        type="number"
+                        value={trackingIntervalMinutes === 0 ? '' : trackingIntervalMinutes}
+                        onChange={(e) => setTrackingIntervalMinutes(e.target.value === '' ? 0 : Number(e.target.value))}
+                        helperText="Minutes between updates"
+                        disabled={loading}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                                mins
+                              </Typography>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                      <TextField
+                        fullWidth
+                        label="Min GPS Accuracy"
+                        type="number"
+                        value={minimumGpsAccuracy === 0 ? '' : minimumGpsAccuracy}
+                        onChange={(e) => setMinimumGpsAccuracy(e.target.value === '' ? 0 : Number(e.target.value))}
+                        helperText="Filter out poor GPS signals"
+                        disabled={loading}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                                meters
+                              </Typography>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Stack>
+                  </Stack>
+                )}
               </Box>
 
               {/* System Monitoring Action */}
@@ -444,8 +600,7 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                             >
                               <Iconify icon={item.icon as any} width={20} />
                             </Box>
-                            <Switch
-                              size="small"
+                            <CustomSwitch
                               checked={isActive}
                               disabled={loading}
                             />
