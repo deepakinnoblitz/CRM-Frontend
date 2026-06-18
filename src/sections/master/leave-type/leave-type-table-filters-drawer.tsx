@@ -3,6 +3,7 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
@@ -87,9 +88,8 @@ export default function LeaveTypeTableFiltersDrawer({
             <TextField
                 select
                 fullWidth
-                value={filters.status}
+                value={filters.status || 'all'}
                 onChange={(e) => onFilters('status', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
                 sx={{
                     '& .MuiOutlinedInput-root': {
@@ -101,9 +101,9 @@ export default function LeaveTypeTableFiltersDrawer({
                     },
                 }}
             >
-                <option value="all">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
+                <MenuItem value="all">All Status</MenuItem>
+                <MenuItem value="Active">Active</MenuItem>
+                <MenuItem value="Inactive">Inactive</MenuItem>
             </TextField>
         </Stack>
     );
@@ -160,7 +160,7 @@ export default function LeaveTypeTableFiltersDrawer({
                 },
             }}
             sx={{
-                zIndex: (theme) => theme.zIndex.drawer + 1100,
+                zIndex: (theme) => theme.zIndex.drawer + 100,
             }}
         >
             {renderHead}

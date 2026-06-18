@@ -122,7 +122,6 @@ export function BadgeTableFiltersDrawer({
                   fullWidth
                   value={filters.badge_type || 'all'}
                   onChange={(e) => onFilters({ badge_type: e.target.value })}
-                  SelectProps={{ native: true }}
                   size="small"
                   sx={{
                     '& .MuiOutlinedInput-root': {
@@ -134,10 +133,10 @@ export function BadgeTableFiltersDrawer({
                     },
                   }}
                 >
-                  <option value="all">All Types</option>
-                  <option value="Performance">Performance</option>
-                  <option value="Behavior">Behavior</option>
-                  <option value="Achievement">Achievement</option>
+                  <MenuItem value="all">All Types</MenuItem>
+                  <MenuItem value="Performance">Performance</MenuItem>
+                  <MenuItem value="Behavior">Behavior</MenuItem>
+                  <MenuItem value="Achievement">Achievement</MenuItem>
                 </TextField>
               </Stack>
             ) : (

@@ -5,6 +5,7 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -167,7 +168,6 @@ export function RequestsTableFiltersDrawer({
                 fullWidth
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
                 sx={{
                     '& .MuiOutlinedInput-root': {
@@ -179,16 +179,16 @@ export function RequestsTableFiltersDrawer({
                     },
                 }}
             >
-                <option value="all">All Statuses</option>
+                <MenuItem value="all">All Statuses</MenuItem>
                 {[
                     { value: 'Pending', label: 'Pending' },
                     { value: 'Approved', label: 'Approved' },
                     { value: 'Rejected', label: 'Rejected' },
                     { value: 'Clarification Requested', label: 'Clarification Requested' },
                 ].map((option) => (
-                    <option key={option.value} value={option.value}>
+                    <MenuItem key={option.value} value={option.value}>
                         {option.label}
-                    </option>
+                    </MenuItem>
                 ))}
             </TextField>
         </Stack>
