@@ -197,11 +197,11 @@ export function EmployeeDailyLogTableToolbar({
           <Button
             disableRipple
             color="inherit"
-            startIcon={<IoMdSettings />}
+            startIcon={<IoMdSettings size={19}/>}
             onClick={onOpenSettings}
             sx={{
               height: 40,
-              px: 2,
+              px: 3,
               bgcolor: 'background.neutral',
               border: '1px solid',
               borderColor: 'divider',
@@ -210,15 +210,7 @@ export function EmployeeDailyLogTableToolbar({
               transition: (theme) =>
                 theme.transitions.create(['background-color', 'border-color'], {
                   duration: theme.transitions.duration.shorter,
-                }),
-              '&:hover': {
-                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                borderColor: 'primary.main',
-                '& .iconify': {
-                  color: 'primary.main',
-                  transform: 'rotate(45deg)',
-                },
-              },
+                })
             }}
           >
             Settings

@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
@@ -23,6 +22,8 @@ import { usePresence } from 'src/hooks/use-presence';
 import { getPresenceSettings, updatePresenceSettings } from 'src/api/presence';
 
 import { Iconify } from 'src/components/iconify';
+
+import { CustomSwitch } from 'src/sections/email-settings/view/email-settings-view';
 
 // ----------------------------------------------------------------------
 
@@ -202,7 +203,7 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                     Automatically switch users to &apos;Break&apos; or &apos;Lunch Break&apos; after inactivity.
                   </Typography>
                 </Stack>
-                <Switch
+                <CustomSwitch
                   checked={enableAutoStatus}
                   onChange={(e) => setEnableAutoStatus(e.target.checked)}
                   disabled={loading}
@@ -340,7 +341,7 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                     If off, users must click &apos;Return&apos; manually after a Lunch Break.
                   </Typography>
                 </Stack>
-                <Switch
+                <CustomSwitch
                   checked={enableAutoResumeBreak}
                   onChange={(e) => setEnableAutoResumeBreak(e.target.checked)}
                   disabled={!enableAutoStatus || loading}
@@ -365,7 +366,7 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                       Track geographical locations of employee activity triggers.
                     </Typography>
                   </Stack>
-                  <Switch
+                  <CustomSwitch
                     checked={enableLocationTracking}
                     onChange={(e) => setEnableLocationTracking(e.target.checked)}
                     disabled={loading}
@@ -374,40 +375,73 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
 
                 {enableLocationTracking && (
                   <Stack spacing={2.5} sx={{ mt: 3, pt: 2.5, borderTop: `1px dashed ${theme.palette.divider}` }}>
-                    <Typography variant="subtitle2" sx={{ color: 'text.primary', mb: 0.5 }}>
-                      Tracking Triggers & Constraints
-                    </Typography>
-                    
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>On Login</Typography>
-                        <Switch
-                          checked={trackOnLogin}
-                          onChange={(e) => setTrackOnLogin(e.target.checked)}
-                          disabled={loading}
-                          size="small"
-                        />
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>On Logout</Typography>
-                        <Switch
-                          checked={trackOnLogout}
-                          onChange={(e) => setTrackOnLogout(e.target.checked)}
-                          disabled={loading}
-                          size="small"
-                        />
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>Status Change</Typography>
-                        <Switch
-                          checked={trackOnStatusChange}
-                          onChange={(e) => setTrackOnStatusChange(e.target.checked)}
-                          disabled={loading}
-                          size="small"
-                        />
-                      </Box>
-                    </Stack>
+                    <Box sx={{ mt: 2 }}>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ color: 'text.primary', mb: 2, fontWeight: 600 }}
+                      >
+                        Tracking Triggers & Constraints
+                      </Typography>
 
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: {
+                            xs: '1fr',
+                            sm: 'repeat(3, 1fr)',
+                          },
+                          gap: 2,
+                        }}
+                      >
+                        {[
+                          {
+                            label: 'On Login',
+                            checked: trackOnLogin,
+                            onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                              setTrackOnLogin(e.target.checked),
+                          },
+                          {
+                            label: 'On Logout',
+                            checked: trackOnLogout,
+                            onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                              setTrackOnLogout(e.target.checked),
+                          },
+                          {
+                            label: 'Status Change',
+                            checked: trackOnStatusChange,
+                            onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                              setTrackOnStatusChange(e.target.checked),
+                          },
+                        ].map((item) => (
+                        <Box
+                            key={item.label}
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 3,
+                                px: 1.5,
+                                py: 2,
+                            }}
+                        >
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    fontWeight: 600,
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                {item.label}
+                            </Typography>
+
+                            <CustomSwitch
+                                checked={item.checked}
+                                onChange={item.onChange}
+                                disabled={loading}
+                            />
+                        </Box>
+                        ))}
+                      </Box>
+                    </Box>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                       <TextField
                         fullWidth
@@ -566,8 +600,7 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                             >
                               <Iconify icon={item.icon as any} width={20} />
                             </Box>
-                            <Switch
-                              size="small"
+                            <CustomSwitch
                               checked={isActive}
                               disabled={loading}
                             />

@@ -64,6 +64,21 @@ const requestCurrentLocation = (): Promise<GeolocationPosition> =>
     );
   });
 
+// ── Module-level singleton for Auto Location Tracking ──
+// usePresence() is mounted in multiple components simultaneously.
+// Without this guard, each instance would create its own setInterval,
+// causing duplicate location logs per tracking cycle.
+let _autoTrackInterval: ReturnType<typeof setInterval> | undefined;
+let _autoTrackEmployeeId: string | null = null;
+
+function clearAutoTrackInterval() {
+  if (_autoTrackInterval) {
+    clearInterval(_autoTrackInterval);
+    _autoTrackInterval = undefined;
+    _autoTrackEmployeeId = null;
+  }
+}
+
 export function usePresence() {
   const { user } = useAuth();
   const { socket } = useSocket(user?.email);
@@ -456,19 +471,28 @@ export function usePresence() {
     };
   }, [status, loading, employeeId]);
 
-  // Periodic Auto Location Tracking
+  // Periodic Auto Location Tracking (singleton — only ONE interval runs across all hook instances)
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | undefined;
+    const shouldTrack = status !== 'Offline' && !loading && employeeId && enableLocationTracking;
 
-    if (status !== 'Offline' && !loading && employeeId && enableLocationTracking) {
-      interval = setInterval(async () => {
-        logLocationIfAllowed('Auto Tracking', statusRef.current);
-      }, trackingIntervalMinutes * 60 * 1000);
+    if (shouldTrack) {
+      // Only recreate the interval if the employee changed or none exists yet
+      if (_autoTrackEmployeeId !== employeeId || !_autoTrackInterval) {
+        clearAutoTrackInterval();
+        _autoTrackEmployeeId = employeeId;
+        _autoTrackInterval = setInterval(() => {
+          logLocationIfAllowed('Auto Tracking', statusRef.current);
+        }, trackingIntervalMinutes * 60 * 1000);
+      }
+    } else {
+      // Clear if we go offline or tracking is disabled
+      if (_autoTrackEmployeeId === employeeId) {
+        clearAutoTrackInterval();
+      }
     }
 
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    // No cleanup here — the singleton is intentionally shared across instances.
+    // It gets cleared when any instance detects Offline/disabled tracking.
   }, [status, loading, employeeId, enableLocationTracking, trackingIntervalMinutes, logLocationIfAllowed]);
 
   return {

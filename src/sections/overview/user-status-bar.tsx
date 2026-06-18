@@ -1241,7 +1241,7 @@ export function UserStatusBar() {
                     <Stack
                         spacing={2}
                         sx={{
-                            mb: 4,
+                            mb: 2,
                             mx: 'auto',
                             width: 'fit-content',
                             textAlign: 'left',
