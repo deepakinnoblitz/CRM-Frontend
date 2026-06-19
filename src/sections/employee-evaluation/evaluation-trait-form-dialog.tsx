@@ -30,12 +30,13 @@ type Props = {
     open: boolean;
     onClose: VoidFunction;
     onSuccess: VoidFunction;
+    onError?: (message: string) => void;
     selectedTrait?: EmployeeEvaluationTrait | null;
 };
 
 
 
-export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, selectedTrait }: Props) {
+export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, onError, selectedTrait }: Props) {
     const { data: evaluationPoints } = useEmployeeEvaluationPoints();
     const { data: traitCategories, refetch: refetchCategories } = useEmployeeEvaluationTraitCategories();
     const [loading, setLoading] = useState(false);
@@ -91,7 +92,20 @@ export function EmployeeEvaluationTraitFormDialog({ open, onClose, onSuccess, se
     };
 
     const handleSave = async () => {
-        if (!validate()) return;
+        if (!validate()) {
+            const errs: string[] = [];
+            if (!formData.trait_name) errs.push('trait_name');
+            if (!formData.category) errs.push('category');
+
+            if (errs.length > 1) {
+                onError?.('Please fill in all required fields');
+            } else if (errs[0] === 'trait_name') {
+                onError?.('Criteria Name is required');
+            } else {
+                onError?.('Category is required');
+            }
+            return;
+        }
 
         setLoading(true);
         try {

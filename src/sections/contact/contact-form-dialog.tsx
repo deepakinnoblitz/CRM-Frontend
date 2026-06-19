@@ -3,10 +3,12 @@ import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { IconButton } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import Snackbar from '@mui/material/Snackbar';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -54,6 +56,16 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
     const [accountOptions, setAccountOptions] = useState<{ name: string; account_name: string }[]>([]);
 
     const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
+
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
+
+    const handleCloseSnackbar = () => {
+        setSnackbar({ ...snackbar, open: false });
+    };
 
     const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
     const [newCompanyName, setNewCompanyName] = useState('');
@@ -244,12 +256,28 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
 
     const handleSave = async () => {
         const newErrors: { [key: string]: boolean } = {};
-        if (!firstName) newErrors.firstName = true;
-        if (!email) newErrors.email = true;
-        if (!phone) newErrors.phone = true;
+        const missingFields: string[] = [];
+
+        if (!firstName) {
+            newErrors.firstName = true;
+            missingFields.push('Name');
+        }
+        if (!email) {
+            newErrors.email = true;
+            missingFields.push('Email');
+        }
+        if (!phone) {
+            newErrors.phone = true;
+            missingFields.push('Phone Number');
+        }
 
         if (Object.keys(newErrors).length > 0) {
             setValidationErrors(newErrors);
+            setSnackbar({
+                open: true,
+                message: `Please fill in mandatory fields: ${missingFields.join(', ')}`,
+                severity: 'error'
+            });
             return;
         }
 
@@ -289,7 +317,7 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
             onClose();
         } catch (err: any) {
             console.error(err);
-            // In a real app, show snackbar here or pass error back
+            setSnackbar({ open: true, message: err.message || 'Failed to save client', severity: 'error' });
         } finally {
             setSaving(false);
         }
@@ -755,6 +783,18 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
                 </Button>
             </DialogActions>
         </Dialog>
+
+        <Snackbar
+            open={snackbar.open}
+            autoHideDuration={6000}
+            onClose={handleCloseSnackbar}
+            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            sx={{ zIndex: (theme) => theme.zIndex.modal + 10 }}
+        >
+            <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+                {snackbar.message}
+            </Alert>
+        </Snackbar>
     </>
     );
 }

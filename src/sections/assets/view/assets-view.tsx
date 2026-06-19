@@ -280,6 +280,17 @@ export function AssetsView() {
         setTouched(true);
 
         if (!assetName.trim() || !category) {
+            const errs: string[] = [];
+            if (!assetName.trim()) errs.push('assetName');
+            if (!category) errs.push('category');
+
+            if (errs.length > 1) {
+                setSnackbar({ open: true, message: 'Please fill in all required fields', severity: 'error' });
+            } else if (errs[0] === 'assetName') {
+                setSnackbar({ open: true, message: 'Asset Name is required', severity: 'error' });
+            } else {
+                setSnackbar({ open: true, message: 'Category is required', severity: 'error' });
+            }
             return;
         }
 

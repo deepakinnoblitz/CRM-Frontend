@@ -31,11 +31,12 @@ type Props = {
     open: boolean;
     onClose: VoidFunction;
     onSuccess: VoidFunction;
+    onError?: (message: string) => void;
     selectedEvent?: any;
 };
 
 
-export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, selectedEvent }: Props) {
+export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, onError, selectedEvent }: Props) {
     const [employees, setEmployees] = useState<any[]>([]);
     const [traits, setTraits] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -98,7 +99,26 @@ export function EmployeeEvaluationEventFormDialog({ open, onClose, onSuccess, se
     };
 
     const handleSave = async () => {
-        if (!validate()) return;
+        if (!validate()) {
+            const errs: string[] = [];
+            if (!formData.employee) errs.push('employee');
+            if (!formData.trait) errs.push('trait');
+            if (!formData.evaluation_type) errs.push('evaluation_type');
+            if (!formData.evaluation_date) errs.push('evaluation_date');
+
+            if (errs.length > 1) {
+                onError?.('Please fill in all required fields');
+            } else if (errs[0] === 'employee') {
+                onError?.('Employee is required');
+            } else if (errs[0] === 'trait') {
+                onError?.('Criteria is required');
+            } else if (errs[0] === 'evaluation_type') {
+                onError?.('Type is required');
+            } else {
+                onError?.('Date is required');
+            }
+            return;
+        }
 
         setLoading(true);
         try {
