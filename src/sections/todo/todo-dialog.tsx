@@ -75,6 +75,11 @@ export default function TodoDialog({ open, onClose, selectedTodo, initialData, o
         setFormErrors(errors);
 
         if (errors.description) {
+            setSnackbar({
+                open: true,
+                message: 'Please fill in mandatory fields: Task Description',
+                severity: 'error'
+            });
             return;
         }
 
