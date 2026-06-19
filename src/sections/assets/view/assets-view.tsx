@@ -702,23 +702,68 @@ export function AssetsView() {
                                     // Regular option
                                     return option.category_name || '';
                                 }}
-                                renderOption={(props, option) => {
+                                renderOption={(props, option: any) => {
                                     const { key, ...optionProps } = props as any;
+
                                     return (
-                                        <li key={key} {...optionProps}>
-                                            <Box sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                color: option.isCreateNew ? 'primary.main' : 'inherit',
-                                                fontWeight: option.isCreateNew ? 600 : 400,
-                                                py: 0.5,
-                                                width: '100%'
-                                            }}>
-                                                {option.isCreateNew && <Iconify icon="mingcute:add-line" sx={{ mr: 1, width: 16 }} />}
-                                                {option.category_name}
+                                        <li
+                                            key={key}
+                                            {...optionProps}
+                                            style={{
+                                                padding: 0,
+                                                margin: 0,
+                                            }}
+                                        >
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    width: '100%',
+                                                    px: 2,
+                                                    py: option.isCreateNew ? 1.6 : 1,
+                                                    borderTop: option.isCreateNew ? '1px solid' : 'none',
+                                                    borderColor: 'divider',
+                                                    color: option.isCreateNew ? 'primary.main' : 'text.primary',
+                                                    bgcolor: option.isCreateNew ? 'rgba(33, 150, 243, 0.08)' : 'transparent',
+
+                                                    '&:hover': {
+                                                        bgcolor: option.isCreateNew
+                                                            ? 'rgba(33, 150, 243, 0.12)'
+                                                            : 'action.hover',
+                                                    },
+                                                }}
+                                            >
+                                                {option.isCreateNew ? (
+                                                    <>
+                                                        <Iconify
+                                                            icon="solar:add-circle-bold"
+                                                            width={20}
+                                                            style={{ marginRight: 12 }}
+                                                        />
+                                                        <Typography
+                                                            variant="subtitle2"
+                                                            fontWeight={600}
+                                                        >
+                                                            Create Asset Category
+                                                        </Typography>
+                                                    </>
+                                                ) : (
+                                                    <Typography variant="body2">
+                                                        {option.category_name}
+                                                    </Typography>
+                                                )}
                                             </Box>
                                         </li>
                                     );
+                                }}
+                                slotProps={{
+                                    paper: {
+                                        sx: {
+                                            '& ul': {
+                                                padding: 0,
+                                            },
+                                        },
+                                    },
                                 }}
                                 loading={loadingCategories}
                                 renderInput={(params) => (
