@@ -2,11 +2,13 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
+import Select from '@mui/material/Select';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import FormControl from '@mui/material/FormControl';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -85,26 +87,23 @@ export default function LeaveTypeTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Status
             </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filters.status || 'all'}
-                onChange={(e) => onFilters('status', e.target.value)}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
+            <FormControl size="small" fullWidth>
+                <Select
+                    value={filters.status || 'all'}
+                    onChange={(e) => onFilters('status', e.target.value)}
+                    sx={{
                         borderRadius: 1.5,
                         bgcolor: 'background.neutral',
                         '&:hover': {
                             bgcolor: 'action.hover',
                         },
-                    },
-                }}
-            >
-                <MenuItem value="all">All Status</MenuItem>
-                <MenuItem value="Active">Active</MenuItem>
-                <MenuItem value="Inactive">Inactive</MenuItem>
-            </TextField>
+                    }}
+                >
+                    <MenuItem value="all">All Status</MenuItem>
+                    <MenuItem value="Active">Active</MenuItem>
+                    <MenuItem value="Inactive">Inactive</MenuItem>
+                </Select>
+            </FormControl>
         </Stack>
     );
 
