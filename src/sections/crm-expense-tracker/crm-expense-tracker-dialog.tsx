@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import Alert from '@mui/material/Alert';
+import Snackbar from '@mui/material/Snackbar';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
@@ -31,6 +33,12 @@ export default function CRMExpenseTrackerDialog({ open, onClose, onSubmit, curre
     const [amount, setAmount] = useState('');
     const [date, setDate] = useState<dayjs.Dayjs | null>(dayjs());
 
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+        open: false,
+        message: '',
+        severity: 'error',
+    });
+
     const [wasSubmitted, setWasSubmitted] = useState(false);
 
     useEffect(() => {
@@ -57,6 +65,17 @@ export default function CRMExpenseTrackerDialog({ open, onClose, onSubmit, curre
         const isAmountValid = !!amount && Number(amount) > 0;
 
         if (!isTitleValid || !isAmountValid) {
+            const errs: string[] = [];
+            if (!isTitleValid) errs.push('title');
+            if (!isAmountValid) errs.push('amount');
+
+            if (errs.length > 1) {
+                setSnackbar({ open: true, message: 'Please fill in all required fields', severity: 'error' });
+            } else if (errs[0] === 'title') {
+                setSnackbar({ open: true, message: 'Title is required', severity: 'error' });
+            } else {
+                setSnackbar({ open: true, message: 'Valid amount is required', severity: 'error' });
+            }
             return;
         }
 
@@ -130,6 +149,21 @@ export default function CRMExpenseTrackerDialog({ open, onClose, onSubmit, curre
                     {currentData ? 'Update' : 'Create'}
                 </Button>
             </DialogActions>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert
+                    onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+                    severity={snackbar.severity}
+                    sx={{ width: '100%', boxShadow: (theme) => theme.customShadows.z8 }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Dialog>
     );
 }

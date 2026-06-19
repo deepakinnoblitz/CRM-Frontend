@@ -72,6 +72,7 @@ export function AttendanceView() {
         status: 'Present',
         attendance_date: dayjs().format('YYYY-MM-DD'),
     });
+    const [touched, setTouched] = useState(false);
 
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
 
@@ -136,12 +137,14 @@ export function AttendanceView() {
             status: 'Present',
             attendance_date: dayjs().format('YYYY-MM-DD'),
         });
+        setTouched(false);
         setOpenCreate(true);
     };
 
     const handleCloseCreate = () => {
         setOpenCreate(false);
         setCurrentAttendanceId(null);
+        setTouched(false);
     };
 
     const handleOpenImport = () => {
@@ -246,6 +249,7 @@ export function AttendanceView() {
     };
 
     const handleCreate = async () => {
+        setTouched(true);
         const error = validateForm();
         if (error) {
             setSnackbar({ open: true, message: error, severity: 'error' });
@@ -296,6 +300,7 @@ export function AttendanceView() {
         if (fullRow) {
             setFormData({ ...fullRow });
         }
+        setTouched(false);
         setOpenCreate(true);
     };
 
@@ -387,6 +392,16 @@ export function AttendanceView() {
                 />
             );
         }
+
+        let errorMsg = '';
+        if (touched) {
+            if (required && !formData[fieldname]) {
+                errorMsg = `${label} is required`;
+            } else if ((fieldname === 'in_time' || fieldname === 'out_time') && (formData.status === 'Present' || formData.status === 'Half Day') && !formData[fieldname]) {
+                errorMsg = `${label} is required for ${formData.status}`;
+            }
+        }
+
         const commonProps = {
             fullWidth: true,
             label,
@@ -394,6 +409,8 @@ export function AttendanceView() {
             onChange: (e: any) => handleInputChange(fieldname, e.target.value),
             InputLabelProps: { shrink: true },
             required,
+            error: !!errorMsg,
+            helperText: errorMsg,
             ...extraProps,
             sx: {
                 '& .MuiFormLabel-asterisk': {
@@ -428,6 +445,8 @@ export function AttendanceView() {
                             fullWidth: true,
                             required,
                             InputLabelProps: { shrink: true },
+                            error: !!errorMsg,
+                            helperText: errorMsg,
                             sx: commonProps.sx
                         }
                     }}
@@ -446,6 +465,8 @@ export function AttendanceView() {
                             fullWidth: true,
                             required,
                             InputLabelProps: { shrink: true },
+                            error: !!errorMsg,
+                            helperText: errorMsg,
                             sx: commonProps.sx
                         }
                     }}
@@ -699,6 +720,8 @@ export function AttendanceView() {
                                         label="Employee"
                                         required
                                         InputLabelProps={{ shrink: true }}
+                                        error={touched && !formData.employee}
+                                        helperText={touched && !formData.employee ? 'Employee is required' : ''}
                                         sx={{
                                             '& .MuiFormLabel-asterisk': {
                                                 color: 'red',

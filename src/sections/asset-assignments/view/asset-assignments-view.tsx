@@ -265,6 +265,20 @@ export function AssetAssignmentsView() {
         setTouched(true);
 
         if (!selectedAsset || !selectedEmployee || !assignedOn) {
+            const errs: string[] = [];
+            if (!selectedAsset) errs.push('asset');
+            if (!selectedEmployee) errs.push('employee');
+            if (!assignedOn) errs.push('assignedOn');
+
+            if (errs.length > 1) {
+                setSnackbar({ open: true, message: 'Please fill in all required fields', severity: 'error' });
+            } else if (errs[0] === 'asset') {
+                setSnackbar({ open: true, message: 'Asset is required', severity: 'error' });
+            } else if (errs[0] === 'employee') {
+                setSnackbar({ open: true, message: 'Employee is required', severity: 'error' });
+            } else {
+                setSnackbar({ open: true, message: 'Assignment date is required', severity: 'error' });
+            }
             return;
         }
 

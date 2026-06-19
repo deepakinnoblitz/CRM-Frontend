@@ -130,9 +130,10 @@ export function ClaimTypeDialog({ open, onClose, onSuccess, id }: Props) {
                         value={claimType}
                         onChange={(e) => {
                              setClaimType(e.target.value);
-                             if (error) setError('');
+                             if (error === 'required') setError('');
                         }}
-                        error={!!error}
+                        error={error === 'required'}
+                        helperText={error === 'required' ? 'Claim type name is required' : ''}
                         disabled={loading}
                         autoFocus
                         InputLabelProps={{ shrink: true }}

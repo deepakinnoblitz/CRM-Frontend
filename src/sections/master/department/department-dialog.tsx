@@ -169,9 +169,10 @@ export function DepartmentDialog({ open, onClose, onSuccess, id }: Props) {
                             value={departmentName}
                             onChange={(e) => {
                                 setDepartmentName(e.target.value);
-                                if (error) setError('');
+                                if (error === 'required') setError('');
                             }}
-                            error={!!error}
+                            error={error === 'required'}
+                            helperText={error === 'required' ? 'Department name is required' : ''}
                             disabled={loading}
                             InputLabelProps={{ shrink: true }}
                             sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}

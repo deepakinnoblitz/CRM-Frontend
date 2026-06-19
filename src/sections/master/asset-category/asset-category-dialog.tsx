@@ -123,10 +123,11 @@ export function AssetCategoryDialog({ open, onClose, onSuccess, id }: Props) {
                         label="Category Name"
                         value={categoryName}
                         onChange={(e) => {
-                             setCategoryName(e.target.value);
-                             if (error) setError('');
+                            setCategoryName(e.target.value);
+                            if (error === 'required') setError('');
                         }}
-                        error={!!error}
+                        error={error === 'required'}
+                        helperText={error === 'required' ? 'Category name is required' : ''}
                         disabled={loading}
                         autoFocus
                         InputLabelProps={{ shrink: true }}

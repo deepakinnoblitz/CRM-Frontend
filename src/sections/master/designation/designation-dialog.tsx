@@ -100,14 +100,17 @@ export function DesignationDialog({ open, onClose, onSuccess, id }: Props) {
     }, [open, id]);
 
     const handleSubmit = async () => {
-        if (!designationName.trim()) {
-            setError('name');
-            setSnackbar({ open: true, message: 'Designation name is required', severity: 'error' });
-            return;
-        }
-        if (!department) {
-            setError('department');
-            setSnackbar({ open: true, message: 'Department is required', severity: 'error' });
+        const errs: string[] = [];
+        if (!designationName.trim()) errs.push('name');
+        if (!department) errs.push('department');
+
+        if (errs.length > 0) {
+            setError(errs.join(','));
+            setSnackbar({ 
+                open: true, 
+                message: errs.length > 1 ? 'Please fill in all required fields' : (errs[0] === 'name' ? 'Designation name is required' : 'Department is required'), 
+                severity: 'error' 
+            });
             return;
         }
 
@@ -183,9 +186,12 @@ export function DesignationDialog({ open, onClose, onSuccess, id }: Props) {
                             value={designationName}
                             onChange={(e) => {
                                  setDesignationName(e.target.value);
-                                 if (error === 'name') setError('');
+                                 if (error.split(',').includes('name')) {
+                                     setError(error.split(',').filter(err => err !== 'name').join(','));
+                                 }
                             }}
-                            error={error === 'name'}
+                            error={error.split(',').includes('name')}
+                            helperText={error.split(',').includes('name') ? 'Designation name is required' : ''}
                             disabled={loading}
                             autoFocus
                             InputLabelProps={{ shrink: true }}
@@ -205,7 +211,9 @@ export function DesignationDialog({ open, onClose, onSuccess, id }: Props) {
                             value={department}
                             onChange={(event, newValue) => {
                                 setDepartment(newValue);
-                                if (error === 'department') setError('');
+                                if (error.split(',').includes('department')) {
+                                    setError(error.split(',').filter(err => err !== 'department').join(','));
+                                }
                             }}
                             disabled={loading}
                             renderInput={(params) => (
@@ -213,7 +221,8 @@ export function DesignationDialog({ open, onClose, onSuccess, id }: Props) {
                                     {...params}
                                     label="Department"
                                     required
-                                    error={error === 'department'}
+                                    error={error.split(',').includes('department')}
+                                    helperText={error.split(',').includes('department') ? 'Department is required' : ''}
                                     InputLabelProps={{ shrink: true }}
                                     sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
                                 />

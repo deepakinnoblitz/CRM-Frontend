@@ -125,9 +125,10 @@ export function PerformanceCriteriaCategoryDialog({ open, onClose, onSuccess, id
                         value={categoryName}
                         onChange={(e) => {
                              setCategoryName(e.target.value);
-                             if (error) setError('');
+                            if (error === 'required') setError('');
                         }}
-                        error={!!error}
+                        error={error === 'required'}
+                        helperText={error === 'required' ? 'Category name is required' : ''}
                         disabled={loading}
                         autoFocus
                         InputLabelProps={{ shrink: true }}

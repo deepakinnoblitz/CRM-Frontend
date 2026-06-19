@@ -171,6 +171,7 @@ export function SalaryStructureComponentDialog({ open, onClose, onSuccess, id }:
                                 if (error === 'name') setError('');
                             }}
                             error={error === 'name'}
+                            helperText={error === 'name' ? 'Component name is required' : ''}
                             disabled={loading}
                             autoFocus
                             InputLabelProps={{ shrink: true }}

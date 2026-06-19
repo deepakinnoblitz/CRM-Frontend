@@ -129,10 +129,11 @@ export function ActivityTypeDialog({ open, onClose, onSuccess, id }: Props) {
                         label="Activity Type Name"
                         value={activityType}
                         onChange={(e) => {
-                             setActivityType(e.target.value);
-                             if (error) setError('');
+                            setActivityType(e.target.value);
+                            if (error === 'required') setError('');
                         }}
-                        error={!!error}
+                       error={error === 'required'}
+                       helperText={error === 'required' ? 'Activity type name is required' : ''}
                         disabled={loading}
                         autoFocus
                         InputLabelProps={{ shrink: true }}

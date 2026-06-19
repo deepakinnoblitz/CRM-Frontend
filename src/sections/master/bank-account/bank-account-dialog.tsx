@@ -85,19 +85,18 @@ export function BankAccountDialog({ open, onClose, onSuccess, id }: Props) {
     }, [open, id]);
 
     const handleSubmit = async () => {
-        if (!bankAccountName.trim()) {
-            setError('Bank Account Name');
-            setSnackbar({ open: true, message: 'Bank Account Name is required', severity: 'error' });
-            return;
-        }
-        if (!accountNumber.trim()) {
-            setError('Account Number');
-            setSnackbar({ open: true, message: 'Account Number is required', severity: 'error' });
-            return;
-        }
-        if (!bankName.trim()) {
-            setError('Bank Name');
-            setSnackbar({ open: true, message: 'Bank Name is required', severity: 'error' });
+        const errs: string[] = [];
+        if (!bankAccountName.trim()) errs.push('Bank Account Name');
+        if (!accountNumber.trim()) errs.push('Account Number');
+        if (!bankName.trim()) errs.push('Bank Name');
+
+        if (errs.length > 0) {
+            setError(errs.join(','));
+            setSnackbar({ 
+                open: true, 
+                message: errs.length > 1 ? 'Please fill in all required fields' : `${errs[0]} is required`, 
+                severity: 'error' 
+            });
             return;
         }
 
@@ -149,9 +148,12 @@ export function BankAccountDialog({ open, onClose, onSuccess, id }: Props) {
                         value={bankAccountName}
                         onChange={(e) => {
                              setBankAccountName(e.target.value);
-                             if (error === 'Bank Account Name') setError('');
+                             if (error.split(',').includes('Bank Account Name')) {
+                                 setError(error.split(',').filter(err => err !== 'Bank Account Name').join(','));
+                             }
                         }}
-                        error={error === 'Bank Account Name'}
+                        error={error.split(',').includes('Bank Account Name')}
+                        helperText={error.split(',').includes('Bank Account Name') ? 'Bank Account Name is required' : ''}
                         disabled={loading}
                         autoFocus
                         InputLabelProps={{ shrink: true }}
@@ -166,9 +168,12 @@ export function BankAccountDialog({ open, onClose, onSuccess, id }: Props) {
                             value={accountNumber}
                             onChange={(e) => {
                                 setAccountNumber(e.target.value);
-                                if (error === 'Account Number') setError('');
+                                if (error.split(',').includes('Account Number')) {
+                                    setError(error.split(',').filter(err => err !== 'Account Number').join(','));
+                                }
                             }}
-                            error={error === 'Account Number'}
+                            error={error.split(',').includes('Account Number')}
+                            helperText={error.split(',').includes('Account Number') ? 'Account Number is required' : ''}
                             disabled={loading}
                             InputLabelProps={{ shrink: true }}
                             sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
@@ -196,9 +201,12 @@ export function BankAccountDialog({ open, onClose, onSuccess, id }: Props) {
                         value={bankName}
                         onChange={(e) => {
                             setBankName(e.target.value);
-                            if (error === 'Bank Name') setError('');
+                            if (error.split(',').includes('Bank Name')) {
+                                setError(error.split(',').filter(err => err !== 'Bank Name').join(','));
+                            }
                         }}
-                        error={error === 'Bank Name'}
+                        error={error.split(',').includes('Bank Name')}
+                        helperText={error.split(',').includes('Bank Name') ? 'Bank Name is required' : ''}
                         disabled={loading}
                         InputLabelProps={{ shrink: true }}
                         sx={{ '& .MuiFormLabel-asterisk': { color: 'red' } }}
