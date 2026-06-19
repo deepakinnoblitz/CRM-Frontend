@@ -284,8 +284,21 @@ export function AssetRequestsView() {
 
     // ── Load available assets for HR when approving a New Request ──
     useEffect(() => {
-        if (openHrAction && hrAction === 'approve' && hrActionRequest?.request_type === 'New Request') {
-            getAvailableAssets().then(setAvailableAssets).catch(console.error);
+        if (
+            openHrAction &&
+            hrAction === 'approve' &&
+            hrActionRequest?.request_type === 'New Request'
+        ) {
+            getAvailableAssets()
+                .then((assets) => {
+                    const filtered = assets.filter(
+                        (asset: any) =>
+                            asset.category === hrActionRequest.asset_category
+                    );
+
+                    setAvailableAssets(filtered);
+                })
+                .catch(console.error);
         }
     }, [openHrAction, hrAction, hrActionRequest]);
 

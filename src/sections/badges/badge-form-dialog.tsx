@@ -75,8 +75,20 @@ export function BadgeFormDialog({ open, onClose, onSuccess, onError, selectedBad
   };
 
   const handleSave = async () => {
-    if (!validate()) return;
-
+    if (!validate()) {
+      const errs: string[] = [];
+      if (!formData.badge_name) errs.push('name');
+      if (!formData.icon) errs.push('icon');
+      
+      if (errs.length > 1) {
+        onError('Please fill in all required fields');
+      } else if (errs[0] === 'name') {
+        onError('Badge Name is required');
+      } else {
+        onError('Badge Icon is required');
+      }
+      return;
+    }
     setLoading(true);
     setErrors({});
     try {

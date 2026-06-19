@@ -155,6 +155,7 @@ export function CompanyBankAccountDialog({ open, onClose, onSuccess, id }: Props
               if (error === 'Bank Name') setError('');
             }}
             error={error === 'Bank Name'}
+            helperText={error === 'Bank Name' ? 'Bank Name is required' : ''}
             disabled={loading}
             autoFocus
             InputLabelProps={{ shrink: true }}

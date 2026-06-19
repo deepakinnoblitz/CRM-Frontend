@@ -149,9 +149,10 @@ export function ProjectDialog({ open, onClose, onSuccess, id }: Props) {
                         value={projectName}
                         onChange={(e) => {
                             setProjectName(e.target.value);
-                            if (error) setError('');
+                            if (error === 'required') setError('');
                         }}
-                        error={!!error}
+                        error={error === 'required'}
+                        helperText={error === 'required' ? 'Project name is required' : ''}
                         disabled={loading}
                         autoFocus
                         InputLabelProps={{ shrink: true }}

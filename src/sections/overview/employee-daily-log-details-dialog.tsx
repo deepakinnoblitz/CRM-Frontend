@@ -1,7 +1,9 @@
 import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
 
+import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
+import Tabs from '@mui/material/Tabs';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -18,6 +20,8 @@ import { fDate, fTime, fDateTime, fDecimalHours } from 'src/utils/format-time';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+
+import EmployeeLocationTab from 'src/sections/employee/employee-location-tab';
 
 // ----------------------------------------------------------------------
 
@@ -211,12 +215,12 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
             <Box sx={{ width: '100%', height: 32, bgcolor: alpha(theme.palette.grey[500], 0.12), borderRadius: 2, position: 'relative', border: `1px solid ${theme.palette.divider}` }}>
                 {segments.map((seg: any, i) => {
                     const isHoveredFromLegend = !!hoveredLegend && !!seg.status && hoveredLegend.toLowerCase() === seg.status.toLowerCase();
-                    
+
                     return (
-                        <Tooltip 
-                            key={`${i}-${isHoveredFromLegend}`} 
-                            title={seg.tooltip || 'Interval'} 
-                            arrow 
+                        <Tooltip
+                            key={`${i}-${isHoveredFromLegend}`}
+                            title={seg.tooltip || 'Interval'}
+                            arrow
                             placement="top"
                             {...(isHoveredFromLegend ? { open: true } : {})}
                             disableInteractive
@@ -281,14 +285,14 @@ const SessionTimelineBar = ({ session }: { session: any }) => {
 
             <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 2.5, px: 0.5, mb: 1 }}>
                 {LEGEND_ITEMS.map((item) => (
-                    <Stack 
+                    <Stack
                         key={item.label}
-                        direction="row" 
-                        alignItems="center" 
+                        direction="row"
+                        alignItems="center"
                         spacing={0.75}
                         onMouseEnter={() => setHoveredLegend(item.status)}
                         onMouseLeave={() => setHoveredLegend(null)}
-                        sx={{ 
+                        sx={{
                             cursor: 'pointer',
                             transition: 'opacity 0.2s',
                             opacity: hoveredLegend && hoveredLegend !== item.status ? 0.5 : 1
@@ -316,6 +320,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
     const [limit, setLimit] = useState(5);
     const [loading, setLoading] = useState(false);
     const [detailedSession, setDetailedSession] = useState<any>(session);
+    const [currentTab, setCurrentTab] = useState('details');
 
     const fetchSession = async () => {
         if (!session?.name) return;
@@ -345,9 +350,15 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
         }
     }, [session]);
 
+    useEffect(() => {
+        if (open) {
+            setCurrentTab('details');
+        }
+    }, [open]);
+
     if (!detailedSession) return null;
 
-    const { employee_name, login_date, login_time, logout_time, total_work_hours, total_break_hours, status, intervals = [], breaks = [] } = detailedSession;
+    const { employee, employee_name, login_date, login_time, logout_time, total_work_hours, total_break_hours, status, intervals = [], breaks = [] } = detailedSession;
 
     const renderDetailItem = (label: string, value: string) => (
         <Box>
@@ -391,7 +402,7 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
             open={open}
             onClose={onClose}
             fullWidth
-            maxWidth="md"
+            maxWidth="lg"
             PaperProps={{
                 sx: {
                     borderRadius: 2,
@@ -411,8 +422,18 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto', mt:2 }}>
-                <Box sx={{ pt: 1 }}>
+            <Tabs
+                value={currentTab}
+                onChange={(event, newValue) => setCurrentTab(newValue)}
+                sx={{ px: 3, borderBottom: (t) => `1px solid ${t.palette.divider}` }}
+            >
+                <Tab value="details" label="Log Details" />
+                <Tab value="location" label="Location Tracking" />
+            </Tabs>
+
+            <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
+                {currentTab === 'details' && (
+                    <Box sx={{ pt: 1 }}>
                     {/* Summary Section */}
                     <Box sx={{ mb: 5 }}>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
@@ -687,6 +708,11 @@ export function EmployeeDailyLogDetailsDialog({ open, onClose, session }: Props)
                         </Box>
                     </Stack>
                 </Box>
+                )}
+
+                {currentTab === 'location' && (
+                    <EmployeeLocationTab employeeId={employee} sessionId={detailedSession.name} />
+                )}
             </DialogContent>
         </Dialog>
     );

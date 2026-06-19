@@ -169,7 +169,35 @@ export function EvaluationAutomationRuleFormDialog({ open, onClose, onSuccess, s
     };
 
     const handleSubmit = async () => {
-        if (!validate()) return;
+        if (!validate()) {
+            const errs: string[] = [];
+            if (!ruleName.trim()) errs.push('ruleName');
+            if (!trait) errs.push('trait');
+            if (!evaluationPoint) errs.push('evaluationPoint');
+            if (eventType === 'Late Login' && !lateLoginAfter) errs.push('lateLoginAfter');
+            if (eventType === 'Early Exit' && !earlyExitBefore) errs.push('earlyExitBefore');
+            if (eventType === 'Specific Day Leave' && !specificDay) errs.push('specificDay');
+            if (eventType === 'Specific Date Leave' && !specificDate) errs.push('specificDate');
+
+            if (errs.length > 1) {
+                setSnackbar({ open: true, message: 'Please fill in all required fields', severity: 'error' });
+            } else if (errs[0] === 'ruleName') {
+                setSnackbar({ open: true, message: 'Rule name is required', severity: 'error' });
+            } else if (errs[0] === 'trait') {
+                setSnackbar({ open: true, message: 'Evaluation Trait is required', severity: 'error' });
+            } else if (errs[0] === 'evaluationPoint') {
+                setSnackbar({ open: true, message: 'Evaluation Point is required', severity: 'error' });
+            } else if (errs[0] === 'lateLoginAfter') {
+                setSnackbar({ open: true, message: 'Late Login After time is required', severity: 'error' });
+            } else if (errs[0] === 'earlyExitBefore') {
+                setSnackbar({ open: true, message: 'Early Exit Before time is required', severity: 'error' });
+            } else if (errs[0] === 'specificDay') {
+                setSnackbar({ open: true, message: 'Specific Day is required', severity: 'error' });
+            } else if (errs[0] === 'specificDate') {
+                setSnackbar({ open: true, message: 'Specific Date is required', severity: 'error' });
+            }
+            return;
+        }
         setLoading(true);
         try {
             const payload: Partial<EvaluationAutomationRule> = {

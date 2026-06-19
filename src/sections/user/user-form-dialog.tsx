@@ -192,15 +192,22 @@ export function UserFormDialog({
 
   const handleSubmitWrapper = () => {
     const validationErrors = validate();
-    if (Object.keys(validationErrors).length === 0) {
+    const errorKeys = Object.keys(validationErrors);
+
+    if (errorKeys.length === 0) {
       onSubmit();
     } else {
+      if (errorKeys.length > 1) {
+        setValidationSnackbar('Please fill in all required fields');
+      } else {
+        setValidationSnackbar(validationErrors[errorKeys[0]]);
+      }
+
       // Jump to the first tab with an error
       if (validationErrors.email || validationErrors.first_name) {
         setCurrentTab('details');
       } else if (validationErrors.roles) {
         setCurrentTab('roles');
-        setValidationSnackbar(validationErrors.roles);
       } else if (validationErrors.password) {
         setCurrentTab('password');
       }

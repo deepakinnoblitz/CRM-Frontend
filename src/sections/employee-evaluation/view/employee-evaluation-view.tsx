@@ -682,6 +682,9 @@ export function EmployeeEvaluationView() {
           refetchEvents();
           refetchLogs();
         }}
+        onError={(msg) => {
+          setSnackbar({ open: true, message: msg, severity: 'error' });
+        }}
         selectedEvent={selectedEvent}
       />
 
@@ -694,6 +697,9 @@ export function EmployeeEvaluationView() {
         onSuccess={() => {
           setSnackbar({ open: true, message: selectedTrait ? 'Criteria updated successfully' : 'Criteria created successfully', severity: 'success' });
           refetchTraits();
+        }}
+        onError={(msg) => {
+          setSnackbar({ open: true, message: msg, severity: 'error' });
         }}
         selectedTrait={selectedTrait}
       />

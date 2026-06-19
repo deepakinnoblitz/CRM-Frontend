@@ -191,6 +191,7 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
                                  if (error === 'name') setError('');
                             }}
                             error={error === 'name'}
+                            helperText={error === 'name' ? 'Leave Type Name is required' : ''}
                             disabled={loading}
                             autoFocus
                             InputLabelProps={{ shrink: true }}

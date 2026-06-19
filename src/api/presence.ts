@@ -70,7 +70,13 @@ export async function updatePresenceSettings(settings: {
   event_keydown: boolean,
   event_scroll: boolean,
   event_click: boolean,
-  event_touchstart: boolean
+  event_touchstart: boolean,
+  enable_location_tracking?: boolean,
+  track_on_login?: boolean,
+  track_on_logout?: boolean,
+  track_on_status_change?: boolean,
+  tracking_interval_minutes?: number,
+  minimum_gps_accuracy?: number
 }) {
   const res = await frappeRequest('/api/method/company.company.doctype.employee_presence_settings.employee_presence_settings.set_presence_settings', {
     method: 'POST',
@@ -79,4 +85,24 @@ export async function updatePresenceSettings(settings: {
   if (!res.ok) throw new Error('Failed to update presence settings');
   const data = await res.json();
   return data.message;
+}
+
+export async function logLocation(latitude: number, longitude: number, accuracy?: number, status?: string, source?: string) {
+  const res = await frappeRequest('/api/method/company.company.presence_api.log_location', {
+    method: 'POST',
+    body: JSON.stringify({ latitude, longitude, accuracy, status, source }),
+  });
+  if (!res.ok) throw new Error('Failed to log location');
+  const data = await res.json();
+  return data.message;
+}
+
+export async function getLocationLogs(employee?: string, session?: string, status?: string, source?: string) {
+  const res = await frappeRequest('/api/method/company.company.presence_api.get_location_logs', {
+    method: 'POST',
+    body: JSON.stringify({ employee, session, status, source }),
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.message || [];
 }

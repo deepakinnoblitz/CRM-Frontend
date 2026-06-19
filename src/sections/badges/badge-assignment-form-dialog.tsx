@@ -88,7 +88,20 @@ export function BadgeAssignmentFormDialog({ open, onClose, onSuccess, onError, s
   };
 
   const handleSave = async () => {
-    if (!validate()) return;
+    if (!validate()) {
+      const errs: string[] = [];
+      if (!formData.employee) errs.push('employee');
+      if (!formData.badge) errs.push('badge');
+      
+      if (errs.length > 1) {
+        onError('Please fill in all required fields');
+      } else if (errs[0] === 'employee') {
+        onError('Employee is required');
+      } else {
+        onError('Badge is required');
+      }
+      return;
+    }
 
     setLoading(true);
     try {
