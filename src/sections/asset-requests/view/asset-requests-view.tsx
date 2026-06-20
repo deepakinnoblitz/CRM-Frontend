@@ -40,6 +40,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useSocket } from 'src/hooks/use-socket';
+import { markAsRead } from 'src/api/unread-counts';
 
 import { frappeRequest } from 'src/utils/csrf';
 
@@ -587,6 +588,9 @@ export function AssetRequestsView() {
                                                         onClick={() => {
                                                             setSelectedRequestName(row.name);
                                                             setOpenDetails(true);
+                                                            markAsRead('Asset Request', row.name).then(() => {
+                                                                window.dispatchEvent(new Event('REFRESH_UNREAD_COUNTS'));
+                                                            });
                                                         }}
                                                         sx={{
                                                             cursor: 'pointer',
@@ -821,6 +825,9 @@ export function AssetRequestsView() {
                                                         onClick={() => {
                                                             setSelectedRequestName(row.name);
                                                             setOpenDetails(true);
+                                                            markAsRead('Asset Request', row.name).then(() => {
+                                                                window.dispatchEvent(new Event('REFRESH_UNREAD_COUNTS'));
+                                                            });
                                                         }}
                                                         sx={{
                                                             cursor: 'pointer',
