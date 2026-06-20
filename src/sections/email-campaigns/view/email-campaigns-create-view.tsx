@@ -98,8 +98,8 @@ export function EmailCampaignsCreateView() {
 
     const TARGET_TYPE_OPTIONS = [
         { value: 'Lead', label: 'Lead' },
-        { value: 'Contact', label: 'Contact' },
-        { value: 'Account', label: 'Account' },
+        { value: 'Contact', label: 'Client' },
+        { value: 'Account', label: 'Company' },
     ];
 
     useEffect(() => {
@@ -223,14 +223,6 @@ export function EmailCampaignsCreateView() {
                 filter.value?.trim()
         );
 
-        if (!hasValidFilter) {
-            enqueueSnackbar(
-                'Please add at least one filter before previewing recipients',
-                { variant: 'warning' }
-            );
-            return;
-        }
-
         try {
             const result = await previewRecipients(
                 targetType,
@@ -291,16 +283,10 @@ export function EmailCampaignsCreateView() {
                         onClick={handleCreate}
                         disabled={creating}
                         sx={{
-                            height: 36,
-                            px: 3,
                             borderRadius: 1.5,
-                            fontWeight: 700,
-                            textTransform: 'none',
-                            bgcolor: '#2081C3',
+                            bgcolor: '#08a3cd',
                             color: 'common.white',
-                            minWidth: 130,
-                            '&:hover': { bgcolor: '#1a699f' },
-                            '&:disabled': { bgcolor: 'action.disabledBackground', color: 'text.disabled' }
+                            '&:hover': { bgcolor: '#068fb3' },
                         }}
                     >
                         {creating ? <CircularProgress size={20} color="inherit" /> : 'Create Campaign'}
@@ -339,6 +325,7 @@ export function EmailCampaignsCreateView() {
                         value={templateOptions.find((opt) => opt.name === emailTemplate) || null}
                         onChange={(_e, newValue) => {
                             setEmailTemplate(newValue?.name || '');
+                            setSubject(newValue?.subject || "");
                             if (newValue?.name) setValidationErrors(prev => ({ ...prev, emailTemplate: false }));
                         }}
                         renderInput={(params) => (
@@ -400,15 +387,15 @@ export function EmailCampaignsCreateView() {
                     startIcon={<CiCalculator2 size={24} />}
                     onClick={handlePreviewRecipients}
                     sx={{
-                        background: 'linear-gradient(135deg,#A855F7,#7C3AED)',
+                        background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
                         borderRadius: 3,
                         px: 2,
-                        py: 0.8,
+                        py: 0.6,
                         textTransform: 'none',
                         fontWeight: 600,
-                        boxShadow: '0 8px 20px rgba(124,58,237,.25)',
                         '&:hover': {
-                        background: 'linear-gradient(135deg,#9333EA,#6D28D9)',
+                        background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
+                        boxShadow: '0 8px 10px rgba(124,58,237,.25)',
                         },
                     }}
                     >
@@ -593,20 +580,16 @@ export function EmailCampaignsCreateView() {
                     }
                     onClick={handleAddFilter}
                     sx={{
-                    mt: 1,
-                    background:
-                        'linear-gradient(135deg,#A855F7,#7C3AED)',
-                    borderRadius: 3,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    px: 2,
-                    py: 0.8,
-                    boxShadow:
-                        '0 8px 20px rgba(124,58,237,.25)',
-                    '&:hover': {
-                        background:
-                        'linear-gradient(135deg,#9333EA,#6D28D9)',
-                    },
+                        background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
+                        borderRadius: 3,
+                        px: 1.5,
+                        py: 0.6,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        '&:hover': {
+                        background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
+                        boxShadow: '0 8px 10px rgba(124,58,237,.25)',
+                        },
                     }}
                 >
                     Add Filter
