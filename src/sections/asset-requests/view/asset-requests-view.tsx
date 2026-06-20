@@ -40,10 +40,10 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useSocket } from 'src/hooks/use-socket';
-import { markAsRead } from 'src/api/unread-counts';
 
 import { frappeRequest } from 'src/utils/csrf';
 
+import { markAsRead } from 'src/api/unread-counts';
 import { getAssetCategories } from 'src/api/assets';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getAvailableAssets, getEmployees, getMyAssignedAssets } from 'src/api/asset-assignments';
