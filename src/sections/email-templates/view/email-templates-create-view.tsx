@@ -12,6 +12,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import LoadingButton from '@mui/lab/LoadingButton';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { useRouter } from 'src/routes/hooks';
@@ -30,6 +31,7 @@ export function EmailTemplateCreateView() {
     const [footerContent, setFooterContent] = useState('');
     const [attachments, setAttachments] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const [templateName, setTemplateName] = useState('');
     const [category, setCategory] = useState('');
@@ -93,6 +95,7 @@ export function EmailTemplateCreateView() {
             return;
         }
 
+        setIsSaving(true);
         try {
             await createEmailTemplate({
                 template_name: templateName,
@@ -125,6 +128,7 @@ export function EmailTemplateCreateView() {
                 severity: 'error',
                 message: error.message || 'Failed to create email template.',
             });
+            setIsSaving(false);
         }
     };
 
@@ -204,9 +208,10 @@ export function EmailTemplateCreateView() {
                     >
                         Go Back
                     </Button>
-                    <Button
+                    <LoadingButton
                         variant="contained"
                         onClick={handleSave}
+                        loading={isSaving}
                         sx={{
                             borderRadius: 1.5,
                             bgcolor: '#08a3cd',
@@ -215,7 +220,7 @@ export function EmailTemplateCreateView() {
                         }}
                     >
                         Save Template
-                    </Button>
+                    </LoadingButton>
                 </Stack>
             </Stack>
 
@@ -293,6 +298,8 @@ export function EmailTemplateCreateView() {
                                 fullWidth
                                 label="Subject"
                                 required
+                                multiline
+                                rows={3}
                                 value={subject}
                                 onChange={(e) => {
                                     setSubject(e.target.value);
