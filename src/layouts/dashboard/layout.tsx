@@ -142,6 +142,24 @@ export function DashboardLayout({
           </Label>
         );
       }
+      if ((item.title === 'Asset Requests' || item.title === 'My Asset Requests') && unreadCounts.counts['Asset Request'] > 0) {
+        item.info = (
+          <Label
+            color="error"
+            variant="filled"
+            sx={{
+              height: 20,
+              minWidth: 20,
+              fontSize: '0.75rem',
+              px: 0.5,
+              borderRadius: 0.75,
+              fontWeight: 'bold',
+            }}
+          >
+            {unreadCounts.counts['Asset Request']}
+          </Label>
+        );
+      }
 
       // Aggregation for Parent Items
       if (item.children) {
@@ -223,6 +241,25 @@ export function DashboardLayout({
               </Label>
             );
             groupCount += unreadCounts.counts['Reimbursement Claim'];
+          }
+          if ((child.title === 'Asset Requests' || child.title === 'My Asset Requests') && unreadCounts.counts['Asset Request'] > 0) {
+            child.info = (
+              <Label
+                color="error"
+                variant="filled"
+                sx={{
+                  height: 18,
+                  minWidth: 18,
+                  fontSize: '0.7rem',
+                  px: 0.5,
+                  borderRadius: 0.5,
+                  fontWeight: 'bold',
+                }}
+              >
+                {unreadCounts.counts['Asset Request']}
+              </Label>
+            );
+            groupCount += unreadCounts.counts['Asset Request'];
           }
         });
 

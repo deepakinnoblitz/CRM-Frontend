@@ -19,6 +19,7 @@ import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import LoadingButton from '@mui/lab/LoadingButton';
 import Autocomplete from '@mui/material/Autocomplete';
 import TableContainer from '@mui/material/TableContainer';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -33,7 +34,7 @@ import { frappeRequest } from 'src/utils/csrf';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchEmailTemplates } from 'src/api/email-template';
-import { getEmailAutomation } from 'src/api/email-automation';
+import { getEmailAutomation, updateEmailAutomation } from 'src/api/email-automation';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -63,6 +64,14 @@ export function EmailAutomationsEditView() {
     const [endDate, setEndDate] = useState('');
     const [runTime, setRunTime] = useState('');
     const [filters, setFilters] = useState<{ field_name: string; operator: string; value: string; }[]>([]);
+    const [description, setDescription] = useState('');
+    const [isActive, setIsActive] = useState(true);
+    const [subjectOverride, setSubjectOverride] = useState('');
+    const [createSeparateCampaign, setCreateSeparateCampaign] = useState(true);
+    const [sendImmediately, setSendImmediately] = useState(false);
+    const [autoPauseOnError, setAutoPauseOnError] = useState(true);
+    const [maxRetryCount, setMaxRetryCount] = useState<number | ''>(3);
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -75,6 +84,13 @@ export function EmailAutomationsEditView() {
                 setStartDate(data.start_date || '');
                 setEndDate(data.end_date || '');
                 setRunTime(data.run_time || '');
+                setDescription(data.description || '');
+                setIsActive(data.is_active === 1);
+                setSubjectOverride(data.subject_override || '');
+                setCreateSeparateCampaign(data.create_separate_campaign === 1);
+                setSendImmediately(data.send_immediately === 1);
+                setAutoPauseOnError(data.auto_pause_on_error === 1);
+                setMaxRetryCount(data.max_retry_count ?? '');
                 if (data.filters && Array.isArray(data.filters) && data.filters.length > 0) {
                     setFilters(data.filters);
                 } else {
@@ -151,8 +167,55 @@ export function EmailAutomationsEditView() {
             return;
         }
 
-        // Add save logic here
+        if (!id) return;
+
+        setIsSaving(true);
+        const data = {
+            automation_name: automationName,
+            status,
+            email_template: emailTemplate,
+            target_type: targetType,
+            frequency,
+            start_date: startDate,
+            end_date: endDate,
+            run_time: runTime,
+            filters,
+            description,
+            is_active: isActive ? 1 : 0,
+            subject_override: subjectOverride,
+            create_separate_campaign: createSeparateCampaign ? 1 : 0,
+            send_immediately: sendImmediately ? 1 : 0,
+            auto_pause_on_error: autoPauseOnError ? 1 : 0,
+            max_retry_count: maxRetryCount ? Number(maxRetryCount) : 0,
+        };
+
+        updateEmailAutomation(id, data)
+            .then(() => {
+                setSnackbar({ open: true, message: 'Automation updated successfully!', severity: 'success' });
+                setTimeout(() => {
+                    router.push('/email-automations');
+                }, 1000);
+            })
+            .catch((error) => {
+                console.error('Failed to update automation:', error);
+                setSnackbar({ open: true, message: parseServerError(error), severity: 'error' });
+                setIsSaving(false);
+            });
     };
+
+    // Parses Frappe's raw _server_messages JSON into a readable string
+    function parseServerError(error: any): string {
+        try {
+            if (error?._server_messages) {
+                const msgs = JSON.parse(error._server_messages);
+                if (Array.isArray(msgs) && msgs.length > 0) {
+                    const first = JSON.parse(msgs[0]);
+                    return first.message || 'An error occurred';
+                }
+            }
+        } catch (_) { /* ignore parse errors */ }
+        return error?.message || error?.exc_type || 'An error occurred';
+    }
 
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -178,9 +241,10 @@ export function EmailAutomationsEditView() {
                     >
                         Go Back
                     </Button>
-                    <Button
+                    <LoadingButton
                         variant="contained"
                         onClick={handleSave}
+                        loading={isSaving}
                         sx={{
                             borderRadius: 1.5,
                             bgcolor: '#08a3cd',
@@ -189,7 +253,7 @@ export function EmailAutomationsEditView() {
                         }}
                     >
                         Save Automation
-                    </Button>
+                    </LoadingButton>
                 </Stack>
             </Stack>
 
@@ -220,8 +284,19 @@ export function EmailAutomationsEditView() {
                                     <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                                 ))}
                             </TextField>
-                            <TextField fullWidth multiline rows={3} label="Description" />
-                            <FormControlLabel control={<CustomSwitch defaultChecked />} label="Is Active" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
+                            <TextField 
+                                fullWidth 
+                                multiline 
+                                rows={3} 
+                                label="Description" 
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                            />
+                            <FormControlLabel 
+                                control={<CustomSwitch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />} 
+                                label="Is Active" 
+                                sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
+                            />
                         </Stack>
                     </Card>
 
@@ -262,7 +337,12 @@ export function EmailAutomationsEditView() {
                                     );
                                 }}
                             />
-                            <TextField fullWidth label="Subject Override" />
+                            <TextField 
+                                fullWidth 
+                                label="Subject Override" 
+                                value={subjectOverride}
+                                onChange={(e) => setSubjectOverride(e.target.value)}
+                            />
                             <TextField 
                                 select
                                 fullWidth 
@@ -474,12 +554,30 @@ export function EmailAutomationsEditView() {
                         <Typography variant="h6" sx={{ mb: 3 }}>Execution Settings</Typography>
                         <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }} gap={3}>
                             <Stack spacing={2}>
-                                <FormControlLabel control={<CustomSwitch defaultChecked />} label="Create Separate Campaign" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
-                                <FormControlLabel control={<CustomSwitch />} label="Send Immediately" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
+                                <FormControlLabel 
+                                    control={<CustomSwitch checked={createSeparateCampaign} onChange={(e) => setCreateSeparateCampaign(e.target.checked)} />} 
+                                    label="Create Separate Campaign" 
+                                    sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
+                                />
+                                <FormControlLabel 
+                                    control={<CustomSwitch checked={sendImmediately} onChange={(e) => setSendImmediately(e.target.checked)} />} 
+                                    label="Send Immediately" 
+                                    sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
+                                />
                             </Stack>
                             <Stack spacing={2}>
-                                <FormControlLabel control={<CustomSwitch defaultChecked />} label="Auto Pause On Error" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
-                                <TextField fullWidth type="number" label="Max Retry Count" />
+                                <FormControlLabel 
+                                    control={<CustomSwitch checked={autoPauseOnError} onChange={(e) => setAutoPauseOnError(e.target.checked)} />} 
+                                    label="Auto Pause On Error" 
+                                    sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
+                                />
+                                <TextField 
+                                    fullWidth 
+                                    type="number" 
+                                    label="Max Retry Count" 
+                                    value={maxRetryCount}
+                                    onChange={(e) => setMaxRetryCount(e.target.value ? Number(e.target.value) : '')}
+                                />
                             </Stack>
                         </Box>
                     </Card>

@@ -43,6 +43,7 @@ import { useSocket } from 'src/hooks/use-socket';
 
 import { frappeRequest } from 'src/utils/csrf';
 
+import { markAsRead } from 'src/api/unread-counts';
 import { getAssetCategories } from 'src/api/assets';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getAvailableAssets, getEmployees, getMyAssignedAssets } from 'src/api/asset-assignments';
@@ -587,6 +588,9 @@ export function AssetRequestsView() {
                                                         onClick={() => {
                                                             setSelectedRequestName(row.name);
                                                             setOpenDetails(true);
+                                                            markAsRead('Asset Request', row.name).then(() => {
+                                                                window.dispatchEvent(new Event('REFRESH_UNREAD_COUNTS'));
+                                                            });
                                                         }}
                                                         sx={{
                                                             cursor: 'pointer',
@@ -821,6 +825,9 @@ export function AssetRequestsView() {
                                                         onClick={() => {
                                                             setSelectedRequestName(row.name);
                                                             setOpenDetails(true);
+                                                            markAsRead('Asset Request', row.name).then(() => {
+                                                                window.dispatchEvent(new Event('REFRESH_UNREAD_COUNTS'));
+                                                            });
                                                         }}
                                                         sx={{
                                                             cursor: 'pointer',
