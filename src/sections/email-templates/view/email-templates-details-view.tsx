@@ -188,30 +188,6 @@ export function EmailTemplateDetailsView() {
                         </Box>
                     </Stack>
 
-                    {/* Tracking */}
-                    <Stack spacing={1.5}>
-                        <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                            <IoMdStats size={20} />
-                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Tracking</Typography>
-                        </Stack>
-                        <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
-                            <Stack spacing={1.5}>
-                                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Open Tracking</Typography>
-                                    <Chip label={enable_open_tracking ? 'Enabled' : 'Disabled'} size="small" color={enable_open_tracking ? 'primary' : 'default'} sx={{ borderRadius: 1 }} />
-                                </Stack>
-                                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Click Tracking</Typography>
-                                    <Chip label={enable_click_tracking ? 'Enabled' : 'Disabled'} size="small" color={enable_click_tracking ? 'primary' : 'default'} sx={{ borderRadius: 1 }} />
-                                </Stack>
-                                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Unsubscribe Link</Typography>
-                                    <Chip label={enable_unsubscribe ? 'Enabled' : 'Disabled'} size="small" color={enable_unsubscribe ? 'primary' : 'default'} sx={{ borderRadius: 1 }} />
-                                </Stack>
-                            </Stack>
-                        </Box>
-                    </Stack>
-
                     {/* Attachments */}
                     <Stack spacing={1.5}>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>

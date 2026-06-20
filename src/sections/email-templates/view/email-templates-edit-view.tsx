@@ -300,15 +300,6 @@ export function EmailTemplateEditView() {
 
                 <Box gridColumn={{ xs: 'span 1', md: 'span 1' }}>
                     <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>Tracking</Typography>
-                        <Stack spacing={2}>
-                            <FormControlLabel control={<CustomSwitch />} label="Enable Open Tracking" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
-                            <FormControlLabel control={<CustomSwitch />} label="Enable Click Tracking" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
-                            <FormControlLabel control={<CustomSwitch />} label="Enable Unsubscribe Link" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
-                        </Stack>
-                    </Card>
-
-                    <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Variables</Typography>
                         <Typography variant="body2" color="textSecondary">
                             Available Variables: {"{{ contact_name }}"}, {"{{ company_name }}"}
