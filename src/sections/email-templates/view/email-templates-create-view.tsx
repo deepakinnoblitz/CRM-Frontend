@@ -30,7 +30,7 @@ export function EmailTemplateCreateView() {
     const [footerContent, setFooterContent] = useState('');
     const [attachments, setAttachments] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
-    
+
     const [templateName, setTemplateName] = useState('');
     const [category, setCategory] = useState('');
     const [templatefor, setTemplatefor] = useState('Lead');
@@ -280,8 +280,8 @@ export function EmailTemplateCreateView() {
                             </TextField>
                             <TextField fullWidth multiline rows={3} label="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
                             <Stack direction="row" spacing={2}>
-                                <FormControlLabel control={<CustomSwitch defaultChecked onChange={(e) => setIsActive(e.target.checked)}/>} label="Is Active" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
-                                <FormControlLabel control={<CustomSwitch onChange={(e) => setIsDefault(e.target.checked)}/>} label="Is Default" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
+                                <FormControlLabel control={<CustomSwitch defaultChecked onChange={(e) => setIsActive(e.target.checked)} />} label="Is Active" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
+                                <FormControlLabel control={<CustomSwitch onChange={(e) => setIsDefault(e.target.checked)} />} label="Is Default" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
                             </Stack>
                         </Stack>
                     </Card>
@@ -464,121 +464,121 @@ export function EmailTemplateCreateView() {
                                 },
                             }}
                         >
-                        {variables.map((item) => {
-                            // Display text (Lead Name, Company Name, etc.)
-                            const label = item.fieldname
-                                .split('_')
-                                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                .join(' ');
+                            {variables.map((item) => {
+                                // Display text (Lead Name, Company Name, etc.)
+                                const label = item.fieldname
+                                    .split('_')
+                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                    .join(' ');
 
-                            return (
-                                <Button
-                                    key={item.fieldname}
-                                    fullWidth
-                                    variant="outlined"
-                                    startIcon={
-                                        <Box
-                                            sx={{
-                                                width: 34,
-                                                height: 34,
-                                                borderRadius: 1.5,
-                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                            }}
-                                        >
-                                            <Iconify
-                                                icon={"solar:code-bold" as any}
-                                                width={18}
-                                                sx={{ color: 'primary.main' }}
-                                            />
-                                        </Box>
-                                    }
-                                    endIcon={
-                                        <MdContentCopy size={16} color='#08a3cd'/>
-                                    }
-                                    onClick={() => insertVariable(item.variable)}
-                                    sx={{
-                                        justifyContent: 'space-between',
-                                        textTransform: 'none',
-                                        fontWeight: 600,
-                                        color: 'text.primary',
-                                        bgcolor: 'background.paper',
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        borderRadius: 2,
-                                        px: 2,
-                                        py: 1.3,
-                                        minHeight: 58,
-                                        transition: 'all .2s ease',
-
-                                        '&:hover': {
-                                            borderColor: 'primary.main',
-                                            bgcolor: (theme) =>
-                                                alpha(theme.palette.primary.main, 0.08),
-                                            transform: 'translateX(2px)',
-                                            boxShadow: (theme) =>
-                                                `0 6px 16px ${alpha(
-                                                    theme.palette.primary.main,
-                                                    0.15
-                                                )}`,
-                                        },
-
-                                        '& .MuiButton-startIcon': {
-                                            mr: 2,
-                                        },
-
-                                        '& .MuiButton-endIcon': {
-                                            ml: 2,
-                                        },
-                                    }}
-                                >
-                                    <Box
+                                return (
+                                    <Button
+                                        key={item.fieldname}
+                                        fullWidth
+                                        variant="outlined"
+                                        startIcon={
+                                            <Box
+                                                sx={{
+                                                    width: 34,
+                                                    height: 34,
+                                                    borderRadius: 1.5,
+                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                }}
+                                            >
+                                                <Iconify
+                                                    icon={"solar:code-bold" as any}
+                                                    width={18}
+                                                    sx={{ color: 'primary.main' }}
+                                                />
+                                            </Box>
+                                        }
+                                        endIcon={
+                                            <MdContentCopy size={16} color='#08a3cd' />
+                                        }
+                                        onClick={() => insertVariable(item.variable)}
                                         sx={{
-                                            flex: 1,
-                                            textAlign: 'left',
-                                            overflow: 'hidden',
+                                            justifyContent: 'space-between',
+                                            textTransform: 'none',
+                                            fontWeight: 600,
+                                            color: 'text.primary',
+                                            bgcolor: 'background.paper',
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            borderRadius: 2,
+                                            px: 2,
+                                            py: 1.3,
+                                            minHeight: 58,
+                                            transition: 'all .2s ease',
+
+                                            '&:hover': {
+                                                borderColor: 'primary.main',
+                                                bgcolor: (theme) =>
+                                                    alpha(theme.palette.primary.main, 0.08),
+                                                transform: 'translateX(2px)',
+                                                boxShadow: (theme) =>
+                                                    `0 6px 16px ${alpha(
+                                                        theme.palette.primary.main,
+                                                        0.15
+                                                    )}`,
+                                            },
+
+                                            '& .MuiButton-startIcon': {
+                                                mr: 2,
+                                            },
+
+                                            '& .MuiButton-endIcon': {
+                                                ml: 2,
+                                            },
                                         }}
                                     >
-                                        <Typography
+                                        <Box
                                             sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 1,
+                                                flex: 1,
+                                                textAlign: 'left',
                                                 overflow: 'hidden',
-                                                whiteSpace: 'nowrap',
                                             }}
                                         >
-                                            <Box
-                                                component="span"
+                                            <Typography
                                                 sx={{
-                                                    fontWeight: 600,
-                                                    color: 'text.primary',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 1,
                                                     overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    fontSize: '0.85rem',
+                                                    whiteSpace: 'nowrap',
                                                 }}
                                             >
-                                                {label}
-                                            </Box>
+                                                <Box
+                                                    component="span"
+                                                    sx={{
+                                                        fontWeight: 600,
+                                                        color: 'text.primary',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        fontSize: '0.85rem',
+                                                    }}
+                                                >
+                                                    {label}
+                                                </Box>
 
-                                            <Box
-                                                component="span"
-                                                sx={{
-                                                    color: 'text.secondary',
-                                                    fontFamily: 'monospace',
-                                                    fontSize: '0.75rem',
-                                                }}
-                                            >
-                                                {item.variable}
-                                            </Box>
-                                        </Typography>
-                                    </Box>
-                                </Button>
-                            );
-                        })}
-                    </Stack>
+                                                <Box
+                                                    component="span"
+                                                    sx={{
+                                                        color: 'text.secondary',
+                                                        fontFamily: 'monospace',
+                                                        fontSize: '0.75rem',
+                                                    }}
+                                                >
+                                                    {item.variable}
+                                                </Box>
+                                            </Typography>
+                                        </Box>
+                                    </Button>
+                                );
+                            })}
+                        </Stack>
                     </Card>
                 </Box>
             </Box>
