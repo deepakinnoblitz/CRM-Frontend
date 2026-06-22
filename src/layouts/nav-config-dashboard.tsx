@@ -6,6 +6,7 @@ import { FiUserPlus } from "react-icons/fi";
 import { GoTasklist } from "react-icons/go";
 import { RiAppsLine } from "react-icons/ri";
 import { RxCalendar } from "react-icons/rx";
+import { FaWhatsapp } from "react-icons/fa";
 import { FaUsersCog } from "react-icons/fa";
 import { MdContacts } from "react-icons/md";
 import { PiMoneyWavy } from "react-icons/pi";
@@ -449,6 +450,15 @@ export const crmAndSalesNavData = [
       { title: 'Email Campaigns', path: '/email-campaigns' },
       { title: 'Email Automations', path: '/email-automations' },
       { title: 'Email Settings', path: '/email-settings' },
+    ],
+  },
+    {
+    title: 'Whatsapp Automation',
+    path: '/whatsapp-templates',
+    icon: <FaWhatsapp size={22} />,
+    children: [
+      { title: 'Whatsapp Templates', path: '/whatsapp-templates' },
+      { title: 'Whatsapp Settings', path: '/whatsapp-settings' },
     ],
   },
   {

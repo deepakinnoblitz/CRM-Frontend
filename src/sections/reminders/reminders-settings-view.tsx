@@ -41,8 +41,8 @@ export const CustomSwitch = styled((props: SwitchProps) => (
   },
   '& .MuiSwitch-thumb': {
     boxSizing: 'border-box',
-    width: 20,
-    height: 20,
+    width: 19,
+    height: 19,
     boxShadow: '0 2px 4px 0 rgb(0 35 11 / 20%)',
   },
   '& .MuiSwitch-track': {

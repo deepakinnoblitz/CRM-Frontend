@@ -28,7 +28,10 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import InputAdornment from '@mui/material/InputAdornment';
 import TableContainer from '@mui/material/TableContainer';
+import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -41,25 +44,13 @@ import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchEmailTemplates } from 'src/api/email-template';
-import { updateEmailCampaign, getEmailCampaign, EmailCampaign, previewRecipients } from 'src/api/email-campaign';
+import { updateEmailCampaign, getEmailCampaign, EmailCampaign, previewRecipients, getFilterFields, getFilterValueOptions } from 'src/api/email-campaign';
 
 import { Iconify } from 'src/components/iconify';
 
 import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 
 // ----------------------------------------------------------------------
-
-const FILTER_FIELD_OPTIONS = [
-    { value: 'workflow_status', label: 'Workflow Status' },
-    { value: 'source', label: 'Source' },
-    { value: 'lead_name', label: 'Lead Name' },
-    { value: 'email', label: 'Email' },
-    { value: 'mobile_no', label: 'Mobile No' },
-    { value: 'city', label: 'City' },
-    { value: 'state', label: 'State' },
-    { value: 'country', label: 'Country' },
-    { value: 'owner', label: 'Owner' },
-];
 
 const FILTER_OPERATOR_OPTIONS = [
     { value: '=', label: '=' },
@@ -98,6 +89,8 @@ export function EmailCampaignsEditView() {
 
     const [templateOptions, setTemplateOptions] = useState<any[]>([]);
     const [filters, setFilters] = useState<any[]>([{ field_name: '', operator: '=', value: '' }]);
+    const [fieldOptions, setFieldOptions] = useState<{ value: string; label: string }[]>([]);
+    const [filterValueOptions, setFilterValueOptions] = useState<Record<number, string[]>>({});
 
     const TARGET_TYPE_OPTIONS = [
         { value: 'Lead', label: 'Lead' },
@@ -112,6 +105,7 @@ export function EmailCampaignsEditView() {
             console.error('Failed to fetch email templates:', err);
         });
     }, []);
+
 
     useEffect(() => {
         if (id) {
@@ -133,6 +127,39 @@ export function EmailCampaignsEditView() {
                 .finally(() => setFetching(false));
         }
     }, [id]);
+
+    useEffect(() => {
+        if (targetType) {
+            getFilterFields(targetType)
+                .then((fields) => {
+                    setFieldOptions(fields);
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch filter fields:', err);
+                });
+        } else {
+            setFieldOptions([]);
+        }
+    }, [targetType]);
+
+    useEffect(() => {
+        if (targetType && filters && filters.length > 0) {
+            filters.forEach(async (filter, idx) => {
+                if (filter.field_name && !filterValueOptions[idx]) {
+                    try {
+                        const opts = await getFilterValueOptions(targetType, filter.field_name);
+                        setFilterValueOptions(prev => ({
+                            ...prev,
+                            [idx]: opts || []
+                        }));
+                    } catch (err) {
+                        console.error(err);
+                    }
+                }
+            });
+        }
+    }, [targetType, filters]);
+
 
     const handleCloseSnackbar = () => {
         setSnackbar((prev) => ({ ...prev, open: false }));
@@ -209,22 +236,68 @@ export function EmailCampaignsEditView() {
     };
 
     const handleAddFilter = () => {
+        if (!targetType) {
+            enqueueSnackbar('Please select Target Type first', { variant: 'warning' });
+            return;
+        }
         setFilters([...filters, { field_name: '', operator: '=', value: '' }]);
     };
 
     const handleRemoveFilter = (index: number) => {
         setFilters(filters.filter((_, i) => i !== index));
+        setFilterValueOptions(prev => {
+            const updated = { ...prev };
+            delete updated[index];
+            const newOptions: Record<number, string[]> = {};
+            let newIdx = 0;
+            for (let i = 0; i < filters.length; i++) {
+                if (i !== index) {
+                    if (updated[i]) {
+                        newOptions[newIdx] = updated[i];
+                    }
+                    newIdx++;
+                }
+            }
+            return newOptions;
+        });
     };
 
-    const handleFilterChange = (index: number, field: string, value: string) => {
+    const handleFilterChange = async (index: number, field: string, value: string) => {
         const newFilters = [...filters];
         newFilters[index] = { ...newFilters[index], [field]: value };
-        setFilters(newFilters);
+        
+        if (field === 'field_name') {
+            newFilters[index].value = '';
+            setFilters(newFilters);
+            if (value && targetType) {
+                try {
+                    const options = await getFilterValueOptions(targetType, value);
+                    setFilterValueOptions(prev => ({
+                        ...prev,
+                        [index]: options || []
+                    }));
+                } catch (err) {
+                    console.error(err);
+                }
+            } else {
+                setFilterValueOptions(prev => {
+                    const updated = { ...prev };
+                    delete updated[index];
+                    return updated;
+                });
+            }
+        } else {
+            setFilters(newFilters);
+        }
     };
+
 
     const [previewOpen, setPreviewOpen] = useState(false);
     const [recipientPreview, setRecipientPreview] = useState<any[]>([]);
     const [totalRecipients, setTotalRecipients] = useState(0);
+    const [previewSearch, setPreviewSearch] = useState('');
+    const [previewPage, setPreviewPage] = useState(0);
+    const [previewRowsPerPage, setPreviewRowsPerPage] = useState(10);
 
     const handlePreviewRecipients = async () => {
         if (!targetType) {
@@ -258,6 +331,8 @@ export function EmailCampaignsEditView() {
 
             setTotalRecipients(result.count);
             setRecipientPreview(result.recipients);
+            setPreviewSearch('');
+            setPreviewPage(0);
             setPreviewOpen(true);
 
             enqueueSnackbar(
@@ -417,15 +492,15 @@ export function EmailCampaignsEditView() {
                 </Box>
                 <Box
                     sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 4,
-                    flexWrap: 'wrap',
-                    gap: 2,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mb: 2,
+                        flexWrap: 'wrap',
+                        gap: 2,
                     }}
                 >
-                    <Typography sx={{ ml: 1, mt: 5, fontWeight: 700, fontSize: 16 }}>
+                    <Typography sx={{ mb: 3, ml: 1, mt: 4, fontWeight: 700, fontSize: 16 }}>
                     Audience
                     </Typography>
 
@@ -434,16 +509,15 @@ export function EmailCampaignsEditView() {
                     onClick={handlePreviewRecipients}
                     startIcon={<CiCalculator2 size={24} />}
                     sx={{
-                        background: 'linear-gradient(135deg,#A855F7,#7C3AED)',
+                        background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
                         borderRadius: 3,
                         px: 2,
-                        py: 0.8,
-                        mt: 4,
+                        py: 0.6,
                         textTransform: 'none',
                         fontWeight: 600,
-                        boxShadow: '0 8px 20px rgba(124,58,237,.25)',
                         '&:hover': {
-                        background: 'linear-gradient(135deg,#9333EA,#6D28D9)',
+                            background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
+                            boxShadow: '0 8px 10px rgba(124,58,237,.25)',
                         },
                     }}
                     >
@@ -469,6 +543,8 @@ export function EmailCampaignsEditView() {
                         value={targetType}
                         onChange={(e) => {
                         setTargetType(e.target.value);
+                        setFilters([{ field_name: '', operator: '=', value: '' }]);
+                        setFilterValueOptions({});
 
                         if (e.target.value) {
                             setValidationErrors((prev) => ({
@@ -532,36 +608,31 @@ export function EmailCampaignsEditView() {
                         },
                     }}
                     >
-                    <TextField
-                        select
+                    <Autocomplete
                         size="small"
-                        value={filter.field_name}
-                        onChange={(e) =>
-                        handleFilterChange(
-                            index,
-                            'field_name',
-                            e.target.value
-                        )
-                        }
-                        sx={{
-                        '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                        },
+                        options={fieldOptions}
+                        getOptionLabel={(option) => option.label || option.value || ''}
+                        value={fieldOptions.find((opt) => opt.value === filter.field_name) || null}
+                        onChange={(_e, newValue) => {
+                            handleFilterChange(index, 'field_name', newValue?.value || '');
                         }}
-                    >
-                        <MenuItem value="">
-                        Select Field
-                        </MenuItem>
-
-                        {FILTER_FIELD_OPTIONS.map((option) => (
-                        <MenuItem
-                            key={option.value}
-                            value={option.value}
-                        >
-                            {option.label}
-                        </MenuItem>
-                        ))}
-                    </TextField>
+                        onOpen={() => {
+                            if (!targetType) {
+                                enqueueSnackbar('Please select Target Type first', { variant: 'warning' });
+                            }
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="Select Field"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 2,
+                                    },
+                                }}
+                            />
+                        )}
+                    />
 
                     <TextField
                         select
@@ -574,6 +645,11 @@ export function EmailCampaignsEditView() {
                             e.target.value
                         )
                         }
+                        onClick={() => {
+                            if (!targetType) {
+                                enqueueSnackbar('Please select Target Type first', { variant: 'warning' });
+                            }
+                        }}
                         sx={{
                         '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
@@ -590,23 +666,59 @@ export function EmailCampaignsEditView() {
                         ))}
                     </TextField>
 
-                    <TextField
-                        size="small"
-                        placeholder="Enter value"
-                        value={filter.value}
-                        onChange={(e) =>
-                        handleFilterChange(
-                            index,
-                            'value',
-                            e.target.value
-                        )
-                        }
-                        sx={{
-                        '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                        },
-                        }}
-                    />
+                    {filterValueOptions[index] && filterValueOptions[index].length > 0 ? (
+                        <Autocomplete
+                            fullWidth
+                            size="small"
+                            options={filterValueOptions[index]}
+                            value={filter.value || ''}
+                            onChange={(_e, newValue) => {
+                                handleFilterChange(index, 'value', newValue || '');
+                            }}
+                            onOpen={() => {
+                                if (!targetType) {
+                                    enqueueSnackbar('Please select Target Type first', { variant: 'warning' });
+                                }
+                            }}
+                            freeSolo
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder="Enter or select value"
+                                    onChange={(e) => handleFilterChange(index, 'value', e.target.value)}
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 2,
+                                        },
+                                    }}
+                                />
+                            )}
+                        />
+                    ) : (
+                        <TextField
+                            size="small"
+                            placeholder="Enter value"
+                            value={filter.value}
+                            onClick={() => {
+                                if (!targetType) {
+                                    enqueueSnackbar('Please select Target Type first', { variant: 'warning' });
+                                }
+                            }}
+                            onChange={(e) =>
+                            handleFilterChange(
+                                index,
+                                'value',
+                                e.target.value
+                            )
+                            }
+                            sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                            },
+                            }}
+                        />
+                    )}
+
 
                     <IconButton
                         color="error"
@@ -627,20 +739,16 @@ export function EmailCampaignsEditView() {
                     }
                     onClick={handleAddFilter}
                     sx={{
-                    mt: 1,
-                    background:
-                        'linear-gradient(135deg,#A855F7,#7C3AED)',
-                    borderRadius: 3,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    px: 2,
-                    py: 0.8,
-                    boxShadow:
-                        '0 8px 20px rgba(124,58,237,.25)',
-                    '&:hover': {
-                        background:
-                        'linear-gradient(135deg,#9333EA,#6D28D9)',
-                    },
+                        background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
+                        borderRadius: 3,
+                        px: 1.5,
+                        py: 0.6,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        '&:hover': {
+                            background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
+                            boxShadow: '0 8px 10px rgba(124,58,237,.25)',
+                        },
                     }}
                 >
                     Add Filter
@@ -771,8 +879,26 @@ export function EmailCampaignsEditView() {
                     </Box>
                 </DialogTitle>
 
-                <DialogContent sx={{ p: 0 }}>
-                    <TableContainer>
+                <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column', minHeight: 450 }}>
+                    <Box sx={{ p: 2.5, display: 'flex', justifyContent: 'flex-start' }}>
+                        <OutlinedInput
+                            size="small"
+                            placeholder="Search recipient..."
+                            value={previewSearch}
+                            onChange={(e: any) => {
+                                setPreviewSearch(e.target.value);
+                                setPreviewPage(0);
+                            }}
+                            startAdornment={
+                                <InputAdornment position="start">
+                                    <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                                </InputAdornment>
+                            }
+                            sx={{ width: 320 }}
+                        />
+                    </Box>
+
+                    <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
                         <Table>
                             <TableHead>
                                 <TableRow
@@ -788,6 +914,7 @@ export function EmailCampaignsEditView() {
                                         sx={{
                                             fontWeight: 700,
                                             py: 2,
+                                            pl: 4,
                                         }}
                                     >
                                         S.No
@@ -812,7 +939,12 @@ export function EmailCampaignsEditView() {
                             </TableHead>
 
                             <TableBody>
-                                {recipientPreview.length === 0 ? (
+                                {recipientPreview.filter((r) => {
+                                    const name = (r.name || '').toLowerCase();
+                                    const email = (r.email || '').toLowerCase();
+                                    const search = previewSearch.toLowerCase();
+                                    return name.includes(search) || email.includes(search);
+                                }).length === 0 ? (
                                     <TableRow>
                                         <TableCell
                                             colSpan={3}
@@ -828,17 +960,46 @@ export function EmailCampaignsEditView() {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    recipientPreview.map(
-                                        (row, index) => (
+                                    recipientPreview
+                                        .filter((r) => {
+                                            const name = (r.name || '').toLowerCase();
+                                            const email = (r.email || '').toLowerCase();
+                                            const search = previewSearch.toLowerCase();
+                                            return name.includes(search) || email.includes(search);
+                                        })
+                                        .slice(
+                                            previewPage * previewRowsPerPage,
+                                            previewPage * previewRowsPerPage + previewRowsPerPage
+                                        )
+                                        .map((row, index) => (
                                             <TableRow
                                                 key={index}
                                                 hover
                                             >
                                                 <TableCell>
                                                     <Typography
-                                                        fontWeight={600}
+                                                        sx={{
+                                                            width: 28,
+                                                            height: 28,
+                                                            display: 'flex',
+                                                            borderRadius: '50%',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                            color: 'primary.main',
+                                                            typography: 'subtitle2',
+                                                            fontWeight: 800,
+                                                            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                                                            ml: 2,
+                                                            transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+                                                            '&:hover': {
+                                                                bgcolor: 'primary.main',
+                                                                color: 'primary.contrastText',
+                                                                transform: 'scale(1.1)',
+                                                            },
+                                                        }}
                                                     >
-                                                        {index + 1}
+                                                        {previewPage * previewRowsPerPage + index + 1}
                                                     </Typography>
                                                 </TableCell>
 
@@ -858,12 +1019,31 @@ export function EmailCampaignsEditView() {
                                                     </Typography>
                                                 </TableCell>
                                             </TableRow>
-                                        )
-                                    )
+                                        ))
                                 )}
                             </TableBody>
                         </Table>
                     </TableContainer>
+
+                    <TablePagination
+                        rowsPerPageOptions={[5, 10, 25]}
+                        component="div"
+                        count={
+                            recipientPreview.filter((r) => {
+                                const name = (r.name || '').toLowerCase();
+                                const email = (r.email || '').toLowerCase();
+                                const search = previewSearch.toLowerCase();
+                                return name.includes(search) || email.includes(search);
+                            }).length
+                        }
+                        rowsPerPage={previewRowsPerPage}
+                        page={previewPage}
+                        onPageChange={(_e: any, newPage: number) => setPreviewPage(newPage)}
+                        onRowsPerPageChange={(e: any) => {
+                            setPreviewRowsPerPage(parseInt(e.target.value, 10));
+                            setPreviewPage(0);
+                        }}
+                    />
                 </DialogContent>
             </Dialog>
 

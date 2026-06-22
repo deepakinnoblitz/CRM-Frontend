@@ -429,7 +429,19 @@ export function EmailAutomationsCreateView() {
                             <Button 
                                 startIcon={<Iconify icon={"mingcute:add-line" as any} />}
                                 onClick={() => setFilters([...filters, { field_name: '', operator: '=', value: '' }])}
-                                sx={{ alignSelf: 'flex-start' }}
+                                sx={{ alignSelf: 'flex-start',
+                                    background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
+                                    borderRadius: 3,
+                                    px: 2,
+                                    py: 0.6,
+                                    textTransform: 'none',
+                                    fontWeight: 600,
+                                    color: 'white',
+                                    '&:hover': {
+                                        background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
+                                        boxShadow: '0 8px 10px rgba(124,58,237,.25)',
+                                    }
+                                }}
                             >
                                 Add Row
                             </Button>
