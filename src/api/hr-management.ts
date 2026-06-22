@@ -13,6 +13,7 @@ export async function fetchFrappeList(doctype: string, params: {
     orderBy?: string;
     order?: 'asc' | 'desc';
     unread_messages?: boolean;
+    unread_only?: boolean;
 }) {
     const filters: any[] = params.filters || [];
 
@@ -51,6 +52,10 @@ export async function fetchFrappeList(doctype: string, params: {
     if (params.unread_messages) {
         query.append('unread_messages', 'true');
     }
+    if (params.unread_only) {
+        query.append('unread_only', 'true');
+    }
+
 
     const fullUrl = `/api/method/frappe.client.get_list?${query.toString()}`;
     console.log(`[API] Fetching ${doctype}: ${fullUrl}`);

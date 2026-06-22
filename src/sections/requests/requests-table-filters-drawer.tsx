@@ -5,17 +5,56 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import Switch from '@mui/material/Switch';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Autocomplete from '@mui/material/Autocomplete';
+import { styled } from '@mui/material/styles';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import type { SwitchProps } from '@mui/material/Switch';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+
+// Custom pill-style toggle matching Reminder settings
+const UnreadSwitch = styled((props: SwitchProps) => (
+    <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
+))(({ theme }) => ({
+    width: 46,
+    height: 26,
+    padding: 0,
+    '& .MuiSwitch-switchBase': {
+        padding: 0,
+        margin: 3,
+        transitionDuration: '250ms',
+        transition: theme.transitions.create(['transform'], { easing: 'ease', duration: 250 }),
+        '&.Mui-checked': {
+            transform: 'translateX(20px)',
+            color: '#fff',
+            '& + .MuiSwitch-track': {
+                backgroundColor: '#00b4d8',
+                opacity: 1,
+                border: 0,
+            },
+        },
+    },
+    '& .MuiSwitch-thumb': {
+        boxSizing: 'border-box',
+        width: 20,
+        height: 20,
+        boxShadow: 'none',
+    },
+    '& .MuiSwitch-track': {
+        borderRadius: 26 / 2,
+        backgroundColor: '#d1d5db',
+        opacity: 1,
+        transition: theme.transitions.create(['background-color'], { duration: 250 }),
+    },
+}));
 
 // ----------------------------------------------------------------------
 
@@ -24,6 +63,7 @@ type FiltersProps = {
     status: string;
     startDate: string | null;
     endDate: string | null;
+    unread_messages: boolean;
 };
 
 type Props = {
@@ -228,6 +268,20 @@ export function RequestsTableFiltersDrawer({
         </Stack>
     );
 
+    const renderUnreadMessages = (
+        <Stack spacing={1.5}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                    Unread Messages
+                </Typography>
+                <UnreadSwitch
+                    checked={filters.unread_messages}
+                    onChange={(e) => onFilters({ unread_messages: e.target.checked })}
+                />
+            </Box>
+        </Stack>
+    );
+
     return (
         <Drawer
             anchor="right"
@@ -252,6 +306,7 @@ export function RequestsTableFiltersDrawer({
                     {isHR && renderEmployee}
                     {renderStatus}
                     {renderDateRange}
+                    {isHR && renderUnreadMessages}
                 </Stack>
             </Scrollbar>
 
@@ -291,3 +346,5 @@ export function RequestsTableFiltersDrawer({
         </Drawer>
     );
 }
+
+
