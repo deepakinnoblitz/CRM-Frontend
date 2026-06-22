@@ -453,12 +453,13 @@ export const crmAndSalesNavData = [
     ],
   },
     {
-    title: 'Whatsapp Automation',
+    title: 'WhatsApp Automation',
     path: '/whatsapp-templates',
     icon: <FaWhatsapp size={22} />,
     children: [
-      { title: 'Whatsapp Templates', path: '/whatsapp-templates' },
-      { title: 'Whatsapp Settings', path: '/whatsapp-settings' },
+      { title: 'WhatsApp Templates', path: '/whatsapp-templates' },
+      { title: 'WhatsApp Automation', path: '/whatsapp-automation' },
+      { title: 'WhatsApp Settings', path: '/whatsapp-settings' },
     ],
   },
   {
