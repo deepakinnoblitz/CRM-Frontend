@@ -12,6 +12,7 @@ export async function fetchFrappeList(doctype: string, params: {
     fields?: string[];
     orderBy?: string;
     order?: 'asc' | 'desc';
+    unread_messages?: boolean;
 }) {
     const filters: any[] = params.filters || [];
 
@@ -47,13 +48,17 @@ export async function fetchFrappeList(doctype: string, params: {
         _: String(Date.now())
     });
 
+    if (params.unread_messages) {
+        query.append('unread_messages', 'true');
+    }
+
     const fullUrl = `/api/method/frappe.client.get_list?${query.toString()}`;
     console.log(`[API] Fetching ${doctype}: ${fullUrl}`);
 
     // Fetch data and count in parallel
     const [res, countRes] = await Promise.all([
         frappeRequest(fullUrl),
-        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=${doctype}&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${params.or_filters ? encodeURIComponent(JSON.stringify(params.or_filters)) : "[]"}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=${doctype}&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${params.or_filters ? encodeURIComponent(JSON.stringify(params.or_filters)) : "[]"}${params.unread_messages ? '&unread_messages=true' : ''}`)
     ]);
 
     if (!res.ok) {

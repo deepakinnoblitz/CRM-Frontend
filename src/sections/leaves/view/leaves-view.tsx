@@ -87,12 +87,14 @@ export function LeavesView() {
         employee: string | null;
         startDate: string | null;
         endDate: string | null;
+        unread_messages: boolean;
     }>({
         status: 'all',
         leave_type: 'all',
         employee: null,
         startDate: null,
         endDate: null,
+        unread_messages: false,
     });
 
     const [openCreate, setOpenCreate] = useState(false);
@@ -146,6 +148,7 @@ export function LeavesView() {
             ...(filters.leave_type !== 'all' ? { leave_type: filters.leave_type } : {}),
             ...(filters.startDate ? { start_date: filters.startDate } : {}),
             ...(filters.endDate ? { end_date: filters.endDate } : {}),
+            ...(filters.unread_messages ? { unread_messages: true } : {}),
         },
         orderBy,
         order,
@@ -426,6 +429,7 @@ export function LeavesView() {
             employee: null,
             startDate: null,
             endDate: null,
+            unread_messages: false,
         });
         setFilterName('');
     };
@@ -438,7 +442,7 @@ export function LeavesView() {
         setOpenFilters(false);
     };
 
-    const canReset = filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== null || filters.startDate !== null || filters.endDate !== null || !!filterName;
+    const canReset = filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== null || filters.startDate !== null || filters.endDate !== null || filters.unread_messages || !!filterName;
 
     const onChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);
