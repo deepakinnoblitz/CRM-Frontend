@@ -245,6 +245,11 @@ export function JobApplicantsView() {
   };
 
   const handleSubmit = async () => {
+
+    if (!validateForm()) {
+        return;
+    }
+
     try {
       if (editApplicant) {
         await updateJobApplicant(editApplicant.name, formData);
@@ -326,6 +331,41 @@ export function JobApplicantsView() {
   const notFound = !loading && !data.length && !!filterName;
   const empty = !loading && !data.length && !filterName;
 
+  const [errors, setErrors] = useState({
+    applicant_name: '',
+    email_id: '',
+    resume_attachment: '',
+  });
+
+  const validateForm = () => {
+    const newErrors = {
+      applicant_name: '',
+      email_id: '',
+      resume_attachment: '',
+    };
+
+    let valid = true;
+
+    if (!formData.applicant_name?.trim()) {
+      newErrors.applicant_name = 'Applicant Name is required';
+      valid = false;
+    }
+
+    if (!formData.email_id?.trim()) {
+      newErrors.email_id = 'Email ID is required';
+      valid = false;
+    }
+
+    if (!formData.resume_attachment?.trim()) {
+      newErrors.resume_attachment = 'Resume Attachment is required';
+      valid = false;
+    }
+
+    setErrors(newErrors);
+
+    return valid;
+  };
+
   return (
     <DashboardContent maxWidth={false}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5, mt: 3 }}>
@@ -400,6 +440,7 @@ export function JobApplicantsView() {
                           phone_number: row.phone_number,
                           job_title: row.job_title,
                           status: row.status,
+                          modified: row.modified
                         }}
                         selected={selected.includes(row.name)}
                         onSelectRow={() => handleSelectRow(row.name)}
@@ -493,14 +534,42 @@ export function JobApplicantsView() {
                 fullWidth
                 label="Applicant Name"
                 value={formData.applicant_name}
-                onChange={(e) => setFormData({ ...formData, applicant_name: e.target.value })}
+                onChange={(e) => {
+                    setFormData({
+                        ...formData,
+                        applicant_name: e.target.value,
+                    });
+
+                    if (errors.applicant_name) {
+                        setErrors({
+                            ...errors,
+                            applicant_name: '',
+                        });
+                    }
+                }}
+                error={!!errors.applicant_name}
+                helperText={errors.applicant_name}
                 required
               />
               <TextField
                 fullWidth
                 label="Email ID"
                 value={formData.email_id}
-                onChange={(e) => setFormData({ ...formData, email_id: e.target.value })}
+                onChange={(e) => {
+                    setFormData({
+                        ...formData,
+                        email_id: e.target.value,
+                    });
+
+                    if (errors.email_id) {
+                        setErrors({
+                            ...errors,
+                            email_id: '',
+                        });
+                    }
+                }}
+                error={!!errors.email_id}
+                helperText={errors.email_id}
                 required
               />
               <TextField
@@ -558,9 +627,26 @@ export function JobApplicantsView() {
                 fullWidth
                 label="Resume Attachment"
                 value={formData.resume_attachment}
-                onChange={(e) => setFormData({ ...formData, resume_attachment: e.target.value })}
+                required
+                onChange={(e) => {
+                setFormData({
+                        ...formData,
+                        resume_attachment: e.target.value,
+                    });
+
+                    if (errors.resume_attachment) {
+                        setErrors({
+                            ...errors,
+                            resume_attachment: '',
+                        });
+                    }
+                }}
+                error={!!errors.resume_attachment}
+                helperText={
+                    errors.resume_attachment ||
+                    'For now, please provide the URL of the uploaded resume.'
+                }
                 placeholder="File URL"
-                helperText="For now, please provide the URL of the uploaded resume."
               />
 
               <TextField

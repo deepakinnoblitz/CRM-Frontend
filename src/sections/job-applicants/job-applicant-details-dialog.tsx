@@ -1,7 +1,4 @@
-import { GrUserWorker } from "react-icons/gr";
 import { AiOutlineDownload } from "react-icons/ai";
-import { MdOutlineWorkOutline } from "react-icons/md";
-import { MdOutlineAddLocationAlt } from "react-icons/md";
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
@@ -97,31 +94,31 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
                     <Typography variant="h5" sx={{ mb: 2, fontWeight: 800, color: '#1c252e' }}>
                         {applicant.applicant_name}
                     </Typography>
-                    <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <MdOutlineWorkOutline size={14} style={{ color: '#007bff', flexShrink: 0 }} />
-                            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 700, lineHeight: 1 }}>
+                    <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ mt: 1 }}>
+                        <Stack direction="row" alignItems="center" spacing={0.75}>
+                            <Iconify icon={"solar:briefcase-bold" as any} width={16} sx={{ color: 'primary.main', flexShrink: 0 }} />
+                            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 700 }}>
                                 {applicant.job_title || 'No Job Assigned'}
                             </Typography>
-                        </Box>
+                        </Stack>
 
-                        <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 700, lineHeight: 1 }}>•</Typography>
+                        <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'text.disabled', flexShrink: 0 }} />
 
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <GrUserWorker size={14} style={{ color: '#007bff', flexShrink: 0 }} />
-                            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 700, lineHeight: 1 }}>
+                        <Stack direction="row" alignItems="center" spacing={0.75}>
+                            <Iconify icon="solar:user-id-bold" width={16} sx={{ color: 'primary.main', flexShrink: 0 }} />
+                            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 700 }}>
                                 {applicant.designation || 'No Designation'}
                             </Typography>
-                        </Box>
+                        </Stack>
 
-                        <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 700, lineHeight: 1 }}>•</Typography>
+                        <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'text.disabled', flexShrink: 0 }} />
 
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <MdOutlineAddLocationAlt size={14} style={{ color: '#007bff', flexShrink: 0 }} />
-                            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 700, lineHeight: 1 }}>
+                        <Stack direction="row" alignItems="center" spacing={0.75}>
+                            <Iconify icon="solar:map-point-bold" width={16} sx={{ color: 'primary.main', flexShrink: 0 }} />
+                            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 700 }}>
                                 {applicant.city || applicant.state || applicant.country || 'Location N/A'}
                             </Typography>
-                        </Box>
+                        </Stack>
                     </Stack>
                 </Box>
                 <StatusLabel status={applicant.status} />

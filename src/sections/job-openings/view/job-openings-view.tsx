@@ -44,6 +44,7 @@ import {
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from 'src/sections/lead/table-no-data';
 import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
@@ -215,16 +216,6 @@ export function JobOpeningsView() {
         }
     }, []);
 
-    const handleDeleteRow = useCallback(async (name: string) => {
-        try {
-            await deleteJobOpening(name);
-            setSnackbar({ open: true, message: 'Deleted successfully', severity: 'success' });
-            refetch();
-        } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Delete failed', severity: 'error' });
-        }
-    }, [refetch]);
-
     const handleBulkDelete = async () => {
         try {
             await Promise.all(selected.map((name) => deleteJobOpening(name)));
@@ -237,6 +228,10 @@ export function JobOpeningsView() {
     };
 
     const handleSubmit = async () => {
+        if (!validateForm()) {
+            return;
+        }
+
         try {
             if (editJob) {
                 await updateJobOpening(editJob.name, formData);
@@ -305,6 +300,81 @@ export function JobOpeningsView() {
     };
 
     const notFound = !loading && !data.length && !!filterName;
+
+    const [errors, setErrors] = useState({
+    job_title: '',
+    designation: '',
+    location: '',
+    experience: '',
+    });
+
+    const validateForm = () => {
+        const newErrors = {
+            job_title: '',
+            designation: '',
+            location: '',
+            experience: '',
+        };
+
+        let valid = true;
+
+        if (!formData.job_title?.trim()) {
+            newErrors.job_title = 'Job Title is required';
+            valid = false;
+        }
+
+        if (!formData.designation?.trim()) {
+            newErrors.designation = 'Designation is required';
+            valid = false;
+        }
+
+        if (!formData.location?.trim()) {
+            newErrors.location = 'Location is required';
+            valid = false;
+        }
+
+        if (!formData.experience?.trim()) {
+            newErrors.experience = 'Experience is required';
+            valid = false;
+        }
+
+        setErrors(newErrors);
+
+        return valid;
+    };
+
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [deleteJobName, setDeleteJobName] = useState<string | null>(null);
+
+    const handleDeleteRow = useCallback((name: string) => {
+            setDeleteJobName(name);
+            setConfirmDelete(true);
+        }, []);
+
+        const handleConfirmDelete = async () => {
+        if (!deleteJobName) return;
+
+        try {
+            await deleteJobOpening(deleteJobName);
+
+            setSnackbar({
+                open: true,
+                message: 'Job Opening deleted successfully',
+                severity: 'success',
+            });
+
+            refetch();
+        } catch (error: any) {
+            setSnackbar({
+                open: true,
+                message: error.message || 'Delete failed',
+                severity: 'error',
+            });
+        } finally {
+            setConfirmDelete(false);
+            setDeleteJobName(null);
+        }
+    };
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -468,23 +538,51 @@ export function JobOpeningsView() {
                 </DialogTitle>
                 <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <Stack spacing={3} sx={{ mt: 2 }}>
+                        <Stack spacing={3} sx={{ mt: 3.5 }}>
                             <TextField
                                 fullWidth
                                 label="Job Title"
+                                required
                                 value={formData.job_title}
-                                onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
+                                onChange={(e) => {
+                                    setFormData({ ...formData, job_title: e.target.value });
+
+                                    if (errors.job_title) {
+                                    setErrors({ ...errors, job_title: '' });
+                                    }
+                                }}
+                                error={!!errors.job_title}
+                                helperText={errors.job_title}
                             />
                             <Autocomplete
                                 fullWidth
                                 options={designations}
                                 value={formData.designation || ''}
                                 onChange={(event, newValue: any) => {
-                                    if (newValue?.isNew || newValue === 'Create Designation' || newValue?.name === 'Create Designation') {
+                                    if (
+                                        newValue?.isNew ||
+                                        newValue === 'Create Designation' ||
+                                        newValue?.name === 'Create Designation'
+                                    ) {
                                         setOpenDesignationCreate(true);
-                                    } else {
-                                        const value = typeof newValue === 'object' && newValue?.name ? newValue.name : newValue;
-                                        setFormData({ ...formData, designation: value || '' });
+                                        return;
+                                    }
+
+                                    const value =
+                                        typeof newValue === 'object'
+                                            ? newValue?.name || ''
+                                            : newValue || '';
+
+                                    setFormData((prev: any) => ({
+                                        ...prev,
+                                        designation: value,
+                                    }));
+
+                                    if (value.trim()) {
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            designation: '',
+                                        }));
                                     }
                                 }}
                                 filterOptions={(options, params) => {
@@ -540,8 +638,11 @@ export function JobOpeningsView() {
                                     <TextField
                                         {...params}
                                         label="Designation"
+                                        required
                                         placeholder="Manager, Developer, etc."
                                         InputLabelProps={{ shrink: true }}
+                                        error={!!errors.designation}
+                                        helperText={errors.designation}
                                     />
                                 )}
                                 freeSolo
@@ -576,14 +677,32 @@ export function JobOpeningsView() {
                                 <TextField
                                     fullWidth
                                     label="Location"
+                                    required
                                     value={formData.location}
-                                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, location: e.target.value });
+
+                                        if (errors.location) {
+                                        setErrors({ ...errors, location: '' });
+                                        }
+                                    }}
+                                    error={!!errors.location}
+                                    helperText={errors.location}
                                 />
                                 <TextField
                                     fullWidth
                                     label="Experience"
+                                    required
                                     value={formData.experience}
-                                    onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, experience: e.target.value });
+
+                                        if (errors.experience) {
+                                        setErrors({ ...errors, experience: '' });
+                                        }
+                                    }}
+                                    error={!!errors.experience}
+                                    helperText={errors.experience}
                                     placeholder="2-4 Years"
                                 />
                             </Stack>
@@ -637,6 +756,26 @@ export function JobOpeningsView() {
                 open={openView}
                 onClose={() => setOpenView(false)}
                 job={viewJob}
+            />
+
+            {/* Confirm Delete Dialog */}
+            <ConfirmDialog
+                open={confirmDelete}
+                onClose={() => {
+                    setConfirmDelete(false);
+                    setDeleteJobName(null);
+                }}
+                title="Delete Job Opening"
+                content="Are you sure you want to delete this Job Opening?"
+                action={
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleConfirmDelete}
+                    >
+                        Delete
+                    </Button>
+                }
             />
 
             <Snackbar
