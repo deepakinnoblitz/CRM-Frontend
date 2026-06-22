@@ -12,7 +12,8 @@ export function useRequests(
     endDate?: string,
     status?: string,
     employee?: string,
-    socket?: any
+    socket?: any,
+    unread_messages?: boolean
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
@@ -30,7 +31,8 @@ export function useRequests(
                 startDate,
                 endDate,
                 status,
-                employee
+                employee,
+                unread_messages
             });
             setData(result.data);
             setTotal(result.total);
@@ -39,7 +41,7 @@ export function useRequests(
         } finally {
             if (!isSilent) setLoading(false);
         }
-    }, [page, pageSize, search, orderBy, order, startDate, endDate, status, employee]);
+    }, [page, pageSize, search, orderBy, order, startDate, endDate, status, employee, unread_messages]);
 
     useEffect(() => {
         refetch();

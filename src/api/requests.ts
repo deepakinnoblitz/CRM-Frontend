@@ -48,10 +48,13 @@ export const fetchRequests = (params: any) => {
         or_filters.push(['Request', 'employee_id', 'like', `%${params.search}%`]);
     }
 
+    const unread_messages = params.unread_messages;
+
     return fetchFrappeList("Request", {
         ...params,
         filters: filters.length > 0 ? filters : undefined,
-        or_filters: or_filters.length > 0 ? or_filters : undefined
+        or_filters: or_filters.length > 0 ? or_filters : undefined,
+        ...(unread_messages ? { unread_messages: true } : {})
     });
 };
 

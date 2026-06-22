@@ -77,6 +77,10 @@ export function DashboardLayout({
 
   const { navData } = useMemo(() => {
     const result = getNavData(user?.roles, view, settings);
+    const userRole: "hr" | "admin" | "" = user?.roles?.some(r => ['hr'].includes(r.toLowerCase()))
+        ? 'hr'
+        : (user?.roles?.some(r => ['admin', 'system manager', 'administrator'].includes(r.toLowerCase())) ? 'admin' : '');
+    const isHR = userRole === "hr" || userRole === "admin";
 
     // Inject unread counts into navData
     result.navData.forEach((item: any) => {
@@ -142,7 +146,7 @@ export function DashboardLayout({
           </Label>
         );
       }
-      if ((item.title === 'Asset Requests' || item.title === 'My Asset Requests') && unreadCounts.counts['Asset Request'] > 0) {
+      if (isHR && (item.title === 'Asset Requests' || item.title === 'My Asset Requests') && unreadCounts.counts['Asset Request'] > 0) {
         item.info = (
           <Label
             color="error"
@@ -242,7 +246,7 @@ export function DashboardLayout({
             );
             groupCount += unreadCounts.counts['Reimbursement Claim'];
           }
-          if ((child.title === 'Asset Requests' || child.title === 'My Asset Requests') && unreadCounts.counts['Asset Request'] > 0) {
+          if (isHR && (child.title === 'Asset Requests' || child.title === 'My Asset Requests') && unreadCounts.counts['Asset Request'] > 0) {
             child.info = (
               <Label
                 color="error"

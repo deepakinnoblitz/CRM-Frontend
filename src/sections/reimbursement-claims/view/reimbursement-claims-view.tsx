@@ -97,6 +97,11 @@ const Android12Switch = styled(Switch)(({ theme }) => ({
 
 export function ReimbursementClaimsView() {
     const { user } = useAuth();
+    const userRole: "hr" | "admin" | "" = user?.roles?.some(r => ['hr', 'hr manager', 'hr user', 'accounts manager'].includes(r.toLowerCase()))
+        ? 'hr'
+        : (user?.roles?.some(r => ['admin', 'system manager', 'administrator'].includes(r.toLowerCase())) ? 'admin' : '');
+    const isHR = userRole === "hr" || userRole === "admin";
+
     const { socket, subscribeToRoom } = useSocket(user?.email);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -114,19 +119,22 @@ export function ReimbursementClaimsView() {
         paid: 'all',
         claim_type: 'all',
         startDate: null as string | null,
-        endDate: null as string | null
+        endDate: null as string | null,
+        unreadOnly: false
     });
-
-    const isHR = user?.roles.some((role: string) =>
-        ['HR Manager', 'HR User', 'HR', 'System Manager', 'Administrator', 'Accounts Manager'].includes(role)
-    );
 
     const effectiveEmployee = isHR ? (filters.employee || 'all') : (user?.employee || 'all');
 
-    const claimsFilters = useMemo(() => ({
-        ...filters,
-        employee: effectiveEmployee,
-    }), [filters, isHR, effectiveEmployee]);
+    const claimsFilters = useMemo(() => {
+        const eff: any = {
+            ...filters,
+            employee: effectiveEmployee,
+        };
+        if (isHR && filters.unreadOnly) {
+            eff.unread_only = true;
+        }
+        return eff;
+    }, [filters, isHR, effectiveEmployee]);
 
     const { data, total, loading, refetch } = useReimbursementClaims(
         page + 1,
@@ -517,8 +525,12 @@ export function ReimbursementClaimsView() {
         }
     };
 
-    const handleFilters = (newFilters: Partial<typeof filters>) => {
-        setFilters((prev) => ({ ...prev, ...newFilters }));
+    const handleFilters = (newFilters: any, value?: any) => {
+        if (typeof newFilters === 'string') {
+            setFilters((prev) => ({ ...prev, [newFilters]: value }));
+        } else {
+            setFilters((prev) => ({ ...prev, ...newFilters }));
+        }
         setPage(0);
     };
 
@@ -528,12 +540,13 @@ export function ReimbursementClaimsView() {
             paid: 'all',
             claim_type: 'all',
             startDate: null,
-            endDate: null
+            endDate: null,
+            unreadOnly: false
         });
         setPage(0);
     };
 
-    const canReset = filters.employee !== null || filters.paid !== 'all' || filters.claim_type !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
+    const canReset = filters.employee !== null || filters.paid !== 'all' || filters.claim_type !== 'all' || filters.startDate !== null || filters.endDate !== null || filters.unreadOnly || !!filterName;
 
     const handleSortChange = (value: string) => {
         if (value === 'newest') { setOrderBy('modified'); setOrder('desc'); }
