@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ImAttachment } from "react-icons/im";
 import { HiOutlineDocumentText } from 'react-icons/hi2';
 import { useParams, useNavigate } from 'react-router-dom';
 import { IoMdArrowBack, IoMdCreate, IoMdDocument } from 'react-icons/io';
@@ -143,15 +144,15 @@ export function WhatsAppTemplateDetailsView() {
                         }}
                     >
                         <Stack spacing={0.5}>
-                            <Typography variant="caption" color="text.secondary">Template Name</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13, fontWeight: 600 }}>Template Name</Typography>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>{template_name || '-'}</Typography>
                         </Stack>
                         <Stack spacing={0.5}>
-                            <Typography variant="caption" color="text.secondary">Category</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13, fontWeight: 600 }}>Category</Typography>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>{category || '-'}</Typography>
                         </Stack>
                         <Stack spacing={0.5}>
-                            <Typography variant="caption" color="text.secondary">Status</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13, fontWeight: 600 }}>Status</Typography>
                             <Box>
                                 <Chip
                                     label={status || 'Draft'}
@@ -168,7 +169,7 @@ export function WhatsAppTemplateDetailsView() {
                             </Box>
                         </Stack>
                         <Stack spacing={0.5}>
-                            <Typography variant="caption" color="text.secondary">Used For</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13, fontWeight: 600 }}>Used For</Typography>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>{used_for || '-'}</Typography>
                         </Stack>
                     </Box>
@@ -258,8 +259,9 @@ export function WhatsAppTemplateDetailsView() {
                 {/* Attachments Card */}
                 <Card sx={{ p: 3 }}>
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary', mb: 3 }}>
+                        <ImAttachment size={18} />
                         <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                            📎 Attachments
+                            Attachments
                         </Typography>
                     </Stack>
 
