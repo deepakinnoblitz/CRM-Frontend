@@ -61,7 +61,7 @@ function DetailItem({ icon, iconColor, label, value, isLink, href }: { icon: str
                 <Iconify icon={icon as any} width={22} sx={{ color: iconColor }} />
             </Box>
             <Box sx={{ minWidth: 0 }}>
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block' }}>{label}</Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block' }}>{label}</Typography>
                 {isLink && typeof value === 'string' ? (
                     <Link href={href} color="primary" variant="body2" sx={{ fontWeight: 800, mt: 0.1, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
                         {value}
@@ -136,12 +136,12 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
                 px: 1,
             }}
         >
-            <DetailItem icon="solar:letter-bold" iconColor="#6366f1" label="Email" value={applicant.email_id} />
-            <DetailItem icon="solar:phone-bold" iconColor="#10b981" label="Phone" value={applicant.phone_number || '-'} />
-            <DetailItem icon="solar:share-bold" iconColor="#f59e0b" label="Source" value={applicant.source || '-'} />
+            <DetailItem icon="solar:letter-bold" iconColor="#08a3cd" label="Email" value={applicant.email_id} />
+            <DetailItem icon="solar:phone-bold" iconColor="#08a3cd" label="Phone" value={applicant.phone_number || '-'} />
+            <DetailItem icon="solar:share-bold" iconColor="#08a3cd" label="Source" value={applicant.source || '-'} />
             <DetailItem
                 icon="solar:wad-of-money-bold"
-                iconColor="#8b5cf6"
+                iconColor="#08a3cd"
                 label="Expected Salary"
                 value={
                     applicant.lower_range ? (
@@ -169,7 +169,7 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
 
             <Box sx={{ display: 'grid', gap: 3.5, px: 1 }}>
                 <Box>
-                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', display: 'block', mb: 1.5 }}>
+                    <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, textTransform: 'uppercase', display: 'block', mb: 1.5 }}>
                         Cover Letter
                     </Typography>
                     <Box sx={{ p: 2.5, bgcolor: '#f4f6f8', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
@@ -181,7 +181,7 @@ export function JobApplicantDetailsDialog({ open, onClose, applicant }: Props) {
 
                 {(applicant.resume_attachment || applicant.resume_link) && (
                     <Box>
-                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', display: 'block', mb: 1.5 }}>
+                        <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, textTransform: 'uppercase', display: 'block', mb: 1.5 }}>
                             Resume / Portfolio
                         </Typography>
                         <Stack direction="row" spacing={2}>
