@@ -135,13 +135,21 @@ export async function createEmailTemplate(data: Partial<EmailTemplate>) {
 
 export async function updateEmailTemplate(name: string, data: Partial<EmailTemplate>) {
     const headers = await getAuthHeaders();
-    const res = await frappeRequest('/api/method/frappe.client.set_value', {
+    
+    // Fetch the latest document to merge and prevent field loss/mismatch
+    const latestDoc = await getEmailTemplate(name);
+    const mergedDoc = {
+        ...latestDoc,
+        ...data,
+        doctype: 'CRM Email Template',
+        name,
+    };
+
+    const res = await frappeRequest('/api/method/frappe.client.save', {
         method: 'POST',
         headers,
         body: JSON.stringify({
-            doctype: 'CRM Email Template',
-            name,
-            fieldname: data,
+            doc: mergedDoc,
         }),
     });
     const json = await res.json();

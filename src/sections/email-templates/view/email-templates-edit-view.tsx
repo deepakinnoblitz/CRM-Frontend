@@ -18,6 +18,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { uploadFile } from 'src/api/data-import';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
   getEmailTemplate,
@@ -118,7 +119,16 @@ export function EmailTemplateEditView() {
         reply_to_email: replyToEmail,
         is_active: isActive ? 1 : 0,
         is_default: isDefault ? 1 : 0,
+        attachments: attachments.map((att: any) => ({
+          name: att.name || undefined,
+          file: att.file,
+          description: att.description || '',
+        })),
       });
+
+      // Reload attachments from backend
+      const updatedDoc = await getEmailTemplate(id!);
+      setAttachments(updatedDoc.attachments || []);
 
       setSnackbar({
         open: true,
@@ -139,11 +149,38 @@ export function EmailTemplateEditView() {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setAttachments((prev) => [...prev, file]);
+    setUploading(true);
+    try {
+      const result = await uploadFile(file, 'CRM Email Template', id!, 'attachments');
+      if (result && result.file_url) {
+        setAttachments((prev) => [
+          ...prev,
+          {
+            file: result.file_url,
+            description: '',
+            file_name: file.name,
+          },
+        ]);
+        setSnackbar({
+          open: true,
+          severity: 'success',
+          message: 'File uploaded successfully',
+        });
+      }
+    } catch (err: any) {
+      console.error(err);
+      setSnackbar({
+        open: true,
+        severity: 'error',
+        message: err.message || 'Failed to upload file.',
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleRemoveAttachment = (index: number) => {
@@ -196,6 +233,7 @@ export function EmailTemplateEditView() {
 
       setEmailContent(doc.email_content || '');
       setFooterContent(doc.footer_content || '');
+      setAttachments(doc.attachments || []);
 
       try {
         const vars = await fetchEmailTemplateVariables(
@@ -508,7 +546,7 @@ export function EmailTemplateEditView() {
                       noWrap
                       sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}
                     >
-                      {typeof file === 'string' ? file : file.url || file.name}
+                      {typeof file === 'string' ? file.split('/').pop() : (file.file_name || file.name || file.file?.split('/').pop() || file.url?.split('/').pop() || 'Attachment')}
                     </Typography>
                     <Button
                       size="small"
