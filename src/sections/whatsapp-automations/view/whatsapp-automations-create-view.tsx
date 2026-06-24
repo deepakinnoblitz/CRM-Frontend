@@ -79,16 +79,19 @@ export function WhatsAppAutomationsCreateView() {
     const [dialogTitle, setDialogTitle] = useState('Send WhatsApp Message?');
     const [dialogMessage, setDialogMessage] = useState('Do you want to send the WhatsApp message?');
     const [autoSend, setAutoSend] = useState(false);
-    const [conditions, setConditions] = useState<{ field_name: string; operator: string; value: string; }[]>([]);
     
     const [isSaving, setIsSaving] = useState(false);
 
-    const [errors, setErrors] = useState<{
-        automationName?: boolean;
-        documentType?: boolean;
-        triggerEvent?: boolean;
-        whatsappTemplate?: boolean;
-    }>({});
+    const [errors, setErrors] = useState({
+        automationName: false,
+        documentType: false,
+        triggerEvent: false,
+        whatsappTemplate: false,
+        workflowState: false,
+        previousWorkflowState: false,
+        dealStage: false,
+        previousDealStage: false,
+    });
 
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
         open: false,
@@ -101,33 +104,40 @@ export function WhatsAppAutomationsCreateView() {
     };
 
     const handleSave = () => {
-        const newErrors: typeof errors = {};
-        const missingFields: string[] = [];
-
-        if (!automationName) {
-            newErrors.automationName = true;
-            missingFields.push('Automation Name');
-        }
-        if (!documentType) {
-            newErrors.documentType = true;
-            missingFields.push('Document Type');
-        }
-        if (!triggerEvent) {
-            newErrors.triggerEvent = true;
-            missingFields.push('Trigger Event');
-        }
-        if (!whatsappTemplate) {
-            newErrors.whatsappTemplate = true;
-            missingFields.push('WhatsApp Template');
-        }
+        const newErrors = {
+            automationName: !automationName,
+            documentType: !documentType,
+            triggerEvent: !triggerEvent,
+            whatsappTemplate: !whatsappTemplate,
+            workflowState:
+                triggerEvent === "Lead Workflow State Change" && !workflowState,
+            previousWorkflowState:
+                triggerEvent === "Lead Workflow State Change" &&
+                !previousWorkflowState,
+            dealStage:
+                triggerEvent === "Deal Stage Change" && !dealStage,
+            previousDealStage:
+                triggerEvent === "Deal Stage Change" && !previousDealStage,
+        };
 
         setErrors(newErrors);
+
+        const missingFields: string[] = [];
+
+        if (newErrors.automationName) missingFields.push("Automation Name");
+        if (newErrors.documentType) missingFields.push("Document Type");
+        if (newErrors.triggerEvent) missingFields.push("Trigger Event");
+        if (newErrors.whatsappTemplate) missingFields.push("WhatsApp Template");
+        if (newErrors.workflowState) missingFields.push("Workflow State");
+        if (newErrors.previousWorkflowState) missingFields.push("Previous Workflow State");
+        if (newErrors.dealStage) missingFields.push("Current Deal Stage");
+        if (newErrors.previousDealStage) missingFields.push("Previous Deal Stage");
 
         if (missingFields.length > 0) {
             setSnackbar({
                 open: true,
-                message: `Please fill in mandatory fields: ${missingFields.join(', ')}`,
-                severity: 'error',
+                message: `Please fill in mandatory fields: ${missingFields.join(", ")}`,
+                severity: "error",
             });
             return;
         }
@@ -155,7 +165,6 @@ export function WhatsAppAutomationsCreateView() {
             dialog_title: showConfirmationDialog ? dialogTitle : undefined,
             dialog_message: showConfirmationDialog ? dialogMessage : undefined,
             auto_send: autoSend ? 1 : 0,
-            conditions,
         };
 
         createWhatsAppAutomation(data)
@@ -299,7 +308,16 @@ export function WhatsAppAutomationsCreateView() {
                                     fullWidth 
                                     label="Workflow State" 
                                     value={workflowState}
-                                    onChange={(e) => setWorkflowState(e.target.value)}
+                                    error={errors.workflowState}
+                                    helperText={errors.workflowState ? "This field is required" : ""}
+                                    onChange={(e) => { 
+                                        setWorkflowState(e.target.value)
+                                        setErrors((prev) => ({
+                                                ...prev,
+                                                workflowState: false,
+                                            }));
+                                        }   
+                                    }
                                 >
                                     <MenuItem value=""><em>None</em></MenuItem>
                                     {leadWorkflowStates.map(opt => (
@@ -312,7 +330,15 @@ export function WhatsAppAutomationsCreateView() {
                                     fullWidth 
                                     label="Previous Workflow State" 
                                     value={previousWorkflowState}
-                                    onChange={(e) => setPreviousWorkflowState(e.target.value)}
+                                    error={errors.previousWorkflowState}
+                                    helperText={errors.previousWorkflowState ? "This field is required" : ""}
+                                    onChange={(e) => {
+                                        setPreviousWorkflowState(e.target.value);
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            previousWorkflowState: false,
+                                        }));
+                                    }}
                                 >
                                     <MenuItem value=""><em>None</em></MenuItem>
                                     {leadWorkflowStates.map(opt => (
@@ -329,7 +355,15 @@ export function WhatsAppAutomationsCreateView() {
                                     fullWidth 
                                     label="Current Deal Stage" 
                                     value={dealStage}
-                                    onChange={(e) => setDealStage(e.target.value)}
+                                    error={errors.dealStage}
+                                    helperText={errors.dealStage ? "This field is required" : ""}
+                                    onChange={(e) => {
+                                        setDealStage(e.target.value)
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            dealStage: false,
+                                        }));
+                                    }}
                                 >
                                     <MenuItem value=""><em>None</em></MenuItem>
                                     {DEAL_STAGES.map(opt => (
@@ -342,7 +376,15 @@ export function WhatsAppAutomationsCreateView() {
                                     fullWidth 
                                     label="Previous Deal Stage" 
                                     value={previousDealStage}
-                                    onChange={(e) => setPreviousDealStage(e.target.value)}
+                                    error={errors.previousDealStage}
+                                    helperText={errors.previousDealStage ? "This field is required" : ""}
+                                    onChange={(e) => {
+                                        setPreviousDealStage(e.target.value);
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            previousDealStage: false,
+                                        }));
+                                    }}
                                 >
                                     <MenuItem value=""><em>None</em></MenuItem>
                                     {DEAL_STAGES.map(opt => (
@@ -427,133 +469,6 @@ export function WhatsAppAutomationsCreateView() {
                             label="Auto Send" 
                             sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
                         />
-                    </Stack>
-                </Card>
-
-                {/* Conditions Child Table */}
-                <Card sx={{ p: 3, mb: 3 }}>
-                    <Typography variant="h6" sx={{ mb: 3 }}>Conditions</Typography>
-                    <Stack spacing={3}>
-                        <TableContainer sx={{
-                            overflow: 'unset',
-                            border: (theme) => `1px solid ${theme.palette.divider}`,
-                            borderRadius: 1.5,
-                            bgcolor: 'background.paper',
-                            boxShadow: (theme) => theme.customShadows.z8,
-                        }}>
-                            <Table sx={{ minWidth: 960 }}>
-                                <TableHead sx={{
-                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                    '& th:first-of-type': { borderTopLeftRadius: 11 },
-                                    '& th:last-of-type': { borderTopRightRadius: 11 }
-                                }}>
-                                    <TableRow>
-                                        <TableCell width={60} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>No.</TableCell>
-                                        <TableCell sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Field</TableCell>
-                                        <TableCell sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Operator</TableCell>
-                                        <TableCell sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Value</TableCell>
-                                        <TableCell width={60} />
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {conditions.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
-                                                <Stack alignItems="center" spacing={1}>
-                                                    <Iconify icon={"solar:folder-with-files-outline" as any} width={32} sx={{ color: 'text.secondary' }} />
-                                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>No Data</Typography>
-                                                </Stack>
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        conditions.map((cond, index) => (
-                                            <TableRow key={index} sx={{
-                                                verticalAlign: 'top',
-                                                transition: (theme) => theme.transitions.create('background-color'),
-                                                '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) },
-                                                '&:nth-of-type(even)': { bgcolor: (theme) => alpha(theme.palette.grey[500], 0.02) },
-                                            }}>
-                                                <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                                    <Box sx={{ py: 1, px: 1 }}>{index + 1}</Box>
-                                                </TableCell>
-                                                <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}`, '&:focus-within': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05) } }}>
-                                                    <TextField 
-                                                        variant="standard"
-                                                        fullWidth
-                                                        value={cond.field_name}
-                                                        onChange={(e) => {
-                                                            const newConditions = [...conditions];
-                                                            newConditions[index].field_name = e.target.value;
-                                                            setConditions(newConditions);
-                                                        }}
-                                                        InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
-                                                    />
-                                                </TableCell>
-                                                <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}`, '&:focus-within': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05) } }}>
-                                                    <TextField 
-                                                        variant="standard"
-                                                        select
-                                                        fullWidth
-                                                        value={cond.operator}
-                                                        onChange={(e) => {
-                                                            const newConditions = [...conditions];
-                                                            newConditions[index].operator = e.target.value;
-                                                            setConditions(newConditions);
-                                                        }}
-                                                        InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
-                                                    >
-                                                        {['=', '!=', 'Like', 'Not Like', '>', '<', '>=', '<=', 'In', 'Not In'].map(opt => (
-                                                            <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                                        ))}
-                                                    </TextField>
-                                                </TableCell>
-                                                <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}`, '&:focus-within': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05) } }}>
-                                                    <TextField 
-                                                        variant="standard"
-                                                        fullWidth
-                                                        value={cond.value}
-                                                        onChange={(e) => {
-                                                            const newConditions = [...conditions];
-                                                            newConditions[index].value = e.target.value;
-                                                            setConditions(newConditions);
-                                                        }}
-                                                        InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
-                                                    />
-                                                </TableCell>
-                                                <TableCell sx={{ px: 1, py: 1 }}>
-                                                    <IconButton color="error" onClick={() => {
-                                                        const newConditions = [...conditions];
-                                                        newConditions.splice(index, 1);
-                                                        setConditions(newConditions);
-                                                    }} size="small" sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}>
-                                                        <Iconify icon="solar:trash-bin-trash-bold" />
-                                                    </IconButton>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                        <Button 
-                            startIcon={<Iconify icon="mingcute:add-line" />}
-                            onClick={() => setConditions([...conditions, { field_name: '', operator: '=', value: '' }])}
-                            sx={{ alignSelf: 'flex-start',
-                                background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
-                                borderRadius: 3,
-                                px: 2,
-                                py: 0.6,
-                                textTransform: 'none',
-                                fontWeight: 600,
-                                color: 'white',
-                                '&:hover': {
-                                    background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
-                                    boxShadow: '0 8px 10px rgba(124,58,237,.25)',
-                                }
-                            }}
-                        >
-                            Add Row
-                        </Button>
                     </Stack>
                 </Card>
             </Box>

@@ -4,13 +4,6 @@ import { handleFrappeError } from 'src/utils/api-error-handler';
 // ----------------------------------------------------------------------
 // TypeScript Interfaces
 // ----------------------------------------------------------------------
-
-export interface WhatsAppAutomationCondition {
-    field_name: string;
-    operator: string;
-    value: string;
-}
-
 export interface WhatsAppAutomation {
     name: string;
     automation_name: string;
@@ -27,7 +20,6 @@ export interface WhatsAppAutomation {
     dialog_title?: string;
     dialog_message?: string;
     auto_send: number;
-    conditions?: WhatsAppAutomationCondition[];
     creation?: string;
     modified?: string;
 }
