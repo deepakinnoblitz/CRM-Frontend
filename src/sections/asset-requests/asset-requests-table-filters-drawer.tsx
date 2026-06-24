@@ -1,3 +1,5 @@
+import type { SwitchProps } from '@mui/material/Switch';
+
 import dayjs from 'dayjs';
 
 import Box from '@mui/material/Box';
@@ -5,11 +7,12 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
-import { Theme } from '@mui/material/styles';
+import Switch from '@mui/material/Switch';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import { Theme, styled } from '@mui/material/styles';
 import Autocomplete from '@mui/material/Autocomplete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -51,6 +54,72 @@ const fieldSx = {
     },
 };
 
+// Custom pill-style toggle matching Reminder settings
+const UnreadSwitch = styled((props: SwitchProps) => (
+    <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
+))(({ theme }) => ({
+    width: 46,
+    height: 26,
+    padding: 0,
+    '& .MuiSwitch-switchBase': {
+        padding: 0,
+        margin: 3,
+        transitionDuration: '250ms',
+        transition: theme.transitions.create(['transform'], { easing: 'ease', duration: 250 }),
+        '&.Mui-checked': {
+            transform: 'translateX(20px)',
+            color: '#fff',
+            '& + .MuiSwitch-track': {
+                backgroundColor: '#00b4d8',
+                opacity: 1,
+                border: 0,
+            },
+        },
+    },
+    '& .MuiSwitch-thumb': {
+        boxSizing: 'border-box',
+        width: 20,
+        height: 20,
+        boxShadow: 'none',
+    },
+    '& .MuiSwitch-track': {
+        borderRadius: 26 / 2,
+        backgroundColor: '#d1d5db',
+        opacity: 1,
+        transition: theme.transitions.create(['background-color'], { duration: 250 }),
+    },
+}));
+
+function ToggleRow({
+    label,
+    description,
+    value,
+    onChange,
+}: {
+    label: string;
+    description?: string;
+    value: boolean;
+    onChange: () => void;
+}) {
+    return (
+        <Stack spacing={1}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                        {label}
+                    </Typography>
+                    {description && (
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                            {description}
+                        </Typography>
+                    )}
+                </Box>
+                <UnreadSwitch checked={value} onChange={onChange} />
+            </Box>
+        </Stack>
+    );
+}
+
 // ----------------------------------------------------------------------
 
 export type AssetRequestFilters = {
@@ -60,6 +129,7 @@ export type AssetRequestFilters = {
     priority: string;
     startDate: string;
     endDate: string;
+    unreadOnly: boolean;
 };
 
 type Props = {
@@ -70,6 +140,7 @@ type Props = {
     canReset: boolean;
     onResetFilters: () => void;
     categories: Array<{ name: string; category_name?: string }>;
+    isHR?: boolean;
 };
 
 export function AssetRequestsTableFiltersDrawer({
@@ -80,6 +151,7 @@ export function AssetRequestsTableFiltersDrawer({
     canReset,
     onResetFilters,
     categories,
+    isHR,
 }: Props) {
 
     const renderHead = (
@@ -279,6 +351,13 @@ export function AssetRequestsTableFiltersDrawer({
                         {renderPriority}
                         {renderDateRange}
                     </LocalizationProvider>
+                    {isHR && (
+                        <ToggleRow
+                            label="Unread Messages"
+                            value={filters.unreadOnly}
+                            onChange={() => onFilters({ unreadOnly: !filters.unreadOnly })}
+                        />
+                    )}
                 </Stack>
             </Scrollbar>
 

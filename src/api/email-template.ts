@@ -12,14 +12,12 @@ export interface EmailTemplate {
     is_active: number;
     is_default: number;
     description?: string;
+    template_for?: string;
     subject: string;
     sender_name?: string;
     reply_to_email?: string;
     email_content: string;
     footer_content?: string;
-    enable_open_tracking: number;
-    enable_click_tracking: number;
-    enable_unsubscribe: number;
     attachments?: any[];
     available_variables?: string;
     creation?: string;
@@ -73,8 +71,7 @@ export async function fetchEmailTemplates(params: FetchEmailTemplatesParams) {
         doctype: 'CRM Email Template',
         fields: JSON.stringify([
             'name', 'template_name', 'category', 'is_active', 'is_default',
-            'subject', 'sender_name', 'description',
-            'enable_open_tracking', 'enable_click_tracking', 'enable_unsubscribe',
+            'subject', 'sender_name', 'description', 'template_for',
             'creation', 'modified', 'owner',
         ]),
         filters: JSON.stringify(filters),
@@ -138,13 +135,21 @@ export async function createEmailTemplate(data: Partial<EmailTemplate>) {
 
 export async function updateEmailTemplate(name: string, data: Partial<EmailTemplate>) {
     const headers = await getAuthHeaders();
-    const res = await frappeRequest('/api/method/frappe.client.set_value', {
+    
+    // Fetch the latest document to merge and prevent field loss/mismatch
+    const latestDoc = await getEmailTemplate(name);
+    const mergedDoc = {
+        ...latestDoc,
+        ...data,
+        doctype: 'CRM Email Template',
+        name,
+    };
+
+    const res = await frappeRequest('/api/method/frappe.client.save', {
         method: 'POST',
         headers,
         body: JSON.stringify({
-            doctype: 'CRM Email Template',
-            name,
-            fieldname: data,
+            doc: mergedDoc,
         }),
     });
     const json = await res.json();
@@ -166,4 +171,33 @@ export async function deleteEmailTemplate(name: string) {
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to delete email template'));
     return true;
+}
+
+export interface EmailTemplateVariable {
+    label: string;
+    fieldname: string;
+    variable: string;
+    fieldtype: string;
+}
+
+export async function fetchEmailTemplateVariables(
+    templateFor: 'Lead' | 'Contact' | 'Account'
+): Promise<EmailTemplateVariable[]> {
+    const res = await frappeRequest(
+        `/api/method/company.company.doctype.crm_email_template.crm_email_template.get_email_template_variables?template_for=${encodeURIComponent(templateFor)}`
+    );
+
+    if (!res.ok) {
+        throw new Error('Failed to fetch email template variables');
+    }
+
+    const json = await res.json();
+
+    if (json.exc) {
+        throw new Error(
+            handleFrappeError(json, 'Failed to fetch email template variables')
+        );
+    }
+
+    return json.message || [];
 }

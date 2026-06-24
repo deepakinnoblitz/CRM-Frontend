@@ -28,6 +28,7 @@ export const fetchWFHAttendance = async (params: {
         status?: string;
         startDate?: string | null;
         endDate?: string | null;
+        unread_only?: boolean;
     };
 }) => {
     const filters: any[] = [];
@@ -63,7 +64,8 @@ export const fetchWFHAttendance = async (params: {
         filters,
         or_filters,
         orderBy: params.orderBy,
-        order: params.order
+        order: params.order,
+        unread_only: params.filters?.unread_only
     });
 };
 

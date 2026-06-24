@@ -13,6 +13,7 @@ export function useReimbursementClaims(
         claim_type?: string;
         startDate?: string | null;
         endDate?: string | null;
+        unread_only?: boolean;
     },
     socket?: any
 ) {

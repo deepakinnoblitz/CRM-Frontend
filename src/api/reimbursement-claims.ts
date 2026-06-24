@@ -41,6 +41,7 @@ async function fetchFrappeList(params: {
         claim_type?: string;
         startDate?: string | null;
         endDate?: string | null;
+        unread_only?: boolean;
     };
 }) {
     const filters: any[] = [];
@@ -83,6 +84,10 @@ async function fetchFrappeList(params: {
         limit_page_length: String(params.page_size),
         order_by: orderByParam
     });
+
+    if (params.filters?.unread_only) {
+        query.append('unread_only', 'true');
+    }
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),

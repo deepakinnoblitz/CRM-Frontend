@@ -1,7 +1,7 @@
 import { enqueueSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
-import { VscDebugStart } from "react-icons/vsc";
 import { useParams, useNavigate } from 'react-router-dom';
+import { VscDebugStart, VscDebugPause, VscDebugStop } from "react-icons/vsc";
 import { IoMdArrowBack, IoMdMail, IoMdCalendar, IoMdPerson, IoMdStats, IoMdCreate, IoMdTrash, IoMdList } from "react-icons/io";
 
 import Box from '@mui/material/Box';
@@ -15,15 +15,19 @@ import TableBody from '@mui/material/TableBody';
 import TableHead from '@mui/material/TableHead';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import InputAdornment from '@mui/material/InputAdornment';
 import TableContainer from '@mui/material/TableContainer';
+import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getEmailCampaign, deleteEmailCampaign, startCampaign as startEmailCampaign, fetchEmailQueue, EmailQueueItem } from 'src/api/email-campaign';
+import { getEmailCampaign, deleteEmailCampaign, startCampaign as startEmailCampaign, pauseCampaign as pauseEmailCampaign, cancelCampaign as cancelEmailCampaign, fetchEmailQueue, EmailQueueItem, previewRecipients } from 'src/api/email-campaign';
 
 import { Label } from 'src/components/label';
+import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
@@ -39,6 +43,13 @@ export function EmailCampaignsDetailsView() {
     const [fetching, setFetching] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [recipients, setRecipients] = useState<any[]>([]);
+    const [recipientsPage, setRecipientsPage] = useState(0);
+    const [recipientsRowsPerPage, setRecipientsRowsPerPage] = useState(10);
+    const [recipientsSearch, setRecipientsSearch] = useState('');
 
     useEffect(() => {
         if (id) {
@@ -54,7 +65,17 @@ export function EmailCampaignsDetailsView() {
                 .then(setEmailQueue)
                 .catch((err) => console.error('Failed to fetch email queue:', err));
         }
-    }, [campaign?.name]);
+        if (campaign?.target_type) {
+            const parsedFilters: any[] = Array.isArray(campaign.filters) ? campaign.filters : [];
+            previewRecipients(campaign.target_type, parsedFilters)
+                .then((res) => {
+                    if (res && res.recipients) {
+                        setRecipients(res.recipients);
+                    }
+                })
+                .catch(err => console.error('Failed to fetch recipients:', err));
+        }
+    }, [campaign]);
 
     if (fetching) {
         return (
@@ -78,6 +99,7 @@ export function EmailCampaignsDetailsView() {
     const {
         campaign_name,
         template_name,
+        email_template,
         subject,
         status,
         target_type,
@@ -98,23 +120,33 @@ export function EmailCampaignsDetailsView() {
     const handleStartCampaign = async () => {
         try {
             await startEmailCampaign(campaign.name);
-
             const updated = await getEmailCampaign(campaign.name);
             setCampaign(updated);
-
-            enqueueSnackbar('Campaign started successfully', {
-                variant: 'success',
-            });
-
+            enqueueSnackbar('Campaign started successfully', { variant: 'success' });
         } catch (err: any) {
-            console.error(err);
+            enqueueSnackbar(err.message || 'Failed to start campaign', { variant: 'error' });
+        }
+    };
 
-            enqueueSnackbar(
-                err?.message || 'Failed to start campaign',
-                {
-                    variant: 'error',
-                }
-            );
+    const handlePauseCampaign = async () => {
+        try {
+            await pauseEmailCampaign(campaign.name);
+            const updated = await getEmailCampaign(campaign.name);
+            setCampaign(updated);
+            enqueueSnackbar('Campaign paused', { variant: 'info' });
+        } catch (err: any) {
+            enqueueSnackbar(err.message || 'Failed to pause campaign', { variant: 'error' });
+        }
+    };
+
+    const handleStopCampaign = async () => {
+        try {
+            await cancelEmailCampaign(campaign.name);
+            const updated = await getEmailCampaign(campaign.name);
+            setCampaign(updated);
+            enqueueSnackbar('Campaign stopped', { variant: 'warning' });
+        } catch (err: any) {
+            enqueueSnackbar(err.message || 'Failed to stop campaign', { variant: 'error' });
         }
     };
 
@@ -131,6 +163,23 @@ export function EmailCampaignsDetailsView() {
             setConfirmDeleteOpen(false);
         }
     };
+
+    const filteredQueue = emailQueue.filter((item) => {
+        const query = searchQuery.toLowerCase();
+        return (
+            (item.recipient_name || '').toLowerCase().includes(query) ||
+            (item.recipient_email || '').toLowerCase().includes(query) ||
+            (item.status || '').toLowerCase().includes(query)
+        );
+    });
+
+    const filteredRecipients = recipients.filter((item) => {
+        const query = recipientsSearch.toLowerCase();
+        return (
+            (item.name || '').toLowerCase().includes(query) ||
+            (item.email || '').toLowerCase().includes(query)
+        );
+    });
 
     return (
         <DashboardContent maxWidth={false}>
@@ -166,12 +215,44 @@ export function EmailCampaignsDetailsView() {
                                 textTransform: 'none',
                                 bgcolor: '#36b37e',
                                 color: 'common.white',
-                                '&:hover': {
-                                    bgcolor: '#2f9d6c',
-                                },
+                                '&:hover': { bgcolor: '#2f9d6c' },
                             }}
                         >
                             Start Campaign
+                        </Button>
+                    )}
+                    {campaign.status === 'Running' && (
+                        <Button
+                            variant="contained"
+                            startIcon={<VscDebugPause />}
+                            onClick={handlePauseCampaign}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 700,
+                                textTransform: 'none',
+                                bgcolor: '#f59e0b',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#d97706' },
+                            }}
+                        >
+                            Pause
+                        </Button>
+                    )}
+                    {!['Completed', 'Cancelled'].includes(campaign.status) && (
+                        <Button
+                            variant="contained"
+                            startIcon={<VscDebugStop />}
+                            onClick={handleStopCampaign}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 700,
+                                textTransform: 'none',
+                                bgcolor: '#ef4444',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#dc2626' },
+                            }}
+                        >
+                            Stop
                         </Button>
                     )}
                     <Button
@@ -211,18 +292,18 @@ export function EmailCampaignsDetailsView() {
                                 <Typography variant="subtitle1" color="text.primary" sx={{ fontWeight: 700 }}>
                                     {campaign_name}
                                 </Typography>
-                                <Stack spacing={1} sx={{ mt: 1 }}>
-                                    <Stack direction="row" spacing={1}>
-                                        <Typography variant="caption" color="text.secondary">Subject:</Typography>
-                                        <Typography variant="body2">{subject || '-'}</Typography>
+                                <Stack spacing={1.5} sx={{ mt: 3 }}>
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 100 }}>Email Template:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>{template_name || email_template || '-'}</Typography>
                                     </Stack>
-                                    <Stack direction="row" spacing={1}>
-                                        <Typography variant="caption" color="text.secondary">Email Template:</Typography>
-                                        <Typography variant="body2">{template_name || '-'}</Typography>
+                                    <Stack direction="row" spacing={2} alignItems="flex-start">
+                                        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 100 }}>Subject:</Typography>
+                                        <Typography variant="body2" sx={{ wordBreak: 'break-word', fontWeight: 500 }}>{subject || '-'}</Typography>
                                     </Stack>
-                                    <Stack direction="row" spacing={1}>
-                                        <Typography variant="caption" color="text.secondary">Status:</Typography>
-                                        <Typography variant="body2">{status || '-'}</Typography>
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 100 }}>Status:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>{status || '-'}</Typography>
                                     </Stack>
                                 </Stack>
                             </Box>
@@ -289,15 +370,119 @@ export function EmailCampaignsDetailsView() {
 
                     <Stack spacing={1.5}>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#08a3cd' }}>
+                            <IoMdPerson size={20} />
+                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase',  color: 'text.secondary' }}>List of Mail Recipients</Typography>
+                        </Stack>
+                        <Card sx={{ p: 0, mt: 2, borderRadius: 1.5, border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                            <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <OutlinedInput
+                                    size="small"
+                                    placeholder="Search recipient..."
+                                    value={recipientsSearch}
+                                    onChange={(e) => {
+                                        setRecipientsSearch(e.target.value);
+                                        setRecipientsPage(0);
+                                    }}
+                                    startAdornment={
+                                        <InputAdornment position="start">
+                                            <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                                        </InputAdornment>
+                                    }
+                                    sx={{ width: 320 }}
+                                />
+                            </Box>
+                            <Scrollbar>
+                                <TableContainer sx={{ maxHeight: 350 }}>
+                                    <Table size="medium">
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell sx={{ pl: 3 }}>S.No</TableCell>
+                                                <TableCell>Recipient Name</TableCell>
+                                                <TableCell>Recipient Email</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {filteredRecipients.length > 0 ? (
+                                                filteredRecipients.slice(recipientsPage * recipientsRowsPerPage, recipientsPage * recipientsRowsPerPage + recipientsRowsPerPage).map((item, index) => (
+                                                    <TableRow key={index} hover>
+                                                        <TableCell sx={{ pl: 3 }}>
+                                                            <Typography
+                                                                sx={{
+                                                                    width: 28,
+                                                                    height: 28,
+                                                                    display: 'flex',
+                                                                    borderRadius: '50%',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                                    color: 'primary.main',
+                                                                    typography: 'subtitle2',
+                                                                    fontWeight: 800,
+                                                                    border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                                                                }}
+                                                            >
+                                                                {recipientsPage * recipientsRowsPerPage + index + 1}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>{item.name}</TableCell>
+                                                        <TableCell>{item.email}</TableCell>
+                                                    </TableRow>
+                                                ))
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={3} align="center">
+                                                        <Typography variant="body2" color="text.secondary" sx={{ my: 3 }}>No recipients found</Typography>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </Scrollbar>
+                            <TablePagination
+                                rowsPerPageOptions={[5, 10, 25]}
+                                component="div"
+                                count={filteredRecipients.length}
+                                rowsPerPage={recipientsRowsPerPage}
+                                page={recipientsPage}
+                                onPageChange={(_e: any, newPage: number) => setRecipientsPage(newPage)}
+                                onRowsPerPageChange={(e: any) => {
+                                    setRecipientsRowsPerPage(parseInt(e.target.value, 10));
+                                    setRecipientsPage(0);
+                                }}
+                            />
+                        </Card>
+                    </Stack>
+
+                    <Stack spacing={1.5}>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#08a3cd' }}>
                             <IoMdList size={20} />
                             <Typography variant="subtitle2" sx={{ textTransform: 'uppercase',  color: 'text.secondary' }}>List of Mail Sends</Typography>
                         </Stack>
                         <Card sx={{ p: 0, mt: 2, borderRadius: 1.5, border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                            <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <OutlinedInput
+                                    size="small"
+                                    placeholder="Search recipient..."
+                                    value={searchQuery}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value);
+                                        setPage(0);
+                                    }}
+                                    startAdornment={
+                                        <InputAdornment position="start">
+                                            <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                                        </InputAdornment>
+                                    }
+                                    sx={{ width: 320 }}
+                                />
+                            </Box>
                             <Scrollbar>
-                                <TableContainer sx={{ maxHeight: 300 }}>
+                                <TableContainer sx={{ maxHeight: 350 }}>
                                     <Table size="medium">
                                         <TableHead>
                                             <TableRow>
+                                                <TableCell sx={{ pl: 3 }}>S.No</TableCell>
                                                 <TableCell>Recipient Name</TableCell>
                                                 <TableCell>Recipient Email</TableCell>
                                                 <TableCell>Status</TableCell>
@@ -305,10 +490,29 @@ export function EmailCampaignsDetailsView() {
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {emailQueue.length > 0 ? (
-                                                emailQueue.map((item) => (
-                                                    <TableRow key={item.name} hover>
-                                                        <TableCell>{item.recipient_name}</TableCell>
+                                            {filteredQueue.length > 0 ? (
+                                                filteredQueue.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((item, index) => (
+                                                    <TableRow key={item.name || index} hover>
+                                                        <TableCell sx={{ pl: 3 }}>
+                                                            <Typography
+                                                                sx={{
+                                                                    width: 28,
+                                                                    height: 28,
+                                                                    display: 'flex',
+                                                                    borderRadius: '50%',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                                    color: 'primary.main',
+                                                                    typography: 'subtitle2',
+                                                                    fontWeight: 800,
+                                                                    border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                                                                }}
+                                                            >
+                                                                {page * rowsPerPage + index + 1}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>{item.recipient_name}</TableCell>
                                                         <TableCell>{item.recipient_email}</TableCell>
                                                         <TableCell>
                                                             <Label
@@ -329,8 +533,8 @@ export function EmailCampaignsDetailsView() {
                                                 ))
                                             ) : (
                                                 <TableRow>
-                                                    <TableCell colSpan={4} align="center">
-                                                        <Typography variant="body2" color="text.secondary">No mail sends found</Typography>
+                                                    <TableCell colSpan={5} align="center">
+                                                        <Typography variant="body2" color="text.secondary" sx={{ my: 3 }}>No mail sends found</Typography>
                                                     </TableCell>
                                                 </TableRow>
                                             )}
@@ -338,6 +542,18 @@ export function EmailCampaignsDetailsView() {
                                     </Table>
                                 </TableContainer>
                             </Scrollbar>
+                            <TablePagination
+                                rowsPerPageOptions={[5, 10, 25]}
+                                component="div"
+                                count={filteredQueue.length}
+                                rowsPerPage={rowsPerPage}
+                                page={page}
+                                onPageChange={(_e: any, newPage: number) => setPage(newPage)}
+                                onRowsPerPageChange={(e: any) => {
+                                    setRowsPerPage(parseInt(e.target.value, 10));
+                                    setPage(0);
+                                }}
+                            />
                         </Card>
                     </Stack>
                 </Stack>

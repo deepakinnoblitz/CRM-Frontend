@@ -55,6 +55,11 @@ import { LeadTableToolbar as AttendanceTableToolbar } from '../../lead/lead-tabl
 
 export function WFHAttendanceView() {
     const { user } = useAuth();
+    const userRole: "hr" | "admin" | "" = user?.roles?.some(r => ['hr', 'hr manager'].includes(r.toLowerCase()))
+        ? 'hr'
+        : (user?.roles?.some(r => ['admin', 'system manager', 'administrator'].includes(r.toLowerCase())) ? 'admin' : '');
+    const isHR = userRole === "hr" || userRole === "admin";
+
     const { socket } = useSocket(user?.email);
     const theme = useTheme();
     const [page, setPage] = useState(0);
@@ -72,14 +77,15 @@ export function WFHAttendanceView() {
     });
 
     const [openFilters, setOpenFilters] = useState(false);
-    const [filters, setFilters] = useState<{ employee: string; status: string; startDate: string | null; endDate: string | null }>({
+    const [filters, setFilters] = useState<{ employee: string; status: string; startDate: string | null; endDate: string | null; unreadOnly: boolean }>({
         employee: 'all',
         status: 'all',
         startDate: null,
-        endDate: null
+        endDate: null,
+        unreadOnly: false
     });
 
-    const canReset = filters.employee !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
+    const canReset = filters.employee !== 'all' || filters.status !== 'all' || filters.startDate !== null || filters.endDate !== null || filters.unreadOnly || !!filterName;
 
     const [openDetails, setOpenDetails] = useState(false);
     const [detailsId, setDetailsId] = useState<string | null>(null);
@@ -98,16 +104,21 @@ export function WFHAttendanceView() {
         severity: 'info'
     });
 
-    const [isHR, setIsHR] = useState(false);
     const [permissions, setPermissions] = useState<{ read: boolean; write: boolean }>({
         read: true,
         write: true,
     });
 
-    const effectiveFilters = useMemo(() => ({
-        ...filters,
-        employee: isHR ? filters.employee : (user?.employee || 'all'),
-    }), [filters, isHR, user]);
+    const effectiveFilters = useMemo(() => {
+        const eff: any = {
+            ...filters,
+            employee: isHR ? filters.employee : (user?.employee || 'all'),
+        };
+        if (isHR && filters.unreadOnly) {
+            eff.unread_only = true;
+        }
+        return eff;
+    }, [filters, isHR, user]);
 
     const { data, total, loading, refetch } = useWFHAttendance(
         page + 1,
@@ -126,20 +137,20 @@ export function WFHAttendanceView() {
     useEffect(() => {
         getHRPermissions('WFH Attendance').then(setPermissions);
         getDoctypeList('Employee', ['name', 'employee_name']).then(setEmployeeOptions).catch(console.error);
-        getCurrentUserInfo().then((userInfo) => {
-            if (userInfo && userInfo.roles) {
-                // Broaden HR detection to include Admins/System Managers
-                const hrRoles = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
-                setIsHR(userInfo.roles.some((role: string) => hrRoles.includes(role)));
-            }
-        });
     }, []);
 
-    const handleFilters = (newFilters: Partial<typeof filters>) => {
-        setFilters((prevState) => ({
-            ...prevState,
-            ...newFilters,
-        }));
+    const handleFilters = (newFilters: any, value?: any) => {
+        if (typeof newFilters === 'string') {
+            setFilters((prevState) => ({
+                ...prevState,
+                [newFilters]: value,
+            }));
+        } else {
+            setFilters((prevState) => ({
+                ...prevState,
+                ...newFilters,
+            }));
+        }
     };
 
     const handleResetFilters = () => {
@@ -148,6 +159,7 @@ export function WFHAttendanceView() {
             status: 'all',
             startDate: null,
             endDate: null,
+            unreadOnly: false,
         });
     };
 

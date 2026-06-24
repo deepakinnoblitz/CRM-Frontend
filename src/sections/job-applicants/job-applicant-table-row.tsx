@@ -8,6 +8,8 @@ import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
+import { fTimeDist } from 'src/utils/format-time';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
@@ -21,6 +23,7 @@ type Props = {
         phone_number: string;
         job_title: string;
         status: string;
+        modified: string;
     };
     selected: boolean;
     onSelectRow: VoidFunction;
@@ -151,7 +154,20 @@ export function JobApplicantTableRow({
             <TableCell>{renderStatus(row.status)}</TableCell>
 
             <TableCell align="right">
-                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end', alignItems: 'center' }}>
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            color: 'text.secondary',
+                            fontWeight: 700,
+                            fontSize: 12,
+                            minWidth: 24,
+                            textAlign: 'right',
+                        }}
+                    >
+                        {fTimeDist(row.modified)}
+                    </Typography>
+
                     <IconButton size="small" color="primary" onClick={onView}>
                         <Iconify icon="solar:eye-bold" />
                     </IconButton>

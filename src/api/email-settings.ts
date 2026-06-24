@@ -15,10 +15,6 @@ export interface EmailSettings {
     enable_email_automation: number;
     scheduler_interval: string;
     create_campaign_history: number;
-    enable_open_tracking: number;
-    enable_click_tracking: number;
-    enable_unsubscribe_link: number;
-    track_ip_address: number;
     queue_size: number;
     auto_delete_old_queue_records: number;
     queue_retention_days: number;

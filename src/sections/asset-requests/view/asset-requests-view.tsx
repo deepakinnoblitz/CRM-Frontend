@@ -8,6 +8,7 @@ import Tab from '@mui/material/Tab';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Tabs from '@mui/material/Tabs';
+import Badge from '@mui/material/Badge';
 import Alert from '@mui/material/Alert';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
@@ -40,9 +41,11 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useSocket } from 'src/hooks/use-socket';
+import { useUnreadCountsContext } from 'src/hooks/unread-counts-context';
 
 import { frappeRequest } from 'src/utils/csrf';
 
+import { markAsRead } from 'src/api/unread-counts';
 import { getAssetCategories } from 'src/api/assets';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getAvailableAssets, getEmployees, getMyAssignedAssets } from 'src/api/asset-assignments';
@@ -105,11 +108,13 @@ const PRIORITY_COLORS: Record<string, 'default' | 'warning' | 'error' | 'info'> 
 
 export function AssetRequestsView() {
     const { user } = useAuth();
-    const { socket, subscribeToRoom, subscribeToEvent } = useSocket(user?.email);
+    const userRole: "hr" | "admin" | "" = user?.roles?.some(r => ['hr', 'hr manager', 'hr user', 'accounts manager'].includes(r.toLowerCase()))
+        ? 'hr'
+        : (user?.roles?.some(r => ['admin', 'system manager', 'administrator'].includes(r.toLowerCase())) ? 'admin' : '');
+    const isHR = userRole === "hr" || userRole === "admin";
 
-    const isHR = user?.roles?.some((role: string) =>
-        ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
-    );
+    const { socket, subscribeToRoom, subscribeToEvent } = useSocket(user?.email);
+    const { unreadCounts } = useUnreadCountsContext();
 
     const [activeTab, setActiveTab] = useState<'my-requests' | 'hr-dashboard'>('my-requests');
 
@@ -121,7 +126,7 @@ export function AssetRequestsView() {
     const [myLoading, setMyLoading] = useState(false);
     const [mySearch, setMySearch] = useState('');
     const [mySort, setMySort] = useState('modified desc');
-    const [myFilters, setMyFilters] = useState({ type: 'all', category: 'all', status: 'all', priority: 'all', startDate: '', endDate: '' });
+    const [myFilters, setMyFilters] = useState({ type: 'all', category: 'all', status: 'all', priority: 'all', startDate: '', endDate: '', unreadOnly: false });
     const [myFiltersOpen, setMyFiltersOpen] = useState(false);
 
     // ── HR Dashboard state ──
@@ -132,7 +137,7 @@ export function AssetRequestsView() {
     const [hrLoading, setHrLoading] = useState(false);
     const [hrSearch, setHrSearch] = useState('');
     const [hrSort, setHrSort] = useState('modified desc');
-    const [hrFilters, setHrFilters] = useState({ type: 'all', category: 'all', status: 'all', priority: 'all', startDate: '', endDate: '' });
+    const [hrFilters, setHrFilters] = useState({ type: 'all', category: 'all', status: 'all', priority: 'all', startDate: '', endDate: '', unreadOnly: false });
     const [hrFiltersOpen, setHrFiltersOpen] = useState(false);
 
     // ── Submit dialog ──
@@ -218,6 +223,7 @@ export function AssetRequestsView() {
                 priority: hrFilters.priority !== 'all' ? hrFilters.priority : '',
                 startDate: hrFilters.startDate,
                 endDate: hrFilters.endDate,
+                unreadOnly: hrFilters.unreadOnly,
             };
             const result = await fetchPendingAssetRequests(hrPage + 1, hrRowsPerPage, hrFilters.type, 'Pending Approval', hrSort, filterArgs);
             setHrRequests(result.data);
@@ -530,7 +536,7 @@ export function AssetRequestsView() {
                         onFilterName={(e: any) => { setMySearch(e.target.value); }}
                         searchPlaceholder={isHR ? "Search all requests by employee, type..." : "Search my requests..."}
                         onOpenFilter={() => setMyFiltersOpen(true)}
-                        canReset={myFilters.type !== 'all' || myFilters.category !== 'all' || myFilters.status !== 'all' || myFilters.priority !== 'all' || !!myFilters.startDate || !!myFilters.endDate}
+                        canReset={myFilters.type !== 'all' || myFilters.category !== 'all' || myFilters.status !== 'all' || myFilters.priority !== 'all' || !!myFilters.startDate || !!myFilters.endDate || myFilters.unreadOnly}
                         sortBy={mySort === 'modified desc' ? 'date_desc' : 'date_asc'}
                         onSortChange={(val: string) => { setMySort(val === 'date_desc' ? 'modified desc' : 'modified asc'); setMyPage(0); }}
                         sortOptions={[
@@ -587,6 +593,11 @@ export function AssetRequestsView() {
                                                         onClick={() => {
                                                             setSelectedRequestName(row.name);
                                                             setOpenDetails(true);
+                                                            if (isHR) {
+                                                                markAsRead('Asset Request', row.name).then(() => {
+                                                                    window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+                                                                });
+                                                            }
                                                         }}
                                                         sx={{
                                                             cursor: 'pointer',
@@ -720,10 +731,28 @@ export function AssetRequestsView() {
                                                                     e.stopPropagation();
                                                                     setSelectedRequestName(row.name);
                                                                     setOpenDetails(true);
+                                                                    if (isHR) {
+                                                                        markAsRead('Asset Request', row.name).then(() => {
+                                                                            window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+                                                                        });
+                                                                    }
                                                                 }}
                                                                 sx={{ color: 'primary.main' }}
                                                             >
-                                                                <Iconify icon="solar:eye-bold" />
+                                                                <Badge
+                                                                    color="error"
+                                                                    variant="dot"
+                                                                    invisible={!(isHR && unreadCounts.unread_ids['Asset Request']?.includes(row.name))}
+                                                                    sx={{
+                                                                        '& .MuiBadge-badge': {
+                                                                            width: 6,
+                                                                            height: 6,
+                                                                            minWidth: 6,
+                                                                        },
+                                                                    }}
+                                                                >
+                                                                    <Iconify icon="solar:eye-bold" />
+                                                                </Badge>
                                                             </IconButton>
                                                         </TableCell>
                                                     </TableRow>
@@ -765,7 +794,7 @@ export function AssetRequestsView() {
                         onFilterName={(e: any) => setHrSearch(e.target.value)}
                         searchPlaceholder="Search by employee or type..."
                         onOpenFilter={() => setHrFiltersOpen(true)}
-                        canReset={hrFilters.type !== 'all' || hrFilters.category !== 'all' || hrFilters.priority !== 'all' || !!hrFilters.startDate || !!hrFilters.endDate}
+                        canReset={hrFilters.type !== 'all' || hrFilters.category !== 'all' || hrFilters.priority !== 'all' || !!hrFilters.startDate || !!hrFilters.endDate || hrFilters.unreadOnly}
                         sortBy={hrSort === 'modified desc' ? 'date_desc' : 'date_asc'}
                         onSortChange={(val: string) => { setHrSort(val === 'date_desc' ? 'modified desc' : 'modified asc'); setHrPage(0); }}
                         sortOptions={[
@@ -821,6 +850,11 @@ export function AssetRequestsView() {
                                                         onClick={() => {
                                                             setSelectedRequestName(row.name);
                                                             setOpenDetails(true);
+                                                            if (isHR) {
+                                                                markAsRead('Asset Request', row.name).then(() => {
+                                                                    window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+                                                                });
+                                                            }
                                                         }}
                                                         sx={{
                                                             cursor: 'pointer',
@@ -951,10 +985,28 @@ export function AssetRequestsView() {
                                                                         e.stopPropagation();
                                                                         setSelectedRequestName(row.name);
                                                                         setOpenDetails(true);
+                                                                        if (isHR) {
+                                                                            markAsRead('Asset Request', row.name).then(() => {
+                                                                                window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
+                                                                            });
+                                                                        }
                                                                     }}
                                                                     sx={{ color: 'primary.main' }}
                                                                 >
-                                                                    <Iconify icon="solar:eye-bold" />
+                                                                    <Badge
+                                                                        color="error"
+                                                                        variant="dot"
+                                                                        invisible={!(isHR && unreadCounts.unread_ids['Asset Request']?.includes(row.name))}
+                                                                        sx={{
+                                                                            '& .MuiBadge-badge': {
+                                                                                width: 6,
+                                                                                height: 6,
+                                                                                minWidth: 6,
+                                                                            },
+                                                                        }}
+                                                                    >
+                                                                        <Iconify icon="solar:eye-bold" />
+                                                                    </Badge>
                                                                 </IconButton>
                                                                 {row.status === 'Pending Approval' && (
                                                                     <IconButton
@@ -1417,9 +1469,10 @@ export function AssetRequestsView() {
                 onClose={() => setMyFiltersOpen(false)}
                 filters={myFilters}
                 onFilters={(newF) => { setMyFilters((f) => ({ ...f, ...newF })); setMyPage(0); }}
-                canReset={myFilters.type !== 'all' || myFilters.category !== 'all' || myFilters.status !== 'all' || myFilters.priority !== 'all' || !!myFilters.startDate || !!myFilters.endDate}
-                onResetFilters={() => { setMyFilters({ type: 'all', category: 'all', status: 'all', priority: 'all', startDate: '', endDate: '' }); setMyPage(0); }}
+                canReset={myFilters.type !== 'all' || myFilters.category !== 'all' || myFilters.status !== 'all' || myFilters.priority !== 'all' || !!myFilters.startDate || !!myFilters.endDate || myFilters.unreadOnly}
+                onResetFilters={() => { setMyFilters({ type: 'all', category: 'all', status: 'all', priority: 'all', startDate: '', endDate: '', unreadOnly: false }); setMyPage(0); }}
                 categories={categories}
+                isHR={isHR && activeTab === 'hr-dashboard'}
             />
 
             {/* ── Filters Drawer — HR Dashboard tab ── */}
@@ -1428,9 +1481,10 @@ export function AssetRequestsView() {
                 onClose={() => setHrFiltersOpen(false)}
                 filters={hrFilters}
                 onFilters={(newF) => { setHrFilters((f) => ({ ...f, ...newF })); setHrPage(0); }}
-                canReset={hrFilters.type !== 'all' || hrFilters.category !== 'all' || hrFilters.status !== 'all' || hrFilters.priority !== 'all' || !!hrFilters.startDate || !!hrFilters.endDate}
-                onResetFilters={() => { setHrFilters({ type: 'all', category: 'all', status: 'all', priority: 'all', startDate: '', endDate: '' }); setHrPage(0); }}
+                canReset={hrFilters.type !== 'all' || hrFilters.category !== 'all' || hrFilters.status !== 'all' || hrFilters.priority !== 'all' || !!hrFilters.startDate || !!hrFilters.endDate || hrFilters.unreadOnly}
+                onResetFilters={() => { setHrFilters({ type: 'all', category: 'all', status: 'all', priority: 'all', startDate: '', endDate: '', unreadOnly: false }); setHrPage(0); }}
                 categories={categories}
+                isHR={isHR && activeTab === 'hr-dashboard'}
             />
 
             {/* ── Asset Request Details Dialog ── */}

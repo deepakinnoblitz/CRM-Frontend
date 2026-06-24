@@ -51,8 +51,8 @@ export const CustomSwitch = styled((props: SwitchProps) => (
     },
     '& .MuiSwitch-thumb': {
         boxSizing: 'border-box',
-        width: 17,
-        height: 17,
+        width: 18,
+        height: 18,
     },
     '& .MuiSwitch-track': {
         borderRadius: 26 / 2,
@@ -75,10 +75,6 @@ export function EmailSettingsView() {
         enable_email_automation: 1,
         scheduler_interval: 'Hourly',
         create_campaign_history: 1,
-        enable_open_tracking: 1,
-        enable_click_tracking: 1,
-        enable_unsubscribe_link: 1,
-        track_ip_address: 1,
         queue_size: 1000,
         auto_delete_old_queue_records: 0,
         queue_retention_days: 30,
@@ -222,62 +218,9 @@ export function EmailSettingsView() {
                             />
                         </Stack>
                     </Card>
-
-                    <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>Automation Configuration</Typography>
-                        <Stack spacing={3}>
-                            <FormControlLabel 
-                                control={<CustomSwitch checked={!!settings.enable_email_automation} onChange={(e) => handleChange('enable_email_automation', e.target.checked ? 1 : 0)} />} 
-                                label="Enable Email Automation" 
-                                sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
-                            />
-                            <TextField 
-                                fullWidth 
-                                select
-                                label="Scheduler Interval" 
-                                value={settings.scheduler_interval || 'Hourly'}
-                                onChange={(e) => handleChange('scheduler_interval', e.target.value)}
-                            >
-                                {['Every 15 Minutes', 'Every 30 Minutes', 'Hourly', 'Daily'].map(opt => (
-                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                ))}
-                            </TextField>
-                            <FormControlLabel 
-                                control={<CustomSwitch checked={!!settings.create_campaign_history} onChange={(e) => handleChange('create_campaign_history', e.target.checked ? 1 : 0)} />} 
-                                label="Create Campaign History" 
-                                sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
-                            />
-                        </Stack>
-                    </Card>
                 </Box>
 
                 <Box gridColumn={{ xs: 'span 1', md: 'span 1' }}>
-                    <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>Tracking Configuration</Typography>
-                        <Stack spacing={3}>
-                            <FormControlLabel 
-                                control={<CustomSwitch checked={!!settings.enable_open_tracking} onChange={(e) => handleChange('enable_open_tracking', e.target.checked ? 1 : 0)} />} 
-                                label="Enable Open Tracking" 
-                                sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
-                            />
-                            <FormControlLabel 
-                                control={<CustomSwitch checked={!!settings.enable_click_tracking} onChange={(e) => handleChange('enable_click_tracking', e.target.checked ? 1 : 0)} />} 
-                                label="Enable Click Tracking" 
-                                sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
-                            />
-                            <FormControlLabel 
-                                control={<CustomSwitch checked={!!settings.enable_unsubscribe_link} onChange={(e) => handleChange('enable_unsubscribe_link', e.target.checked ? 1 : 0)} />} 
-                                label="Enable Unsubscribe Link" 
-                                sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
-                            />
-                            <FormControlLabel 
-                                control={<CustomSwitch checked={!!settings.track_ip_address} onChange={(e) => handleChange('track_ip_address', e.target.checked ? 1 : 0)} />} 
-                                label="Track IP Address" 
-                                sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
-                            />
-                        </Stack>
-                    </Card>
-
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Queue Configuration</Typography>
                         <Stack spacing={3}>
@@ -305,6 +248,33 @@ export function EmailSettingsView() {
                             <FormControlLabel 
                                 control={<CustomSwitch checked={!!settings.enable_debug_logs} onChange={(e) => handleChange('enable_debug_logs', e.target.checked ? 1 : 0)} />} 
                                 label="Enable Debug Logs" 
+                                sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
+                            />
+                        </Stack>
+                    </Card>
+                    
+                    <Card sx={{ p: 3, mb: 3 }}>
+                        <Typography variant="h6" sx={{ mb: 3 }}>Automation Configuration</Typography>
+                        <Stack spacing={3}>
+                            <FormControlLabel 
+                                control={<CustomSwitch checked={!!settings.enable_email_automation} onChange={(e) => handleChange('enable_email_automation', e.target.checked ? 1 : 0)} />} 
+                                label="Enable Email Automation" 
+                                sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
+                            />
+                            <TextField 
+                                fullWidth 
+                                select
+                                label="Scheduler Interval" 
+                                value={settings.scheduler_interval || 'Hourly'}
+                                onChange={(e) => handleChange('scheduler_interval', e.target.value)}
+                            >
+                                {['Every 15 Minutes', 'Every 30 Minutes', 'Hourly', 'Daily'].map(opt => (
+                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                ))}
+                            </TextField>
+                            <FormControlLabel 
+                                control={<CustomSwitch checked={!!settings.create_campaign_history} onChange={(e) => handleChange('create_campaign_history', e.target.checked ? 1 : 0)} />} 
+                                label="Create Campaign History" 
                                 sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
                             />
                         </Stack>

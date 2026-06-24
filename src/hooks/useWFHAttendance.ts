@@ -8,7 +8,7 @@ export function useWFHAttendance(
     search: string,
     orderBy?: string,
     order?: 'asc' | 'desc',
-    filters?: { employee?: string; status?: string; startDate?: string | null; endDate?: string | null },
+    filters?: { employee?: string; status?: string; startDate?: string | null; endDate?: string | null; unread_only?: boolean },
     socket?: any
 ) {
     const [data, setData] = useState<any[]>([]);

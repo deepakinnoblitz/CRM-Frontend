@@ -27,9 +27,12 @@ import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
+import OutlinedInput from '@mui/material/OutlinedInput';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
+import InputAdornment from '@mui/material/InputAdornment';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import TablePagination from '@mui/material/TablePagination';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -41,25 +44,13 @@ import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchEmailTemplates } from 'src/api/email-template';
-import { createEmailCampaign, EmailCampaign, previewRecipients } from 'src/api/email-campaign';
+import { createEmailCampaign, EmailCampaign, previewRecipients, getFilterFields, getFilterValueOptions } from 'src/api/email-campaign';
 
 import { Iconify } from 'src/components/iconify';
 
 import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 
 // ----------------------------------------------------------------------
-
-const FILTER_FIELD_OPTIONS = [
-    { value: 'workflow_status', label: 'Workflow Status' },
-    { value: 'source', label: 'Source' },
-    { value: 'lead_name', label: 'Lead Name' },
-    { value: 'email', label: 'Email' },
-    { value: 'mobile_no', label: 'Mobile No' },
-    { value: 'city', label: 'City' },
-    { value: 'state', label: 'State' },
-    { value: 'country', label: 'Country' },
-    { value: 'owner', label: 'Owner' },
-];
 
 const FILTER_OPERATOR_OPTIONS = [
     { value: '=', label: '=' },
@@ -95,11 +86,13 @@ export function EmailCampaignsCreateView() {
 
     const [templateOptions, setTemplateOptions] = useState<any[]>([]);
     const [filters, setFilters] = useState<any[]>([{ field_name: '', operator: '=', value: '' }]);
+    const [fieldOptions, setFieldOptions] = useState<{ value: string; label: string }[]>([]);
+    const [filterValueOptions, setFilterValueOptions] = useState<Record<number, string[]>>({});
 
     const TARGET_TYPE_OPTIONS = [
         { value: 'Lead', label: 'Lead' },
-        { value: 'Contact', label: 'Contact' },
-        { value: 'Account', label: 'Account' },
+        { value: 'Contact', label: 'Client' },
+        { value: 'Account', label: 'Company' },
     ];
 
     useEffect(() => {
@@ -109,6 +102,40 @@ export function EmailCampaignsCreateView() {
             console.error('Failed to fetch email templates:', err);
         });
     }, []);
+
+    useEffect(() => {
+        if (targetType) {
+            getFilterFields(targetType)
+                .then((fields) => {
+                    setFieldOptions(fields);
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch filter fields:', err);
+                });
+        } else {
+            setFieldOptions([]);
+        }
+    }, [targetType]);
+
+    useEffect(() => {
+        if (targetType && filters && filters.length > 0) {
+            filters.forEach(async (filter, idx) => {
+                if (filter.field_name && !filterValueOptions[idx]) {
+                    try {
+                        const opts = await getFilterValueOptions(targetType, filter.field_name);
+                        setFilterValueOptions(prev => ({
+                            ...prev,
+                            [idx]: opts || []
+                        }));
+                    } catch (err) {
+                        console.error(err);
+                    }
+                }
+            });
+        }
+    }, [targetType, filters]);
+
+
 
     const handleCloseSnackbar = () => {
         setSnackbar((prev) => ({ ...prev, open: false }));
@@ -168,10 +195,10 @@ export function EmailCampaignsCreateView() {
 
             await createEmailCampaign(campaignData);
             setSnackbar({ open: true, message: 'Email Campaign created successfully', severity: 'success' });
-            
+
             sessionStorage.setItem(
-            'email_campaign_success',
-            'Email Campaign created successfully'
+                'email_campaign_success',
+                'Email Campaign created successfully'
             );
 
             router.push('/email-campaigns');
@@ -190,22 +217,68 @@ export function EmailCampaignsCreateView() {
     };
 
     const handleAddFilter = () => {
+        if (!targetType) {
+            enqueueSnackbar('Please select Target Type first', { variant: 'warning' });
+            return;
+        }
         setFilters([...filters, { field_name: '', operator: '=', value: '' }]);
     };
 
     const handleRemoveFilter = (index: number) => {
         setFilters(filters.filter((_, i) => i !== index));
+        setFilterValueOptions(prev => {
+            const updated = { ...prev };
+            delete updated[index];
+            const newOptions: Record<number, string[]> = {};
+            let newIdx = 0;
+            for (let i = 0; i < filters.length; i++) {
+                if (i !== index) {
+                    if (updated[i]) {
+                        newOptions[newIdx] = updated[i];
+                    }
+                    newIdx++;
+                }
+            }
+            return newOptions;
+        });
     };
 
-    const handleFilterChange = (index: number, field: string, value: string) => {
+    const handleFilterChange = async (index: number, field: string, value: string) => {
         const newFilters = [...filters];
         newFilters[index] = { ...newFilters[index], [field]: value };
-        setFilters(newFilters);
+
+        if (field === 'field_name') {
+            newFilters[index].value = '';
+            setFilters(newFilters);
+            if (value && targetType) {
+                try {
+                    const options = await getFilterValueOptions(targetType, value);
+                    setFilterValueOptions(prev => ({
+                        ...prev,
+                        [index]: options || []
+                    }));
+                } catch (err) {
+                    console.error(err);
+                }
+            } else {
+                setFilterValueOptions(prev => {
+                    const updated = { ...prev };
+                    delete updated[index];
+                    return updated;
+                });
+            }
+        } else {
+            setFilters(newFilters);
+        }
     };
+
 
     const [previewOpen, setPreviewOpen] = useState(false);
     const [recipientPreview, setRecipientPreview] = useState<any[]>([]);
     const [totalRecipients, setTotalRecipients] = useState(0);
+    const [previewSearch, setPreviewSearch] = useState('');
+    const [previewPage, setPreviewPage] = useState(0);
+    const [previewRowsPerPage, setPreviewRowsPerPage] = useState(10);
 
     const handlePreviewRecipients = async () => {
         if (!targetType) {
@@ -223,14 +296,6 @@ export function EmailCampaignsCreateView() {
                 filter.value?.trim()
         );
 
-        if (!hasValidFilter) {
-            enqueueSnackbar(
-                'Please add at least one filter before previewing recipients',
-                { variant: 'warning' }
-            );
-            return;
-        }
-
         try {
             const result = await previewRecipients(
                 targetType,
@@ -239,6 +304,8 @@ export function EmailCampaignsCreateView() {
 
             setTotalRecipients(result.count);
             setRecipientPreview(result.recipients);
+            setPreviewSearch('');
+            setPreviewPage(0);
             setPreviewOpen(true);
 
             enqueueSnackbar(
@@ -291,16 +358,10 @@ export function EmailCampaignsCreateView() {
                         onClick={handleCreate}
                         disabled={creating}
                         sx={{
-                            height: 36,
-                            px: 3,
                             borderRadius: 1.5,
-                            fontWeight: 700,
-                            textTransform: 'none',
-                            bgcolor: '#2081C3',
+                            bgcolor: '#08a3cd',
                             color: 'common.white',
-                            minWidth: 130,
-                            '&:hover': { bgcolor: '#1a699f' },
-                            '&:disabled': { bgcolor: 'action.disabledBackground', color: 'text.disabled' }
+                            '&:hover': { bgcolor: '#068fb3' },
                         }}
                     >
                         {creating ? <CircularProgress size={20} color="inherit" /> : 'Create Campaign'}
@@ -339,6 +400,7 @@ export function EmailCampaignsCreateView() {
                         value={templateOptions.find((opt) => opt.name === emailTemplate) || null}
                         onChange={(_e, newValue) => {
                             setEmailTemplate(newValue?.name || '');
+                            setSubject(newValue?.subject || "");
                             if (newValue?.name) setValidationErrors(prev => ({ ...prev, emailTemplate: false }));
                         }}
                         renderInput={(params) => (
@@ -381,36 +443,36 @@ export function EmailCampaignsCreateView() {
                         disabled
                     />
                 </Box>
-                 <Box
+                <Box
                     sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 2,
-                    flexWrap: 'wrap',
-                    gap: 2,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mb: 2,
+                        flexWrap: 'wrap',
+                        gap: 2,
                     }}
                 >
                     <Typography sx={{ mb: 3, ml: 1, mt: 2, fontWeight: 700, fontSize: 16 }}>
-                    Audience
+                        Audience
                     </Typography>
 
                     <Button
-                    variant="contained"
-                    startIcon={<CiCalculator2 size={24} />}
-                    onClick={handlePreviewRecipients}
-                    sx={{
-                        background: 'linear-gradient(135deg,#A855F7,#7C3AED)',
-                        borderRadius: 3,
-                        px: 2,
-                        py: 0.8,
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        boxShadow: '0 8px 20px rgba(124,58,237,.25)',
-                        '&:hover': {
-                        background: 'linear-gradient(135deg,#9333EA,#6D28D9)',
-                        },
-                    }}
+                        variant="contained"
+                        startIcon={<CiCalculator2 size={24} />}
+                        onClick={handlePreviewRecipients}
+                        sx={{
+                            background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
+                            borderRadius: 3,
+                            px: 2,
+                            py: 0.6,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            '&:hover': {
+                                background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
+                                boxShadow: '0 8px 10px rgba(124,58,237,.25)',
+                            },
+                        }}
                     >
                         Preview Recipients
                     </Button>
@@ -422,41 +484,43 @@ export function EmailCampaignsCreateView() {
                         gap: 3,
                         mb: 4,
                         gridTemplateColumns: {
-                        xs: '1fr',
-                        md: '1fr 1fr',
+                            xs: '1fr',
+                            md: '1fr 1fr',
                         },
                     }}
-                    >
+                >
                     <TextField
                         fullWidth
                         select
                         label="Target Type"
                         value={targetType}
                         onChange={(e) => {
-                        setTargetType(e.target.value);
+                            setTargetType(e.target.value);
+                            setFilters([{ field_name: '', operator: '=', value: '' }]);
+                            setFilterValueOptions({});
 
-                        if (e.target.value) {
-                            setValidationErrors((prev) => ({
-                            ...prev,
-                            targetType: false,
-                            }));
-                        }
+                            if (e.target.value) {
+                                setValidationErrors((prev) => ({
+                                    ...prev,
+                                    targetType: false,
+                                }));
+                            }
                         }}
                         required
                         error={!!validationErrors.targetType}
                         helperText={
-                        validationErrors.targetType
-                            ? 'Target Type is required'
-                            : ''
+                            validationErrors.targetType
+                                ? 'Target Type is required'
+                                : ''
                         }
                     >
                         {TARGET_TYPE_OPTIONS.map((option) => (
-                        <MenuItem
-                            key={option.value}
-                            value={option.value}
-                        >
-                            {option.label}
-                        </MenuItem>
+                            <MenuItem
+                                key={option.value}
+                                value={option.value}
+                            >
+                                {option.label}
+                            </MenuItem>
                         ))}
                     </TextField>
 
@@ -469,207 +533,239 @@ export function EmailCampaignsCreateView() {
                 </Box>
 
                 <Box
-                sx={{
-                    p: 3,
-                    borderRadius: 3,
-                    bgcolor: '#F8FAFC',
-                    border: '1px solid #E5E7EB',
-                }}
-                >
-                <Typography
-                    variant="subtitle1"
-                    fontWeight={700}
-                    sx={{ mb: 3 }}
-                >
-                    Filters
-                </Typography>
-
-                {filters.map((filter, index) => (
-                    <Box
-                    key={index}
                     sx={{
-                        display: 'grid',
-                        gap: 2,
-                        mb: 2,
-                        alignItems: 'center',
-                        gridTemplateColumns: {
-                        xs: '1fr',
-                        md: '2fr 1.5fr 2fr auto',
-                        },
-                    }}
-                    >
-                    <TextField
-                        select
-                        size="small"
-                        value={filter.field_name}
-                        onChange={(e) =>
-                        handleFilterChange(
-                            index,
-                            'field_name',
-                            e.target.value
-                        )
-                        }
-                        sx={{
-                        '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                        },
-                        }}
-                    >
-                        <MenuItem value="">
-                        Select Field
-                        </MenuItem>
-
-                        {FILTER_FIELD_OPTIONS.map((option) => (
-                        <MenuItem
-                            key={option.value}
-                            value={option.value}
-                        >
-                            {option.label}
-                        </MenuItem>
-                        ))}
-                    </TextField>
-
-                    <TextField
-                        select
-                        size="small"
-                        value={filter.operator}
-                        onChange={(e) =>
-                        handleFilterChange(
-                            index,
-                            'operator',
-                            e.target.value
-                        )
-                        }
-                        sx={{
-                        '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                        },
-                        }}
-                    >
-                        {FILTER_OPERATOR_OPTIONS.map((option) => (
-                        <MenuItem
-                            key={option.value}
-                            value={option.value}
-                        >
-                            {option.label}
-                        </MenuItem>
-                        ))}
-                    </TextField>
-
-                    <TextField
-                        size="small"
-                        placeholder="Enter value"
-                        value={filter.value}
-                        onChange={(e) =>
-                        handleFilterChange(
-                            index,
-                            'value',
-                            e.target.value
-                        )
-                        }
-                        sx={{
-                        '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                        },
-                        }}
-                    />
-
-                    <IconButton
-                        color="error"
-                        onClick={() =>
-                        handleRemoveFilter(index)
-                        }
-                        disabled={filters.length <= 1}
-                    >
-                        <Iconify icon="solar:trash-bin-trash-bold" />
-                    </IconButton>
-                    </Box>
-                ))}
-
-                <Button
-                    variant="contained"
-                    startIcon={
-                    <Iconify icon="mingcute:add-line" />
-                    }
-                    onClick={handleAddFilter}
-                    sx={{
-                    mt: 1,
-                    background:
-                        'linear-gradient(135deg,#A855F7,#7C3AED)',
-                    borderRadius: 3,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    px: 2,
-                    py: 0.8,
-                    boxShadow:
-                        '0 8px 20px rgba(124,58,237,.25)',
-                    '&:hover': {
-                        background:
-                        'linear-gradient(135deg,#9333EA,#6D28D9)',
-                    },
+                        p: 3,
+                        borderRadius: 3,
+                        bgcolor: '#F8FAFC',
+                        border: '1px solid #E5E7EB',
                     }}
                 >
-                    Add Filter
-                </Button>
+                    <Typography
+                        variant="subtitle1"
+                        fontWeight={700}
+                        sx={{ mb: 3 }}
+                    >
+                        Filters
+                    </Typography>
+
+                    {filters.map((filter, index) => (
+                        <Box
+                            key={index}
+                            sx={{
+                                display: 'grid',
+                                gap: 2,
+                                mb: 2,
+                                alignItems: 'center',
+                                gridTemplateColumns: {
+                                    xs: '1fr',
+                                    md: '2fr 1.5fr 2fr auto',
+                                },
+                            }}
+                        >
+                            <Autocomplete
+                                size="small"
+                                options={fieldOptions}
+                                getOptionLabel={(option) => option.label || option.value || ''}
+                                value={fieldOptions.find((opt) => opt.value === filter.field_name) || null}
+                                onChange={(_e, newValue) => {
+                                    handleFilterChange(index, 'field_name', newValue?.value || '');
+                                }}
+                                onOpen={() => {
+                                    if (!targetType) {
+                                        enqueueSnackbar('Please select Target Type first', { variant: 'warning' });
+                                    }
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        placeholder="Select Field"
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                borderRadius: 2,
+                                            },
+                                        }}
+                                    />
+                                )}
+                            />
+
+                            <TextField
+                                select
+                                size="small"
+                                value={filter.operator}
+                                onChange={(e) =>
+                                    handleFilterChange(
+                                        index,
+                                        'operator',
+                                        e.target.value
+                                    )
+                                }
+                                onClick={() => {
+                                    if (!targetType) {
+                                        enqueueSnackbar('Please select Target Type first', { variant: 'warning' });
+                                    }
+                                }}
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 2,
+                                    },
+                                }}
+                            >
+                                {FILTER_OPERATOR_OPTIONS.map((option) => (
+                                    <MenuItem
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {option.label}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+
+                            {filterValueOptions[index] && filterValueOptions[index].length > 0 ? (
+                                <Autocomplete
+                                    fullWidth
+                                    size="small"
+                                    options={filterValueOptions[index]}
+                                    value={filter.value || ''}
+                                    onChange={(_e, newValue) => {
+                                        handleFilterChange(index, 'value', newValue || '');
+                                    }}
+                                    onOpen={() => {
+                                        if (!targetType) {
+                                            enqueueSnackbar('Please select Target Type first', { variant: 'warning' });
+                                        }
+                                    }}
+                                    freeSolo
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            placeholder="Enter or select value"
+                                            onChange={(e) => handleFilterChange(index, 'value', e.target.value)}
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    borderRadius: 2,
+                                                },
+                                            }}
+                                        />
+                                    )}
+                                />
+                            ) : (
+                                <TextField
+                                    size="small"
+                                    placeholder="Enter value"
+                                    value={filter.value}
+                                    onClick={() => {
+                                        if (!targetType) {
+                                            enqueueSnackbar('Please select Target Type first', { variant: 'warning' });
+                                        }
+                                    }}
+                                    onChange={(e) =>
+                                        handleFilterChange(
+                                            index,
+                                            'value',
+                                            e.target.value
+                                        )
+                                    }
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 2,
+                                        },
+                                    }}
+                                />
+                            )}
+
+
+                            <IconButton
+                                color="error"
+                                onClick={() =>
+                                    handleRemoveFilter(index)
+                                }
+                                disabled={filters.length <= 1}
+                            >
+                                <Iconify icon="solar:trash-bin-trash-bold" />
+                            </IconButton>
+                        </Box>
+                    ))}
+
+                    <Button
+                        variant="contained"
+                        startIcon={
+                            <Iconify icon="mingcute:add-line" />
+                        }
+                        onClick={handleAddFilter}
+                        sx={{
+                            background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
+                            borderRadius: 3,
+                            px: 1.5,
+                            py: 0.6,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            '&:hover': {
+                                background: 'linear-gradient(135deg,#08a3cd,#08a3cd)',
+                                boxShadow: '0 8px 10px rgba(124,58,237,.25)',
+                            },
+                        }}
+                    >
+                        Add Filter
+                    </Button>
                 </Box>
             </Card>
 
             <Card sx={{ p: 3, mb: 3 }}>
-            <Typography
-                sx={{ mb: 3, ml: 1, fontWeight: 700, fontSize: 16 }}
-            >
-                Scheduling
-            </Typography>
+                <Typography
+                    sx={{ mb: 3, ml: 1, fontWeight: 700, fontSize: 16 }}
+                >
+                    Scheduling
+                </Typography>
 
-            <Box
-            sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 3,
-                flexWrap: 'wrap',
-            }}
-            >
-            <FormControlLabel
-                sx={{
-                m: 0,
-                minWidth: 220,
-                '& .MuiFormControlLabel-label': {
-                    ml: 1.5, // gap between switch and label
-                    fontSize: '15px',
-                    fontWeight: 500,
-                },
-                }}
-                control={
-                <CustomSwitch
-                    checked={sendImmediately}
-                    onChange={(e) => setSendImmediately(e.target.checked)}
-                />
-                }
-                label="Send Immediately"
-            />
-
-            {!sendImmediately && (
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                    label="Schedule Date"
-                    value={scheduleDate ? dayjs(scheduleDate) : null}
-                    onChange={(newValue) =>
-                    setScheduleDate(
-                        newValue ? newValue.format('YYYY-MM-DD') : ''
-                    )
-                    }
-                    slotProps={{
-                    textField: {
-                        size: 'small',
-                        sx: {
-                        minWidth: 380,
-                        },
-                    },
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        flexWrap: 'wrap',
                     }}
-                />
-                </LocalizationProvider>
-            )}
-            </Box>
+                >
+                    <FormControlLabel
+                        sx={{
+                            m: 0,
+                            minWidth: 220,
+                            '& .MuiFormControlLabel-label': {
+                                ml: 1.5, // gap between switch and label
+                                fontSize: '15px',
+                                fontWeight: 500,
+                            },
+                        }}
+                        control={
+                            <CustomSwitch
+                                checked={sendImmediately}
+                                onChange={(e) => setSendImmediately(e.target.checked)}
+                            />
+                        }
+                        label="Send Immediately"
+                    />
+
+                    {!sendImmediately && (
+                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DatePicker
+                                label="Schedule Date"
+                                value={scheduleDate ? dayjs(scheduleDate) : null}
+                                onChange={(newValue) =>
+                                    setScheduleDate(
+                                        newValue ? newValue.format('YYYY-MM-DD') : ''
+                                    )
+                                }
+                                slotProps={{
+                                    textField: {
+                                        size: 'small',
+                                        sx: {
+                                            minWidth: 380,
+                                        },
+                                    },
+                                }}
+                            />
+                        </LocalizationProvider>
+                    )}
+                </Box>
             </Card>
 
             <Dialog
@@ -737,8 +833,26 @@ export function EmailCampaignsCreateView() {
                     </Box>
                 </DialogTitle>
 
-                <DialogContent sx={{ p: 0 }}>
-                    <TableContainer>
+                <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column', minHeight: 450 }}>
+                    <Box sx={{ p: 2.5, display: 'flex', justifyContent: 'flex-start' }}>
+                        <OutlinedInput
+                            size="small"
+                            placeholder="Search recipient..."
+                            value={previewSearch}
+                            onChange={(e) => {
+                                setPreviewSearch(e.target.value);
+                                setPreviewPage(0);
+                            }}
+                            startAdornment={
+                                <InputAdornment position="start">
+                                    <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                                </InputAdornment>
+                            }
+                            sx={{ width: 320 }}
+                        />
+                    </Box>
+
+                    <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
                         <Table>
                             <TableHead>
                                 <TableRow
@@ -754,6 +868,7 @@ export function EmailCampaignsCreateView() {
                                         sx={{
                                             fontWeight: 700,
                                             py: 2,
+                                            pl: 4,
                                         }}
                                     >
                                         S.No
@@ -778,7 +893,12 @@ export function EmailCampaignsCreateView() {
                             </TableHead>
 
                             <TableBody>
-                                {recipientPreview.length === 0 ? (
+                                {recipientPreview.filter((r) => {
+                                    const name = (r.name || '').toLowerCase();
+                                    const email = (r.email || '').toLowerCase();
+                                    const search = previewSearch.toLowerCase();
+                                    return name.includes(search) || email.includes(search);
+                                }).length === 0 ? (
                                     <TableRow>
                                         <TableCell
                                             colSpan={3}
@@ -794,17 +914,46 @@ export function EmailCampaignsCreateView() {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    recipientPreview.map(
-                                        (row, index) => (
+                                    recipientPreview
+                                        .filter((r) => {
+                                            const name = (r.name || '').toLowerCase();
+                                            const email = (r.email || '').toLowerCase();
+                                            const search = previewSearch.toLowerCase();
+                                            return name.includes(search) || email.includes(search);
+                                        })
+                                        .slice(
+                                            previewPage * previewRowsPerPage,
+                                            previewPage * previewRowsPerPage + previewRowsPerPage
+                                        )
+                                        .map((row, index) => (
                                             <TableRow
                                                 key={index}
                                                 hover
                                             >
                                                 <TableCell>
                                                     <Typography
-                                                        fontWeight={600}
+                                                        sx={{
+                                                            width: 28,
+                                                            height: 28,
+                                                            display: 'flex',
+                                                            borderRadius: '50%',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                            color: 'primary.main',
+                                                            typography: 'subtitle2',
+                                                            fontWeight: 800,
+                                                            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                                                            ml: 2,
+                                                            transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+                                                            '&:hover': {
+                                                                bgcolor: 'primary.main',
+                                                                color: 'primary.contrastText',
+                                                                transform: 'scale(1.1)',
+                                                            },
+                                                        }}
                                                     >
-                                                        {index + 1}
+                                                        {previewPage * previewRowsPerPage + index + 1}
                                                     </Typography>
                                                 </TableCell>
 
@@ -824,12 +973,31 @@ export function EmailCampaignsCreateView() {
                                                     </Typography>
                                                 </TableCell>
                                             </TableRow>
-                                        )
-                                    )
+                                        ))
                                 )}
                             </TableBody>
                         </Table>
                     </TableContainer>
+
+                    <TablePagination
+                        rowsPerPageOptions={[5, 10, 25]}
+                        component="div"
+                        count={
+                            recipientPreview.filter((r) => {
+                                const name = (r.name || '').toLowerCase();
+                                const email = (r.email || '').toLowerCase();
+                                const search = previewSearch.toLowerCase();
+                                return name.includes(search) || email.includes(search);
+                            }).length
+                        }
+                        rowsPerPage={previewRowsPerPage}
+                        page={previewPage}
+                        onPageChange={(_e, newPage) => setPreviewPage(newPage)}
+                        onRowsPerPageChange={(e) => {
+                            setPreviewRowsPerPage(parseInt(e.target.value, 10));
+                            setPreviewPage(0);
+                        }}
+                    />
                 </DialogContent>
             </Dialog>
 

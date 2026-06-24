@@ -168,7 +168,23 @@ export async function getEmailCampaign(name: string): Promise<EmailCampaign> {
         `/api/method/frappe.client.get?doctype=CRM Email Campaign&name=${encodeURIComponent(name)}`
     );
     if (!res.ok) throw new Error('Failed to fetch email campaign details');
-    return (await res.json()).message;
+    const campaign = (await res.json()).message;
+
+    if (campaign.email_template) {
+        try {
+            const templateRes = await frappeRequest(
+                `/api/method/frappe.client.get_value?doctype=CRM Email Template&fieldname=template_name&filters={"name":"${campaign.email_template}"}`
+            );
+            const templateJson = await templateRes.json();
+            if (templateJson.message && templateJson.message.template_name) {
+                campaign.template_name = templateJson.message.template_name;
+            }
+        } catch (err) {
+            console.error('Failed to fetch template name', err);
+        }
+    }
+
+    return campaign;
 }
 
 // ----------------------------------------------------------------------
@@ -307,6 +323,16 @@ export async function getFilterValueOptions(targetType: string, fieldName: strin
     if (!res.ok) throw new Error('Failed to fetch filter options');
     return json.message;
 }
+
+export async function getFilterFields(targetType: string) {
+    const res = await frappeRequest(
+        `/api/method/company.company.doctype.crm_email_campaign.crm_email_campaign.get_filter_fields?target_type=${encodeURIComponent(targetType)}`
+    );
+    const json = await res.json();
+    if (!res.ok) throw new Error('Failed to fetch filter fields');
+    return json.message || [];
+}
+
 
 // ----------------------------------------------------------------------
 // Fetch Email Queue for a Campaign

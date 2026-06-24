@@ -80,6 +80,7 @@ export function RequestsView() {
   const [filterEmployee, setFilterEmployee] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
+  const [filterUnreadMessages, setFilterUnreadMessages] = useState(false);
 
   const [openFilters, setOpenFilters] = useState(false);
 
@@ -95,7 +96,8 @@ export function RequestsView() {
     endDate || undefined,
     filterStatus,
     effectiveEmployee,
-    socket
+    socket,
+    isHR ? filterUnreadMessages : undefined
   );
 
   const [openCreate, setOpenCreate] = useState(false);
@@ -153,11 +155,12 @@ export function RequestsView() {
     setOrder(ord as 'asc' | 'desc');
   };
 
-  const handleFilters = useCallback((update: Partial<{ status: string; employee: string | null; startDate: string | null; endDate: string | null }>) => {
+  const handleFilters = useCallback((update: Partial<{ status: string; employee: string | null; startDate: string | null; endDate: string | null; unread_messages: boolean }>) => {
     if ('status' in update) setFilterStatus(update.status || 'all');
     if ('employee' in update) setFilterEmployee(update.employee || null);
     if ('startDate' in update) setStartDate(update.startDate || null);
     if ('endDate' in update) setEndDate(update.endDate || null);
+    if ('unread_messages' in update) setFilterUnreadMessages(!!update.unread_messages);
     setPage(0);
   }, []);
 
@@ -167,6 +170,7 @@ export function RequestsView() {
     setFilterStatus('all');
     setFilterEmployee(null);
     setFilterName('');
+    setFilterUnreadMessages(false);
     setPage(0);
   };
 
@@ -468,7 +472,7 @@ export function RequestsView() {
             { value: 'subject_desc', label: 'Subject: Z to A' },
           ]}
           onOpenFilter={() => setOpenFilters(true)}
-          canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all' || filterEmployee !== null}
+          canReset={!!startDate || !!endDate || !!filterName || filterStatus !== 'all' || filterEmployee !== null || (isHR ? filterUnreadMessages : false)}
         />
 
 
@@ -745,9 +749,10 @@ export function RequestsView() {
           employee: filterEmployee,
           startDate,
           endDate,
+          unread_messages: filterUnreadMessages,
         }}
         onFilters={handleFilters}
-        canReset={!!startDate || !!endDate || filterStatus !== 'all' || filterEmployee !== null}
+        canReset={!!startDate || !!endDate || filterStatus !== 'all' || filterEmployee !== null || (isHR ? filterUnreadMessages : false)}
         onResetFilters={handleResetFilters}
         employees={employees}
         isHR={isHR}

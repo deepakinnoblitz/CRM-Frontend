@@ -17,6 +17,9 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+import { CustomSwitch } from 'src/sections/email-settings/view/email-settings-view';
+
+
 // ----------------------------------------------------------------------
 
 type FiltersProps = {
@@ -25,6 +28,7 @@ type FiltersProps = {
     leave_type: string;
     startDate: string | null;
     endDate: string | null;
+    unread_messages: boolean;
 };
 
 type Props = {
@@ -273,6 +277,20 @@ export function LeavesTableFiltersDrawer({
             </LocalizationProvider>
         </Stack>
     );
+    const renderUnreadMessages = (
+        <Stack spacing={1.5}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                     Unread Messages
+                </Typography>
+                <CustomSwitch
+                    checked={filters.unread_messages}
+                    onChange={(e) => onFilters({ unread_messages: e.target.checked })}
+                />
+            </Box>
+        </Stack>
+    );
+
 
     return (
         <Drawer
@@ -299,6 +317,7 @@ export function LeavesTableFiltersDrawer({
                     {renderStatus}
                     {renderLeaveType}
                     {renderDateRange}
+                    {isHR && renderUnreadMessages}
                 </Stack>
             </Scrollbar>
 

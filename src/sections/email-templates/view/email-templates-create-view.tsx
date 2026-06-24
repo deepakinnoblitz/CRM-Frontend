@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { MdContentCopy } from "react-icons/md";
 import { IoMdArrowBack } from 'react-icons/io';
 
 import Box from '@mui/material/Box';
@@ -11,11 +12,13 @@ import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import LoadingButton from '@mui/lab/LoadingButton';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
+import { createEmailTemplate, fetchEmailTemplateVariables, EmailTemplateVariable } from 'src/api/email-template';
 
 import { Iconify } from 'src/components/iconify';
 import { RichTextEditor } from 'src/components/rich-text-editor/rich-text-editor';
@@ -28,11 +31,19 @@ export function EmailTemplateCreateView() {
     const [footerContent, setFooterContent] = useState('');
     const [attachments, setAttachments] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
-    
+    const [isSaving, setIsSaving] = useState(false);
+
     const [templateName, setTemplateName] = useState('');
     const [category, setCategory] = useState('');
+    const [templatefor, setTemplatefor] = useState('Lead');
     const [subject, setSubject] = useState('');
-    const [errors, setErrors] = useState<{ templateName?: boolean; category?: boolean; subject?: boolean; emailContent?: boolean }>({});
+    const [description, setDescription] = useState('');
+    const [senderName, setSenderName] = useState('');
+    const [replyToEmail, setReplyToEmail] = useState('');
+    const [isActive, setIsActive] = useState(true);
+    const [isDefault, setIsDefault] = useState(false);
+    const [errors, setErrors] = useState<{ templateName?: boolean; category?: boolean; templatefor?: boolean; subject?: boolean; emailContent?: boolean }>({});
+    const [variables, setVariables] = useState<EmailTemplateVariable[]>([]);
 
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
         open: false,
@@ -44,22 +55,30 @@ export function EmailTemplateCreateView() {
         setSnackbar((prev) => ({ ...prev, open: false }));
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         const newErrors: typeof errors = {};
         const missingFields: string[] = [];
 
-        if (!templateName) {
+        if (!templateName.trim()) {
             newErrors.templateName = true;
             missingFields.push('Template Name');
         }
+
         if (!category) {
             newErrors.category = true;
             missingFields.push('Category');
         }
-        if (!subject) {
+
+        if (!templatefor) {
+            newErrors.templatefor = true;
+            missingFields.push('Template For');
+        }
+
+        if (!subject.trim()) {
             newErrors.subject = true;
             missingFields.push('Subject');
         }
+
         if (!emailContent || emailContent === '<p><br></p>') {
             newErrors.emailContent = true;
             missingFields.push('Email Content');
@@ -67,16 +86,50 @@ export function EmailTemplateCreateView() {
 
         setErrors(newErrors);
 
-        if (missingFields.length > 0) {
+        if (missingFields.length) {
             setSnackbar({
                 open: true,
-                message: `Please fill in mandatory fields: ${missingFields.join(', ')}`,
                 severity: 'error',
+                message: `Please fill in: ${missingFields.join(', ')}`,
             });
             return;
         }
 
-        // Add save logic here
+        setIsSaving(true);
+        try {
+            await createEmailTemplate({
+                template_name: templateName,
+                category,
+                template_for: templatefor,
+                subject,
+                email_content: emailContent,
+                footer_content: footerContent,
+                description: '',
+                sender_name: '',
+                reply_to_email: '',
+                is_active: 1,
+                is_default: 0,
+                attachments,
+            });
+
+            setSnackbar({
+                open: true,
+                severity: 'success',
+                message: 'Email Template created successfully.',
+            });
+
+            setTimeout(() => {
+                router.push('/email-templates');
+            }, 500);
+
+        } catch (error: any) {
+            setSnackbar({
+                open: true,
+                severity: 'error',
+                message: error.message || 'Failed to create email template.',
+            });
+            setIsSaving(false);
+        }
     };
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,6 +142,52 @@ export function EmailTemplateCreateView() {
     const handleRemoveAttachment = (index: number) => {
         setAttachments((prev) => prev.filter((_, i) => i !== index));
     };
+
+    const templateForOptions = [
+        { label: 'Lead', value: 'Lead' },
+        { label: 'Client', value: 'Contact' },
+        { label: 'Company', value: 'Account' },
+    ];
+
+    const handleTemplateForChange = async (value: string) => {
+        setTemplatefor(value);
+
+        if (value) {
+            setErrors((prev) => ({ ...prev, templatefor: false }));
+        }
+
+        try {
+            const data = await fetchEmailTemplateVariables(
+                value as 'Lead' | 'Contact' | 'Account'
+            );
+
+            setVariables(data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleCopyVariable = (variable: string) => {
+        navigator.clipboard.writeText(variable);
+        setSnackbar({
+            open: true,
+            severity: 'success',
+            message: `Copied ${variable} to clipboard`,
+        });
+    };
+
+    useEffect(() => {
+        const loadDefaultVariables = async () => {
+            try {
+                const data = await fetchEmailTemplateVariables("Lead");
+                setVariables(data);
+            } catch (err) {
+                console.error("Failed to load Lead variables", err);
+            }
+        };
+
+        loadDefaultVariables();
+    }, []);
 
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
@@ -113,9 +212,10 @@ export function EmailTemplateCreateView() {
                     >
                         Go Back
                     </Button>
-                    <Button
+                    <LoadingButton
                         variant="contained"
                         onClick={handleSave}
+                        loading={isSaving}
                         sx={{
                             borderRadius: 1.5,
                             bgcolor: '#08a3cd',
@@ -124,12 +224,19 @@ export function EmailTemplateCreateView() {
                         }}
                     >
                         Save Template
-                    </Button>
+                    </LoadingButton>
                 </Stack>
             </Stack>
 
-            <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(3, 1fr)' }} gap={3}>
-                <Box gridColumn={{ xs: 'span 1', md: 'span 2' }}>
+            <Box
+                display="grid"
+                gridTemplateColumns={{
+                    xs: '1fr',
+                    md: 'minmax(0, 2.5fr) 350px',
+                }}
+                gap={3}
+            >
+                <Box>
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Basic Information</Typography>
                         <Stack spacing={3}>
@@ -164,10 +271,26 @@ export function EmailTemplateCreateView() {
                                     </MenuItem>
                                 ))}
                             </TextField>
-                            <TextField fullWidth multiline rows={3} label="Description" />
+                            <TextField
+                                select
+                                fullWidth
+                                label="Template For"
+                                required
+                                value={templatefor}
+                                onChange={(e) => handleTemplateForChange(e.target.value)}
+                                error={errors.templatefor}
+                                helperText={errors.templatefor ? 'This field is required' : ''}
+                            >
+                                {templateForOptions.map((option) => (
+                                    <MenuItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                            <TextField fullWidth multiline rows={3} label="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
                             <Stack direction="row" spacing={2}>
-                                <FormControlLabel control={<CustomSwitch defaultChecked />} label="Is Active" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
-                                <FormControlLabel control={<CustomSwitch />} label="Is Default" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
+                                <FormControlLabel control={<CustomSwitch defaultChecked onChange={(e) => setIsActive(e.target.checked)} />} label="Is Active" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
+                                <FormControlLabel control={<CustomSwitch onChange={(e) => setIsDefault(e.target.checked)} />} label="Is Default" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
                             </Stack>
                         </Stack>
                     </Card>
@@ -179,6 +302,8 @@ export function EmailTemplateCreateView() {
                                 fullWidth
                                 label="Subject"
                                 required
+                                multiline
+                                rows={3}
                                 value={subject}
                                 onChange={(e) => {
                                     setSubject(e.target.value);
@@ -187,8 +312,8 @@ export function EmailTemplateCreateView() {
                                 error={errors.subject}
                                 helperText={errors.subject ? 'This field is required' : ''}
                             />
-                            <TextField fullWidth label="Sender Name" />
-                            <TextField fullWidth label="Reply To Email" />
+                            <TextField fullWidth label="Sender Name" value={senderName} onChange={(e) => setSenderName(e.target.value)} />
+                            <TextField fullWidth label="Reply To Email" value={replyToEmail} onChange={(e) => setReplyToEmail(e.target.value)} />
                         </Stack>
                     </Card>
 
@@ -208,6 +333,7 @@ export function EmailTemplateCreateView() {
                                     placeholder="Enter email content..."
                                     error={errors.emailContent}
                                     helperText={errors.emailContent ? 'This field is required' : undefined}
+                                    minHeight={600}
                                 />
                             </Box>
                             <Box>
@@ -218,6 +344,7 @@ export function EmailTemplateCreateView() {
                                     value={footerContent}
                                     onChange={(val: string) => setFooterContent(val)}
                                     placeholder="Enter footer content..."
+                                    minHeight={300}
                                 />
                             </Box>
                         </Stack>
@@ -297,21 +424,172 @@ export function EmailTemplateCreateView() {
                     </Box>
                 </Box>
 
-                <Box gridColumn={{ xs: 'span 1', md: 'span 1' }}>
-                    <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>Tracking</Typography>
-                        <Stack spacing={2}>
-                            <FormControlLabel control={<CustomSwitch />} label="Enable Open Tracking" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
-                            <FormControlLabel control={<CustomSwitch />} label="Enable Click Tracking" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
-                            <FormControlLabel control={<CustomSwitch />} label="Enable Unsubscribe Link" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
-                        </Stack>
-                    </Card>
+                <Box
+                    gridColumn={{ xs: 'span 1', md: 'span 1' }}
+                    sx={{
+                        position: 'sticky',
+                        top: 90,
+                        alignSelf: 'start',
+                    }}
+                >
+                    <Card
+                        sx={{
+                            borderRadius: 2,
+                            overflow: 'hidden',
+                            display: 'flex',
+                            flexDirection: 'column',
 
-                    <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>Variables</Typography>
-                        <Typography variant="body2" color="textSecondary">
-                            Available Variables: {"{{ contact_name }}"}, {"{{ company_name }}"}
+                            // Dynamic height based on screen size
+                            maxHeight: 'calc(100vh - 120px)',
+                        }}
+                    >
+                        <Typography
+                            variant="h6"
+                            sx={{
+                                px: 2,
+                                py: 1.5,
+                                borderBottom: '1px solid',
+                                borderColor: 'divider',
+                                fontWeight: 600,
+                            }}
+                        >
+                            Variables
                         </Typography>
+
+                        <Stack
+                            spacing={1}
+                            sx={{
+                                p: 2,
+                                overflowY: 'auto',
+                                flex: 1,
+
+                                '&::-webkit-scrollbar': {
+                                    width: 6,
+                                },
+                                '&::-webkit-scrollbar-thumb': {
+                                    bgcolor: 'grey.400',
+                                    borderRadius: 3,
+                                },
+                                '&::-webkit-scrollbar-thumb:hover': {
+                                    bgcolor: 'grey.500',
+                                },
+                            }}
+                        >
+                            {variables.map((item) => {
+                                // Display text (Lead Name, Company Name, etc.)
+                                const label = item.fieldname
+                                    .split('_')
+                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                    .join(' ');
+
+                                return (
+                                    <Button
+                                        key={item.fieldname}
+                                        fullWidth
+                                        variant="outlined"
+                                        startIcon={
+                                            <Box
+                                                sx={{
+                                                    width: 34,
+                                                    height: 34,
+                                                    borderRadius: 1.5,
+                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                }}
+                                            >
+                                                <Iconify
+                                                    icon={"solar:code-bold" as any}
+                                                    width={18}
+                                                    sx={{ color: 'primary.main' }}
+                                                />
+                                            </Box>
+                                        }
+                                        endIcon={
+                                            <MdContentCopy size={16} color='#08a3cd' />
+                                        }
+                                        onClick={() => handleCopyVariable(item.variable)}
+                                        sx={{
+                                            justifyContent: 'space-between',
+                                            textTransform: 'none',
+                                            fontWeight: 600,
+                                            color: 'text.primary',
+                                            bgcolor: 'background.paper',
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            borderRadius: 2,
+                                            px: 2,
+                                            py: 1.3,
+                                            minHeight: 58,
+                                            transition: 'all .2s ease',
+
+                                            '&:hover': {
+                                                borderColor: 'primary.main',
+                                                bgcolor: (theme) =>
+                                                    alpha(theme.palette.primary.main, 0.08),
+                                                transform: 'translateX(2px)',
+                                                boxShadow: (theme) =>
+                                                    `0 6px 16px ${alpha(
+                                                        theme.palette.primary.main,
+                                                        0.15
+                                                    )}`,
+                                            },
+
+                                            '& .MuiButton-startIcon': {
+                                                mr: 2,
+                                            },
+
+                                            '& .MuiButton-endIcon': {
+                                                ml: 2,
+                                            },
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                flex: 1,
+                                                textAlign: 'left',
+                                                overflow: 'hidden',
+                                            }}
+                                        >
+                                            <Typography
+                                                sx={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 1,
+                                                    overflow: 'hidden',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                <Box
+                                                    component="span"
+                                                    sx={{
+                                                        fontWeight: 600,
+                                                        color: 'text.primary',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        fontSize: '0.85rem',
+                                                    }}
+                                                >
+                                                    {label}
+                                                </Box>
+
+                                                <Box
+                                                    component="span"
+                                                    sx={{
+                                                        color: 'text.secondary',
+                                                        fontFamily: 'monospace',
+                                                        fontSize: '0.75rem',
+                                                    }}
+                                                >
+                                                    {item.variable}
+                                                </Box>
+                                            </Typography>
+                                        </Box>
+                                    </Button>
+                                );
+                            })}
+                        </Stack>
                     </Card>
                 </Box>
             </Box>

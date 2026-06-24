@@ -44,8 +44,8 @@ export const fetchLeaveApplications = (params: any) => {
     if (restParams.filters) {
         Object.entries(restParams.filters).forEach(([key, value]) => {
             if (value && value !== 'all') {
-                if (key === 'start_date' || key === 'end_date') {
-                    // Handled below for range
+                if (key === 'start_date' || key === 'end_date' || key === 'unread_messages') {
+                    // Handled below for range and extra flags
                 } else {
                     filters.push(["Leave Application", key, "=", value]);
                 }
@@ -68,7 +68,17 @@ export const fetchLeaveApplications = (params: any) => {
         );
     }
 
-    return fetchFrappeList("Leave Application", { ...restParams, filters, or_filters });
+    const unread_messages = restParams.filters?.unread_messages;
+    // NOTE: unread_messages filtering is handled by the backend permission query condition
+    // (get_leave_application_permission_query_conditions in api.py) via the unread_messages URL param.
+    // Do NOT add a fake filter field here — unread_only is not a real Leave Application field.
+    
+    return fetchFrappeList("Leave Application", { 
+        ...restParams, 
+        filters, 
+        or_filters,
+        ...(unread_messages ? { unread_messages: true } : {})
+    });
 };
 
 export async function createLeaveApplication(data: Partial<LeaveApplication>) {
