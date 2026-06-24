@@ -90,6 +90,7 @@ export const WhatsAppAutomationDetailsPage = lazy(() => import('src/pages/whatsa
 
 
 export const EmailSettingsPage = lazy(() => import('src/pages/email-settings'));
+export const WhatsAppSettingsPage = lazy(() => import('src/pages/whatsapp-settings'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 
 export const LeadReportPage = lazy(() => import('src/pages/reports/lead'));
@@ -305,6 +306,7 @@ export const routesSection: RouteObject[] = [
           { path: ':id/view', element: <WhatsAppAutomationDetailsPage /> },
         ],
       },
+      { path: 'whatsapp-settings', element: <WhatsAppSettingsPage /> },
       { path: 'blog', element: <BlogPage /> },
 
       {
