@@ -1,6 +1,8 @@
 import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
+import { EmailTemplateVariable } from './email-template';
+
 // ----------------------------------------------------------------------
 // TypeScript Interfaces
 // ----------------------------------------------------------------------
@@ -165,4 +167,17 @@ export async function deleteWhatsAppTemplate(name: string) {
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to delete WhatsApp template'));
     return true;
+}
+
+// ----------------------------------------------------------------------
+// Fetch WhatsApp Template Variables
+// ----------------------------------------------------------------------
+
+export async function fetchWhatsAppTemplateVariables(usedFor: string): Promise<EmailTemplateVariable[]> {
+    const res = await frappeRequest(
+        `/api/method/company.company.doctype.crm_whatsapp_template.crm_whatsapp_template.get_whatsapp_template_variables?used_for=${encodeURIComponent(usedFor)}`
+    );
+    if (!res.ok) throw new Error('Failed to fetch WhatsApp template variables');
+    const data = await res.json();
+    return data.message || [];
 }

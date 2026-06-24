@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { FaFileUpload } from 'react-icons/fa';
 import { IoMdArrowBack } from 'react-icons/io';
+import { MdContentCopy } from 'react-icons/md';
 import { useState, useEffect, useRef } from 'react';
 import { RiUploadCloud2Line } from 'react-icons/ri';
 
@@ -30,7 +31,8 @@ import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { uploadWhatsappAttachment } from 'src/api/whatsapp';
-import { getWhatsAppTemplate, updateWhatsAppTemplate } from 'src/api/whatsapp-template';
+import { EmailTemplateVariable } from 'src/api/email-template';
+import { getWhatsAppTemplate, updateWhatsAppTemplate, fetchWhatsAppTemplateVariables } from 'src/api/whatsapp-template';
 
 import { Iconify } from 'src/components/iconify';
 import { RichTextEditor } from 'src/components/rich-text-editor/rich-text-editor';
@@ -77,7 +79,7 @@ export function WhatsAppTemplateEditView() {
     const [category, setCategory] = useState('');
     const [language, setLanguage] = useState('English');
     const [status, setStatus] = useState('Draft');
-    const [usedFor, setUsedFor] = useState('');
+    const [usedFor, setUsedFor] = useState('Lead');
     const [headerText, setHeaderText] = useState('');
     const [messageBody, setMessageBody] = useState('');
     const [footerText, setFooterText] = useState('');
@@ -103,6 +105,35 @@ export function WhatsAppTemplateEditView() {
         severity: 'success' | 'error' | 'info' | 'warning';
     }>({ open: false, message: '', severity: 'success' });
 
+    const [variables, setVariables] = useState<EmailTemplateVariable[]>([]);
+
+    useEffect(() => {
+        const loadVariables = async () => {
+            if (!usedFor) {
+                setVariables([]);
+                return;
+            }
+            try {
+                const data = await fetchWhatsAppTemplateVariables(usedFor);
+                setVariables(data);
+            } catch (err) {
+                console.error('Failed to load variables:', err);
+                setVariables([]);
+            }
+        };
+
+        loadVariables();
+    }, [usedFor]);
+
+    const handleCopyVariable = (variable: string) => {
+        navigator.clipboard.writeText(variable);
+        setSnackbar({
+            open: true,
+            message: `Copied ${variable} to clipboard`,
+            severity: 'success',
+        });
+    };
+
     const handleCloseSnackbar = () => setSnackbar((prev) => ({ ...prev, open: false }));
 
     useEffect(() => {
@@ -114,7 +145,7 @@ export function WhatsAppTemplateEditView() {
                 setCategory(data.category || '');
                 setLanguage(data.language || 'English');
                 setStatus(data.status || 'Draft');
-                setUsedFor(data.used_for || '');
+                setUsedFor(data.used_for || 'Lead');
                 setMessageBody(data.message_body || '');
                 setHeaderText(data.header_text || '');
                 setFooterText(data.footer_text || '');
@@ -303,331 +334,498 @@ export function WhatsAppTemplateEditView() {
                 </Stack>
             </Stack>
 
-            <Card sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 3 }}>Basic Information</Typography>
-                <Stack spacing={3}>
-                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                        <TextField
-                            fullWidth
-                            label="Template Name"
-                            required
-                            value={templateName}
-                            onChange={(e) => {
-                                setTemplateName(e.target.value);
-                                if (e.target.value) setErrors((prev) => ({ ...prev, templateName: false }));
-                            }}
-                            error={errors.templateName}
-                            helperText={errors.templateName ? 'This field is required' : ''}
-                        />
-                        <TextField
-                            select
-                            fullWidth
-                            label="Category"
-                            required
-                            value={category}
-                            onChange={(e) => {
-                                setCategory(e.target.value);
-                                if (e.target.value) setErrors((prev) => ({ ...prev, category: false }));
-                            }}
-                            error={errors.category}
-                            helperText={errors.category ? 'This field is required' : ''}
-                        >
-                            {CATEGORY_OPTIONS.map((opt) => (
-                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                            ))}
-                        </TextField>
-                    </Box>
-
-                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                        <TextField
-                            select
-                            fullWidth
-                            label="Status"
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                        >
-                            {STATUS_OPTIONS.map((opt) => (
-                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                            ))}
-                        </TextField>
-                        <TextField
-                            select
-                            fullWidth
-                            label="Used For"
-                            value={usedFor}
-                            onChange={(e) => setUsedFor(e.target.value)}
-                        >
-                            <MenuItem value="">None</MenuItem>
-                            {USED_FOR_OPTIONS.map((opt) => (
-                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                            ))}
-                        </TextField>
-                    </Box>
-                </Stack>
-            </Card>
-
-            <Card sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 3 }}>Template Content</Typography>
-                <Stack spacing={3}>
-                    <TextField
-                        fullWidth
-                        multiline
-                        rows={4.5}
-                        label="Header Text"
-                        value={headerText}
-                        onChange={(e) => setHeaderText(e.target.value)}
-                        placeholder="Header text shown above message"
-                    />
-
-                    <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: errors.messageBody ? 'error.main' : 'text.secondary', mb: 1 }}>
-                            Message Body <Box component="span" sx={{ color: 'error.main' }}>*</Box>
-                        </Typography>
-                        <RichTextEditor
-                            value={messageBody}
-                            onChange={(val: string) => {
-                                setMessageBody(val);
-                                if (val && val !== '<p><br></p>') setErrors((prev) => ({ ...prev, messageBody: false }));
-                            }}
-                            placeholder="Enter message body..."
-                            error={errors.messageBody}
-                            helperText={errors.messageBody ? 'This field is required' : undefined}
-                            minHeight={250}
-                        />
-                    </Box>
-
-                    <TextField
-                        fullWidth
-                        multiline
-                        rows={4.5}
-                        label="Footer Text"
-                        value={footerText}
-                        onChange={(e) => setFooterText(e.target.value)}
-                        placeholder="Footer text shown below message"
-                    />
-
-                    <FormControlLabel
-                        control={
-                            <CustomSwitch
-                                checked={allowAttachment}
-                                onChange={(e) => {
-                                    setAllowAttachment(e.target.checked);
-                                    if (e.target.checked && attachments.length === 0) {
-                                        setAttachments([createEmptyAttachment()]);
-                                    }
-                                }}
-                            />
-                        }
-                        label="Allow Attachment"
-                        sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
-                    />
-
-                    {allowAttachment && (
-                        <Box sx={{ mt: 2 }}>
-                            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: 14 }}>
-                                    Attachments ({attachments.filter((a) => a.file).length})
-                                </Typography>
-                                <Button
-                                    size="small"
-                                    variant="contained"
-                                    onClick={handleAddAttachmentRow}
-                                    startIcon={<Iconify icon="mingcute:add-line" />}
-                                    sx={{
-                                        borderRadius: 1,
-                                        bgcolor: '#08a3cd',
-                                        color: 'common.white',
-                                        '&:hover': { bgcolor: '#068fb3' },
+            <Box
+                display="grid"
+                gridTemplateColumns={{
+                    xs: '1fr',
+                    md: 'minmax(0, 2.5fr) 350px',
+                }}
+                gap={3}
+            >
+                <Box>
+                    <Card sx={{ p: 3, mb: 3 }}>
+                        <Typography variant="h6" sx={{ mb: 3 }}>Basic Information</Typography>
+                        <Stack spacing={3}>
+                            <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                                <TextField
+                                    fullWidth
+                                    label="Template Name"
+                                    required
+                                    value={templateName}
+                                    onChange={(e) => {
+                                        setTemplateName(e.target.value);
+                                        if (e.target.value) setErrors((prev) => ({ ...prev, templateName: false }));
                                     }}
+                                    error={errors.templateName}
+                                    helperText={errors.templateName ? 'This field is required' : ''}
+                                />
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Category"
+                                    required
+                                    value={category}
+                                    onChange={(e) => {
+                                        setCategory(e.target.value);
+                                        if (e.target.value) setErrors((prev) => ({ ...prev, category: false }));
+                                    }}
+                                    error={errors.category}
+                                    helperText={errors.category ? 'This field is required' : ''}
                                 >
-                                    Add Row
-                                </Button>
-                            </Stack>
+                                    {CATEGORY_OPTIONS.map((opt) => (
+                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                    ))}
+                                </TextField>
+                            </Box>
 
-                            <TableContainer sx={{ border: (t) => `1px solid ${t.palette.divider}`, borderRadius: 1.5 }}>
-                                <Table sx={{ minWidth: 800 }}>
-                                    <TableHead sx={{ bgcolor: (t) => alpha(t.palette.grey[500], 0.08), '& th': { fontWeight: 700, fontSize: 13 } }}>
-                                        <TableRow>
-                                            <TableCell width={40} align="center">S.No</TableCell>
-                                            <TableCell>Attachment</TableCell>
-                                            <TableCell>Description</TableCell>
-                                            <TableCell>File Name</TableCell>
-                                            <TableCell>File Size</TableCell>
-                                            <TableCell>Uploaded On</TableCell>
-                                            <TableCell align="center">Actions</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {attachments.map((row, index) => (
-                                            <TableRow key={index} sx={{ '&:hover': { bgcolor: (t) => alpha(t.palette.primary.main, 0.02) } }}>
-                                                <TableCell align="center">
-                                                    <Box sx={{ width: 24, height: 24, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.primary.main, 0.1), color: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, mx: 'auto' }}>
-                                                        {index + 1}
-                                                    </Box>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <input
-                                                        type="file"
-                                                        style={{ display: 'none' }}
-                                                        ref={(el) => { fileInputRefs.current[index] = el; }}
-                                                        onChange={(e) => {
-                                                            const f = e.target.files?.[0];
-                                                            if (f) handleFileSelect(index, f);
-                                                            e.target.value = '';
-                                                        }}
-                                                    />
-                                                    {row.file ? (
-                                                        <Stack direction="row" alignItems="center" spacing={1}>
-                                                            <Chip
-                                                                label={row.file_name || 'File'}
-                                                                size="small"
-                                                                icon={<FaFileUpload size={13} />}
-                                                                sx={{
-                                                                    maxWidth: 150,
-                                                                    bgcolor: '#22c55e',
-                                                                    color: '#ffffff',
-                                                                    fontWeight: 600,
-                                                                    '& .MuiChip-icon': {
-                                                                        color: '#ffffff',
-                                                                        ml: 0.5,
-                                                                    },
-                                                                    p: 1
+                            <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Status"
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                >
+                                    {STATUS_OPTIONS.map((opt) => (
+                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                    ))}
+                                </TextField>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Used For"
+                                    value={usedFor}
+                                    onChange={(e) => setUsedFor(e.target.value)}
+                                >
+                                    {USED_FOR_OPTIONS.map((opt) => (
+                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                    ))}
+                                </TextField>
+                            </Box>
+                        </Stack>
+                    </Card>
+
+                    <Card sx={{ p: 3, mb: 3 }}>
+                        <Typography variant="h6" sx={{ mb: 3 }}>Template Content</Typography>
+                        <Stack spacing={3}>
+                            <TextField
+                                fullWidth
+                                multiline
+                                rows={4.5}
+                                label="Header Text"
+                                value={headerText}
+                                onChange={(e) => setHeaderText(e.target.value)}
+                                placeholder="Header text shown above message"
+                            />
+
+                            <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: errors.messageBody ? 'error.main' : 'text.secondary', mb: 1 }}>
+                                    Message Body <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+                                </Typography>
+                                <RichTextEditor
+                                    value={messageBody}
+                                    onChange={(val: string) => {
+                                        setMessageBody(val);
+                                        if (val && val !== '<p><br></p>') setErrors((prev) => ({ ...prev, messageBody: false }));
+                                    }}
+                                    placeholder="Enter message body..."
+                                    error={errors.messageBody}
+                                    helperText={errors.messageBody ? 'This field is required' : undefined}
+                                    minHeight={250}
+                                />
+                            </Box>
+
+                            <TextField
+                                fullWidth
+                                multiline
+                                rows={4.5}
+                                label="Footer Text"
+                                value={footerText}
+                                onChange={(e) => setFooterText(e.target.value)}
+                                placeholder="Footer text shown below message"
+                            />
+
+                            <FormControlLabel
+                                control={
+                                    <CustomSwitch
+                                        checked={allowAttachment}
+                                        onChange={(e) => {
+                                            setAllowAttachment(e.target.checked);
+                                            if (e.target.checked && attachments.length === 0) {
+                                                setAttachments([createEmptyAttachment()]);
+                                            }
+                                        }}
+                                    />
+                                }
+                                label="Allow Attachment"
+                                sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
+                            />
+
+                            {allowAttachment && (
+                                <Box sx={{ mt: 2 }}>
+                                    <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: 14 }}>
+                                            Attachments ({attachments.filter((a) => a.file).length})
+                                        </Typography>
+                                        <Button
+                                            size="small"
+                                            variant="contained"
+                                            onClick={handleAddAttachmentRow}
+                                            startIcon={<Iconify icon="mingcute:add-line" />}
+                                            sx={{
+                                                borderRadius: 1,
+                                                bgcolor: '#08a3cd',
+                                                color: 'common.white',
+                                                '&:hover': { bgcolor: '#068fb3' },
+                                            }}
+                                        >
+                                            Add Row
+                                        </Button>
+                                    </Stack>
+
+                                    <TableContainer sx={{ border: (t) => `1px solid ${t.palette.divider}`, borderRadius: 1.5 }}>
+                                        <Table sx={{ minWidth: 800 }}>
+                                            <TableHead sx={{ bgcolor: (t) => alpha(t.palette.grey[500], 0.08), '& th': { fontWeight: 700, fontSize: 13 } }}>
+                                                <TableRow>
+                                                    <TableCell width={40} align="center">S.No</TableCell>
+                                                    <TableCell>Attachment</TableCell>
+                                                    <TableCell>Description</TableCell>
+                                                    <TableCell>File Name</TableCell>
+                                                    <TableCell>File Size</TableCell>
+                                                    <TableCell>Uploaded On</TableCell>
+                                                    <TableCell align="center">Actions</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {attachments.map((row, index) => (
+                                                    <TableRow key={index} sx={{ '&:hover': { bgcolor: (t) => alpha(t.palette.primary.main, 0.02) } }}>
+                                                        <TableCell align="center">
+                                                            <Box sx={{ width: 24, height: 24, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.primary.main, 0.1), color: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, mx: 'auto' }}>
+                                                                {index + 1}
+                                                            </Box>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <input
+                                                                type="file"
+                                                                style={{ display: 'none' }}
+                                                                ref={(el) => { fileInputRefs.current[index] = el; }}
+                                                                onChange={(e) => {
+                                                                    const f = e.target.files?.[0];
+                                                                    if (f) handleFileSelect(index, f);
+                                                                    e.target.value = '';
                                                                 }}
                                                             />
-                                                            <IconButton size="small" onClick={() => fileInputRefs.current[index]?.click()} title="Change file">
-                                                                <Iconify icon="solar:refresh-bold" width={16} />
-                                                            </IconButton>
-                                                        </Stack>
-                                                    ) : (
-                                                        <Button
-                                                            size="small"
-                                                            variant="contained"
-                                                            startIcon={<RiUploadCloud2Line />}
-                                                            onClick={() => fileInputRefs.current[index]?.click()}
-                                                            disabled={uploadingIndex === index}
-                                                            sx={{
-                                                                borderRadius: 1.5,
-                                                                fontWeight: 600,
-                                                                textTransform: 'none',
-                                                                bgcolor: '#36b37e',
-                                                                color: 'common.white',
-                                                                '&:hover': { bgcolor: '#2b9065' }
-                                                            }}
-                                                        >
-                                                            {uploadingIndex === index ? 'Uploading...' : 'Upload File'}
-                                                        </Button>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <TextField
-                                                        size="small"
-                                                        placeholder="Description..."
-                                                        value={row.description}
-                                                        onChange={(e) => handleAttachmentDescriptionChange(index, e.target.value)}
-                                                        variant="standard"
-                                                        InputProps={{ disableUnderline: true, sx: { fontSize: 13 } }}
-                                                        fullWidth
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 14 }}>
-                                                        {row.file_name || '—'}
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 14 }}>
-                                                        {row.file_size || '—'}
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 14 }}>
-                                                        {row.uploaded_on || '—'}
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    <Stack direction="row" spacing={0.5} justifyContent="center">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => handlePreviewAttachment(row)}
-                                                            sx={{ color: 'info.main' }}
-                                                            disabled={!row.file}
-                                                            title="Preview"
-                                                        >
-                                                            <Iconify icon="solar:eye-bold" width={18} />
-                                                        </IconButton>
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => handleDownloadAttachment(row)}
-                                                            sx={{ color: 'success.main' }}
-                                                            disabled={!row.file}
-                                                            title="Download"
-                                                        >
-                                                            <Iconify icon="solar:download-bold" width={18} />
-                                                        </IconButton>
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => handleRemoveAttachmentRow(index)}
-                                                            sx={{ color: 'error.main' }}
-                                                            title="Delete row"
-                                                        >
-                                                            <Iconify icon="solar:trash-bin-trash-bold" width={18} />
-                                                        </IconButton>
-                                                    </Stack>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                        {attachments.length === 0 && (
-                                            <TableRow>
-                                                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>
-                                                        No attachments. Click &quot;Add Row&quot; to start.
-                                                    </Typography>
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </Box>
-                    )}
-                </Stack>
-            </Card>
+                                                            {row.file ? (
+                                                                <Stack direction="row" alignItems="center" spacing={1}>
+                                                                    <Chip
+                                                                        label={row.file_name || 'File'}
+                                                                        size="small"
+                                                                        icon={<FaFileUpload size={13} />}
+                                                                        sx={{
+                                                                            maxWidth: 150,
+                                                                            bgcolor: '#22c55e',
+                                                                            color: '#ffffff',
+                                                                            fontWeight: 600,
+                                                                            '& .MuiChip-icon': {
+                                                                                color: '#ffffff',
+                                                                                ml: 0.5,
+                                                                            },
+                                                                            p: 1
+                                                                        }}
+                                                                    />
+                                                                    <IconButton size="small" onClick={() => fileInputRefs.current[index]?.click()} title="Change file">
+                                                                        <Iconify icon="solar:refresh-bold" width={16} />
+                                                                    </IconButton>
+                                                                </Stack>
+                                                            ) : (
+                                                                <Button
+                                                                    size="small"
+                                                                    variant="contained"
+                                                                    startIcon={<RiUploadCloud2Line />}
+                                                                    onClick={() => fileInputRefs.current[index]?.click()}
+                                                                    disabled={uploadingIndex === index}
+                                                                    sx={{
+                                                                        borderRadius: 1.5,
+                                                                        fontWeight: 600,
+                                                                        textTransform: 'none',
+                                                                        bgcolor: '#36b37e',
+                                                                        color: 'common.white',
+                                                                        '&:hover': { bgcolor: '#2b9065' }
+                                                                    }}
+                                                                >
+                                                                    {uploadingIndex === index ? 'Uploading...' : 'Upload File'}
+                                                                </Button>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <TextField
+                                                                size="small"
+                                                                placeholder="Description..."
+                                                                value={row.description}
+                                                                onChange={(e) => handleAttachmentDescriptionChange(index, e.target.value)}
+                                                                variant="standard"
+                                                                InputProps={{ disableUnderline: true, sx: { fontSize: 13 } }}
+                                                                fullWidth
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 14 }}>
+                                                                {row.file_name || '—'}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 14 }}>
+                                                                {row.file_size || '—'}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 14 }}>
+                                                                {row.uploaded_on || '—'}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell align="center">
+                                                            <Stack direction="row" spacing={0.5} justifyContent="center">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => handlePreviewAttachment(row)}
+                                                                    sx={{ color: 'info.main' }}
+                                                                    disabled={!row.file}
+                                                                    title="Preview"
+                                                                >
+                                                                    <Iconify icon="solar:eye-bold" width={18} />
+                                                                </IconButton>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => handleDownloadAttachment(row)}
+                                                                    sx={{ color: 'success.main' }}
+                                                                    disabled={!row.file}
+                                                                    title="Download"
+                                                                >
+                                                                    <Iconify icon="solar:download-bold" width={18} />
+                                                                </IconButton>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => handleRemoveAttachmentRow(index)}
+                                                                    sx={{ color: 'error.main' }}
+                                                                    title="Delete row"
+                                                                >
+                                                                    <Iconify icon="solar:trash-bin-trash-bold" width={18} />
+                                                                </IconButton>
+                                                            </Stack>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                                {attachments.length === 0 && (
+                                                    <TableRow>
+                                                        <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled' }}>
+                                                                No attachments. Click &quot;Add Row&quot; to start.
+                                                            </Typography>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                </Box>
+                            )}
+                        </Stack>
+                    </Card>
 
-            <Card sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 3 }}>Meta Information</Typography>
-                <Stack spacing={3}>
-                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' } }}>
-                        <TextField
-                            fullWidth
-                            label="Meta Template Name"
-                            value={metaTemplateName}
-                            onChange={(e) => setMetaTemplateName(e.target.value)}
-                        />
-                        <TextField
-                            select
-                            fullWidth
-                            label="Language"
-                            value={language}
-                            onChange={(e) => setLanguage(e.target.value)}
+                    <Card sx={{ p: 3, mb: 3 }}>
+                        <Typography variant="h6" sx={{ mb: 3 }}>Meta Information</Typography>
+                        <Stack spacing={3}>
+                            <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' } }}>
+                                <TextField
+                                    fullWidth
+                                    label="Meta Template Name"
+                                    value={metaTemplateName}
+                                    onChange={(e) => setMetaTemplateName(e.target.value)}
+                                />
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Language"
+                                    value={language}
+                                    onChange={(e) => setLanguage(e.target.value)}
+                                >
+                                    {LANGUAGE_OPTIONS.map((opt) => (
+                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                    ))}
+                                </TextField>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Meta Status"
+                                    value={metaStatus || 'Draft'}
+                                    onChange={(e) => setMetaStatus(e.target.value)}
+                                >
+                                    {META_STATUS_OPTIONS.map((opt) => (
+                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                    ))}
+                                </TextField>
+                            </Box>
+                        </Stack>
+                    </Card>
+                </Box>
+
+                <Box
+                    gridColumn={{ xs: 'span 1', md: 'span 1' }}
+                    sx={{
+                        position: 'sticky',
+                        top: 90,
+                        alignSelf: 'start',
+                    }}
+                >
+                    <Card
+                        sx={{
+                            borderRadius: 2,
+                            overflow: 'hidden',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            maxHeight: 'calc(100vh - 120px)',
+                        }}
+                    >
+                        <Typography
+                            variant="h6"
+                            sx={{
+                                px: 2,
+                                py: 1.5,
+                                borderBottom: '1px solid',
+                                borderColor: 'divider',
+                                fontWeight: 600,
+                            }}
                         >
-                            {LANGUAGE_OPTIONS.map((opt) => (
-                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                            ))}
-                        </TextField>
-                        <TextField
-                            select
-                            fullWidth
-                            label="Meta Status"
-                            value={metaStatus || 'Draft'}
-                            onChange={(e) => setMetaStatus(e.target.value)}
+                            Variables
+                        </Typography>
+
+                        <Stack
+                            spacing={1}
+                            sx={{
+                                p: 2,
+                                overflowY: 'auto',
+                                flex: 1,
+                                '&::-webkit-scrollbar': {
+                                    width: 6,
+                                },
+                                '&::-webkit-scrollbar-thumb': {
+                                    bgcolor: 'grey.400',
+                                    borderRadius: 3,
+                                },
+                                '&::-webkit-scrollbar-thumb:hover': {
+                                    bgcolor: 'grey.500',
+                                },
+                            }}
                         >
-                            {META_STATUS_OPTIONS.map((opt) => (
-                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                            ))}
-                        </TextField>
-                    </Box>
-                </Stack>
-            </Card>
+                            {variables.length === 0 ? (
+                                <Stack alignItems="center" justifyContent="center" sx={{ py: 8, px: 2, color: 'text.secondary', textAlign: 'center' }}>
+                                    <Iconify icon={"solar:folder-with-files-outline" as any} width={32} sx={{ mb: 1, opacity: 0.5 }} />
+                                    <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                                        {usedFor ? 'No variables available' : 'Select "Used For" to view variables'}
+                                    </Typography>
+                                </Stack>
+                            ) : (
+                                variables.map((item) => {
+                                    const label = item.fieldname
+                                        .split('_')
+                                        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                                        .join(' ');
+
+                                    return (
+                                        <Button
+                                            key={item.fieldname}
+                                            fullWidth
+                                            variant="outlined"
+                                            startIcon={
+                                                <Box
+                                                    sx={{
+                                                        width: 34,
+                                                        height: 34,
+                                                        borderRadius: 1.5,
+                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                    }}
+                                                >
+                                                    <Iconify
+                                                        icon={"solar:code-bold" as any}
+                                                        width={18}
+                                                        sx={{ color: 'primary.main' }}
+                                                    />
+                                                </Box>
+                                            }
+                                            endIcon={<MdContentCopy size={16} color="#08a3cd" />}
+                                            onClick={() => handleCopyVariable(item.variable)}
+                                            sx={{
+                                                justifyContent: 'space-between',
+                                                textTransform: 'none',
+                                                fontWeight: 600,
+                                                color: 'text.primary',
+                                                bgcolor: 'background.paper',
+                                                border: '1px solid',
+                                                borderColor: 'divider',
+                                                borderRadius: 2,
+                                                px: 2,
+                                                py: 1.3,
+                                                minHeight: 58,
+                                                transition: 'all .2s ease',
+                                                '&:hover': {
+                                                    borderColor: 'primary.main',
+                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                    transform: 'translateX(2px)',
+                                                    boxShadow: (theme) => `0 6px 16px ${alpha(theme.palette.primary.main, 0.15)}`,
+                                                },
+                                                '& .MuiButton-startIcon': {
+                                                    mr: 2,
+                                                },
+                                                '& .MuiButton-endIcon': {
+                                                    ml: 2,
+                                                },
+                                            }}
+                                        >
+                                            <Box sx={{ flex: 1, textAlign: 'left', overflow: 'hidden' }}>
+                                                <Typography
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1,
+                                                        overflow: 'hidden',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
+                                                >
+                                                    <Box
+                                                        component="span"
+                                                        sx={{
+                                                            fontWeight: 600,
+                                                            color: 'text.primary',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            fontSize: '0.85rem',
+                                                        }}
+                                                    >
+                                                        {label}
+                                                    </Box>
+                                                    <Box
+                                                        component="span"
+                                                        sx={{
+                                                            color: 'text.secondary',
+                                                            fontFamily: 'monospace',
+                                                            fontSize: '0.75rem',
+                                                        }}
+                                                    >
+                                                        {item.variable}
+                                                    </Box>
+                                                </Typography>
+                                            </Box>
+                                        </Button>
+                                    );
+                                })
+                            )}
+                        </Stack>
+                    </Card>
+                </Box>
+            </Box>
 
             <Snackbar
                 open={snackbar.open}
