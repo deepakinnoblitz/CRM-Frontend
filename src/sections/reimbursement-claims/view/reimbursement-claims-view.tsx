@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -8,22 +8,17 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import Select from '@mui/material/Select';
 import Switch from '@mui/material/Switch';
-import { styled } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
-import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
-import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell'
 import TableBody from '@mui/material/TableBody';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import InputLabel from '@mui/material/InputLabel';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
-import FormControl from '@mui/material/FormControl';
+import { alpha, styled } from '@mui/material/styles';
 import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -38,17 +33,19 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { useSocket } from 'src/hooks/use-socket';
 import { useReimbursementClaims } from 'src/hooks/useReimbursementClaims';
 
+import { frappeRequest } from 'src/utils/csrf';
+
 import { fetchEmployees } from 'src/api/employees';
 import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
-    applyReimbursementClaimWorkflowAction,
+    getClaimTypes,
     getReimbursementClaim,
     createReimbursementClaim,
     updateReimbursementClaim,
     deleteReimbursementClaim,
     getReimbursementClaimPermissions,
-    getClaimTypes
+    applyReimbursementClaimWorkflowAction
 } from 'src/api/reimbursement-claims';
 
 import { Iconify } from 'src/components/iconify';
@@ -160,6 +157,9 @@ export function ReimbursementClaimsView() {
     const [dateOfExpense, setDateOfExpense] = useState('');
     const [amount, setAmount] = useState('');
     const [claimDetails, setClaimDetails] = useState('');
+    const [receipt, setReceipt] = useState('');
+    const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const [receiptFileError, setReceiptFileError] = useState('');
 
     // Payment Details (for Edit)
     const [paymentReference, setPaymentReference] = useState('');
@@ -243,7 +243,9 @@ export function ReimbursementClaimsView() {
         setDateOfExpense('');
         setAmount('');
         setClaimDetails('');
-        setClaimDetails('');
+        setReceipt('');
+        setReceiptFile(null);
+        setReceiptFileError('');
         setPaymentReference('');
         setPaidDate(null);
         setPaid(false);
@@ -263,6 +265,9 @@ export function ReimbursementClaimsView() {
         setDateOfExpense('');
         setAmount('');
         setClaimDetails('');
+        setReceipt('');
+        setReceiptFile(null);
+        setReceiptFileError('');
         setFormErrors({});
     };
 
@@ -275,6 +280,9 @@ export function ReimbursementClaimsView() {
             setDateOfExpense(fullData.date_of_expense || '');
             setAmount(fullData.amount?.toString() || '');
             setClaimDetails(fullData.claim_details || '');
+            setReceipt(fullData.receipt || '');
+            setReceiptFile(null);
+            setReceiptFileError('');
             setPaymentReference(fullData.payment_reference || '');
             setPaidDate(fullData.paid_date || null);
             setPaid(fullData.paid === 1);
@@ -359,6 +367,9 @@ export function ReimbursementClaimsView() {
         if (!claimType) errors.claimType = 'Claim Type is required';
         if (!dateOfExpense) errors.dateOfExpense = 'Date of Expense is required';
         if (!amount || parseFloat(amount) <= 0) errors.amount = 'Valid Amount is required';
+        if (!isApprovedOrPaid && !receipt && !receiptFile) {
+            errors.receipt = 'Receipt is required';
+        }
 
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
@@ -371,6 +382,9 @@ export function ReimbursementClaimsView() {
             if (!claimType) errors.claimType = 'Claim Type';
             if (!dateOfExpense) errors.dateOfExpense = 'Date of Expense';
             if (!amount || parseFloat(amount) <= 0) errors.amount = 'Valid Amount';
+            if (!isApprovedOrPaid && !receipt && !receiptFile) {
+                errors.receipt = 'Receipt';
+            }
 
             const missingFields = Object.values(errors).join(', ');
             setSnackbar({
@@ -422,24 +436,39 @@ export function ReimbursementClaimsView() {
             return;
         }
 
-        const claimData = {
-            employee: employee.trim(),
-            claim_type: claimType.trim(),
-            date_of_expense: dateOfExpense,
-            amount: parseFloat(amount) || 0,
-            claim_details: claimDetails.trim(),
-            ...(isEdit && user?.roles.some(r => ['System Manager', 'HR', 'HR User', 'HR Manager', 'Accounts Manager'].includes(r)) ? {
-                payment_reference: paymentReference,
-                paid_date: paidDate || undefined,
-                paid: paid ? 1 : 0,
-                approved_by: approvedBy,
-                paid_by: paidBy,
-                approver_comments: approverComments
-            } : {})
-        };
-
         try {
             setSubmitting(true);
+            let finalReceiptUrl = receipt;
+
+            if (receiptFile) {
+                const formDataUpload = new FormData();
+                formDataUpload.append('file', receiptFile, receiptFile.name);
+                formDataUpload.append('is_private', '0');
+                const uploadRes = await frappeRequest('/api/method/upload_file', { method: 'POST', body: formDataUpload });
+                if (!uploadRes.ok) {
+                    throw new Error('Failed to upload receipt file');
+                }
+                const uploadData = await uploadRes.json();
+                finalReceiptUrl = uploadData.message?.file_url || uploadData.file_url || '';
+            }
+
+            const claimData = {
+                employee: employee.trim(),
+                claim_type: claimType.trim(),
+                date_of_expense: dateOfExpense,
+                amount: parseFloat(amount) || 0,
+                claim_details: claimDetails.trim(),
+                receipt: finalReceiptUrl || '',
+                ...(isEdit && user?.roles.some(r => ['System Manager', 'HR', 'HR User', 'HR Manager', 'Accounts Manager'].includes(r)) ? {
+                    payment_reference: paymentReference,
+                    paid_date: paidDate || undefined,
+                    paid: paid ? 1 : 0,
+                    approved_by: approvedBy,
+                    paid_by: paidBy,
+                    approver_comments: approverComments
+                } : {})
+            };
+
             if (isEdit && currentClaim) {
                 await updateReimbursementClaim(currentClaim.name, claimData);
 
@@ -1000,6 +1029,121 @@ export function ReimbursementClaimsView() {
                         {renderField('date_of_expense', 'Date of Expense', 'date', [], { inputProps: { readOnly: isApprovedOrPaid }, disabled: isApprovedOrPaid }, true)}
                         {renderField('amount', 'Amount', 'number', [], { placeholder: 'Enter amount', inputProps: { step: '0.01', min: '0' }, disabled: isApprovedOrPaid }, true)}
                         {renderField('claim_details', 'Claim Details', 'textarea', [], { placeholder: 'Enter claim details', disabled: isApprovedOrPaid })}
+
+                        <Box
+                            sx={{
+                                p: 3,
+                                borderRadius: 2,
+                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                border: (theme) => `1px dashed ${formErrors.receipt ? theme.palette.error.main : alpha(theme.palette.grey[500], 0.2)}`,
+                            }}
+                        >
+                            <Stack
+                                direction={{ xs: 'column', sm: 'row' }}
+                                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                justifyContent="space-between"
+                                spacing={2}
+                                sx={{ mb: 2.5 }}
+                            >
+                                <Typography variant="h6">
+                                    Receipt{' '}
+                                    <Box component="span" sx={{ color: 'red' }}>
+                                        *
+                                    </Box>
+                                </Typography>
+
+                                <Button
+                                    variant="contained"
+                                    component="label"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<Iconify icon="solar:upload-bold" />}
+                                    disabled={isApprovedOrPaid}
+                                    sx={{ minWidth: { xs: 1, sm: 'auto' } }}
+                                >
+                                    Upload File
+                                    <input
+                                        type="file"
+                                        hidden
+                                        disabled={isApprovedOrPaid}
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            setReceiptFileError('');
+                                            if (file.size > 10 * 1024 * 1024) {
+                                                setReceiptFileError('File size exceeds 10MB limit.');
+                                                return;
+                                            }
+                                            setReceiptFile(file);
+                                            setReceipt('');
+                                            if (formErrors.receipt) {
+                                                setFormErrors(prev => ({ ...prev, receipt: '' }));
+                                            }
+                                        }}
+                                    />
+                                </Button>
+                            </Stack>
+
+                            <Stack spacing={1}>
+                                {!receipt && !receiptFile ? (
+                                    <Stack alignItems="center" justifyContent="center" sx={{ py: 3, color: 'text.disabled' }}>
+                                        <Iconify icon="solar:file-bold" width={40} height={40} sx={{ mb: 1, opacity: 0.48 }} />
+                                        <Typography variant="body2">No file attached</Typography>
+                                    </Stack>
+                                ) : (
+                                    <Stack
+                                        direction="row"
+                                        alignItems="center"
+                                        sx={{
+                                            px: 1.5,
+                                            py: 0.75,
+                                            borderRadius: 1.5,
+                                            bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                        }}
+                                    >
+                                        <Iconify icon="solar:link-bold" width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
+                                        <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
+                                            {receiptFile ? receiptFile.name : (receipt.split('/').pop() || receipt)}
+                                        </Typography>
+                                        {!isApprovedOrPaid && (
+                                            <Button
+                                                size="small"
+                                                color="inherit"
+                                                onClick={() => {
+                                                    setReceipt('');
+                                                    setReceiptFile(null);
+                                                }}
+                                                sx={{
+                                                    px: 1.5,
+                                                    py: 0,
+                                                    height: 26,
+                                                    borderRadius: 1.5,
+                                                    minWidth: 'auto',
+                                                    typography: 'caption',
+                                                    bgcolor: 'background.paper',
+                                                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.24)}`,
+                                                    '&:hover': {
+                                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                                    },
+                                                }}
+                                            >
+                                                Remove
+                                            </Button>
+                                        )}
+                                    </Stack>
+                                )}
+                            </Stack>
+                            {formErrors.receipt && (
+                                <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                                    {formErrors.receipt}
+                                </Typography>
+                            )}
+                            {receiptFileError && (
+                                <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                                    {receiptFileError}
+                                </Typography>
+                            )}
+                        </Box>
 
                         {isEdit && user?.roles.some(r => ['System Manager', 'HR', 'HR User', 'HR Manager', 'Accounts Manager'].includes(r)) &&
                             (currentClaim?.workflow_state === 'Approved' || currentClaim?.workflow_state === 'Paid') && (
