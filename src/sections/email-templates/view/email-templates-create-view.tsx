@@ -167,9 +167,13 @@ export function EmailTemplateCreateView() {
         }
     };
 
-    const insertVariable = (variable: string) => {
-        const value = `${emailContent} ${variable}`;
-        setEmailContent(value);
+    const handleCopyVariable = (variable: string) => {
+        navigator.clipboard.writeText(variable);
+        setSnackbar({
+            open: true,
+            severity: 'success',
+            message: `Copied ${variable} to clipboard`,
+        });
     };
 
     useEffect(() => {
@@ -505,7 +509,7 @@ export function EmailTemplateCreateView() {
                                         endIcon={
                                             <MdContentCopy size={16} color='#08a3cd' />
                                         }
-                                        onClick={() => insertVariable(item.variable)}
+                                        onClick={() => handleCopyVariable(item.variable)}
                                         sx={{
                                             justifyContent: 'space-between',
                                             textTransform: 'none',

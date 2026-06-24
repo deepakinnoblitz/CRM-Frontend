@@ -193,9 +193,13 @@ export function EmailTemplateEditView() {
     { label: 'Company', value: 'Account' },
   ];
 
-  const insertVariable = (variable: string) => {
-    const value = `${emailContent} ${variable}`;
-    setEmailContent(value);
+  const handleCopyVariable = (variable: string) => {
+    navigator.clipboard.writeText(variable);
+    setSnackbar({
+      open: true,
+      severity: 'success',
+      message: `Copied ${variable} to clipboard`,
+    });
   };
 
   const handleTemplateForChange = async (value: string) => {
@@ -656,7 +660,7 @@ export function EmailTemplateEditView() {
                       </Box>
                     }
                     endIcon={<MdContentCopy size={16} color="#08a3cd" />}
-                    onClick={() => insertVariable(item.variable)}
+                    onClick={() => handleCopyVariable(item.variable)}
                     sx={{
                       justifyContent: 'space-between',
                       textTransform: 'none',
