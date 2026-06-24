@@ -1,5 +1,15 @@
+import type { WorkflowAction} from 'src/api/reimbursement-claims';
+
 import dayjs from 'dayjs';
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
+import { 
+    FaFileAlt, 
+    FaFilePdf, 
+    FaFileWord, 
+    FaFileImage, 
+    FaFileExcel, 
+    FaExternalLinkAlt 
+} from 'react-icons/fa';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -18,11 +28,10 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
-import { updateReimbursementClaim, WorkflowAction, getReimbursementClaimWorkflowActions, applyReimbursementClaimWorkflowAction } from 'src/api/reimbursement-claims';
+import { updateReimbursementClaim, getReimbursementClaimWorkflowActions, applyReimbursementClaimWorkflowAction } from 'src/api/reimbursement-claims';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { useAuth } from 'src/auth/auth-context';
@@ -275,40 +284,111 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                         {/* Attachments */}
                         {(claim.receipt || claim.payment_proof) && (
                             <Box sx={{ pt: 3 }}>
-                                <SectionHeader
-                                    title="Attachments"
-                                    icon="solar:link-bold"
-                                    action={
-                                        <Stack direction="row" spacing={1}>
-                                            {claim.receipt && (
-                                                <Button
-                                                    variant="text"
-                                                    size="small"
-                                                    color="primary"
-                                                    startIcon={<Iconify icon={"solar:paperclip-bold" as any} />}
-                                                    href={claim.receipt}
-                                                    target="_blank"
-                                                    sx={{ fontSize: '0.75rem', fontWeight: 700 }}
+                                <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, textTransform: 'uppercase', mb: 1.5, display: 'block', ml: 1.5 }}>
+                                    ATTACHMENT
+                                </Typography>
+                                <Stack spacing={2}>
+                                    {claim.receipt && (
+                                        <Stack
+                                            direction="row"
+                                            alignItems="center"
+                                            justifyContent="space-between"
+                                            sx={{
+                                                p: 2,
+                                                borderRadius: 1.5,
+                                                border: (themeVar) => `1px solid ${alpha(themeVar.palette.grey[500], 0.2)}`,
+                                                bgcolor: (themeVar) => alpha(themeVar.palette.grey[500], 0.02),
+                                            }}
+                                        >
+                                            <Stack direction="row" alignItems="center" spacing={2}>
+                                                <Box
+                                                    sx={{
+                                                        width: 40,
+                                                        height: 40,
+                                                        borderRadius: 1,
+                                                        bgcolor: (themeVar) => alpha(themeVar.palette.primary.main, 0.08),
+                                                        color: 'info.main',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                    }}
                                                 >
-                                                    Expense Receipt
-                                                </Button>
-                                            )}
-                                            {claim.payment_proof && (
-                                                <Button
-                                                    variant="text"
-                                                    size="small"
-                                                    color="success"
-                                                    startIcon={<Iconify icon={"solar:check-read-bold" as any} />}
-                                                    href={claim.payment_proof}
-                                                    target="_blank"
-                                                    sx={{ fontSize: '0.75rem', fontWeight: 700 }}
-                                                >
-                                                    Payment Proof
-                                                </Button>
-                                            )}
+                                                    {getFileIcon(claim.receipt)}
+                                                </Box>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                                    {decodeURIComponent(claim.receipt.split('/').pop()?.split('?')[0] || 'Expense Receipt')}
+                                                </Typography>
+                                            </Stack>
+                                            <Button
+                                                href={claim.receipt}
+                                                target="_blank"
+                                                variant="text"
+                                                color="primary"
+                                                endIcon={<FaExternalLinkAlt size={14} />}
+                                                sx={{
+                                                    fontWeight: 700,
+                                                    textTransform: 'none',
+                                                    fontSize: '0.875rem',
+                                                    '&:hover': {
+                                                        bgcolor: 'transparent',
+                                                    }
+                                                }}
+                                            >
+                                                View Attachment
+                                            </Button>
                                         </Stack>
-                                    }
-                                />
+                                    )}
+                                    {claim.payment_proof && (
+                                        <Stack
+                                            direction="row"
+                                            alignItems="center"
+                                            justifyContent="space-between"
+                                            sx={{
+                                                p: 2,
+                                                borderRadius: 1.5,
+                                                border: (themeVar) => `1px solid ${alpha(themeVar.palette.grey[500], 0.2)}`,
+                                                bgcolor: (themeVar) => alpha(themeVar.palette.grey[500], 0.02),
+                                            }}
+                                        >
+                                            <Stack direction="row" alignItems="center" spacing={2}>
+                                                <Box
+                                                    sx={{
+                                                        width: 40,
+                                                        height: 40,
+                                                        borderRadius: 1,
+                                                        bgcolor: (themeVar) => alpha(themeVar.palette.primary.main, 0.08),
+                                                        color: 'success.main',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                    }}
+                                                >
+                                                    {getFileIcon(claim.payment_proof)}
+                                                </Box>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                                    {decodeURIComponent(claim.payment_proof.split('/').pop()?.split('?')[0] || 'Payment Proof')}
+                                                </Typography>
+                                            </Stack>
+                                            <Button
+                                                href={claim.payment_proof}
+                                                target="_blank"
+                                                variant="text"
+                                                color="success"
+                                                endIcon={<FaExternalLinkAlt size={14} />}
+                                                sx={{
+                                                    fontWeight: 700,
+                                                    textTransform: 'none',
+                                                    fontSize: '0.875rem',
+                                                    '&:hover': {
+                                                        bgcolor: 'transparent',
+                                                    }
+                                                }}
+                                            >
+                                                View Attachment
+                                            </Button>
+                                        </Stack>
+                                    )}
+                                </Stack>
                             </Box>
                         )}
 
@@ -464,6 +544,25 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
             />
         </Dialog>
     );
+}
+
+function getFileIcon(url: string) {
+    const ext = url.split('.').pop()?.split('?')[0]?.toLowerCase();
+    if (!ext) return <FaFileAlt size={20} />;
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
+        return <FaFileImage size={20} />;
+    }
+    if (ext === 'pdf') {
+        return <FaFilePdf size={20} />;
+    }
+    if (['xls', 'xlsx'].includes(ext)) {
+        return <FaFileExcel size={20} />;
+    }
+    if (['doc', 'docx'].includes(ext)) {
+        return <FaFileWord size={20} />;
+    }
+    return <FaFileAlt size={20} />;
 }
 
 function getActionIcon(action: string) {

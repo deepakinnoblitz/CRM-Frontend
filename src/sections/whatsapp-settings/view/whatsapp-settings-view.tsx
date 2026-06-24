@@ -87,6 +87,7 @@ export function WhatsAppSettingsView() {
         phone_number_id: '',
         business_account_id: '',
     });
+    const [originalSettings, setOriginalSettings] = useState<Partial<WhatsAppSettings>>({});
     const [errors, setErrors] = useState<{ phone_number_id?: boolean; access_token?: boolean; webhook_verify_token?: boolean }>({});
     const [testing, setTesting] = useState(false);
 
@@ -113,7 +114,12 @@ export function WhatsAppSettingsView() {
 
     useEffect(() => {
         getWhatsAppSettings()
-            .then(data => setSettings(data))
+            .then(data => {
+                if (data) {
+                    setSettings(data);
+                    setOriginalSettings(data);
+                }
+            })
             .catch(err => enqueueSnackbar('Failed to load settings', { variant: 'error' }));
     }, [enqueueSnackbar]);
 
@@ -122,6 +128,18 @@ export function WhatsAppSettingsView() {
         if (field === 'phone_number_id' || field === 'access_token' || field === 'webhook_verify_token') {
             setErrors(prev => ({ ...prev, [field]: false }));
         }
+    };
+
+    const hasChanges = () => {
+        const fields: (keyof WhatsAppSettings)[] = [
+            'enable_whatsapp',
+            'token_type',
+            'access_token',
+            'phone_number_id',
+            'business_account_id',
+            'webhook_verify_token'
+        ];
+        return fields.some(field => settings[field] !== originalSettings[field]);
     };
 
     const handleSave = async () => {
@@ -135,8 +153,18 @@ export function WhatsAppSettingsView() {
             return;
         }
 
+        if (!hasChanges()) {
+            enqueueSnackbar('No changes to save', { variant: 'info' });
+            return;
+        }
+
         try {
             await saveWhatsAppSettings(settings);
+            const updatedData = await getWhatsAppSettings();
+            if (updatedData) {
+                setSettings(updatedData);
+                setOriginalSettings(updatedData);
+            }
             enqueueSnackbar('Settings saved successfully', { variant: 'success' });
         } catch {
             enqueueSnackbar('Failed to save settings', { variant: 'error' });
@@ -192,6 +220,7 @@ export function WhatsAppSettingsView() {
                 .then(data => {
                     if (data) {
                         setSettings(data);
+                        setOriginalSettings(data);
                     }
                 })
                 .catch(err => {
