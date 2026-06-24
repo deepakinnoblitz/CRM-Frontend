@@ -1,21 +1,35 @@
+import type { SwitchProps } from '@mui/material/Switch';
 import type { WhatsAppSettings } from 'src/api/whatsapp-settings';
 
 import { useSnackbar } from 'notistack';
-import { useState, useEffect } from 'react';
+import { MuiTelInput } from 'mui-tel-input';
+import { MdContentCopy } from 'react-icons/md';
+import { useRef, useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import { styled } from '@mui/material/styles';
+import Dialog from '@mui/material/Dialog';
+import Switch from '@mui/material/Switch';
 import MenuItem from '@mui/material/MenuItem';
+import { styled } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import Switch, { SwitchProps } from '@mui/material/Switch';
+import IconButton from '@mui/material/IconButton';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import InputAdornment from '@mui/material/InputAdornment';
+import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { DashboardContent } from 'src/layouts/dashboard';
+import { sendWhatsappMessage, uploadWhatsappAttachment } from 'src/api/whatsapp';
 import { getWhatsAppSettings, saveWhatsAppSettings, testWhatsAppConnection } from 'src/api/whatsapp-settings';
+
+import { Iconify } from 'src/components/iconify';
 
 export const CustomSwitch = styled((props: SwitchProps) => (
     <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
@@ -75,6 +89,27 @@ export function WhatsAppSettingsView() {
     });
     const [errors, setErrors] = useState<{ phone_number_id?: boolean; access_token?: boolean; webhook_verify_token?: boolean }>({});
     const [testing, setTesting] = useState(false);
+
+    // Modal state
+    const [sendModalOpen, setSendModalOpen] = useState(false);
+    const [recipientPhone, setRecipientPhone] = useState('');
+    const [messageText, setMessageText] = useState('');
+    const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
+    const [attachmentName, setAttachmentName] = useState<string>('');
+    const [uploadingFile, setUploadingFile] = useState(false);
+    const [sendingMessage, setSendingMessage] = useState(false);
+
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+    useEffect(() => {
+        if (sendModalOpen && settings.whatsapp_number) {
+            let phoneVal = settings.whatsapp_number.trim();
+            if (phoneVal && !phoneVal.startsWith('+')) {
+                phoneVal = `+${phoneVal}`;
+            }
+            setRecipientPhone(phoneVal);
+        }
+    }, [sendModalOpen, settings.whatsapp_number]);
 
     useEffect(() => {
         getWhatsAppSettings()
@@ -153,7 +188,57 @@ export function WhatsAppSettingsView() {
                 }
             );
         } finally {
-            setTesting(false);
+            getWhatsAppSettings()
+                .then(data => {
+                    if (data) {
+                        setSettings(data);
+                    }
+                })
+                .catch(err => {
+                    console.error('Failed to refresh settings from DB:', err);
+                })
+                .finally(() => {
+                    setTesting(false);
+                });
+        }
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadingFile(true);
+        try {
+            const url = await uploadWhatsappAttachment(file);
+            setAttachmentUrl(url);
+            setAttachmentName(file.name);
+            enqueueSnackbar('Attachment uploaded successfully', { variant: 'success' });
+        } catch (err: any) {
+            enqueueSnackbar(err.message || 'Failed to upload attachment', { variant: 'error' });
+        } finally {
+            setUploadingFile(false);
+        }
+    };
+
+    const handleSend = async () => {
+        const cleanPhone = recipientPhone.replace(/\D/g, '');
+        if (!cleanPhone) {
+            enqueueSnackbar('Phone number is required', { variant: 'error' });
+            return;
+        }
+
+        setSendingMessage(true);
+        try {
+            await sendWhatsappMessage(cleanPhone, messageText, attachmentUrl || undefined);
+            enqueueSnackbar('WhatsApp message sent successfully', { variant: 'success' });
+            setMessageText('');
+            setAttachmentUrl(null);
+            setAttachmentName('');
+            setSendModalOpen(false);
+        } catch (err: any) {
+            enqueueSnackbar(err.message || 'Failed to send WhatsApp message', { variant: 'error' });
+        } finally {
+            setSendingMessage(false);
         }
     };
 
@@ -169,6 +254,19 @@ export function WhatsAppSettingsView() {
                         sx={{ borderRadius: 1.5 }}
                     >
                         {testing ? 'Testing...' : 'Test Connection'}
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => setSendModalOpen(true)}
+                        sx={{
+                            bgcolor: '#25D366',
+                            color: '#FFFFFF',
+                            '&:hover': { bgcolor: '#1EBE5D' },
+                            '&:active': { bgcolor: '#128C7E' },
+                            borderRadius: 1.5,
+                        }}
+                    >
+                        Send WhatsApp Message
                     </Button>
                     <Button
                         variant="contained"
@@ -255,7 +353,24 @@ export function WhatsAppSettingsView() {
                                 fullWidth
                                 label="Webhook URL"
                                 value={settings.webhook_url || ''}
-                                InputProps={{ readOnly: true }}
+                                InputProps={{
+                                    readOnly: true,
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                onClick={() => {
+                                                    if (settings.webhook_url) {
+                                                        navigator.clipboard.writeText(settings.webhook_url);
+                                                        enqueueSnackbar('Webhook URL copied to clipboard', { variant: 'success' });
+                                                    }
+                                                }}
+                                                edge="end"
+                                            >
+                                                <MdContentCopy size={18} color="#08a3cd" />
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                }}
                                 helperText="Auto Generated - Configure this URL in your Facebook App dashboard"
                             />
                         </Stack>
@@ -280,6 +395,98 @@ export function WhatsAppSettingsView() {
                     </Card>
                 </Box>
             </Box>
+
+            <Dialog open={sendModalOpen} onClose={() => setSendModalOpen(false)} fullWidth maxWidth="sm">
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6">Send WhatsApp Message</Typography>
+                    <IconButton
+                        aria-label="close"
+                        onClick={() => setSendModalOpen(false)}
+                        sx={{
+                            color: (theme) => theme.palette.grey[500],
+                        }}
+                    >
+                        <Iconify icon="mingcute:close-line" width={24} />
+                    </IconButton>
+                </DialogTitle>
+
+                <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 3, py: 2 }}>
+                    <MuiTelInput
+                        required
+                        fullWidth
+                        defaultCountry="IN"
+                        label="Phone Number"
+                        value={recipientPhone}
+                        onChange={(newValue) => setRecipientPhone(newValue)}
+                    />
+
+                    <TextField
+                        fullWidth
+                        multiline
+                        rows={4}
+                        label="Message"
+                        placeholder="Enter message..."
+                        value={messageText}
+                        onChange={(e) => setMessageText(e.target.value)}
+                    />
+
+                    <Box>
+                        <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: 'text.secondary' }}>Attachment</Typography>
+                        <input
+                            type="file"
+                            style={{ display: 'none' }}
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                        />
+                        {uploadingFile ? (
+                            <Button disabled variant="outlined" startIcon={<CircularProgress size={16} />}>
+                                Uploading...
+                            </Button>
+                        ) : attachmentUrl ? (
+                            <Stack direction="row" alignItems="center" spacing={1}>
+                                <Chip
+                                    label={attachmentName}
+                                    onDelete={() => {
+                                        setAttachmentUrl(null);
+                                        setAttachmentName('');
+                                    }}
+                                    sx={{
+                                        bgcolor: '#22c55e',
+                                        color: '#ffffff',
+                                        fontWeight: 600,
+                                        '& .MuiChip-deleteIcon': {
+                                            color: '#ffffff',
+                                            '&:hover': {
+                                                color: '#e0e0e0',
+                                            }
+                                        }
+                                    }}
+                                />
+                            </Stack>
+                        ) : (
+                            <Button
+                                variant="outlined"
+                                onClick={() => fileInputRef.current?.click()}
+                                startIcon={<Iconify icon="solar:upload-bold" />}
+                                sx={{ color: '#08a3cd', borderColor: '#08a3cd', '&:hover': { borderColor: '#068fb3', bgcolor: 'rgba(8, 163, 205, 0.04)' } }}
+                            >
+                                Upload File
+                            </Button>
+                        )}
+                    </Box>
+                </DialogContent>
+
+                <DialogActions sx={{ p: 2 }}>
+                    <Button
+                        onClick={handleSend}
+                        variant="contained"
+                        disabled={sendingMessage || uploadingFile}
+                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
+                        {sendingMessage ? 'Sending...' : 'Send'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </DashboardContent>
     );
 }
