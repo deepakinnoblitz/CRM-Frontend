@@ -84,6 +84,7 @@ export const EmailAutomationEditPage = lazy(() => import('src/pages/email-automa
 export const EmailAutomationDetailsPage = lazy(() => import('src/pages/email-automations/details'));
 
 export const EmailSettingsPage = lazy(() => import('src/pages/email-settings'));
+export const WhatsAppSettingsPage = lazy(() => import('src/pages/whatsapp-settings'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 
 export const LeadReportPage = lazy(() => import('src/pages/reports/lead'));
@@ -290,6 +291,7 @@ export const routesSection: RouteObject[] = [
           { path: ':id/view', element: <WhatsAppTemplateDetailsPage /> },
         ],
       },
+      { path: 'whatsapp-settings', element: <WhatsAppSettingsPage /> },
       { path: 'blog', element: <BlogPage /> },
 
       {
