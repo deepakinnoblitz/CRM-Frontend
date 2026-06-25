@@ -232,7 +232,7 @@ export const employeeNavData = [
   {
     title: 'My Request List',
     path: '/requests',
-    icon: <FiList   size={18} />,
+    icon: <FiList size={18} />,
   },
   {
     title: 'My Timesheet',
@@ -413,7 +413,7 @@ export const crmAndSalesNavData = [
   {
     title: 'Company',
     path: '/accounts',
-    icon: <FaBuildingUser size={20}/>,
+    icon: <FaBuildingUser size={20} />,
   },
   {
     title: 'Proposal',
@@ -452,12 +452,13 @@ export const crmAndSalesNavData = [
       { title: 'Email Settings', path: '/email-settings' },
     ],
   },
-    {
+  {
     title: 'WhatsApp Automation',
     path: '/whatsapp-templates',
     icon: <FaWhatsapp size={22} />,
     children: [
       { title: 'WhatsApp Templates', path: '/whatsapp-templates' },
+      { title: 'WhatsApp Campaigns', path: '/whatsapp-campaigns' },
       { title: 'WhatsApp Automation', path: '/whatsapp-automation' },
       { title: 'WhatsApp Settings', path: '/whatsapp-settings' },
     ],

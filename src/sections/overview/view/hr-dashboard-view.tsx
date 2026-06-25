@@ -270,7 +270,7 @@ export function HRDashboardView() {
                         headLabel={[
                             { id: 'index', label: 'S.No' },
                             { id: 'employee_name', label: 'Employee Name' },
-                            { id: 'leave_type', label: 'Leave Type' },
+                            { id: 'employee', label: 'Employee ID' },
                         ]}
                         emptyMessage="No leave today"
                     />
