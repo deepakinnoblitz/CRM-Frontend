@@ -46,10 +46,13 @@ const getClipPath = (index: number, total: number) => {
     }
     return 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)';
 };
+import { getAutomationPreview, sendAutomationMessage, getLatestWhatsAppMessage } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import { WhatsappAutomationDialog } from 'src/sections/lead/whatsapp-automation-dialog';
 
 import { DealRelatedList } from '../deal-related-list';
 
@@ -72,6 +75,9 @@ export function DealDetailsView() {
         severity: 'success',
     });
 
+    const [automationData, setAutomationData] = useState<any>(null);
+    const [openAutomationDialog, setOpenAutomationDialog] = useState(false);
+
     useEffect(() => {
         if (deal && deal.stage) {
             const validStage = STAGE_OPTIONS.some(s => s.value === deal.stage) ? deal.stage : 'Just In';
@@ -93,6 +99,17 @@ export function DealDetailsView() {
                 message: `Prospect stage updated from "${previousStage}" to "${selectedStage}" successfully`,
                 severity: 'success'
             });
+
+            // Fetch WhatsApp automation preview
+            try {
+                const preview = await getAutomationPreview('Deal', deal.name, previousStage);
+                if (preview && preview.show_confirmation) {
+                    setAutomationData(preview);
+                    setOpenAutomationDialog(true);
+                }
+            } catch (automationErr: any) {
+                console.error('Failed to fetch WhatsApp automation preview:', automationErr);
+            }
         } catch (err: any) {
             console.error('Failed to update stage:', err);
             setSnackbar({
@@ -104,6 +121,48 @@ export function DealDetailsView() {
             setUpdatingStage(false);
         }
     }, [deal, selectedStage]);
+
+    const handleSendAutomationMessage = useCallback(async (proposalName: string | null) => {
+        if (!deal || !automationData) return;
+        try {
+            await sendAutomationMessage(
+                automationData.automation_name,
+                'Deal',
+                deal.name,
+                proposalName
+            );
+
+            const latestMsg = await getLatestWhatsAppMessage(deal.name, true);
+            if (latestMsg && latestMsg.status === 'Failed') {
+                let errMsg = 'Unable to send WhatsApp message.';
+                try {
+                    if (latestMsg.raw_payload) {
+                        const payload = JSON.parse(latestMsg.raw_payload);
+                        const fbErrMessage = payload?.error?.error?.message || payload?.error?.message || payload?.error;
+                        if (fbErrMessage) {
+                            errMsg = fbErrMessage.replace(/^\(#\d+\)\s*/, '');
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to parse raw_payload:", e);
+                }
+                throw new Error(errMsg);
+            }
+
+            setSnackbar({
+                open: true,
+                message: 'WhatsApp Message Sent Successfully',
+                severity: 'success'
+            });
+        } catch (err: any) {
+            setSnackbar({
+                open: true,
+                message: err.message || 'Failed to send message.',
+                severity: 'error'
+            });
+            throw err;
+        }
+    }, [deal, automationData]);
 
     const handleStageUpdateClick = useCallback(async () => {
         if (!deal || !selectedStage) return;
@@ -472,6 +531,19 @@ export function DealDetailsView() {
                     </Button>
                 }
             />
+
+            {automationData && (
+                <WhatsappAutomationDialog
+                    open={openAutomationDialog}
+                    onClose={() => {
+                        setOpenAutomationDialog(false);
+                        setAutomationData(null);
+                    }}
+                    automation={automationData}
+                    lead={deal}
+                    onSend={handleSendAutomationMessage}
+                />
+            )}
 
             <Snackbar
                 open={snackbar.open}
