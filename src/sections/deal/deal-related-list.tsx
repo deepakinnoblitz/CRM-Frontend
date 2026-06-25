@@ -303,7 +303,7 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                         )}
                     </Box>
 
-                    <Button
+                    {/* <Button
                         variant="contained"
                         color={type === 'estimations' ? "info" : "success"}
                         size="small"
@@ -312,7 +312,7 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                         sx={{ height: 40, px: 2, ml: 3 }}
                     >
                         New {type === 'estimations' ? 'Estimation' : 'Invoice'}
-                    </Button>
+                    </Button> */}
                 </Stack>
             )}
 
