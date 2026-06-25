@@ -465,3 +465,18 @@ export async function sendAutomationMessage(
     return json.message;
 }
 
+export async function getLatestWhatsAppMessage(
+    docname: string,
+    isDeal: boolean
+): Promise<{ status: string; raw_payload?: string } | null> {
+    const filters = isDeal ? { prospect: docname } : { lead: docname };
+    const res = await frappeRequest(
+        `/api/method/frappe.client.get_list?doctype=CRM WhatsApp Message&filters=${encodeURIComponent(JSON.stringify(filters))}&fields=${encodeURIComponent(JSON.stringify(["status", "raw_payload"]))}&order_by=creation desc&limit=1`
+    );
+    if (!res.ok) {
+        throw new Error("Failed to fetch WhatsApp message status");
+    }
+    const data = await res.json();
+    return data.message && data.message.length > 0 ? data.message[0] : null;
+}
+

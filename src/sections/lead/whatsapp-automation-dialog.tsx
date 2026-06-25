@@ -108,11 +108,7 @@ export function WhatsappAutomationDialog({
           {automation.message || 'Do you want to send the WhatsApp message?'}
         </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 3, borderRadius: 1.5 }}>
-            {error}
-          </Alert>
-        )}
+
 
         {isProposalSentState && (
           <FormControl fullWidth required error={!!error && !selectedProposal} sx={{ mb: 3 }}>

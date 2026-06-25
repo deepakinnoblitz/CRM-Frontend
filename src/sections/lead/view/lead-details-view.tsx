@@ -36,7 +36,7 @@ import { useRouter } from 'src/routes/hooks';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getDoc, getLead, convertLead, getWorkflowStates, getWorkflowActions, getFollowupHistory, applyWorkflowAction, getProposalByLeadId, getAutomationPreview, sendAutomationMessage } from 'src/api/leads';
+import { getDoc, getLead, convertLead, getWorkflowStates, getWorkflowActions, getFollowupHistory, applyWorkflowAction, getProposalByLeadId, getAutomationPreview, sendAutomationMessage, getLatestWhatsAppMessage } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -294,17 +294,44 @@ export function LeadDetailsView() {
 
     const handleSendAutomationMessage = useCallback(async (proposalName: string | null) => {
         if (!lead || !automationData) return;
-        await sendAutomationMessage(
-            automationData.automation_name,
-            'Lead',
-            lead.name,
-            proposalName
-        );
-        setSnackbar({
-            open: true,
-            message: 'WhatsApp Message Sent Successfully',
-            severity: 'success'
-        });
+        try {
+            await sendAutomationMessage(
+                automationData.automation_name,
+                'Lead',
+                lead.name,
+                proposalName
+            );
+
+            const latestMsg = await getLatestWhatsAppMessage(lead.name, false);
+            if (latestMsg && latestMsg.status === 'Failed') {
+                let errMsg = 'Unable to send WhatsApp message.';
+                try {
+                    if (latestMsg.raw_payload) {
+                        const payload = JSON.parse(latestMsg.raw_payload);
+                        const fbErrMessage = payload?.error?.error?.message || payload?.error?.message || payload?.error;
+                        if (fbErrMessage) {
+                            errMsg = fbErrMessage.replace(/^\(#\d+\)\s*/, '');
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to parse raw_payload:", e);
+                }
+                throw new Error(errMsg);
+            }
+
+            setSnackbar({
+                open: true,
+                message: 'WhatsApp Message Sent Successfully',
+                severity: 'success'
+            });
+        } catch (err: any) {
+            setSnackbar({
+                open: true,
+                message: err.message || 'Failed to send message.',
+                severity: 'error'
+            });
+            throw err;
+        }
     }, [lead, automationData]);
 
     const handleStageUpdateClick = useCallback(() => {
