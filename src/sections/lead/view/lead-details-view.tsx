@@ -36,7 +36,7 @@ import { useRouter } from 'src/routes/hooks';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getDoc, getLead, convertLead, getWorkflowStates, getWorkflowActions, getFollowupHistory, applyWorkflowAction, getProposalByLeadId } from 'src/api/leads';
+import { getDoc, getLead, convertLead, getWorkflowStates, getWorkflowActions, getFollowupHistory, applyWorkflowAction, getProposalByLeadId, getAutomationPreview, sendAutomationMessage } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -46,6 +46,7 @@ import { WhatsappChatDialog } from './whatsapp_chat_dialog';
 import { LeadFollowupDetails } from '../lead-followup-details';
 import { LeadProposalDetails } from '../lead-proposal-details';
 import { LeadPipelineTimeline } from '../lead-pipeline-timeline';
+import { WhatsappAutomationDialog } from '../whatsapp-automation-dialog';
 import { AccountDetailsDialog } from '../../report/account/account-details-dialog';
 import { ContactDetailsDialog } from '../../report/contact/contact-details-dialog';
 
@@ -78,6 +79,8 @@ export function LeadDetailsView() {
     const navigate = useNavigate();
 
     const [openWhatsapp, setOpenWhatsapp] = useState(false);
+    const [automationData, setAutomationData] = useState<any>(null);
+    const [openAutomationDialog, setOpenAutomationDialog] = useState(false);
 
     const [lead, setLead] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -265,6 +268,17 @@ export function LeadDetailsView() {
                 message: `Lead status updated from "${previousStage}" to "${selectedStage}" successfully`,
                 severity: 'success'
             });
+
+            // Fetch WhatsApp automation preview
+            try {
+                const preview = await getAutomationPreview('Lead', lead.name, previousStage);
+                if (preview && preview.show_confirmation) {
+                    setAutomationData(preview);
+                    setOpenAutomationDialog(true);
+                }
+            } catch (automationErr: any) {
+                console.error('Failed to fetch WhatsApp automation preview:', automationErr);
+            }
         } catch (err: any) {
             console.error('Failed to update stage:', err);
             setSnackbar({
@@ -277,6 +291,21 @@ export function LeadDetailsView() {
             setUpdatingStage(false);
         }
     }, [lead, selectedStage, allWorkflowData]);
+
+    const handleSendAutomationMessage = useCallback(async (proposalName: string | null) => {
+        if (!lead || !automationData) return;
+        await sendAutomationMessage(
+            automationData.automation_name,
+            'Lead',
+            lead.name,
+            proposalName
+        );
+        setSnackbar({
+            open: true,
+            message: 'WhatsApp Message Sent Successfully',
+            severity: 'success'
+        });
+    }, [lead, automationData]);
 
     const handleStageUpdateClick = useCallback(() => {
         if (!lead || !selectedStage || selectedStage === (lead.workflow_state || 'New Lead')) {
@@ -1020,6 +1049,19 @@ export function LeadDetailsView() {
                     </Button>
                 }
             />
+
+            {automationData && (
+                <WhatsappAutomationDialog
+                    open={openAutomationDialog}
+                    onClose={() => {
+                        setOpenAutomationDialog(false);
+                        setAutomationData(null);
+                    }}
+                    automation={automationData}
+                    lead={lead}
+                    onSend={handleSendAutomationMessage}
+                />
+            )}
 
             <Snackbar
                 open={snackbar.open}

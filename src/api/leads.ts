@@ -416,3 +416,52 @@ export async function applyWorkflowAction(doctype: string, name: string, action:
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to apply workflow action"));
     return json.message;
 }
+
+export async function getAutomationPreview(
+    doctype: string,
+    docname: string,
+    previousState: string
+): Promise<{
+    show_confirmation: boolean;
+    title?: string;
+    message?: string;
+    preview: string;
+    automation_name: string;
+}> {
+    const res = await frappeRequest(
+        `/api/method/company.company.doctype.crm_whatsapp_automation.crm_whatsapp_automation.get_automation_preview?doctype=${encodeURIComponent(doctype)}&docname=${encodeURIComponent(docname)}&previous_state=${encodeURIComponent(previousState)}`
+    );
+    if (!res.ok) {
+        throw new Error("Failed to fetch WhatsApp automation preview");
+    }
+    const data = await res.json();
+    return data.message;
+}
+
+export async function sendAutomationMessage(
+    automationName: string,
+    doctype: string,
+    docname: string,
+    proposalName: string | null
+): Promise<any> {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(
+        "/api/method/company.company.doctype.crm_whatsapp_automation.crm_whatsapp_automation.send_automation_message",
+        {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                automation_name: automationName,
+                doctype,
+                docname,
+                proposal_name: proposalName,
+            }),
+        }
+    );
+    const json = await res.json();
+    if (!res.ok || json.exc) {
+        throw new Error(handleFrappeError(json, "Unable to send WhatsApp message."));
+    }
+    return json.message;
+}
+

@@ -52,6 +52,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { DealRelatedList } from '../deal-related-list';
+import { WhatsappAutomationDialog } from 'src/sections/lead/whatsapp-automation-dialog';
+import { getAutomationPreview, sendAutomationMessage } from 'src/api/leads';
 
 // ----------------------------------------------------------------------
 
@@ -71,6 +73,9 @@ export function DealDetailsView() {
         message: '',
         severity: 'success',
     });
+
+    const [automationData, setAutomationData] = useState<any>(null);
+    const [openAutomationDialog, setOpenAutomationDialog] = useState(false);
 
     useEffect(() => {
         if (deal && deal.stage) {
@@ -93,6 +98,17 @@ export function DealDetailsView() {
                 message: `Prospect stage updated from "${previousStage}" to "${selectedStage}" successfully`,
                 severity: 'success'
             });
+
+            // Fetch WhatsApp automation preview
+            try {
+                const preview = await getAutomationPreview('Deal', deal.name, previousStage);
+                if (preview && preview.show_confirmation) {
+                    setAutomationData(preview);
+                    setOpenAutomationDialog(true);
+                }
+            } catch (automationErr: any) {
+                console.error('Failed to fetch WhatsApp automation preview:', automationErr);
+            }
         } catch (err: any) {
             console.error('Failed to update stage:', err);
             setSnackbar({
@@ -104,6 +120,21 @@ export function DealDetailsView() {
             setUpdatingStage(false);
         }
     }, [deal, selectedStage]);
+
+    const handleSendAutomationMessage = useCallback(async (proposalName: string | null) => {
+        if (!deal || !automationData) return;
+        await sendAutomationMessage(
+            automationData.automation_name,
+            'Deal',
+            deal.name,
+            proposalName
+        );
+        setSnackbar({
+            open: true,
+            message: 'WhatsApp Message Sent Successfully',
+            severity: 'success'
+        });
+    }, [deal, automationData]);
 
     const handleStageUpdateClick = useCallback(async () => {
         if (!deal || !selectedStage) return;
@@ -472,6 +503,19 @@ export function DealDetailsView() {
                     </Button>
                 }
             />
+
+            {automationData && (
+                <WhatsappAutomationDialog
+                    open={openAutomationDialog}
+                    onClose={() => {
+                        setOpenAutomationDialog(false);
+                        setAutomationData(null);
+                    }}
+                    automation={automationData}
+                    lead={deal}
+                    onSend={handleSendAutomationMessage}
+                />
+            )}
 
             <Snackbar
                 open={snackbar.open}
