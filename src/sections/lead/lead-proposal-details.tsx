@@ -10,6 +10,7 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import CardHeader from "@mui/material/CardHeader";
 import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
 import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 
@@ -94,13 +95,15 @@ export function LeadProposalDetails({ title, subheader, list }: Props) {
 
                 <TableCell>Status</TableCell>
 
+                <TableCell align="center">Action</TableCell>
+
               </TableRow>
             </TableHead>
 
             <TableBody>
               {paginatedList.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={8} align="center">
                     <Box
                       sx={{
                         py: 8,
@@ -218,6 +221,16 @@ export function LeadProposalDetails({ title, subheader, list }: Props) {
                     >
                         {row.status}
                         </Label>
+                    </TableCell>
+                    <TableCell align="center">
+                      <IconButton
+                        color="primary"
+                        onClick={() =>
+                          router.push(`/proposals/${encodeURIComponent(row.name)}/view`)
+                        }
+                      >
+                        <Iconify icon="solar:eye-bold" width={20} />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
                 ))
