@@ -7,8 +7,8 @@ export interface DashboardStats {
     deals: number;
     accounts: number;
     proposals: number;
-    estimations :number;
-    invoices :number;
+    estimations: number;
+    invoices: number;
     leads_by_status: Array<{ status: string; count: number }>;
     deals_by_stage: Array<{ stage: string; count: number }>;
     charts: {
@@ -88,8 +88,8 @@ export async function fetchDashboardStats(start_date?: string, end_date?: string
             deals: m.deals || 0,
             accounts: m.accounts || 0,
             proposals: m.proposals ?? m.proposal ?? 0,
-            estimations: m.proposals ?? m.proposal ?? 0,
-            invoices: m.proposals ?? m.proposal ?? 0,
+            estimations: m.estimations ?? m.estimation ?? 0,
+            invoices: m.invoices ?? m.invoice ?? 0,
             leads_by_status: m.leads_by_status || [],
             deals_by_stage: m.deals_by_stage || [],
             charts: {
