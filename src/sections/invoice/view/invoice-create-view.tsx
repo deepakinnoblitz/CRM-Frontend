@@ -157,6 +157,7 @@ export function InvoiceCreateView() {
         }
     };
     const [customerError, setCustomerError] = useState(false);
+    const [billingNameError, setBillingNameError] = useState(false);
     const [itemError, setItemError] = useState(false);
     const [paymentTermsError, setPaymentTermsError] = useState(false);
 
@@ -167,6 +168,18 @@ export function InvoiceCreateView() {
         getDoctypeList('Deal', ['name']).then(setDealOptions);
         getDoctypeList('Company Bank Account', ['name', 'account_holder_name', 'account_no']).then(setBankAccountOptions);
         fetchPaymentTermsOptions();
+
+        if (customerId) {
+            getContact(customerId)
+                .then((contact) => {
+                    const mappedOptions = contact.company_names?.map((id: string, idx: number) => ({
+                        name: id,
+                        account_name: contact.company_name_list?.[idx] || id
+                    })) || [];
+                    setBillingNameOptions(mappedOptions);
+                })
+                .catch((err) => console.error('Failed to fetch initial contact details:', err));
+        }
     }, []);
 
     // Prefill client from deal when navigated from the Deals table
@@ -204,6 +217,7 @@ export function InvoiceCreateView() {
 
                 if (mappedOptions.length === 1) {
                     setBillingName(mappedOptions[0].name);
+                    setBillingNameError(false);
                 } else {
                     setBillingName('');
                 }
@@ -392,6 +406,13 @@ export function InvoiceCreateView() {
             return;
         }
         setCustomerError(false);
+
+        if (!billingName) {
+            setBillingNameError(true);
+            enqueueSnackbar('Please select a Billing Name', { variant: 'error' });
+            return;
+        }
+        setBillingNameError(false);
 
         if (!paymentTerms || paymentTerms === 'Select Payment terms') {
             setPaymentTermsError(true);
@@ -601,11 +622,19 @@ export function InvoiceCreateView() {
                             options={billingNameOptions}
                             getOptionLabel={(option) => option.account_name || option.name || ''}
                             value={billingNameOptions.find((opt) => opt.name === billingName) || null}
-                            onChange={(_e, newValue) => setBillingName(newValue?.name || '')}
+                            onChange={(_e, newValue) => {
+                                setBillingName(newValue?.name || '');
+                                if (newValue?.name) {
+                                    setBillingNameError(false);
+                                }
+                            }}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
                                     label="Billing Name"
+                                    required
+                                    error={billingNameError}
+                                    helperText={billingNameError ? 'Please select a Billing Name' : ''}
                                 />
                             )}
                             renderOption={(props, option) => (
