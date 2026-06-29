@@ -7,7 +7,10 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
 import Switch from '@mui/material/Switch';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
 import { styled } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -207,34 +210,31 @@ export function WFHAttendanceTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Status
             </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filters.status}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
+            <FormControl fullWidth size="small">
+                <Select
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                    displayEmpty
+                    sx={{
                         borderRadius: 1.5,
                         bgcolor: 'background.neutral',
                         '&:hover': {
                             bgcolor: 'action.hover',
                         },
-                    },
-                }}
-            >
-                <option value="all">All Statuses</option>
-                {[
-                    { value: 'Rejected', label: 'Rejected' },
-                    { value: 'Pending', label: 'Pending' },
-                    { value: 'Approved', label: 'Approved' }
-                ].map((option) => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </TextField>
+                    }}
+                >
+                    <MenuItem value="all">All Statuses</MenuItem>
+                    {[
+                        { value: 'Rejected', label: 'Rejected' },
+                        { value: 'Pending', label: 'Pending' },
+                        { value: 'Approved', label: 'Approved' }
+                    ].map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
         </Stack>
     );
 
