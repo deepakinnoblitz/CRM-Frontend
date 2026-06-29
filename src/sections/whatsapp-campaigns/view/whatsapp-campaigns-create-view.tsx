@@ -400,7 +400,7 @@ export function WhatsAppCampaignsCreateView() {
                                                 maxWidth: 300
                                             }}
                                         >
-                                            {option.message_body || ''}
+                                            {option.message_body ? option.message_body.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ') : ''}
                                         </Typography>
                                     </Box>
                                 </li>

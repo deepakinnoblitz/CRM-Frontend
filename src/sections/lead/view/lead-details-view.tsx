@@ -1,3 +1,4 @@
+import { MdInfo } from "react-icons/md";
 import { IoMdArrowBack } from "react-icons/io";
 import { RiMailSendLine } from "react-icons/ri";
 import { useState, useEffect, useCallback } from 'react';
@@ -821,8 +822,24 @@ export function LeadDetailsView() {
                                         gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                     }}
                                 >
-                                    <DetailItem label="Email" value={lead.email} icon={<FaEnvelope size={13} />} />
-                                    <DetailItem label="Phone" value={lead.phone_number} icon={<FaPhone size={13} />} />
+                                    <DetailItem
+                                        label="Phone"
+                                        value={
+                                            lead.phone_numbers?.length
+                                                ? lead.phone_numbers.map((p: any) => p.phone).join(", ")
+                                                : lead.phone_number
+                                        }
+                                        icon={<FaPhone size={13} />}
+                                    />
+                                    <DetailItem
+                                        label="Email"
+                                        value={
+                                            lead.emails?.length
+                                                ? lead.emails.map((e: any) => e.email).join(", ")
+                                                : lead.email
+                                        }
+                                        icon={<FaEnvelope size={13} />}
+                                    />
                                     <DetailItem label="Service" value={lead.service} icon={<FaLightbulb size={13} />} color="info.main" />
                                     <DetailItem label="Leads Type" value={lead.leads_type} icon={<FaTag size={13} />} />
                                     <DetailItem label="Leads From" value={lead.leads_from} icon={<FaGlobe size={13} />} />
@@ -843,8 +860,22 @@ export function LeadDetailsView() {
                                     <DetailItem label="Country" value={lead.country} icon={<FaGlobe size={13} />} />
                                     <DetailItem label="State" value={lead.state} icon={<FaLocationDot size={13} />} />
                                     <DetailItem label="City" value={lead.city} icon={<FaCity size={13} />} />
+                                </Box>
+                            </Box>
+
+                            {/* System Information */}
+                            <Box sx={{ margin: 2 }}>
+                                <SectionHeader title="System Information" icon={<MdInfo size={18} />} />
+                                <Box
+                                    sx={{
+                                        display: 'grid',
+                                        gap: 3,
+                                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+                                    }}
+                                >
                                     <DetailItem label="Owner" value={lead.owner_name || lead.owner} icon={<FaUser size={13} />} color="secondary.main" />
                                     <DetailItem label="Creation" value={`${new Date(lead.creation).toLocaleDateString('en-GB').replace(/\//g, '-')} ${new Date(lead.creation).toLocaleTimeString('en-GB')}`} icon={<FaCalendarDays size={13} />} />
+                                    <DetailItem label="Modified" value={`${new Date(lead.modified).toLocaleDateString('en-GB').replace(/\//g, '-')} ${new Date(lead.modified).toLocaleTimeString('en-GB')}`} icon={<FaCalendarDays size={13} />} />
                                 </Box>
                             </Box>
 

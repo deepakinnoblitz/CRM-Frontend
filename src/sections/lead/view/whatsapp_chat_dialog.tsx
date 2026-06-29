@@ -1,3 +1,4 @@
+import { enqueueSnackbar } from 'notistack';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -202,8 +203,9 @@ export function WhatsappChatDialog({
             } else {
                 console.error('Failed to send WhatsApp message:', result?.error);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to send WhatsApp message:', error);
+            enqueueSnackbar(error.message || 'Failed to send WhatsApp message', { variant: 'error' });
         } finally {
             setSending(false);
         }
