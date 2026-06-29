@@ -25,10 +25,21 @@ import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { frappeRequest } from 'src/utils/csrf';
+
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getWhatsAppTemplate } from 'src/api/whatsapp-template';
 
 import { Iconify } from 'src/components/iconify';
+
+// ----------------------------------------------------------------------
+
+const formatFileSize = (bytes: number) => {
+    if (!bytes) return '—';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
 
 // ----------------------------------------------------------------------
 
@@ -39,11 +50,60 @@ export function WhatsAppTemplateDetailsView() {
     const [template, setTemplate] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
     const [viewAttachment, setViewAttachment] = useState<any>(null);
+    const [attachmentsMeta, setAttachmentsMeta] = useState<Record<string, any>>({});
 
     useEffect(() => {
         if (id) {
+            setFetching(true);
             getWhatsAppTemplate(id)
-                .then(setTemplate)
+                .then(async (data) => {
+                    setTemplate(data);
+
+                    const attachments = data.default_attachment || [];
+                    if (attachments.length > 0) {
+                        const fileUrls = attachments.map((att: any) => att.file).filter(Boolean);
+                        if (fileUrls.length > 0) {
+                            const getRelativePath = (url: string) => {
+                                try {
+                                    if (url.startsWith('http://') || url.startsWith('https://')) {
+                                        const parsed = new URL(url);
+                                        return parsed.pathname;
+                                    }
+                                    return url;
+                                } catch (e) {
+                                    return url;
+                                }
+                            };
+                            const relativePaths = fileUrls.map(getRelativePath);
+                            const allUrls = Array.from(new Set([...fileUrls, ...relativePaths]));
+
+                            try {
+                                const query = new URLSearchParams({
+                                    doctype: 'File',
+                                    fields: JSON.stringify(['file_name', 'file_url', 'file_size', 'creation', 'owner']),
+                                    filters: JSON.stringify([['File', 'file_url', 'in', allUrls]]),
+                                    limit_page_length: '999',
+                                });
+                                const response = await frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`);
+                                if (response.ok) {
+                                    const resData = await response.json();
+                                    const files = resData.message || [];
+                                    const metaMap: Record<string, any> = {};
+                                    files.forEach((f: any) => {
+                                        metaMap[f.file_url] = f;
+                                        const filename = f.file_url.split('/').pop();
+                                        if (filename) {
+                                            metaMap[filename] = f;
+                                        }
+                                    });
+                                    setAttachmentsMeta(metaMap);
+                                }
+                            } catch (metaErr) {
+                                console.error('Failed to fetch file metadata:', metaErr);
+                            }
+                        }
+                    }
+                })
                 .catch((err) => console.error('Failed to fetch template details:', err))
                 .finally(() => setFetching(false));
         }
@@ -67,6 +127,27 @@ export function WhatsAppTemplateDetailsView() {
             </DashboardContent>
         );
     }
+
+    const getFileMeta = (fileUrl: string) => {
+        if (!fileUrl) return null;
+        if (attachmentsMeta[fileUrl]) return attachmentsMeta[fileUrl];
+
+        // Check relative path
+        try {
+            if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+                const pathname = new URL(fileUrl).pathname;
+                if (attachmentsMeta[pathname]) return attachmentsMeta[pathname];
+            }
+        } catch (e) {
+            // Ignore invalid URL format
+        }
+
+        // Check filename match
+        const filename = fileUrl.split('/').pop();
+        if (filename && attachmentsMeta[filename]) return attachmentsMeta[filename];
+
+        return null;
+    };
 
     const {
         template_name,
@@ -285,83 +366,96 @@ export function WhatsAppTemplateDetailsView() {
                                             <TableCell>File Name</TableCell>
                                             <TableCell>Description</TableCell>
                                             <TableCell>File Size</TableCell>
-                                            <TableCell>Upload Date</TableCell>
+                                            <TableCell>Uploaded On</TableCell>
+                                            <TableCell>Uploaded By</TableCell>
                                             <TableCell align="center">Actions</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {default_attachment.map((row: any, index: number) => (
-                                            <TableRow key={index} hover>
-                                                <TableCell align="center">{index + 1}</TableCell>
-                                                <TableCell>
-                                                    {row.file ? (
-                                                        <Chip
-                                                            label={row.file.split('/').pop() || '—'}
-                                                            size="small"
-                                                            icon={<HiOutlineDocumentText size={16} style={{ color: '#ffffff', marginLeft: 8, marginRight: 2 }} />}
-                                                            sx={{
-                                                                height: 'auto',
-                                                                bgcolor: '#22c55e',
-                                                                color: '#ffffff',
-                                                                fontWeight: 500,
-                                                                '& .MuiChip-icon': {
-                                                                    ml: 0.5,
+                                        {default_attachment.map((row: any, index: number) => {
+                                            const meta = getFileMeta(row.file);
+                                            const fileSize = meta ? formatFileSize(meta.file_size) : '—';
+                                            const uploadedOn = meta && meta.creation ? new Date(meta.creation.replace(' ', 'T')).toLocaleDateString() : '—';
+                                            const uploadedBy = meta ? (meta.owner || '—') : '—';
+
+                                            return (
+                                                <TableRow key={index} hover>
+                                                    <TableCell align="center">{index + 1}</TableCell>
+                                                    <TableCell>
+                                                        {row.file ? (
+                                                            <Chip
+                                                                label={row.file.split('/').pop() || '—'}
+                                                                size="small"
+                                                                icon={<HiOutlineDocumentText size={16} style={{ color: '#ffffff', marginLeft: 8, marginRight: 2 }} />}
+                                                                sx={{
+                                                                    height: 'auto',
+                                                                    bgcolor: '#22c55e',
                                                                     color: '#ffffff',
-                                                                },
-                                                                '& .MuiChip-label': {
-                                                                    whiteSpace: 'normal',
-                                                                    wordBreak: 'break-all',
-                                                                    display: 'inline-block',
-                                                                    py: 0.5,
-                                                                    lineHeight: 1.2,
-                                                                },
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        '—'
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                                        {row.description || '—'}
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                                        —
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                                        —
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    <Stack direction="row" spacing={0.5} justifyContent="center">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => setViewAttachment(row)}
-                                                            sx={{ color: 'info.main' }}
-                                                            title="View Details"
-                                                        >
-                                                            <Iconify icon="solar:eye-bold" width={18} />
-                                                        </IconButton>
-                                                        {row.file && (
+                                                                    fontWeight: 500,
+                                                                    '& .MuiChip-icon': {
+                                                                        ml: 0.5,
+                                                                        color: '#ffffff',
+                                                                    },
+                                                                    '& .MuiChip-label': {
+                                                                        whiteSpace: 'normal',
+                                                                        wordBreak: 'break-all',
+                                                                        display: 'inline-block',
+                                                                        py: 0.5,
+                                                                        lineHeight: 1.2,
+                                                                    },
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            '—'
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                            {row.description || '—'}
+                                                        </Typography>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                            {fileSize}
+                                                        </Typography>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                            {uploadedOn}
+                                                        </Typography>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                            {uploadedBy}
+                                                        </Typography>
+                                                    </TableCell>
+                                                    <TableCell align="center">
+                                                        <Stack direction="row" spacing={0.5} justifyContent="center">
                                                             <IconButton
                                                                 size="small"
-                                                                component="a"
-                                                                href={row.file}
-                                                                download={row.file.split('/').pop() || 'attachment'}
-                                                                sx={{ color: 'success.main' }}
-                                                                title="Download"
+                                                                onClick={() => setViewAttachment(row)}
+                                                                sx={{ color: 'info.main' }}
+                                                                title="View Details"
                                                             >
-                                                                <Iconify icon="solar:download-bold" width={18} />
+                                                                <Iconify icon="solar:eye-bold" width={18} />
                                                             </IconButton>
-                                                        )}
-                                                    </Stack>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
+                                                            {row.file && (
+                                                                <IconButton
+                                                                    size="small"
+                                                                    component="a"
+                                                                    href={row.file}
+                                                                    download={row.file.split('/').pop() || 'attachment'}
+                                                                    sx={{ color: 'success.main' }}
+                                                                    title="Download"
+                                                                >
+                                                                    <Iconify icon="solar:download-bold" width={18} />
+                                                                </IconButton>
+                                                            )}
+                                                        </Stack>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
                                     </TableBody>
                                 </Table>
                             </TableContainer>
@@ -430,65 +524,72 @@ export function WhatsAppTemplateDetailsView() {
                     </IconButton>
                 </DialogTitle>
                 <DialogContent dividers sx={{ px: 3, pb: 4, pt: 3 }}>
-                    {viewAttachment && (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            {/* Document Info Card */}
-                            <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.grey[500], 0.04), border: (t) => `1px dashed ${alpha(t.palette.grey[500], 0.2)}` }}>
-                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, textTransform: 'uppercase', fontWeight: 600 }}>
-                                            <Iconify icon="solar:document-bold" width={14} />
-                                            File Name
-                                        </Typography>
-                                        <Typography variant="subtitle2" sx={{ wordBreak: 'break-all' }}>{viewAttachment.file?.split('/').pop() || '—'}</Typography>
+                    {viewAttachment && (() => {
+                        const viewAttachmentMeta = getFileMeta(viewAttachment.file);
+                        const viewFileSize = viewAttachmentMeta ? formatFileSize(viewAttachmentMeta.file_size) : '—';
+                        const viewUploadedOn = viewAttachmentMeta && viewAttachmentMeta.creation ? new Date(viewAttachmentMeta.creation.replace(' ', 'T')).toLocaleString() : '—';
+                        const viewUploadedBy = viewAttachmentMeta ? (viewAttachmentMeta.owner || '—') : '—';
+
+                        return (
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                {/* Document Info Card */}
+                                <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.grey[500], 0.04), border: (t) => `1px dashed ${alpha(t.palette.grey[500], 0.2)}` }}>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
+                                        <Box>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, textTransform: 'uppercase', fontWeight: 600 }}>
+                                                <Iconify icon="solar:document-bold" width={14} />
+                                                File Name
+                                            </Typography>
+                                            <Typography variant="subtitle2" sx={{ wordBreak: 'break-all' }}>{viewAttachment.file?.split('/').pop() || '—'}</Typography>
+                                        </Box>
+
+                                        <Box>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, textTransform: 'uppercase', fontWeight: 600 }}>
+                                                <Iconify icon={"solar:diskette-bold" as any} width={14} />
+                                                File Size
+                                            </Typography>
+                                            <Typography variant="subtitle2">{viewFileSize}</Typography>
+                                        </Box>
                                     </Box>
+
+                                    <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
 
                                     <Box>
                                         <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, textTransform: 'uppercase', fontWeight: 600 }}>
-                                            <Iconify icon={"solar:diskette-bold" as any} width={14} />
-                                            File Size
+                                            <Iconify icon="solar:notes-bold" width={14} />
+                                            Description
                                         </Typography>
-                                        <Typography variant="subtitle2">—</Typography>
+                                        <Typography variant="body2" sx={{ color: viewAttachment.description ? 'text.primary' : 'text.disabled' }}>
+                                            {viewAttachment.description || 'No description provided.'}
+                                        </Typography>
                                     </Box>
                                 </Box>
 
-                                <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
-
-                                <Box>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, textTransform: 'uppercase', fontWeight: 600 }}>
-                                        <Iconify icon="solar:notes-bold" width={14} />
-                                        Description
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: viewAttachment.description ? 'text.primary' : 'text.disabled' }}>
-                                        {viewAttachment.description || 'No description provided.'}
-                                    </Typography>
-                                </Box>
-                            </Box>
-
-                            {/* Meta Info */}
-                            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2, px: 1 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                    <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.success.main, 0.1), color: 'success.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Iconify icon="solar:calendar-date-bold" width={16} />
+                                {/* Meta Info */}
+                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2, px: 1 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                        <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.success.main, 0.1), color: 'success.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Iconify icon="solar:calendar-date-bold" width={16} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Uploaded On</Typography>
+                                            <Typography variant="subtitle2" sx={{ fontSize: 13 }}>{viewUploadedOn}</Typography>
+                                        </Box>
                                     </Box>
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Uploaded On</Typography>
-                                        <Typography variant="subtitle2" sx={{ fontSize: 13 }}>—</Typography>
-                                    </Box>
-                                </Box>
 
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                    <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.warning.main, 0.1), color: 'warning.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Iconify icon={"solar:user-circle-bold" as any} width={16} />
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Uploaded By</Typography>
-                                        <Typography variant="subtitle2" sx={{ fontSize: 13 }}>—</Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                        <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.warning.main, 0.1), color: 'warning.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Iconify icon={"solar:user-circle-bold" as any} width={16} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Uploaded By</Typography>
+                                            <Typography variant="subtitle2" sx={{ fontSize: 13 }}>{viewUploadedBy}</Typography>
+                                        </Box>
                                     </Box>
                                 </Box>
                             </Box>
-                        </Box>
-                    )}
+                        );
+                    })()}
                 </DialogContent>
                 <DialogActions sx={{ m: 1 }}>
                     <Button

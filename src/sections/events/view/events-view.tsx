@@ -1732,19 +1732,21 @@ export function EventsView() {
                                 </Stack>
 
                                 {/* End Date */}
-                                <Stack direction="row" alignItems="center" spacing={2}>
-                                    <Box sx={{ width: 44, borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider', textAlign: 'center', flexShrink: 0 }}>
-                                        <Box sx={{ bgcolor: 'info.main', color: 'common.white', fontSize: '0.688rem', fontWeight: 700, py: 0.25, textTransform: 'uppercase' }}>
-                                            {dayjs(clickedEvent.ends_on || clickedEvent.starts_on).format('MMM')}
+                                {clickedEvent.ends_on && clickedEvent.ends_on !== clickedEvent.starts_on && (
+                                    <Stack direction="row" alignItems="center" spacing={2}>
+                                        <Box sx={{ width: 44, borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider', textAlign: 'center', flexShrink: 0 }}>
+                                            <Box sx={{ bgcolor: 'info.main', color: 'common.white', fontSize: '0.688rem', fontWeight: 700, py: 0.25, textTransform: 'uppercase' }}>
+                                                {dayjs(clickedEvent.ends_on).format('MMM')}
+                                            </Box>
+                                            <Box sx={{ bgcolor: 'background.neutral', color: 'text.primary', fontSize: '0.938rem', fontWeight: 700, py: 0.5 }}>
+                                                {dayjs(clickedEvent.ends_on).format('D')}
+                                            </Box>
                                         </Box>
-                                        <Box sx={{ bgcolor: 'background.neutral', color: 'text.primary', fontSize: '0.938rem', fontWeight: 700, py: 0.5 }}>
-                                            {dayjs(clickedEvent.ends_on || clickedEvent.starts_on).format('D')}
-                                        </Box>
-                                    </Box>
-                                    <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                        {dayjs(clickedEvent.ends_on || clickedEvent.starts_on).format('MMM D, YYYY h:mm A')}
-                                    </Typography>
-                                </Stack>
+                                        <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                            {dayjs(clickedEvent.ends_on).format('MMM D, YYYY h:mm A')}
+                                        </Typography>
+                                    </Stack>
+                                )}
 
                                 {/* Duration */}
                                 {showDuration && (

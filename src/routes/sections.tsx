@@ -78,6 +78,11 @@ export const EmailCampaignCreatePage = lazy(() => import('src/pages/email-campai
 export const EmailCampaignEditPage = lazy(() => import('src/pages/email-campaigns/edit'));
 export const EmailCampaignDetailsPage = lazy(() => import('src/pages/email-campaigns/details'));
 
+export const WhatsAppCampaignListPage = lazy(() => import('src/pages/whatsapp-campaigns/list'));
+export const WhatsAppCampaignCreatePage = lazy(() => import('src/pages/whatsapp-campaigns/new'));
+export const WhatsAppCampaignEditPage = lazy(() => import('src/pages/whatsapp-campaigns/edit'));
+export const WhatsAppCampaignDetailsPage = lazy(() => import('src/pages/whatsapp-campaigns/details'));
+
 export const EmailAutomationListPage = lazy(() => import('src/pages/email-automations/list'));
 export const EmailAutomationCreatePage = lazy(() => import('src/pages/email-automations/new'));
 export const EmailAutomationEditPage = lazy(() => import('src/pages/email-automations/edit'));
@@ -276,6 +281,15 @@ export const routesSection: RouteObject[] = [
           { path: 'new', element: <EmailCampaignCreatePage /> },
           { path: ':id/edit', element: <EmailCampaignEditPage /> },
           { path: ':id/view', element: <EmailCampaignDetailsPage /> },
+        ],
+      },
+      {
+        path: 'whatsapp-campaigns',
+        children: [
+          { index: true, element: <WhatsAppCampaignListPage /> },
+          { path: 'new', element: <WhatsAppCampaignCreatePage /> },
+          { path: ':id/edit', element: <WhatsAppCampaignEditPage /> },
+          { path: ':id/view', element: <WhatsAppCampaignDetailsPage /> },
         ],
       },
       {
