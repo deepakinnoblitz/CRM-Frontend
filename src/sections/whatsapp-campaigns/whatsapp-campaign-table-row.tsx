@@ -171,7 +171,7 @@ export function WhatsAppCampaignTableRow({
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
-                    {canDelete && (
+                    {canDelete && row.status != 'Completed' && (
                         <IconButton onClick={onDelete} sx={{ color: 'error.main' }} title="Delete">
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>
