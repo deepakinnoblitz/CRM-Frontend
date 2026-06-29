@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
@@ -191,26 +192,17 @@ export function UserDetailsDialog({ open, onClose, userId, onEdit }: Props) {
                                 />
                                 <DetailItem
                                     label="Last Login"
-                                    value={user.last_login ? new Date(user.last_login).toLocaleString('en-GB', {
-                                        day: '2-digit', month: '2-digit', year: 'numeric',
-                                        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-                                    }) : 'Never'}
+                                    value={user.last_login ? dayjs(user.last_login).format('DD-MM-YYYY hh:mm A') : 'Never'}
                                     icon="solar:clock-circle-bold"
                                 />
                                 <DetailItem
                                     label="Created"
-                                    value={user.creation ? new Date(user.creation).toLocaleString('en-GB', {
-                                        day: '2-digit', month: '2-digit', year: 'numeric',
-                                        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-                                    }) : '-'}
+                                    value={user.creation ? dayjs(user.creation).format('DD-MM-YYYY hh:mm A') : '-'}
                                     icon="solar:calendar-bold"
                                 />
                                 <DetailItem
                                     label="Modified"
-                                    value={user.modified ? new Date(user.modified).toLocaleString('en-GB', {
-                                        day: '2-digit', month: '2-digit', year: 'numeric',
-                                        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-                                    }) : '-'}
+                                    value={user.modified ? dayjs(user.modified).format('DD-MM-YYYY hh:mm A') : '-'}
                                     icon="solar:calendar-mark-bold"
                                 />
                             </Box>

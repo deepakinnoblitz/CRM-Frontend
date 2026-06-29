@@ -1,6 +1,7 @@
 import type { SwitchProps } from '@mui/material/Switch';
 import type { WhatsAppSettings } from 'src/api/whatsapp-settings';
 
+import dayjs from 'dayjs';
 import { useSnackbar } from 'notistack';
 import { MuiTelInput } from 'mui-tel-input';
 import { MdContentCopy } from 'react-icons/md';
@@ -439,7 +440,7 @@ export function WhatsAppSettingsView() {
                                 <TextField
                                     fullWidth
                                     label="Last Connected On"
-                                    value={settings.last_connected_on || ''}
+                                    value={settings.last_connected_on ? dayjs(settings.last_connected_on).format('DD-MM-YYYY hh:mm A') : ''}
                                     InputProps={{ readOnly: true }}
                                 />
                             </Stack>
