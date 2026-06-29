@@ -40,6 +40,9 @@ export async function sendWhatsappMessage(phone: string, message: string, attach
     if (!res.ok) {
         throw new Error(handleFrappeError(json, "Failed to send WhatsApp message"));
     }
+    if (json.message && json.message.success === false) {
+        throw new Error(json.message.error || "Failed to send WhatsApp message");
+    }
     return json.message;
 }
 

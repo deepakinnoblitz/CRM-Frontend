@@ -1,8 +1,9 @@
+import dayjs from 'dayjs';
 import { enqueueSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { VscDebugStart, VscDebugPause, VscDebugStop } from "react-icons/vsc";
-import { IoMdArrowBack, IoMdMail, IoMdCalendar, IoMdPerson, IoMdStats, IoMdCreate, IoMdTrash, IoMdList } from "react-icons/io";
+import { IoMdArrowBack, IoMdMail, IoMdCalendar, IoMdPerson, IoMdStats, IoMdCreate, IoMdTrash, IoMdList, IoMdRefresh } from "react-icons/io";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -67,6 +68,17 @@ export function WhatsAppCampaignsDetailsView() {
                 .finally(() => setFetching(false));
         }
     }, [id]);
+
+    const handleRefresh = async () => {
+        if (!id) return;
+        try {
+            const data = await getWhatsAppCampaign(id);
+            setCampaign(data);
+            enqueueSnackbar('Campaign status refreshed', { variant: 'success' });
+        } catch (err) {
+            enqueueSnackbar('Failed to refresh campaign', { variant: 'error' });
+        }
+    };
 
     useEffect(() => {
         if (campaign?.name) {
@@ -210,6 +222,24 @@ export function WhatsAppCampaignsDetailsView() {
                     >
                         Go Back
                     </Button>
+                    <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={handleRefresh}
+                        startIcon={<IoMdRefresh size={20} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 2.5,
+                            '&:hover': {
+                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                                borderColor: 'primary.main',
+                            }
+                        }}
+                    >
+                        Refresh
+                    </Button>
                     {!['Running', 'Completed', 'Cancelled'].includes(campaign.status) && (
                         <Button
                             variant="contained"
@@ -244,7 +274,7 @@ export function WhatsAppCampaignsDetailsView() {
                             Pause
                         </Button>
                     )}
-                    {!['Completed', 'Cancelled'].includes(campaign.status) && (
+                    {campaign.status === 'Running' && (
                         <Button
                             variant="contained"
                             startIcon={<VscDebugStop />}
@@ -390,7 +420,7 @@ export function WhatsAppCampaignsDetailsView() {
                                 />
                             </Box>
                             <Scrollbar>
-                                <TableContainer sx={{ maxHeight: 350 }}>
+                                <TableContainer>
                                     <Table size="medium">
                                         <TableHead>
                                             <TableRow>
@@ -476,7 +506,7 @@ export function WhatsAppCampaignsDetailsView() {
                                 />
                             </Box>
                             <Scrollbar>
-                                <TableContainer sx={{ maxHeight: 350 }}>
+                                <TableContainer>
                                     <Table size="medium">
                                         <TableHead>
                                             <TableRow>
@@ -526,7 +556,7 @@ export function WhatsAppCampaignsDetailsView() {
                                                                 {item.status}
                                                             </Label>
                                                         </TableCell>
-                                                        <TableCell>{item.sent_on || '-'}</TableCell>
+                                                        <TableCell>{item.sent_on ? dayjs(item.sent_on).format('DD-MM-YYYY hh:mm A') : '-'}</TableCell>
                                                     </TableRow>
                                                 ))
                                             ) : (

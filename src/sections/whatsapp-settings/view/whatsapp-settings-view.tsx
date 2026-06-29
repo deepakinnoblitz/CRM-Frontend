@@ -7,7 +7,9 @@ import { MdContentCopy } from 'react-icons/md';
 import { useRef, useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
+import Tab from '@mui/material/Tab';
 import Card from '@mui/material/Card';
+import Tabs from '@mui/material/Tabs';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
@@ -22,12 +24,13 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import InputAdornment from '@mui/material/InputAdornment';
+import LinearProgress from '@mui/material/LinearProgress';
 import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { sendWhatsappMessage, uploadWhatsappAttachment } from 'src/api/whatsapp';
-import { getWhatsAppSettings, saveWhatsAppSettings, testWhatsAppConnection } from 'src/api/whatsapp-settings';
+import { getWhatsAppSettings, saveWhatsAppSettings, testWhatsAppConnection, getWhatsAppMessageCount } from 'src/api/whatsapp-settings';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -90,6 +93,8 @@ export function WhatsAppSettingsView() {
     const [originalSettings, setOriginalSettings] = useState<Partial<WhatsAppSettings>>({});
     const [errors, setErrors] = useState<{ phone_number_id?: boolean; access_token?: boolean; webhook_verify_token?: boolean }>({});
     const [testing, setTesting] = useState(false);
+    const [currentTab, setCurrentTab] = useState('settings');
+    const [messageCount, setMessageCount] = useState<number>(0);
 
     // Modal state
     const [sendModalOpen, setSendModalOpen] = useState(false);
@@ -113,12 +118,13 @@ export function WhatsAppSettingsView() {
     }, [sendModalOpen, settings.whatsapp_number]);
 
     useEffect(() => {
-        getWhatsAppSettings()
-            .then(data => {
+        Promise.all([getWhatsAppSettings(), getWhatsAppMessageCount()])
+            .then(([data, count]) => {
                 if (data) {
                     setSettings(data);
                     setOriginalSettings(data);
                 }
+                setMessageCount(count);
             })
             .catch(err => enqueueSnackbar('Failed to load settings', { variant: 'error' }));
     }, [enqueueSnackbar]);
@@ -137,7 +143,8 @@ export function WhatsAppSettingsView() {
             'access_token',
             'phone_number_id',
             'business_account_id',
-            'webhook_verify_token'
+            'webhook_verify_token',
+            'max_success_send_message_limit'
         ];
         return fields.some(field => settings[field] !== originalSettings[field]);
     };
@@ -208,8 +215,8 @@ export function WhatsAppSettingsView() {
         } catch (err: any) {
             enqueueSnackbar(
                 err?.response?.data?.message ||
-                    err?.message ||
-                    "Unable to connect to WhatsApp API.",
+                err?.message ||
+                "Unable to connect to WhatsApp API.",
                 {
                     variant: "error",
                     autoHideDuration: 6000,
@@ -307,123 +314,200 @@ export function WhatsAppSettingsView() {
                 </Stack>
             </Stack>
 
-            <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }} gap={3}>
-                <Box gridColumn={{ xs: 'span 1', md: 'span 1' }}>
-                    <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>WhatsApp Integration</Typography>
-                        <Stack spacing={3}>
-                            <FormControlLabel
-                                control={<CustomSwitch checked={!!settings.enable_whatsapp} onChange={(e) => handleChange('enable_whatsapp', e.target.checked ? 1 : 0)} />}
-                                label="Enable WhatsApp"
-                                sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
-                            />
-                            <TextField
-                                fullWidth
-                                select
-                                label="Token Type"
-                                value={settings.token_type || 'Temporary'}
-                                onChange={(e) => handleChange('token_type', e.target.value)}
-                            >
-                                {['Temporary', 'Permanent'].map(opt => (
-                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                ))}
-                            </TextField>
-                            <TextField
-                                fullWidth
-                                type="password"
-                                label="Access Token"
-                                value={settings.access_token || ''}
-                                onChange={(e) => handleChange('access_token', e.target.value)}
-                                required
-                                error={errors.access_token}
-                                helperText={errors.access_token ? 'This field is required' : ''}
-                            />
-                            <TextField
-                                fullWidth
-                                label="Phone Number ID"
-                                value={settings.phone_number_id || ''}
-                                onChange={(e) => handleChange('phone_number_id', e.target.value)}
-                                required
-                                error={errors.phone_number_id}
-                                helperText={errors.phone_number_id ? 'This field is required' : ''}
-                            />
-                            <TextField
-                                fullWidth
-                                label="Business Account ID"
-                                value={settings.business_account_id || ''}
-                                onChange={(e) => handleChange('business_account_id', e.target.value)}
-                                required
-                            />
-                            <TextField
-                                fullWidth
-                                label="WhatsApp Number"
-                                value={settings.whatsapp_number || ''}
-                                InputProps={{ readOnly: true }}
-                            />
-                        </Stack>
-                    </Card>
-                </Box>
+            <Tabs value={currentTab} onChange={(e, val) => setCurrentTab(val)} sx={{ mb: 3 }}>
+                <Tab label="Settings" value="settings" />
+                <Tab label="Analytics" value="analytics" />
+            </Tabs>
 
-                <Box gridColumn={{ xs: 'span 1', md: 'span 1' }}>
-                    <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>Webhook Configuration</Typography>
-                        <Stack spacing={3}>
-                            <TextField
-                                fullWidth
-                                type="password"
-                                label="Webhook Verify Token"
-                                value={settings.webhook_verify_token || ''}
-                                onChange={(e) => handleChange('webhook_verify_token', e.target.value)}
-                                required
-                                error={errors.webhook_verify_token}
-                                helperText={errors.webhook_verify_token ? 'This field is required' : ''}
+            {currentTab === 'settings' && (
+                <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }} gap={3}>
+                    <Box gridColumn={{ xs: 'span 1', md: 'span 1' }}>
+                        <Card sx={{ p: 3, mb: 3 }}>
+                            <Typography variant="h6" sx={{ mb: 3 }}>WhatsApp Integration</Typography>
+                            <Stack spacing={3}>
+                                <FormControlLabel
+                                    control={<CustomSwitch checked={!!settings.enable_whatsapp} onChange={(e) => handleChange('enable_whatsapp', e.target.checked ? 1 : 0)} />}
+                                    label="Enable WhatsApp"
+                                    sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
+                                />
+                                <TextField
+                                    fullWidth
+                                    select
+                                    label="Token Type"
+                                    value={settings.token_type || 'Temporary'}
+                                    onChange={(e) => handleChange('token_type', e.target.value)}
+                                >
+                                    {['Temporary', 'Permanent'].map(opt => (
+                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                    ))}
+                                </TextField>
+                                <TextField
+                                    fullWidth
+                                    type="password"
+                                    label="Access Token"
+                                    value={settings.access_token || ''}
+                                    onChange={(e) => handleChange('access_token', e.target.value)}
+                                    required
+                                    error={errors.access_token}
+                                    helperText={errors.access_token ? 'This field is required' : ''}
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="Phone Number ID"
+                                    value={settings.phone_number_id || ''}
+                                    onChange={(e) => handleChange('phone_number_id', e.target.value)}
+                                    required
+                                    error={errors.phone_number_id}
+                                    helperText={errors.phone_number_id ? 'This field is required' : ''}
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="Business Account ID"
+                                    value={settings.business_account_id || ''}
+                                    onChange={(e) => handleChange('business_account_id', e.target.value)}
+                                    required
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="WhatsApp Number"
+                                    value={settings.whatsapp_number || ''}
+                                    InputProps={{ readOnly: true }}
+                                />
+                                <TextField
+                                    fullWidth
+                                    type="number"
+                                    label="Max Success Send Message Limit (Monthly)"
+                                    value={settings.max_success_send_message_limit ?? ''}
+                                    onChange={(e) => handleChange('max_success_send_message_limit', e.target.value === '' ? undefined : Number(e.target.value))}
+                                    placeholder="0"
+                                    helperText="Leave empty or set to 0 for unlimited messages"
+                                />
+                            </Stack>
+                        </Card>
+                    </Box>
+
+                    <Box gridColumn={{ xs: 'span 1', md: 'span 1' }}>
+                        <Card sx={{ p: 3, mb: 3 }}>
+                            <Typography variant="h6" sx={{ mb: 3 }}>Webhook Configuration</Typography>
+                            <Stack spacing={3}>
+                                <TextField
+                                    fullWidth
+                                    type="password"
+                                    label="Webhook Verify Token"
+                                    value={settings.webhook_verify_token || ''}
+                                    onChange={(e) => handleChange('webhook_verify_token', e.target.value)}
+                                    required
+                                    error={errors.webhook_verify_token}
+                                    helperText={errors.webhook_verify_token ? 'This field is required' : ''}
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="Webhook URL"
+                                    value={settings.webhook_url || ''}
+                                    InputProps={{
+                                        readOnly: true,
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => {
+                                                        if (settings.webhook_url) {
+                                                            navigator.clipboard.writeText(settings.webhook_url);
+                                                            enqueueSnackbar('Webhook URL copied to clipboard', { variant: 'success' });
+                                                        }
+                                                    }}
+                                                    edge="end"
+                                                >
+                                                    <MdContentCopy size={18} color="#08a3cd" />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                    helperText="Auto Generated - Configure this URL in your Facebook App dashboard"
+                                />
+                            </Stack>
+                        </Card>
+
+                        <Card sx={{ p: 3, mb: 3 }}>
+                            <Typography variant="h6" sx={{ mb: 3 }}>Connection Status</Typography>
+                            <Stack spacing={3}>
+                                <TextField
+                                    fullWidth
+                                    label="Connection Status"
+                                    value={settings.connection_status || 'Disconnected'}
+                                    InputProps={{ readOnly: true }}
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="Last Connected On"
+                                    value={settings.last_connected_on || ''}
+                                    InputProps={{ readOnly: true }}
+                                />
+                            </Stack>
+                        </Card>
+                    </Box>
+                </Box>
+            )}
+
+            {currentTab === 'analytics' && (
+                <Box>
+                    <Card sx={{ p: 4, mb: 3, textAlign: 'center' }}>
+                        <Typography variant="h5" sx={{ mb: 2 }}>Monthly WhatsApp Message Analytics</Typography>
+
+                        <Box sx={{ my: 5, position: 'relative', display: 'inline-flex' }}>
+                            <CircularProgress
+                                variant="determinate"
+                                value={
+                                    (settings.max_success_send_message_limit && settings.max_success_send_message_limit > 0)
+                                        ? Math.min(100, (messageCount / settings.max_success_send_message_limit) * 100)
+                                        : 100
+                                }
+                                size={160}
+                                thickness={4}
+                                sx={{ color: '#08a3cd' }}
                             />
-                            <TextField
-                                fullWidth
-                                label="Webhook URL"
-                                value={settings.webhook_url || ''}
-                                InputProps={{
-                                    readOnly: true,
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                onClick={() => {
-                                                    if (settings.webhook_url) {
-                                                        navigator.clipboard.writeText(settings.webhook_url);
-                                                        enqueueSnackbar('Webhook URL copied to clipboard', { variant: 'success' });
-                                                    }
-                                                }}
-                                                edge="end"
-                                            >
-                                                <MdContentCopy size={18} color="#08a3cd" />
-                                            </IconButton>
-                                        </InputAdornment>
-                                    ),
+                            <Box
+                                sx={{
+                                    top: 0,
+                                    left: 0,
+                                    bottom: 0,
+                                    right: 0,
+                                    position: 'absolute',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexDirection: 'column'
                                 }}
-                                helperText="Auto Generated - Configure this URL in your Facebook App dashboard"
-                            />
-                        </Stack>
-                    </Card>
+                            >
+                                <Typography variant="h4" component="div" color="text.primary">
+                                    {messageCount}
+                                </Typography>
+                                {settings.max_success_send_message_limit ? (
+                                    <Typography variant="body2" color="text.secondary">
+                                        / {settings.max_success_send_message_limit} Limit
+                                    </Typography>
+                                ) : (
+                                    <Typography variant="body2" color="text.secondary">
+                                        Messages Sent
+                                    </Typography>
+                                )}
+                            </Box>
+                        </Box>
 
-                    <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>Connection Status</Typography>
-                        <Stack spacing={3}>
-                            <TextField
-                                fullWidth
-                                label="Connection Status"
-                                value={settings.connection_status || 'Disconnected'}
-                                InputProps={{ readOnly: true }}
-                            />
-                            <TextField
-                                fullWidth
-                                label="Last Connected On"
-                                value={settings.last_connected_on || ''}
-                                InputProps={{ readOnly: true }}
-                            />
-                        </Stack>
+                        {(settings.max_success_send_message_limit && settings.max_success_send_message_limit > 0) && (
+                            <Box sx={{ mt: 3 }}>
+                                <Typography variant="body1">
+                                    You have used <strong>{messageCount}</strong> out of your <strong>{settings.max_success_send_message_limit}</strong> messages limit.
+                                </Typography>
+                                {(messageCount >= settings.max_success_send_message_limit) && (
+                                    <Typography color="error" variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>
+                                        Limit Reached. Messages will no longer be sent.
+                                    </Typography>
+                                )}
+                            </Box>
+                        )}
                     </Card>
                 </Box>
-            </Box>
+            )}
 
             <Dialog open={sendModalOpen} onClose={() => setSendModalOpen(false)} fullWidth maxWidth="sm">
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

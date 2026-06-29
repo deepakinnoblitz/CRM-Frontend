@@ -17,6 +17,8 @@ export interface WhatsAppSettings {
     webhook_url?: string;
     connection_status?: string;
     last_connected_on?: string;
+    max_success_send_message_limit?: number;
+    success_message_count?: number;
 }
 
 // ----------------------------------------------------------------------
@@ -60,4 +62,15 @@ export async function testWhatsAppConnection() {
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to test WhatsApp connection'));
     return json.message;
+}
+
+// ----------------------------------------------------------------------
+// Get Monthly WhatsApp Message Count
+// ----------------------------------------------------------------------
+
+export async function getWhatsAppMessageCount(): Promise<number> {
+    const res = await frappeRequest('/api/method/company.company.crm_whatsapp_api.get_monthly_message_count');
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to get message count'));
+    return json.message || 0;
 }
