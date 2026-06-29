@@ -1,3 +1,5 @@
+import type { SelectChangeEvent } from '@mui/material/Select';
+
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
@@ -8,11 +10,10 @@ import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
-import FormControl from '@mui/material/FormControl';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
-import type { SelectChangeEvent } from '@mui/material/Select';
 
 import { getCountries, getStates, getCities } from 'src/api/location';
 
