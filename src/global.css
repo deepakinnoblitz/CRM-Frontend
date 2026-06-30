@@ -23,6 +23,7 @@
 * Baseline
 *************************************** */
 html {
+  zoom: 0.9;
   height: 100%;
   -webkit-overflow-scrolling: touch;
 }
