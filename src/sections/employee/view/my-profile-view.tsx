@@ -1,6 +1,7 @@
 import type { IconType } from 'react-icons';
 
 import { IoCall } from "react-icons/io5";
+import { TbMoneybagPlus } from "react-icons/tb";
 import { FaPhoneVolume } from "react-icons/fa6";
 import { useState, useEffect, useCallback } from 'react'
 import {
@@ -391,7 +392,7 @@ export function MyProfileView() {
                                     border: (theme) => `1px solid ${theme.palette.divider}`,
                                 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                        <ReactIcon icon={FaDollarSign} size={20} sx={{ color: 'primary.main' }} />
+                                        <ReactIcon icon={TbMoneybagPlus} size={20} sx={{ color: 'primary.main' }} />
                                         <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}>
                                             Cost to Company (Monthly)
                                         </Typography>
