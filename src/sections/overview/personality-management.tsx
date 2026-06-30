@@ -45,8 +45,6 @@ import PersonalityGauge from 'src/sections/employee-evaluation/component/persona
 
 // ----------------------------------------------------------------------
 
-
-
 const pulse = keyframes`
   0% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.05); opacity: 0.8; }
@@ -203,14 +201,14 @@ export function PersonalityManagement() {
                         mb: 3,
                         textAlign: "left",
                         m: 2,
-                        pl: 0.5
+                        pr: 3
                     }}
                 >
                     <Typography
                         variant="h5"
                         sx={{
                             fontWeight: 700,
-                            mb: 0.5,
+                            textAlign: 'center'
                         }}
                     >
                         Employee Evaluation Score
@@ -549,14 +547,17 @@ export function PersonalityManagement() {
                                                     fontSize: 22,
                                                 }}
                                             />
+                                            <Typography variant="body2">
+                                                <Box component="span" sx={{ fontWeight: 700 }}>
+                                                    {text.split(" - ")[0]}
+                                                </Box>
 
-                                            <Typography
-                                                variant="body2"
-                                                sx={{
-                                                    fontWeight: 500,
-                                                }}
-                                            >
-                                                {text}
+                                                {text.includes(" - ") && (
+                                                    <Box component="span" sx={{ fontWeight: 500, color: "text.secondary" }}>
+                                                        {" - "}
+                                                        {text.split(" - ")[1]}
+                                                    </Box>
+                                                )}
                                             </Typography>
                                         </Stack>
                                     ))
