@@ -29,6 +29,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { frappeRequest } from 'src/utils/csrf';
+
 import { DashboardContent } from 'src/layouts/dashboard';
 import { uploadWhatsappAttachment } from 'src/api/whatsapp';
 import { EmailTemplateVariable } from 'src/api/email-template';
@@ -140,7 +142,7 @@ export function WhatsAppTemplateEditView() {
         if (!id) return;
         setFetching(true);
         getWhatsAppTemplate(id)
-            .then((data) => {
+            .then(async (data) => {
                 setTemplateName(data.template_name || '');
                 setCategory(data.category || '');
                 setLanguage(data.language || 'English');
@@ -153,7 +155,8 @@ export function WhatsAppTemplateEditView() {
                 setMetaTemplateName(data.meta_template_name || '');
                 setMetaStatus(data.meta_status || 'Draft');
 
-                const loadedAttachments = (data.default_attachment || []).map((item: any) => ({
+                const rawAttachments = data.default_attachment || [];
+                const loadedAttachments = rawAttachments.map((item: any) => ({
                     file: item.file || null,
                     description: item.description || '',
                     file_name: item.file ? decodeURIComponent(item.file.split('/').pop() || '') : '',
@@ -161,6 +164,70 @@ export function WhatsAppTemplateEditView() {
                     uploaded_on: '—',
                 }));
                 setAttachments(loadedAttachments);
+
+                // Fetch file metadata for existing files
+                const fileUrls = rawAttachments.map((att: any) => att.file).filter(Boolean);
+                if (fileUrls.length > 0) {
+                    const getRelativePath = (url: string) => {
+                        try {
+                            if (url.startsWith('http://') || url.startsWith('https://')) {
+                                const parsed = new URL(url);
+                                return parsed.pathname;
+                            }
+                            return url;
+                        } catch (e) {
+                            return url;
+                        }
+                    };
+                    const relativePaths = fileUrls.map(getRelativePath);
+                    const allUrls = Array.from(new Set([...fileUrls, ...relativePaths]));
+
+                    try {
+                        const query = new URLSearchParams({
+                            doctype: 'File',
+                            fields: JSON.stringify(['file_name', 'file_url', 'file_size', 'creation', 'owner']),
+                            filters: JSON.stringify([['File', 'file_url', 'in', allUrls]]),
+                            limit_page_length: '999',
+                        });
+                        const response = await frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`);
+                        if (response.ok) {
+                            const resData = await response.json();
+                            const files = resData.message || [];
+                            const metaMap: Record<string, any> = {};
+                            files.forEach((f: any) => {
+                                metaMap[f.file_url] = f;
+                                const filename = f.file_url.split('/').pop();
+                                if (filename) {
+                                    metaMap[filename] = f;
+                                }
+                            });
+
+                            const formatFileSizeLocal = (bytes: number) => {
+                                if (!bytes) return '—';
+                                if (bytes < 1024) return `${bytes} B`;
+                                if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+                                return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+                            };
+
+                            setAttachments((prev) =>
+                                prev.map((att) => {
+                                    if (!att.file) return att;
+                                    const meta = metaMap[att.file] || metaMap[getRelativePath(att.file)] || metaMap[att.file.split('/').pop() || ''];
+                                    if (meta) {
+                                        return {
+                                            ...att,
+                                            file_size: formatFileSizeLocal(meta.file_size),
+                                            uploaded_on: meta.creation ? new Date(meta.creation.replace(' ', 'T')).toLocaleString() : '—',
+                                        };
+                                    }
+                                    return att;
+                                })
+                            );
+                        }
+                    } catch (metaErr) {
+                        console.error('Failed to fetch file metadata in Edit view:', metaErr);
+                    }
+                }
             })
             .catch((err) => console.error('Failed to load template:', err))
             .finally(() => setFetching(false));

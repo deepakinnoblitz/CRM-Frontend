@@ -5,9 +5,12 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -111,30 +114,27 @@ export function EmployeeDailyLogTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Status
             </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filterStatus}
-                onChange={(e) => onFilterStatus(e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
+            <FormControl fullWidth size="small">
+                <Select
+                    value={filterStatus}
+                    onChange={(e) => onFilterStatus(e.target.value)}
+                    displayEmpty
+                    sx={{
                         borderRadius: 1.5,
                         bgcolor: 'background.neutral',
                         '&:hover': {
                             bgcolor: 'action.hover',
                         },
-                    },
-                }}
-            >
-                <option value="all">All Status</option>
-                {options.status.map((option) => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </TextField>
+                    }}
+                >
+                    <MenuItem value="all">All Status</MenuItem>
+                    {options.status.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
         </Stack>
     );
 
@@ -202,30 +202,27 @@ export function EmployeeDailyLogTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Day
             </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filterDay}
-                onChange={(e) => onFilterDay(e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
+            <FormControl fullWidth size="small">
+                <Select
+                    value={filterDay}
+                    onChange={(e) => onFilterDay(e.target.value)}
+                    displayEmpty
+                    sx={{
                         borderRadius: 1.5,
                         bgcolor: 'background.neutral',
                         '&:hover': {
                             bgcolor: 'action.hover',
                         },
-                    },
-                }}
-            >
-                <option value="all">All Days</option>
-                {options.days.map((option) => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </TextField>
+                    }}
+                >
+                    <MenuItem value="all">All Days</MenuItem>
+                    {options.days.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
         </Stack>
     );
 

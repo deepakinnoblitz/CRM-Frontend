@@ -129,6 +129,7 @@ export function InvoiceEditView() {
         }
     };
     const [customerError, setCustomerError] = useState(false);
+    const [billingNameError, setBillingNameError] = useState(false);
     const [itemError, setItemError] = useState(false);
     const [paymentTermsError, setPaymentTermsError] = useState(false);
 
@@ -224,6 +225,7 @@ export function InvoiceEditView() {
                 // Auto-select if only one billing option is available
                 if (mappedOptions.length === 1) {
                     setBillingName(mappedOptions[0].name);
+                    setBillingNameError(false);
                 }
                 // Clear current billing name if it does not exist in the new options
                 else if (!mappedOptions.find((opt) => opt.name === billingName)) {
@@ -417,6 +419,13 @@ export function InvoiceEditView() {
         }
         setCustomerError(false);
 
+        if (!billingName) {
+            setBillingNameError(true);
+            enqueueSnackbar('Please select a Billing Name', { variant: 'error' });
+            return;
+        }
+        setBillingNameError(false);
+
         if (!paymentTerms || paymentTerms === 'Select Payment terms') {
             setPaymentTermsError(true);
             enqueueSnackbar('Please select Payment Terms', { variant: 'error' });
@@ -596,11 +605,19 @@ export function InvoiceEditView() {
                             options={billingNameOptions}
                             getOptionLabel={(option) => option.account_name || option.name || ''}
                             value={billingNameOptions.find((opt) => opt.name === billingName) || null}
-                            onChange={(_e, newValue) => setBillingName(newValue?.name || '')}
+                            onChange={(_e, newValue) => {
+                                setBillingName(newValue?.name || '');
+                                if (newValue?.name) {
+                                    setBillingNameError(false);
+                                }
+                            }}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
                                     label="Billing Name"
+                                    required
+                                    error={billingNameError}
+                                    helperText={billingNameError ? 'Please select a Billing Name' : ''}
                                 />
                             )}
                             renderOption={(props, option) => (

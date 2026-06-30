@@ -25,7 +25,16 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getEmailCampaign, deleteEmailCampaign, startCampaign as startEmailCampaign, pauseCampaign as pauseEmailCampaign, cancelCampaign as cancelEmailCampaign, fetchEmailQueue, EmailQueueItem, previewRecipients } from 'src/api/email-campaign';
+import {
+    getWhatsAppCampaign,
+    deleteWhatsAppCampaign,
+    startCampaign as startWhatsAppCampaign,
+    pauseCampaign as pauseWhatsAppCampaign,
+    cancelCampaign as cancelWhatsAppCampaign,
+    fetchWhatsAppQueue,
+    WhatsAppQueueItem,
+    previewRecipients
+} from 'src/api/whatsapp-campaign';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -34,13 +43,13 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 // ----------------------------------------------------------------------
 
-export function EmailCampaignsDetailsView() {
+export function WhatsAppCampaignsDetailsView() {
     const { id } = useParams();
     const router = useRouter();
     const navigate = useNavigate();
 
     const [campaign, setCampaign] = useState<any>(null);
-    const [emailQueue, setEmailQueue] = useState<EmailQueueItem[]>([]);
+    const [whatsappQueue, setWhatsappQueue] = useState<WhatsAppQueueItem[]>([]);
     const [fetching, setFetching] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -54,7 +63,7 @@ export function EmailCampaignsDetailsView() {
 
     useEffect(() => {
         if (id) {
-            getEmailCampaign(id)
+            getWhatsAppCampaign(id)
                 .then(setCampaign)
                 .finally(() => setFetching(false));
         }
@@ -63,7 +72,7 @@ export function EmailCampaignsDetailsView() {
     const handleRefresh = async () => {
         if (!id) return;
         try {
-            const data = await getEmailCampaign(id);
+            const data = await getWhatsAppCampaign(id);
             setCampaign(data);
             enqueueSnackbar('Campaign status refreshed', { variant: 'success' });
         } catch (err) {
@@ -73,9 +82,9 @@ export function EmailCampaignsDetailsView() {
 
     useEffect(() => {
         if (campaign?.name) {
-            fetchEmailQueue(campaign.name)
-                .then(setEmailQueue)
-                .catch((err) => console.error('Failed to fetch email queue:', err));
+            fetchWhatsAppQueue(campaign.name)
+                .then(setWhatsappQueue)
+                .catch((err) => console.error('Failed to fetch WhatsApp queue:', err));
         }
         if (campaign?.target_type) {
             const parsedFilters: any[] = Array.isArray(campaign.filters) ? campaign.filters : [];
@@ -100,8 +109,8 @@ export function EmailCampaignsDetailsView() {
     if (!campaign) {
         return (
             <DashboardContent maxWidth={false}>
-                <Typography variant="h4">Email Campaign not found</Typography>
-                <Button onClick={() => router.push('/email-campaigns')} sx={{ mt: 3 }}>
+                <Typography variant="h4">WhatsApp Campaign not found</Typography>
+                <Button onClick={() => router.push('/whatsapp-campaigns')} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
             </DashboardContent>
@@ -111,28 +120,25 @@ export function EmailCampaignsDetailsView() {
     const {
         campaign_name,
         template_name,
-        email_template,
+        whatsapp_template,
         subject,
         status,
         target_type,
         filters,
         total_recipients,
         sent_count,
-        open_count,
-        click_count,
         failed_count,
         schedule_date,
-        creation,
     } = campaign;
 
     const handleEdit = () => {
-        router.push(`/email-campaigns/${encodeURIComponent(id || '')}/edit`);
+        router.push(`/whatsapp-campaigns/${encodeURIComponent(id || '')}/edit`);
     };
 
     const handleStartCampaign = async () => {
         try {
-            await startEmailCampaign(campaign.name);
-            const updated = await getEmailCampaign(campaign.name);
+            await startWhatsAppCampaign(campaign.name);
+            const updated = await getWhatsAppCampaign(campaign.name);
             setCampaign(updated);
             enqueueSnackbar('Campaign started successfully', { variant: 'success' });
         } catch (err: any) {
@@ -142,8 +148,8 @@ export function EmailCampaignsDetailsView() {
 
     const handlePauseCampaign = async () => {
         try {
-            await pauseEmailCampaign(campaign.name);
-            const updated = await getEmailCampaign(campaign.name);
+            await pauseWhatsAppCampaign(campaign.name);
+            const updated = await getWhatsAppCampaign(campaign.name);
             setCampaign(updated);
             enqueueSnackbar('Campaign paused', { variant: 'info' });
         } catch (err: any) {
@@ -153,8 +159,8 @@ export function EmailCampaignsDetailsView() {
 
     const handleStopCampaign = async () => {
         try {
-            await cancelEmailCampaign(campaign.name);
-            const updated = await getEmailCampaign(campaign.name);
+            await cancelWhatsAppCampaign(campaign.name);
+            const updated = await getWhatsAppCampaign(campaign.name);
             setCampaign(updated);
             enqueueSnackbar('Campaign stopped', { variant: 'warning' });
         } catch (err: any) {
@@ -166,21 +172,21 @@ export function EmailCampaignsDetailsView() {
         if (!id) return;
         setDeleting(true);
         try {
-            await deleteEmailCampaign(id);
-            router.push('/email-campaigns');
+            await deleteWhatsAppCampaign(id);
+            router.push('/whatsapp-campaigns');
         } catch (error) {
-            console.error('Failed to delete email campaign:', error);
+            console.error('Failed to delete WhatsApp campaign:', error);
         } finally {
             setDeleting(false);
             setConfirmDeleteOpen(false);
         }
     };
 
-    const filteredQueue = emailQueue.filter((item) => {
+    const filteredQueue = whatsappQueue.filter((item) => {
         const query = searchQuery.toLowerCase();
         return (
             (item.recipient_name || '').toLowerCase().includes(query) ||
-            (item.recipient_email || '').toLowerCase().includes(query) ||
+            (item.recipient_phone || '').toLowerCase().includes(query) ||
             (item.status || '').toLowerCase().includes(query)
         );
     });
@@ -189,14 +195,14 @@ export function EmailCampaignsDetailsView() {
         const query = recipientsSearch.toLowerCase();
         return (
             (item.name || '').toLowerCase().includes(query) ||
-            (item.email || '').toLowerCase().includes(query)
+            (item.phone || '').toLowerCase().includes(query)
         );
     });
 
     return (
         <DashboardContent maxWidth={false}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3} className="no-print">
-                <Typography variant="h4">Email Campaign: {campaign_name}</Typography>
+                <Typography variant="h4">WhatsApp Campaign: {campaign_name}</Typography>
                 <Stack direction="row" spacing={2}>
                     <Button
                         variant="outlined"
@@ -227,8 +233,8 @@ export function EmailCampaignsDetailsView() {
                             textTransform: 'none',
                             px: 2.5,
                             '&:hover': {
-                                bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
-                                borderColor: 'text.primary',
+                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                                borderColor: 'primary.main',
                             }
                         }}
                     >
@@ -324,8 +330,8 @@ export function EmailCampaignsDetailsView() {
                                 </Typography>
                                 <Stack spacing={1.5} sx={{ mt: 3 }}>
                                     <Stack direction="row" spacing={2} alignItems="center">
-                                        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 100 }}>Email Template:</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>{template_name || email_template || '-'}</Typography>
+                                        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 100 }}>WhatsApp Template:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>{template_name || whatsapp_template || '-'}</Typography>
                                     </Stack>
                                     <Stack direction="row" spacing={2} alignItems="flex-start">
                                         <Typography variant="caption" color="text.secondary" sx={{ minWidth: 100 }}>Subject:</Typography>
@@ -382,14 +388,6 @@ export function EmailCampaignsDetailsView() {
                                         <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main' }}>{sent_count}</Typography>
                                     </Stack>
                                     <Stack direction="row" justifyContent="space-between">
-                                        <Typography variant="caption" color="text.secondary">Opened</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{open_count}</Typography>
-                                    </Stack>
-                                    <Stack direction="row" justifyContent="space-between">
-                                        <Typography variant="caption" color="text.secondary">Clicked</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{click_count}</Typography>
-                                    </Stack>
-                                    <Stack direction="row" justifyContent="space-between">
                                         <Typography variant="caption" color="text.secondary">Failed</Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.main' }}>{failed_count}</Typography>
                                     </Stack>
@@ -401,7 +399,7 @@ export function EmailCampaignsDetailsView() {
                     <Stack spacing={1.5}>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#08a3cd' }}>
                             <IoMdPerson size={20} />
-                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase',  color: 'text.secondary' }}>List of Mail Recipients</Typography>
+                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', color: 'text.secondary' }}>List of WhatsApp Recipients</Typography>
                         </Stack>
                         <Card sx={{ p: 0, mt: 2, borderRadius: 1.5, border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                             <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -428,7 +426,7 @@ export function EmailCampaignsDetailsView() {
                                             <TableRow>
                                                 <TableCell sx={{ pl: 3 }}>S.No</TableCell>
                                                 <TableCell>Recipient Name</TableCell>
-                                                <TableCell>Recipient Email</TableCell>
+                                                <TableCell>Phone Number</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -455,7 +453,7 @@ export function EmailCampaignsDetailsView() {
                                                             </Typography>
                                                         </TableCell>
                                                         <TableCell sx={{ fontWeight: 600 }}>{item.name}</TableCell>
-                                                        <TableCell>{item.email}</TableCell>
+                                                        <TableCell>{item.phone}</TableCell>
                                                     </TableRow>
                                                 ))
                                             ) : (
@@ -487,7 +485,7 @@ export function EmailCampaignsDetailsView() {
                     <Stack spacing={1.5}>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#08a3cd' }}>
                             <IoMdList size={20} />
-                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase',  color: 'text.secondary' }}>List of Mail Sends</Typography>
+                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', color: 'text.secondary' }}>List of WhatsApp Sends</Typography>
                         </Stack>
                         <Card sx={{ p: 0, mt: 2, borderRadius: 1.5, border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                             <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -514,7 +512,7 @@ export function EmailCampaignsDetailsView() {
                                             <TableRow>
                                                 <TableCell sx={{ pl: 3 }}>S.No</TableCell>
                                                 <TableCell>Recipient Name</TableCell>
-                                                <TableCell>Recipient Email</TableCell>
+                                                <TableCell>Phone Number</TableCell>
                                                 <TableCell>Status</TableCell>
                                                 <TableCell>Sent On</TableCell>
                                             </TableRow>
@@ -543,7 +541,7 @@ export function EmailCampaignsDetailsView() {
                                                             </Typography>
                                                         </TableCell>
                                                         <TableCell sx={{ fontWeight: 600 }}>{item.recipient_name}</TableCell>
-                                                        <TableCell>{item.recipient_email}</TableCell>
+                                                        <TableCell>{item.recipient_phone}</TableCell>
                                                         <TableCell>
                                                             <Label
                                                                 sx={{
@@ -564,7 +562,7 @@ export function EmailCampaignsDetailsView() {
                                             ) : (
                                                 <TableRow>
                                                     <TableCell colSpan={5} align="center">
-                                                        <Typography variant="body2" color="text.secondary" sx={{ my: 3 }}>No mail sends found</Typography>
+                                                        <Typography variant="body2" color="text.secondary" sx={{ my: 3 }}>No WhatsApp sends found</Typography>
                                                     </TableCell>
                                                 </TableRow>
                                             )}
@@ -593,7 +591,7 @@ export function EmailCampaignsDetailsView() {
                 open={confirmDeleteOpen}
                 onClose={() => !deleting && setConfirmDeleteOpen(false)}
                 title="Confirm Delete"
-                content="Are you sure you want to delete this Email Campaign?"
+                content="Are you sure you want to delete this WhatsApp Campaign?"
                 action={
                     <Button
                         variant="contained"

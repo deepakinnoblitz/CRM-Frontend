@@ -29,6 +29,8 @@ export interface PersonalityDashboardData {
     howToImprove?: string | string[] | null;
     lastUpdated?: string | null;
     traits: Array<{ trait: string; score: number }>;
+    performance_breakdown?: Array<{ trait: string; score: number; impact: number }>;
+    recent_evaluations?: Array<{ name: string; trait: string; score_change: number; creation: string; remarks: string }>;
 }
 
 

@@ -589,13 +589,6 @@ export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM', settings?:
       addItems(employeeNavData);
       addItems(crmAndSalesNavData);
     }
-    addItems([
-      {
-        title: 'User Management',
-        path: '/users',
-        icon: <FaUsersCog size={22} />,
-      }
-    ]);
     return { hasAccess: true, navData: mergedNav };
   }
 

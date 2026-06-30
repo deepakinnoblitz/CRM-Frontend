@@ -49,10 +49,10 @@ const getStatusStyle = (status: string) => {
     };
 };
 
-export type EmailCampaignRowProps = {
+export type WhatsAppCampaignRowProps = {
     id: string;
     campaign_name: string;
-    email_template: string;
+    whatsapp_template: string;
     target_type: string;
     total_recipients: number;
     sent_count: number;
@@ -61,8 +61,8 @@ export type EmailCampaignRowProps = {
     template_name?: string;
 };
 
-type EmailCampaignTableRowProps = {
-    row: EmailCampaignRowProps;
+type WhatsAppCampaignTableRowProps = {
+    row: WhatsAppCampaignRowProps;
     hideCheckbox?: boolean;
     index?: number;
     onView: () => void;
@@ -72,7 +72,7 @@ type EmailCampaignTableRowProps = {
     canDelete?: boolean;
 };
 
-export function EmailCampaignTableRow({
+export function WhatsAppCampaignTableRow({
     row,
     hideCheckbox = false,
     index,
@@ -81,7 +81,7 @@ export function EmailCampaignTableRow({
     onDelete,
     canEdit = true,
     canDelete = true,
-}: EmailCampaignTableRowProps) {
+}: WhatsAppCampaignTableRowProps) {
     return (
         <TableRow
             hover
@@ -122,7 +122,7 @@ export function EmailCampaignTableRow({
 
             <TableCell>
                 <Typography variant="body2" noWrap>
-                    {row.template_name || row.email_template}
+                    {row.template_name || row.whatsapp_template}
                 </Typography>
             </TableCell>
 
@@ -145,18 +145,20 @@ export function EmailCampaignTableRow({
             </TableCell>
 
             <TableCell>
-                <Label
-                    sx={{
-                        ...getStatusStyle(row.status),
-                        fontWeight: 700,
-                        fontSize: 11,
-                        textTransform: 'uppercase',
-                        borderRadius: '6px',
-                        padding: '4px 12px',
-                    }}
-                >
-                    {row.status}
-                </Label>
+                <Typography variant="body2">
+                    <Label
+                        sx={{
+                            ...getStatusStyle(row.status),
+                            fontWeight: 700,
+                            fontSize: 11,
+                            textTransform: 'uppercase',
+                            borderRadius: '6px',
+                            padding: '4px 12px',
+                        }}
+                    >
+                        {row.status}
+                    </Label>
+                </Typography>
             </TableCell>
 
             <TableCell align="center">
@@ -169,7 +171,7 @@ export function EmailCampaignTableRow({
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
-                    {canDelete && row.status != 'Completed' &&(
+                    {canDelete && row.status != 'Completed' && (
                         <IconButton onClick={onDelete} sx={{ color: 'error.main' }} title="Delete">
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>

@@ -1,3 +1,5 @@
+import type { SelectChangeEvent } from '@mui/material/Select';
+
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
@@ -5,9 +7,12 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
 
 import { getCountries, getStates, getCities } from 'src/api/location';
@@ -94,7 +99,7 @@ export default function EmployeeTableFiltersDrawer({
         onFilters({ designation: event.target.value });
     };
 
-    const handleFilterStatus = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFilterStatus = (event: SelectChangeEvent<string>) => {
         onFilters({ status: event.target.value });
     };
 
@@ -297,27 +302,24 @@ export default function EmployeeTableFiltersDrawer({
                         <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                             Status
                         </Typography>
-                        <TextField
-                            select
-                            fullWidth
-                            value={filters.status}
-                            onChange={handleFilterStatus}
-                            SelectProps={{ native: true }}
-                            size="small"
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
+                        <FormControl fullWidth size="small">
+                            <Select
+                                value={filters.status}
+                                onChange={handleFilterStatus}
+                                displayEmpty
+                                sx={{
                                     borderRadius: 1.5,
                                     bgcolor: 'background.neutral',
                                     '&:hover': {
                                         bgcolor: 'action.hover',
                                     },
-                                },
-                            }}
-                        >
-                            <option value="all">All Status</option>
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                        </TextField>
+                                }}
+                            >
+                                <MenuItem value="all">All Status</MenuItem>
+                                <MenuItem value="Active">Active</MenuItem>
+                                <MenuItem value="Inactive">Inactive</MenuItem>
+                            </Select>
+                        </FormControl>
                     </Stack>
                 </Stack>
             </Scrollbar>
