@@ -107,6 +107,23 @@ export function EmailTemplateEditView() {
 
     setIsSaving(true);
     try {
+      const uploadedAttachments = await Promise.all(
+        attachments.map(async (att) => {
+          if (att.isRaw) {
+            const result = await uploadFile(att.file, 'CRM Email Template', id!, 'attachments');
+            return {
+              file: result.file_url,
+              description: att.description || '',
+            };
+          }
+          return {
+            name: att.name || undefined,
+            file: att.file,
+            description: att.description || '',
+          };
+        })
+      );
+
       await updateEmailTemplate(id!, {
         template_name: templateName,
         category,
@@ -119,11 +136,7 @@ export function EmailTemplateEditView() {
         reply_to_email: replyToEmail,
         is_active: isActive ? 1 : 0,
         is_default: isDefault ? 1 : 0,
-        attachments: attachments.map((att: any) => ({
-          name: att.name || undefined,
-          file: att.file,
-          description: att.description || '',
-        })),
+        attachments: uploadedAttachments,
       });
 
       // Reload attachments from backend
@@ -149,38 +162,19 @@ export function EmailTemplateEditView() {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
-    try {
-      const result = await uploadFile(file, 'CRM Email Template', id!, 'attachments');
-      if (result && result.file_url) {
-        setAttachments((prev) => [
-          ...prev,
-          {
-            file: result.file_url,
-            description: '',
-            file_name: file.name,
-          },
-        ]);
-        setSnackbar({
-          open: true,
-          severity: 'success',
-          message: 'File uploaded successfully',
-        });
-      }
-    } catch (err: any) {
-      console.error(err);
-      setSnackbar({
-        open: true,
-        severity: 'error',
-        message: err.message || 'Failed to upload file.',
-      });
-    } finally {
-      setUploading(false);
-    }
+    setAttachments((prev) => [
+      ...prev,
+      {
+        file,
+        isRaw: true,
+        name: file.name,
+        description: '',
+      },
+    ]);
   };
 
   const handleRemoveAttachment = (index: number) => {

@@ -454,44 +454,105 @@ export function WhatsAppSettingsView() {
                     <Card sx={{ p: 4, mb: 3, textAlign: 'center' }}>
                         <Typography variant="h5" sx={{ mb: 2 }}>Monthly WhatsApp Message Analytics</Typography>
 
-                        <Box sx={{ my: 5, position: 'relative', display: 'inline-flex' }}>
-                            <CircularProgress
-                                variant="determinate"
-                                value={
-                                    (settings.max_success_send_message_limit && settings.max_success_send_message_limit > 0)
-                                        ? Math.min(100, (messageCount / settings.max_success_send_message_limit) * 100)
-                                        : 100
-                                }
-                                size={160}
-                                thickness={4}
-                                sx={{ color: '#08a3cd' }}
-                            />
-                            <Box
+                        <Box
+                        sx={{
+                            position: "relative",
+                            display: "inline-flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            my: 4,
+                        }}
+                        >
+                        {/* Background Ring */}
+                        <CircularProgress
+                            variant="determinate"
+                            value={100}
+                            size={240}
+                            thickness={3.8}
+                            sx={{
+                            color: (theme) => theme.palette.grey[200],
+                            }}
+                        />
+
+                        {/* Progress Ring */}
+                        <CircularProgress
+                            variant="determinate"
+                            value={
+                            settings.max_success_send_message_limit
+                                ? Math.min(
+                                    100,
+                                    (messageCount / settings.max_success_send_message_limit) * 100
+                                )
+                                : 100
+                            }
+                            size={240}
+                            thickness={5}
+                            sx={{
+                            color: "#08A3CD",
+                            position: "absolute",
+                            left: 0,
+                            "& .MuiCircularProgress-circle": {
+                                strokeLinecap: "round",
+                            },
+                            filter: "drop-shadow(0 4px 12px rgba(8,163,205,.25))",
+                            }}
+                        />
+
+                        {/* Center Content */}
+                        <Box
+                            sx={{
+                            position: "absolute",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            textAlign: "center",
+                            }}
+                        >
+                            <Typography
+                            variant="h2"
+                            sx={{
+                                fontWeight: 800,
+                                lineHeight: 1,
+                                color: "#111827",
+                            }}
+                            >
+                            {messageCount}
+                            </Typography>
+
+                            <Typography
+                            variant="body2"
+                            sx={{
+                                mt: 0.5,
+                                color: "text.secondary",
+                                fontWeight: 600,
+                            }}
+                            >
+                            {settings.max_success_send_message_limit
+                                ? `of ${settings.max_success_send_message_limit}`
+                                : "Messages Sent"}
+                            </Typography>
+
+                            {settings.max_success_send_message_limit && (
+                            <Typography
+                                variant="caption"
                                 sx={{
-                                    top: 0,
-                                    left: 0,
-                                    bottom: 0,
-                                    right: 0,
-                                    position: 'absolute',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexDirection: 'column'
+                                mt: 1,
+                                px: 1.5,
+                                py: 0.4,
+                                borderRadius: 10,
+                                bgcolor: "#E0F7FC",
+                                color: "#08A3CD",
+                                fontWeight: 700,
                                 }}
                             >
-                                <Typography variant="h4" component="div" color="text.primary">
-                                    {messageCount}
-                                </Typography>
-                                {settings.max_success_send_message_limit ? (
-                                    <Typography variant="body2" color="text.secondary">
-                                        / {settings.max_success_send_message_limit} Limit
-                                    </Typography>
-                                ) : (
-                                    <Typography variant="body2" color="text.secondary">
-                                        Messages Sent
-                                    </Typography>
+                                {Math.round(
+                                (messageCount / settings.max_success_send_message_limit) * 100
                                 )}
-                            </Box>
+                                %
+                            </Typography>
+                            )}
+                        </Box>
                         </Box>
 
                         {(settings.max_success_send_message_limit && settings.max_success_send_message_limit > 0) && (
