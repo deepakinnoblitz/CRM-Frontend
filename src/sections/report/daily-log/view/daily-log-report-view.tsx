@@ -377,15 +377,15 @@ export function DailyLogReportView() {
                 const sheet = workbook.addWorksheet('Muster Roll Report');
 
                 const columns = [
-                    { header: 'Employee', key: 'employee_name', width: 25 },
-                    { header: 'Employee ID', key: 'employee_id', width: 15 }
+                    { header: 'Employee ID', key: 'employee_id', width: 15 },
+                    { header: 'Employee', key: 'employee_name', width: 25 }
                 ];
 
                 dates.forEach((date) => {
                     columns.push({
                         header: date.format('DD MMM (ddd)'),
                         key: date.format('YYYY-MM-DD'),
-                        width: 12
+                        width: 20
                     });
                 });
 
@@ -401,35 +401,58 @@ export function DailyLogReportView() {
 
                 uniqueEmployees.forEach((emp) => {
                     const rowData: any = {
-                        employee_name: emp.name,
-                        employee_id: emp.id
+                        employee_id: emp.id,
+                        employee_name: emp.name
                     };
                     dates.forEach((date) => {
                         rowData[date.format('YYYY-MM-DD')] = getAttendanceStatus(emp.id, date);
                     });
 
                     const excelRow = sheet.addRow(rowData);
+                    excelRow.height = 60;
 
                     for (let i = 3; i <= columns.length; i++) {
                         const cell = excelRow.getCell(i);
-                        const cellVal = cell.value;
+                        const date = dates[i - 3];
+                        const cellStatus = getAttendanceStatus(emp.id, date);
                         cell.alignment = { vertical: 'middle', horizontal: 'center' };
 
-                        if (cellVal === 'P') {
+                        if (cellStatus === 'P') {
+                            const times = getAttendanceTimes(emp.id, date);
+                            cell.value = `${times.inTime}\nto\n${times.outTime}`;
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2F0D9' } };
                             cell.font = { color: { argb: 'FF385723' }, bold: true };
-                        } else if (cellVal === 'A') {
+                            cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
+                        } else if (cellStatus === 'A') {
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCE4D6' } };
                             cell.font = { color: { argb: 'FFC65911' }, bold: true };
-                        } else if (cellVal === 'HD') {
+                        } else if (cellStatus === 'HD') {
+                            const times = getAttendanceTimes(emp.id, date);
+                            cell.value = `${times.inTime}\nto\n${times.outTime}`;
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
                             cell.font = { color: { argb: 'FF7F6000' }, bold: true };
-                        } else if (cellVal === 'H') {
+                            cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
+                        } else if (cellStatus === 'H') {
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
                             cell.font = { color: { argb: 'FF595959' }, bold: true };
                         }
                     }
                 });
+
+                // Merge Holiday columns
+                if (uniqueEmployees.length > 0) {
+                    dates.forEach((date, index) => {
+                        if (isDateHoliday(date)) {
+                            const colIndex = index + 3;
+                            sheet.mergeCells(2, colIndex, uniqueEmployees.length + 1, colIndex);
+                            const topCell = sheet.getRow(2).getCell(colIndex);
+                            topCell.value = 'HOLIDAY';
+                            topCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+                            topCell.font = { color: { argb: 'FF595959' }, bold: true, size: 10 };
+                            topCell.alignment = { textRotation: 90, vertical: 'middle', horizontal: 'center', wrapText: true };
+                        }
+                    });
+                }
 
                 sheet.eachRow((row, rowNumber) => {
                     for (let i = 1; i <= columns.length; i++) {
@@ -438,10 +461,10 @@ export function DailyLogReportView() {
                             cell.alignment = { vertical: 'middle', horizontal: 'center' };
                         }
                         cell.border = {
-                            top: { style: 'thin', color: { argb: 'FFD9D9D9' } },
-                            bottom: { style: 'thin', color: { argb: 'FFD9D9D9' } },
-                            left: { style: 'thin', color: { argb: 'FFD9D9D9' } },
-                            right: { style: 'thin', color: { argb: 'FFD9D9D9' } }
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
                         };
                     }
                 });
