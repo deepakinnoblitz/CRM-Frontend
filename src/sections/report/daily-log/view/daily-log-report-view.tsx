@@ -409,7 +409,7 @@ export function DailyLogReportView() {
                     });
 
                     const excelRow = sheet.addRow(rowData);
-                    excelRow.height = 45;
+                    excelRow.height = 60;
 
                     for (let i = 3; i <= columns.length; i++) {
                         const cell = excelRow.getCell(i);
