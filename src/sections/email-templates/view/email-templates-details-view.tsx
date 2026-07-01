@@ -138,7 +138,7 @@ export function EmailTemplateDetailsView() {
                             <IoMdSettings size={18} />
                             <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.2 }}>Basic Information</Typography>
                         </Stack>
-                        <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                        <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.06), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.18)}` }}>
                             <Stack spacing={1.5}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: 12}}>Template Name</Typography>
@@ -162,7 +162,7 @@ export function EmailTemplateDetailsView() {
                             <IoMdMail size={18} />
                             <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.2 }}>Email Settings</Typography>
                         </Stack>
-                        <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                        <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.06), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.18)}` }}>
                             <Stack spacing={1.5}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: 12}}>Sender Name</Typography>
@@ -253,24 +253,57 @@ export function EmailTemplateDetailsView() {
                                     </Stack>
                                 ) : (
                                     <Stack spacing={1}>
-                                        {parsedAttachments.map((file: any, index: number) => (
-                                            <Stack
-                                                key={index}
-                                                direction="row"
-                                                alignItems="center"
-                                                sx={{
-                                                    px: 1.5,
-                                                    py: 0.75,
-                                                    borderRadius: 1.5,
-                                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                                }}
-                                            >
-                                                <Iconify icon={"solar:link-bold" as any} width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
-                                                <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
-                                                    {typeof file === 'string' ? file.split('/').pop() : (file.name || file.url?.split('/').pop() || 'Attachment')}
-                                                </Typography>
-                                            </Stack>
-                                        ))}
+                                        {parsedAttachments.map((file: any, index: number) => {
+                                            const url = typeof file === 'string' ? file : (file.file || file.url || '');
+                                            const fileName = url ? decodeURIComponent(url.split('/').pop() || 'Attachment') : 'Attachment';
+
+                                            return (
+                                                <Stack
+                                                    key={index}
+                                                    direction="row"
+                                                    alignItems="center"
+                                                    sx={{
+                                                        px: 1.5,
+                                                        py: 0.75,
+                                                        borderRadius: 1.5,
+                                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                                    }}
+                                                >
+                                                    <Iconify icon={"solar:link-bold" as any} width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
+                                                    <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
+                                                        {fileName}
+                                                    </Typography>
+                                                    
+                                                    {url && (
+                                                        <Stack direction="row" spacing={1}>
+                                                            <Button
+                                                                size="small"
+                                                                variant="text"
+                                                                onClick={() => window.open(url, '_blank')}
+                                                                sx={{ textTransform: 'none', fontWeight: 600, color: 'info.main', py: 0 }}
+                                                            >
+                                                                View File
+                                                            </Button>
+                                                            <Button
+                                                                size="small"
+                                                                variant="text"
+                                                                onClick={() => {
+                                                                    const link = document.createElement('a');
+                                                                    link.href = url;
+                                                                    link.download = fileName;
+                                                                    document.body.appendChild(link);
+                                                                    link.click();
+                                                                    document.body.removeChild(link);
+                                                                }}
+                                                                sx={{ textTransform: 'none', fontWeight: 600, color: 'primary.main', py: 0 }}
+                                                            >
+                                                                Download
+                                                            </Button>
+                                                        </Stack>
+                                                    )}
+                                                </Stack>
+                                            );
+                                        })}
                                     </Stack>
                                 )}
                             </Box>

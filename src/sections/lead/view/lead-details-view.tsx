@@ -37,7 +37,7 @@ import { useRouter } from 'src/routes/hooks';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getDoc, getLead, convertLead, getWorkflowStates, getWorkflowActions, getFollowupHistory, applyWorkflowAction, getProposalByLeadId, getAutomationPreview, sendAutomationMessage, getLatestWhatsAppMessage } from 'src/api/leads';
+import { getDoc, getLead, convertLead, getWorkflowStates, getWorkflowActions, getFollowupHistory, applyWorkflowAction, getProposalByLeadId, getAutomationPreview, sendAutomationMessage, getLatestWhatsAppMessage, getEmailAutomationPreview, sendEmailAutomationMessage } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -47,22 +47,12 @@ import { WhatsappChatDialog } from './whatsapp_chat_dialog';
 import { LeadFollowupDetails } from '../lead-followup-details';
 import { LeadProposalDetails } from '../lead-proposal-details';
 import { LeadPipelineTimeline } from '../lead-pipeline-timeline';
+import { EmailAutomationDialog } from '../email-automation-dialog';
 import { WhatsappAutomationDialog } from '../whatsapp-automation-dialog';
 import { AccountDetailsDialog } from '../../report/account/account-details-dialog';
 import { ContactDetailsDialog } from '../../report/contact/contact-details-dialog';
 
 // ----------------------------------------------------------------------
-
-const STAGE_OPTIONS = [
-    { value: 'New Lead', label: 'New Lead' },
-    { value: 'Contacted', label: 'Contacted' },
-    { value: 'Qualified', label: 'Qualified' },
-    { value: 'Proposal Sent', label: 'Proposal\nSent' },
-    { value: 'In Negotiation', label: 'In\nNegotiation' },
-    { value: 'Closed', label: 'Closed' },
-    { value: 'Not Interested', label: 'Not\nInterested' },
-    { value: 'In Active', label: 'In\nActive' },
-];
 
 const getClipPath = (index: number, total: number) => {
     if (index === 0) {
@@ -82,6 +72,9 @@ export function LeadDetailsView() {
     const [openWhatsapp, setOpenWhatsapp] = useState(false);
     const [automationData, setAutomationData] = useState<any>(null);
     const [openAutomationDialog, setOpenAutomationDialog] = useState(false);
+
+    const [emailAutomationData, setEmailAutomationData] = useState<any>(null);
+    const [openEmailAutomationDialog, setOpenEmailAutomationDialog] = useState(false);
 
     const [lead, setLead] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -280,6 +273,15 @@ export function LeadDetailsView() {
             } catch (automationErr: any) {
                 console.error('Failed to fetch WhatsApp automation preview:', automationErr);
             }
+            try {
+                const emailPreview = await getEmailAutomationPreview('Lead', lead.name, previousStage);
+                if (emailPreview?.show_confirmation) {
+                    setEmailAutomationData(emailPreview);
+                    setOpenEmailAutomationDialog(true);
+                }
+            } catch (err) {
+                console.error(err);
+            }
         } catch (err: any) {
             console.error('Failed to update stage:', err);
             setSnackbar({
@@ -293,7 +295,7 @@ export function LeadDetailsView() {
         }
     }, [lead, selectedStage, allWorkflowData]);
 
-    const handleSendAutomationMessage = useCallback(async (proposalName: string | null) => {
+    const handleSendAutomationMessage = useCallback( async (proposalName: string | null) => {
         if (!lead || !automationData) return;
         try {
             await sendAutomationMessage(
@@ -334,6 +336,38 @@ export function LeadDetailsView() {
             throw err;
         }
     }, [lead, automationData]);
+
+        const handleSendEmailAutomation = useCallback(
+        async (proposalName: string | null) => {
+            if (!lead || !emailAutomationData) return;
+
+            try {
+                await sendEmailAutomationMessage(
+                    emailAutomationData.automation_name,
+                    "Lead",
+                    lead.name,
+                    proposalName
+                );
+
+                setSnackbar({
+                    open: true,
+                    message: "Email sent successfully.",
+                    severity: "success",
+                });
+
+            } catch (err: any) {
+
+                setSnackbar({
+                    open: true,
+                    message: err.message || "Failed to send Email.",
+                    severity: "error",
+                });
+
+                throw err;
+            }
+        },
+        [lead, emailAutomationData]
+    );
 
     const handleStageUpdateClick = useCallback(() => {
         if (!lead || !selectedStage || selectedStage === (lead.workflow_state || 'New Lead')) {
@@ -1118,6 +1152,19 @@ export function LeadDetailsView() {
                     automation={automationData}
                     lead={lead}
                     onSend={handleSendAutomationMessage}
+                />
+            )}
+
+            {emailAutomationData && (
+                <EmailAutomationDialog
+                    open={openEmailAutomationDialog}
+                    onClose={() => {
+                        setOpenEmailAutomationDialog(false);
+                        setEmailAutomationData(null);
+                    }}
+                    automation={emailAutomationData}
+                    lead={lead}
+                    onSend={handleSendEmailAutomation}
                 />
             )}
 
