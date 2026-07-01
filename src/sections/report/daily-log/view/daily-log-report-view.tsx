@@ -27,7 +27,6 @@ import RadioGroup from '@mui/material/RadioGroup';
 import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
 import Autocomplete from '@mui/material/Autocomplete';
-import ToggleButton from '@mui/material/ToggleButton';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
@@ -36,7 +35,6 @@ import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
@@ -300,8 +298,8 @@ export function DailyLogReportView() {
         );
     }, [holidays]);
 
-    const getStatusStyles = (status: 'P' | 'A' | 'HD' | 'H') => {
-        switch (status) {
+    const getStatusStyles = (cellStatus: 'P' | 'A' | 'HD' | 'H') => {
+        switch (cellStatus) {
             case 'P':
                 return {
                     bgcolor: 'rgba(34, 197, 94, 0.14)',
@@ -326,6 +324,8 @@ export function DailyLogReportView() {
                     color: '#9f1239',
                     fontWeight: 'bold',
                 };
+            default:
+                return {};
         }
     };
 
@@ -349,13 +349,11 @@ export function DailyLogReportView() {
         return dateArray;
     })();
 
-    const uniqueEmployees = (() => {
-        return Array.from(
-            new Map(
-                reportData.map((row) => [row.employee, { id: row.employee, name: row.employee_name }])
-            ).values()
-        );
-    })();
+    const uniqueEmployees = Array.from(
+        new Map(
+            reportData.map((row) => [row.employee, { id: row.employee, name: row.employee_name }])
+        ).values()
+    );
 
     const handleReset = () => {
         setFromDate(null);
@@ -414,19 +412,19 @@ export function DailyLogReportView() {
 
                     for (let i = 3; i <= columns.length; i++) {
                         const cell = excelRow.getCell(i);
-                        const status = cell.value;
+                        const cellVal = cell.value;
                         cell.alignment = { vertical: 'middle', horizontal: 'center' };
 
-                        if (status === 'P') {
+                        if (cellVal === 'P') {
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2F0D9' } };
                             cell.font = { color: { argb: 'FF385723' }, bold: true };
-                        } else if (status === 'A') {
+                        } else if (cellVal === 'A') {
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCE4D6' } };
                             cell.font = { color: { argb: 'FFC65911' }, bold: true };
-                        } else if (status === 'HD') {
+                        } else if (cellVal === 'HD') {
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
                             cell.font = { color: { argb: 'FF7F6000' }, bold: true };
-                        } else if (status === 'H') {
+                        } else if (cellVal === 'H') {
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
                             cell.font = { color: { argb: 'FF595959' }, bold: true };
                         }
@@ -674,18 +672,16 @@ export function DailyLogReportView() {
 
                     // Header formatted cleanly as Day + Date (e.g. "Mon 23"), not stacked/wrapped digit-by-digit
                     const headers = ['Employee', 'ID', ...pageDates.map(d => `${d.format('ddd')} ${d.format('DD')}`)];
-                    const body = uniqueEmployees.map(emp => {
-                        return [
-                            emp.name,
-                            emp.id,
-                            ...pageDates.map(date => getAttendanceStatus(emp.id, date))
-                        ];
-                    });
+                    const body = uniqueEmployees.map(emp => [
+                        emp.name,
+                        emp.id,
+                        ...pageDates.map(date => getAttendanceStatus(emp.id, date))
+                    ]);
 
                     autoTable(doc, {
                         startY: 40,
                         head: [headers],
-                        body: body,
+                        body,
                         theme: 'grid',
                         headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
                         styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', lineWidth: 0.15, lineColor: [60, 60, 60], valign: 'middle' },
@@ -1426,8 +1422,8 @@ export function DailyLogReportView() {
                                                             }
                                                         }
 
-                                                        const status = getAttendanceStatus(emp.id, date);
-                                                        const showTime = status === 'P' || status === 'HD';
+                                                        const cellStatus = getAttendanceStatus(emp.id, date);
+                                                        const showTime = cellStatus === 'P' || cellStatus === 'HD';
                                                         const times = showTime ? getAttendanceTimes(emp.id, date) : null;
                                                         return (
                                                             <TableCell
@@ -1449,7 +1445,7 @@ export function DailyLogReportView() {
                                                                         alignItems: 'center',
                                                                         justifyContent: 'center',
                                                                         fontSize: '0.725rem',
-                                                                        ...getStatusStyles(status),
+                                                                        ...getStatusStyles(cellStatus),
                                                                     }}
                                                                 >
                                                                     {showTime && times ? (
@@ -1459,7 +1455,7 @@ export function DailyLogReportView() {
                                                                             <Box component="span" sx={{ fontSize: '0.725rem', fontWeight: 700 }}>{times.outTime}</Box>
                                                                         </Box>
                                                                     ) : (
-                                                                        status
+                                                                        cellStatus
                                                                     )}
                                                                 </Box>
                                                             </TableCell>
@@ -1512,7 +1508,7 @@ export function DailyLogReportView() {
                             position: 'absolute',
                             right: 12,
                             top: 12,
-                            color: (theme) => theme.palette.grey[500],
+                             color: (t) => t.palette.grey[500],
                         }}
                     >
                         <Iconify icon={"mingcute:close-line" as any} />
@@ -1546,7 +1542,7 @@ export function DailyLogReportView() {
                             sx={{
                                 pt: 2,
                                 mt: 1,
-                                borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                 borderTop: (t) => `1px solid ${t.palette.divider}`,
                                 mb: 2,
                                 alignItems: 'flex-start'
                             }}
