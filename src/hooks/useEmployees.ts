@@ -16,7 +16,7 @@ export function useEmployees(
     filterCity?: string,
     joiningDateFrom?: string | null,
     joiningDateTo?: string | null,
-    filterEmployee?: string
+    filterEmployee?: string[]
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
@@ -33,10 +33,20 @@ export function useEmployees(
                 filters.push(['Employee', 'department', '=', filterDepartment]);
             }
  
-            // Add employee filter
-            if (filterEmployee && filterEmployee !== 'all') {
-                or_filters.push(['Employee', 'name', '=', filterEmployee]);
-                or_filters.push(['Employee', 'employee_id', '=', filterEmployee]);
+            if (filterEmployee && filterEmployee.length > 0) {
+                or_filters.push([
+                    'Employee',
+                    'name',
+                    'in',
+                    filterEmployee,
+                ]);
+
+                or_filters.push([
+                    'Employee',
+                    'employee_id',
+                    'in',
+                    filterEmployee,
+                ]);
             }
 
             // Add designation filter
