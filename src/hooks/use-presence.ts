@@ -280,13 +280,13 @@ export function usePresence() {
     try {
       // Validate GPS before status change
       if (newStatus !== 'Offline') {
-          const canProceed = await validateLocationForStatusChange();
+        const canProceed = await validateLocationForStatusChange();
 
-          if (!canProceed) {
-              // GPS unavailable or permission denied
-              // Dialog is already opened inside validateLocationForStatusChange()
-              return false;
-          }
+        if (!canProceed) {
+          // GPS unavailable or permission denied
+          // Dialog is already opened inside validateLocationForStatusChange()
+          return false;
+        }
       }
 
       const res = await apiUpdatePresence(newStatus, employeeId, message, source, startTime);
@@ -304,14 +304,14 @@ export function usePresence() {
         // Trigger Geo Location Tracking
         let trackingSource: 'Login' | 'Logout' | 'Status Change' = 'Status Change';
         if (newStatus === 'Offline') {
-            trackingSource = 'Logout';
-            await logLocationIfAllowed(trackingSource, newStatus);
+          trackingSource = 'Logout';
+          await logLocationIfAllowed(trackingSource, newStatus);
         } else if (oldStatus === 'Offline') {
-            trackingSource = 'Login';
-            await logLocationIfAllowed(trackingSource, newStatus);
+          trackingSource = 'Login';
+          await logLocationIfAllowed(trackingSource, newStatus);
         } else {
-            trackingSource = 'Status Change';
-            await logLocationIfAllowed(trackingSource, newStatus);
+          trackingSource = 'Status Change';
+          await logLocationIfAllowed(trackingSource, newStatus);
         }
       }
       localStorage.setItem('user_presence_status', newStatus);
@@ -456,14 +456,14 @@ export function usePresence() {
     fetchSettings();
   }, [fetchStatus, fetchSettings]);
 
-  // Periodic ping (every 30 seconds) - Increased frequency for auto-status accuracy
+  // Periodic ping (every 120 seconds) - Increased frequency for auto-status accuracy
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
 
     if (status !== 'Offline' && !loading && employeeId) {
       interval = setInterval(async () => {
         await pingPresence(employeeId);
-      }, 30000); // 30s
+      }, 120000); // 120s
     }
 
     return () => {
