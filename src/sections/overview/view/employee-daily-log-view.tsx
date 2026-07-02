@@ -16,6 +16,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useSocket } from 'src/hooks/use-socket';
 import { usePresenceLog } from 'src/hooks/use-presence-log';
 
+import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -52,7 +53,10 @@ const SORT_OPTIONS = [
 
 export function EmployeeDailyLogView() {
     const { user } = useAuth();
-    const isHR = user?.roles?.includes('HR') || user?.roles?.includes('Administrator');
+
+    const HR_ROLES = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
+    const isHR = user?.roles?.some((role: string) => HR_ROLES.includes(role)) ?? false;
+
     const { socket } = useSocket(user?.email);
 
     const [page, setPage] = useState(0);
@@ -68,32 +72,30 @@ export function EmployeeDailyLogView() {
 
     const [employees, setEmployees] = useState<{ value: string; label: string }[]>([]);
 
+    // Pre-set employee filter for non-HR users (same as attendance report)
+    useEffect(() => {
+        if (user && user.roles) {
+            const hasHRRole = user.roles.some((role: string) => HR_ROLES.includes(role));
+            if (!hasHRRole && user.employee) {
+                setFilterEmployee(user.employee);
+            }
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
+
+    // Fetch employee list for HR users (same API as attendance report)
     useEffect(() => {
         if (isHR) {
-            const fetchEmployees = async () => {
-                try {
-                    const res = await fetch('/api/method/frappe.client.get_list', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            doctype: 'Employee',
-                            fields: ['name', 'employee_name'],
-                            filters: { status: 'Active' },
-                            limit_page_length: 1000
-                        })
-                    });
-                    const data = await res.json();
-                    if (data.message) {
-                        setEmployees(data.message.map((emp: any) => ({
-                            value: emp.name,
-                            label: `${emp.employee_name} (${emp.name})`
-                        })));
-                    }
-                } catch (error) {
+            getDoctypeList('Employee', ['name', 'employee_name'])
+                .then((list: any[]) => {
+                    setEmployees(list.map((emp) => ({
+                        value: emp.name,
+                        label: `${emp.employee_name} (${emp.name})`
+                    })));
+                })
+                .catch((error: any) => {
                     console.error('Failed to fetch employees:', error);
-                }
-            };
-            fetchEmployees();
+                });
         }
     }, [isHR]);
 
@@ -185,16 +187,18 @@ export function EmployeeDailyLogView() {
         setPage(0);
     };
 
+    const defaultEmployee = isHR ? 'all' : (user?.employee || 'all');
+
     const handleResetFilters = () => {
         setFilterStatus('all');
-        setFilterEmployee('all');
+        setFilterEmployee(defaultEmployee);
         setFilterDay('all');
         setFilterStartDate('');
         setFilterEndDate('');
         setPage(0);
     };
 
-    const canReset = filterStatus !== 'all' || filterEmployee !== 'all' || filterDay !== 'all' || !!filterStartDate || !!filterEndDate || !!filterName;
+    const canReset = filterStatus !== 'all' || filterEmployee !== defaultEmployee || filterDay !== 'all' || !!filterStartDate || !!filterEndDate || !!filterName;
 
     const handleSortChange = (value: string) => {
         setSortBy(value);
@@ -331,6 +335,7 @@ export function EmployeeDailyLogView() {
                 onFilterEndDate={handleFilterEndDate}
                 canReset={canReset}
                 onResetFilters={handleResetFilters}
+                isHR={isHR}
                 options={{
                     status: STATUS_OPTIONS,
                     employees: employees,
